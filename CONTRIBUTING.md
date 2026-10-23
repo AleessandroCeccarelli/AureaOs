@@ -1,54 +1,46 @@
 
 # Contributing to AureaOS
 
-First of all, thank you for your interest in AureaOS!
+First of all, thank you for your interest in AureaOS.
 
-AureaOS is an open-source Linux desktop project built around a simple idea:
+AureaOS is an open-source project built around a simple idea:
 
 **Take the simplicity people love in operating systems, and shape it to fit Linux.**
 
-We want to create a system that is elegant, modern, easy to use, and respectful of users' freedom and privacy.
+Whether you are a developer, designer, tester, technical writer, or simply someone with ideas to share, your contribution can help shape the project.
 
 ## Rome Wasn't Built in a Day
 
-**Rome wasn't built in a day, and neither will AureaOS be.**
+AureaOS is in its early stages. There is still a lot to define, design, build, and test.
 
-This project is just beginning. There is a long journey ahead, and we know that building a great operating system takes time, patience, ideas, and teamwork.
-
-Every useful suggestion, every discussion, every test, every line of code, and every contribution can help us move forward.
-
-We believe in building AureaOS step by step, doing things properly rather than rushing to add features.
+We value thoughtful contributions, constructive feedback, and realistic proposals. You do not need to contribute code to help the project.
 
 ## How You Can Help
 
-You do not need to be an expert or a developer to contribute.
+There are many ways to contribute:
 
-You can help by:
+- **Ideas and discussion:** suggest improvements and discuss the project's direction.
+- **Design:** help shape a consistent, accessible, and elegant user experience.
+- **Development:** contribute code as the technical architecture takes shape.
+- **Testing:** help identify usability issues, bugs, and compatibility problems.
+- **Documentation:** improve explanations, guides, and technical documentation.
+- **Feedback:** share your experience and help us understand what users need.
 
-- Sharing ideas and suggestions.
-- Joining discussions about the vision and architecture.
-- Helping us choose the right technologies.
-- Improving documentation and translations.
-- Testing AureaOS as development progresses.
-- Reporting bugs and suggesting improvements.
-- Contributing code through pull requests when development begins.
-
-Constructive feedback is always welcome. Different points of view help us make better decisions.
+Before working on a substantial change, open a discussion or issue so we can agree on the goal and approach.
 
 ## A Project Built in the Open
 
-AureaOS is an open-source project. We want to share our progress, discuss our decisions, and learn from the community.
+AureaOS aims to be developed transparently and collaboratively.
 
-Contributions should respect the licenses of the project and of any third-party components. Please explain the purpose of proposed changes and keep contributions focused and easy to review.
+Please keep contributions respectful, explain the reasoning behind proposed changes, and focus discussions on making the project better.
 
-The project is currently in its planning stage. Development will progress gradually, and contribution guidelines may evolve as the project grows.
+Contributions to the project's original work are expected to follow the applicable project license. Third-party components remain subject to their own licenses.
+
+More detailed contribution procedures will be added as the development workflow becomes established.
 
 ## Thank You
 
-To everyone who takes the time to read about AureaOS, share an idea, join a discussion, test a build, write documentation, or contribute code:
-
-**Thank you. We truly appreciate your interest and support.**
-
-AureaOS is an ambitious journey, and every constructive contribution can make a difference.
+Every useful suggestion, test, improvement, and contribution matters.
 
 **Rome wasn't built in a day, and neither will AureaOS be. Let's build it together, one step at a time.**
+
