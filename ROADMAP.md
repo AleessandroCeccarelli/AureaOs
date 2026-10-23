@@ -1,58 +1,93 @@
+
 # AureaOS Roadmap
 
-This roadmap describes the direction of the project. It is a plan, not a promise that every feature is already implemented. Priorities may change as we learn and test.
+This roadmap describes the intended direction of AureaOS. It is a working plan, not a promise that every feature will be delivered exactly as written.
 
-# Phase 0 — Project foundations
+The project will progress in stages, prioritizing a reliable foundation before expanding the desktop experience.
 
-* [x]	Create the public GitHub repository.
-* [x]	Add the project README.
-* [x]	Choose GNU GPL v3.0 for original code, while respecting the separate licenses of included components.
-* [ ]	Document the initial architecture and project conventions.
-* [ ]	Define how third-party licenses and notices will be tracked.
+## Phase 0 — Project Setup
 
-# Phase 1 — Build a reliable base
+- [x] Create the public GitHub repository.
+- [x] Add the initial README.
+- [x] Choose GPL-3.0 for the project's original work.
+- [x] Document the project's vision and guiding principles.
+- [x] Add contribution guidelines.
+- [ ] Document the initial technical architecture.
+- [ ] Define how third-party components and their licenses will be tracked.
 
-* [ ]	Set up the development environment.
-* [ ]	Create a repeatable build process based on Debian tools.
-* [ ]	Produce a first bootable x86-64 test image.
-* [ ]	Test booting and basic hardware support on real computers.
-* [ ]	Document known limitations and recovery steps.
+## Phase 1 — Technical Foundation
 
-# Phase 2 — Establish the system experience
+The first priority is to establish a reproducible, testable foundation.
 
-* [ ]	Define the Aurea Design System: typography, spacing, colors, icons, controls, and motion.
-* [ ]	Prototype the desktop shell and core window-management behavior.
-* [ ]	Establish a consistent settings and permissions model.
-* [ ]	Define how system updates and recovery will work.
+- [ ] Set up the development environment.
+- [ ] Define the initial system architecture.
+- [ ] Create a repeatable Debian-based build process.
+- [ ] Produce a bootable x86-64 test image.
+- [ ] Test boot, installation, and basic hardware compatibility.
+- [ ] Document supported hardware and known limitations.
+- [ ] Define initial system recovery and troubleshooting procedures.
 
-# Phase 3 — Develop original components
+## Phase 2 — Desktop Experience
 
-# Planned components include:
+Once the technical foundation is reliable, work can begin on the desktop experience.
 
-* Aurea Desktop — desktop shell and window experience.
-* Quaero — global search for applications, files, folders, and settings.
-* Fides — file manager.
-* Aurea Store — application discovery and management.
-* Aurea Update — operating-system updates.
-* Aurea Backup — backup tools.
-* Aurea Recovery — recovery and rollback tools.
+- [ ] Define the AureaOS design system.
+- [ ] Prototype the Aurea Desktop shell.
+- [ ] Establish window management and core desktop interactions.
+- [ ] Define consistent interfaces for settings and system tools.
+- [ ] Design system notifications and application integration.
+- [ ] Plan user permissions and essential security workflows.
+- [ ] Design the update and recovery experience.
 
-Each component will be planned, implemented, and tested in small steps. These names describe intended projects, not completed features.
+## Phase 3 — Core Components
 
-# Phase 4 — AureaOS Roma 1.0
+The following components are planned. They are not yet implemented.
 
-* [ ]	Deliver a bootable and installable x86-64 system.
-* [ ]	Provide a clear installation experience.
-* [ ]	Make core hardware and networking work reliably on supported devices.
-* [ ]	Establish a dependable update and recovery path.
-* [ ]	Publish installation instructions, known issues, and release notes.
+### Planned Components
 
-# Guiding priorities
+- [ ] **Aurea Desktop:** desktop shell and window management.
+- [ ] **Quaero:** global search for applications, files, folders, and settings.
+- [ ] **Fides:** file manager.
+- [ ] **Aurea Store:** graphical application discovery and installation using Flatpak and Flathub.
+- [ ] **Aurea Update:** graphical system update manager.
+- [ ] **Aurea Backup:** personal data backup tools.
+- [ ] **Aurea Recovery:** system recovery tools.
 
-1. Reliability before adding more features.
-2. A usable system before visual polish alone.
-3. Small, testable changes instead of large, fragile rewrites.
-4. Reuse mature Linux technologies where appropriate.
-5. Keep the project open, documented, and respectful of upstream licenses.
+### Shared Design and Integration
 
-Current status: planning and early project setup. No roadmap item should be considered complete unless the repository contains the implementation and its results have been tested.
+- [ ] Define shared design conventions and reusable interface components.
+- [ ] Establish consistent notification and badge behavior.
+- [ ] Define integration points for application windows and desktop features.
+- [ ] Establish clear permission and confirmation patterns.
+- [ ] Document the interfaces needed for future system components.
+
+## Phase 4 — AureaOS Roma 1.0
+
+The first planned release will focus on a usable, installable, and coherent system rather than an excessive number of features.
+
+- [ ] Produce an installable x86-64 system image.
+- [ ] Provide a straightforward graphical installation experience.
+- [ ] Establish a defined set of supported hardware.
+- [ ] Deliver the initial desktop experience and essential system tools.
+- [ ] Provide a reliable update workflow.
+- [ ] Provide documented backup and recovery procedures.
+- [ ] Publish installation, usage, and troubleshooting documentation.
+- [ ] Document known limitations and release criteria.
+
+## Guiding Priorities
+
+Development decisions should follow these priorities:
+
+1. **Reliability first:** build a stable foundation before adding complexity.
+2. **A coherent experience:** make the system feel like one product.
+3. **Usability:** prioritize graphical workflows for everyday tasks.
+4. **Freedom and transparency:** respect open-source principles and third-party licenses.
+5. **Incremental progress:** prefer working, testable milestones over promises.
+
+## Current Status
+
+AureaOS is in the planning and early setup stage. The repository establishes the project's direction and provides a place to organize future development.
+
+Implementation status will be updated as work progresses.
+
+**Rome wasn't built in a day, and neither will AureaOS be.**
