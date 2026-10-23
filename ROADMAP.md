@@ -1,8 +1,8 @@
-AureaOS Roadmap
+# AureaOS Roadmap
 
 This roadmap describes the direction of the project. It is a plan, not a promise that every feature is already implemented. Priorities may change as we learn and test.
 
-Phase 0 — Project foundations
+# Phase 0 — Project foundations
 
 * [x]	Create the public GitHub repository.
 * [x]	Add the project README.
@@ -10,7 +10,7 @@ Phase 0 — Project foundations
 * [ ]	Document the initial architecture and project conventions.
 * [ ]	Define how third-party licenses and notices will be tracked.
 
-Phase 1 — Build a reliable base
+# Phase 1 — Build a reliable base
 
 * [ ]	Set up the development environment.
 * [ ]	Create a repeatable build process based on Debian tools.
@@ -18,16 +18,16 @@ Phase 1 — Build a reliable base
 * [ ]	Test booting and basic hardware support on real computers.
 * [ ]	Document known limitations and recovery steps.
 
-Phase 2 — Establish the system experience
+# Phase 2 — Establish the system experience
 
 * [ ]	Define the Aurea Design System: typography, spacing, colors, icons, controls, and motion.
 * [ ]	Prototype the desktop shell and core window-management behavior.
 * [ ]	Establish a consistent settings and permissions model.
 * [ ]	Define how system updates and recovery will work.
 
-Phase 3 — Develop original components
+# Phase 3 — Develop original components
 
-Planned components include:
+# Planned components include:
 
 * Aurea Desktop — desktop shell and window experience.
 * Quaero — global search for applications, files, folders, and settings.
@@ -39,7 +39,7 @@ Planned components include:
 
 Each component will be planned, implemented, and tested in small steps. These names describe intended projects, not completed features.
 
-Phase 4 — AureaOS Roma 1.0
+# Phase 4 — AureaOS Roma 1.0
 
 * [ ]	Deliver a bootable and installable x86-64 system.
 * [ ]	Provide a clear installation experience.
@@ -47,7 +47,7 @@ Phase 4 — AureaOS Roma 1.0
 * [ ]	Establish a dependable update and recovery path.
 * [ ]	Publish installation instructions, known issues, and release notes.
 
-Guiding priorities
+# Guiding priorities
 
 1. Reliability before adding more features.
 2. A usable system before visual polish alone.
