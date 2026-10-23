@@ -51,4 +51,4 @@ Use proven open technologies. Move forward deliberately. Build what is missing. 
 
 AureaOS looks to the future without confusing novelty with reliability. We choose technologies because they are suitable, well-maintained, and aligned with our vision—not simply because they are new, nor because they have always been there.
 
-Technology is beautiful when it is there, but you barely notice it.
+# Technology is beautiful when it is there, but you barely notice it.
