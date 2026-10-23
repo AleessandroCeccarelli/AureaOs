@@ -1,4 +1,8 @@
-<img src="assets/AureaOS-Social-Preview.jpg" alt="AureaOS — A golden A inspired by the Colosseum" width="800">
+<p align="center">
+
+  <img src="assets/AureaOS-Social-Preview.jpg" alt="AureaOS — A golden A inspired by the Colosseum" width="800">
+
+</p>
 
 
 # AureaOS
