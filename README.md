@@ -1,92 +1,81 @@
+
 # AureaOS
 
-Technology is beautiful when it is there, but you barely notice it.
+**Take the simplicity people love in operating systems, and shape it to fit Linux.**
 
-AureaOS is an open-source Linux desktop project with one simple goal:
-make using a computer feel easy, clear, and enjoyable.
+AureaOS is an open-source project with a simple ambition: make Linux feel natural, elegant, coherent, and welcoming to everyone.
 
-We believe Linux already has the technology needed for a great desktop.
-Our job is to bring those technologies together in a way that feels
-natural and consistent.
+It is being designed as a complete desktop experience, where the system, applications, settings, and everyday workflows feel like parts of one whole.
 
-# Our vision
+## Our Vision
 
-We want to take the simplicity people appreciate in different operating
-systems and shape it to fit Linux.
+We believe an operating system should adapt to people, not the other way around.
 
-That means learning from the best ideas in desktop computing: a clear
-interface, useful settings, smooth window management, easy app
-installation, reliable updates, and hardware that works without
-unnecessary effort.
+AureaOS aims to combine the openness and flexibility of Linux with the simplicity, consistency, and attention to detail that make technology enjoyable to use.
 
-We do not want to copy another operating system. We want to create our
-own experience, built on Linux and guided by the needs of everyday
-users.
+The goal is not to hide Linux's capabilities, but to make them accessible without requiring users to understand its complexity.
 
-# What AureaOS stands for
+## What AureaOS Stands For
 
-• Simple to use: everyday tasks should not require a terminal or
-technical knowledge.
-• Open and free: people should be able to study, use, improve, and
-share the source code under its license.
-• Beautiful and consistent: the desktop and built-in apps should
-feel like parts of one carefully designed system.
-• Works with your hardware: AureaOS should detect and configure
-supported hardware automatically whenever possible.
-• Privacy by default: no online account should be required just to
-use the computer.
-• Modern and reliable: updates, applications, and system tools
-should work together in a predictable way.
-• Built on proven technology: we will use the Linux ecosystem
-instead of reinventing every low-level component.
+- **Simplicity:** everyday tasks should be straightforward and intuitive.
+- **Consistency:** the desktop, applications, settings, and system tools should share one coherent design.
+- **Elegance:** thoughtful typography, restrained animations, translucent surfaces, and warm visual details.
+- **Freedom:** an open-source system that respects users and does not require a cloud account.
+- **Accessibility:** a welcoming experience for beginners and experienced users alike.
+- **Reliability:** updates, recovery, and system maintenance should be understandable and dependable.
 
-# A desktop designed as one experience
+## A Desktop Designed as One Experience
 
-AureaOS aims to bring its tools together into a coherent desktop:
+AureaOS is planned around a set of integrated components:
 
-• Aurea Desktop — the main desktop and window experience.
-• Quaero — search for apps, files, folders, and settings.
-• Fides — a simple, capable file manager.
-• Aurea Store — one clear place to find and manage applications.
-• Aurea Update — a dedicated way to update the operating system.
-• Aurea Backup and Aurea Recovery — planned tools for backup
-and recovery.
+- **Aurea Desktop:** the desktop environment and window management experience.
+- **Quaero:** a global search for applications, files, folders, and settings.
+- **Fides:** a simple, coherent file manager.
+- **Aurea Store:** a graphical application store built around Flatpak and Flathub.
+- **Aurea Update:** a clear and accessible system update manager.
+- **Aurea Backup:** tools for protecting personal data.
+- **Aurea Recovery:** tools for recovering a system when something goes wrong.
 
-These are planned components, not a claim that they are already
-implemented.
+These are planned components, not yet implemented features. Their design and scope will evolve as development progresses.
 
-# Built on Linux
+## Built on Linux
 
-The first release is planned for x86-64 PCs and will use Debian as
-its technical foundation.
+AureaOS will use Debian as its technical foundation.
 
-Debian and other open-source projects provide much of the underlying
-technology. AureaOS will focus on the desktop experience, integration,
-tools, and original components that make the system feel like one
-product.
+Debian provides the foundation; AureaOS will build its own identity and user experience on top of it.
 
-We respect the licenses and contributions of the projects we build upon.
+The initial target is x86-64 hardware, with a focus on automatic hardware detection, straightforward installation, and a desktop that works well without requiring the terminal for ordinary tasks.
 
-# First release: AureaOS Roma 1.0
+A local user account will be available without requiring a mandatory cloud account. Additional options, including biometric login, may be supported where compatible hardware and software allow it.
 
-Our first milestone is a bootable and installable system with a reliable
-base. From there, we will develop AureaOS step by step, test it on real
-hardware, and improve it through feedback.
+## First Release: AureaOS Roma 1.0
 
-AureaOS is currently in the planning stage. Features and plans may
-change as development progresses.
+The first planned release is **AureaOS Roma 1.0**.
 
-# Our guiding idea
+Future releases may take their names from other Italian cities, reflecting the project's roots and identity.
 
-Take the simplicity people love in operating systems, and shape it to
-fit Linux.
+The initial goal is to build a reliable, installable system with a coherent desktop experience, essential system tools, documentation, and a clearly defined scope of supported hardware.
 
-Linux should not need to hide its freedom or power behind complexity.
-AureaOS aims to make that power feel simple, polished, and welcoming.
+## Our Guiding Idea
 
-────────
+**“La tecnologia è bella quando c’è e non si vede.”**
 
-AureaOS is an open-source project licensed under the GNU General Public
-License v3.0 for its original code, subject to the license notices
-included with each component. Names and logos may be subject to separate
-trademark rules.
+*Technology is beautiful when it is there, but you barely notice it.*
+
+Technology should feel natural. The interface should help people accomplish what they want, without getting in their way.
+
+## Project Status
+
+AureaOS is currently in its planning and early setup stage. The project is open to discussion, ideas, contributions, and collaboration.
+
+Features described in this README represent the project's direction and may change as development progresses.
+
+## License
+
+AureaOS's original work is released under the GNU General Public License v3.0 (GPL-3.0), unless otherwise stated.
+
+Third-party software remains subject to its respective licenses.
+
+---
+
+**Rome wasn't built in a day, and neither will AureaOS be. Let's build it together, one step at a time.**
