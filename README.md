@@ -62,6 +62,19 @@ Future releases may take their names from other Italian cities, reflecting the p
 
 The initial goal is to build a reliable, installable system with a coherent desktop experience, essential system tools, documentation, and a clearly defined scope of supported hardware.
 
+## Documentation
+
+Explore the project's vision, philosophy, technical direction, and development plans:
+
+- [Vision](VISION.md) — the goals and intended experience of AureaOS.
+- [Philosophy](PHILOSOPHY.md) — the ideas and design principles that define the project's identity.
+- [Technology Principles](TECHNOLOGY.md) — the technical direction and criteria for choosing technologies.
+- [Roadmap](ROADMAP.md) — the planned development phases and priorities.
+- [Contributing](CONTRIBUTING.md) — how to participate, share ideas, and contribute.
+- [License](LICENSE) — the GNU General Public License version 3.0.
+
+Project artwork and visual assets are available in the [assets directory](assets/).
+
 ## Our Guiding Idea
 
 **“La tecnologia è bella quando c’è e non si vede.”**
