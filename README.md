@@ -1,4 +1,4 @@
-AureaOS
+# AureaOS
 
 Technology is beautiful when it is there, but you barely notice it.
 
@@ -9,7 +9,7 @@ We believe Linux already has the technology needed for a great desktop.
 Our job is to bring those technologies together in a way that feels
 natural and consistent.
 
-Our vision
+# Our vision
 
 We want to take the simplicity people appreciate in different operating
 systems and shape it to fit Linux.
@@ -23,7 +23,7 @@ We do not want to copy another operating system. We want to create our
 own experience, built on Linux and guided by the needs of everyday
 users.
 
-What AureaOS stands for
+# What AureaOS stands for
 
 • Simple to use: everyday tasks should not require a terminal or
 technical knowledge.
@@ -40,7 +40,7 @@ should work together in a predictable way.
 • Built on proven technology: we will use the Linux ecosystem
 instead of reinventing every low-level component.
 
-A desktop designed as one experience
+# A desktop designed as one experience
 
 AureaOS aims to bring its tools together into a coherent desktop:
 
@@ -55,7 +55,7 @@ and recovery.
 These are planned components, not a claim that they are already
 implemented.
 
-Built on Linux
+# Built on Linux
 
 The first release is planned for x86-64 PCs and will use Debian as
 its technical foundation.
@@ -67,7 +67,7 @@ product.
 
 We respect the licenses and contributions of the projects we build upon.
 
-First release: AureaOS Roma 1.0
+# First release: AureaOS Roma 1.0
 
 Our first milestone is a bootable and installable system with a reliable
 base. From there, we will develop AureaOS step by step, test it on real
@@ -76,7 +76,7 @@ hardware, and improve it through feedback.
 AureaOS is currently in the planning stage. Features and plans may
 change as development progresses.
 
-Our guiding idea
+# Our guiding idea
 
 Take the simplicity people love in operating systems, and shape it to
 fit Linux.
