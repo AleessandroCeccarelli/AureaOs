@@ -8,13 +8,13 @@
 - Initial root filesystem tool: `debootstrap`
 - Bootstrap mirror: `https://deb.debian.org/debian`
 - Initial debootstrap profile: `minbase`
-- Initial bootstrap repository component: `main`
+- Bootstrap and target APT components: `main`, `contrib`, `non-free`, `non-free-firmware`
 
 ## Initial system profile
 
 The first build stage creates a minimal, terminal-only Debian root filesystem. It is a development artifact, not a complete AureaOS installation image. No graphical desktop or desktop applications are included at this stage.
 
-The proposed package selection is maintained under `debian/packages/`. Those lists are not yet consumed by the bootstrap script and are not yet a fully dependency-tested or final package policy.
+The package selection is maintained under `debian/packages/`. The bootstrap script reads and installs the common manifests. A successful syntax check does not prove all packages resolve; the integrated profile still needs a full test against the live Debian Trixie repositories.
 
 ## Build implementation
 
@@ -26,23 +26,15 @@ Default destination:
 
 A different absolute path can be supplied with `--target`. Generated root filesystems are kept outside the Git repository. The script refuses to overwrite an existing destination and verifies the Debian codename and target architecture after bootstrap.
 
-The script currently runs `debootstrap` with:
+The script runs `debootstrap` with suite `trixie`, architecture `amd64`, variant `minbase`, and all four components: `main`, `contrib`, `non-free`, and `non-free-firmware`. It then writes `/etc/apt/sources.list.d/debian.sources` for `trixie`, `trixie-updates`, and `trixie-security`, updates package indexes, and installs the common manifests.
 
-- Suite: `trixie`
-- Architecture: `amd64`
-- Variant: `minbase`
-- Components: `main`
-- Mirror: `https://deb.debian.org/debian`
-
-This stage does not install the proposed package manifest, configure the final APT sources, set up Btrfs, configure the firewall, create user accounts, select a bootloader, or generate an installable image.
+The optional `--with-rar` flag adds RAR extraction support. `--boot-mode bios` and `--boot-mode uefi` select the corresponding GRUB manifest; the default is `none`, so no bootloader is selected automatically. The script does not configure Btrfs, firewall policy, user accounts, or create an installable image.
 
 ## Package manifest
 
 `debian/packages/README.md` documents the proposed groups and their limitations. The package lists separate the terminal-only base, networking, Bluetooth, security, storage, archives, firmware, kernel/initramfs, and alternative BIOS/UEFI bootloader packages.
 
-Repository components must be explicitly selected and documented. The initial debootstrap stage uses `main`; firmware packages generally require `non-free-firmware`, while the optional `7zip-rar` package requires `non-free`. These choices must be reflected in APT sources and reviewed for redistribution terms before they are used in a release build.
-
-The project uses a pragmatic component policy rather than an open-source-only rule. Every third-party component retains its own license and distribution terms. AureaOS's GPL-3.0 license applies to the project's original work, not automatically to bundled third-party software.
+All four Debian components are enabled consistently for the main archive and security updates. This makes the selected packages available to APT; it does not automatically install every package from those components. The project is not limited to free-software-only packages.
 
 ## Build objectives and status
 
@@ -53,15 +45,16 @@ The project uses a pragmatic component policy rather than an open-source-only ru
 - [x] Test refusal to overwrite an existing destination.
 - [x] Build and verify a second minimal root filesystem using the script.
 - [x] Add an initial package-manifest proposal under `debian/packages/`.
-- [ ] Validate all package names, dependencies and repository components against Trixie.
-- [ ] Decide and implement the final APT source and security-update policy.
+- [x] Enable all four Debian archive components for bootstrap and configure Trixie, updates, and security APT sources.
+- [x] Integrate the common package manifests into the bootstrap script with optional RAR and BIOS/UEFI GRUB selections.
+- [ ] Run a complete fresh build and validate package resolution/installation against live Trixie repositories.
 - [ ] Define system accounts, hostname, locale, timezone and service defaults.
 - [ ] Define the partition scheme and Btrfs subvolume/mount layout.
 - [ ] Configure firewall defaults and test networking, DNS and Bluetooth behavior.
 - [ ] Select the release image's boot mode and configure the appropriate bootloader.
 - [ ] Produce and test a bootable x86-64 image.
 - [ ] Test installation, updates, recovery and representative hardware.
-- [ ] Document supported hardware, licenses and known limitations.
+- [ ] Document supported hardware and known limitations.
 
 ## Filesystem, boot and recovery
 

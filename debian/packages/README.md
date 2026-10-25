@@ -2,7 +2,7 @@
 
 ## Purpose and status
 
-These files are the proposed, version-controlled package selection for AureaOS Roma 1.0. They are inputs for a future build implementation; they do not install packages. The lists have not yet been integrated into `tools/build/bootstrap-debian.sh` and must not be described as a finished or fully dependency-validated system profile.
+These files are the version-controlled package selection for the initial AureaOS Roma 1.0 terminal-only profile. `tools/build/bootstrap-debian.sh` reads these lists and installs the common manifests into the target root filesystem. The profile is integrated into the build script, but package resolution and a complete rootfs build still need to be tested against the live Debian Trixie repositories before calling it validated.
 
 ## Target
 
@@ -27,32 +27,35 @@ These files are the proposed, version-controlled package selection for AureaOS R
 
 The BIOS and UEFI bootloader lists are alternatives, not a single list to install wholesale. The final image target and secure-boot requirements must be decided before either list is integrated into the build.
 
-## Debian repository components and licensing
+## Debian repository components
 
-The base configuration currently uses only `main` for the debootstrap bootstrap stage. Several proposed packages require additional Debian archive components:
+The bootstrap and target APT configuration enable all four official Debian archive components: `main`, `contrib`, `non-free` and `non-free-firmware`. The generated deb822 source file covers `trixie`, `trixie-updates` and `trixie-security`. This makes packages from those components available to APT; it does not mean every package in every component is installed.
 
-- `non-free-firmware`: firmware and CPU microcode packages in `firmware.list`
-- `non-free`: `7zip-rar` in `rar-extraction-optional.list`
-
-The final APT source configuration must explicitly enable the required components for both the main archive and Debian security updates. Enabling a component is a project distribution decision, not an automatic consequence of listing a package.
-
-AureaOS uses a pragmatic selection policy. Components are evaluated for hardware compatibility, reliability, security, performance, usability, maintenance, licensing and redistribution terms. Open-source-only selection is not a project requirement. Proprietary components may be used when they materially improve the user experience and their terms permit the intended distribution. The GPL-3.0 license for AureaOS's original project code does not relicense third-party packages; each component retains its own license and terms.
+The project is not limited to free-software-only packages. The original AureaOS code remains licensed under GPL-3.0, while packages installed from Debian retain their own upstream packaging and license metadata.
 
 ## Important limitations
 
-- Package names and dependencies must be checked against the target Debian 13 repositories before the lists are consumed by automation.
+- The script now consumes the package lists, but a complete build must still confirm that every package resolves and installs successfully against the live Debian 13 repositories.
 - Package lists do not configure services, firewall rules, permissions, DNS behavior, firmware loading, or automatic updates.
 - `btrfs-progs` does not make the installed root filesystem Btrfs. Partitioning, subvolumes, mount configuration, initramfs and recovery behavior remain to be designed.
 - `linux-image-amd64` and `initramfs-tools` do not by themselves make the root filesystem bootable. A matching bootloader, partition layout, configuration, kernel command line and image-generation process are required.
-- RAR support is optional. `7zip-rar` is in `non-free` and provides RAR extraction through 7-Zip; it does not provide RAR archive creation. Review its license and redistribution terms before including it.
+- RAR support is optional. Use `--with-rar` to install `7zip-rar` from `non-free`; it provides RAR extraction through 7-Zip, not RAR archive creation.
 - Firmware packages improve compatibility for supported devices but cannot guarantee that every Wi-Fi, Bluetooth, graphics or other device will work. Hardware testing is required.
 - No desktop environment, graphical settings application, graphical firewall manager, graphical archive manager, installer, or AureaOS-specific application is included in this terminal-only package profile.
 
+## Build options
+
+- Default: install the common manifests, including kernel/initramfs, with no GRUB package selected.
+- `--boot-mode bios`: add the legacy BIOS GRUB package.
+- `--boot-mode uefi`: add the x86-64 UEFI GRUB package.
+- `--with-rar`: add optional RAR extraction support.
+
+The BIOS and UEFI options are mutually exclusive. Neither option alone creates a bootable image.
+
 ## Next steps
 
-1. Verify package availability, dependencies and archive components against Debian 13 Trixie.
-2. Decide whether optional RAR support and the broad firmware set belong in the default image.
-3. Define APT sources and security-update policy.
-4. Design the disk layout, Btrfs subvolumes, boot mode and recovery model.
-5. Integrate these lists into a build script only after the choices above are reviewed.
-6. Test the generated image in a virtual machine and on representative hardware.
+1. Run the updated script against a fresh test destination and resolve any package/dependency errors.
+2. Review installed package size and trim or retain the broad firmware set based on hardware coverage.
+3. Design the disk layout, Btrfs subvolumes, boot mode and recovery model.
+4. Add explicit service defaults, network/firewall policy and user-account setup.
+5. Build and test a bootable image in a virtual machine before testing representative hardware.
