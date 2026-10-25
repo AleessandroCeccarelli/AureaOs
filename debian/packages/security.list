@@ -1,0 +1,3 @@
+# Components only; policy and default rules must be implemented separately.
+nftables
+polkitd

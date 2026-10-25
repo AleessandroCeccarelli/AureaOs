@@ -1,0 +1,3 @@
+# Common kernel/initramfs packages; this list alone does not make an image bootable.
+linux-image-amd64
+initramfs-tools

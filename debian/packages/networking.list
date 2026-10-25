@@ -1,0 +1,6 @@
+# Wired and wireless networking. Package name is lowercase in Debian.
+network-manager
+wpasupplicant
+wireless-regdb
+curl
+wget

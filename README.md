@@ -9,7 +9,7 @@
 
 **Take the simplicity people love in operating systems, and shape it to fit Linux.**
 
-AureaOS is an open-source project with a simple ambition: make Linux feel natural, elegant, coherent, and welcoming to everyone.
+AureaOS is a Linux operating-system project with a simple ambition: make Linux feel natural, elegant, coherent, and welcoming to everyone. The project’s original code is open source; the finished system may also integrate third-party proprietary software or firmware when technically justified and legally distributable.
 
 It is being designed as a complete desktop experience, where the system, applications, settings, and everyday workflows feel like parts of one whole.
 
@@ -26,7 +26,7 @@ The goal is not to hide Linux's capabilities, but to make them accessible withou
 - **Simplicity:** everyday tasks should be straightforward and intuitive.
 - **Consistency:** the desktop, applications, settings, and system tools should share one coherent design.
 - **Elegance:** thoughtful typography, restrained animations, translucent surfaces, and warm visual details.
-- **Freedom:** an open-source system that respects users and does not require a cloud account.
+- **User choice:** a system designed to respect users and avoid a mandatory cloud account; individual third-party components retain their own licenses and terms.
 - **Accessibility:** a welcoming experience for beginners and experienced users alike.
 - **Reliability:** updates, recovery, and system maintenance should be understandable and dependable.
 

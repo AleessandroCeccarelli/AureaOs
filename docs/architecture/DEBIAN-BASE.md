@@ -1,112 +1,86 @@
 # AureaOS Debian Base
 
-## Base Distribution
+## Base distribution
 
-- Distribution: Debian GNU/Linux
-- Release: Debian 13 (Trixie)
+- Distribution: Debian GNU/Linux 13 (Trixie)
 - Release channel: Stable
-- Target architecture: amd64 (x86-64)
-- Initial build method: `debootstrap`
-- Debian mirror: `https://deb.debian.org/debian`
+- Target architecture: `amd64` (x86-64)
+- Initial root filesystem tool: `debootstrap`
+- Bootstrap mirror: `https://deb.debian.org/debian`
+- Initial debootstrap profile: `minbase`
+- Initial bootstrap repository component: `main`
 
-## Initial System Profile
+## Initial system profile
 
-The initial AureaOS base is a minimal, terminal-only system.
+The first build stage creates a minimal, terminal-only Debian root filesystem. It is a development artifact, not a complete AureaOS installation image. No graphical desktop or desktop applications are included at this stage.
 
-It must not include a graphical desktop environment or desktop applications.
+The proposed package selection is maintained under `debian/packages/`. Those lists are not yet consumed by the bootstrap script and are not yet a fully dependency-tested or final package policy.
 
-Only the packages and services required for a functional, maintainable base system should be included.
+## Build implementation
 
-The initial root filesystem is created using Debian's `minbase` profile and the `main` repository component.
+The bootstrap script is `tools/build/bootstrap-debian.sh`.
 
-## Build Objectives
+Default destination:
 
-- [x] Define the initial Debian release and target architecture.
-- [x] Select `debootstrap` for creating the initial root filesystem.
-- [x] Create a minimal Debian root filesystem outside the Git repository.
-- [x] Implement a bootstrap script in `tools/build/bootstrap-debian.sh`.
-- [x] Validate the bootstrap script's Bash syntax.
-- [x] Verify that the script refuses to overwrite an existing destination.
-- [x] Build and verify a second root filesystem using the bootstrap script.
-- [ ] Define the initial package selection and system configuration in the repository.
-- [ ] Configure and document the system's APT repositories and update policy.
-- [ ] Establish a reproducible Linux build environment targeting amd64.
-- [ ] Validate the complete filesystem configuration and boot behavior.
-- [ ] Produce a bootable x86-64 test image.
-- [ ] Document dependencies, licenses, and known limitations.
+`~/Documenti/AureaOS-Build/rootfs`
 
-## Build Process
+A different absolute path can be supplied with `--target`. Generated root filesystems are kept outside the Git repository. The script refuses to overwrite an existing destination and verifies the Debian codename and target architecture after bootstrap.
 
-The initial root filesystem is created with `debootstrap` using the following configuration:
+The script currently runs `debootstrap` with:
 
-- Distribution: `trixie`
+- Suite: `trixie`
 - Architecture: `amd64`
 - Variant: `minbase`
 - Components: `main`
 - Mirror: `https://deb.debian.org/debian`
 
-The bootstrap script is located at:
+This stage does not install the proposed package manifest, configure the final APT sources, set up Btrfs, configure the firewall, create user accounts, select a bootloader, or generate an installable image.
 
-`tools/build/bootstrap-debian.sh`
+## Package manifest
 
-By default, the script creates the root filesystem at:
+`debian/packages/README.md` documents the proposed groups and their limitations. The package lists separate the terminal-only base, networking, Bluetooth, security, storage, archives, firmware, kernel/initramfs, and alternative BIOS/UEFI bootloader packages.
 
-`~/Documenti/AureaOS-Build/rootfs`
+Repository components must be explicitly selected and documented. The initial debootstrap stage uses `main`; firmware packages generally require `non-free-firmware`, while the optional `7zip-rar` package requires `non-free`. These choices must be reflected in APT sources and reviewed for redistribution terms before they are used in a release build.
 
-A different destination can be specified with the `--target` option.
+The project uses a pragmatic component policy rather than an open-source-only rule. Every third-party component retains its own license and distribution terms. AureaOS's GPL-3.0 license applies to the project's original work, not automatically to bundled third-party software.
 
-The build output is kept outside the Git repository to prevent generated system files from being mixed with source code, documentation, and build tooling.
+## Build objectives and status
 
-The script checks the destination before starting and refuses to overwrite an existing path.
+- [x] Select Debian 13 Trixie and `amd64` as the initial target.
+- [x] Select `debootstrap` and create a minimal root filesystem outside the repository.
+- [x] Add a bootstrap script with destination safety checks.
+- [x] Validate the script syntax and its help behavior.
+- [x] Test refusal to overwrite an existing destination.
+- [x] Build and verify a second minimal root filesystem using the script.
+- [x] Add an initial package-manifest proposal under `debian/packages/`.
+- [ ] Validate all package names, dependencies and repository components against Trixie.
+- [ ] Decide and implement the final APT source and security-update policy.
+- [ ] Define system accounts, hostname, locale, timezone and service defaults.
+- [ ] Define the partition scheme and Btrfs subvolume/mount layout.
+- [ ] Configure firewall defaults and test networking, DNS and Bluetooth behavior.
+- [ ] Select the release image's boot mode and configure the appropriate bootloader.
+- [ ] Produce and test a bootable x86-64 image.
+- [ ] Test installation, updates, recovery and representative hardware.
+- [ ] Document supported hardware, licenses and known limitations.
 
-## Validation Status
+## Filesystem, boot and recovery
 
-The following initial checks have been completed:
+Installing `btrfs-progs` only supplies Btrfs administration tools. A Btrfs root requires an explicit partitioning plan, subvolumes, mount configuration and compatible initramfs/boot configuration. Snapshot and recovery behavior must be designed and tested; installing Btrfs tools alone does not provide automatic snapshots or rollback.
 
-- The bootstrap script passes Bash syntax validation.
-- The script's help option works.
-- The script refuses to overwrite an existing root filesystem.
-- A minimal Debian root filesystem has been created successfully.
-- A second root filesystem has been created using the bootstrap script.
-- The resulting system identifies itself as Debian GNU/Linux 13 (Trixie).
-- The resulting root filesystem reports the `amd64` architecture.
+The kernel and initramfs packages do not make a root filesystem bootable by themselves. The image build must select a target boot mode and install/configure the matching bootloader. `boot-bios.list` and `boot-uefi.list` are alternatives, not lists to install together by default.
 
-These checks validate the initial bootstrap process. They do not establish that AureaOS is bootable or ready for installation.
+## Update policy
 
-The following validations remain outstanding:
+The intended policy separates three update domains:
 
-- Verification of the complete system configuration.
-- Validation of APT repository and security update configuration.
-- Boot testing.
-- Testing on supported hardware.
-- Production and validation of a bootable x86-64 image.
+1. Debian base packages and security updates from explicitly configured Debian repositories.
+2. AureaOS-specific system components from a project-managed release/update mechanism, which remains to be designed.
+3. Third-party applications delivered through Flatpak/Flathub, updated through their own distribution mechanisms.
 
-The current build process is operationally repeatable, but bit-for-bit reproducibility has not yet been established. Package versions may change as Debian repositories are updated.
+This separation is an architectural intention, not an implemented update system. Compatibility, rollback, signing, repository trust and failure recovery must be designed before release.
 
-## Update Policy
+## Reproducibility and validation
 
-The Debian base is intended to follow the configured official Debian repositories for the selected Stable release and its security updates.
+The bootstrap procedure has been executed successfully, but this does not establish bit-for-bit reproducibility. Repository package versions can change over time. A reproducible release process will need documented package snapshots or version constraints, build-environment control, artifact checksums and automated validation.
 
-The final APT repository configuration and update policy must be defined and verified before the system is considered ready for distribution.
-
-AureaOS-specific components will have a separate update and release channel managed by the AureaOS project. Their distribution mechanism and integration with system updates remain to be defined.
-
-Third-party applications distributed through Flatpak and Flathub will follow their respective distribution and update mechanisms.
-
-The separation between Debian updates and AureaOS component updates must preserve compatibility between the underlying system and the AureaOS desktop experience.
-
-## Scope
-
-This document defines the initial Debian base and its bootstrap process.
-
-The graphical desktop, AureaOS applications, installer, final release image, and complete system update implementation are outside the scope of the initial base implementation.
-
-## Implementation Status
-
-The initial Debian root filesystem has been built and the bootstrap script has been tested successfully.
-
-The build script is version-controlled in the AureaOS repository. Generated root filesystems remain outside the repository.
-
-The project has not yet produced a bootable AureaOS image or a final installation ISO.
-
-Further work is required to define the system configuration, package selection, repository policy, boot process, and validation procedures before the Debian base can be considered ready for integration into AureaOS Roma 1.0.
+The current root filesystem is not a bootable AureaOS image and no final installation ISO has been produced.

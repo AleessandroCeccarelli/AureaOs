@@ -1,0 +1,20 @@
+# Essential terminal-only base. No desktop environment or GUI applications.
+systemd
+systemd-sysv
+dbus
+sudo
+apt
+ca-certificates
+locales
+tzdata
+bash-completion
+less
+nano
+vim-tiny
+procps
+psmisc
+iproute2
+iputils-ping
+pciutils
+usbutils
+lsof

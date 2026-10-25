@@ -2,7 +2,7 @@
 
 ## Looking Forward, Building on Proven Foundations
 
-AureaOS is built for the future. Its technology choices reflect a clear principle: adopt modern, mature, well-maintained, and genuinely open technologies, then integrate and shape them into one coherent operating system experience.
+AureaOS is built for the future. Its technology choices reflect a clear principle: select modern, mature, well-maintained components that deliver the best overall result, then integrate and shape them into one coherent operating system experience. Open-source and proprietary components are both eligible when their technical merits and distribution terms justify their use.
 
 We do not reinvent infrastructure simply for the sake of doing so. We build on the strengths of the Linux ecosystem and focus our own development on the parts that make AureaOS distinctive.
 
@@ -12,18 +12,20 @@ AureaOS Roma 1.0 is designed around a native Wayland desktop. X11 and XWayland a
 
 Our goal is not to preserve every historical workflow indefinitely. We want a desktop designed around modern display, input, security, and application technologies.
 
-## Open Technologies, Carefully Chosen
+## Technology Selection, Without Dogma
 
-AureaOS prioritizes technologies that are:
+AureaOS evaluates components according to the needs of the system and the people using it. Open-source status is not an absolute requirement, and proprietary software or firmware may be included when it materially improves compatibility, reliability, performance, usability, or hardware support and can legally be distributed.
 
-- **Open source**, with licenses compatible with their intended use and distribution.
-- **Mature and proven**, with real-world use, active maintenance, and appropriate testing.
-- **Modern and forward-looking**, using current interfaces and avoiding unnecessary dependence on obsolete technologies.
-- **Interoperable**, so components work together instead of creating a fragmented experience.
-- **Maintainable**, with documentation, a sustainable development path, and clear upgrade strategies.
-- **Adaptable**, allowing AureaOS to integrate, configure, theme, and extend them where their licenses and architecture permit.
+Each candidate should be assessed for:
 
-Open source alone is not enough: each dependency must be evaluated for its license, security, maintenance, compatibility, resource usage, and long-term suitability.
+- **Compatibility and reliability**, including behavior on supported hardware.
+- **Security and maintenance**, including update support and response to vulnerabilities.
+- **Performance and resource use**, especially on everyday and lower-powered computers.
+- **Usability and integration**, including whether the component supports a coherent graphical experience.
+- **Licensing and distribution terms**, including attribution, redistribution, patent, trademark, and other obligations where applicable.
+- **Long-term sustainability**, including documentation, upstream health, and the availability of alternatives.
+
+Open-source components are valuable because they can offer transparency and flexibility. Proprietary components can also be the practical choice in some cases. Neither label replaces a technical and legal evaluation. Third-party components retain their own licenses; the GPL-3.0 license for original AureaOS code does not automatically apply to them.
 
 ## Build What Makes AureaOS Different
 
@@ -35,7 +37,7 @@ We will select technologies according to the needs of each component. Native app
 
 ## One Coherent System
 
-AureaOS should not feel like a collection of unrelated projects assembled together. Even when its underlying components come from different open-source communities, they should work together as a unified product.
+AureaOS should not feel like a collection of unrelated projects assembled together. Even when its underlying components come from different projects, vendors, and licensing models, they should work together as a unified product.
 
 That means consistent interaction patterns, visual design, accessibility, system integration, and clear user-facing behavior. Complexity should remain behind the scenes whenever possible.
 
@@ -47,7 +49,7 @@ Compatibility decisions will be made consciously, based on security, reliability
 
 ## Our Guiding Principle
 
-Use proven open technologies. Move forward deliberately. Build what is missing. Integrate everything into one coherent experience.
+Choose the best-suited technologies. Move forward deliberately. Build what is missing. Integrate everything into one coherent experience.
 
 AureaOS looks to the future without confusing novelty with reliability. We choose technologies because they are suitable, well-maintained, and aligned with our vision—not simply because they are new, nor because they have always been there.
 

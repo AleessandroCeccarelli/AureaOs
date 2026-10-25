@@ -1,0 +1,2 @@
+# Install only for an image explicitly targeting 64-bit UEFI.
+grub-efi-amd64

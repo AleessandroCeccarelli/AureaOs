@@ -29,7 +29,7 @@ The architecture follows these principles:
 2. **Separation of responsibilities:** distinguish the base operating system, AureaOS-specific configuration, build tools, tests, and desktop applications.
 3. **Reproducibility:** system artifacts must be produced through documented and repeatable procedures.
 4. **Reliability first:** changes must be testable, documented, and introduced incrementally.
-5. **Open technologies:** dependencies must be evaluated for licensing, security, maintenance, compatibility, and long-term suitability.
+5. **Pragmatic technology selection:** open-source and proprietary components may both be selected when justified by compatibility, reliability, security, performance, usability, maintenance, licensing, and redistribution terms. No component is accepted without reviewing its obligations.
 6. **Wayland-first desktop:** the intended desktop architecture for Roma 1.0 excludes X11 and XWayland. Exceptions, if any, require explicit evaluation and documentation.
 7. **Coherent user experience:** system components must support a consistent and accessible operating environment.
 8. **No unnecessary reinvention:** AureaOS development should focus on integration and features that distinguish the project.
@@ -117,7 +117,7 @@ Directories will be created when their responsibilities and contents are suffici
 
 ## 6. Dependencies and Licensing
 
-Third-party components remain subject to their respective licenses.
+Third-party components remain subject to their respective licenses. AureaOS is not restricted to open-source-only components; proprietary software and firmware may be included when they materially improve compatibility or the user experience and their distribution terms permit the intended use. The project license applies to original AureaOS work and does not automatically relicense third-party components.
 
 Before integrating a dependency, AureaOS should record, as applicable:
 

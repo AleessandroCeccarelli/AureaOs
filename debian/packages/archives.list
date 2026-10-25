@@ -1,0 +1,9 @@
+# Common archive and compression tools; RAR support is in a separate optional list.
+tar
+gzip
+bzip2
+xz-utils
+zstd
+zip
+unzip
+7zip

@@ -1,0 +1,5 @@
+# Filesystem and disk utilities. Installing btrfs-progs does not configure Btrfs as root.
+btrfs-progs
+e2fsprogs
+dosfstools
+util-linux

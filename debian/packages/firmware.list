@@ -1,0 +1,11 @@
+# Broad hardware support. Requires the Debian non-free-firmware component.
+# Review installed size, redistribution terms, and device coverage before release.
+firmware-linux
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+firmware-brcm80211
+firmware-mediatek
+firmware-libertas
+amd64-microcode
+intel-microcode
