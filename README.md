@@ -70,6 +70,8 @@ Explore the project's vision, philosophy, technical direction, and development p
 - [Philosophy](PHILOSOPHY.md) — the ideas and design principles that define the project's identity.
 - [Technology Principles](TECHNOLOGY.md) — the technical direction and criteria for choosing technologies.
 - [Roadmap](ROADMAP.md) — the planned development phases and priorities.
+- [Planned First-Party Applications](docs/product/PLANNED-APPLICATIONS.md) — planned applications, their candidate names, and intended functions.
+
 - [Contributing](CONTRIBUTING.md) — how to participate, share ideas, and contribute.
 - [License](LICENSE) — the GNU General Public License version 3.0.
 
