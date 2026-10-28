@@ -71,6 +71,11 @@ Explore the project's vision, philosophy, technical direction, and development p
 - [Technology Principles](TECHNOLOGY.md) — the technical direction and criteria for choosing technologies.
 - [Roadmap](ROADMAP.md) — the planned development phases and priorities.
 - [Planned First-Party Applications](docs/product/PLANNED-APPLICATIONS.md) — planned applications, their candidate names, and intended functions.
+- [Human Interfaces](docs/human-interfaces/README.md) — the shared UI library and design system.
+- [Visual Design Principles](docs/human-interfaces/DESIGN-PRINCIPLES.md) — visual identity, themes, transparency, motion, and desktop design.
+- [Shared UI Components](docs/human-interfaces/COMPONENTS.md) — common components, context menus, input devices, window management, and accessibility.
+- [Planned System Tools](docs/product/PLANNED-SYSTEM-TOOLS.md) — planned printer and scanner management and the Resource Monitor.
+
 
 - [Contributing](CONTRIBUTING.md) — how to participate, share ideas, and contribute.
 - [License](LICENSE) — the GNU General Public License version 3.0.
