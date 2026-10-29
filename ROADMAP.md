@@ -41,17 +41,15 @@ Once the technical foundation is reliable, work can begin on the desktop experie
 
 ## Phase 3 — Core Components
 
-The following components are planned. They are not yet implemented.
+Printing and Scanning
 
-### Planned Components
-
-- [ ] **Aurea Desktop:** desktop shell and window management.
-- [ ] **Quaero:** global search for applications, files, folders, and settings.
-- [ ] **Fides:** file manager.
-- [ ] **Aurea Store:** graphical application discovery and installation using Flatpak and Flathub.
-- [ ] **Aurea Update:** graphical system update manager.
-- [ ] **Aurea Backup:** personal data backup tools.
-- [ ] **Aurea Recovery:** system recovery tools.
+* [ ]	Integrate CUPS for printing and SANE for scanner support.
+* [ ]	Support compatible USB and Wi-Fi network printers and scanners.
+* [ ]	Enable automatic network device discovery using supported standard protocols.
+* [ ]	Provide a native graphical interface for printer and scanner setup.
+* [ ]	Manage print queues, job status, and errors.
+* [ ]	Support scanning to PDF and image formats, including multipage scanning when available.
+* [ ]	Test compatibility with multifunction devices from different manufacturers.
 
 ### Shared Design and Integration
 
