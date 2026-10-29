@@ -58,6 +58,16 @@ The following components are planned. They are not yet implemented.
 * [ ]	Aurea AI: planned AI integration for the AureaOS environment.
 * [ ]	Aurea Wallet: planned secure management of passwords and passkeys.
 * [ ]	Printing and Scanning: graphical printer and scanner configuration, printing queues, and document scanning using Linux infrastructure such as CUPS and SANE.
+* [ ]	Aurea Media API: provide shared multimedia capabilities to all first-party applications through common system interfaces, avoiding duplicated codecs, libraries, and format-handling implementations.
+* [ ]	Video decoding for H.264/AVC, H.265/HEVC, AV1, and AV2, subject to decoder maturity, hardware support, and applicable licensing requirements.
+* [ ]	Common image formats: JPEG, PNG, GIF (including animation), WebP, TIFF, HEIF/HEIC, and AVIF.
+* [ ]	JPEG XL (JXL) image decoding.
+* [ ]	RAW photo support through suitable imaging libraries, with camera-format compatibility testing.
+* [ ]	Spatial photo support, including stereoscopic HEIC and relevant spatial metadata.
+* [ ]	Spatial video support, including MV-HEVC decoding and spatial metadata where supported.
+* [ ]	Shared image and video metadata handling, previews, and format detection.
+* [ ]	Make supported multimedia capabilities available consistently to Fides, Visio, Explora, and other first-party applications as appropriate.
+* [ ]	Verify format compatibility, playback, image rendering, and metadata preservation through shared API tests.
 
 ### Printing and Scanning
 
