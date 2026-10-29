@@ -41,7 +41,7 @@ Once the technical foundation is reliable, work can begin on the desktop experie
 
 ## Phase 3 — Core Components
 
-Planned Components
+### Planned Components
 
 The following components are planned. They are not yet implemented.
 
@@ -59,7 +59,7 @@ The following components are planned. They are not yet implemented.
 * [ ]	Aurea Wallet: planned secure management of passwords and passkeys.
 * [ ]	Printing and Scanning: graphical printer and scanner configuration, printing queues, and document scanning using Linux infrastructure such as CUPS and SANE.
 
-## Printing and Scanning
+### Printing and Scanning
 
 * [ ]	Integrate CUPS for printing and SANE for scanner support.
 * [ ]	Support compatible USB and Wi-Fi network printers and scanners.
@@ -87,6 +87,7 @@ The first planned release will focus on a usable, installable, and coherent syst
 - [ ] Deliver the initial desktop experience and essential system tools.
 - [ ] Provide a reliable update workflow.
 - [ ] Provide documented backup and recovery procedures.
+* [ ]	Validate printing and scanning with supported USB and Wi-Fi multifunction devices.
 - [ ] Publish installation, usage, and troubleshooting documentation.
 - [ ] Document known limitations and release criteria.
 
