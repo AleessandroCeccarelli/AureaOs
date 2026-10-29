@@ -41,7 +41,25 @@ Once the technical foundation is reliable, work can begin on the desktop experie
 
 ## Phase 3 — Core Components
 
-Printing and Scanning
+Planned Components
+
+The following components are planned. They are not yet implemented.
+
+* [ ]	Aurea Desktop: native desktop shell, window management, floating dock, application previews, virtual desktops, and desktop interactions.
+* [ ]	Aurea Greeter: graphical login screen and user session entry.
+* [ ]	Aurea Human Interfaces: shared UI component library and design system for first-party applications.
+* [ ]	Aurea System API: shared interfaces for system services and native applications.
+* [ ]	Quaero: global search for applications, files, folders, and settings.
+* [ ]	Fides: graphical file manager, archive handling, and file previews.
+* [ ]	Aurea Store: graphical application discovery, installation, and management using Flatpak and Flathub.
+* [ ]	Aurea Update: graphical system update manager, separate from application updates.
+* [ ]	Aurea Time: backup application with incremental backups, version history, encryption, and restoration.
+* [ ]	Aurea Recovery: graphical system recovery and reinstallation tools.
+* [ ]	Aurea AI: planned AI integration for the AureaOS environment.
+* [ ]	Aurea Wallet: planned secure management of passwords and passkeys.
+* [ ]	Printing and Scanning: graphical printer and scanner configuration, printing queues, and document scanning using Linux infrastructure such as CUPS and SANE.
+
+** Printing and Scanning
 
 * [ ]	Integrate CUPS for printing and SANE for scanner support.
 * [ ]	Support compatible USB and Wi-Fi network printers and scanners.
