@@ -87,7 +87,7 @@ The first planned release will focus on a usable, installable, and coherent syst
 - [ ] Deliver the initial desktop experience and essential system tools.
 - [ ] Provide a reliable update workflow.
 - [ ] Provide documented backup and recovery procedures.
-* [ ]	Validate printing and scanning with supported USB and Wi-Fi multifunction devices.
+- [ ]	Validate printing and scanning with supported USB and Wi-Fi multifunction devices.
 - [ ] Publish installation, usage, and troubleshooting documentation.
 - [ ] Document known limitations and release criteria.
 
