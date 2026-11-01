@@ -1,6 +1,8 @@
 
 # The AureaOS Philosophy
 
+This document describes the intended product, not the current implementation. AureaOS targets Debian GNU/Linux 13 (Trixie) on `amd64`; its desktop UI and applications are planned. The repository currently contains an early terminal-only Debian bootstrap and design resources.
+
 ## Not Another Operating System Imitation
 
 AureaOS is not an attempt to recreate Windows or macOS on top of Linux.
@@ -21,7 +23,7 @@ For some people, customization is the main attraction of Linux. For others, it i
 
 **Both approaches are valid. But not every operating system needs to serve every preference in the same way.**
 
-AureaOS is designed for people who want the benefits of Linux without feeling that configuring their operating system has become a hobby in itself.
+AureaOS is intended for people who want the benefits of Linux without feeling that configuring their operating system has become a hobby in itself.
 
 ## Turn It On. Get Things Done.
 
@@ -33,7 +35,7 @@ They do not want to spend the first afternoon searching for the right theme, the
 
 **They want to use their computer, not spend their time configuring it.**
 
-AureaOS aims to deliver a complete experience from the beginning: a considered desktop, consistent system tools, sensible defaults, and the essential features people need for everyday computing.
+AureaOS aims to deliver a complete experience: a considered desktop, consistent system tools, sensible defaults, and the essential features people need for everyday computing.
 
 The system should feel finished, not like a collection of components waiting for the user to put them together.
 

@@ -1,120 +1,65 @@
-
 # AureaOS Roadmap
 
-This roadmap describes the intended direction of AureaOS. It is a working plan, not a promise that every feature will be delivered exactly as written.
+This roadmap records current work and intended next steps. It is a working plan, not a delivery schedule. AureaOS targets Debian GNU/Linux 13 (Trixie), `amd64` (x86-64); the first release is AureaOS Roma 1.0.
 
-The project will progress in stages, prioritizing a reliable foundation before expanding the desktop experience.
+## Current status
 
-## Phase 0 — Project Setup
+### Implemented in the repository
 
-- [x] Create the public GitHub repository.
-- [x] Add the initial README.
-- [x] Choose GPL-3.0 for the project's original work.
-- [x] Document the project's vision and guiding principles.
-- [x] Add contribution guidelines.
-- [ ] Document the initial technical architecture.
-- [ ] Define how third-party components and their licenses will be tracked.
+- Project vision, contribution guidance, technical direction, and initial architecture documentation.
+- Debian package manifest files and `tools/build/bootstrap-debian.sh` for a minimal, terminal-only Debian root filesystem.
+- AureaOS visual design resources, including CSS color tokens, themes, icons, illustrations, and wallpapers.
 
-## Phase 1 — Technical Foundation
+These are repository artifacts. The bootstrap profile has not completed full package-resolution validation against Debian repositories, and it does not produce a bootable installation image. Design assets do not constitute a functioning desktop or application library.
 
-The first priority is to establish a reproducible, testable foundation.
+### In development / not yet complete
 
-- [ ] Set up the development environment.
-- [ ] Define the initial system architecture.
-- [ ] Create a repeatable Debian-based build process.
-- [ ] Produce a bootable x86-64 test image.
-- [ ] Test boot, installation, and basic hardware compatibility.
-- [ ] Document supported hardware and known limitations.
-- [ ] Define initial system recovery and troubleshooting procedures.
+- Validate the complete package profile and bootstrap process against Debian 13 Trixie repositories.
+- Define the system identity, service defaults, storage layout, boot configuration, and security policy.
+- Produce and validate a bootable test image, then document hardware support and limitations.
 
-## Phase 2 — Desktop Experience
+### Planned
 
-Once the technical foundation is reliable, work can begin on the desktop experience.
+- A GUI-first, Wayland-first Aurea Desktop and graphical installation experience.
+- Shared AureaOS Human Interfaces library and system integration.
+- First-party components including Quaero, Fides, Aurea Store, Aurea Update, Aurea Backup, and Aurea Recovery.
+- Flatpak and Flathub as the planned application distribution path.
+- Separate update channels for Debian base packages and AureaOS-specific system components. Application updates through Flatpak are a separate domain.
 
-- [ ] Define the AureaOS design system.
-- [ ] Prototype the Aurea Desktop shell.
-- [ ] Establish window management and core desktop interactions.
-- [ ] Define consistent interfaces for settings and system tools.
-- [ ] Design system notifications and application integration.
-- [ ] Plan user permissions and essential security workflows.
-- [ ] Design the update and recovery experience.
+The desktop UI, AureaOS applications, installer, and graphical system tools have not yet been implemented.
 
-## Phase 3 — Core Components
+## Development priorities
 
-### Planned Components
+1. Complete and validate the minimal Debian 13 `amd64` foundation.
+2. Define the system image, boot, installation, security, and update boundaries.
+3. Build and test a bootable development image and record its supported hardware.
+4. Develop the shared GUI foundation and Wayland desktop.
+5. Add first-party applications and system tools in coherent, testable increments.
+6. Set and verify release criteria for AureaOS Roma 1.0.
 
-The following components are planned. They are not yet implemented.
+## Planned components
 
-* [ ]	Aurea Desktop: native desktop shell, window management, floating dock, application previews, virtual desktops, and desktop interactions.
-* [ ]	Aurea Greeter: graphical login screen and user session entry.
-* [ ]	Aurea Human Interfaces: shared UI component library and design system for first-party applications.
-* [ ]	Aurea System API: shared interfaces for system services and native applications.
-* [ ]	Quaero: global search for applications, files, folders, and settings.
-* [ ]	Fides: graphical file manager, archive handling, and file previews.
-* [ ]	Aurea Store: graphical application discovery, installation, and management using Flatpak and Flathub.
-* [ ]	Aurea Update: graphical system update manager, separate from application updates.
-* [ ]	Aurea Time: backup application with incremental backups, version history, encryption, and restoration.
-* [ ]	Aurea Recovery: graphical system recovery and reinstallation tools.
-* [ ]	Aurea AI: planned AI integration for the AureaOS environment.
-* [ ]	Aurea Wallet: planned secure management of passwords and passkeys.
-* [ ]	Printing and Scanning: graphical printer and scanner configuration, printing queues, and document scanning using Linux infrastructure such as CUPS and SANE.
-* [ ]	Aurea Media API: provide shared multimedia capabilities to all first-party applications through common system interfaces, avoiding duplicated codecs, libraries, and format-handling implementations.
-* [ ]	Video decoding for H.264/AVC, H.265/HEVC, AV1, and AV2, subject to decoder maturity, hardware support, and applicable licensing requirements.
-* [ ]	Common image formats: JPEG, PNG, GIF (including animation), WebP, TIFF, HEIF/HEIC, and AVIF.
-* [ ]	JPEG XL (JXL) image decoding.
-* [ ]	RAW photo support through suitable imaging libraries, with camera-format compatibility testing.
-* [ ]	Spatial photo support, including stereoscopic HEIC and relevant spatial metadata.
-* [ ]	Spatial video support, including MV-HEVC decoding and spatial metadata where supported.
-* [ ]	Shared image and video metadata handling, previews, and format detection.
-* [ ]	Make supported multimedia capabilities available consistently to Fides, Visio, Explora, and other first-party applications as appropriate.
-* [ ]	Verify format compatibility, playback, image rendering, and metadata preservation through shared API tests.
+All items below are planned unless explicitly listed in the implemented section above.
 
-### Printing and Scanning
+| Component | Intended role |
+|---|---|
+| Aurea Desktop | Desktop shell and window management |
+| AureaOS Human Interfaces | Shared design system and UI components |
+| Quaero | Search for applications, files, folders, and settings |
+| Fides | Graphical file manager |
+| Aurea Store | Application discovery and management using Flatpak and Flathub |
+| Aurea Update | Updates for AureaOS-specific system components, separate from Debian base updates |
+| Aurea Backup | User data backup |
+| Aurea Recovery | System recovery |
+| Printer and scanner tools | Graphical device setup and management using suitable Linux infrastructure |
+| Resource Monitor | Graphical view of system activity |
 
-* [ ]	Integrate CUPS for printing and SANE for scanner support.
-* [ ]	Support compatible USB and Wi-Fi network printers and scanners.
-* [ ]	Enable automatic network device discovery using supported standard protocols.
-* [ ]	Provide a native graphical interface for printer and scanner setup.
-* [ ]	Manage print queues, job status, and errors.
-* [ ]	Support scanning to PDF and image formats, including multipage scanning when available.
-* [ ]	Test compatibility with multifunction devices from different manufacturers.
+The candidate applications Sonus, Visio, and Explora are described in [Planned First-Party Applications](docs/product/PLANNED-APPLICATIONS.md). Additional ideas in product documents remain proposals until explicitly selected and implemented.
 
-### Shared Design and Integration
+## Guiding priorities
 
-- [ ] Define shared design conventions and reusable interface components.
-- [ ] Establish consistent notification and badge behavior.
-- [ ] Define integration points for application windows and desktop features.
-- [ ] Establish clear permission and confirmation patterns.
-- [ ] Document the interfaces needed for future system components.
-
-## Phase 4 — AureaOS Roma 1.0
-
-The first planned release will focus on a usable, installable, and coherent system rather than an excessive number of features.
-
-- [ ] Produce an installable x86-64 system image.
-- [ ] Provide a straightforward graphical installation experience.
-- [ ] Establish a defined set of supported hardware.
-- [ ] Deliver the initial desktop experience and essential system tools.
-- [ ] Provide a reliable update workflow.
-- [ ] Provide documented backup and recovery procedures.
-- [ ]	Validate printing and scanning with supported USB and Wi-Fi multifunction devices.
-- [ ] Publish installation, usage, and troubleshooting documentation.
-- [ ] Document known limitations and release criteria.
-
-## Guiding Priorities
-
-Development decisions should follow these priorities:
-
-1. **Reliability first:** build a stable foundation before adding complexity.
-2. **A coherent experience:** make the system feel like one product.
-3. **Usability:** prioritize graphical workflows for everyday tasks.
-4. **Freedom and transparency:** respect open-source principles and third-party licenses.
-5. **Incremental progress:** prefer working, testable milestones over promises.
-
-## Current Status
-
-AureaOS is in the planning and early setup stage. The repository establishes the project's direction and provides a place to organize future development.
-
-Implementation status will be updated as work progresses.
-
-**Rome wasn't built in a day, and neither will AureaOS be.**
+1. Reliability before feature count.
+2. Graphical workflows for everyday tasks.
+3. A consistent and accessible experience.
+4. Clear boundaries between Debian, AureaOS components, and third-party applications.
+5. Honest reporting of implementation status, limitations, and licensing.

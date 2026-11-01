@@ -1,62 +1,42 @@
-
 # AureaOS Vision
 
-## Our Guiding Idea
+## Guiding idea
 
 **“La tecnologia è bella quando c’è e non si vede.”**
 
 *Technology is beautiful when it is there, but you barely notice it.*
 
-Technology should feel natural. A good operating system should help people do what they want to do without forcing them to think about how the system works.
+AureaOS aims to make Linux easier to use without hiding its flexibility. An operating system should help people do what they want without making them manage unnecessary complexity.
 
-AureaOS aims to make that experience possible on Linux.
+## What we believe
 
-## What We Believe
+- Technology should adapt to people.
+- Simplicity and capability can coexist.
+- The desktop, applications, settings, and system tools should feel consistent.
+- Users should not need a cloud account to use the system.
+- Visual design and motion should support clarity and usability.
+- Installation, updates, backup, and recovery should be understandable and dependable.
 
-We believe that:
+## Our approach
 
-- **Technology should adapt to people.** Users should not have to adapt to unnecessary complexity.
-- **Simplicity is not a lack of power.** Advanced capabilities can exist without overwhelming everyday users.
-- **Consistency matters.** The desktop, applications, settings, and system tools should feel like parts of the same experience.
-- **Freedom matters.** Users should be able to use their system without being forced into a cloud account or a proprietary ecosystem.
-- **Good design is functional.** Every visual detail, animation, and interaction should have a purpose.
-- **Trust is essential.** Installation, updates, backups, and recovery should be understandable and reliable.
+AureaOS is a GUI-first, Wayland-first Linux distribution based on Debian GNU/Linux 13 (Trixie), targeting `amd64` (x86-64). The first release is **AureaOS Roma 1.0**.
 
-## Our Approach
+Debian is the technical foundation. AureaOS plans to add its own desktop experience, system integration, and applications while reusing established Linux infrastructure where it fits.
 
-AureaOS will build on Debian while developing its own identity, desktop experience, and integrated system tools.
+The desktop UI and AureaOS applications are not yet implemented. The repository currently includes an early, terminal-only Debian root filesystem bootstrap, package manifests, and visual design resources. See the [roadmap](ROADMAP.md) for status and next steps.
 
-Debian is the technical foundation, not the identity of the project.
+## A desktop that feels natural
 
-Our approach is to:
+The planned desktop should be modern, accessible, and coherent. Warm accents, considered typography, translucent surfaces, and restrained motion are design directions; they must serve readability and usability.
 
-- Design the experience as a coherent whole rather than a collection of unrelated applications.
-- Prefer graphical interfaces for everyday operations.
-- Keep terminal access available for advanced users, developers, and administrators.
-- Adapt to supported hardware and make installation as straightforward as possible.
-- Use open technologies and respect the licenses of third-party components.
-- Make privacy, reliability, and user control fundamental design principles.
+Everyday tasks should have graphical workflows. The terminal remains available for advanced users, developers, and administrators.
 
-## A Desktop That Feels Natural
+## First release
 
-AureaOS aims for a modern, elegant, and welcoming interface.
+**AureaOS Roma 1.0** is the project's first release target. The initial platform is Debian 13 Trixie on `amd64`. Work should proceed in stages, with a reliable foundation before the desktop and its applications expand.
 
-Its visual language may include translucent surfaces, warm golden accents, thoughtful typography, and restrained animations. These elements should support clarity and usability rather than become distractions.
-
-The desktop should feel responsive and consistent, from opening an application to changing a system setting.
-
-## First Target
-
-The first planned release is **AureaOS Roma 1.0**, initially targeting x86-64 hardware.
-
-The first priority is not to build every possible feature. It is to establish a reliable foundation and deliver a small, coherent, usable system.
-
-The project will progress in stages, with clear distinctions between planned features, prototypes, and working implementations.
-
-## Our Motto
+## Motto
 
 **Take the simplicity people love in operating systems, and shape it to fit Linux.**
 
-AureaOS is not about making Linux less capable. It is about making its capabilities easier to reach.
-
-**Technology is at its best when people can focus on what they want to do, not on the technology itself.**
+AureaOS aims to make Linux capabilities easier to reach while respecting the openness and flexibility of the platform.

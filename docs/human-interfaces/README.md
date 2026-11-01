@@ -3,7 +3,7 @@
 
 ## Purpose
 
-AureaOS Human Interfaces is the planned shared user interface library and design system for native AureaOS applications.
+AureaOS Human Interfaces is the planned shared user interface library and design system for AureaOS applications. The repository currently includes design documentation and visual resources, including CSS theme tokens. It does not yet contain an implemented shared application library or a working desktop UI.
 
 Its purpose is to provide reusable UI components, consistent interaction patterns, and a coherent visual identity across the AureaOS desktop and applications.
 
@@ -38,8 +38,8 @@ Human Interfaces provides reusable visual components and interaction patterns. T
 
 These are complementary responsibilities and should remain clearly separated.
 
-## Implementation Status
+## Status
 
-This document describes the intended direction of the project. The shared library and its components are not yet implemented.
+Design documentation and visual resources are present. The shared library, desktop UI, and integrations described here remain planned work.
 
 Detailed design rules and component specifications will be documented separately as the project progresses.

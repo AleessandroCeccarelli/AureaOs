@@ -2,7 +2,7 @@
 
 ## 1. Purpose
 
-This document defines the initial technical architecture of AureaOS Roma 1.0.
+This document records the initial architecture direction for AureaOS Roma 1.0.
 
 Its purpose is to establish clear boundaries between the Debian foundation, AureaOS-specific system integration, and the future desktop experience.
 
@@ -30,7 +30,7 @@ The architecture follows these principles:
 3. **Reproducibility:** system artifacts must be produced through documented and repeatable procedures.
 4. **Reliability first:** changes must be testable, documented, and introduced incrementally.
 5. **Pragmatic technology selection:** open-source and proprietary components may both be selected when justified by compatibility, reliability, security, performance, usability, maintenance, licensing, and redistribution terms. No component is accepted without reviewing its obligations.
-6. **Wayland-first desktop:** the intended desktop architecture for Roma 1.0 excludes X11 and XWayland. Exceptions, if any, require explicit evaluation and documentation.
+6. **Wayland-first desktop:** the intended desktop architecture for Roma 1.0 is designed for Wayland. Compatibility requirements and any exceptions must be evaluated and documented.
 7. **Coherent user experience:** system components must support a consistent and accessible operating environment.
 8. **No unnecessary reinvention:** AureaOS development should focus on integration and features that distinguish the project.
 
@@ -40,9 +40,7 @@ The system is conceptually divided into the following layers.
 
 ### 4.1 Debian Base
 
-The Debian base provides the underlying Linux operating system and established system infrastructure.
-
-Its exact release, package selection, initialization system, service configuration, and security policies must be documented before implementation.
+The target base is Debian GNU/Linux 13 (Trixie), `amd64` (x86-64). The repository contains an early `debootstrap` script and package manifests for a minimal, terminal-only root filesystem. This is not a complete or bootable AureaOS image. See [Debian Base](DEBIAN-BASE.md) for implementation status and limitations.
 
 ### 4.2 AureaOS System Configuration
 
@@ -62,9 +60,7 @@ Only requirements that have been evaluated and documented should be implemented.
 
 Build tools will provide a documented process for preparing and validating AureaOS system artifacts.
 
-The chosen build technology must support the project's target architecture, reproducibility goals, maintainability, and licensing requirements.
-
-The build technology and its implementation remain to be selected and verified.
+The current bootstrap implementation uses `debootstrap`. It has not yet been validated as a complete package-profile build or a reproducible release process. Further build and image-generation tooling remains to be selected and verified.
 
 ### 4.4 AureaOS Desktop and Applications
 
@@ -80,7 +76,7 @@ Planned components include:
 - Aurea Backup.
 - Aurea Recovery.
 
-These components are planned features and are not considered implemented by this document.
+These components are planned features and are not implemented. Flatpak and Flathub are planned for application distribution.
 
 ## 5. Repository Organization
 
@@ -95,9 +91,7 @@ AureaOs/
 │   └── architecture/
 │       └── INITIAL-ARCHITECTURE.md
 ├── debian/
-│   ├── packages/
-│   ├── config/
-│   └── services/
+│   └── packages/
 ├── tools/
 │   └── build/
 ├── tests/
@@ -111,7 +105,7 @@ AureaOs/
 └── LICENSE
 ```
 
-This structure is a proposal, not a claim that all directories or implementation files already exist.
+This was a proposed structure. The current repository has `debian/packages/` and `tools/build/bootstrap-debian.sh`; other proposed areas may not exist yet.
 
 Directories will be created when their responsibilities and contents are sufficiently defined. Their organization may be refined as the build process and system architecture become clearer.
 
@@ -164,13 +158,13 @@ A successful build alone does not establish that the resulting operating system 
 
 The following decisions require evaluation and documentation before the corresponding implementation begins:
 
-- The Debian release and repository policy.
+- Debian repository policy beyond the current Trixie bootstrap sources.
 - The system build technology and build environment.
 - The initial package selection.
-- The initialization system and service-management approach.
+- Service configuration and security policy.
 - The Wayland compositor and associated desktop infrastructure.
 - The graphics, networking, audio, and hardware integration strategy.
-- The security and system-update policies.
+- The separate update mechanisms for Debian base packages and AureaOS-specific system components.
 - The dependency inventory and license-review process.
 - The initial automated testing strategy.
 
@@ -194,9 +188,7 @@ Desktop application development will expand as the technical foundation becomes 
 
 ## 11. Current Status
 
-AureaOS is in the planning and early setup stage.
-
-This document establishes the initial architectural direction. It does not indicate that the system configuration, build tools, desktop components, or test image have already been implemented.
+AureaOS has an early Debian root filesystem bootstrap and package-manifest structure. The full package profile, bootable image, installer, desktop UI, and AureaOS applications are not yet complete. Visual assets in the repository are design resources, not a working UI implementation.
 
 Architecture decisions and implementation status must be updated as the project progresses.
 

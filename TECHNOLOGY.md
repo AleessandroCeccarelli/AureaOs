@@ -1,58 +1,44 @@
 # AureaOS Technology Principles
 
-## Looking Forward, Building on Proven Foundations
+## Platform
 
-AureaOS is built for the future. Its technology choices reflect a clear principle: select modern, mature, well-maintained components that deliver the best overall result, then integrate and shape them into one coherent operating system experience. Open-source and proprietary components are both eligible when their technical merits and distribution terms justify their use.
+AureaOS Roma 1.0 targets Debian GNU/Linux 13 (Trixie) on `amd64` (x86-64). The project is GUI-first and Wayland-first: the intended desktop is designed for Wayland. The desktop and its applications remain planned and are not yet implemented.
 
-We do not reinvent infrastructure simply for the sake of doing so. We build on the strengths of the Linux ecosystem and focus our own development on the parts that make AureaOS distinctive.
+The repository currently contains a bootstrap script and package manifests for a minimal, terminal-only Debian root filesystem. This is an early development artifact, not a complete AureaOS system image. See [Debian Base](docs/architecture/DEBIAN-BASE.md) for implementation details and limitations.
 
-## Modern by Design
+## Technology selection
 
-AureaOS Roma 1.0 is designed around a native Wayland desktop. X11 and XWayland are not part of the intended desktop architecture. Applications selected for the default experience must be compatible with this direction; any exceptions must be deliberate, documented, and justified rather than included merely for legacy compatibility.
+Choose components for the needs of AureaOS and its users. Open-source and proprietary software or firmware may be considered when technically justified and legally distributable. Evaluate each candidate for:
 
-Our goal is not to preserve every historical workflow indefinitely. We want a desktop designed around modern display, input, security, and application technologies.
+- Compatibility and reliability on the target platform.
+- Security, maintenance, and upstream support.
+- Performance and resource use.
+- Usability, accessibility, and integration.
+- License, attribution, redistribution, patent, and other applicable terms.
+- Long-term sustainability and available alternatives.
 
-## Technology Selection, Without Dogma
+Third-party components retain their own licenses. GPL-3.0 applies to original AureaOS work as stated in the repository license; it does not automatically apply to third-party components.
 
-AureaOS evaluates components according to the needs of the system and the people using it. Open-source status is not an absolute requirement, and proprietary software or firmware may be included when it materially improves compatibility, reliability, performance, usability, or hardware support and can legally be distributed.
+## Build on established infrastructure
 
-Each candidate should be assessed for:
+AureaOS should reuse mature Linux infrastructure for capabilities already served well by the ecosystem. Project development should focus on the integrated desktop experience and the AureaOS-specific parts that are missing.
 
-- **Compatibility and reliability**, including behavior on supported hardware.
-- **Security and maintenance**, including update support and response to vulnerabilities.
-- **Performance and resource use**, especially on everyday and lower-powered computers.
-- **Usability and integration**, including whether the component supports a coherent graphical experience.
-- **Licensing and distribution terms**, including attribution, redistribution, patent, trademark, and other obligations where applicable.
-- **Long-term sustainability**, including documentation, upstream health, and the availability of alternatives.
+No single implementation language, toolkit, or application technology is selected for every component. Native and web technologies may be evaluated where they fit the component's integration, performance, accessibility, maintenance, and security needs.
 
-Open-source components are valuable because they can offer transparency and flexibility. Proprietary components can also be the practical choice in some cases. Neither label replaces a technical and legal evaluation. Third-party components retain their own licenses; the GPL-3.0 license for original AureaOS code does not automatically apply to them.
+## One coherent experience
 
-## Build What Makes AureaOS Different
+Components from different projects should work together through consistent interaction patterns, accessible interfaces, clear system behavior, and maintainable integration. Visual consistency must not depend on fragile changes to third-party applications.
 
-AureaOS will reuse reliable Linux infrastructure for essential system capabilities instead of duplicating work that the ecosystem has already solved well.
+## Updates and distribution
 
-Our own development will focus on the integrated desktop experience and the components that define AureaOS: its interface, window management, system settings, search, file management, application store, update experience, backup, and recovery tools.
+The Debian base and AureaOS-specific system components are intended to use separate update channels. Their update mechanisms, trust model, compatibility rules, and recovery behavior still need to be designed and validated.
 
-We will select technologies according to the needs of each component. Native applications are appropriate where close system integration, efficiency, or performance matters. Web technologies, including Electron where suitable, can help us build consistent applications and web-based tools. No single implementation technology is mandatory for every application. Every choice must serve the overall experience.
+Flatpak and Flathub are planned for distributing applications through Aurea Store. Application provenance, permissions, maintenance, and trust remain part of the design; a graphical store alone does not guarantee that an application is safe.
 
-## One Coherent System
+## Compatibility
 
-AureaOS should not feel like a collection of unrelated projects assembled together. Even when its underlying components come from different projects, vendors, and licensing models, they should work together as a unified product.
+The desktop direction is Wayland-first. Compatibility decisions should consider user needs, security, reliability, and maintenance cost. Any exceptions to the intended desktop direction must be evaluated and documented rather than assumed.
 
-That means consistent interaction patterns, visual design, accessibility, system integration, and clear user-facing behavior. Complexity should remain behind the scenes whenever possible.
+## Guiding principle
 
-## Compatibility Is a Deliberate Choice
-
-AureaOS will not pursue compatibility with every legacy technology at any cost. For Roma 1.0, the project prioritizes a modern Wayland environment and applications that support it.
-
-Compatibility decisions will be made consciously, based on security, reliability, user needs, maintenance costs, and the project’s long-term direction. Requirements and known limitations must be documented honestly.
-
-## Our Guiding Principle
-
-Choose the best-suited technologies. Move forward deliberately. Build what is missing. Integrate everything into one coherent experience.
-
-AureaOS looks to the future without confusing novelty with reliability. We choose technologies because they are suitable, well-maintained, and aligned with our vision—not simply because they are new, nor because they have always been there.
-
----
-
-*Technology is beautiful when it is there, but you barely notice it.*
+Choose suitable, maintained technologies. Reuse proven foundations, build what is missing, and describe decisions and implementation status accurately.

@@ -1,4 +1,6 @@
-# AureaOS — Product Vision and User Experience
+# AureaOS Product Experience
+
+This document describes product direction and planned workflows. AureaOS targets Debian GNU/Linux 13 (Trixie), `amd64` (x86-64), with a GUI-first, Wayland-first desktop. The current repository contains an early terminal-only Debian root filesystem bootstrap and design resources; the desktop UI and AureaOS applications are not implemented. Requirements below do not imply working features.
 
 ### 1. What AureaOS Wants to Be
 
@@ -32,7 +34,7 @@ We want the approachability of Windows and macOS, the foundations of Linux, and 
 
 ### 3. Debian as the Foundation, AureaOS as the Product
 
-AureaOS will use Debian Stable as its initial technical foundation, retaining the Linux kernel and proven system infrastructure wherever they serve the project’s goals.
+AureaOS targets Debian GNU/Linux 13 (Trixie) as its initial technical foundation, retaining the Linux kernel and proven system infrastructure wherever they serve the project’s goals.
 
 There is no reason to reinvent mature technologies simply to claim that everything is new. The objective is to build a better integrated experience on top of reliable foundations.
 
@@ -94,7 +96,7 @@ The planned core components include:
 * Quaero — global search for applications, files, folders, settings and other relevant system content.
 * Fides — the AureaOS file manager, designed for everyday file management and integrated with the desktop and system services.
 * Aurea Store — a graphical application store centered on Flatpak and Flathub.
-* Aurea Update — a clear and understandable system and application update experience.
+* Aurea Update — a graphical update experience for AureaOS-specific system components, separate from Debian base updates. Flatpak application updates are a separate update domain.
 * Aurea Backup — tools to help users protect their personal data.
 * Aurea Recovery — recovery facilities for common system problems.
 * Aurea Wallet — a planned system component for securely managing supported credentials and related security features.
@@ -203,7 +205,7 @@ AureaOS should respect Linux’s roots while making the benefits of Linux access
 
 The intended technical direction includes:
 
-* Debian Stable as the initial system foundation.
+* Debian GNU/Linux 13 (Trixie) as the initial system foundation.
 * Linux kernel and established system infrastructure.
 * Rust for AureaOS components where appropriate.
 * Wayland as the native desktop display architecture.
@@ -211,7 +213,7 @@ The intended technical direction includes:
 * PipeWire and WirePlumber for audio.
 * NetworkManager for network connectivity.
 * systemd for system startup and service management.
-* Flatpak and Flathub for the planned application-store experience.
+* Flatpak and Flathub for the planned application-distribution experience.
 * Vendor drivers and firmware when they are the most suitable supported solution and their use is permitted.
 * Native AureaOS applications and system services to provide the integrated product experience.
 
@@ -235,4 +237,4 @@ AureaOS: the experience people expect, built on the foundations we believe in.
 
 ⸻
 
-### This document describes the product vision, architectural direction and planned components of AureaOS. It does not imply that every feature described is already implemented. Implementation status, technical decisions and development priorities must be tracked separately in the project documentation.
+The components and workflows described here are planned. Their presence in this document does not mean that they are implemented. Technical decisions and development status are recorded in the [roadmap](ROADMAP.md) and architecture documents.
