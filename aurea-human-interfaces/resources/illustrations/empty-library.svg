@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc">
+  <title id="title">Empty library</title>
+  <desc id="desc">A quiet stack of empty cards with a gold bookmark.</desc>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+    <path d="M68 53h117a12 12 0 0 1 12 12v123H80a12 12 0 0 1-12-12z" fill="#F8F8FA" stroke="#D9DCE3"/>
+    <path d="M88 74h77M88 94h58M88 145h77M88 165h47" stroke="#B9BEC9"/>
+    <path d="M190 75h55a12 12 0 0 1 12 12v89h-67z" fill="#FFF" stroke="#D9DCE3"/>
+    <path d="M207 101h31M207 119h22" stroke="#B9BEC9"/>
+    <path d="M226 75v42l10-7 10 7V75" fill="#E9D8B3" stroke="#A97818"/>
+    <path d="M58 192h204" stroke="#D9DCE3"/>
+    <circle cx="160" cy="192" r="5" fill="#A97818" stroke="none"/>
+  </g>
+</svg>

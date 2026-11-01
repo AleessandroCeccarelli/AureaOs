@@ -1,0 +1,26 @@
+/* Subtle, theme-aware decorative textures. Apply to non-text content surfaces only. */
+:root {
+  --aurea-texture-ink: color-mix(in srgb, var(--aurea-text-secondary) 12%, transparent);
+  --aurea-texture-glow: color-mix(in srgb, var(--aurea-accent) 10%, transparent);
+}
+
+.aurea-texture-grid {
+  background-image:
+    linear-gradient(var(--aurea-texture-ink) 1px, transparent 1px),
+    linear-gradient(90deg, var(--aurea-texture-ink) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.aurea-texture-diagonal {
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 11px,
+    var(--aurea-texture-ink) 11px 12px
+  );
+}
+
+.aurea-texture-glow {
+  background-image:
+    radial-gradient(ellipse at 18% 12%, var(--aurea-texture-glow), transparent 58%),
+    radial-gradient(ellipse at 84% 88%, var(--aurea-texture-ink), transparent 56%);
+}

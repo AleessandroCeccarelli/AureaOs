@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" role="img" aria-labelledby="title desc">
+  <title id="title">Connection unavailable</title>
+  <desc id="desc">A small cloud and disconnected network signal.</desc>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+    <path d="M95 145h116a31 31 0 0 0 0-62 43 43 0 0 0-82-7 35 35 0 0 0-34 69z" fill="#F8F8FA" stroke="#B9BEC9"/>
+    <path d="M127 109a47 47 0 0 1 61 0M139 122a28 28 0 0 1 37 0" stroke="#A0A4AE"/>
+    <path d="m151 106 19 19m0-19-19 19" stroke="#A97818" stroke-width="4"/>
+    <circle cx="160" cy="164" r="5" fill="#A97818" stroke="none"/>
+    <path d="M160 169v17m-42 0h84" stroke="#D9DCE3"/>
+    <circle cx="118" cy="186" r="7" fill="#FFF" stroke="#B9BEC9"/>
+    <circle cx="202" cy="186" r="7" fill="#FFF" stroke="#B9BEC9"/>
+    <path d="m122 181 10-9m66 9-10-9" stroke="#B9BEC9"/>
+  </g>
+</svg>
