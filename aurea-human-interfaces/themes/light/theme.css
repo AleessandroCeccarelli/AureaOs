@@ -1,0 +1,42 @@
+/* AureaOS shared Light theme. Values follow docs/human-interfaces/COLOR-SYSTEM.md. */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  --aurea-accent: #a97818;
+  --aurea-accent-hover: #8e6110;
+  --aurea-accent-soft: #f4e6c7;
+
+  --aurea-canvas: #f3f4f7;
+  --aurea-surface: #ffffff;
+  --aurea-surface-secondary: #f8f8fa;
+  --aurea-surface-raised: #ffffff;
+  --aurea-surface-sunken: #e9ebf0;
+
+  --aurea-text-primary: #20232a;
+  --aurea-text-secondary: #5e6470;
+  --aurea-text-tertiary: #747b87;
+  --aurea-text-disabled: #969ba5;
+
+  --aurea-border: #d9dce3;
+  --aurea-border-strong: #b9bec9;
+  --aurea-focus-ring: #a97818;
+  --aurea-selection: #e9d8b3;
+  --aurea-hover: #eceef2;
+  --aurea-pressed: #dfe2e8;
+
+  --aurea-success: #237a52;
+  --aurea-success-container: #e3f3e9;
+  --aurea-warning: #8a5a00;
+  --aurea-warning-container: #fff1d2;
+  --aurea-error: #b33a3a;
+  --aurea-error-container: #fbe9e7;
+  --aurea-information: #2866a8;
+  --aurea-information-container: #e7f0fb;
+
+  --aurea-glass-fill: rgba(250, 250, 252, 0.76);
+  --aurea-glass-fill-strong: rgba(250, 250, 252, 0.9);
+  --aurea-glass-highlight: rgba(255, 255, 255, 0.72);
+  --aurea-glass-border: rgba(255, 255, 255, 0.72);
+  --aurea-glass-shadow: 0 12px 36px rgba(28, 35, 49, 0.16);
+}

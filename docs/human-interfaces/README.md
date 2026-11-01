@@ -28,6 +28,8 @@ The design system is planned to define:
 - Accessibility and keyboard interaction guidelines.
 - Reusable components for native AureaOS applications.
 
+The shared light/dark color palette, semantic tokens, and glass-surface rules are specified in [Color System](COLOR-SYSTEM.md). The CSS implementation for web-based interfaces is in [AureaOS Themes](../../aurea-human-interfaces/themes/README.md). Desktop services, native apps, and notifications should consume this shared contract.
+
 ## Relationship with AureaOS
 
 AureaOS Human Interfaces is intended to work alongside the AureaOS System API.

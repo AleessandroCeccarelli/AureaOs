@@ -88,7 +88,7 @@ The design system should distinguish:
 - Hover, focus, pressed, and disabled states.
 - Success, warning, and error states.
 
-Exact color values will be defined and validated during implementation.
+The shared color values and semantic tokens are defined in [Color System](COLOR-SYSTEM.md). Desktop services, native applications, and notifications must consume the same tokens and theme selection.
 
 ## 5. Transparency and Glass Effects
 

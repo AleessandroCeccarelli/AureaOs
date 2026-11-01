@@ -1,0 +1,15 @@
+/* Import this file once in a web-based AureaOS interface. Light is the default. */
+@import "../light/theme.css";
+@import "../dark/theme.css";
+
+/* Surface fallback when the user asks for reduced transparency. */
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  [data-theme] {
+    --aurea-glass-fill: var(--aurea-surface);
+    --aurea-glass-fill-strong: var(--aurea-surface-raised);
+    --aurea-glass-highlight: transparent;
+    --aurea-glass-border: var(--aurea-border);
+    --aurea-glass-shadow: 0 8px 24px rgba(28, 35, 49, 0.14);
+  }
+}
