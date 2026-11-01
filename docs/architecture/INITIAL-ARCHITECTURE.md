@@ -33,6 +33,7 @@ The architecture follows these principles:
 6. **Wayland-first desktop:** the intended desktop architecture for Roma 1.0 is designed for Wayland. Compatibility requirements and any exceptions must be evaluated and documented.
 7. **Coherent user experience:** system components must support a consistent and accessible operating environment.
 8. **No unnecessary reinvention:** AureaOS development should focus on integration and features that distinguish the project.
+9. **Rust as the primary language:** first-party AureaOS applications and components should use Rust where appropriate. A different language requires a documented technical reason; third-party software is outside this policy.
 
 ## 4. Initial System Layers
 
@@ -40,7 +41,7 @@ The system is conceptually divided into the following layers.
 
 ### 4.1 Debian Base
 
-The target base is Debian GNU/Linux 13 (Trixie), `amd64` (x86-64). The repository contains an early `debootstrap` script and package manifests for a minimal, terminal-only root filesystem. This is not a complete or bootable AureaOS image. See [Debian Base](DEBIAN-BASE.md) for implementation status and limitations.
+The target base is Debian GNU/Linux 13 (Trixie), `amd64` (x86-64), with Btrfs selected as the default installed filesystem. The repository contains an early `debootstrap` script and package manifests for a minimal, terminal-only root filesystem. This is not a complete or bootable AureaOS image and does not yet configure the installed filesystem. Aurea Time is planned to own backup and restore; AureaOS will not use Btrfs's native snapshot workflow for those tasks. See [Debian Base](DEBIAN-BASE.md) for implementation status and limitations.
 
 ### 4.2 AureaOS System Configuration
 
@@ -64,19 +65,7 @@ The current bootstrap implementation uses `debootstrap`. It has not yet been val
 
 ### 4.4 AureaOS Desktop and Applications
 
-The desktop experience will be developed as a separate layer that integrates with the underlying system.
-
-Planned components include:
-
-- Aurea Desktop.
-- Quaero.
-- Fides.
-- Aurea Store.
-- Aurea Update.
-- Aurea Backup.
-- Aurea Recovery.
-
-These components are planned features and are not implemented. Flatpak and Flathub are planned for application distribution.
+The desktop experience is planned as a separate layer integrated with the underlying system. The [Application and Component Catalog](../product/APPLICATION-CATALOG.md) is the authoritative inventory and distinguishes Roma 1.0 direction from candidates and exploratory ideas. The desktop UI and first-party applications are not implemented. Flatpak and Flathub are planned for application distribution.
 
 ## 5. Repository Organization
 
@@ -156,7 +145,7 @@ A successful build alone does not establish that the resulting operating system 
 
 ## 9. Decisions Still to Be Defined
 
-The following decisions require evaluation and documentation before the corresponding implementation begins:
+The [Application and Component Catalog](../product/APPLICATION-CATALOG.md) is the authoritative inventory of planned components and candidates. The following technical decisions require evaluation and documentation before the corresponding implementation begins:
 
 - Debian repository policy beyond the current Trixie bootstrap sources.
 - The system build technology and build environment.

@@ -37,7 +37,7 @@ The project is not limited to free-software-only packages. The original AureaOS 
 
 - The script now consumes the package lists, but a complete build must still confirm that every package resolves and installs successfully against the live Debian 13 repositories.
 - Package lists do not configure services, firewall rules, permissions, DNS behavior, firmware loading, or automatic updates.
-- `btrfs-progs` does not make the installed root filesystem Btrfs. Partitioning, subvolumes, mount configuration, initramfs and recovery behavior remain to be designed.
+- Btrfs is the selected default filesystem for installed AureaOS systems. Installing `btrfs-progs` does not configure it: partitioning, subvolumes, mounts, initramfs and boot setup remain to be designed. AureaOS will not use Btrfs's native snapshot workflow for backups or restore; Aurea Time is planned to manage these tasks.
 - `linux-image-amd64` and `initramfs-tools` do not by themselves make the root filesystem bootable. A matching bootloader, partition layout, configuration, kernel command line and image-generation process are required.
 - RAR support is optional. Use `--with-rar` to install `7zip-rar` from `non-free`; it provides RAR extraction through 7-Zip, not RAR archive creation.
 - Firmware packages improve compatibility for supported devices but cannot guarantee that every Wi-Fi, Bluetooth, graphics or other device will work. Hardware testing is required.
@@ -56,6 +56,6 @@ The BIOS and UEFI options are mutually exclusive. Neither option alone creates a
 
 1. Run the updated script against a fresh test destination and resolve any package/dependency errors.
 2. Review installed package size and trim or retain the broad firmware set based on hardware coverage.
-3. Design the disk layout, Btrfs subvolumes, boot mode and recovery model.
+3. Define the disk layout, Btrfs subvolumes, mount plan and boot mode; design and validate Aurea Time backup and restore.
 4. Add explicit service defaults, network/firewall policy and user-account setup.
 5. Build and test a bootable image in a virtual machine before testing representative hardware.

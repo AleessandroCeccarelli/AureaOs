@@ -20,11 +20,11 @@ These are repository artifacts. The bootstrap profile has not completed full pac
 
 ### Planned
 
-- A GUI-first, Wayland-first Aurea Desktop and graphical installation experience.
-- Shared AureaOS Human Interfaces library and system integration.
-- First-party components including Quaero, Fides, Aurea Store, Aurea Update, Aurea Backup, and Aurea Recovery.
+- GUI-first, Wayland-first Aurea Desktop and graphical installation experience.
+- Shared AureaOS Human Interfaces library and system integration. Design documentation and tokens exist; the reusable UI library is not implemented.
+- Core first-party system applications and tools listed as Roma 1.0 direction in the [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md).
 - Flatpak and Flathub as the planned application distribution path.
-- Separate update channels for Debian base packages and AureaOS-specific system components. Application updates through Flatpak are a separate domain.
+- Separate update channels for Debian base packages and AureaOS-specific system components. Flatpak application updates are a separate domain.
 
 The desktop UI, AureaOS applications, installer, and graphical system tools have not yet been implemented.
 
@@ -37,24 +37,11 @@ The desktop UI, AureaOS applications, installer, and graphical system tools have
 5. Add first-party applications and system tools in coherent, testable increments.
 6. Set and verify release criteria for AureaOS Roma 1.0.
 
-## Planned components
+## Application and component status
 
-All items below are planned unless explicitly listed in the implemented section above.
+The [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md) is the authoritative inventory, including name variants, Roma 1.0 direction, candidates, and exploratory long-term concepts. The catalog records the desktop, shared design system, applications, printer/scanner management, and Resource Monitor without implying they are implemented.
 
-| Component | Intended role |
-|---|---|
-| Aurea Desktop | Desktop shell and window management |
-| AureaOS Human Interfaces | Shared design system and UI components |
-| Quaero | Search for applications, files, folders, and settings |
-| Fides | Graphical file manager |
-| Aurea Store | Application discovery and management using Flatpak and Flathub |
-| Aurea Update | Updates for AureaOS-specific system components, separate from Debian base updates |
-| Aurea Backup | User data backup |
-| Aurea Recovery | System recovery |
-| Printer and scanner tools | Graphical device setup and management using suitable Linux infrastructure |
-| Resource Monitor | Graphical view of system activity |
-
-The candidate applications Sonus, Visio, and Explora are described in [Planned First-Party Applications](docs/product/PLANNED-APPLICATIONS.md). Additional ideas in product documents remain proposals until explicitly selected and implemented.
+Sonus, Visio, and Explora remain candidates; see [Planned First-Party Applications](docs/product/PLANNED-APPLICATIONS.md) for their concept notes. Wallet, system-level passkeys, and Aurea AI/ChatGPT integration remain exploratory long-term ideas. No milestones or delivery dates are set here.
 
 ## Guiding priorities
 

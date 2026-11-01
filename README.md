@@ -25,14 +25,16 @@ Planned components include:
 - **Fides:** graphical file manager.
 - **Aurea Store:** graphical application discovery and management, planned around Flatpak and Flathub.
 - **Aurea Update:** system updates for AureaOS components, separate from Debian base updates and application updates.
-- **Aurea Backup** and **Aurea Recovery:** planned backup and recovery tools.
+- **Aurea Time:** planned system backup and restore, from individual files through the full system, using compatible USB disks or network storage.
 
 These names describe planned work, not available features. Scope and implementation choices may change as the project develops.
 
 ## Technical direction
 
 - Debian GNU/Linux 13 (Trixie), `amd64`.
+- Btrfs is the selected default installed filesystem; backup and restore are planned through Aurea Time, not native Btrfs snapshots.
 - GUI-first and Wayland-first desktop direction.
+- Rust is the primary programming language for first-party AureaOS development where appropriate.
 - Separate update channels for the Debian base and AureaOS-specific system components.
 - Flatpak and Flathub planned for application distribution.
 - Open-source and proprietary third-party components may be considered, subject to technical, licensing, and distribution review.
@@ -44,6 +46,7 @@ These names describe planned work, not available features. Scope and implementat
 - [Product experience](PRODUCT_EXPERIENCE.md) — planned workflows and components.
 - [Technology principles](TECHNOLOGY.md) — technical direction and selection criteria.
 - [Roadmap](ROADMAP.md) — development status and priorities.
+- [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md) — authoritative inventory of first-party apps, tools, desktop components, services, and shared design resources.
 - [Initial architecture](docs/architecture/INITIAL-ARCHITECTURE.md) — system layers and open decisions.
 - [Debian base](docs/architecture/DEBIAN-BASE.md) — current bootstrap implementation and limitations.
 - [Debian package manifests](debian/packages/README.md) — package groups and profile status.

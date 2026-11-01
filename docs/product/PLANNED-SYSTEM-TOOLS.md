@@ -1,6 +1,8 @@
 
 # AureaOS — Planned System Tools
 
+> **Authoritative inventory:** See the [Application and Component Catalog](APPLICATION-CATALOG.md) for status, language policy, and technology choices for printer management, scanner management, and Resource Monitor.
+
 ## 1. Purpose and Status
 
 This document defines planned graphical system tools for AureaOS Roma 1.0 and the intended user experience they should provide.

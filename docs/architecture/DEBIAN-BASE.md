@@ -5,6 +5,7 @@
 - Distribution: Debian GNU/Linux 13 (Trixie)
 - Release channel: Stable
 - Target architecture: `amd64` (x86-64)
+- Default installed filesystem: Btrfs (selected; not configured by the current bootstrap)
 - Initial root filesystem tool: `debootstrap`
 - Bootstrap mirror: `https://deb.debian.org/debian`
 - Initial debootstrap profile: `minbase`
@@ -39,6 +40,7 @@ All four Debian components are enabled consistently for the main archive and sec
 ## Build objectives and status
 
 - [x] Select Debian 13 Trixie and `amd64` as the initial target.
+- [x] Select Btrfs as the default installed filesystem.
 - [x] Select `debootstrap` and create a minimal root filesystem outside the repository.
 - [x] Add a bootstrap script with destination safety checks.
 - [x] Validate the script syntax and its help behavior.
@@ -58,7 +60,9 @@ All four Debian components are enabled consistently for the main archive and sec
 
 ## Filesystem, boot and recovery
 
-Installing `btrfs-progs` only supplies Btrfs administration tools. A Btrfs root requires an explicit partitioning plan, subvolumes, mount configuration and compatible initramfs/boot configuration. Snapshot and recovery behavior must be designed and tested; installing Btrfs tools alone does not provide automatic snapshots or rollback.
+The default installed filesystem is Btrfs. The current bootstrap installs tools but does not format or configure the final system filesystem. Partitioning, subvolumes, mounts, initramfs and boot configuration still need to be designed and tested.
+
+AureaOS will not use Btrfs's native snapshot or rollback workflow for backup and restore. Aurea Time is the planned system for restoring data from an individual file through the full system. Its backup format, USB-disk and network-storage compatibility, and recovery process remain to be designed and validated.
 
 The kernel and initramfs packages do not make a root filesystem bootable by themselves. The image build must select a target boot mode and install/configure the matching bootloader. `boot-bios.list` and `boot-uefi.list` are alternatives, not lists to install together by default.
 

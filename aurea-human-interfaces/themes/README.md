@@ -1,12 +1,14 @@
 # AureaOS Themes and Tokens
 
-The shared CSS custom properties in this directory implement the palette defined in [Color System](../../docs/human-interfaces/COLOR-SYSTEM.md).
+This directory contains the current CSS token source for web-based AureaOS interfaces. `tokens/index.css` imports the light and dark values. [Color System](../../docs/human-interfaces/COLOR-SYSTEM.md) documents the semantic contract those values implement. Keep this token set as the source of truth for implemented web-theme values; native toolkit mappings should use the same semantic names and values rather than define competing palettes.
 
 Reusable visual assets, including the desktop wallpaper collection, are organized under [resources](../resources/README.md).
 
 ## Use
 
-Import `tokens/index.css` once in a web-based AureaOS interface. The light theme is the default. Apply `data-theme="dark"` to the application root to switch the entire interface to dark mode; use `data-theme="light"` to explicitly select light mode. Remove the attribute to follow the default light theme until the system theme service is connected.
+Import `tokens/index.css` once in a web-based AureaOS interface. The light theme is the default. Apply `data-theme="dark"` to the application root to switch the entire interface to dark mode; use `data-theme="light"` to explicitly select light mode. Remove the attribute to follow the default light theme until a system theme service is connected.
+
+These files are design infrastructure. They are not evidence that AureaOS applications or a shared UI component library exist or consume the tokens. First-party applications should also follow the shared rules for Aurea Sans and readable fallback fonts, spacing, controls, icons, keyboard navigation, visible focus, accessibility, and plain-language terminology. The final typeface/fallback stack and the default UI language/localization policy remain open decisions. See [AureaOS Human Interfaces](../../docs/human-interfaces/README.md) for the full contract.
 
 ```html
 <html data-theme="dark">

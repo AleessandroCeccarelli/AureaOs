@@ -18,17 +18,15 @@ Its purpose is to provide reusable UI components, consistent interaction pattern
 
 ## Scope
 
-The design system is planned to define:
+The shared visual and interaction contract applies to every first-party desktop and system application. App-specific layouts may differ, but applications should share:
 
-- Color palettes and light and dark themes.
-- Typography and the Aurea Sans typeface.
-- Spacing, sizing, borders, and corner radii.
-- Buttons, fields, menus, dialogs, cards, and notifications.
-- Icons, transitions, animations, and interaction feedback.
-- Accessibility and keyboard interaction guidelines.
-- Reusable components for native AureaOS applications.
+- Semantic design tokens, light and dark themes, spacing, and typography.
+- Aurea Sans as the primary typeface direction, with readable fallback fonts. The final font and fallback stack are not yet selected.
+- Consistent controls, icons, focus states, and interaction patterns.
+- Keyboard navigation, accessible names and feedback, scalable text, and reduced-motion support.
+- Consistent product names and plain-language user-facing copy.
 
-The shared light/dark color palette, semantic tokens, and glass-surface rules are specified in [Color System](COLOR-SYSTEM.md). The CSS implementation for web-based interfaces is in [AureaOS Themes](../../aurea-human-interfaces/themes/README.md). Desktop services, native apps, and notifications should consume this shared contract.
+The shared light/dark color palette and semantic token contract are specified in [Color System](COLOR-SYSTEM.md). The current web-theme token source is [AureaOS Themes](../../aurea-human-interfaces/themes/README.md), especially `themes/tokens/index.css`. Native apps, desktop services, and notifications should map to the same semantic values rather than introduce competing design tokens.
 
 ## Relationship with AureaOS
 
@@ -42,4 +40,4 @@ These are complementary responsibilities and should remain clearly separated.
 
 Design documentation and visual resources are present. The shared library, desktop UI, and integrations described here remain planned work.
 
-Detailed design rules and component specifications will be documented separately as the project progresses.
+Design rules and visual resources are present, including tokens and theme files. The reusable UI component library and its application integrations remain planned. The default UI language and localization policy are open decisions.

@@ -23,7 +23,11 @@ Third-party components retain their own licenses. GPL-3.0 applies to original Au
 
 AureaOS should reuse mature Linux infrastructure for capabilities already served well by the ecosystem. Project development should focus on the integrated desktop experience and the AureaOS-specific parts that are missing.
 
-No single implementation language, toolkit, or application technology is selected for every component. Native and web technologies may be evaluated where they fit the component's integration, performance, accessibility, maintenance, and security needs.
+**Rust is the primary programming language for AureaOS development**, including first-party system applications and components where appropriate. A different language may be used when a component has a clear technical reason; document the exception and its maintenance implications. This policy does not require third-party software to use Rust.
+
+No native UI toolkit has been selected. Toolkit and web technologies may be evaluated for individual components according to integration, performance, accessibility, maintenance, and security needs. CSS is used for the existing web theme tokens; it does not imply that AureaOS applications or a shared UI toolkit have been implemented.
+
+See the [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md) for per-component language and technology status. Vulkan remains a candidate rendering technology, not a confirmed choice.
 
 ## One coherent experience
 

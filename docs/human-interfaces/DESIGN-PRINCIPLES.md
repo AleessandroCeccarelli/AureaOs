@@ -124,7 +124,7 @@ Glass effects must remain visually lightweight and must not introduce unnecessar
 
 ## 6. Typography
 
-AureaOS plans to use **Aurea Sans** as its shared typeface.
+AureaOS plans to use **Aurea Sans** as its primary shared typeface. The selected font family and fallback stack remain open; first-party interfaces should use readable, scalable fallbacks until these choices are settled.
 
 Typography must provide:
 

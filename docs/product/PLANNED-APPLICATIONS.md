@@ -1,10 +1,12 @@
 # AureaOS — Planned First-Party Applications
 
+> **Authoritative inventory:** See the [Application and Component Catalog](APPLICATION-CATALOG.md) for current names, status, programming-language policy, and technology choices. This page keeps the concept notes for Sonus, Visio, and Explora.
+
 ## 1. Purpose and Status
 
-This document records three candidate applications planned for the AureaOS ecosystem: **Sonus**, **Visio**, and **Explora**.
+This document records three candidate applications for the AureaOS ecosystem: **Sonus**, **Visio**, and **Explora**. Their inclusion here does not confirm Roma 1.0 scope.
 
-Their names, functions, and visual direction represent the current product vision. The applications are planned concepts, not implemented software. Names remain subject to software-name, trademark, and domain checks.
+Their names, functions, and visual direction represent product concepts, not implemented software. Their application scope and technical choices remain open. Names remain subject to software-name, trademark, and domain checks.
 
 ## 2. Sonus — Music Player
 
@@ -57,13 +59,13 @@ The browser engine and upstream project have not yet been selected. Existing bro
 
 Sonus, Visio, and Explora should belong to the same visual family without having identical layouts.
 
-Their shared design rules will be defined by **AureaOS Human Interfaces**, the planned common interface library and design system.
+Their shared design rules are intended to follow **AureaOS Human Interfaces**, the planned common design system and UI library. The library itself is not implemented; design resources and CSS theme tokens are present.
 
 ### Visual principles
 
 - **Clean, flat, geometric, and precise:** clear shapes, crisp lines, restrained borders, and deliberate spacing.
 - **Material Design as a reference:** use its strengths in hierarchy, reusable components, and interaction states without copying Android’s identity.
-- **Shared typography:** Aurea Sans is the intended system typeface, with consistent text hierarchy.
+- **Shared typography:** Aurea Sans is the primary typeface direction. Its final font selection and fallback stack remain open.
 - **Consistent components:** common spacing, corner radii, buttons, fields, menus, icons, focus states, animations, and accessibility rules.
 - **Light surfaces first:** warm white, ivory, and pale grey, with gold and bronze used as restrained accents rather than dominant colours.
 - **Coordinated dark theme:** dark neutral surfaces, readable light text, and controlled accents.
@@ -107,4 +109,4 @@ These are architectural goals, not implemented features. AureaOS should reuse ma
 
 The names were selected for their Latin roots, concise form, and fit with the AureaOS identity. Before public release, check for existing software names, trademarks, relevant domains, and naming conflicts.
 
-The applications remain planned concepts. Their selection does not mean implementation has begun or that their final technical choices have been made. 
+The applications remain candidates, not Roma 1.0 commitments. Rust is the AureaOS primary programming language if they proceed; toolkit, backend, and browser-engine choices remain open as recorded in the catalog. Their selection does not mean implementation has begun.

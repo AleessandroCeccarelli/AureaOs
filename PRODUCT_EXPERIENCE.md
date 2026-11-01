@@ -80,7 +80,7 @@ The desktop must be responsive, accessible, visually coherent and pleasant to us
 
 The goal is not to recreate the Windows desktop or the macOS interface. Aurea Desktop should establish its own identity while offering the familiarity and predictability people expect from a modern operating system.
 
-The intended architecture is native Wayland, with a compositor and shell designed around AureaOS’s needs. Rust is a preferred implementation language where appropriate, and Vulkan is a rendering direction to evaluate where the architecture and hardware make it suitable.
+The intended architecture is Wayland-first, with a compositor and shell designed around AureaOS’s needs. Rust is the primary programming language for AureaOS components where appropriate. Vulkan is a candidate rendering technology, not a confirmed choice. The compositor, renderer, and toolkit remain undecided.
 
 These are architectural goals, not claims that the components are already implemented.
 
@@ -97,13 +97,9 @@ The planned core components include:
 * Fides — the AureaOS file manager, designed for everyday file management and integrated with the desktop and system services.
 * Aurea Store — a graphical application store centered on Flatpak and Flathub.
 * Aurea Update — a graphical update experience for AureaOS-specific system components, separate from Debian base updates. Flatpak application updates are a separate update domain.
-* Aurea Backup — tools to help users protect their personal data.
-* Aurea Recovery — recovery facilities for common system problems.
-* Aurea Wallet — a planned system component for securely managing supported credentials and related security features.
-* System Passkeys — operating-system-level support for passkeys, designed to make modern authentication accessible and consistent across supported applications and services.
-* ChatGPT System Integration — a planned integration that makes ChatGPT available as part of the operating-system experience rather than merely as a website the user must open manually.
+* Aurea Time — system backup and restore, from an individual file through the full system, using a compatible USB disk or network storage.
 
-These components are part of the intended product direction. Their implementation, interfaces, security models and technical scope will be defined as development progresses.
+The [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md) is the authoritative inventory and records status, name origins, and technology choices. The desktop and first-party applications listed above are planned; none of their UI is implemented.
 
 ### 7. Fides — A File Manager That Belongs to AureaOS
 
@@ -129,13 +125,13 @@ Search should be fast, predictable and relevant. Its results must respect user p
 
 Quaero should reduce the distance between what a user wants to do and the action that accomplishes it.
 
-### 9. Aurea Wallet and System-Level Passkeys
+### 9. Aurea Wallet and System-Level Passkeys — Exploratory
 
 Security should be integrated into the operating system instead of being left entirely to individual applications.
 
-AureaOS plans to explore Aurea Wallet as a dedicated system component for supported credentials and related security functionality. Its precise scope will be established through explicit security and architecture decisions.
+Aurea Wallet and system-level passkeys are exploratory, long-term ideas. They are not Roma 1.0 commitments. Any future scope requires explicit security and architecture decisions.
 
-A central objective is to support passkeys at the operating-system level, allowing compatible applications and services to use modern passwordless authentication through a consistent system experience.
+One area for exploration is whether to support passkeys at the operating-system level, allowing compatible applications and services to use modern passwordless authentication through a consistent system experience.
 
 Where supported, users should be able to create, manage and use passkeys without having to understand the underlying authentication protocols or manage a different process for every application.
 
@@ -145,9 +141,9 @@ Passkeys are not simply another type of password, and a system Wallet must not b
 
 AureaOS should make strong security easier to use, without pretending that security can be achieved through interface design alone.
 
-### 10. ChatGPT as Part of the Operating-System Experience
+### 10. ChatGPT Integration — Exploratory
 
-AureaOS aims to explore a deeper integration of ChatGPT into the desktop and system experience.
+An Aurea AI / ChatGPT integration is an exploratory, long-term idea, not a Roma 1.0 commitment.
 
 The intention is to make AI assistance available where it can genuinely help users, rather than limiting access to a separate browser tab.
 
@@ -175,13 +171,13 @@ Operating-system updates and desktop application updates should be integrated in
 
 The aim is to make software installation feel like a natural part of AureaOS rather than a separate technical task.
 
-### 12. Updates, Recovery and Reliability
+### 12. Updates, Backup and Reliability
 
 A system that is easy to use must also be easy to maintain.
 
 AureaOS should provide clear update workflows, meaningful progress information and understandable explanations when something goes wrong. Users should not have to guess whether an update has completed or whether the system needs attention.
 
-Aurea Backup and Aurea Recovery are intended to help users protect their data and recover from supported problems.
+Aurea Time is the planned system for protecting data and restoring it at file or full-system level. It should support compatible USB disks and network storage. The default AureaOS filesystem will be Btrfs, but AureaOS will not use Btrfs's native snapshot workflow for backups or restore points; Aurea Time will manage these tasks. Its backup format, scheduling, validation, and exact supported network-storage types remain open technical decisions.
 
 Reliability must be considered throughout the design: safe defaults, clear error handling, predictable behavior, maintainable components and careful testing are all part of the user experience.
 
@@ -207,7 +203,7 @@ The intended technical direction includes:
 
 * Debian GNU/Linux 13 (Trixie) as the initial system foundation.
 * Linux kernel and established system infrastructure.
-* Rust for AureaOS components where appropriate.
+* Rust as the primary programming language for AureaOS applications and components where appropriate; see [Technology Principles](TECHNOLOGY.md).
 * Wayland as the native desktop display architecture.
 * Vulkan as a rendering direction where technically suitable.
 * PipeWire and WirePlumber for audio.
@@ -227,7 +223,7 @@ AureaOS will be moving toward its goal when a user can install it on supported h
 
 The user should be able to manage updates, protect personal data and use supported authentication features without being forced to understand the underlying system.
 
-The operating system should also provide a clear and responsible path toward system-level passkeys, Aurea Wallet and ChatGPT integration, with each feature implemented according to its real technical and security requirements.
+Over the longer term, if selected, AureaOS may provide a clear and responsible path toward system-level passkeys, Aurea Wallet, and ChatGPT integration, subject to their technical, privacy, and security requirements.
 
 Experienced users should retain access to Linux tools and the underlying system. Simplicity must not mean removing capability, hiding important choices or taking control away from the user.
 
