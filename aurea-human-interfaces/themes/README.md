@@ -2,6 +2,8 @@
 
 The shared CSS custom properties in this directory implement the palette defined in [Color System](../../docs/human-interfaces/COLOR-SYSTEM.md).
 
+Reusable visual assets, including the desktop wallpaper collection, are organized under [resources](../resources/README.md).
+
 ## Use
 
 Import `tokens/index.css` once in a web-based AureaOS interface. The light theme is the default. Apply `data-theme="dark"` to the application root to switch the entire interface to dark mode; use `data-theme="light"` to explicitly select light mode. Remove the attribute to follow the default light theme until the system theme service is connected.

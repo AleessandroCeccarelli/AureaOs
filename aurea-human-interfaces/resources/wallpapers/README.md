@@ -1,5 +1,7 @@
 # AureaOS Roma wallpaper collection
 
+This is the canonical location for AureaOS desktop wallpapers: `aurea-human-interfaces/resources/wallpapers/`.
+
 Nine original AI-generated wallpaper concepts created for the AureaOS Roma project.
 The collection includes three abstract color wallpapers and six Rome-inspired scenes.
 
