@@ -1,8 +1,8 @@
-* AureaOS Sound Theme — Audio Specification
+# AureaOS Sound Theme — Audio Specification
 
 Initial synthesis parameters for the nine original AureaOS system sound effects. These values are starting points for listening tests and may be refined before approval.
 
-** General parameters
+## General parameters
 
 * Format: Ogg Vorbis in .oga container
 * Sample rate: 48 kHz
@@ -12,7 +12,7 @@ Initial synthesis parameters for the nine original AureaOS system sound effects.
 * Silence: Trim unnecessary leading and trailing silence
 * Transitions: Avoid clicks by applying short attack and release envelopes
 
-** Event parameters
+## Event parameters
 
 File	Duration	Frequency / notes	Character
 message-new-instant.oga	350–500 ms	660 Hz → 880 Hz	Two soft, clear notes
@@ -25,7 +25,7 @@ power-plug.oga	250–400 ms	523 Hz → 659 Hz	Brief, positive
 power-unplug.oga	250–400 ms	659 Hz → 523 Hz	Brief, neutral
 complete.oga	600–900 ms	523 Hz → 659 Hz → 784 Hz	Short, harmonious sequence
 
-** Synthesis guidelines
+## Synthesis guidelines
 
 * Use short attack and release ramps (approximately 5–15 ms) to prevent clicks.
 * Use a brief gap between separate notes or pulses (approximately 40–80 ms).
