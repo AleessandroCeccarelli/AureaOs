@@ -1,0 +1,8 @@
+[Sound Theme]
+Name=Aurea
+Comment=AureaOS system sound theme
+Inherits=freedesktop
+Directories=stereo
+
+[stereo]
+OutputProfile=stereo
