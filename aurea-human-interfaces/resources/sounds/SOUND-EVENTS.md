@@ -1,5 +1,4 @@
-
-...# AureaOS Sound Events
+# AureaOS Sound Events
 
 Initial sound event specification for AureaOS Roma.
 
