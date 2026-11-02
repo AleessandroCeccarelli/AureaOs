@@ -1,25 +1,43 @@
 :root,
 :root[data-theme='light'] {
-  --aurea-bg: #f3efe8;
-  --aurea-bg-app: #f7f3ee;
-  --aurea-bg-surface: rgba(255, 255, 255, 0.68);
-  --aurea-bg-panel: #efe7dc;
-  --aurea-bg-elevated: #f9f6f2;
-  --aurea-text-primary: #1d1a17;
-  --aurea-text-secondary: #4a4039;
-  --aurea-text-muted: #736a62;
-  --aurea-border-subtle: rgba(35, 31, 28, 0.12);
-  --aurea-border-strong: rgba(35, 31, 28, 0.2);
-  --aurea-accent-primary: #b98345;
-  --aurea-accent-secondary: #d9a861;
-  --aurea-accent-warm: #c76d3b;
-  --aurea-positive: #3d7c56;
-  --aurea-warning: #b47b21;
-  --aurea-critical: #a6423b;
-  --aurea-focus: #8a5b2e;
-  --aurea-glass-fill: rgba(255, 255, 255, 0.34);
-  --aurea-glass-border: rgba(255, 255, 255, 0.5);
-  --aurea-glow-soft: rgba(185, 131, 69, 0.22);
-  --aurea-shadow-soft: 0 10px 30px rgba(30, 25, 22, 0.08);
-  --aurea-shadow-strong: 0 20px 40px rgba(30, 25, 22, 0.16);
+  --aurea-surface-desktop: #edf4ff;
+  --aurea-surface-window: #ffffff;
+  --aurea-surface-panel: rgba(255, 255, 255, 0.62);
+  --aurea-surface-elevated: #f6f9ff;
+  --aurea-surface-strong: #eef3ff;
+
+  --aurea-text-primary: #121a24;
+  --aurea-text-secondary: #2f3d4d;
+  --aurea-text-muted: #5d6d7f;
+
+  --aurea-border-subtle: rgba(17, 24, 39, 0.08);
+  --aurea-border-strong: rgba(17, 24, 39, 0.14);
+
+  --aurea-accent-primary: #6fa6ff;
+  --aurea-accent-strong: #4d8df7;
+  --aurea-accent-soft: rgba(111, 166, 255, 0.16);
+  --aurea-accent-warm: #d8a86a;
+  --aurea-accent-warm-soft: rgba(216, 168, 106, 0.18);
+
+  --aurea-success: #3c7b5e;
+  --aurea-warning: #bc8229;
+  --aurea-critical: #b6504a;
+  --aurea-focus: #3d7af6;
+
+  --aurea-dock-bg: rgba(247, 250, 255, 0.58);
+  --aurea-dock-bg-strong: rgba(249, 251, 255, 0.76);
+  --aurea-dock-border: rgba(255, 255, 255, 0.7);
+
+  --aurea-panel-bg: rgba(255, 255, 255, 0.66);
+  --aurea-panel-border: rgba(20, 28, 38, 0.08);
+
+  --aurea-notification-bg: rgba(255, 255, 255, 0.72);
+  --aurea-notification-border: rgba(17, 24, 39, 0.08);
+  --aurea-notification-shadow: 0 18px 40px rgba(18, 26, 36, 0.16);
+
+  --aurea-glass-fill: rgba(255, 255, 255, 0.28);
+  --aurea-glass-border: rgba(255, 255, 255, 0.58);
+
+  --aurea-shadow-soft: 0 14px 30px rgba(17, 24, 39, 0.10);
+  --aurea-shadow-strong: 0 24px 48px rgba(17, 24, 39, 0.16);
 }

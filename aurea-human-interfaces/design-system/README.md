@@ -1,65 +1,39 @@
-# Design System
+# AureaOS Design System
 
-This area is the shared visual foundation for AureaOS.
+This directory defines the visual identity of AureaOS in a simple and reusable way.
 
-AureaOS must feel familiar and immediately usable, especially for users coming from Windows or macOS, but it must never become a visual copy of either. It should feel like a modern desktop that respects user habits while clearly expressing its own personality.
+The desktop direction is intentionally familiar to people coming from Windows or macOS, while still keeping a distinct AureaOS identity. The visual language should be calm, readable, precise, and premium.
 
-## Core principles
+## Core design decisions
 
-- Familiar workflows, not copied interfaces
-- Strong hierarchy and clarity
-- Predictable behavior
-- Accessible contrast and readable typography
-- Distinct native identity without friction or intimidation
-- Reusable patterns across the system
+- Light theme: soft blue-gray desktop, white windows, dark readable text
+- Dark theme: deep slate-blue desktop, dark windows, bright text
+- Dock: floating, translucent, and placed at the bottom of the screen
+- Notifications: floating glass-like panels with soft blur and strong readability
+- Windows: clean, rounded, and light in structure
+- Accent color: soft blue with a subtle warm gold highlight for identity
+- No permanent top bar in the default shell layout
 
-## What belongs here
+## Token files
 
-- semantic tokens for colors and surfaces
-- spacing, radius, and elevation rules
-- typography and text hierarchy
-- control states and interaction patterns
-- reusable UI building blocks
-- system-level visual patterns for shell and app surfaces
+- `tokens/index.css` — shared token source
+- `tokens/light.css` — light theme values
+- `tokens/dark.css` — dark theme values
 
-## Structure
+## Design intent
 
-- `tokens/` — theme variables and semantic values
-- `components/` — shared UI building blocks
-- `patterns/` — recurring desktop and app layouts
-- `README.md` — design system overview and rules
+AureaOS should feel:
 
-## Design philosophy
+- familiar in workflow and behavior
+- modern and premium in visual tone
+- clear in readability and contrast
+- calm in motion and surfaces
+- unique in personality without being visually alien
 
-AureaOS should respect user expectations in practical ways:
+## Visual rules
 
-- clear window chrome
-- familiar app controls
-- fast navigation
-- keyboard-first workflows without sacrificing discoverability
-- logical grouping of settings and system actions
-- warm, welcoming visuals that remain modern and premium
-
-The system should feel like an operating system designed for people who want control and clarity, not a styled clone of another platform.
-
-## Token intent
-
-The color system should express a premium but grounded identity:
-
-- warm neutrals for calm surfaces
-- deep contrast for system panels and active workspaces
-- gold and bronze accents to convey AureaOS identity without overwhelming the UI
-- subtle glass effects and layered surfaces for a modern desktop feel
-- readable, crisp typography for productivity and comfort
-
-## Product identity
-
-AureaOS should be:
-
-- polished but not sterile
-- elegant but not unfamiliar
-- helpful without being noisy
-- comfortable for long work sessions
-- emotionally calm and confident
-
-This is the balance the design system should protect as the OS grows.
+- windows should be mostly white or dark slate, not heavy black blocks
+- the dock should be translucent and soft, not opaque and heavy
+- notifications should be liquid-glass inspired, with high readability and soft blur
+- gold or warm accent should be used only as a personality accent, not as a dominant color
+- the shell should prioritize clarity, not clutter

@@ -1,30 +1,50 @@
 :root {
-  --aurea-bg: #f3efe8;
-  --aurea-bg-app: #f7f3ee;
-  --aurea-bg-surface: rgba(255, 255, 255, 0.68);
-  --aurea-bg-panel: #efe7dc;
-  --aurea-bg-elevated: #f9f6f2;
-  --aurea-text-primary: #1d1a17;
-  --aurea-text-secondary: #4a4039;
-  --aurea-text-muted: #736a62;
-  --aurea-border-subtle: rgba(35, 31, 28, 0.12);
-  --aurea-border-strong: rgba(35, 31, 28, 0.2);
-  --aurea-accent-primary: #b98345;
-  --aurea-accent-secondary: #d9a861;
-  --aurea-accent-warm: #c76d3b;
-  --aurea-positive: #3d7c56;
-  --aurea-warning: #b47b21;
-  --aurea-critical: #a6423b;
-  --aurea-focus: #8a5b2e;
-  --aurea-glass-fill: rgba(255, 255, 255, 0.34);
-  --aurea-glass-border: rgba(255, 255, 255, 0.5);
-  --aurea-glow-soft: rgba(185, 131, 69, 0.22);
-  --aurea-shadow-soft: 0 10px 30px rgba(30, 25, 22, 0.08);
-  --aurea-shadow-strong: 0 20px 40px rgba(30, 25, 22, 0.16);
-  --aurea-radius-sm: 10px;
-  --aurea-radius-md: 14px;
-  --aurea-radius-lg: 20px;
-  --aurea-radius-xl: 28px;
+  --aurea-surface-desktop: #edf4ff;
+  --aurea-surface-window: #ffffff;
+  --aurea-surface-panel: rgba(255, 255, 255, 0.62);
+  --aurea-surface-elevated: #f6f9ff;
+  --aurea-surface-strong: #eef3ff;
+
+  --aurea-text-primary: #121a24;
+  --aurea-text-secondary: #2f3d4d;
+  --aurea-text-muted: #5d6d7f;
+
+  --aurea-border-subtle: rgba(17, 24, 39, 0.08);
+  --aurea-border-strong: rgba(17, 24, 39, 0.14);
+
+  --aurea-accent-primary: #6fa6ff;
+  --aurea-accent-strong: #4d8df7;
+  --aurea-accent-soft: rgba(111, 166, 255, 0.16);
+  --aurea-accent-warm: #d8a86a;
+  --aurea-accent-warm-soft: rgba(216, 168, 106, 0.18);
+
+  --aurea-success: #3c7b5e;
+  --aurea-warning: #bc8229;
+  --aurea-critical: #b6504a;
+  --aurea-focus: #3d7af6;
+
+  --aurea-dock-bg: rgba(247, 250, 255, 0.58);
+  --aurea-dock-bg-strong: rgba(249, 251, 255, 0.76);
+  --aurea-dock-border: rgba(255, 255, 255, 0.7);
+
+  --aurea-panel-bg: rgba(255, 255, 255, 0.66);
+  --aurea-panel-border: rgba(20, 28, 38, 0.08);
+
+  --aurea-notification-bg: rgba(255, 255, 255, 0.72);
+  --aurea-notification-border: rgba(17, 24, 39, 0.08);
+  --aurea-notification-shadow: 0 18px 40px rgba(18, 26, 36, 0.16);
+
+  --aurea-glass-fill: rgba(255, 255, 255, 0.28);
+  --aurea-glass-border: rgba(255, 255, 255, 0.58);
+
+  --aurea-shadow-soft: 0 14px 30px rgba(17, 24, 39, 0.10);
+  --aurea-shadow-strong: 0 24px 48px rgba(17, 24, 39, 0.16);
+
+  --aurea-window-radius: 18px;
+  --aurea-panel-radius: 20px;
+  --aurea-dock-radius: 22px;
+  --aurea-control-radius: 12px;
+
   --aurea-space-1: 4px;
   --aurea-space-2: 8px;
   --aurea-space-3: 12px;
@@ -33,32 +53,51 @@
   --aurea-space-6: 24px;
   --aurea-space-8: 32px;
   --aurea-space-10: 40px;
-  --aurea-font-ui: "Inter", "Segoe UI", "SF Pro Display", sans-serif;
-  --aurea-font-display: "Inter", "Segoe UI", "SF Pro Display", sans-serif;
-  --aurea-font-mono: "JetBrains Mono", "SFMono-Regular", "Consolas", monospace;
+
+  --aurea-font-ui: "Segoe UI Variable", "Segoe UI", "Inter", "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --aurea-font-display: "Segoe UI Variable", "Segoe UI", "Inter", "SF Pro Display", sans-serif;
+  --aurea-font-mono: "Cascadia Code", "JetBrains Mono", "SFMono-Regular", "Consolas", monospace;
 }
 
 :root[data-theme='dark'] {
-  --aurea-bg: #111511;
-  --aurea-bg-app: #171b18;
-  --aurea-bg-surface: rgba(32, 39, 35, 0.76);
-  --aurea-bg-panel: #1d2320;
-  --aurea-bg-elevated: #222927;
-  --aurea-text-primary: #edf0ec;
-  --aurea-text-secondary: #d3d9d2;
-  --aurea-text-muted: #a9b2ab;
+  --aurea-surface-desktop: #0d1320;
+  --aurea-surface-window: #101b2a;
+  --aurea-surface-panel: rgba(17, 27, 42, 0.72);
+  --aurea-surface-elevated: #152336;
+  --aurea-surface-strong: #18273a;
+
+  --aurea-text-primary: #edf3ff;
+  --aurea-text-secondary: #d2dcf1;
+  --aurea-text-muted: #a7b5c9;
+
   --aurea-border-subtle: rgba(255, 255, 255, 0.08);
   --aurea-border-strong: rgba(255, 255, 255, 0.12);
-  --aurea-accent-primary: #d9a861;
-  --aurea-accent-secondary: #e7c17a;
-  --aurea-accent-warm: #c77a49;
-  --aurea-positive: #68a77f;
-  --aurea-warning: #d6a552;
-  --aurea-critical: #d26964;
-  --aurea-focus: #e2b76d;
-  --aurea-glass-fill: rgba(20, 24, 22, 0.46);
-  --aurea-glass-border: rgba(255, 255, 255, 0.12);
-  --aurea-glow-soft: rgba(217, 168, 97, 0.18);
-  --aurea-shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.2);
-  --aurea-shadow-strong: 0 24px 48px rgba(0, 0, 0, 0.38);
+
+  --aurea-accent-primary: #7aaeff;
+  --aurea-accent-strong: #8ebaff;
+  --aurea-accent-soft: rgba(122, 174, 255, 0.20);
+  --aurea-accent-warm: #dcb170;
+  --aurea-accent-warm-soft: rgba(220, 177, 112, 0.18);
+
+  --aurea-success: #63a77b;
+  --aurea-warning: #d7a750;
+  --aurea-critical: #d26d63;
+  --aurea-focus: #8bb9ff;
+
+  --aurea-dock-bg: rgba(15, 22, 31, 0.58);
+  --aurea-dock-bg-strong: rgba(18, 26, 36, 0.76);
+  --aurea-dock-border: rgba(255, 255, 255, 0.08);
+
+  --aurea-panel-bg: rgba(16, 27, 42, 0.72);
+  --aurea-panel-border: rgba(255, 255, 255, 0.08);
+
+  --aurea-notification-bg: rgba(18, 27, 38, 0.72);
+  --aurea-notification-border: rgba(255, 255, 255, 0.08);
+  --aurea-notification-shadow: 0 18px 42px rgba(4, 9, 16, 0.42);
+
+  --aurea-glass-fill: rgba(16, 27, 42, 0.36);
+  --aurea-glass-border: rgba(255, 255, 255, 0.10);
+
+  --aurea-shadow-soft: 0 12px 28px rgba(0, 0, 0, 0.26);
+  --aurea-shadow-strong: 0 24px 52px rgba(0, 0, 0, 0.38);
 }
