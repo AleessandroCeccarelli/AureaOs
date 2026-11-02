@@ -12,7 +12,7 @@ Initial synthesis parameters for the nine original AureaOS system sound effects.
 * Silence: Trim unnecessary leading and trailing silence
 * Transitions: Avoid clicks by applying short attack and release envelopes
 
-## Event 
+## Event parameters
 
 | File | Duration | Frequency / notes | Character |
 |---|---:|---|---|
