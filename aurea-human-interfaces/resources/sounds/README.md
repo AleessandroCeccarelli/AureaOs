@@ -16,4 +16,5 @@ This directory is the source location for the AureaOS system sound theme.
 - Keep source assets and licensing/attribution notes with the theme.
 - The desktop installation target is `/usr/share/sounds/Aurea/`; this repository remains the editable source.
 
-Audio files will be added after the event list and sound direction are approved.
+The event list and sound direction are documented in `SOUND-EVENTS.md`.
+Original audio assets will be generated locally and added after review.
