@@ -1,6 +1,7 @@
 # AureaOS Sound Theme — Audio Testing Checklist
 
 Use this checklist to review the original system sound effects before including them in AureaOS Roma.
+
 Use `AUDIO-SPECIFICATION.md` as the reference for target durations, frequencies, and synthesis parameters.
 
 ## File and format
