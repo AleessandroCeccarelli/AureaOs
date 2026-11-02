@@ -2,7 +2,7 @@
 
 This file provides a simple SPDX-style summary of the licensing status for the AureaOS project and its reviewed third-party content.
 
-This document is intended to support project review, auditing, and maintenance as the project grows. It is not a replacement for the project-level license files or for the detailed third-party registry in `THIRD_PARTY_NOTICES.md`.
+This document supports project review and auditing. It does not replace the project license file or the detailed third-party registry in `THIRD_PARTY_NOTICES.md`.
 
 ## Project target
 
@@ -36,38 +36,27 @@ SPDX-License-Identifier: GPL-3.0-only
 - Debian package ecosystem
   - SPDX-License-Identifier: varies by package and license
   - Source: Debian package repositories
-  - Notes: Runtime dependencies are managed through Debian package metadata and system package policy. They are not all vendored in this repository and must be reviewed at build time and release time.
+  - Notes: Runtime dependencies are managed through Debian package metadata and system package policy. They are not all vendored in this repository and must be reviewed at build and release time.
 
 ## Notes
 
-- The project as a whole is not "GPL-3.0-only" in a literal sense if third-party components with different licenses are bundled or redistributed.
-- The project license applies to the original AureaOS work unless another file explicitly overrides it.
+- The project as a whole is not a single license bundle if third-party components with different licenses are redistributed.
+- The project license applies to the original AureaOS work unless a specific file states otherwise.
 - Third-party components keep their own licenses and must be tracked in `THIRD_PARTY_NOTICES.md`.
-- This summary should be updated whenever a new dependency is introduced or when a reviewed component changes license status.
-
-## Recommended maintenance rule
-
-Whenever a new dependency, font, icon pack, asset, or vendored library is added to the project, do the following:
-
-1. Add a record to `licenses/THIRD_PARTY_NOTICES.md`
-2. Add the relevant SPDX-style identifier here if appropriate
-3. Confirm the license is compatible with the project goals and distribution model
-4. Keep the path and purpose clear for future audit work
+- This summary should be updated whenever a new dependency, font, icon set, asset, or vendored library is introduced.
 
 ## Current review status
 
 - `LICENSE` (project): reviewed
-- `aurea-human-interfaces/symbols/source/fluent-ui` : reviewed
-- `aurea-human-interfaces/fonts/source/google-fonts/noto-color-emoji` : reviewed
+- `aurea-human-interfaces/symbols/source/fluent-ui`: reviewed
+- `aurea-human-interfaces/fonts/source/google-fonts/noto-color-emoji`: reviewed
 - Debian base dependencies: pending package-level review as the OS matures
 
-## Example future entry format
+## Outstanding verification items
 
-```text
-- Component Name
-  - SPDX-License-Identifier: MIT
-  - Source: path/to/component
-  - Notes: short description and review status
-```
+The following are known to require confirmation when the corresponding resources are used in release builds or distribution bundles:
 
-This file is intentionally simple and intentionally maintainable.
+- exact package-origin provenance for any Debian packages included in project bundles
+- any additional third-party font or icon assets newly added in the future
+- any third-party image, wallpaper, or artwork not yet listed in `THIRD_PARTY_NOTICES.md`
+- any proprietary or external runtime components that might be introduced later

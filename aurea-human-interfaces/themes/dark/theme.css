@@ -1,41 +1,45 @@
-/* AureaOS shared Dark theme. Values follow docs/human-interfaces/COLOR-SYSTEM.md. */
+/* AureaOS legacy theme compatibility wrapper.
+ * Source of truth: aurea-human-interfaces/design-system/tokens/index.css
+ */
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --aurea-accent: #e6bd68;
-  --aurea-accent-hover: #f0ce86;
-  --aurea-accent-soft: #49391f;
+  --aurea-accent: #7aaeff;
+  --aurea-accent-hover: #8ebaff;
+  --aurea-accent-soft: rgba(122, 174, 255, 0.20);
+  --aurea-accent-warm: #dcb170;
+  --aurea-accent-warm-soft: rgba(220, 177, 112, 0.18);
 
-  --aurea-canvas: #17191e;
-  --aurea-surface: #202329;
-  --aurea-surface-secondary: #272a31;
-  --aurea-surface-raised: #30343d;
-  --aurea-surface-sunken: #191b20;
+  --aurea-canvas: #0d1320;
+  --aurea-surface: #101b2a;
+  --aurea-surface-secondary: #172537;
+  --aurea-surface-raised: #18273a;
+  --aurea-surface-sunken: #0d1625;
 
-  --aurea-text-primary: #f4f2ed;
-  --aurea-text-secondary: #c2c4ca;
-  --aurea-text-tertiary: #a0a4ae;
-  --aurea-text-disabled: #777c87;
+  --aurea-text-primary: #edf3ff;
+  --aurea-text-secondary: #d2dcf1;
+  --aurea-text-tertiary: #a7b5c9;
+  --aurea-text-disabled: #7f90ad;
 
-  --aurea-border: #3b3f49;
-  --aurea-border-strong: #555b68;
-  --aurea-focus-ring: #e6bd68;
-  --aurea-selection: #49391f;
-  --aurea-hover: #333741;
-  --aurea-pressed: #3c414c;
+  --aurea-border: rgba(255, 255, 255, 0.08);
+  --aurea-border-strong: rgba(255, 255, 255, 0.12);
+  --aurea-focus-ring: #8bb9ff;
+  --aurea-selection: rgba(122, 174, 255, 0.18);
+  --aurea-hover: rgba(255, 255, 255, 0.04);
+  --aurea-pressed: rgba(255, 255, 255, 0.08);
 
-  --aurea-success: #75d19c;
-  --aurea-success-container: #203b2d;
-  --aurea-warning: #f0c56b;
-  --aurea-warning-container: #44351d;
-  --aurea-error: #f28b82;
-  --aurea-error-container: #482725;
-  --aurea-information: #8ab4f8;
-  --aurea-information-container: #20334d;
+  --aurea-success: #63a77b;
+  --aurea-success-container: #17392d;
+  --aurea-warning: #d7a750;
+  --aurea-warning-container: #332b1a;
+  --aurea-error: #d26d63;
+  --aurea-error-container: #382929;
+  --aurea-information: #7aaeff;
+  --aurea-information-container: #1d2a3a;
 
-  --aurea-glass-fill: rgba(34, 37, 44, 0.78);
-  --aurea-glass-fill-strong: rgba(34, 37, 44, 0.92);
-  --aurea-glass-highlight: rgba(255, 255, 255, 0.1);
-  --aurea-glass-border: rgba(255, 255, 255, 0.12);
-  --aurea-glass-shadow: 0 16px 42px rgba(0, 0, 0, 0.38);
+  --aurea-glass-fill: rgba(17, 27, 42, 0.72);
+  --aurea-glass-fill-strong: rgba(17, 27, 42, 0.80);
+  --aurea-glass-highlight: rgba(255, 255, 255, 0.10);
+  --aurea-glass-border: rgba(255, 255, 255, 0.10);
+  --aurea-glass-shadow: 0 18px 42px rgba(4, 9, 16, 0.42);
 }

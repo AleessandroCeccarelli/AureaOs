@@ -1,43 +1,44 @@
-
 # AureaOS Human Interfaces
 
 ## Purpose
 
-AureaOS Human Interfaces is the planned shared user interface library and design system for AureaOS applications. The repository currently includes design documentation and visual resources, including CSS theme tokens. It does not yet contain an implemented shared application library or a working desktop UI.
+AureaOS Human Interfaces is the planned shared user interface library and design system for AureaOS applications and system surfaces.
 
-Its purpose is to provide reusable UI components, consistent interaction patterns, and a coherent visual identity across the AureaOS desktop and applications.
+The repository currently includes design documentation, visual resources, and token definitions. The current approved source of truth for visual values is:
 
-## Core Principles
+- `aurea-human-interfaces/design-system/tokens/index.css`
 
-- **Consistency:** shared components follow common design and interaction rules.
-- **Clarity:** interfaces remain understandable and easy to use.
-- **Context:** each application adapts its layout to its purpose while preserving the shared design language.
-- **Accessibility:** components should support accessible interaction and readable content.
-- **Reusability:** common UI behavior should be implemented once and reused wherever appropriate.
-- **Maintainability:** shared components should evolve without unnecessary duplication across applications.
+## Core principles
+
+- Consistency: shared components follow common design and interaction rules.
+- Clarity: interfaces remain readable, understandable, and easy to use.
+- Context: each application adapts to its purpose while preserving the shared system language.
+- Accessibility: components support readable text, strong contrast, and accessible interaction.
+- Reusability: common UI behavior should be implemented once and reused across the system.
+- Maintainability: shared components should evolve without unnecessary duplication.
 
 ## Scope
 
-The shared visual and interaction contract applies to every first-party desktop and system application. App-specific layouts may differ, but applications should share:
+The shared visual contract applies to first-party desktop and system components. App-specific layouts may differ, but applications should share:
 
-- Semantic design tokens, light and dark themes, spacing, and typography.
-- Aurea Sans as the primary typeface direction, with readable fallback fonts. The final font and fallback stack are not yet selected.
-- Consistent controls, icons, focus states, and interaction patterns.
-- Keyboard navigation, accessible names and feedback, scalable text, and reduced-motion support.
-- Consistent product names and plain-language user-facing copy.
+- semantic design tokens
+- light and dark themes
+- spacing, layout rhythm, and structural rules
+- keyboard navigation and accessible interaction patterns
+- product names and plain-language user-facing copy
 
-The shared light/dark color palette and semantic token contract are specified in [Color System](COLOR-SYSTEM.md). The current web-theme token source is [AureaOS Themes](../../aurea-human-interfaces/themes/README.md), especially `themes/tokens/index.css`. Native apps, desktop services, and notifications should map to the same semantic values rather than introduce competing design tokens.
+## Palette
 
-## Relationship with AureaOS
+The approved foundation is a blue-gray palette with a soft blue primary accent and a restrained warm accent for identity highlights only.
 
-AureaOS Human Interfaces is intended to work alongside the AureaOS System API.
+This replaces earlier references that treated ivory, graphite, and gold as the dominant palette basis.
 
-Human Interfaces provides reusable visual components and interaction patterns. The System API provides shared access to system capabilities.
+## Font status
 
-These are complementary responsibilities and should remain clearly separated.
+The default system font remains DA DEFINIRE.
+
+Aurea Sans is a future candidate and may become the system font if and when it is approved. Until then, no final system font choice should be presented as definitive in docs or UI guides.
 
 ## Status
 
-Design documentation and visual resources are present. The shared library, desktop UI, and integrations described here remain planned work.
-
-Design rules and visual resources are present, including tokens and theme files. The reusable UI component library and its application integrations remain planned. The default UI language and localization policy are open decisions.
+Design documentation and visual resources are present. Shared UI libraries and complete integrations remain planned work.

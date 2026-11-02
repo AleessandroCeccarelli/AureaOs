@@ -1,34 +1,60 @@
 # AureaOS Themes and Tokens
 
-This directory contains the current CSS token source for web-based AureaOS interfaces. `tokens/index.css` imports the light and dark values. [Color System](../../docs/human-interfaces/COLOR-SYSTEM.md) documents the semantic contract those values implement. Keep this token set as the source of truth for implemented web-theme values; native toolkit mappings should use the same semantic names and values rather than define competing palettes.
+This directory contains the current theme and token source for AureaOS interfaces.
 
-Reusable visual assets, including the desktop wallpaper collection, are organized under [resources](../resources/README.md).
+Important: `aurea-human-interfaces/design-system/tokens/index.css` is the source of truth for the approved token set. The files in this directory are compatibility wrappers and should mirror the same semantic names and values.
+
+The palette direction is a blue-gray foundation with a soft blue primary accent and a restrained warm accent used only for identity highlights. This keeps the system familiar and readable while preserving AureaOS personality.
+
+## Source of truth
+
+The authoritative token file is:
+
+- `aurea-human-interfaces/design-system/tokens/index.css`
+
+The theme files under this directory are kept for compatibility and should remain in sync with the token source.
+
+## Theme behavior
+
+- Light theme default: soft blue-gray desktop and white windows
+- Dark theme: deep blue-gray desktop and dark slate windows
+- Accent color: soft blue for actions and system emphasis
+- Warm accent: subtle gold/amber only for identity moments, not general UI text
+- Glass surfaces: translucent and readable, without sacrificing contrast
+
+## Font status
+
+The default system font is still DA DEFINIRE.
+
+Aurea Sans is the intended future system font if and when it is approved and ready. Until then, this repository should not treat any specific font stack as a final system decision.
 
 ## Use
 
-Import `tokens/index.css` once in a web-based AureaOS interface. The light theme is the default. Apply `data-theme="dark"` to the application root to switch the entire interface to dark mode; use `data-theme="light"` to explicitly select light mode. Remove the attribute to follow the default light theme until a system theme service is connected.
+The default web theme is light mode. Apply `data-theme="dark"` to switch to dark mode.
 
-These files are design infrastructure. They are not evidence that AureaOS applications or a shared UI component library exist or consume the tokens. First-party applications should also follow the shared rules for Aurea Sans and readable fallback fonts, spacing, controls, icons, keyboard navigation, visible focus, accessibility, and plain-language terminology. The final typeface/fallback stack and the default UI language/localization policy remain open decisions. See [AureaOS Human Interfaces](../../docs/human-interfaces/README.md) for the full contract.
+Example:
 
 ```html
 <html data-theme="dark">
 ```
 
-Use semantic variables in components, for example:
+Use semantic variables in components, not hard-coded values:
 
 ```css
 .app-shell {
   color: var(--aurea-text-primary);
-  background: var(--aurea-canvas);
+  background: var(--aurea-surface-desktop);
 }
 
 .notification {
   color: var(--aurea-text-primary);
-  background: var(--aurea-glass-fill-strong);
-  border: 1px solid var(--aurea-glass-border);
-  box-shadow: var(--aurea-glass-shadow);
-  backdrop-filter: blur(28px);
+  background: var(--aurea-notification-bg);
+  border: 1px solid var(--aurea-notification-border);
+  box-shadow: var(--aurea-notification-shadow);
+  backdrop-filter: blur(24px);
 }
 ```
 
-Desktop services, native apps, quick settings, and notifications should map their toolkit's theme properties to the same semantic names and values. Avoid introducing app-specific copies of shared chrome colors. Ordinary app content uses opaque surface tokens; glass tokens are for transient or floating surfaces.
+## Notes
+
+The theme files in this folder do not imply that a full desktop shell exists yet. They describe the approved design system foundation only.

@@ -1,40 +1,31 @@
 # Tokens
 
-This directory contains the central source of visual values for AureaOS.
+This directory is the source of truth for the approved AureaOS visual token set.
 
-The token system is the shared vocabulary of the interface. It defines the meaning of colors, surfaces, emphasis, borders, text, shadows, and focus states.
+The design system uses a blue-gray foundation with a soft blue primary accent and a restrained warm accent used only for identity highlights. This keeps the desktop familiar, readable, and calm while preserving a clear AureaOS personality.
 
-## Goals
+## Source of truth
 
-- one source of truth for design values
-- cross-system consistency
-- easy adaptation for light and dark themes
-- simple mapping to UI components and desktop surfaces
+- `aurea-human-interfaces/design-system/tokens/index.css`
 
-## Files
+The `light.css` and `dark.css` files are theme-specific overrides for the shared token set and must stay in sync with the source of truth.
 
-- `index.css` — main token entry point
-- `light.css` — light theme values
-- `dark.css` — dark theme values
+## Token model
 
-## Semantic model
+Examples of semantic tokens:
 
-Tokens should be descriptive, not tied to one component in isolation. For example:
-
-- `--aurea-bg-app`
-- `--aurea-bg-surface`
-- `--aurea-bg-panel`
-- `--aurea-accent-primary`
+- `--aurea-surface-desktop`
+- `--aurea-surface-window`
+- `--aurea-surface-panel`
 - `--aurea-text-primary`
-- `--aurea-border-subtle`
-- `--aurea-glass-fill`
-- `--aurea-shadow-soft`
+- `--aurea-accent-primary`
+- `--aurea-accent-warm`
+- `--aurea-dock-bg`
+- `--aurea-notification-bg`
 
-This reduces visual drift and creates a stable base for both the desktop shell and system applications.
+## Notes
 
-## Design rules
-
-- interface colors should be semantic, not app-specific
-- used colors must remain accessible in both light and dark modes
-- accent color should be strong, but not dominant across the entire system
-- glass surfaces and translucency should be subtle and readable
+- The palette is intentionally blue-gray based, not ivory / graphite / gold dominant.
+- The warm accent is a secondary identity highlight and should not dominate the shell.
+- The default system font remains DA DEFINIRE; Aurea Sans is a future candidate only when approved.
+- A final font decision must be made from the repository font database, not from an ad hoc external stack.
