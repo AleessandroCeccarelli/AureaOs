@@ -1,4 +1,5 @@
-# AureaOS Sound Events
+
+...# AureaOS Sound Events
 
 Initial sound event specification for AureaOS Roma.
 
@@ -39,3 +40,4 @@ Aurea/
     ├── power-plug.oga
     ├── power-unplug.oga
     └── complete.oga
+...
