@@ -1,0 +1,25 @@
+:root,
+:root[data-theme='light'] {
+  --aurea-bg: #f3efe8;
+  --aurea-bg-app: #f7f3ee;
+  --aurea-bg-surface: rgba(255, 255, 255, 0.68);
+  --aurea-bg-panel: #efe7dc;
+  --aurea-bg-elevated: #f9f6f2;
+  --aurea-text-primary: #1d1a17;
+  --aurea-text-secondary: #4a4039;
+  --aurea-text-muted: #736a62;
+  --aurea-border-subtle: rgba(35, 31, 28, 0.12);
+  --aurea-border-strong: rgba(35, 31, 28, 0.2);
+  --aurea-accent-primary: #b98345;
+  --aurea-accent-secondary: #d9a861;
+  --aurea-accent-warm: #c76d3b;
+  --aurea-positive: #3d7c56;
+  --aurea-warning: #b47b21;
+  --aurea-critical: #a6423b;
+  --aurea-focus: #8a5b2e;
+  --aurea-glass-fill: rgba(255, 255, 255, 0.34);
+  --aurea-glass-border: rgba(255, 255, 255, 0.5);
+  --aurea-glow-soft: rgba(185, 131, 69, 0.22);
+  --aurea-shadow-soft: 0 10px 30px rgba(30, 25, 22, 0.08);
+  --aurea-shadow-strong: 0 20px 40px rgba(30, 25, 22, 0.16);
+}
