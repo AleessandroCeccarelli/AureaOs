@@ -2,72 +2,72 @@
 
 ## Purpose
 
-This document defines the naming rules for symbols exposed by the AureaOS symbol catalog.
+This document defines proposed naming rules for symbols that may be exposed by a future AureaOS symbol catalog.
 
-The goal is to provide clear, consistent, and stable names for use across the operating system and its applications.
+The catalog is not yet a verified inventory or an implemented API. Names in the examples below are conceptual proposals, not confirmed matches for Fluent source assets.
 
-## General Rules
+## General rules
 
-Symbol names must:
+Proposed symbol names should:
 
-* Use lowercase English words
-* Use hyphens to separate words
-* Describe the symbol’s meaning or function
-* Follow common desktop and Linux terminology where appropriate
-* Remain independent of the original Fluent asset filenames
-* Avoid unnecessary abbreviations
-* Remain stable once published
+- use lowercase English words
+- use hyphens to separate words
+- describe the symbol's meaning or function
+- follow common desktop terminology where appropriate
+- remain independent of original Fluent filenames
+- avoid unnecessary abbreviations
+- remain stable once published as part of an implemented catalog
 
-## Semantic Naming
+## Semantic naming
 
-Names should describe the intended meaning or action rather than the visual appearance of the icon.
+Names should describe intended meaning or action rather than visual appearance.
 
-Preferred examples:
+Conceptual examples:
 
-* folder
-* document-open
-* document-save
-* settings
-* network-wireless
-* window-close
+- `folder`
+- `document-open`
+- `document-save`
+- `settings`
+- `network-wireless`
+- `window-close`
+
+These examples have not yet been verified or mapped to specific assets in `../source/fluent-ui/` (relative to this `catalog/` directory).
 
 Avoid names based only on appearance, such as:
 
-* blue-folder
-* three-lines
-* round-cross
+- `blue-folder`
+- `three-lines`
+- `round-cross`
 
-## Actions and Objects
+## Actions and objects
 
-Use established action-object naming where appropriate:
+Use an established action-object pattern where it makes the meaning clear. The following are naming examples only, not verified asset mappings:
 
-* document-open
-* document-save
-* window-close
-* media-play
-* media-pause
+- `document-open`
+- `document-save`
+- `window-close`
+- `media-play`
+- `media-pause`
 
-For common objects with an unambiguous meaning, use the object name alone:
+For common objects with an unambiguous meaning, a single object name may be suitable. These are also conceptual examples:
 
-* folder
-* printer
-* calendar
-* camera
+- `folder`
+- `printer`
+- `calendar`
+- `camera`
 
 ## Variants
 
-Variants must not be included in the base symbol name.
+Variants should not be included in the base symbol name. A future catalog entry may record a verified variant separately from the conceptual name.
 
-For example, settings identifies the symbol, while regular or filled identifies its variant.
+Labels such as `regular` or `filled` are examples only. Their availability must be checked against the actual source files for each symbol before being recorded.
 
-## Source Mapping
+## Source mapping
 
-Each catalog entry must preserve the original Fluent asset name and map it to the corresponding AureaOS symbol name.
+A catalog entry should preserve the exact Fluent asset name and map it to the AureaOS name only after the mapping has been verified against the source collection at `../source/fluent-ui/`.
 
-Changing an upstream filename must not require changing the public AureaOS name.
+Changing an upstream filename should not require changing a published AureaOS name, provided the mapping is maintained and verified.
 
 ## Consistency
 
-Before adding a new symbol name, check whether an existing catalog entry already represents the same meaning.
-
-Synonyms should be avoided unless they represent genuinely distinct concepts or actions.
+Before adding a proposed name, check whether an existing catalog entry already represents the same meaning. Avoid synonyms unless they describe genuinely different concepts or actions.

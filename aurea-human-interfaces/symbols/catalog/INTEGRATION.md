@@ -2,57 +2,46 @@
 
 ## Purpose
 
-This document defines how AureaOS applications access and use symbols from the shared symbol catalog.
+This document describes the planned integration direction for symbols in AureaOS applications. It does not define an implemented API or runtime loading mechanism.
 
-The integration interface provides a consistent way to request symbols without depending on the original Fluent asset filenames or source directory structure.
+The goal is to let applications use stable AureaOS catalog names without depending on upstream Fluent filenames or source directory layout.
 
-## Symbol Requests
+## Symbol requests
 
-Applications should request symbols using their stable AureaOS catalog names.
+The proposed model is for applications to request a verified AureaOS catalog name. Names shown in examples—including `folder`, `document-open`, `settings`, `network-wireless`, and `window-close`—are conceptual proposals. They have not yet been verified against or mapped to specific assets in `../source/fluent-ui/` (relative to this `catalog/` directory).
 
-Examples:
-
-* folder
-* document-open
-* settings
-* network-wireless
-* window-close
-
-Applications must not reference files directly from source/fluent-ui.
+Until the catalog and integration interface are implemented, these examples must not be treated as available API names. The intended future interface should avoid requiring application code to reference source files directly.
 
 ## Variants
 
-The symbol interface should support the available variants, including:
+Variant availability must be checked against the actual source assets for each mapped symbol. `Regular` and `Filled` are illustrative variant labels, not a claim that both variants exist for every symbol.
 
-* Regular
-* Filled
-
-Applications may specify a variant when the visual context requires it. When no variant is specified, the interface should apply the default defined by the catalog.
+The catalog must record a variant only after it has been verified in the source collection. Default-variant behavior remains to be defined during implementation.
 
 ## Sizes
 
-The symbol interface should support the sizes available in the catalog.
+Source dimensions and available size options must be read from verified asset metadata. This document does not establish exact dimensions, a complete size list, or an implemented logical-size API.
 
-Applications should request symbols using logical size values where possible, rather than relying on hard-coded source asset dimensions.
+The future catalog may define logical sizes for application use, but each such value must be mapped to verified source assets during implementation.
 
-## Catalog Mapping
+## Catalog mapping
 
-Each symbol request must resolve through the catalog to the appropriate Fluent asset.
+A verified mapping should preserve, when available and confirmed:
 
-The mapping should preserve:
+- proposed AureaOS symbol name
+- exact original Fluent asset name
+- verified variant
+- verified source dimensions or size metadata
+- source asset location
 
-* AureaOS symbol name
-* Original Fluent asset name
-* Variant
-* Size
-* Source asset location
+The mapping is not complete until it has been checked against the files in `../source/fluent-ui/`.
 
-## Consistency and Compatibility
+## Consistency and compatibility
 
-The symbol interface should provide stable names and predictable behavior across AureaOS applications.
+The future shared interface should provide stable AureaOS names so upstream filename or organization changes do not unnecessarily affect applications. This is a design goal, not current implemented behavior.
 
-Changes to source assets or their organization should not require application code to change, provided the public catalog names remain stable.
+The project intends to keep the full Fluent set available for a modern OS. Cataloging or integrating symbols must not remove or narrow the upstream source collection simply to limit the catalog.
 
-## Future Implementation
+## Future implementation
 
-The concrete API, asset packaging format, and runtime loading mechanism will be defined during implementation of the AureaOS shared UI library.
+The concrete API, asset packaging format, variant defaults, logical sizing, and runtime loading mechanism remain to be defined during implementation of the AureaOS shared UI library.

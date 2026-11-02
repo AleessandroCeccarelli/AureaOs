@@ -2,60 +2,45 @@
 
 ## Purpose
 
-The symbol catalog defines the names, variants, and mappings used to access icons throughout AureaOS and its applications.
+The catalog documents proposed AureaOS names, functional categories, and the future mapping from those names to verified Fluent UI System Icons source assets.
 
-It provides a consistent interface between the original Fluent UI System Icons assets and the user interfaces built on top of them.
+The catalog documentation is a design proposal. It is not yet a complete inventory, a verified mapping, or an implemented runtime interface.
 
-## Catalog Structure
+## Catalog structure
 
-The catalog will organize symbols by functional category, including:
+The catalog is organized by functional categories. See `CATEGORIES.md` for the proposed categories and examples.
 
-* System and settings
-* Files and documents
-* Applications and windows
-* Connectivity and devices
-* Accessibility
-* Notifications and status
-* Multimedia and controls
-* Common actions and navigation
+Names in that document and in other catalog examples are conceptual proposals. They have not yet been checked or mapped to specific files in `../source/fluent-ui/`.
 
-## Naming Convention
+## Naming convention
 
-Symbol names must be:
+Proposed AureaOS names should be:
 
-* Descriptive and easy to understand
-* Consistent with common desktop and Linux terminology where appropriate
-* Independent of the original Fluent filenames
-* Stable for application developers
+- descriptive and easy to understand
+- consistent with common desktop terminology where appropriate
+- independent of upstream filenames
+- stable once published
 
-Examples:
+Examples such as `folder`, `document-open`, `settings`, `network-wireless`, and `window-close` illustrate the naming style only. They are not verified asset mappings.
 
-* folder
-* document-open
-* settings
-* network-wireless
-* window-close
+See `NAMING-CONVENTION.md` for the naming rules.
 
-## Variants and Sizes
+## Variants and sizes
 
-The catalog will record the available Fluent variants, including Regular and Filled, and the supported sizes.
+The actual variants and size options must be inventoried from the source assets before catalog entries claim they are available. Labels such as `Regular` and `Filled` may be used as examples of variant concepts, but their availability for any particular symbol is not confirmed by this document.
 
-The selected variant should reflect the symbol’s role and visual context. Applications should not need to know the original asset filename to request a symbol.
+No exact source dimensions or final logical-size API are established here. Once verified, catalog metadata should record the source variant and dimensions and explain any logical-size mapping used by the UI.
 
-## Source Mapping
+## Source mapping
 
-Each catalog entry will map its AureaOS symbol name to its original Fluent asset, including its variant and size.
+Each verified catalog entry should map an AureaOS conceptual name to an actual Fluent asset. The mapping should record the exact upstream filename and source location, with variant and size information only where verified.
 
-Original source assets must remain preserved in source/fluent-ui.
+The source directory, relative to this `catalog/` directory, is `../source/fluent-ui/`. Keep upstream assets there; do not rename, move, or narrow the full source collection as a side effect of catalog work.
 
-## Application Usage
+## Application usage
 
-Applications should access symbols through the shared AureaOS symbols interface.
-
-They should use catalog names rather than directly referencing source asset paths. This keeps the application interface stable if the underlying assets or directory structure change.
+The intended direction is for applications to request symbols through a future shared AureaOS interface and use catalog names rather than hard-coded source paths. That interface and its implementation do not yet exist. See `INTEGRATION.md` for the current plan and open implementation decisions.
 
 ## Completeness
 
-The catalog is intended to provide comprehensive icon coverage for a modern desktop operating system.
-
-Useful symbols should not be excluded solely to reduce catalog size.
+The project intends to keep the full Fluent set needed for a modern operating system available. Catalog organization and future mappings must not be used to exclude useful source symbols solely to reduce catalog size.

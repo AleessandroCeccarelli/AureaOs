@@ -2,122 +2,106 @@
 
 ## Purpose
 
-This document defines the functional categories used to organize symbols in the AureaOS symbol catalog.
+This document defines the proposed functional categories for organizing entries in the AureaOS symbol catalog.
 
-Categories help developers discover appropriate symbols and maintain consistent iconography throughout the operating system and its applications.
+The category names and examples below describe catalog concepts. Example symbol names are not verified against, or mapped to, specific Fluent assets in `../source/fluent-ui/` (relative to this `catalog/` directory).
 
 ## Categories
 
-## System and Settings
+### System and Settings
 
-Symbols for system configuration, preferences, maintenance, and administration.
+Conceptual examples for system configuration, preferences, maintenance, and administration:
 
-Examples:
+- `settings`
+- `system-update`
+- `security`
+- `accessibility`
 
-* settings
-* system-update
-* security
-* accessibility
+### Files and Documents
 
-## Files and Documents
+Conceptual examples for file management, document handling, storage, and file operations:
 
-Symbols for file management, document handling, storage, and file operations.
+- `folder`
+- `folder-open`
+- `document`
+- `document-open`
+- `document-save`
+- `drive`
 
-Examples:
+### Applications and Windows
 
-* folder
-* folder-open
-* document
-* document-open
-* document-save
-* drive
+Conceptual examples for launching, managing, and interacting with applications and windows:
 
-## Applications and Windows
+- `app`
+- `app-grid`
+- `window`
+- `window-close`
+- `window-minimize`
+- `window-maximize`
 
-Symbols for launching, managing, and interacting with applications and windows.
+### Connectivity and Devices
 
-Examples:
+Conceptual examples for network connections, wireless communication, peripherals, and hardware:
 
-* app
-* app-grid
-* window
-* window-close
-* window-minimize
-* window-maximize
+- `network-wireless`
+- `network-wired`
+- `bluetooth`
+- `device`
+- `usb`
 
-## Connectivity and Devices
+### Accessibility
 
-Symbols for network connections, wireless communication, peripherals, and hardware.
+Conceptual examples for accessibility features and assistive interaction:
 
-Examples:
+- `accessibility`
+- `contrast`
+- `hearing`
+- `text-size`
+- `keyboard`
 
-* network-wireless
-* network-wired
-* bluetooth
-* device
-* usb
+### Notifications and Status
 
-## Accessibility
+Conceptual examples for notifications, system states, warnings, and informational feedback:
 
-Symbols for accessibility features and assistive interaction.
+- `notification`
+- `status-info`
+- `status-success`
+- `status-warning`
+- `status-error`
 
-Examples:
+### Multimedia and Controls
 
-* accessibility
-* contrast
-* hearing
-* text-size
-* keyboard
+Conceptual examples for audio, video, playback, display, and media controls:
 
-## Notifications and Status
+- `media-play`
+- `media-pause`
+- `media-stop`
+- `volume`
+- `brightness`
 
-Symbols for notifications, system states, warnings, and informational feedback.
+### Actions and Navigation
 
-Examples:
+Conceptual examples for common actions, navigation, editing, and interface controls:
 
-* notification
-* status-info
-* status-success
-* status-warning
-* status-error
+- `add`
+- `remove`
+- `edit`
+- `delete`
+- `search`
+- `arrow-left`
+- `arrow-right`
+- `chevron-down`
 
-## Multimedia and Controls
+## Categorization rules
 
-Symbols for audio, video, playback, display, and media controls.
-
-Examples:
-
-* media-play
-* media-pause
-* media-stop
-* volume
-* brightness
-
-## Actions and Navigation
-
-Symbols for common actions, navigation, editing, and interface controls.
-
-Examples:
-
-* add
-* remove
-* edit
-* delete
-* search
-* arrow-left
-* arrow-right
-* chevron-down
-
-## Categorization Rules
-
-* Every catalog entry should have one primary category.
-* Additional tags may be used when a symbol serves multiple purposes.
-* Categories describe function, not visual appearance.
-* New categories may be introduced when they represent a distinct and useful functional area.
-* Existing categories should be reused whenever possible to avoid unnecessary fragmentation.
+- Each verified catalog entry should have one primary category.
+- Additional tags may be used when an entry serves multiple purposes.
+- Categories describe function, not visual appearance.
+- New categories may be introduced when they represent a distinct and useful functional area.
+- Existing categories should be reused where appropriate to avoid unnecessary fragmentation.
 
 ## Completeness
 
-The categories are intended to cover the needs of a modern desktop operating system and its applications.
+These proposed categories are intended to cover the needs of a modern desktop operating system and its applications. They describe organization, not a claim that all example names or mappings are implemented.
 
-The catalog may expand as AureaOS develops new system features and application capabilities.
+The project intends to keep the full Fluent set needed by a modern operating system available. Catalog categories must not be used to exclude useful source symbols merely to keep the catalog small.
