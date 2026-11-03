@@ -9,11 +9,13 @@ use std::sync::mpsc::Receiver;
 
 use crate::error::ShellError;
 use crate::event::ShellEvent;
+use crate::session::{DesktopSession, SessionState};
 use crate::state::{ShellLifecycle, ShellState};
 
-/// Owns the runtime lifecycle of the shell.
+/// Owns the runtime and desktop session lifecycles.
 pub struct ShellRuntime {
     lifecycle: ShellLifecycle,
+    session: DesktopSession,
 }
 
 impl ShellRuntime {
@@ -21,12 +23,14 @@ impl ShellRuntime {
     pub fn new() -> Self {
         Self {
             lifecycle: ShellLifecycle::new(),
+            session: DesktopSession::new(),
         }
     }
 
-    /// Starts the runtime.
+    /// Starts the runtime and activates the desktop session.
     pub fn start(&mut self) -> Result<(), ShellError> {
-        self.lifecycle.start()
+        self.lifecycle.start()?;
+        self.session.activate()
     }
 
     /// Runs the event loop until shutdown is requested or the channel closes.
@@ -51,14 +55,29 @@ impl ShellRuntime {
         }
     }
 
-    /// Stops the runtime.
+    /// Stops the desktop session and then the runtime.
     pub fn stop(&mut self) -> Result<(), ShellError> {
+        if self.session.state() == SessionState::Active
+            || self.session.state() == SessionState::Locked
+        {
+            self.session.stop()?;
+        }
+
+        if self.session.state() == SessionState::Stopping {
+            self.session.finish_stop()?;
+        }
+
         self.lifecycle.stop()
     }
 
     /// Returns the current runtime state.
     pub fn state(&self) -> ShellState {
         self.lifecycle.state()
+    }
+
+    /// Returns the current desktop session state.
+    pub fn session_state(&self) -> SessionState {
+        self.session.state()
     }
 }
 
@@ -74,6 +93,7 @@ mod tests {
 
     use super::ShellRuntime;
     use crate::event::ShellEvent;
+    use crate::session::SessionState;
     use crate::state::ShellState;
 
     #[test]
@@ -87,6 +107,7 @@ mod tests {
         runtime.run_event_loop(receiver).unwrap();
 
         assert_eq!(runtime.state(), ShellState::Stopped);
+        assert_eq!(runtime.session_state(), SessionState::Stopped);
     }
 
     #[test]
@@ -100,5 +121,6 @@ mod tests {
         runtime.run_event_loop(receiver).unwrap();
 
         assert_eq!(runtime.state(), ShellState::Stopped);
+        assert_eq!(runtime.session_state(), SessionState::Stopped);
     }
 }
