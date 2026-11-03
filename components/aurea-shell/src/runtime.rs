@@ -167,4 +167,13 @@ mod tests {
 
         assert_eq!(runtime.session_state(), SessionState::Active);
     }
+
+        #[test]
+    fn runtime_rejects_stop_before_start() {
+        let mut runtime = ShellRuntime::new();
+
+        assert!(runtime.stop().is_err());
+        assert_eq!(runtime.state(), ShellState::Created);
+        assert_eq!(runtime.session_state(), SessionState::Starting);
+    }
 }
