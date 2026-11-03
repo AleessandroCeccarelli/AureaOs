@@ -27,10 +27,17 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
 
     let shutdown_bus = event_bus.clone();
 
-    ctrlc::set_handler(move || {
+    if ctrlc::set_handler(move || {
         request_shutdown(&shutdown_bus);
     })
-    .map_err(|_| ShellError::InitializationFailed("Failed to register shutdown handler"))?;
+    .is_err()
+    {
+        runtime.stop()?;
+
+        return Err(ShellError::InitializationFailed(
+            "Failed to register shutdown handler",
+        ));
+    }
 
     runtime.run_event_loop(receiver)?;
 
