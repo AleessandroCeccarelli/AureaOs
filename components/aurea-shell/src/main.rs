@@ -12,6 +12,7 @@ mod event;
 mod runtime;
 mod session;
 mod dispatcher;
+mod event_bus;
 mod state;
 
 fn main() {
