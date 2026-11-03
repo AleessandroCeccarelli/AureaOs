@@ -48,9 +48,11 @@ impl ShellRuntime {
         Ok(())
     }
 
-    /// Handles an event received by the runtime.
+        /// Handles an event received by the runtime.
     pub fn handle_event(&mut self, event: ShellEvent) -> Result<(), ShellError> {
         match event {
+            ShellEvent::LockRequested => self.session.lock(),
+            ShellEvent::UnlockRequested => self.session.unlock(),
             ShellEvent::ShutdownRequested => self.stop(),
         }
     }
@@ -122,5 +124,32 @@ mod tests {
 
         assert_eq!(runtime.state(), ShellState::Stopped);
         assert_eq!(runtime.session_state(), SessionState::Stopped);
+    }
+    
+        #[test]
+    fn runtime_handles_lock_and_unlock_events() {
+        let mut runtime = ShellRuntime::new();
+
+        runtime.start().unwrap();
+        runtime.handle_event(ShellEvent::LockRequested).unwrap();
+
+        assert_eq!(runtime.session_state(), SessionState::Locked);
+
+        runtime.handle_event(ShellEvent::UnlockRequested).unwrap();
+
+        assert_eq!(runtime.session_state(), SessionState::Active);
+    }
+
+    #[test]
+    fn runtime_rejects_unlock_event_when_session_is_active() {
+        let mut runtime = ShellRuntime::new();
+
+        runtime.start().unwrap();
+
+        assert!(runtime
+            .handle_event(ShellEvent::UnlockRequested)
+            .is_err());
+
+        assert_eq!(runtime.session_state(), SessionState::Active);
     }
 }
