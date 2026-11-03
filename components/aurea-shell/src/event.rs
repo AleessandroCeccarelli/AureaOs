@@ -8,5 +8,7 @@
 /// Events handled by the shell runtime.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ShellEvent {
+    LockRequested,
+    UnlockRequested,
     ShutdownRequested,
 }
