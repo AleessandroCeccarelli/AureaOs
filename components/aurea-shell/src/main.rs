@@ -10,6 +10,7 @@ mod app;
 mod config;
 mod error;
 mod state;
+mod runtime;
 
 fn main() {
     let config = config::ShellConfig::default();
