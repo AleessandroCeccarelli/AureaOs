@@ -28,10 +28,17 @@ impl ShellRuntime {
         }
     }
 
-    /// Starts the runtime and activates the desktop session.
+        /// Starts the runtime and activates the desktop session.
     pub fn start(&mut self) -> Result<(), ShellError> {
         self.lifecycle.start()?;
-        self.session.activate()
+
+        if let Err(error) = self.session.activate() {
+            // Roll back the runtime lifecycle if session activation fails.
+            self.lifecycle.stop()?;
+            return Err(error);
+        }
+
+        Ok(())
     }
 
     /// Runs the event loop until shutdown is requested or the channel closes.
