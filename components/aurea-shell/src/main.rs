@@ -5,10 +5,11 @@
 //
 // Application entry point for the AureaOS desktop shell.
 
+mod app;
 mod config;
 
 fn main() {
     let config = config::ShellConfig::default();
 
-    println!("Starting {}...", config.name);
+    app::run(config);
 }
