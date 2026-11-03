@@ -12,3 +12,7 @@ pub mod compositor;
 
 pub use compositor::AureaCompositor;
 
+pub mod server;
+
+pub use server::WaylandServer;
+
