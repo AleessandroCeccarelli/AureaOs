@@ -20,5 +20,6 @@ fn main() {
 
     if let Err(error) = app::run(config) {
         eprintln!("Aurea Shell error: {error}");
+        std::process::exit(1);
     }
 }
