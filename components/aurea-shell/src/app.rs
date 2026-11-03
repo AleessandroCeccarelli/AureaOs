@@ -21,16 +21,16 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
     let mut runtime = ShellRuntime::new();
     let (event_bus, receiver) = EventBus::new();
 
+    runtime.start()?;
+
+    println!("Starting {}...", config.name);
+
     let shutdown_bus = event_bus.clone();
 
     ctrlc::set_handler(move || {
         request_shutdown(&shutdown_bus);
     })
     .map_err(|_| ShellError::InitializationFailed("Failed to register shutdown handler"))?;
-
-    runtime.start()?;
-
-    println!("Starting {}...", config.name);
 
     runtime.run_event_loop(receiver)?;
 
