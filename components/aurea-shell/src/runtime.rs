@@ -6,6 +6,7 @@
 // Shell runtime management.
 
 use std::sync::mpsc::Receiver;
+
 use crate::dispatcher::{self, RuntimeCommand};
 use crate::error::ShellError;
 use crate::event::ShellEvent;
@@ -111,6 +112,7 @@ mod tests {
     use super::ShellRuntime;
     use crate::error::ShellError;
     use crate::event::ShellEvent;
+    use crate::event_bus::EventBus;
     use crate::session::SessionState;
     use crate::state::ShellState;
 
