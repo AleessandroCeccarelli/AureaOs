@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -7,6 +6,8 @@
 //! Wayland server lifecycle and client dispatch.
 
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
 use std::time::Duration;
 
 use smithay::{
@@ -32,7 +33,7 @@ pub struct AureaClientState {
 impl ClientData for AureaClientState {
     fn initialized(&self, _client_id: ClientId) {}
 
-    fn disconnected(&self, _client_id: ClientId, _reason: DisconnectReason) {}
+    fn disconnected(&self, _client_id: &ClientId, _reason: DisconnectReason) {}
 }
 
 impl CompositorHandler for AureaCompositor {
@@ -80,17 +81,14 @@ impl WaylandServer {
     }
 
     /// Runs the server until shutdown is requested.
-pub fn run(
-    &mut self,
-    shutdown: &std::sync::atomic::AtomicBool,
-) -> std::io::Result<()> {
-    while !shutdown.load(std::sync::atomic::Ordering::Relaxed) {
-        self.dispatch()?;
-        std::thread::sleep(Duration::from_millis(10));
-    }
+    pub fn run(&mut self, shutdown: &AtomicBool) -> std::io::Result<()> {
+        while !shutdown.load(Ordering::Relaxed) {
+            self.dispatch()?;
+            thread::sleep(Duration::from_millis(10));
+        }
 
-    Ok(())
-}
+        Ok(())
+    }
 
     /// Accepts pending clients and dispatches their protocol requests.
     pub fn dispatch(&mut self) -> std::io::Result<()> {
