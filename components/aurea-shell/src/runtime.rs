@@ -6,12 +6,12 @@
 // Shell runtime management.
 
 use std::sync::mpsc::Receiver;
-
 use crate::dispatcher::{self, RuntimeCommand};
 use crate::error::ShellError;
 use crate::event::ShellEvent;
 use crate::session::{DesktopSession, SessionState};
 use crate::state::{ShellLifecycle, ShellState};
+use crate::event_bus::EventBus;
 
 /// Owns the runtime and desktop session lifecycles.
 pub struct ShellRuntime {
@@ -222,11 +222,11 @@ mod tests {
 
     #[test]
     fn runtime_event_loop_stops_on_shutdown_event() {
-        let (sender, receiver) = mpsc::channel();
+        let (event_bus, receiver) = EventBus::new();
         let mut runtime = ShellRuntime::new();
 
         runtime.start().unwrap();
-        sender.send(ShellEvent::ShutdownRequested).unwrap();
+        event_bus.publish(ShellEvent::ShutdownRequested).unwrap();
 
         runtime.run_event_loop(receiver).unwrap();
 
