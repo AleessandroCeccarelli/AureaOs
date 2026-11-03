@@ -5,20 +5,30 @@
 
 //! Wayland server lifecycle and client dispatch.
 
+use std::io;
+use std::os::fd::AsFd;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::thread;
 use std::time::Duration;
 
 use smithay::{
     delegate_compositor,
-    reexports::wayland_server::{
-        backend::{ClientData, ClientId, DisconnectReason},
-        protocol::wl_surface::WlSurface,
-        Client, Display, ListeningSocket,
+    reexports::{
+        calloop::{
+            EventLoop, Interest, Mode,
+            generic::Generic,
+        },
+        wayland_server::{
+            backend::{ClientData, ClientId, DisconnectReason},
+            protocol::wl_surface::WlSurface,
+            Client, Display,
+        },
     },
-    wayland::compositor::{
-        CompositorClientState, CompositorHandler, CompositorState,
+    wayland::{
+        compositor::{
+            CompositorClientState, CompositorHandler, CompositorState,
+        },
+        socket::ListeningSocketSource,
     },
 };
 
@@ -33,7 +43,7 @@ pub struct AureaClientState {
 impl ClientData for AureaClientState {
     fn initialized(&self, _client_id: ClientId) {}
 
-    fn disconnected(&self, _client_id: &ClientId, _reason: DisconnectReason) {}
+    fn disconnected(&self, _client_id: ClientId, _reason: DisconnectReason) {}
 }
 
 impl CompositorHandler for AureaCompositor {
@@ -56,51 +66,103 @@ impl CompositorHandler for AureaCompositor {
 
 delegate_compositor!(AureaCompositor);
 
-/// Owns the Wayland display, listening socket, and connected clients.
-pub struct WaylandServer {
+/// State accessed by Calloop event callbacks.
+struct WaylandState {
     display: Display<AureaCompositor>,
     compositor: AureaCompositor,
-    listener: ListeningSocket,
     clients: Vec<Client>,
+    error: Option<io::Error>,
+}
+
+/// Owns the Wayland display and its Calloop event loop.
+pub struct WaylandServer {
+    event_loop: EventLoop<WaylandState>,
+    state: WaylandState,
 }
 
 impl WaylandServer {
     /// Creates a server bound to the requested Wayland socket name.
-    pub fn new(socket_name: &str) -> std::io::Result<Self> {
+    pub fn new(socket_name: &str) -> io::Result<Self> {
+        let mut event_loop = EventLoop::<WaylandState>::try_new()
+            .map_err(io::Error::other)?;
+
         let mut display = Display::<AureaCompositor>::new()?;
         let display_handle = display.handle();
         let compositor = AureaCompositor::new(&display_handle);
-        let listener = ListeningSocket::bind(socket_name)?;
 
-        Ok(Self {
+        let mut state = WaylandState {
             display,
             compositor,
-            listener,
             clients: Vec::new(),
-        })
+            error: None,
+        };
+
+        let loop_handle = event_loop.handle();
+
+        // Accept new Wayland clients when the listening socket becomes readable.
+        let listening_socket = ListeningSocketSource::with_name(socket_name)
+            .map_err(io::Error::other)?;
+
+        loop_handle
+            .insert_source(listening_socket, |stream, _, state| {
+                match state
+                    .display
+                    .handle()
+                    .insert_client(stream, Arc::new(AureaClientState::default()))
+                {
+                    Ok(client) => state.clients.push(client),
+                    Err(error) => {
+                        state.error = Some(io::Error::other(error));
+                    }
+                }
+            })
+            .map_err(io::Error::other)?;
+
+        // Monitor the Wayland display fd for incoming client requests.
+        let display_fd = state
+            .display
+            .backend()
+            .poll_fd()
+            .as_fd()
+            .try_clone_to_owned()?;
+
+        let stop_handle = loop_handle.clone();
+
+        loop_handle
+            .insert_source(
+                Generic::new(display_fd, Interest::READ, Mode::Level),
+                move |_, _, state| {
+                    if let Err(error) =
+                        state.display.dispatch_clients(&mut state.compositor)
+                    {
+                        state.error = Some(io::Error::other(error));
+                        stop_handle.stop();
+                        return;
+                    }
+
+                    if let Err(error) = state.display.flush_clients() {
+                        state.error = Some(io::Error::other(error));
+                        stop_handle.stop();
+                    }
+                },
+            )
+            .map_err(io::Error::other)?;
+
+        Ok(Self { event_loop, state })
     }
 
     /// Runs the server until shutdown is requested.
-    pub fn run(&mut self, shutdown: &AtomicBool) -> std::io::Result<()> {
-        while !shutdown.load(Ordering::Relaxed) {
-            self.dispatch()?;
-            thread::sleep(Duration::from_millis(10));
+    pub fn run(&mut self, shutdown: &AtomicBool) -> io::Result<()> {
+        while !shutdown.load(Ordering::Acquire) {
+            self.event_loop
+                .dispatch(Duration::from_millis(100), &mut self.state)
+                .map_err(io::Error::other)?;
+
+            if let Some(error) = self.state.error.take() {
+                return Err(error);
+            }
         }
 
         Ok(())
-    }
-
-    /// Accepts pending clients and dispatches their protocol requests.
-    pub fn dispatch(&mut self) -> std::io::Result<()> {
-        while let Some(stream) = self.listener.accept()? {
-            let client = self
-                .display
-                .handle()
-                .insert_client(stream, Arc::new(AureaClientState::default()))?;
-            self.clients.push(client);
-        }
-
-        self.display.dispatch_clients(&mut self.compositor)?;
-        self.display.flush_clients()
     }
 }
