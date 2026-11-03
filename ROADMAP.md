@@ -2,41 +2,47 @@
 
 This roadmap records current work and intended next steps. It is a working plan, not a delivery schedule. AureaOS targets Debian GNU/Linux 13 (Trixie), `amd64` (x86-64); the first release is AureaOS Roma 1.0.
 
-## Current status
+# Current status
 
 ### Implemented in the repository
 
-- Project vision, contribution guidance, technical direction, and initial architecture documentation.
-- Debian package manifest files and `tools/build/bootstrap-debian.sh` for a minimal, terminal-only Debian root filesystem.
-- AureaOS visual design resources, including CSS color tokens, themes, icons, illustrations, and wallpapers.
+* Project vision, contribution guidance, technical direction, and initial architecture documentation.
+* Debian package manifests and a bootstrap script for a minimal, terminal-only Debian root filesystem.
+* AureaOS visual design resources, including tokens, themes, icons, illustrations, and wallpapers.
+* Initial Rust aurea-shell and aurea-compositor components.
+* Shell session lifecycle coordination and shutdown through an event bus.
+* Initial Smithay-based Wayland server, XDG shell handling, and basic toplevel tracking.
 
-These are repository artifacts. The bootstrap profile has not completed full package-resolution validation against Debian repositories, and it does not produce a bootable installation image. Design assets do not constitute a functioning desktop or application library.
+The shell and compositor are early prototypes, not a usable graphical desktop. Rendering, output management, input handling, and complete window management are not yet implemented.
 
-### In development / not yet complete
+The Debian bootstrap profile still needs package-resolution validation and does not produce a bootable installation image.
 
-- Validate the complete package profile and bootstrap process against Debian 13 Trixie repositories.
-- Define the system identity, service defaults, storage layout, boot configuration, and security policy.
-- Produce and validate a bootable test image, then document hardware support and limitations.
+## In development / not yet complete
 
-### Planned
+* Validate the complete package profile and bootstrap process against Debian 13 Trixie repositories.
+* Validate the shell/compositor workspace build and tests.
+* Define system identity, service defaults, storage layout, boot configuration, and security policy.
+* Produce and validate a bootable test image, then document hardware support and limitations.
 
-- GUI-first, Wayland-first Aurea Desktop and graphical installation experience.
-- Shared AureaOS Human Interfaces library and system integration. Design documentation and tokens exist; the reusable UI library is not implemented.
-- Core first-party system applications and tools listed as Roma 1.0 direction in the [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md).
-- Flatpak and Flathub as the planned application distribution path.
-- Complete the AureaOS system sound theme: generate original synthesized `.oga` event sounds with a local Python script on macOS or Linux, review them, and add the approved assets under `aurea-human-interfaces/resources/sounds/Aurea/stereo/`. The sound event specification and theme metadata are in place; audio generation remains pending.
-- Separate update channels for Debian base packages and AureaOS-specific system components. Flatpak application updates are a separate domain.
+## Planned
 
-The desktop UI, AureaOS applications, installer, and graphical system tools have not yet been implemented.
+* Complete the Wayland desktop foundation, including rendering, outputs, input, and window management.
+* GUI-first graphical installation experience.
+* Shared AureaOS Human Interfaces library and system integration.
+* Core first-party applications and tools listed in the Application and Component Catalog.
+* Flatpak and Flathub as the planned application distribution path.
+* Separate update channels for Debian base packages and AureaOS system components.
+* Complete and review the original AureaOS system sound theme.
 
 ## Development priorities
 
-1. Complete and validate the minimal Debian 13 `amd64` foundation.
-2. Define the system image, boot, installation, security, and update boundaries.
-3. Build and test a bootable development image and record its supported hardware.
-4. Develop the shared GUI foundation and Wayland desktop.
-5. Add first-party applications and system tools in coherent, testable increments.
-6. Set and verify release criteria for AureaOS Roma 1.0.
+1. Validate the shell/compositor workspace build and tests.
+2. Continue the compositor foundation: rendering backend, outputs, input, and surface lifecycle.
+3. Complete and validate the minimal Debian 13 amd64 foundation.
+4. Define image, boot, installation, security, and update boundaries.
+5. Build and test a bootable development image and record supported hardware.
+6. Develop the shared GUI foundation and first-party applications.
+7. Set and verify release criteria for AureaOS Roma 1.0.
 
 ## Application and component status
 
