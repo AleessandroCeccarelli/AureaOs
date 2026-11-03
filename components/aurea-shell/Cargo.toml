@@ -1,0 +1,8 @@
+[package]
+name = "aurea-shell"
+version = "0.1.0"
+edition = "2024"
+description = "Desktop shell for AureaOS"
+license = "GPL-3.0-or-later"
+
+[dependencies]
