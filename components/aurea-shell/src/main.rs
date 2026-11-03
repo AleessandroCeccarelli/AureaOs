@@ -7,6 +7,7 @@
 
 mod app;
 mod config;
+mod error;
 mod state;
 
 fn main() {
