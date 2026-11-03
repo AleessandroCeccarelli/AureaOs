@@ -1,5 +1,4 @@
-
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-only
 //
 // AureaOS — Aurea Shell
 // Copyright (C) 2026 Alessandro Ceccarelli
