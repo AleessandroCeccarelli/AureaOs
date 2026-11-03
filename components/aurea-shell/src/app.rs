@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS — Aurea Shell
@@ -8,6 +7,7 @@
 
 use crate::config::ShellConfig;
 use crate::error::ShellError;
+use crate::event::ShellEvent;
 use crate::runtime::ShellRuntime;
 
 /// Starts the Aurea Shell application.
@@ -18,7 +18,7 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
 
     println!("Starting {}...", config.name);
 
-    runtime.stop()?;
+    runtime.handle_event(ShellEvent::ShutdownRequested)?;
 
     Ok(())
 }
