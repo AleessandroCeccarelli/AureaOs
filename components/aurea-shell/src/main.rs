@@ -7,8 +7,6 @@
 
 mod app;
 mod config;
-mod app;
-mod config;
 mod state;
 
 fn main() {
