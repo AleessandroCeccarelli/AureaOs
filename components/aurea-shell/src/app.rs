@@ -8,15 +8,17 @@
 
 use crate::config::ShellConfig;
 use crate::error::ShellError;
-use crate::state::ShellLifecycle;
+use crate::runtime::ShellRuntime;
 
 /// Starts the Aurea Shell application.
 pub fn run(config: ShellConfig) -> Result<(), ShellError> {
-    let mut lifecycle = ShellLifecycle::new();
+    let mut runtime = ShellRuntime::new();
 
-    lifecycle.start()?;
+    runtime.start()?;
 
     println!("Starting {}...", config.name);
+
+    runtime.stop()?;
 
     Ok(())
 }
