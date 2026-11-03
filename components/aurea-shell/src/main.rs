@@ -11,6 +11,7 @@ mod error;
 mod event;
 mod runtime;
 mod session;
+mod dispatcher;
 mod state;
 
 fn main() {
