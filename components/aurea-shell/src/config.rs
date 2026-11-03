@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS — Aurea Shell
-// Copyright (C) 2026 AureaOS project contributors
+// Copyright (C) 2026 Alessandro Ceccarelli
 //
-// Default configuration for the AureaOS desktop shell.
+// Default configuration and unit tests for the AureaOS desktop shell.
 
 /// Basic configuration for the Aurea Shell.
 pub struct ShellConfig {
@@ -16,5 +16,17 @@ impl Default for ShellConfig {
         Self {
             name: "Aurea Shell",
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ShellConfig;
+
+    #[test]
+    fn default_config_has_expected_name() {
+        let config = ShellConfig::default();
+
+        assert_eq!(config.name, "Aurea Shell");
     }
 }
