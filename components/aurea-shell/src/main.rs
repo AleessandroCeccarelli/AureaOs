@@ -10,6 +10,7 @@ mod config;
 mod error;
 mod event;
 mod runtime;
+mod session;
 mod state;
 
 fn main() {
