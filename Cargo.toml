@@ -6,5 +6,6 @@
 [workspace]
 members = [
     "components/aurea-shell",
+    "components/aurea-compositor",
 ]
 resolver = "3"
