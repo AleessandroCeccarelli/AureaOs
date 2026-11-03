@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+
+ // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS — Aurea Shell
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -13,5 +14,7 @@ mod state;
 fn main() {
     let config = config::ShellConfig::default();
 
-    app::run(config);
+    if let Err(error) = app::run(config) {
+        eprintln!("Aurea Shell error: {error}");
+    }
 }
