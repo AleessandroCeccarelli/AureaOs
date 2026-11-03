@@ -28,10 +28,7 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
     let (event_bus, receiver) = EventBus::new();
 
     // Bind the Wayland socket before starting the shell lifecycle.
-    let server = WaylandServer::new("wayland-0")
-        .map_err(|_| ShellError::InitializationFailed(
-            "Failed to initialize Wayland compositor",
-        ))?;
+    let server = WaylandServer::new("wayland-0")?;
 
     runtime.start()?;
 
@@ -56,10 +53,8 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
     let server_bus = event_bus.clone();
 
     let server_thread = thread::spawn(move || {
-        let result = {
-            let mut server = server;
-            server.run(&server_shutdown)
-        };
+        let mut server = server;
+        let result = server.run(&server_shutdown);
 
         if result.is_err() {
             request_shutdown(&server_bus);
@@ -70,21 +65,20 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
 
     let runtime_result = runtime.run_event_loop(receiver);
 
-    shutdown.store(true, Ordering::Relaxed);
+    // Signal the compositor to exit regardless of runtime success.
+    shutdown.store(true, Ordering::Release);
 
-    let server_result = server_thread.join();
+    let server_result = match server_thread.join() {
+        Ok(result) => result.map_err(ShellError::Compositor),
+        Err(_) => Err(ShellError::CompositorThreadPanicked),
+    };
 
+    // Preserve the runtime error if it failed; otherwise report compositor
+    // termination errors.
     runtime_result?;
+    server_result?;
 
-    match server_result {
-        Ok(Ok(())) => Ok(()),
-        Ok(Err(_)) => Err(ShellError::InitializationFailed(
-            "Wayland compositor stopped unexpectedly",
-        )),
-        Err(_) => Err(ShellError::InitializationFailed(
-            "Wayland compositor thread panicked",
-        )),
-    }
+    Ok(())
 }
 
 #[cfg(test)]
