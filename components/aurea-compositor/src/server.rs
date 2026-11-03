@@ -7,6 +7,7 @@
 //! Wayland server lifecycle and client dispatch.
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use smithay::{
     delegate_compositor,
@@ -77,6 +78,19 @@ impl WaylandServer {
             clients: Vec::new(),
         })
     }
+
+    /// Runs the server until shutdown is requested.
+pub fn run(
+    &mut self,
+    shutdown: &std::sync::atomic::AtomicBool,
+) -> std::io::Result<()> {
+    while !shutdown.load(std::sync::atomic::Ordering::Relaxed) {
+        self.dispatch()?;
+        std::thread::sleep(Duration::from_millis(10));
+    }
+
+    Ok(())
+}
 
     /// Accepts pending clients and dispatches their protocol requests.
     pub fn dispatch(&mut self) -> std::io::Result<()> {
