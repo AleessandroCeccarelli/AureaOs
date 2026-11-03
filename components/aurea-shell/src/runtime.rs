@@ -11,6 +11,7 @@ use crate::error::ShellError;
 use crate::event::ShellEvent;
 use crate::session::{DesktopSession, SessionState};
 use crate::state::{ShellLifecycle, ShellState};
+use crate::dispatcher::{self, RuntimeCommand};
 
 /// Owns the runtime and desktop session lifecycles.
 pub struct ShellRuntime {
@@ -48,12 +49,12 @@ impl ShellRuntime {
         Ok(())
     }
 
-        /// Handles an event received by the runtime.
+            /// Dispatches an event and executes the resulting runtime command.
     pub fn handle_event(&mut self, event: ShellEvent) -> Result<(), ShellError> {
-        match event {
-            ShellEvent::LockRequested => self.session.lock(),
-            ShellEvent::UnlockRequested => self.session.unlock(),
-            ShellEvent::ShutdownRequested => self.stop(),
+        match dispatcher::dispatch(event) {
+            RuntimeCommand::LockSession => self.session.lock(),
+            RuntimeCommand::UnlockSession => self.session.unlock(),
+            RuntimeCommand::Shutdown => self.stop(),
         }
     }
 
