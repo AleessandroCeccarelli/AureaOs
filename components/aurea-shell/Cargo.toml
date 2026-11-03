@@ -1,6 +1,6 @@
-# SPDX-License-Identifier: GPL-3.0-later
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# AureaOS
+# AureaOS — Aurea Shell
 # Copyright (C) 2026 Alessandro Ceccarelli
 
 [package]
@@ -8,7 +8,8 @@ name = "aurea-shell"
 version = "0.1.0"
 edition = "2024"
 description = "Desktop shell for AureaOS"
-license = "GPL-3.0-only"
+license = "GPL-3.0-or-later"
 
 [dependencies]
 ctrlc = "3"
+aurea-compositor = { path = "../aurea-compositor" }
