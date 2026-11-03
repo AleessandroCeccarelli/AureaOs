@@ -176,4 +176,15 @@ mod tests {
         assert_eq!(runtime.state(), ShellState::Created);
         assert_eq!(runtime.session_state(), SessionState::Starting);
     }
+
+        #[test]
+    fn runtime_rejects_starting_twice() {
+        let mut runtime = ShellRuntime::new();
+
+        runtime.start().unwrap();
+
+        assert!(runtime.start().is_err());
+        assert_eq!(runtime.state(), ShellState::Running);
+        assert_eq!(runtime.session_state(), SessionState::Active);
+    }
 }
