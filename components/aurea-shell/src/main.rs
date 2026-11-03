@@ -7,6 +7,9 @@
 
 mod app;
 mod config;
+mod app;
+mod config;
+mod state;
 
 fn main() {
     let config = config::ShellConfig::default();
