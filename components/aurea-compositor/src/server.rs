@@ -26,8 +26,9 @@ use smithay::{
     },
     wayland::{
         compositor::{
-            CompositorClientState, CompositorHandler, CompositorState,
-        },
+    BufferAssignment, CompositorClientState, CompositorHandler,
+    CompositorState, SurfaceAttributes, with_states,
+},
         socket::ListeningSocketSource,
     },
 };
@@ -46,10 +47,24 @@ impl ClientData for AureaClientState {
     fn disconnected(&self, _client_id: ClientId, _reason: DisconnectReason) {}
 }
 
-impl CompositorHandler for AureaCompositor {
-    fn compositor_state(&mut self) -> &mut CompositorState {
-        self.compositor_state()
-    }
+fn commit(&mut self, surface: &WlSurface) {
+    let mapped = with_states(surface, |states| {
+        let current = states
+            .cached_state
+            .get::<SurfaceAttributes>()
+            .current();
+
+        match current.buffer.as_ref() {
+            Some(BufferAssignment::NewBuffer(_)) => Some(true),
+            Some(BufferAssignment::Removed) => Some(false),
+            None => None,
+        }
+    });
+
+    self
+        .window_manager()
+        .update_surface_buffer(surface, mapped);
+}
 
     fn client_compositor_state<'a>(
         &self,
