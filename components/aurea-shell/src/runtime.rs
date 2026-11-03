@@ -275,17 +275,16 @@ mod tests {
         assert_eq!(runtime.session_state(), SessionState::Starting);
     }
 
-    #[test]
+        #[test]
     fn runtime_start_error_is_lifecycle_transition_error() {
         let mut runtime = ShellRuntime::new();
 
         runtime.start().unwrap();
 
-        assert_eq!(
+        assert!(matches!(
             runtime.start(),
             Err(ShellError::InvalidLifecycleTransition(
                 "Shell can only start from the Created state"
             ))
-        );
+        ));
     }
-}
