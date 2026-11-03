@@ -9,10 +9,8 @@
 //! This crate contains the compositor implementation built on Smithay.
 
 pub mod compositor;
+pub mod server;
+mod xdg_shell;
 
 pub use compositor::AureaCompositor;
-
-pub mod server;
-
 pub use server::WaylandServer;
-
