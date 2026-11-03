@@ -11,3 +11,4 @@ description = "Desktop shell for AureaOS"
 license = "GPL-3.0-only"
 
 [dependencies]
+ctrlc = "3"
