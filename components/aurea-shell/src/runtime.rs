@@ -7,11 +7,11 @@
 
 use std::sync::mpsc::Receiver;
 
+use crate::dispatcher::{self, RuntimeCommand};
 use crate::error::ShellError;
 use crate::event::ShellEvent;
 use crate::session::{DesktopSession, SessionState};
 use crate::state::{ShellLifecycle, ShellState};
-use crate::dispatcher::{self, RuntimeCommand};
 
 /// Owns the runtime and desktop session lifecycles.
 pub struct ShellRuntime {
@@ -28,12 +28,13 @@ impl ShellRuntime {
         }
     }
 
-        /// Starts the runtime and activates the desktop session.
+    /// Starts the runtime and activates the desktop session.
+    ///
+    /// If session activation fails, the runtime lifecycle is rolled back.
     pub fn start(&mut self) -> Result<(), ShellError> {
         self.lifecycle.start()?;
 
         if let Err(error) = self.session.activate() {
-            // Roll back the runtime lifecycle if session activation fails.
             self.lifecycle.stop()?;
             return Err(error);
         }
@@ -56,7 +57,7 @@ impl ShellRuntime {
         Ok(())
     }
 
-            /// Dispatches an event and executes the resulting runtime command.
+    /// Dispatches an event and executes the resulting runtime command.
     pub fn handle_event(&mut self, event: ShellEvent) -> Result<(), ShellError> {
         match dispatcher::dispatch(event) {
             RuntimeCommand::LockSession => self.session.lock(),
@@ -67,14 +68,20 @@ impl ShellRuntime {
 
     /// Stops the desktop session and then the runtime.
     pub fn stop(&mut self) -> Result<(), ShellError> {
-        if self.session.state() == SessionState::Active
-            || self.session.state() == SessionState::Locked
-        {
-            self.session.stop()?;
-        }
-
-        if self.session.state() == SessionState::Stopping {
-            self.session.finish_stop()?;
+        match self.session.state() {
+            SessionState::Active | SessionState::Locked => {
+                self.session.stop()?;
+                self.session.finish_stop()?;
+            }
+            SessionState::Stopping => {
+                self.session.finish_stop()?;
+            }
+            SessionState::Stopped => {}
+            SessionState::Starting => {
+                return Err(ShellError::InvalidLifecycleTransition(
+                    "Session cannot stop before activation",
+                ));
+            }
         }
 
         self.lifecycle.stop()
@@ -133,8 +140,8 @@ mod tests {
         assert_eq!(runtime.state(), ShellState::Stopped);
         assert_eq!(runtime.session_state(), SessionState::Stopped);
     }
-    
-        #[test]
+
+    #[test]
     fn runtime_handles_lock_and_unlock_events() {
         let mut runtime = ShellRuntime::new();
 
