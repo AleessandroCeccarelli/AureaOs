@@ -10,7 +10,11 @@ AureaOS is a Linux distribution project built on Debian GNU/Linux 13 (Trixie) fo
 
 ## Project status
 
-The repository contains an early Debian bootstrap script, package manifests, and design resources. The script creates a minimal, terminal-only Debian root filesystem; this is a development artifact, not an installable AureaOS image. The desktop UI, AureaOS applications, installer, and graphical system tools are planned and have not yet been implemented. Package resolution for the full profile and a bootable image still need validation.
+AureaOS is in an early prototype stage. The repository includes a minimal Debian bootstrap, package manifests, design resources, and initial Rust components for the desktop session.
+
+The current prototype separates aurea-shell and aurea-compositor. The shell coordinates session lifecycle and shutdown through an event bus and starts the compositor as a local component. The compositor uses Smithay and has an initial Wayland server, XDG shell handling, and basic toplevel tracking.
+
+This is not yet a usable graphical desktop. The compositor does not yet provide a complete rendering backend, display/output management, input handling, or full window management. The Debian bootstrap creates a minimal terminal-only root filesystem; it is a development artifact, not an installable or bootable AureaOS image. Package resolution and the full bootstrap profile still need validation.
 
 Visual tokens, themes, icons, illustrations, and wallpapers are present as design assets. Their presence does not mean a working desktop or shared application library exists.
 
