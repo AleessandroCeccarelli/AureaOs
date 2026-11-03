@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS — Aurea Shell
@@ -7,6 +6,7 @@
 // Shell runtime management.
 
 use crate::error::ShellError;
+use crate::event::ShellEvent;
 use crate::state::{ShellLifecycle, ShellState};
 
 /// Owns the runtime lifecycle of the shell.
@@ -25,6 +25,13 @@ impl ShellRuntime {
     /// Starts the runtime.
     pub fn start(&mut self) -> Result<(), ShellError> {
         self.lifecycle.start()
+    }
+
+    /// Handles an event received by the runtime.
+    pub fn handle_event(&mut self, event: ShellEvent) -> Result<(), ShellError> {
+        match event {
+            ShellEvent::ShutdownRequested => self.stop(),
+        }
     }
 
     /// Stops the runtime.
@@ -47,10 +54,11 @@ impl Default for ShellRuntime {
 #[cfg(test)]
 mod tests {
     use super::ShellRuntime;
+    use crate::event::ShellEvent;
     use crate::state::ShellState;
 
     #[test]
-    fn runtime_starts_and_stops() {
+    fn runtime_starts_and_stops_on_shutdown_event() {
         let mut runtime = ShellRuntime::new();
 
         assert_eq!(runtime.state(), ShellState::Created);
@@ -58,7 +66,10 @@ mod tests {
         runtime.start().unwrap();
         assert_eq!(runtime.state(), ShellState::Running);
 
-        runtime.stop().unwrap();
+        runtime
+            .handle_event(ShellEvent::ShutdownRequested)
+            .unwrap();
+
         assert_eq!(runtime.state(), ShellState::Stopped);
     }
 }
