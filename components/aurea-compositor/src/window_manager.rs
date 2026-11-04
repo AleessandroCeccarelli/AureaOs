@@ -79,7 +79,7 @@ impl WindowManager {
             .count()
     }
 
-        /// Returns the alive, mapped toplevels for rendering.
+    /// Returns the alive, mapped toplevels for rendering.
     pub fn mapped_toplevels(&self) -> impl Iterator<Item = &ToplevelSurface> {
         self.toplevels
             .iter()
