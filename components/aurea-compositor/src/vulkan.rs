@@ -32,6 +32,26 @@ impl fmt::Display for VulkanInitError {
 
 impl Error for VulkanInitError {}
 
+/// General category of a Vulkan physical device.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VulkanDeviceType {
+    Integrated,
+    Discrete,
+    Virtual,
+    Cpu,
+    Other,
+}
+
+/// Preference used when selecting a physical device.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GpuPreference {
+    /// Prefer integrated graphics for lower power consumption.
+    PowerSaving,
+
+    /// Prefer discrete graphics for higher performance.
+    Performance,
+}
+
 /// Summary of a Vulkan physical device.
 #[derive(Debug, Clone)]
 pub struct VulkanDeviceInfo {
@@ -43,6 +63,9 @@ pub struct VulkanDeviceInfo {
 
     /// Driver information reported by Smithay.
     pub driver: String,
+
+    /// General device category.
+    pub device_type: VulkanDeviceType,
 }
 
 /// Holds the Vulkan instance and discovered physical devices.
@@ -91,6 +114,13 @@ impl VulkanContext {
                 name: device.name().to_owned(),
                 api_version: format!("{:?}", device.api_version()),
                 driver: format!("{:?}", device.driver()),
+                device_type: match format!("{:?}", device.ty()).as_str() {
+                    "INTEGRATED_GPU" => VulkanDeviceType::Integrated,
+                    "DISCRETE_GPU" => VulkanDeviceType::Discrete,
+                    "VIRTUAL_GPU" => VulkanDeviceType::Virtual,
+                    "CPU" => VulkanDeviceType::Cpu,
+                    _ => VulkanDeviceType::Other,
+                },
             })
             .collect()
     }
@@ -103,5 +133,22 @@ impl VulkanContext {
     /// Returns whether at least one physical device was discovered.
     pub fn has_devices(&self) -> bool {
         !self.physical_devices.is_empty()
+    }
+
+    /// Selects a device according to the requested preference.
+    ///
+    /// This is an initial policy only. Display compatibility, queue
+    /// capabilities and power-management state must also be considered
+    /// before the compositor uses the selected device.
+    pub fn select_device(&self, preference: GpuPreference) -> Option<&PhysicalDevice> {
+        let preferred_type = match preference {
+            GpuPreference::PowerSaving => "INTEGRATED_GPU",
+            GpuPreference::Performance => "DISCRETE_GPU",
+        };
+
+        self.physical_devices
+            .iter()
+            .find(|device| format!("{:?}", device.ty()) == preferred_type)
+            .or_else(|| self.physical_devices.first())
     }
 }
