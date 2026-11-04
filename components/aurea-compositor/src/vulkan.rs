@@ -32,7 +32,20 @@ impl fmt::Display for VulkanInitError {
 
 impl Error for VulkanInitError {}
 
-/// Holds the Vulkan instance and the physical devices discovered on the system.
+/// Summary of a Vulkan physical device.
+#[derive(Debug, Clone)]
+pub struct VulkanDeviceInfo {
+    /// Device name reported by the Vulkan implementation.
+    pub name: String,
+
+    /// Vulkan API version supported by the device.
+    pub api_version: String,
+
+    /// Driver information reported by Smithay.
+    pub driver: String,
+}
+
+/// Holds the Vulkan instance and discovered physical devices.
 pub struct VulkanContext {
     instance: Instance,
     physical_devices: Vec<PhysicalDevice>,
@@ -68,6 +81,18 @@ impl VulkanContext {
     /// Returns the discovered physical devices.
     pub fn physical_devices(&self) -> &[PhysicalDevice] {
         &self.physical_devices
+    }
+
+    /// Returns summaries of all discovered physical devices.
+    pub fn device_info(&self) -> Vec<VulkanDeviceInfo> {
+        self.physical_devices
+            .iter()
+            .map(|device| VulkanDeviceInfo {
+                name: device.name().to_owned(),
+                api_version: format!("{:?}", device.api_version()),
+                driver: format!("{:?}", device.driver()),
+            })
+            .collect()
     }
 
     /// Returns the number of discovered physical devices.
