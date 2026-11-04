@@ -2,14 +2,15 @@
 #
 # AureaOS
 # Copyright (C) 2026 Alessandro Ceccarelli
-
 [package]
 name = "aurea-compositor"
 version = "0.1.0"
 edition = "2024"
 description = "Wayland compositor for AureaOS"
 license = "GPL-3.0-only"
-
+[features]
+default = []
+vulkan = ["smithay/backend_vulkan"]
 [dependencies]
 smithay = {
     version = "0.7",
