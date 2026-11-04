@@ -9,6 +9,7 @@ mod context;
 mod logical_device;
 mod physical_device;
 mod queue;
+mod backend;
 
 use std::error::Error;
 use std::fmt;
@@ -39,3 +40,4 @@ pub use context::VulkanContext;
 pub use logical_device::VulkanLogicalDevice;
 pub use physical_device::{VulkanDeviceInfo, VulkanDeviceType};
 pub use queue::VulkanQueueFamilyInfo;
+pub use backend::VulkanBackend;
