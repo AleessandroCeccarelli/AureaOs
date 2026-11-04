@@ -10,6 +10,8 @@ use std::fmt;
 
 use smithay::backend::vulkan::{version::Version, Instance, PhysicalDevice};
 
+use crate::renderer::RenderPreference;
+
 /// Error returned while initializing Vulkan.
 #[derive(Debug)]
 pub struct VulkanInitError {
@@ -40,16 +42,6 @@ pub enum VulkanDeviceType {
     Virtual,
     Cpu,
     Other,
-}
-
-/// Preference used when selecting a physical device.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum GpuPreference {
-    /// Prefer integrated graphics for lower power consumption.
-    PowerSaving,
-
-    /// Prefer discrete graphics for higher performance.
-    Performance,
 }
 
 /// Summary of a Vulkan physical device.
@@ -114,13 +106,7 @@ impl VulkanContext {
                 name: device.name().to_owned(),
                 api_version: format!("{:?}", device.api_version()),
                 driver: format!("{:?}", device.driver()),
-                device_type: match format!("{:?}", device.ty()).as_str() {
-                    "INTEGRATED_GPU" => VulkanDeviceType::Integrated,
-                    "DISCRETE_GPU" => VulkanDeviceType::Discrete,
-                    "VIRTUAL_GPU" => VulkanDeviceType::Virtual,
-                    "CPU" => VulkanDeviceType::Cpu,
-                    _ => VulkanDeviceType::Other,
-                },
+                device_type: Self::classify_device(device),
             })
             .collect()
     }
@@ -135,20 +121,37 @@ impl VulkanContext {
         !self.physical_devices.is_empty()
     }
 
-    /// Selects a device according to the requested preference.
+    /// Selects a device according to the requested rendering preference.
     ///
-    /// This is an initial policy only. Display compatibility, queue
-    /// capabilities and power-management state must also be considered
-    /// before the compositor uses the selected device.
-    pub fn select_device(&self, preference: GpuPreference) -> Option<&PhysicalDevice> {
+    /// This is an initial preference-based policy. Display compatibility,
+    /// queue capabilities and power-management state must also be checked
+    /// before using the selected device.
+    pub fn select_device(
+        &self,
+        preference: RenderPreference,
+    ) -> Option<&PhysicalDevice> {
         let preferred_type = match preference {
-            GpuPreference::PowerSaving => "INTEGRATED_GPU",
-            GpuPreference::Performance => "DISCRETE_GPU",
+            RenderPreference::PowerSaving => VulkanDeviceType::Integrated,
+            RenderPreference::Performance => VulkanDeviceType::Discrete,
+            RenderPreference::Automatic => return self.physical_devices.first(),
         };
 
         self.physical_devices
             .iter()
-            .find(|device| format!("{:?}", device.ty()) == preferred_type)
+            .find(|device| Self::classify_device(device) == preferred_type)
             .or_else(|| self.physical_devices.first())
+    }
+
+    fn classify_device(device: &PhysicalDevice) -> VulkanDeviceType {
+        // Vulkan VkPhysicalDeviceType values:
+        // 0 = OTHER, 1 = INTEGRATED_GPU, 2 = DISCRETE_GPU,
+        // 3 = VIRTUAL_GPU, 4 = CPU.
+        match device.ty().as_raw() {
+            1 => VulkanDeviceType::Integrated,
+            2 => VulkanDeviceType::Discrete,
+            3 => VulkanDeviceType::Virtual,
+            4 => VulkanDeviceType::Cpu,
+            _ => VulkanDeviceType::Other,
+        }
     }
 }
