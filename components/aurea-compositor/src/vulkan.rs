@@ -1,16 +1,17 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+
+ // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Vulkan instance, physical-device discovery and queue-family inspection.
+//! Vulkan instance, physical-device discovery and logical-device setup.
 
 use std::error::Error;
 use std::fmt;
 
 use smithay::{
     backend::vulkan::{version::Version, Instance, PhysicalDevice},
-    reexports::ash::vk,
+    reexports::ash::{self, vk},
 };
 
 use crate::renderer::RenderPreference;
@@ -57,7 +58,7 @@ pub struct VulkanDeviceInfo {
     pub has_graphics_queue: bool,
 }
 
-/// Capabilities of a physical device queue family.
+/// Capabilities of a physical-device queue family.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VulkanQueueFamilyInfo {
     pub index: u32,
@@ -71,6 +72,72 @@ pub struct VulkanQueueFamilyInfo {
 pub struct VulkanContext {
     instance: Instance,
     physical_devices: Vec<PhysicalDevice>,
+}
+
+/// A logical Vulkan device and its graphics queue.
+pub struct VulkanLogicalDevice {
+    device: ash::Device,
+    graphics_queue: vk::Queue,
+    graphics_queue_family: u32,
+}
+
+impl VulkanLogicalDevice {
+    /// Creates a logical device with one graphics queue.
+    fn new(
+        physical_device: &PhysicalDevice,
+        queue_family_index: u32,
+    ) -> Result<Self, VulkanInitError> {
+        let priorities = [1.0_f32];
+        let queue_info = [vk::DeviceQueueCreateInfo::default()
+            .queue_family_index(queue_family_index)
+            .queue_priorities(&priorities)];
+
+        let create_info = vk::DeviceCreateInfo::default()
+            .queue_create_infos(&queue_info);
+
+        let device = unsafe {
+            physical_device
+                .instance()
+                .handle()
+                .create_device(physical_device.handle(), &create_info, None)
+        }
+        .map_err(|error| {
+            VulkanInitError::new(format!("Failed to create Vulkan logical device: {error}"))
+        })?;
+
+        let graphics_queue =
+            unsafe { device.get_device_queue(queue_family_index, 0) };
+
+        Ok(Self {
+            device,
+            graphics_queue,
+            graphics_queue_family: queue_family_index,
+        })
+    }
+
+    /// Returns the underlying Vulkan device handle.
+    pub fn handle(&self) -> &ash::Device {
+        &self.device
+    }
+
+    /// Returns the graphics queue handle.
+    pub fn graphics_queue(&self) -> vk::Queue {
+        self.graphics_queue
+    }
+
+    /// Returns the graphics queue-family index.
+    pub fn graphics_queue_family(&self) -> u32 {
+        self.graphics_queue_family
+    }
+}
+
+impl Drop for VulkanLogicalDevice {
+    fn drop(&mut self) {
+        unsafe {
+            let _ = self.device.device_wait_idle();
+            self.device.destroy_device(None);
+        }
+    }
 }
 
 impl VulkanContext {
@@ -114,9 +181,10 @@ impl VulkanContext {
                 api_version: format!("{:?}", device.api_version()),
                 driver: format!("{:?}", device.driver()),
                 device_type: Self::classify_device(device),
-                has_graphics_queue: self.queue_families(device)
+                has_graphics_queue: self
+                    .queue_families(device)
                     .iter()
-                    .any(|family| family.supports_graphics),
+                    .any(|family| family.supports_graphics && family.queue_count > 0),
             })
             .collect()
     }
@@ -144,20 +212,7 @@ impl VulkanContext {
             .collect()
     }
 
-    /// Returns the number of discovered physical devices.
-    pub fn device_count(&self) -> usize {
-        self.physical_devices.len()
-    }
-
-    /// Returns whether at least one physical device was discovered.
-    pub fn has_devices(&self) -> bool {
-        !self.physical_devices.is_empty()
-    }
-
-    /// Selects a graphics-capable device according to the requested preference.
-    ///
-    /// Presentation compatibility is not checked here because it depends on
-    /// the display surface, which is created by the window-system backend.
+    /// Selects a graphics-capable physical device according to the preference.
     pub fn select_device(
         &self,
         preference: RenderPreference,
@@ -170,31 +225,58 @@ impl VulkanContext {
 
         self.physical_devices
             .iter()
-            .filter(|device| {
-                self.queue_families(device)
-                    .iter()
-                    .any(|family| family.supports_graphics && family.queue_count > 0)
-            })
+            .filter(|device| self.graphics_queue_family(device).is_some())
             .find(|device| {
                 preferred_type
                     .map(|kind| Self::classify_device(device) == kind)
                     .unwrap_or(true)
             })
             .or_else(|| {
-                self.physical_devices.iter().find(|device| {
-                    self.queue_families(device)
-                        .iter()
-                        .any(|family| family.supports_graphics && family.queue_count > 0)
-                })
+                self.physical_devices
+                    .iter()
+                    .find(|device| self.graphics_queue_family(device).is_some())
             })
     }
 
+    /// Creates a logical device for the selected physical device.
+    pub fn create_logical_device(
+        &self,
+        preference: RenderPreference,
+    ) -> Result<VulkanLogicalDevice, VulkanInitError> {
+        let physical_device = self
+            .select_device(preference)
+            .ok_or_else(|| VulkanInitError::new("No graphics-capable Vulkan device found"))?;
+
+        let queue_family_index = self
+            .graphics_queue_family(physical_device)
+            .ok_or_else(|| VulkanInitError::new("Selected device has no graphics queue"))?;
+
+        VulkanLogicalDevice::new(physical_device, queue_family_index)
+    }
+
+    fn graphics_queue_family(&self, device: &PhysicalDevice) -> Option<u32> {
+        self.queue_families(device)
+            .into_iter()
+            .find(|family| family.supports_graphics && family.queue_count > 0)
+            .map(|family| family.index)
+    }
+
+    /// Returns the number of discovered physical devices.
+    pub fn device_count(&self) -> usize {
+        self.physical_devices.len()
+    }
+
+    /// Returns whether at least one physical device was discovered.
+    pub fn has_devices(&self) -> bool {
+        !self.physical_devices.is_empty()
+    }
+
     fn classify_device(device: &PhysicalDevice) -> VulkanDeviceType {
-        match device.ty().as_raw() {
-            1 => VulkanDeviceType::Integrated,
-            2 => VulkanDeviceType::Discrete,
-            3 => VulkanDeviceType::Virtual,
-            4 => VulkanDeviceType::Cpu,
+        match device.ty() {
+            vk::PhysicalDeviceType::INTEGRATED_GPU => VulkanDeviceType::Integrated,
+            vk::PhysicalDeviceType::DISCRETE_GPU => VulkanDeviceType::Discrete,
+            vk::PhysicalDeviceType::VIRTUAL_GPU => VulkanDeviceType::Virtual,
+            vk::PhysicalDeviceType::CPU => VulkanDeviceType::Cpu,
             _ => VulkanDeviceType::Other,
         }
     }
