@@ -9,16 +9,10 @@
 /target/
 **/target/
 
-Cargo.lock
-# Keep Cargo.lock for applications and workspaces when reproducible builds
-# are required. Uncomment the next line if the repository should track it.
-#!Cargo.lock
-
-# Rust compiler and analyzer artifacts
+# Rust compiler artifacts
 *.rs.bk
 *.rlib
 *.rmeta
-*.d
 *.profraw
 *.profdata
 
@@ -38,17 +32,18 @@ Cargo.lock
 .Module.symvers.cmd
 .modules.order.cmd
 
-# CMake / Make / Ninja
+# CMake
 /build/
 /cmake-build-*/
 /CMakeFiles/
 /CMakeCache.txt
-/Makefile
+
+# Ninja
 /ninja-build/
 .ninja_deps
 .ninja_log
 
-# Linux packages and images
+# Linux packages and disk images
 *.deb
 *.rpm
 *.AppImage
@@ -62,7 +57,7 @@ Cargo.lock
 *.vhdx
 
 # ----------------------------------------------------------------------
-# macOS / Xcode
+# macOS
 # ----------------------------------------------------------------------
 
 .DS_Store
@@ -70,7 +65,7 @@ Cargo.lock
 .LSOverride
 ._*
 
-# Xcode user data and build products
+# Xcode build products and user data
 DerivedData/
 *.xcuserstate
 *.xccheckout
@@ -81,22 +76,17 @@ DerivedData/
 *.dSYM.zip
 *.xcarchive/
 *.app/
-
-# Xcode project user-specific settings
 xcuserdata/
 *.xcuserdatad/
 *.mode1v3
 *.mode2v3
 *.perspectivev3
 *.pbxuser
-!default.pbxuser
-!*.xcuserdatad/
 
 # Swift Package Manager
 .build/
 .swiftpm/
 Packages/
-Package.resolved
 
 # ----------------------------------------------------------------------
 # IDEs and editors
@@ -111,7 +101,7 @@ Package.resolved
 *.bak
 
 # ----------------------------------------------------------------------
-# Logs, caches, temporary files
+# Logs, caches, and temporary files
 # ----------------------------------------------------------------------
 
 *.log
@@ -123,7 +113,7 @@ temp/
 tmp/
 
 # ----------------------------------------------------------------------
-# Test and coverage output
+# Tests and coverage
 # ----------------------------------------------------------------------
 
 /coverage/
@@ -159,6 +149,8 @@ tmp/
 .env
 .env.*
 !.env.example
+
+# Private keys and certificates
 *.pem
 *.key
 *.p12
