@@ -9,3 +9,4 @@ mod window_manager;
 mod xdg_shell;
 pub use compositor::AureaCompositor;
 pub use server::WaylandServer;
+pub mod render;
