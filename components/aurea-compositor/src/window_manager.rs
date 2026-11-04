@@ -78,4 +78,12 @@ impl WindowManager {
             .filter(|toplevel| toplevel.surface.alive() && toplevel.mapped)
             .count()
     }
+
+        /// Returns the alive, mapped toplevels for rendering.
+    pub fn mapped_toplevels(&self) -> impl Iterator<Item = &ToplevelSurface> {
+        self.toplevels
+            .iter()
+            .filter(|toplevel| toplevel.surface.alive() && toplevel.mapped)
+            .map(|toplevel| &toplevel.surface)
+    }
 }
