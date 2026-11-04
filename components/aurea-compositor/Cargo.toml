@@ -1,16 +1,31 @@
+
 # SPDX-License-Identifier: GPL-3.0-later
 #
 # AureaOS
 # Copyright (C) 2026 Alessandro Ceccarelli
+
 [package]
 name = "aurea-compositor"
 version = "0.1.0"
 edition = "2024"
 description = "Wayland compositor for AureaOS"
 license = "GPL-3.0-only"
+
 [features]
 default = []
+
+# Native Linux desktop backend: DRM/KMS, GBM, libinput, udev and libseat.
+drm = [
+    "smithay/backend_drm",
+    "smithay/backend_gbm",
+    "smithay/backend_libinput",
+    "smithay/backend_udev",
+    "smithay/backend_session_libseat",
+]
+
+# Vulkan remains an independent, opt-in rendering feature.
 vulkan = ["smithay/backend_vulkan"]
+
 [dependencies]
 smithay = {
     version = "0.7",
