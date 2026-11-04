@@ -13,6 +13,9 @@ mod xdg_shell;
 pub mod render;
 pub mod renderer;
 
+#[cfg(feature = "drm")]
+pub mod drm;
+
 #[cfg(feature = "vulkan")]
 pub mod vulkan;
 
