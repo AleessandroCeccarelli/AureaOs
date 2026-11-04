@@ -2,13 +2,20 @@
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
+
 //! Wayland compositor component for AureaOS.
+
 pub mod compositor;
 pub mod server;
 mod window_manager;
 mod xdg_shell;
-pub use compositor::AureaCompositor;
-pub use server::WaylandServer;
+
 pub mod render;
 pub mod renderer;
+
+#[cfg(feature = "vulkan")]
+pub mod vulkan;
+
+pub use compositor::AureaCompositor;
 pub use renderer::RenderBackend;
+pub use server::WaylandServer;
