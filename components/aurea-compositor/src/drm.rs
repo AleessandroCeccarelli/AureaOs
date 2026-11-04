@@ -38,22 +38,21 @@ impl Error for DrmSessionError {}
 /// Owns the libseat session and its event notifier.
 pub struct DrmSession {
     session: LibSeatSession,
-    notifier: LibSeatSessionNotifier,
+    notifier: Option<LibSeatSessionNotifier>,
 }
 
 impl DrmSession {
     /// Opens a session through libseat.
     pub fn new() -> Result<Self, DrmSessionError> {
-        let (session, notifier) = LibSeatSession::new()
-            .map_err(|error| {
-                DrmSessionError::new(format!(
-                    "Failed to open a libseat session: {error}"
-                ))
-            })?;
+        let (session, notifier) = LibSeatSession::new().map_err(|error| {
+            DrmSessionError::new(format!(
+                "Failed to open a libseat session: {error}"
+            ))
+        })?;
 
         Ok(Self {
             session,
-            notifier,
+            notifier: Some(notifier),
         })
     }
 
@@ -62,8 +61,14 @@ impl DrmSession {
         &self.session
     }
 
-    /// Returns the notifier used to receive session events.
-    pub fn notifier(&mut self) -> &mut LibSeatSessionNotifier {
-        &mut self.notifier
+    /// Transfers the notifier to the Calloop event loop.
+    ///
+    /// This can only be called once.
+    pub fn take_notifier(
+        &mut self,
+    ) -> Result<LibSeatSessionNotifier, DrmSessionError> {
+        self.notifier.take().ok_or_else(|| {
+            DrmSessionError::new("The libseat notifier was already transferred")
+        })
     }
 }
