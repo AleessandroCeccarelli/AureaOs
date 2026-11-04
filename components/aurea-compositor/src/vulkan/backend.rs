@@ -35,7 +35,7 @@ impl VulkanBackend {
             .ok_or_else(|| VulkanInitError::new("Selected device has no graphics queue"))?;
 
         let selected_device_info =
-            Self::selected_device_info(&context, physical_device);
+         Self::build_selected_device_info(&context, physical_device);
 
         let device =
             VulkanLogicalDevice::new(physical_device, queue_family_index)?;
@@ -62,10 +62,10 @@ impl VulkanBackend {
         &self.device
     }
 
-    fn selected_device_info(
-        context: &VulkanContext,
-        device: &PhysicalDevice,
-    ) -> VulkanDeviceInfo {
+    fn build_selected_device_info(
+    context: &VulkanContext,
+    device: &PhysicalDevice,
+) -> VulkanDeviceInfo {
         let has_graphics_queue = context
             .queue_families(device)
             .iter()
