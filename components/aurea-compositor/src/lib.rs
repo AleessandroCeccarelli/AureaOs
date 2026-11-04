@@ -17,5 +17,5 @@ pub mod renderer;
 pub mod vulkan;
 
 pub use compositor::AureaCompositor;
-pub use renderer::RenderBackend;
+pub use renderer::{RenderBackend, RenderPreference};
 pub use server::WaylandServer;
