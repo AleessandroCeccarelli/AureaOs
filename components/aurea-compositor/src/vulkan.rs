@@ -3,12 +3,15 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Vulkan instance and physical-device discovery.
+//! Vulkan instance, physical-device discovery and queue-family inspection.
 
 use std::error::Error;
 use std::fmt;
 
-use smithay::backend::vulkan::{version::Version, Instance, PhysicalDevice};
+use smithay::{
+    backend::vulkan::{version::Version, Instance, PhysicalDevice},
+    reexports::ash::vk,
+};
 
 use crate::renderer::RenderPreference;
 
@@ -47,17 +50,21 @@ pub enum VulkanDeviceType {
 /// Summary of a Vulkan physical device.
 #[derive(Debug, Clone)]
 pub struct VulkanDeviceInfo {
-    /// Device name reported by the Vulkan implementation.
     pub name: String,
-
-    /// Vulkan API version supported by the device.
     pub api_version: String,
-
-    /// Driver information reported by Smithay.
     pub driver: String,
-
-    /// General device category.
     pub device_type: VulkanDeviceType,
+    pub has_graphics_queue: bool,
+}
+
+/// Capabilities of a physical device queue family.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct VulkanQueueFamilyInfo {
+    pub index: u32,
+    pub queue_count: u32,
+    pub supports_graphics: bool,
+    pub supports_compute: bool,
+    pub supports_transfer: bool,
 }
 
 /// Holds the Vulkan instance and discovered physical devices.
@@ -107,6 +114,32 @@ impl VulkanContext {
                 api_version: format!("{:?}", device.api_version()),
                 driver: format!("{:?}", device.driver()),
                 device_type: Self::classify_device(device),
+                has_graphics_queue: self.queue_families(device)
+                    .iter()
+                    .any(|family| family.supports_graphics),
+            })
+            .collect()
+    }
+
+    /// Returns queue-family capabilities for a physical device.
+    pub fn queue_families(
+        &self,
+        device: &PhysicalDevice,
+    ) -> Vec<VulkanQueueFamilyInfo> {
+        let properties = device
+            .instance()
+            .handle()
+            .get_physical_device_queue_family_properties(device.handle());
+
+        properties
+            .iter()
+            .enumerate()
+            .map(|(index, family)| VulkanQueueFamilyInfo {
+                index: index as u32,
+                queue_count: family.queue_count,
+                supports_graphics: family.queue_flags.contains(vk::QueueFlags::GRAPHICS),
+                supports_compute: family.queue_flags.contains(vk::QueueFlags::COMPUTE),
+                supports_transfer: family.queue_flags.contains(vk::QueueFlags::TRANSFER),
             })
             .collect()
     }
@@ -121,31 +154,42 @@ impl VulkanContext {
         !self.physical_devices.is_empty()
     }
 
-    /// Selects a device according to the requested rendering preference.
+    /// Selects a graphics-capable device according to the requested preference.
     ///
-    /// This is an initial preference-based policy. Display compatibility,
-    /// queue capabilities and power-management state must also be checked
-    /// before using the selected device.
+    /// Presentation compatibility is not checked here because it depends on
+    /// the display surface, which is created by the window-system backend.
     pub fn select_device(
         &self,
         preference: RenderPreference,
     ) -> Option<&PhysicalDevice> {
         let preferred_type = match preference {
-            RenderPreference::PowerSaving => VulkanDeviceType::Integrated,
-            RenderPreference::Performance => VulkanDeviceType::Discrete,
-            RenderPreference::Automatic => return self.physical_devices.first(),
+            RenderPreference::PowerSaving => Some(VulkanDeviceType::Integrated),
+            RenderPreference::Performance => Some(VulkanDeviceType::Discrete),
+            RenderPreference::Automatic => None,
         };
 
         self.physical_devices
             .iter()
-            .find(|device| Self::classify_device(device) == preferred_type)
-            .or_else(|| self.physical_devices.first())
+            .filter(|device| {
+                self.queue_families(device)
+                    .iter()
+                    .any(|family| family.supports_graphics && family.queue_count > 0)
+            })
+            .find(|device| {
+                preferred_type
+                    .map(|kind| Self::classify_device(device) == kind)
+                    .unwrap_or(true)
+            })
+            .or_else(|| {
+                self.physical_devices.iter().find(|device| {
+                    self.queue_families(device)
+                        .iter()
+                        .any(|family| family.supports_graphics && family.queue_count > 0)
+                })
+            })
     }
 
     fn classify_device(device: &PhysicalDevice) -> VulkanDeviceType {
-        // Vulkan VkPhysicalDeviceType values:
-        // 0 = OTHER, 1 = INTEGRATED_GPU, 2 = DISCRETE_GPU,
-        // 3 = VIRTUAL_GPU, 4 = CPU.
         match device.ty().as_raw() {
             1 => VulkanDeviceType::Integrated,
             2 => VulkanDeviceType::Discrete,
