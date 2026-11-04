@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+
+ // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -34,20 +35,33 @@ pub struct VulkanDeviceInfo {
     pub has_graphics_queue: bool,
 }
 
+impl VulkanDeviceInfo {
+    pub(super) fn from_device(
+        device: &PhysicalDevice,
+        has_graphics_queue: bool,
+    ) -> Self {
+        Self {
+            name: device.name().to_owned(),
+            api_version: format!("{:?}", device.api_version()),
+            driver: format!("{:?}", device.driver()),
+            device_type: VulkanContext::classify_device(device),
+            has_graphics_queue,
+        }
+    }
+}
+
 impl VulkanContext {
     /// Returns summaries of all discovered physical devices.
     pub fn device_info(&self) -> Vec<VulkanDeviceInfo> {
         self.physical_devices
             .iter()
-            .map(|device| VulkanDeviceInfo {
-                name: device.name().to_owned(),
-                api_version: format!("{:?}", device.api_version()),
-                driver: format!("{:?}", device.driver()),
-                device_type: Self::classify_device(device),
-                has_graphics_queue: self
+            .map(|device| {
+                let has_graphics_queue = self
                     .queue_families(device)
                     .iter()
-                    .any(|family| family.supports_graphics && family.queue_count > 0),
+                    .any(|family| family.supports_graphics && family.queue_count > 0);
+
+                VulkanDeviceInfo::from_device(device, has_graphics_queue)
             })
             .collect()
     }
