@@ -1,4 +1,5 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+
+ // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -9,8 +10,6 @@ use smithay::{
     backend::vulkan::PhysicalDevice,
     reexports::ash::{self, vk},
 };
-
-use crate::renderer::RenderPreference;
 
 use super::{VulkanContext, VulkanInitError};
 
@@ -84,7 +83,7 @@ impl VulkanContext {
     /// Creates a logical device for the selected physical device.
     pub fn create_logical_device(
         &self,
-        preference: RenderPreference,
+        preference: crate::renderer::RenderPreference,
     ) -> Result<VulkanLogicalDevice, VulkanInitError> {
         let physical_device = self
             .select_device(preference)
