@@ -10,3 +10,5 @@ mod xdg_shell;
 pub use compositor::AureaCompositor;
 pub use server::WaylandServer;
 pub mod render;
+pub mod renderer;
+pub use renderer::RenderBackend;
