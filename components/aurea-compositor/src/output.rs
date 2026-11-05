@@ -2,6 +2,9 @@
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
+
+pub mod layout;
+
 //! Display output descriptions and registry.
 use std::collections::BTreeMap;
 /// Stable identifier for a display output.
