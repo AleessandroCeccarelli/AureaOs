@@ -1,9 +1,12 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+
+ // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 //! Converts DRM output descriptions into the compositor output model.
+
 use std::{error::Error, fmt};
+
 use crate::output::{
     layout::OutputPosition,
     manager::OutputManager,
@@ -11,6 +14,7 @@ use crate::output::{
     OutputId,
     OutputMode,
 };
+
 /// Describes a display mode reported by the DRM backend.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DrmModeInfo {
@@ -18,6 +22,7 @@ pub struct DrmModeInfo {
     height: u32,
     refresh_millihz: u32,
 }
+
 impl DrmModeInfo {
     /// Creates a display mode description.
     pub const fn new(
@@ -31,18 +36,22 @@ impl DrmModeInfo {
             refresh_millihz,
         }
     }
+
     /// Returns the mode width in pixels.
     pub const fn width(&self) -> u32 {
         self.width
     }
+
     /// Returns the mode height in pixels.
     pub const fn height(&self) -> u32 {
         self.height
     }
+
     /// Returns the refresh rate in millihertz.
     pub const fn refresh_millihz(&self) -> u32 {
         self.refresh_millihz
     }
+
     /// Converts the DRM mode into the compositor's output mode.
     pub fn to_output_mode(self) -> Option<OutputMode> {
         OutputMode::new(
@@ -52,6 +61,7 @@ impl DrmModeInfo {
         )
     }
 }
+
 /// Describes a physical display output discovered by DRM.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DrmOutputDescriptor {
@@ -61,6 +71,7 @@ pub struct DrmOutputDescriptor {
     current_mode: DrmModeInfo,
     scale: u32,
 }
+
 impl DrmOutputDescriptor {
     /// Creates a descriptor from DRM output information.
     pub fn new(
@@ -78,26 +89,32 @@ impl DrmOutputDescriptor {
             scale,
         }
     }
+
     /// Returns the output identifier.
     pub const fn id(&self) -> OutputId {
         self.id
     }
+
     /// Returns the output name.
     pub fn name(&self) -> &str {
         &self.name
     }
+
     /// Returns the supported display modes.
     pub fn modes(&self) -> &[DrmModeInfo] {
         &self.modes
     }
+
     /// Returns the current display mode.
     pub const fn current_mode(&self) -> DrmModeInfo {
         self.current_mode
     }
+
     /// Returns the output scale.
     pub const fn scale(&self) -> u32 {
         self.scale
     }
+
     /// Converts this descriptor into the compositor output model.
     pub fn into_display_output(
         self,
@@ -108,13 +125,22 @@ impl DrmOutputDescriptor {
             .map(DrmModeInfo::to_output_mode)
             .collect::<Option<Vec<_>>>()
             .ok_or(DrmOutputError::InvalidMode)?;
+
+        for index in 0..modes.len() {
+            if modes[..index].contains(&modes[index]) {
+                return Err(DrmOutputError::DuplicateMode);
+            }
+        }
+
         let current_mode = self
             .current_mode
             .to_output_mode()
             .ok_or(DrmOutputError::InvalidMode)?;
+
         if !modes.contains(&current_mode) {
             return Err(DrmOutputError::UnsupportedCurrentMode);
         }
+
         DisplayOutput::new(
             self.id,
             self.name,
@@ -125,19 +151,25 @@ impl DrmOutputDescriptor {
         .ok_or(DrmOutputError::InvalidOutput)
     }
 }
+
 /// Errors produced while converting or registering a DRM output.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DrmOutputError {
     InvalidMode,
+    DuplicateMode,
     UnsupportedCurrentMode,
     InvalidOutput,
     DuplicateOutputId,
 }
+
 impl fmt::Display for DrmOutputError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidMode => {
                 formatter.write_str("DRM reported an invalid display mode")
+            }
+            Self::DuplicateMode => {
+                formatter.write_str("DRM reported duplicate display modes")
             }
             Self::UnsupportedCurrentMode => {
                 formatter.write_str(
@@ -153,7 +185,9 @@ impl fmt::Display for DrmOutputError {
         }
     }
 }
+
 impl Error for DrmOutputError {}
+
 /// Converts and registers a DRM output with its logical position.
 pub fn register_output(
     manager: &mut OutputManager,
@@ -161,6 +195,7 @@ pub fn register_output(
     position: OutputPosition,
 ) -> Result<(), DrmOutputError> {
     let output = descriptor.into_display_output()?;
+
     manager
         .register(output, (position.x(), position.y()))
         .map_err(|_| DrmOutputError::DuplicateOutputId)
