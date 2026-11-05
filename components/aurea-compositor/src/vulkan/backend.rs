@@ -119,9 +119,9 @@
      pub fn record_empty_command_buffer(
          &self,
      ) -> Result<VulkanCommandBuffer<'_>, VulkanCommandError> {
-         let command_buffer =
-             VulkanCommandBuffer::new(&self.device)
-                 .map_err(VulkanCommandError)?;
+         let mut command_buffer =
+    VulkanCommandBuffer::new(&self.device)
+        .map_err(VulkanCommandError)?;
 
          command_buffer
              .begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
