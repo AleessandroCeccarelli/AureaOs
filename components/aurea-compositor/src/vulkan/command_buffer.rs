@@ -102,9 +102,12 @@ impl<'device> VulkanCommandBuffer<'device> {
     ) -> Result<(), vk::Result> {
         match self.state {
             CommandBufferState::Recording
-            | CommandBufferState::Pending
-            | CommandBufferState::Invalid => {
-                return Err(vk::Result::ERROR_VALIDATION_FAILED_EXT);
+| CommandBufferState::Pending => {
+    return Err(vk::Result::ERROR_VALIDATION_FAILED_EXT);
+}
+CommandBufferState::Initial
+| CommandBufferState::Executable
+| CommandBufferState::Invalid => {}
             }
             CommandBufferState::Initial
             | CommandBufferState::Executable => {}
