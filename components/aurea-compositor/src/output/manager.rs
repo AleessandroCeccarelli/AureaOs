@@ -91,7 +91,47 @@ impl OutputManager {
     pub fn iter(&self) -> impl Iterator<Item = &DisplayOutput> {
         self.registry.iter()
     }
-}
+
+        /// Changes the enabled state of a registered output.
+    pub fn set_enabled(
+        &mut self,
+        id: OutputId,
+        enabled: bool,
+    ) -> bool {
+        let Some(output) = self.registry.get_mut(id) else {
+            return false;
+        };
+
+        output.set_enabled(enabled);
+        true
+    }
+
+    /// Changes the current mode of a registered output.
+    pub fn set_mode(
+        &mut self,
+        id: OutputId,
+        mode: OutputMode,
+    ) -> bool {
+        let Some(output) = self.registry.get_mut(id) else {
+            return false;
+        };
+
+        output.set_mode(mode)
+    }
+
+    /// Changes the scale factor of a registered output.
+    pub fn set_scale(
+        &mut self,
+        id: OutputId,
+        scale: u32,
+    ) -> bool {
+        let Some(output) = self.registry.get_mut(id) else {
+            return false;
+        };
+
+        output.set_scale(scale)
+    }
+    
 
 #[cfg(test)]
 mod tests {
