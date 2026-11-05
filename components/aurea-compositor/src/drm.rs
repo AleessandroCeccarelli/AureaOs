@@ -73,3 +73,4 @@ impl DrmSession {
     }
 }
 pub mod device;
+pub mod output;
