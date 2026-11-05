@@ -1,0 +1,122 @@
+# SPDX-License-Identifier: GPL-3.0-only
+# AureaOS — repository-wide ignore rules
+
+# Rust / Cargo
+/target/
+**/target/
+*.rs.bk
+*.rlib
+*.rmeta
+*.d
+*.profraw
+*.profdata
+
+# Cargo.lock is intentionally tracked for reproducible builds.
+
+# Linux build artifacts
+*.o
+*.a
+*.so
+*.so.*
+*.ko
+*.mod
+*.mod.c
+*.symvers
+*.order
+.Module.symvers.cmd
+.modules.order.cmd
+
+# CMake / Make / Ninja
+/build/
+/cmake-build-*/
+/CMakeFiles/
+/CMakeCache.txt
+/ninja-build/
+.ninja_deps
+.ninja_log
+
+# Linux packages and disk images
+*.deb
+*.rpm
+*.AppImage
+*.iso
+*.img
+*.raw
+*.qcow2
+*.vdi
+*.vmdk
+*.vhd
+*.vhdx
+
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux desktop metadata
+.directory
+.Trash-*
+*~
+
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Other IDEs and editors
+.idea/
+*.swp
+*.swo
+*.tmp
+*.bak
+
+# Swift Package Manager (incidental files only)
+.build/
+.swiftpm/
+Packages/
+Package.resolved
+
+# Logs, caches, temporary files
+*.log
+*.trace
+*.cache
+.cache/
+.tmp/
+temp/
+tmp/
+
+# Test and coverage output
+/coverage/
+*.lcov
+*.gcda
+*.gcno
+*.prof
+
+# AureaOS generated artifacts
+/artifacts/
+/dist/
+/out/
+/output/
+/rootfs/
+/staging/
+/sysroot/
+/iso/
+/images/
+/packages/
+/generated/
+
+# Generated documentation
+/docs/_build/
+/site/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
