@@ -133,6 +133,11 @@ impl WaylandServer {
             .map_err(io::Error::other)?;
         }
 
+             // Publish registered outputs as Wayland globals.
+        state
+            .compositor
+            .publish_wayland_outputs(&display_handle);
+
         let loop_handle = event_loop.handle();
 
         // Register the listening socket and incoming client handling.
