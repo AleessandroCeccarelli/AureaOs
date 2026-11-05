@@ -5,6 +5,7 @@
 
 //! Display output descriptions and registry.
 pub mod layout;
+pub mod manager;
 use std::collections::BTreeMap;
 /// Stable identifier for a display output.
 pub type OutputId = u64;
