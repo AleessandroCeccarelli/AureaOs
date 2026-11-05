@@ -1,5 +1,4 @@
-
- // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -9,11 +8,11 @@
 use std::{error::Error, fmt};
 
 use crate::output::{
+    layout::OutputPosition,
+    manager::OutputManager,
     DisplayOutput,
     OutputId,
     OutputMode,
-    manager::OutputManager,
-    layout::OutputPosition,
 };
 
 /// Describes a display mode reported by the DRM backend.
@@ -147,9 +146,7 @@ pub fn register_output(
 ) -> Result<(), DrmOutputError> {
     let output = descriptor.into_display_output()?;
 
-    if manager.register(output, position) {
-        Ok(())
-    } else {
-        Err(DrmOutputError::DuplicateOutputId)
-    }
+    manager
+        .register(output, (position.x(), position.y()))
+        .map_err(|_| DrmOutputError::DuplicateOutputId)
 }
