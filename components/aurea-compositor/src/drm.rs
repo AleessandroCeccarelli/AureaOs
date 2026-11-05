@@ -75,3 +75,4 @@ impl DrmSession {
 pub mod device;
 pub mod output;
 pub mod discovery;
+pub mod outputs;
