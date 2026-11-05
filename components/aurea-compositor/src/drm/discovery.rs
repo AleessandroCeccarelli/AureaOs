@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+
+ // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
-
 //! Discovers connected DRM connectors and converts them into output descriptors.
 
 use std::{error::Error, fmt};
@@ -64,9 +64,9 @@ impl Error for DrmDiscoveryError {}
 /// `first_output_id` is the ID assigned to the first connected output.
 /// Subsequent IDs are assigned in the order returned by DRM.
 ///
-/// Connectors that are disconnected or report no display modes are skipped.
-/// The selected initial mode is the preferred mode, or the first reported
-/// mode when no preferred mode is available.
+/// Disconnected connectors and connectors without display modes are skipped.
+/// The selected initial mode is the preferred mode, or the first valid mode
+/// when no preferred mode is available.
 pub fn discover_connected_outputs(
     device: &DrmDevice,
     first_output_id: OutputId,
@@ -110,7 +110,7 @@ pub fn discover_connected_outputs(
                 DrmModeInfo::new(
                     u32::from(width),
                     u32::from(height),
-                    mode.vrefresh().saturating_mul(1_000),
+                    u32::from(mode.vrefresh()).saturating_mul(1_000),
                 )
             })
             .collect::<Vec<_>>();
@@ -128,8 +128,7 @@ pub fn discover_connected_outputs(
         let current_mode = DrmModeInfo::new(
             u32::from(current_width),
             u32::from(current_height),
-            drm_modes[preferred_index]
-                .vrefresh()
+            u32::from(drm_modes[preferred_index].vrefresh())
                 .saturating_mul(1_000),
         );
 
