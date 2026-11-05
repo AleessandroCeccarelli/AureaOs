@@ -3,9 +3,8 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-pub mod layout;
-
 //! Display output descriptions and registry.
+pub mod layout;
 use std::collections::BTreeMap;
 /// Stable identifier for a display output.
 pub type OutputId = u64;
