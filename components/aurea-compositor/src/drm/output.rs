@@ -201,9 +201,6 @@ pub fn register_output(
         .map_err(|_| DrmOutputError::DuplicateOutputId)
 }
 
-
-// SPDX-License-Identifier: GPL-3.0-or-later
-
 #[cfg(test)]
 mod tests {
     use super::*;
