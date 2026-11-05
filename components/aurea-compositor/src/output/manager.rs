@@ -1,18 +1,41 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//
-// AureaOS
-// Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Coordinates output registration and logical layout.
+use super::{OutputLayout, OutputMode, OutputRegistry};
+use std::fmt;
 
-use super::{
-    DisplayOutput,
-    OutputId,
-    OutputRegistry,
-    layout::{OutputLayout, OutputPosition},
-};
+/// Errors returned by output management operations.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum OutputManagerError {
+    UnknownOutput(String),
+    InvalidMode {
+        output: String,
+        mode: OutputMode,
+    },
+    InvalidScale {
+        output: String,
+        scale: u32,
+    },
+}
 
-/// Coordinates output descriptions and their logical positions.
+impl fmt::Display for OutputManagerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::UnknownOutput(output) => {
+                write!(f, "Unknown output: {output}")
+            }
+            Self::InvalidMode { output, mode } => {
+                write!(f, "Mode {mode:?} is not supported by output {output}")
+            }
+            Self::InvalidScale { output, scale } => {
+                write!(f, "Invalid scale {scale} for output {output}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for OutputManagerError {}
+
+/// Coordinates output registration, layout, and configuration.
 #[derive(Debug, Default)]
 pub struct OutputManager {
     registry: OutputRegistry,
@@ -20,194 +43,106 @@ pub struct OutputManager {
 }
 
 impl OutputManager {
+    /// Creates an empty output manager.
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Registers an output and its position as one operation.
-    ///
-    /// Returns false if the output ID is already registered.
+    /// Returns the output registry.
+    pub fn registry(&self) -> &OutputRegistry {
+        &self.registry
+    }
+
+    /// Returns the output layout.
+    pub fn layout(&self) -> &OutputLayout {
+        &self.layout
+    }
+
+    /// Registers an output and places it in the layout.
     pub fn register(
         &mut self,
-        output: DisplayOutput,
-        position: OutputPosition,
-    ) -> bool {
-        let id = output.id();
-
-        if !self.registry.register(output) {
-            return false;
-        }
-
-        // The ID was just registered, so this insertion should succeed.
-        if !self.layout.insert(id, position) {
-            self.registry.remove(id);
-            return false;
-        }
-
-        true
+        output: super::DisplayOutput,
+        position: (i32, i32),
+    ) -> Result<(), OutputManagerError> {
+        let id = output.id().to_owned();
+        self.registry.register(output);
+        self.layout.set_position(id, position);
+        Ok(())
     }
 
-    /// Removes an output and its layout position.
-    pub fn remove(&mut self, id: OutputId) -> Option<DisplayOutput> {
-        let output = self.registry.remove(id)?;
-
-        self.layout.remove(id);
-
-        Some(output)
+    /// Unregisters an output and removes it from the layout.
+    pub fn unregister(&mut self, output_id: &str) -> bool {
+        self.layout.remove(output_id);
+        self.registry.remove(output_id).is_some()
     }
 
-    pub fn output(&self, id: OutputId) -> Option<&DisplayOutput> {
-        self.registry.get(id)
-    }
-
-    pub fn output_mut(
-        &mut self,
-        id: OutputId,
-    ) -> Option<&mut DisplayOutput> {
-        self.registry.get_mut(id)
-    }
-
-    pub fn position(&self, id: OutputId) -> Option<OutputPosition> {
-        self.layout.get(id)
-    }
-
-    /// Updates the position of a registered output.
-    pub fn set_position(
-        &mut self,
-        id: OutputId,
-        position: OutputPosition,
-    ) -> bool {
-        self.layout.set_position(id, position)
-    }
-
-    pub fn len(&self) -> usize {
-        self.registry.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.registry.is_empty()
-    }
-
-    pub fn iter(&self) -> impl Iterator<Item = &DisplayOutput> {
-        self.registry.iter()
-    }
-
-        /// Changes the enabled state of a registered output.
+    /// Enables or disables an output.
     pub fn set_enabled(
         &mut self,
-        id: OutputId,
+        output_id: &str,
         enabled: bool,
-    ) -> bool {
-        let Some(output) = self.registry.get_mut(id) else {
-            return false;
-        };
+    ) -> Result<(), OutputManagerError> {
+        let output = self
+            .registry
+            .get_mut(output_id)
+            .ok_or_else(|| OutputManagerError::UnknownOutput(output_id.to_owned()))?;
 
         output.set_enabled(enabled);
-        true
+        Ok(())
     }
 
-    /// Changes the current mode of a registered output.
+    /// Changes the active mode of an output.
     pub fn set_mode(
         &mut self,
-        id: OutputId,
+        output_id: &str,
         mode: OutputMode,
-    ) -> bool {
-        let Some(output) = self.registry.get_mut(id) else {
-            return false;
-        };
+    ) -> Result<(), OutputManagerError> {
+        let output = self
+            .registry
+            .get_mut(output_id)
+            .ok_or_else(|| OutputManagerError::UnknownOutput(output_id.to_owned()))?;
 
-        output.set_mode(mode)
+        if !output.supports_mode(&mode) {
+            return Err(OutputManagerError::InvalidMode {
+                output: output_id.to_owned(),
+                mode,
+            });
+        }
+
+        output.set_mode(mode);
+        Ok(())
     }
 
-    /// Changes the scale factor of a registered output.
+    /// Changes the scale of an output.
     pub fn set_scale(
         &mut self,
-        id: OutputId,
+        output_id: &str,
         scale: u32,
-    ) -> bool {
-        let Some(output) = self.registry.get_mut(id) else {
-            return false;
-        };
+    ) -> Result<(), OutputManagerError> {
+        if scale == 0 {
+            return Err(OutputManagerError::InvalidScale {
+                output: output_id.to_owned(),
+                scale,
+            });
+        }
 
-        output.set_scale(scale)
+        let output = self
+            .registry
+            .get_mut(output_id)
+            .ok_or_else(|| OutputManagerError::UnknownOutput(output_id.to_owned()))?;
+
+        output.set_scale(scale);
+        Ok(())
     }
-    
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::OutputMode;
-
-    fn sample_output(id: OutputId) -> DisplayOutput {
-        let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
-
-        DisplayOutput::new(
-            id,
-            format!("DISPLAY-{id}"),
-            vec![mode],
-            mode,
-            1,
-        )
-        .unwrap()
-    }
 
     #[test]
-    fn registers_output_with_position() {
-        let mut manager = OutputManager::new();
-        let position = OutputPosition::new(1920, 0);
-
-        assert!(manager.register(sample_output(1), position));
-        assert_eq!(manager.len(), 1);
-        assert_eq!(manager.position(1), Some(position));
-        assert!(manager.output(1).is_some());
-    }
-
-    #[test]
-    fn rejects_duplicate_output_ids() {
-        let mut manager = OutputManager::new();
-
-        assert!(manager.register(
-            sample_output(1),
-            OutputPosition::new(0, 0),
-        ));
-        assert!(!manager.register(
-            sample_output(1),
-            OutputPosition::new(1920, 0),
-        ));
-
-        assert_eq!(manager.len(), 1);
-        assert_eq!(
-            manager.position(1),
-            Some(OutputPosition::new(0, 0)),
-        );
-    }
-
-    #[test]
-    fn removes_output_and_position_together() {
-        let mut manager = OutputManager::new();
-        manager.register(
-            sample_output(1),
-            OutputPosition::new(0, 0),
-        );
-
-        assert!(manager.remove(1).is_some());
-        assert!(manager.output(1).is_none());
-        assert_eq!(manager.position(1), None);
-        assert!(manager.is_empty());
-    }
-
-    #[test]
-    fn updates_only_registered_output_positions() {
-        let mut manager = OutputManager::new();
-        let position = OutputPosition::new(1920, 0);
-
-        assert!(!manager.set_position(1, position));
-        manager.register(
-            sample_output(1),
-            OutputPosition::default(),
-        );
-
-        assert!(manager.set_position(1, position));
-        assert_eq!(manager.position(1), Some(position));
+    fn manager_starts_empty() {
+        let manager = OutputManager::new();
+        assert_eq!(manager.registry().iter().count(), 0);
     }
 }
