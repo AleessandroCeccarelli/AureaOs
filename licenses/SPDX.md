@@ -1,3 +1,4 @@
+
 # SPDX Summary for AureaOS
 
 This file provides a simple SPDX-style summary of the licensing status for the AureaOS project and its reviewed third-party content.
@@ -8,16 +9,16 @@ This document supports project review and auditing. It does not replace the proj
 
 - Project: AureaOS
 - Repository: AleessandroCeccarelli/AureaOs
-- Primary project license: GPL-3.0-only
+- Primary project license: GPL-3.0-or-later
 - License file: `LICENSE`
 
 ## SPDX overview
 
-SPDX-License-Identifier: GPL-3.0-only
+SPDX-License-Identifier: GPL-3.0-or-later
 
 ### Original AureaOS project content
 
-- License: GPL-3.0-only
+- License: GPL-3.0-or-later
 - Scope: original project source files, documentation, scripts, and project-authored content unless otherwise stated
 - Reference: `LICENSE`
 
