@@ -2,16 +2,13 @@
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
-
 //! Initializes compositor outputs from the DRM backend.
-
 use std::{error::Error, fmt};
-
 use crate::{
     drm::{
         device::DrmDevice,
         discovery::{discover_connected_outputs, DrmDiscoveryError},
-        output::{register_output, DrmOutputError},
+        output::{register_output, DrmOutputError, DrmOutputDescriptor},
     },
     output::{
         layout::OutputPosition,
@@ -19,7 +16,6 @@ use crate::{
         OutputId,
     },
 };
-
 /// Errors produced while initializing DRM outputs.
 #[derive(Debug)]
 pub enum DrmOutputsError {
@@ -30,7 +26,6 @@ pub enum DrmOutputsError {
     },
     PositionOverflow,
 }
-
 impl fmt::Display for DrmOutputsError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -49,7 +44,6 @@ impl fmt::Display for DrmOutputsError {
         }
     }
 }
-
 impl Error for DrmOutputsError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
@@ -59,7 +53,6 @@ impl Error for DrmOutputsError {
         }
     }
 }
-
 /// Discovers connected DRM outputs and registers them in the output manager.
 ///
 /// Outputs are placed horizontally from left to right, starting at `(0, 0)`.
@@ -73,33 +66,28 @@ pub fn initialize_drm_outputs(
 ) -> Result<usize, DrmOutputsError> {
     let descriptors = discover_connected_outputs(device, first_output_id)
         .map_err(DrmOutputsError::Discovery)?;
-
+    // Validate all positions before mutating the output manager.
+    let mut positioned_outputs = Vec::with_capacity(descriptors.len());
     let mut next_x = 0_i32;
-    let mut registered_count = 0;
-
     for descriptor in descriptors {
         let output_id = descriptor.id();
-        let width = descriptor.current_mode().width();
-
+        let width = i32::try_from(descriptor.current_mode().width())
+            .map_err(|_| DrmOutputsError::PositionOverflow)?;
+        positioned_outputs.push((descriptor, output_id, next_x));
+        next_x = next_x
+            .checked_add(width)
+            .ok_or(DrmOutputsError::PositionOverflow)?;
+    }
+    for (descriptor, output_id, x) in positioned_outputs {
         register_output(
             manager,
             descriptor,
-            OutputPosition::new(next_x, 0),
+            OutputPosition::new(x, 0),
         )
         .map_err(|source| DrmOutputsError::Registration {
             output_id,
             source,
         })?;
-
-        let width = i32::try_from(width)
-            .map_err(|_| DrmOutputsError::PositionOverflow)?;
-
-        next_x = next_x
-            .checked_add(width)
-            .ok_or(DrmOutputsError::PositionOverflow)?;
-
-        registered_count += 1;
     }
-
-    Ok(registered_count)
+    Ok(manager.registry().len())
 }
