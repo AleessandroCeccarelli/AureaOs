@@ -10,10 +10,11 @@ use std::{
     path::Path,
 };
 use smithay::backend::{
-    drm::DrmDeviceFd,
+    drm::{DeviceFd, DrmDeviceFd},
     session::Session,
     udev,
 };
+use smithay::reexports::rustix::fs::OFlags;
 use crate::drm::DrmSession;
 /// Error returned while discovering or opening a DRM device.
 #[derive(Debug)]
@@ -30,9 +31,7 @@ pub enum DrmDeviceError {
 impl fmt::Display for DrmDeviceError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::NoDevice => {
-                formatter.write_str("No primary DRM device was found")
-            }
+            Self::NoDevice => formatter.write_str("No primary DRM device was found"),
             Self::SessionInactive => {
                 formatter.write_str("Cannot open DRM device: session is inactive")
             }
@@ -73,14 +72,14 @@ impl DrmDevice {
         }
         let fd: OwnedFd = session
             .session()
-            .open(device_path.as_ref())
+            .open(
+                device_path.as_ref(),
+                OFlags::RDWR | OFlags::CLOEXEC | OFlags::NOCTTY | OFlags::NONBLOCK,
+            )
             .map_err(|error| {
                 DrmDeviceError::OpenFailed(error.to_string())
             })?;
-        let device_fd = DrmDeviceFd::new(fd)
-            .map_err(|error| {
-                DrmDeviceError::OpenFailed(error.to_string())
-            })?;
+        let device_fd = DrmDeviceFd::new(DeviceFd::from(fd));
         Ok(Self { device_fd })
     }
     /// Returns a reference to the DRM device file descriptor.
