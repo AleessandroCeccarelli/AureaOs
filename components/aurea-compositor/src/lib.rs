@@ -12,6 +12,8 @@ mod xdg_shell;
 
 pub mod render;
 pub mod renderer;
+pub mod output;
+
 
 #[cfg(feature = "drm")]
 pub mod drm;
