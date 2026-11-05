@@ -9,6 +9,7 @@
 mod client;
 mod event_loop;
 mod session;
+mod session_events;
 mod socket;
 mod state;
 
