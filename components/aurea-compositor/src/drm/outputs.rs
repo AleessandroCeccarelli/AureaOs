@@ -32,10 +32,7 @@ pub enum DrmOutputsError {
         output_id: OutputId,
         source: DrmOutputError,
     },
-    Manager {
-        output_id: OutputId,
-        source: OutputManagerError,
-    },
+    Manager(OutputManagerError),
     PositionOverflow,
 }
 
@@ -51,12 +48,8 @@ impl fmt::Display for DrmOutputsError {
                     "Failed to prepare DRM output {output_id}: {source}"
                 )
             }
-            Self::Manager { output_id, source } => {
-                write!(
-                    formatter,
-                    "Output manager failed to register DRM output \
-                     {output_id}: {source}"
-                )
+            Self::Manager(source) => {
+                write!(formatter, "Output manager failed to register DRM outputs: {source}")
             }
             Self::PositionOverflow => {
                 formatter.write_str("DRM output layout position overflow")
@@ -70,7 +63,7 @@ impl Error for DrmOutputsError {
         match self {
             Self::Discovery(source) => Some(source),
             Self::Registration { source, .. } => Some(source),
-            Self::Manager { source, .. } => Some(source),
+            Self::Manager(source) => Some(source),
             Self::PositionOverflow => None,
         }
     }
@@ -84,7 +77,7 @@ impl Error for DrmOutputsError {
 /// discovered output.
 ///
 /// All descriptors, IDs, and positions are validated before the output
-/// manager is mutated.
+/// manager is mutated. Registration is performed atomically as a batch.
 pub fn initialize_drm_outputs(
     device: &DrmDevice,
     manager: &mut OutputManager,
@@ -97,7 +90,6 @@ pub fn initialize_drm_outputs(
     let mut staged_ids = BTreeSet::new();
     let mut next_x = 0_i32;
 
-    // Convert and validate the complete batch before registering anything.
     for descriptor in descriptors {
         let output_id = descriptor.id();
 
@@ -120,7 +112,7 @@ pub fn initialize_drm_outputs(
                 source,
             })?;
 
-        staged_outputs.push((output, output_id, next_x));
+        staged_outputs.push((output, (next_x, 0)));
 
         next_x = next_x
             .checked_add(width)
@@ -129,15 +121,9 @@ pub fn initialize_drm_outputs(
 
     let output_count = staged_outputs.len();
 
-    // All descriptors and positions are validated before mutating the manager.
-    for (output, output_id, x) in staged_outputs {
-        manager
-            .register(output, (x, 0))
-            .map_err(|source| DrmOutputsError::Manager {
-                output_id,
-                source,
-            })?;
-    }
+    manager
+        .register_batch(staged_outputs)
+        .map_err(DrmOutputsError::Manager)?;
 
     Ok(output_count)
 }
