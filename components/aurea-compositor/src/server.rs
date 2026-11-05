@@ -7,6 +7,7 @@
 //! Wayland server modules and public API.
 
 mod client;
+mod display_events;
 mod event_loop;
 mod session;
 mod session_events;
