@@ -3,6 +3,7 @@
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
+
 //! Native DRM/KMS backend modules.
 
 pub mod device;
