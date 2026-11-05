@@ -4,65 +4,81 @@
  // AureaOS
  // Copyright (C) 2026 Alessandro Ceccarelli
 
- //! Vulkan command submission and fence synchronization.
+//! Vulkan command submission and fence synchronization.
 
- use smithay::reexports::ash::{self, vk};
+use smithay::reexports::ash::{self, vk};
 
- /// Submits command buffers to a Vulkan queue and waits for completion.
- pub struct VulkanQueueSubmitter<'device> {
-     device: &'device ash::Device,
-     queue: vk::Queue,
- }
+/// Submits command buffers to a Vulkan queue and waits for completion.
+pub struct VulkanQueueSubmitter<'device> {
+    device: &'device ash::Device,
+    queue: vk::Queue,
+}
 
- impl<'device> VulkanQueueSubmitter<'device> {
-     /// Creates a submitter for the specified device queue.
-     pub(super) fn new(
-         device: &'device ash::Device,
-         queue: vk::Queue,
-     ) -> Self {
-         Self { device, queue }
-     }
+impl<'device> VulkanQueueSubmitter<'device> {
+    /// Creates a submitter for the specified device queue.
+    pub(super) fn new(
+        device: &'device ash::Device,
+        queue: vk::Queue,
+    ) -> Self {
+        Self { device, queue }
+    }
 
-     /// Submits a recorded command buffer and waits for its completion.
-     ///
-     /// The command buffer must have been ended and must not already be
-     /// pending execution.
-     pub fn submit_and_wait(
-         &self,
-         command_buffer: vk::CommandBuffer,
-     ) -> Result<(), vk::Result> {
-         let command_buffers = [command_buffer];
-         let submit_info = [vk::SubmitInfo::default()
-             .command_buffers(&command_buffers)];
+    /// Submits a recorded command buffer and waits for its completion.
+    ///
+    /// The command buffer must have been ended and must not already be
+    /// pending execution.
+    pub fn submit_and_wait(
+        &self,
+        command_buffer: vk::CommandBuffer,
+    ) -> Result<(), vk::Result> {
+        let command_buffers = [command_buffer];
+        let submit_info = [
+            vk::SubmitInfo::default()
+                .command_buffers(&command_buffers),
+        ];
 
-         let fence_info = vk::FenceCreateInfo::default();
-         let fence = unsafe {
-             self.device.create_fence(&fence_info, None)
-         }?;
+        let fence_info = vk::FenceCreateInfo::default();
 
-         let submit_result = unsafe {
-             self.device.queue_submit(
-                 self.queue,
-                 &submit_info,
-                 fence,
-             )
-         };
+        let fence = unsafe {
+            self.device.create_fence(&fence_info, None)
+        }?;
 
-         if let Err(error) = submit_result {
-             unsafe {
-                 self.device.destroy_fence(fence, None);
-             }
-             return Err(error);
-         }
+        let submit_result = unsafe {
+            self.device.queue_submit(
+                self.queue,
+                &submit_info,
+                fence,
+            )
+        };
 
-         let wait_result = unsafe {
-             self.device.wait_for_fences(&[fence], true, u64::MAX)
-         };
+        if let Err(error) = submit_result {
+            unsafe {
+                self.device.destroy_fence(fence, None);
+            }
 
-         unsafe {
-             self.device.destroy_fence(fence, None);
-         }
+            return Err(error);
+        }
 
-         wait_result
-     }
- }
+        let wait_result = unsafe {
+            self.device.wait_for_fences(
+                &[fence],
+                true,
+                u64::MAX,
+            )
+        };
+
+        if wait_result.is_err() {
+            // The fence may still be associated with pending queue work.
+            // Attempt to drain the device before destroying the fence.
+            let _ = unsafe {
+                self.device.device_wait_idle()
+            };
+        }
+
+        unsafe {
+            self.device.destroy_fence(fence, None);
+        }
+
+        wait_result
+    }
+}
