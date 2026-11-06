@@ -25,8 +25,9 @@ fn remove_disconnected_clients(state: &mut WaylandState) {
     let disconnected_clients = state
         .disconnected_clients
         .lock()
-        .map(|mut clients| std::mem::take(&mut *clients))
-        .unwrap_or_default();
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .drain(..)
+        .collect::<Vec<_>>();
 
     if disconnected_clients.is_empty() {
         return;
