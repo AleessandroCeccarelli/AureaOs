@@ -1,5 +1,5 @@
 
- // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -35,6 +35,11 @@ fn remove_disconnected_clients(state: &mut WaylandState) {
     state.clients.retain(|client| {
         !disconnected_clients.contains(&client.id().clone())
     });
+
+    state
+        .compositor
+        .window_manager()
+        .remove_dead_toplevels();
 }
 
 /// Registers the display fd and dispatches incoming client requests.
