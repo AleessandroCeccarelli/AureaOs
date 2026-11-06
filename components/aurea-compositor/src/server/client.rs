@@ -53,11 +53,12 @@ impl ClientData for AureaClientState {
         client_id: ClientId,
         _reason: DisconnectReason,
     ) {
-        if let Ok(mut disconnected_clients) =
-            self.disconnected_clients.lock()
-        {
-            disconnected_clients.push(client_id);
-        }
+        let mut disconnected_clients = self
+            .disconnected_clients
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+
+        disconnected_clients.push(client_id);
     }
 }
 
