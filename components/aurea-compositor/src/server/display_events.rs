@@ -12,8 +12,10 @@ use std::{
 };
 
 use smithay::reexports::calloop::{
-    Interest, LoopHandle, Mode,
     generic::Generic,
+    Interest,
+    LoopHandle,
+    Mode,
 };
 
 use super::state::WaylandState;
@@ -40,7 +42,11 @@ pub(super) fn register_display_events(
                 if let Err(error) = state.display.flush_clients() {
                     state.error = Some(io::Error::other(error));
                     stop_handle.stop();
+                    return;
                 }
+
+                // Remove clients that have disconnected from the display.
+                state.clients.retain(|client| client.is_alive());
             },
         )
         .map_err(io::Error::other)?;
