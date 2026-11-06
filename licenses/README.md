@@ -2,7 +2,7 @@
 
 This directory contains the central project records for licensing, attribution, and third-party review.
 
-The original AureaOS project content is released under the GNU General Public License v3.0 (GPL-3.0-only), unless explicitly stated otherwise in a specific file. This directory tracks third-party code, assets, fonts, icons, and other components that are not covered by the project’s original license statement.
+The original AureaOS project content is released under the GNU General Public License version 3 or later (GPL-3.0-or-later), unless explicitly stated otherwise in a specific file. This directory tracks third-party code, assets, fonts, icons, and other components that are not covered by the project’s original license statement.
 
 ## Files in this directory
 
@@ -46,6 +46,6 @@ The project-level license applies to the original AureaOS work. Third-party mate
 
 The primary project license is:
 
-- `GPL-3.0-only`
+- `GPL-3.0-or-later`
 
 This is the canonical project identifier used in SPDX-related documentation unless a specific file states otherwise.

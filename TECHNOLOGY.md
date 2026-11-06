@@ -17,7 +17,7 @@ Choose components for the needs of AureaOS and its users. Open-source and propri
 - License, attribution, redistribution, patent, and other applicable terms.
 - Long-term sustainability and available alternatives.
 
-Third-party components retain their own licenses. GPL-3.0 applies to original AureaOS work as stated in the repository license; it does not automatically apply to third-party components.
+Third-party components retain their own licenses. GPL-3.0-or-later applies to original AureaOS work as stated in the repository license; it does not automatically apply to third-party components.
 
 ## Build on established infrastructure
 

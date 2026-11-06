@@ -1,4 +1,3 @@
-
  // SPDX-License-Identifier: GPL-3.0-or-later
  //
  // AureaOS
@@ -97,4 +96,3 @@
          scene: &RenderScene<'_>,
      ) -> Result<(), Self::Error>;
  }
-

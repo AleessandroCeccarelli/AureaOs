@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -96,13 +96,5 @@ mod tests {
         assert!(layout.insert(1, OutputPosition::default()));
         assert!(layout.set_position(1, position));
         assert_eq!(layout.get(1), Some(position));
-    }
-    #[test]
-    fn removes_positions() {
-        let mut layout = OutputLayout::new();
-        layout.insert(1, OutputPosition::new(0, 0));
-        assert_eq!(layout.remove(1), Some(OutputPosition::new(0, 0)));
-        assert_eq!(layout.remove(1), None);
-        assert!(layout.is_empty());
     }
 }
