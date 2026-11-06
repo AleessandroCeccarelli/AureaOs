@@ -20,6 +20,23 @@ use smithay::reexports::calloop::{
 
 use super::state::WaylandState;
 
+/// Removes clients whose disconnection has been reported.
+fn remove_disconnected_clients(state: &mut WaylandState) {
+    let disconnected_clients = state
+        .disconnected_clients
+        .lock()
+        .map(|mut clients| std::mem::take(&mut *clients))
+        .unwrap_or_default();
+
+    if disconnected_clients.is_empty() {
+        return;
+    }
+
+    state.clients.retain(|client| {
+        !disconnected_clients.contains(&client.id().clone())
+    });
+}
+
 /// Registers the display fd and dispatches incoming client requests.
 pub(super) fn register_display_events(
     loop_handle: &LoopHandle<'_, WaylandState>,
@@ -38,6 +55,8 @@ pub(super) fn register_display_events(
                     stop_handle.stop();
                     return;
                 }
+
+                remove_disconnected_clients(state);
 
                 if let Err(error) = state.display.flush_clients() {
                     state.error = Some(io::Error::other(error));
