@@ -1,5 +1,5 @@
 
-// SPDX-License-Identifier: GPL-3.0-or-later
+ // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -42,11 +42,7 @@ pub(super) fn register_display_events(
                 if let Err(error) = state.display.flush_clients() {
                     state.error = Some(io::Error::other(error));
                     stop_handle.stop();
-                    return;
                 }
-
-                // Remove clients that have disconnected from the display.
-                state.clients.retain(|client| client.is_alive());
             },
         )
         .map_err(io::Error::other)?;
