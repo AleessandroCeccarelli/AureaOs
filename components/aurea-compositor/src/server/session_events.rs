@@ -16,7 +16,10 @@ use smithay::{
 };
 
 #[cfg(feature = "drm")]
-use crate::drm::{device::DrmDevice, DrmDeviceError, DrmSession};
+use crate::drm::{
+    device::{DrmDevice, DrmDeviceError},
+    DrmSession,
+};
 
 #[cfg(feature = "drm")]
 use super::state::WaylandState;
