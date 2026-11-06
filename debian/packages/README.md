@@ -31,7 +31,7 @@ The BIOS and UEFI bootloader lists are alternatives, not a single list to instal
 
 The bootstrap and target APT configuration enable all four official Debian archive components: `main`, `contrib`, `non-free` and `non-free-firmware`. The generated deb822 source file covers `trixie`, `trixie-updates` and `trixie-security`. This makes packages from those components available to APT; it does not mean every package in every component is installed.
 
-The project is not limited to free-software-only packages. The original AureaOS code remains licensed under GPL-3.0, while packages installed from Debian retain their own upstream packaging and license metadata.
+The project is not limited to free-software-only packages. The original AureaOS code remains licensed under GPL-3.0-or-later , while packages installed from Debian retain their own upstream packaging and license metadata.
 
 ## Important limitations
 
