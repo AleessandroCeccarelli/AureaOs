@@ -1,5 +1,5 @@
 
- // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -16,21 +16,36 @@ use smithay::{
 };
 
 #[cfg(feature = "drm")]
-use crate::drm::DrmSession;
+use crate::drm::{device::DrmDevice, DrmDeviceError, DrmSession};
 
 #[cfg(feature = "drm")]
 use super::state::WaylandState;
 
-/// Applies a libseat event to the compositor's session state.
+/// Applies a session event to the compositor and DRM device state.
 #[cfg(feature = "drm")]
 fn apply_session_event(
     event: SessionEvent,
     session_active: &mut bool,
-) {
+    drm_device: Option<&mut DrmDevice>,
+) -> Result<(), DrmDeviceError> {
     match event {
-        SessionEvent::ActivateSession => *session_active = true,
-        SessionEvent::PauseSession => *session_active = false,
+        SessionEvent::PauseSession => {
+            if let Some(device) = drm_device {
+                device.pause();
+            }
+
+            *session_active = false;
+        }
+        SessionEvent::ActivateSession => {
+            if let Some(device) = drm_device {
+                device.activate()?;
+            }
+
+            *session_active = true;
+        }
     }
+
+    Ok(())
 }
 
 /// Registers libseat activation and pause events with the event loop.
@@ -43,7 +58,15 @@ pub(super) fn register_session_events(
 
     loop_handle
         .insert_source(notifier, |event, _, state| {
-            apply_session_event(event, &mut state.session_active);
+            let result = apply_session_event(
+                event,
+                &mut state.session_active,
+                state._drm_device.as_mut(),
+            );
+
+            if let Err(error) = result {
+                state.error = Some(io::Error::other(error));
+            }
         })
         .map_err(io::Error::other)?;
 
@@ -55,13 +78,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn session_events_update_active_state() {
+    fn pause_event_updates_session_state() {
+        let mut active = true;
+
+        let result =
+            apply_session_event(SessionEvent::PauseSession, &mut active, None);
+
+        assert!(result.is_ok());
+        assert!(!active);
+    }
+
+    #[test]
+    fn activate_event_updates_session_state() {
         let mut active = false;
 
-        apply_session_event(SessionEvent::ActivateSession, &mut active);
-        assert!(active);
+        let result =
+            apply_session_event(SessionEvent::ActivateSession, &mut active, None);
 
-        apply_session_event(SessionEvent::PauseSession, &mut active);
-        assert!(!active);
+        assert!(result.is_ok());
+        assert!(active);
     }
 }
