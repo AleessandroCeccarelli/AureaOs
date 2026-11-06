@@ -13,7 +13,7 @@ use smithay::{
 
 use crate::renderer::RenderPreference;
 
-use super::{queue::VulkanQueueFamilyInfo, VulkanContext};
+use super::VulkanContext;
 
 /// General category of a Vulkan physical device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

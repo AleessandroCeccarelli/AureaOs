@@ -31,12 +31,12 @@ fn session_can_activate_lock_unlock_and_stop() {
 fn session_rejects_locking_before_activation() {
     let mut session = DesktopSession::new();
 
-    assert_eq!(
+    assert!(matches!(
         session.lock(),
         Err(ShellError::InvalidLifecycleTransition(
             "Session can only lock from the Active state"
         ))
-    );
+    ));
 }
 
 #[test]
@@ -44,34 +44,34 @@ fn session_rejects_unlocking_when_not_locked() {
     let mut session = DesktopSession::new();
     session.activate().unwrap();
 
-    assert_eq!(
+    assert!(matches!(
         session.unlock(),
         Err(ShellError::InvalidLifecycleTransition(
             "Session can only unlock from the Locked state"
         ))
-    );
+    ));
 }
 
 #[test]
 fn session_rejects_stopping_before_activation() {
     let mut session = DesktopSession::new();
 
-    assert_eq!(
+    assert!(matches!(
         session.stop(),
         Err(ShellError::InvalidLifecycleTransition(
             "Session can only stop from the Active or Locked state"
         ))
-    );
+    ));
 }
 
 #[test]
 fn session_rejects_finishing_stop_before_stopping() {
     let mut session = DesktopSession::new();
 
-    assert_eq!(
+    assert!(matches!(
         session.finish_stop(),
         Err(ShellError::InvalidLifecycleTransition(
             "Session can only finish stopping from the Stopping state"
         ))
-    );
+    ));
 }

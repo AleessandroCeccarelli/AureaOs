@@ -46,14 +46,13 @@ impl WindowManager {
     ) {
         self.remove_dead_toplevels();
 
-        if let Some(mapped) = mapped {
-            if let Some(toplevel) = self
+        if let Some(mapped) = mapped
+            && let Some(toplevel) = self
                 .toplevels
                 .iter_mut()
                 .find(|toplevel| toplevel.surface.wl_surface() == surface)
-            {
-                toplevel.mapped = mapped;
-            }
+        {
+            toplevel.mapped = mapped;
         }
     }
 

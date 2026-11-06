@@ -7,11 +7,10 @@
 use super::{
     DisplayOutput,
     OutputId,
-    OutputLayout,
     OutputMode,
-    OutputPosition,
     OutputRegistry,
 };
+use super::layout::{OutputLayout, OutputPosition};
 use std::{collections::BTreeSet, fmt};
 
 /// Errors returned by output management operations.

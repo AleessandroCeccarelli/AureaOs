@@ -148,7 +148,6 @@ fn create_wayland_output(
         subpixel: Subpixel::Unknown,
         make: "AureaOS".to_owned(),
         model: config.name.clone(),
-        serial_number: String::new(),
     };
 
     let wayland_output = Output::new(config.name, properties);

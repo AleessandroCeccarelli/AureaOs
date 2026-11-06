@@ -28,10 +28,14 @@ impl VulkanContext {
         &self,
         device: &PhysicalDevice,
     ) -> Vec<VulkanQueueFamilyInfo> {
-        let properties = device
-            .instance()
-            .handle()
-            .get_physical_device_queue_family_properties(device.handle());
+        // SAFETY: Smithay's `PhysicalDevice` is enumerated from the same live
+        // instance returned by `device.instance()`, so both handles are valid.
+        let properties = unsafe {
+            device
+                .instance()
+                .handle()
+                .get_physical_device_queue_family_properties(device.handle())
+        };
 
         properties
             .iter()

@@ -12,7 +12,6 @@ use crate::error::ShellError;
 use crate::event::ShellEvent;
 use crate::session::{DesktopSession, SessionState};
 use crate::state::{ShellLifecycle, ShellState};
-use crate::event_bus::EventBus;
 
 /// Owns the runtime and desktop session lifecycles.
 pub struct ShellRuntime {

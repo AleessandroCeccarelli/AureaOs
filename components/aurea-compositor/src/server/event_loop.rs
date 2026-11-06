@@ -1,5 +1,4 @@
-
- // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -27,10 +26,12 @@ use crate::drm::{device::DrmDevice, DrmSession};
 
 use super::{
     display_events::register_display_events,
-    session,
     socket::register_wayland_socket,
     state::WaylandState,
 };
+
+#[cfg(feature = "drm")]
+use super::session;
 
 #[cfg(feature = "drm")]
 use super::session_events::register_session_events;
@@ -41,7 +42,7 @@ use crate::AureaCompositor;
 
 /// Owns the Wayland display and its Calloop event loop.
 pub struct WaylandServer {
-    event_loop: EventLoop<WaylandState>,
+    event_loop: EventLoop<'static, WaylandState>,
     state: WaylandState,
 }
 
@@ -103,10 +104,11 @@ impl WaylandServer {
         #[cfg(feature = "drm")] drm_session: Option<DrmSession>,
         #[cfg(feature = "drm")] drm_device: Option<DrmDevice>,
     ) -> io::Result<Self> {
-        let mut event_loop =
+        let event_loop =
             EventLoop::<WaylandState>::try_new().map_err(io::Error::other)?;
 
-        let display = Display::<AureaCompositor>::new()?;
+        let display =
+            Display::<AureaCompositor>::new().map_err(io::Error::other)?;
         let display_handle = display.handle();
         let compositor = AureaCompositor::new(&display_handle);
 

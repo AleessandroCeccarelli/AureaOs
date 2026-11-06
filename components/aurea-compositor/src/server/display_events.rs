@@ -16,6 +16,7 @@ use smithay::reexports::calloop::{
     Interest,
     LoopHandle,
     Mode,
+    PostAction,
 };
 
 use super::state::WaylandState;
@@ -34,7 +35,8 @@ fn remove_disconnected_clients(state: &mut WaylandState) {
     }
 
     state.clients.retain(|client| {
-        !disconnected_clients.contains(&client.id().clone())
+        let client_id = client.id();
+        !disconnected_clients.contains(&client_id)
     });
 
     state
@@ -48,8 +50,6 @@ pub(super) fn register_display_events(
     loop_handle: &LoopHandle<'_, WaylandState>,
     display_fd: OwnedFd,
 ) -> io::Result<()> {
-    let stop_handle = loop_handle.clone();
-
     loop_handle
         .insert_source(
             Generic::new(display_fd, Interest::READ, Mode::Level),
@@ -58,16 +58,16 @@ pub(super) fn register_display_events(
                     state.display.dispatch_clients(&mut state.compositor)
                 {
                     state.error = Some(io::Error::other(error));
-                    stop_handle.stop();
-                    return;
+                    return Ok(PostAction::Continue);
                 }
 
                 remove_disconnected_clients(state);
 
                 if let Err(error) = state.display.flush_clients() {
                     state.error = Some(io::Error::other(error));
-                    stop_handle.stop();
                 }
+
+                Ok(PostAction::Continue)
             },
         )
         .map_err(io::Error::other)?;

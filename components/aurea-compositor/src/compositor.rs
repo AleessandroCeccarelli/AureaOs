@@ -9,8 +9,9 @@
 use std::{collections::BTreeMap, error::Error};
 
 use smithay::{
+    input::{SeatHandler, SeatState},
     output::Output,
-    reexports::wayland_server::DisplayHandle,
+    reexports::wayland_server::{protocol::wl_surface::WlSurface, DisplayHandle},
     wayland::{
         compositor::CompositorState,
         shell::xdg::XdgShellState,
@@ -63,10 +64,21 @@ impl<E: Error + 'static> std::fmt::Display for CompositorRenderError<E> {
 
 impl<E: Error + 'static> Error for CompositorRenderError<E> {}
 
+impl SeatHandler for AureaCompositor {
+    type KeyboardFocus = WlSurface;
+    type PointerFocus = WlSurface;
+    type TouchFocus = WlSurface;
+
+    fn seat_state(&mut self) -> &mut SeatState<Self> {
+        &mut self.seat_state
+    }
+}
+
 /// Core state owned by the AureaOS compositor.
 pub struct AureaCompositor {
     compositor_state: CompositorState,
     xdg_shell_state: XdgShellState,
+    seat_state: SeatState<Self>,
     window_manager: WindowManager,
     output_manager: OutputManager,
     wayland_outputs: BTreeMap<OutputId, Output>,
@@ -81,6 +93,7 @@ impl AureaCompositor {
         Self {
             compositor_state,
             xdg_shell_state,
+            seat_state: SeatState::new(),
             window_manager: WindowManager::new(),
             output_manager: OutputManager::new(),
             wayland_outputs: BTreeMap::new(),

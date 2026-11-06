@@ -79,10 +79,10 @@ impl CompositorHandler for AureaCompositor {
 
     fn commit(&mut self, surface: &WlSurface) {
         let mapped = with_states(surface, |states| {
-            let current = states
+            let mut cached_state = states
                 .cached_state
-                .get::<SurfaceAttributes>()
-                .current();
+                .get::<SurfaceAttributes>();
+            let current = cached_state.current();
 
             match current.buffer.as_ref() {
                 Some(BufferAssignment::NewBuffer(_)) => Some(true),
