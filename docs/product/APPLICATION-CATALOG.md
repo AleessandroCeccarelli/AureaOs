@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Application and Component Catalog
 
 This is the authoritative inventory of named first-party applications, desktop components, system tools, services, and shared design resources found in AureaOS documentation. It records direction and status; it is not a statement that planned software exists.

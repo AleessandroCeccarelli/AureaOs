@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// AureaOS — Aurea Shell
-// Copyright (C) 2026 Alessandro Ceccarelli
-//
-// Event bus contract tests.
+// AureaOS shell integration contracts.
 
-use crate::event::ShellEvent;
-use crate::event_bus::EventBus;
+use aurea_shell::event::ShellEvent;
+use aurea_shell::event_bus::EventBus;
 
 #[test]
 fn cloned_event_bus_shares_the_same_channel() {
@@ -16,15 +13,9 @@ fn cloned_event_bus_shares_the_same_channel() {
     bus.publish(ShellEvent::LockRequested).unwrap();
     second_bus.publish(ShellEvent::ShutdownRequested).unwrap();
 
-    assert_eq!(
-        receiver.recv().unwrap(),
-        ShellEvent::LockRequested
-    );
+    assert_eq!(receiver.recv().unwrap(), ShellEvent::LockRequested);
 
-    assert_eq!(
-        receiver.recv().unwrap(),
-        ShellEvent::ShutdownRequested
-    );
+    assert_eq!(receiver.recv().unwrap(), ShellEvent::ShutdownRequested);
 }
 
 #[test]

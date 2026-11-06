@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Prototypes
 
 This area contains design experiments, mockups, and concept work for the AureaOS desktop experience.

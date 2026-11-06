@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 <p align="center">
   <img src="assets/AureaOS-Social-Preview.jpg" alt="AureaOS — a golden A inspired by the Colosseum" width="800">
 </p>

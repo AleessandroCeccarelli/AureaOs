@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Wallpapers
 
 This directory contains desktop wallpaper sets and related attribution notes for AureaOS.

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Roma 1.0 — Debian Package Manifest
 
 ## Purpose and status

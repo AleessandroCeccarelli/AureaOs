@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Themes and Tokens
 
 This directory contains the current theme and token source for AureaOS interfaces.

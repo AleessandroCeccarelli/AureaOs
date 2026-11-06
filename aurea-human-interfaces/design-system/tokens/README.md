@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Tokens
 
 This directory is the source of truth for the approved AureaOS visual token set.

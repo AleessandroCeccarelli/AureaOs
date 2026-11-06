@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 #!/usr/bin/env bash
 set -Eeuo pipefail

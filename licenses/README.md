@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS License Registry
 
 This directory contains the central project records for licensing, attribution, and third-party review.

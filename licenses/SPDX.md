@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # SPDX Summary for AureaOS
 
 This file provides a simple SPDX-style summary of the licensing status for the AureaOS project and its reviewed third-party content.

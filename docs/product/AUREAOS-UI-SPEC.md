@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS UI Design Specification
 
 This document describes the intended desktop experience for AureaOS.

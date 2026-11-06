@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Design System
 
 This directory defines the visual identity of AureaOS in a simple and reusable way.

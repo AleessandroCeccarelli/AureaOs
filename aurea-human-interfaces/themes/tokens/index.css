@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 /* Import this file once in a web-based AureaOS interface. Light is the default. */
 @import "../light/theme.css";
 @import "../dark/theme.css";

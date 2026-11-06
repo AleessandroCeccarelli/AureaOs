@@ -5,23 +5,13 @@
 //
 // Application entry point for the AureaOS desktop shell.
 
-mod app;
-mod config;
-mod error;
-mod event;
-mod runtime;
-mod session;
-mod dispatcher;
-mod event_bus;
-mod state;
+use aurea_shell::{app, config::ShellConfig};
 
 fn main() {
-    let config = config::ShellConfig::default();
+    let config = ShellConfig::default();
 
     if let Err(error) = app::run(config) {
         eprintln!("Aurea Shell error: {error}");
         std::process::exit(1);
     }
 }
-#[cfg(test)]
-mod tests;

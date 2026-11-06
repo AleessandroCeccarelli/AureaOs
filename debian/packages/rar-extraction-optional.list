@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Optional: requires Debian's non-free component and separate license review.
 # Provides RAR extraction through 7-Zip; it does not provide RAR archive creation.
 7zip-rar

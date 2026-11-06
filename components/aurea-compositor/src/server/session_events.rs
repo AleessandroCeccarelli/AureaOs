@@ -76,28 +76,5 @@ pub(super) fn register_session_events(
 }
 
 #[cfg(all(test, feature = "drm"))]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn pause_event_updates_session_state() {
-        let mut active = true;
-
-        let result =
-            apply_session_event(SessionEvent::PauseSession, &mut active, None);
-
-        assert!(result.is_ok());
-        assert!(!active);
-    }
-
-    #[test]
-    fn activate_event_updates_session_state() {
-        let mut active = false;
-
-        let result =
-            apply_session_event(SessionEvent::ActivateSession, &mut active, None);
-
-        assert!(result.is_ok());
-        assert!(active);
-    }
-}
+#[path = "../../tests/unit/server_session_events.rs"]
+mod tests;

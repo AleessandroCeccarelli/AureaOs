@@ -24,32 +24,7 @@ pub fn dispatch(event: ShellEvent) -> RuntimeCommand {
     }
 }
 
+
 #[cfg(test)]
-mod tests {
-    use super::{dispatch, RuntimeCommand};
-    use crate::event::ShellEvent;
-
-    #[test]
-    fn dispatches_lock_event() {
-        assert_eq!(
-            dispatch(ShellEvent::LockRequested),
-            RuntimeCommand::LockSession
-        );
-    }
-
-    #[test]
-    fn dispatches_unlock_event() {
-        assert_eq!(
-            dispatch(ShellEvent::UnlockRequested),
-            RuntimeCommand::UnlockSession
-        );
-    }
-
-    #[test]
-    fn dispatches_shutdown_event() {
-        assert_eq!(
-            dispatch(ShellEvent::ShutdownRequested),
-            RuntimeCommand::Shutdown
-        );
-    }
-}
+#[path = "../tests/unit/dispatcher.rs"]
+mod tests;

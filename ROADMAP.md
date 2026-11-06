@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Roadmap
 
 This roadmap records current work and intended next steps. It is a working plan, not a delivery schedule. AureaOS targets Debian GNU/Linux 13 (Trixie), amd64 (x86-64); the first release is AureaOS Roma 1.0.
@@ -6,8 +8,8 @@ This roadmap records current work and intended next steps. It is a working plan,
 
 ### Implemented in the repository
 
-- Project vision, contribution guidance, technical direction, and initial architecture documentation.
-- Debian package manifests and a bootstrap script for a minimal, terminal-only Debian root filesystem.
+- [Project vision](VISION.md), contribution guidance, technical direction, and [initial architecture](docs/architecture/INITIAL-ARCHITECTURE.md).
+- Debian package manifests and a bootstrap script for a minimal, terminal-only Debian root filesystem ([Debian base](docs/architecture/DEBIAN-BASE.md)).
 - AureaOS visual design resources, including tokens, themes, icons, illustrations, and wallpapers.
 - Initial Rust aurea-shell and aurea-compositor components.
 - Shell session lifecycle coordination and shutdown through an event bus.
@@ -32,7 +34,7 @@ The Debian bootstrap profile still needs package-resolution validation and does 
 - Provide Automatic — AureaOS and manual display configuration through Settings → Display & Video.
 - GUI-first graphical installation experience.
 - Shared AureaOS Human Interfaces library and system integration.
-- Core first-party applications and tools listed in the Application and Component Catalog.
+- Core first-party applications and tools listed in the [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md).
 - Flatpak and Flathub as the planned application distribution path.
 - Separate update channels for Debian base packages and AureaOS system components.
 - Complete and review the original AureaOS system sound theme.
@@ -51,11 +53,11 @@ The Debian bootstrap profile still needs package-resolution validation and does 
 
 ## Application and component status
 
-The Application and Component Catalog is the authoritative inventory, including name variants, Roma 1.0 direction, candidates, and exploratory long-term concepts. The catalog records the desktop, shared design system, applications, system tools, and system subsystems without implying they are implemented.
+The [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md) is the authoritative inventory, including name variants, Roma 1.0 direction, candidates, and exploratory long-term concepts. The catalog records the desktop, shared design system, applications, system tools, and system subsystems without implying they are implemented.
 
-Aurea Display Intelligence is a planned system subsystem. Its architecture and responsibilities are documented in Display Intelligence. Its implementation depends on reliable DRM/KMS output management and compositor integration.
+Aurea Display Intelligence is a planned system subsystem. Its architecture and responsibilities are documented in [Display Intelligence](docs/architecture/DISPLAY-INTELLIGENCE.md). Its implementation depends on reliable DRM/KMS output management and compositor integration.
 
-Sonus, Visio, and Explora remain candidates; see Planned First-Party Applications for their concept notes. Wallet, system-level passkeys, and Aurea AI/ChatGPT integration remain exploratory long-term ideas. No milestones or delivery dates are set here.
+Sonus, Visio, and Explora remain candidates; see [Planned First-Party Applications](docs/product/PLANNED-APPLICATIONS.md) for their concept notes. Wallet, system-level passkeys, and Aurea AI/ChatGPT integration remain exploratory long-term ideas. No milestones or delivery dates are set here.
 
 ## Guiding priorities
 

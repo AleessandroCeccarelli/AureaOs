@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS — Planned First-Party Applications
 
 > **Authoritative inventory:** See the [Application and Component Catalog](APPLICATION-CATALOG.md) for current names, status, programming-language policy, and technology choices. This page keeps the concept notes for Sonus, Visio, and Explora.

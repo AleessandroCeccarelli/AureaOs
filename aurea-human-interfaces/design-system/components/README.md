@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # UI Components
 
 This directory contains the foundational primitives for AureaOS interface components.

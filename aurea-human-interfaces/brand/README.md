@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Brand and Visual Identity
 
 This area contains the brand-facing visual identity for AureaOS.

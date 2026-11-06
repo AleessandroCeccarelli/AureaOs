@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Roma wallpaper collection
 
 This is the canonical location for AureaOS desktop wallpapers: `aurea-human-interfaces/resources/wallpapers/`.

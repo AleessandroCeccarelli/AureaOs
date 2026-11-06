@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Stereo Sounds
 
 This directory will contain the original synthesized system sound effects

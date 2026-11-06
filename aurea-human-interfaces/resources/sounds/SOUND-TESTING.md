@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Sound Theme — Audio Testing Checklist
 
 Use this checklist to review the original system sound effects before including them in AureaOS Roma.

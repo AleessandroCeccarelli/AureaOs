@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Sound Events
 
 Initial sound event specification for AureaOS Roma.

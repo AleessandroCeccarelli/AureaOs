@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Third-Party Notices
 
 This file is the project register for third-party code, assets, fonts, icons, and other components included in AureaOS or referenced by the project.

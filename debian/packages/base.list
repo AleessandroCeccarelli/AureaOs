@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Essential terminal-only base. No desktop environment or GUI applications.
 systemd
 systemd-sysv

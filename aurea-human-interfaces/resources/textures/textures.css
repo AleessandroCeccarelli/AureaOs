@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
 /* Subtle, theme-aware decorative textures. Apply to non-text content surfaces only. */
 :root {
   --aurea-texture-ink: color-mix(in srgb, var(--aurea-text-secondary) 12%, transparent);

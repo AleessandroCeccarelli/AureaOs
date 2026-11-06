@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Broad hardware support. Requires the Debian non-free-firmware component.
 # Review installed size, redistribution terms, and device coverage before release.
 firmware-linux

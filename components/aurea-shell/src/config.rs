@@ -19,14 +19,7 @@ impl Default for ShellConfig {
     }
 }
 
+
 #[cfg(test)]
-mod tests {
-    use super::ShellConfig;
-
-    #[test]
-    fn default_config_has_expected_name() {
-        let config = ShellConfig::default();
-
-        assert_eq!(config.name, "Aurea Shell");
-    }
-}
+#[path = "../tests/unit/config.rs"]
+mod tests;

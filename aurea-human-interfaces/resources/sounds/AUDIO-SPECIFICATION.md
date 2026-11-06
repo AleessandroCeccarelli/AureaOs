@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Sound Theme — Audio Specification
 
 Initial synthesis parameters for the nine original AureaOS system sound effects. These values are starting points for listening tests and may be refined before approval.

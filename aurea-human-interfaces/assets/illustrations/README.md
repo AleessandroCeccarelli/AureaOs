@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Illustrations
 
 This directory contains decorative visual assets used for onboarding, empty states, system messages, and supportive interfaces.

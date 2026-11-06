@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Asset Library
 
 This directory contains the visual resources used by the AureaOS interface and product presentation. The goal is to keep visual content organized and clearly separated from the runtime system layer.

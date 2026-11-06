@@ -1,2 +1,3 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
 # Install only for an image explicitly targeting legacy BIOS/CSM.
 grub-pc

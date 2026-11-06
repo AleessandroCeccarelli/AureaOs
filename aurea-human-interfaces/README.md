@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Aurea Human Interfaces
 
 This directory is the visual foundation for AureaOS.

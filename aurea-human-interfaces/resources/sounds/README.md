@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Sound Resources
 
 This directory is the source location for the AureaOS system sound theme.

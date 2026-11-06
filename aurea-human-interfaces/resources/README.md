@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Human Interfaces Resources
 
 This directory holds reusable visual assets for the AureaOS Human Interfaces library and desktop.

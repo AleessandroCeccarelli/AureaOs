@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Typography
 
 This directory contains the type and font sources used by the AureaOS design system.

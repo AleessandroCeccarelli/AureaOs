@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Backgrounds
 
 This directory contains reusable background compositions and layered visual surfaces for AureaOS.

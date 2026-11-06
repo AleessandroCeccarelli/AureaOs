@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Textures
 
 This directory contains reusable texture and surface treatments for AureaOS interfaces.

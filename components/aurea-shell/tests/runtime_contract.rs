@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// AureaOS — Aurea Shell
-// Copyright (C) 2026 Alessandro Ceccarelli
-//
-// Runtime integration contract tests.
+// AureaOS shell integration contracts.
 
-use crate::error::ShellError;
-use crate::event::ShellEvent;
-use crate::event_bus::EventBus;
-use crate::runtime::ShellRuntime;
-use crate::session::SessionState;
-use crate::state::ShellState;
+use aurea_shell::error::ShellError;
+use aurea_shell::event::ShellEvent;
+use aurea_shell::event_bus::EventBus;
+use aurea_shell::runtime::ShellRuntime;
+use aurea_shell::session::SessionState;
+use aurea_shell::state::ShellState;
 
 #[test]
 fn runtime_shutdown_completes_both_lifecycles() {

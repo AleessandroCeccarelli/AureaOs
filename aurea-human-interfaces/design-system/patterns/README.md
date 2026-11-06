@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # Patterns
 
 This folder contains recurring interface compositions and interaction patterns for AureaOS.

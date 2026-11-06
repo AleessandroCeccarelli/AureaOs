@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
 # AureaOS Product Experience
 
 This document describes product direction and planned workflows. AureaOS targets Debian GNU/Linux 13 (Trixie), `amd64` (x86-64), with a GUI-first, Wayland-first desktop. The current repository contains an early terminal-only Debian root filesystem bootstrap and design resources; the desktop UI and AureaOS applications are not implemented. Requirements below do not imply working features.
