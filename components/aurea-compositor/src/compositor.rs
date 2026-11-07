@@ -17,7 +17,7 @@ use smithay::{
 use crate::{
     output::{
         OutputId,
-        manager::OutputManager,
+        manager::{OutputManager, OutputReconciliation},
         wayland::{OutputPublicationError, publish_output, publish_outputs},
     },
     render::RenderScene,
@@ -55,6 +55,37 @@ impl<E: Error + 'static> std::fmt::Display for CompositorRenderError<E> {
 }
 
 impl<E: Error + 'static> Error for CompositorRenderError<E> {}
+
+/// Failure while publishing a committed output reconciliation.
+#[derive(Debug)]
+pub struct OutputReconciliationError {
+    output_id: OutputId,
+    source: OutputPublicationError,
+    rollback_error: Option<OutputPublicationError>,
+}
+
+impl std::fmt::Display for OutputReconciliationError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            formatter,
+            "Failed to publish reconciled output {}: {}",
+            self.output_id, self.source
+        )?;
+        if let Some(error) = &self.rollback_error {
+            write!(
+                formatter,
+                "; restoring prior output globals also failed: {error}"
+            )?;
+        }
+        Ok(())
+    }
+}
+
+impl Error for OutputReconciliationError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(&self.source)
+    }
+}
 
 impl SeatHandler for AureaCompositor {
     type KeyboardFocus = WlSurface;
@@ -144,6 +175,73 @@ impl AureaCompositor {
         Ok(())
     }
 
+    /// Republishes one output after its description or position changed.
+    /// The replacement is fully validated and created before the retained
+    /// output handle is swapped, so a publication error leaves the old global.
+    pub fn refresh_wayland_output(
+        &mut self,
+        display: &DisplayHandle,
+        output_id: OutputId,
+    ) -> Result<(), OutputPublicationError> {
+        let Some(output) = self.output_manager.registry().get(output_id) else {
+            self.wayland_outputs.remove(&output_id);
+            return Ok(());
+        };
+        if !output.is_enabled() {
+            self.wayland_outputs.remove(&output_id);
+            return Ok(());
+        }
+        let position = self
+            .output_manager
+            .layout()
+            .get(output_id)
+            .unwrap_or_default();
+        if let Some(replacement) = publish_output(display, output, position)? {
+            self.wayland_outputs.insert(output_id, replacement);
+        } else {
+            self.wayland_outputs.remove(&output_id);
+        }
+        Ok(())
+    }
+
+    /// Publishes a per-device model reconciliation, rolling back the output
+    /// manager and affected Wayland globals if any changed global is invalid.
+    pub fn publish_output_reconciliation(
+        &mut self,
+        display: &DisplayHandle,
+        previous: OutputManager,
+        changes: &OutputReconciliation,
+    ) -> Result<(), OutputReconciliationError> {
+        let mut affected = changes.added.clone();
+        affected.extend(changes.updated.iter().copied());
+        affected.extend(changes.removed.iter().copied());
+
+        for id in &changes.removed {
+            self.unpublish_wayland_output(*id);
+        }
+        for id in changes.added.iter().chain(&changes.updated) {
+            if let Err(source) = self.refresh_wayland_output(display, *id) {
+                self.output_manager = previous.clone();
+                let mut rollback_error = None;
+                for rollback_id in &affected {
+                    if previous.registry().get(*rollback_id).is_some() {
+                        if let Err(error) = self.refresh_wayland_output(display, *rollback_id) {
+                            rollback_error.get_or_insert(error);
+                        }
+                    } else {
+                        self.unpublish_wayland_output(*rollback_id);
+                    }
+                }
+                return Err(OutputReconciliationError {
+                    output_id: *id,
+                    source,
+                    rollback_error,
+                });
+            }
+        }
+        Ok(())
+    }
+
     /// Removes one published Wayland output.
     ///
     /// Dropping the retained Smithay output removes its global.
@@ -206,3 +304,7 @@ impl AureaCompositor {
             .map_err(CompositorRenderError::Backend)
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/unit/compositor_output_reconciliation.rs"]
+mod output_reconciliation_tests;

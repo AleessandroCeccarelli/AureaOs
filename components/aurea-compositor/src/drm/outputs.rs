@@ -11,11 +11,11 @@ use crate::{
     drm::{
         device::DrmDevice,
         discovery::{DrmDiscoveryError, discover_connected_outputs},
-        output::DrmOutputError,
+        output::{DrmOutputDescriptor, DrmOutputError},
     },
     output::{
         OutputId,
-        manager::{OutputManager, OutputManagerError},
+        manager::{OutputManager, OutputManagerError, OutputReconciliation},
     },
 };
 
@@ -81,7 +81,17 @@ pub fn initialize_drm_outputs(
     manager: &mut OutputManager,
 ) -> Result<usize, DrmOutputsError> {
     let descriptors = discover_connected_outputs(device).map_err(DrmOutputsError::Discovery)?;
+    register_drm_output_descriptors(descriptors, manager)
+}
 
+/// Registers a previously discovered descriptor set atomically.
+///
+/// This is shared by initial setup and hotplug reconciliation so connector
+/// information is queried only once per refresh.
+pub fn register_drm_output_descriptors(
+    descriptors: Vec<DrmOutputDescriptor>,
+    manager: &mut OutputManager,
+) -> Result<usize, DrmOutputsError> {
     let mut staged_outputs = Vec::with_capacity(descriptors.len());
     let mut staged_ids = BTreeSet::new();
     let mut next_x = 0_i32;
@@ -117,4 +127,26 @@ pub fn initialize_drm_outputs(
         .map_err(DrmOutputsError::Manager)?;
 
     Ok(output_count)
+}
+
+/// Reconciles a device's existing output IDs with its current connector set.
+/// OutputManager preserves positions and user configuration for retained IDs.
+pub fn reconcile_drm_outputs(
+    device: &DrmDevice,
+    manager: &mut OutputManager,
+    owned_ids: &[OutputId],
+) -> Result<OutputReconciliation, DrmOutputsError> {
+    let descriptors = discover_connected_outputs(device).map_err(DrmOutputsError::Discovery)?;
+    let mut outputs = Vec::with_capacity(descriptors.len());
+    for descriptor in descriptors {
+        let output_id = descriptor.id();
+        outputs.push(
+            descriptor
+                .into_display_output()
+                .map_err(|source| DrmOutputsError::Registration { output_id, source })?,
+        );
+    }
+    manager
+        .reconcile_outputs(owned_ids, outputs)
+        .map_err(DrmOutputsError::Manager)
 }

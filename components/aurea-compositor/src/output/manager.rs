@@ -5,7 +5,10 @@
 
 use super::layout::{OutputLayout, OutputPosition};
 use super::{DisplayOutput, OutputId, OutputMode, OutputRegistry};
-use std::{collections::BTreeSet, fmt};
+use std::{
+    collections::{BTreeSet, HashSet},
+    fmt,
+};
 
 /// Errors returned by output management operations.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -14,6 +17,7 @@ pub enum OutputManagerError {
     UnknownOutput(OutputId),
     InvalidMode { output: OutputId, mode: OutputMode },
     InvalidScale { output: OutputId, scale: u32 },
+    PositionOverflow,
 }
 
 impl fmt::Display for OutputManagerError {
@@ -31,6 +35,7 @@ impl fmt::Display for OutputManagerError {
             Self::InvalidScale { output, scale } => {
                 write!(f, "Invalid scale {scale} for output {output}")
             }
+            Self::PositionOverflow => f.write_str("Output layout position overflow"),
         }
     }
 }
@@ -38,10 +43,18 @@ impl fmt::Display for OutputManagerError {
 impl std::error::Error for OutputManagerError {}
 
 /// Coordinates output registration, layout, and configuration.
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct OutputManager {
     registry: OutputRegistry,
     layout: OutputLayout,
+}
+
+/// IDs affected by a per-device output reconciliation.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct OutputReconciliation {
+    pub added: Vec<OutputId>,
+    pub updated: Vec<OutputId>,
+    pub removed: Vec<OutputId>,
 }
 
 impl OutputManager {
@@ -123,6 +136,106 @@ impl OutputManager {
         }
 
         Ok(())
+    }
+
+    /// Reconciles the outputs owned by one DRM device with a fresh discovery
+    /// result. Unchanged outputs keep their object and layout position. Updated
+    /// outputs retain scale, enabled state, position, and a still-supported
+    /// current mode. New outputs are placed after the rightmost output in the
+    /// final set, using replacement dimensions for updated outputs.
+    pub fn reconcile_outputs(
+        &mut self,
+        owned_ids: &[OutputId],
+        discovered: Vec<DisplayOutput>,
+    ) -> Result<OutputReconciliation, OutputManagerError> {
+        let owned = owned_ids.iter().copied().collect::<HashSet<_>>();
+        let mut desired = BTreeSet::new();
+        for output in &discovered {
+            let id = output.id();
+            if !desired.insert(id) {
+                return Err(OutputManagerError::DuplicateOutput(id));
+            }
+            if self.registry.get(id).is_some() && !owned.contains(&id) {
+                return Err(OutputManagerError::DuplicateOutput(id));
+            }
+        }
+
+        let discovered_ids = discovered
+            .iter()
+            .map(DisplayOutput::id)
+            .collect::<HashSet<_>>();
+        let discovered_widths = discovered
+            .iter()
+            .map(|output| (output.id(), output.current_mode().width()))
+            .collect::<std::collections::HashMap<_, _>>();
+        let mut changes = OutputReconciliation::default();
+        let mut updates = Vec::new();
+        let mut additions = Vec::new();
+
+        for output in discovered {
+            let id = output.id();
+            if let Some(current) = self.registry.get(id) {
+                let mut replacement = current.clone();
+                replacement.update_from_discovery(output);
+                if *current != replacement {
+                    changes.updated.push(id);
+                    updates.push((id, replacement));
+                }
+            } else {
+                changes.added.push(id);
+                additions.push(output);
+            }
+        }
+        changes.removed = owned
+            .into_iter()
+            .filter(|id| !discovered_ids.contains(id) && self.registry.get(*id).is_some())
+            .collect();
+
+        let removed = changes.removed.iter().copied().collect::<HashSet<_>>();
+        let mut next_x = self.registry.iter().try_fold(0_i32, |right, output| {
+            if removed.contains(&output.id()) {
+                return Ok(right);
+            }
+            let position = self.layout.get(output.id()).unwrap_or_default();
+            let width = discovered_widths
+                .get(&output.id())
+                .copied()
+                .unwrap_or_else(|| output.current_mode().width());
+            let width = i32::try_from(width).map_err(|_| OutputManagerError::PositionOverflow)?;
+            let edge = position
+                .x()
+                .checked_add(width)
+                .ok_or(OutputManagerError::PositionOverflow)?;
+            Ok::<i32, OutputManagerError>(right.max(edge))
+        })?;
+        let mut addition_positions = Vec::with_capacity(additions.len());
+        for output in &additions {
+            let width = i32::try_from(output.current_mode().width())
+                .map_err(|_| OutputManagerError::PositionOverflow)?;
+            addition_positions.push((output.id(), (next_x, 0)));
+            next_x = next_x
+                .checked_add(width)
+                .ok_or(OutputManagerError::PositionOverflow)?;
+        }
+
+        // All validation and position arithmetic is complete before mutation.
+        let before = self.clone();
+        for id in &changes.removed {
+            self.unregister(*id);
+        }
+        for (id, output) in updates {
+            if let Some(current) = self.registry.get_mut(id) {
+                *current = output;
+            }
+        }
+        for (output, (_, position)) in additions.into_iter().zip(addition_positions) {
+            if let Err(error) = self.register(output, position) {
+                *self = before;
+                return Err(error);
+            }
+        }
+
+        Ok(changes)
     }
 
     /// Unregisters an output and removes it from the layout.

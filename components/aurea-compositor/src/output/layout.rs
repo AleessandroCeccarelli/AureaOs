@@ -24,7 +24,7 @@ impl OutputPosition {
     }
 }
 /// Stores logical positions for registered outputs.
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct OutputLayout {
     positions: BTreeMap<OutputId, OutputPosition>,
 }

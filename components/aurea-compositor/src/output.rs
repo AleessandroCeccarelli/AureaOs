@@ -135,10 +135,22 @@ impl DisplayOutput {
     pub fn set_enabled(&mut self, enabled: bool) {
         self.enabled = enabled;
     }
+
+    /// Applies newly discovered properties while preserving user settings.
+    /// The preferred mode is retained if it remains supported; scale and
+    /// enabled state are compositor configuration, not DRM discovery data.
+    pub(crate) fn update_from_discovery(&mut self, mut discovered: Self) {
+        if discovered.modes.contains(&self.current_mode) {
+            discovered.current_mode = self.current_mode;
+        }
+        discovered.scale = self.scale;
+        discovered.enabled = self.enabled;
+        *self = discovered;
+    }
 }
 
 /// Registry of currently known display outputs.
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct OutputRegistry {
     outputs: BTreeMap<OutputId, DisplayOutput>,
 }
