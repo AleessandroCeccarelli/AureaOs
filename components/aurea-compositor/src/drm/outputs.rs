@@ -67,20 +67,20 @@ impl Error for DrmOutputsError {
 
 /// Discovers connected DRM outputs and registers them in the output manager.
 ///
+/// Output IDs are derived from the DRM device and connector identities,
+/// so this function does not need a caller-provided ID namespace.
+///
 /// Outputs are placed horizontally from left to right, starting at `(0, 0)`.
 /// The next output's x-position is calculated from the preceding output's
-/// current mode width. `first_output_id` is the ID assigned to the first
-/// discovered output.
+/// current mode width.
 ///
 /// All descriptors, IDs, and positions are validated before the output
 /// manager is mutated. Registration is performed atomically as a batch.
 pub fn initialize_drm_outputs(
     device: &DrmDevice,
     manager: &mut OutputManager,
-    first_output_id: OutputId,
 ) -> Result<usize, DrmOutputsError> {
-    let descriptors =
-        discover_connected_outputs(device, first_output_id).map_err(DrmOutputsError::Discovery)?;
+    let descriptors = discover_connected_outputs(device).map_err(DrmOutputsError::Discovery)?;
 
     let mut staged_outputs = Vec::with_capacity(descriptors.len());
     let mut staged_ids = BTreeSet::new();

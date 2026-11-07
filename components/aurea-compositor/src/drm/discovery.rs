@@ -13,6 +13,7 @@ use crate::drm::{
     device::DrmDevice,
     output::{DrmModeInfo, DrmOutputDescriptor},
 };
+
 use crate::output::OutputId;
 
 /// Errors produced while discovering DRM outputs.
@@ -26,9 +27,6 @@ pub enum DrmDiscoveryError {
 
     /// The DRM device could not provide connector information.
     ConnectorQueryFailed { connector_id: u32, message: String },
-
-    /// An output identifier could not be represented.
-    OutputIdOverflow,
 }
 
 impl fmt::Display for DrmDiscoveryError {
@@ -49,44 +47,42 @@ impl fmt::Display for DrmDiscoveryError {
                     "Failed to query DRM connector {connector_id}: {message}"
                 )
             }
-            Self::OutputIdOverflow => formatter.write_str("DRM output identifier overflow"),
         }
     }
 }
 
 impl Error for DrmDiscoveryError {}
 
-/// Derives a stable output ID from a DRM connector ID.
+/// Derives a globally unique output ID from a DRM device and connector.
 ///
-/// `first_output_id` acts as the base namespace for this DRM device.
-/// The resulting ID does not depend on connector enumeration order.
-fn output_id_for_connector(
-    first_output_id: OutputId,
-    connector_id: u32,
-) -> Result<OutputId, DrmDiscoveryError> {
-    first_output_id
-        .checked_add(u64::from(connector_id))
-        .ok_or(DrmDiscoveryError::OutputIdOverflow)
+/// The upper 64 bits contain the Linux DRM device identifier.
+/// The lower 32 bits contain the connector identifier.
+///
+/// This encoding is deterministic and collision-free for the complete
+/// device-identifier and connector-identifier ranges.
+fn output_id_for_connector(device_id: u64, connector_id: u32) -> OutputId {
+    (u128::from(device_id) << 32) | u128::from(connector_id)
 }
 
 /// Discovers connected DRM outputs.
 ///
-/// Each output ID is derived from its DRM connector ID and the supplied
-/// device namespace. IDs therefore remain stable when other connectors
-/// are connected, disconnected, or returned in a different order.
+/// Each output ID is derived from its DRM device identifier and connector ID.
+/// IDs therefore remain stable when connectors are enumerated in a different
+/// order and remain unique across different DRM devices.
 ///
 /// Disconnected connectors and connectors without display modes are skipped.
 /// The selected initial mode is the preferred mode, or the first available
 /// mode when no preferred mode is available.
 pub fn discover_connected_outputs(
     device: &DrmDevice,
-    first_output_id: OutputId,
 ) -> Result<Vec<DrmOutputDescriptor>, DrmDiscoveryError> {
     // drm-rs operations use the underlying file descriptor directly.
     // They must not be performed while Smithay has paused the device.
     if !device.is_active() {
         return Err(DrmDiscoveryError::DeviceInactive);
     }
+
+    let device_id = device.device().device_id() as u64;
 
     let resources = device
         .fd()
@@ -142,7 +138,7 @@ pub fn discover_connected_outputs(
         );
 
         let connector_id = u32::from(*connector_handle);
-        let output_id = output_id_for_connector(first_output_id, connector_id)?;
+        let output_id = output_id_for_connector(device_id, connector_id);
 
         let name = format!(
             "{}-{}",

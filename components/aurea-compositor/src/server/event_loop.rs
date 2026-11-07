@@ -154,12 +154,8 @@ impl WaylandServer {
         // Discover connected connectors on the currently initialized DRM device.
         #[cfg(feature = "drm")]
         if let Some(device) = state._drm_device.as_ref() {
-            crate::drm::outputs::initialize_drm_outputs(
-                device,
-                state.compositor.output_manager(),
-                1,
-            )
-            .map_err(io::Error::other)?;
+            crate::drm::outputs::initialize_drm_outputs(device, state.compositor.output_manager())
+                .map_err(io::Error::other)?;
         }
 
         // Publish registered outputs as Wayland globals.
