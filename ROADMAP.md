@@ -17,6 +17,8 @@ AureaOS targets Debian GNU/Linux 13 (Trixie), `amd64` (x86-64). The first releas
 - Initial Rust implementations of `aurea-shell` and `aurea-compositor`.
 - Shell session lifecycle coordination and shutdown handling through an event bus.
 - A Smithay-based Wayland server with initial XDG shell integration.
+- Initial Wayland seat and XKB keyboard support, with libinput event routing under the DRM feature.
+- Global Super + Ctrl + Left / Right workspace navigation shortcuts.
 - Initial toplevel surface tracking and window-management structures.
 - Initial four-workspace model with workspace switching and per-window assignment.
 - Render-scene filtering so only mapped windows on the active workspace are drawn.
@@ -47,7 +49,7 @@ The Debian bootstrap profile still needs package-resolution validation and does 
 
 - Implement a concrete graphics rendering backend and physical frame presentation.
 - Complete DRM/KMS mode setting and physical display configuration.
-- Implement complete keyboard, pointer, and touch input handling.
+- Complete pointer, touch, and gesture input handling, including touchpad workspace gestures.
 - Develop complete window management and desktop interactions.
 - Develop Aurea Display Intelligence for display capabilities, fixed-refresh strategies, VRR support, and display policy.
 - Integrate display policy with compositor presentation information and the DRM/KMS backend.

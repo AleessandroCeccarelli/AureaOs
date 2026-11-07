@@ -142,11 +142,15 @@ impl WaylandServer {
             #[cfg(feature = "drm")]
             udev_changed_devices: Vec::new(),
         };
+        state.compositor.initialize_keyboard()?;
 
         let loop_handle = event_loop.handle();
         #[cfg(feature = "drm")]
         {
             state.loop_handle = Some(loop_handle.clone());
+            if let Some(session) = state.drm_session.as_ref() {
+                super::input::register_input_backend(&loop_handle, session)?;
+            }
         }
 
         // Register Udev monitoring and obtain the initial DRM inventory.

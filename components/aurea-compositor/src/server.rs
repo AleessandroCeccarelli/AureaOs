@@ -8,7 +8,10 @@
 mod client;
 mod display_events;
 mod event_loop;
+#[cfg(feature = "drm")]
+mod input;
 mod output;
+mod seat;
 mod session;
 mod session_events;
 mod socket;

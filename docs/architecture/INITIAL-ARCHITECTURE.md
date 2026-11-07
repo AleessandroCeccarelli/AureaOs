@@ -110,6 +110,9 @@ The current prototype includes:
 - An initial window-management model.
 - An initial four-workspace model: mapped toplevels belong to one workspace, and
   render scenes include only windows on the active workspace.
+- An initial Wayland seat and XKB keyboard, with libinput event routing when the
+  DRM feature is enabled.
+- Super + Ctrl + Left / Right bindings for workspace navigation.
 - Conversion of mapped XDG surface trees into Smithay render elements, including logical window positions and output scaling.
 - DRM device discovery and management.
 - DRM device event integration with the compositor event loop.
@@ -128,7 +131,7 @@ The following capabilities remain incomplete:
 - A concrete graphics rendering backend.
 - Frame rendering and presentation to physical displays.
 - Complete DRM/KMS mode setting.
-- Full input handling.
+- Full pointer, touch, and gesture handling.
 - Complete window management and desktop interactions, including workspace UI,
   keyboard shortcuts, and touchpad gestures.
 - Cross-GPU rendering and presentation.

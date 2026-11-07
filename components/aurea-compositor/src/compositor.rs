@@ -5,12 +5,21 @@
 
 //! Core Wayland compositor state.
 
-use std::{collections::BTreeMap, error::Error};
+use std::{
+    collections::{BTreeMap, HashSet},
+    error::Error,
+    io,
+};
 
 use smithay::{
-    input::{SeatHandler, SeatState},
+    backend::input::{KeyState, Keycode},
+    input::{
+        Seat, SeatHandler, SeatState,
+        keyboard::{FilterResult, XkbConfig},
+    },
     output::Output,
     reexports::wayland_server::{DisplayHandle, protocol::wl_surface::WlSurface},
+    utils::SERIAL_COUNTER,
     wayland::{compositor::CompositorState, shell::xdg::XdgShellState},
 };
 
@@ -103,6 +112,8 @@ pub struct AureaCompositor {
     compositor_state: CompositorState,
     xdg_shell_state: XdgShellState,
     seat_state: SeatState<Self>,
+    seat: Seat<Self>,
+    suppressed_shortcut_releases: HashSet<Keycode>,
     window_manager: WindowManager,
     output_manager: OutputManager,
     wayland_outputs: BTreeMap<OutputId, Output>,
@@ -113,14 +124,67 @@ impl AureaCompositor {
     pub fn new(display: &DisplayHandle) -> Self {
         let compositor_state = CompositorState::new::<Self>(display);
         let xdg_shell_state = XdgShellState::new::<Self>(display);
+        let mut seat_state = SeatState::new();
+        let seat = seat_state.new_wl_seat(display, "seat0");
 
         Self {
             compositor_state,
             xdg_shell_state,
-            seat_state: SeatState::new(),
+            seat_state,
+            seat,
+            suppressed_shortcut_releases: HashSet::new(),
             window_manager: WindowManager::new(),
             output_manager: OutputManager::new(),
             wayland_outputs: BTreeMap::new(),
+        }
+    }
+
+    /// Initializes the Wayland keyboard using Smithay's default XKB layout.
+    pub fn initialize_keyboard(&mut self) -> io::Result<()> {
+        if self.seat.get_keyboard().is_none() {
+            self.seat
+                .add_keyboard(XkbConfig::default(), 200, 25)
+                .map_err(io::Error::other)?;
+        }
+        Ok(())
+    }
+
+    /// Feeds one backend key event through the compositor shortcut filter and
+    /// forwards unhandled events to the focused Wayland client.
+    pub fn handle_keyboard_input(&mut self, keycode: Keycode, state: KeyState, time_millis: u32) {
+        let Some(keyboard) = self.seat.get_keyboard() else {
+            return;
+        };
+        let serial = SERIAL_COUNTER.next_serial();
+        keyboard.input(
+            self,
+            keycode,
+            state,
+            serial,
+            time_millis,
+            |compositor, modifiers, key| {
+                if state == KeyState::Released
+                    && compositor.suppressed_shortcut_releases.remove(&keycode)
+                {
+                    return FilterResult::Intercept(());
+                }
+
+                if state == KeyState::Pressed
+                    && compositor.handle_keyboard_shortcut(key.modified_sym(), *modifiers)
+                {
+                    compositor.suppressed_shortcut_releases.insert(keycode);
+                    return FilterResult::Intercept(());
+                }
+
+                FilterResult::Forward
+            },
+        );
+    }
+
+    /// Changes the focused Wayland surface for the compositor seat.
+    pub fn focus_surface(&mut self, surface: Option<WlSurface>) {
+        if let Some(keyboard) = self.seat.get_keyboard() {
+            keyboard.set_focus(self, surface, SERIAL_COUNTER.next_serial());
         }
     }
 
@@ -275,7 +339,11 @@ impl AureaCompositor {
     ///
     /// Returns `false` when the index is outside the four-workspace set.
     pub fn switch_workspace(&mut self, workspace: usize) -> bool {
-        self.window_manager.switch_workspace(workspace)
+        if !self.window_manager.switch_workspace(workspace) {
+            return false;
+        }
+        self.focus_surface(self.window_manager.active_workspace_surface());
+        true
     }
 
     /// Applies a resolved global keyboard shortcut to the desktop state.
@@ -303,8 +371,14 @@ impl AureaCompositor {
 
     /// Moves a managed toplevel surface to a workspace by its zero-based index.
     pub fn move_toplevel_to_workspace(&mut self, surface: &WlSurface, workspace: usize) -> bool {
-        self.window_manager
+        if !self
+            .window_manager
             .move_toplevel_to_workspace(surface, workspace)
+        {
+            return false;
+        }
+        self.focus_surface(self.window_manager.active_workspace_surface());
+        true
     }
 
     /// Returns the output manager.

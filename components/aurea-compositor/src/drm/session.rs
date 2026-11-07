@@ -68,6 +68,12 @@ impl DrmSession {
         &mut self.session
     }
 
+    /// Returns a shared libseat handle for input backends that open devices
+    /// through the same active seat session.
+    pub fn session_handle(&self) -> LibSeatSession {
+        self.session.clone()
+    }
+
     /// Transfers the notifier to the Calloop event loop.
     ///
     /// This can only be called once.

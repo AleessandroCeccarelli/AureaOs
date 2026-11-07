@@ -104,7 +104,11 @@ impl WindowManager {
     }
 
     /// Updates mapping state when a toplevel's buffer changes.
-    pub fn update_surface_buffer(&mut self, surface: &WlSurface, mapped: Option<bool>) {
+    pub fn update_surface_buffer(
+        &mut self,
+        surface: &WlSurface,
+        mapped: Option<bool>,
+    ) -> Option<bool> {
         self.remove_dead_toplevels();
 
         if let Some(mapped) = mapped
@@ -114,7 +118,10 @@ impl WindowManager {
                 .find(|toplevel| toplevel.surface.wl_surface() == surface)
         {
             toplevel.mapped = mapped;
+            return Some(mapped);
         }
+
+        None
     }
 
     /// Removes handles for windows that have been destroyed.
@@ -158,5 +165,17 @@ impl WindowManager {
                     && toplevel.workspace == self.active_workspace
             })
             .map(|toplevel| (&toplevel.surface, toplevel.location))
+    }
+
+    /// Returns one mapped surface on the active workspace for keyboard focus.
+    pub(crate) fn active_workspace_surface(&self) -> Option<WlSurface> {
+        self.toplevels
+            .iter()
+            .find(|toplevel| {
+                toplevel.surface.alive()
+                    && toplevel.mapped
+                    && toplevel.workspace == self.active_workspace
+            })
+            .map(|toplevel| toplevel.surface.wl_surface().clone())
     }
 }
