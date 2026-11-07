@@ -67,8 +67,6 @@ impl WaylandServer {
     }
 
     /// Creates a server with a libseat session and the primary GPU for a seat.
-    ///
-    /// The GPU is discovered automatically; no `/dev/dri/cardN` path is needed.
     #[cfg(feature = "drm")]
     pub fn new_with_primary_drm(socket_name: &str, seat: &str) -> io::Result<Self> {
         let mut drm_session = session::create_session()?;
@@ -122,24 +120,31 @@ impl WaylandServer {
             #[cfg(feature = "drm")]
             session_active,
             #[cfg(feature = "drm")]
-            udev_device_paths: Vec::new(),
+            gpu_manager: crate::gpu::GpuManager::new(),
             #[cfg(feature = "drm")]
-            udev_events: Vec::new(),
+            udev_device_ids: Vec::new(),
+            #[cfg(feature = "drm")]
+            udev_changed_devices: Vec::new(),
         };
 
         let loop_handle = event_loop.handle();
 
-        // Register Udev monitoring and capture the initial DRM device list.
-        //
-        // The initial snapshot is collected before the backend is inserted
-        // into Calloop, as required by Smithay.
+        // Register Udev monitoring and obtain the initial GPU inventory.
         #[cfg(feature = "drm")]
         if let Some(seat) = state.drm_session.as_ref().map(DrmSession::seat) {
-            state.udev_device_paths =
-                super::udev_events::register_udev_events(&loop_handle, &seat)?;
+            let initial_devices = super::udev_events::register_udev_events(&loop_handle, &seat)?;
+
+            for (device_id, path) in initial_devices {
+                state
+                    .gpu_manager
+                    .register_device(path.clone())
+                    .map_err(io::Error::other)?;
+
+                state.udev_device_ids.push((device_id, path));
+            }
         }
 
-        // Discover connected connectors and register their output metadata.
+        // Discover connected connectors on the currently initialized DRM device.
         #[cfg(feature = "drm")]
         if let Some(device) = state._drm_device.as_ref() {
             crate::drm::outputs::initialize_drm_outputs(

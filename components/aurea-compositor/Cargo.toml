@@ -1,3 +1,4 @@
+
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # AureaOS
@@ -14,20 +15,20 @@ license = "GPL-3.0-or-later"
 default = []
 
 # Native Linux desktop backend: DRM/KMS, GBM, libinput, udev and libseat.
+# Multi-GPU support is provided by Smithay's renderer_multi module.
 drm = [
     "smithay/backend_drm",
     "smithay/backend_gbm",
     "smithay/backend_libinput",
     "smithay/backend_udev",
     "smithay/backend_session_libseat",
+    "smithay/renderer_multi",
 ]
 
 # Vulkan remains an independent, opt-in rendering feature.
 vulkan = ["smithay/backend_vulkan"]
 
-[dependencies]
-smithay = {
-    version = "0.7",
-    default-features = false,
-    features = ["wayland_frontend"],
-}
+[dependencies.smithay]
+version = "0.7"
+default-features = false
+features = ["wayland_frontend"]

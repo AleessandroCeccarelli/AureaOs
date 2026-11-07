@@ -6,6 +6,7 @@
 //! Wayland compositor component for AureaOS.
 
 pub mod compositor;
+pub mod gpu;
 pub mod server;
 mod window_manager;
 mod xdg_shell;
@@ -21,5 +22,6 @@ pub mod drm;
 pub mod vulkan;
 
 pub use compositor::AureaCompositor;
+pub use gpu::{GpuAvailability, GpuDevice, GpuManager, GpuManagerError};
 pub use renderer::{RenderBackend, RenderPreference};
 pub use server::WaylandServer;
