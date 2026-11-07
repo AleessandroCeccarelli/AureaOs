@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -11,17 +10,13 @@ use std::sync::{Arc, Mutex};
 use smithay::{
     delegate_compositor,
     reexports::wayland_server::{
+        Client,
         backend::{ClientData, ClientId, DisconnectReason},
         protocol::wl_surface::WlSurface,
-        Client,
     },
     wayland::compositor::{
-        with_states,
-        BufferAssignment,
-        CompositorClientState,
-        CompositorHandler,
-        CompositorState,
-        SurfaceAttributes,
+        BufferAssignment, CompositorClientState, CompositorHandler, CompositorState,
+        SurfaceAttributes, with_states,
     },
 };
 
@@ -35,9 +30,7 @@ pub(super) struct AureaClientState {
 
 impl AureaClientState {
     /// Creates client state connected to the server disconnection queue.
-    pub(super) fn new(
-        disconnected_clients: Arc<Mutex<Vec<ClientId>>>,
-    ) -> Self {
+    pub(super) fn new(disconnected_clients: Arc<Mutex<Vec<ClientId>>>) -> Self {
         Self {
             compositor_state: CompositorClientState::default(),
             disconnected_clients,
@@ -48,11 +41,7 @@ impl AureaClientState {
 impl ClientData for AureaClientState {
     fn initialized(&self, _client_id: ClientId) {}
 
-    fn disconnected(
-        &self,
-        client_id: ClientId,
-        _reason: DisconnectReason,
-    ) {
+    fn disconnected(&self, client_id: ClientId, _reason: DisconnectReason) {
         let mut disconnected_clients = self
             .disconnected_clients
             .lock()
@@ -67,10 +56,7 @@ impl CompositorHandler for AureaCompositor {
         self.compositor_state()
     }
 
-    fn client_compositor_state<'a>(
-        &self,
-        client: &'a Client,
-    ) -> &'a CompositorClientState {
+    fn client_compositor_state<'a>(&self, client: &'a Client) -> &'a CompositorClientState {
         &client
             .get_data::<AureaClientState>()
             .expect("AureaClientState must be attached to every client")
@@ -79,9 +65,7 @@ impl CompositorHandler for AureaCompositor {
 
     fn commit(&mut self, surface: &WlSurface) {
         let mapped = with_states(surface, |states| {
-            let mut cached_state = states
-                .cached_state
-                .get::<SurfaceAttributes>();
+            let mut cached_state = states.cached_state.get::<SurfaceAttributes>();
             let current = cached_state.current();
 
             match current.buffer.as_ref() {
@@ -91,8 +75,7 @@ impl CompositorHandler for AureaCompositor {
             }
         });
 
-        self.window_manager()
-            .update_surface_buffer(surface, mapped);
+        self.window_manager().update_surface_buffer(surface, mapped);
     }
 }
 

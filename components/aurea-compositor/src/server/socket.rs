@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -23,8 +22,7 @@ pub(super) fn register_wayland_socket(
 
     loop_handle
         .insert_source(listening_socket, |stream, _, state| {
-            let client_state =
-                AureaClientState::new(Arc::clone(&state.disconnected_clients));
+            let client_state = AureaClientState::new(Arc::clone(&state.disconnected_clients));
 
             match state
                 .display

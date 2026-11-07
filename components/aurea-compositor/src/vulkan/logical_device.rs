@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -32,31 +31,26 @@ impl VulkanLogicalDevice {
             .queue_family_index(queue_family_index)
             .queue_priorities(&priorities)];
 
-        let create_info =
-            vk::DeviceCreateInfo::default().queue_create_infos(&queue_info);
+        let create_info = vk::DeviceCreateInfo::default().queue_create_infos(&queue_info);
 
         let device = unsafe {
-            physical_device
-                .instance()
-                .handle()
-                .create_device(physical_device.handle(), &create_info, None)
+            physical_device.instance().handle().create_device(
+                physical_device.handle(),
+                &create_info,
+                None,
+            )
         }
         .map_err(|error| {
-            VulkanInitError::new(format!(
-                "Failed to create Vulkan logical device: {error}"
-            ))
+            VulkanInitError::new(format!("Failed to create Vulkan logical device: {error}"))
         })?;
 
-        let graphics_queue =
-            unsafe { device.get_device_queue(queue_family_index, 0) };
+        let graphics_queue = unsafe { device.get_device_queue(queue_family_index, 0) };
 
         let pool_info = vk::CommandPoolCreateInfo::default()
             .queue_family_index(queue_family_index)
             .flags(vk::CommandPoolCreateFlags::RESET_COMMAND_BUFFER);
 
-        let command_pool = match unsafe {
-            device.create_command_pool(&pool_info, None)
-        } {
+        let command_pool = match unsafe { device.create_command_pool(&pool_info, None) } {
             Ok(pool) => pool,
             Err(error) => {
                 unsafe {
@@ -98,32 +92,22 @@ impl VulkanLogicalDevice {
     }
 
     /// Allocates one primary command buffer from this device's command pool.
-    pub(super) fn allocate_primary_command_buffer(
-        &self,
-    ) -> Result<vk::CommandBuffer, vk::Result> {
+    pub(super) fn allocate_primary_command_buffer(&self) -> Result<vk::CommandBuffer, vk::Result> {
         let allocation_info = vk::CommandBufferAllocateInfo::default()
             .command_pool(self.command_pool)
             .level(vk::CommandBufferLevel::PRIMARY)
             .command_buffer_count(1);
 
-        let command_buffers = unsafe {
-            self.device
-                .allocate_command_buffers(&allocation_info)
-        }?;
+        let command_buffers = unsafe { self.device.allocate_command_buffers(&allocation_info) }?;
 
         Ok(command_buffers[0])
     }
 
     /// Frees a command buffer allocated from this device's pool.
-    pub(super) fn free_command_buffer(
-        &self,
-        command_buffer: vk::CommandBuffer,
-    ) {
+    pub(super) fn free_command_buffer(&self, command_buffer: vk::CommandBuffer) {
         unsafe {
-            self.device.free_command_buffers(
-                self.command_pool,
-                &[command_buffer],
-            );
+            self.device
+                .free_command_buffers(self.command_pool, &[command_buffer]);
         }
     }
 
@@ -132,8 +116,7 @@ impl VulkanLogicalDevice {
         &self,
         command_buffer: vk::CommandBuffer,
     ) -> Result<(), vk::Result> {
-        VulkanQueueSubmitter::new(&self.device, self.graphics_queue)
-            .submit_and_wait(command_buffer)
+        VulkanQueueSubmitter::new(&self.device, self.graphics_queue).submit_and_wait(command_buffer)
     }
 }
 
@@ -155,19 +138,11 @@ impl VulkanContext {
     ) -> Result<VulkanLogicalDevice, VulkanInitError> {
         let physical_device = self
             .select_device(preference)
-            .ok_or_else(|| {
-                VulkanInitError::new(
-                    "No graphics-capable Vulkan device found",
-                )
-            })?;
+            .ok_or_else(|| VulkanInitError::new("No graphics-capable Vulkan device found"))?;
 
         let queue_family_index = self
             .graphics_queue_family(physical_device)
-            .ok_or_else(|| {
-                VulkanInitError::new(
-                    "Selected device has no graphics queue",
-                )
-            })?;
+            .ok_or_else(|| VulkanInitError::new("Selected device has no graphics queue"))?;
 
         VulkanLogicalDevice::new(physical_device, queue_family_index)
     }

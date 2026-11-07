@@ -1,16 +1,10 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-use super::{
-    DisplayOutput,
-    OutputId,
-    OutputMode,
-    OutputRegistry,
-};
 use super::layout::{OutputLayout, OutputPosition};
+use super::{DisplayOutput, OutputId, OutputMode, OutputRegistry};
 use std::{collections::BTreeSet, fmt};
 
 /// Errors returned by output management operations.
@@ -18,14 +12,8 @@ use std::{collections::BTreeSet, fmt};
 pub enum OutputManagerError {
     DuplicateOutput(OutputId),
     UnknownOutput(OutputId),
-    InvalidMode {
-        output: OutputId,
-        mode: OutputMode,
-    },
-    InvalidScale {
-        output: OutputId,
-        scale: u32,
-    },
+    InvalidMode { output: OutputId, mode: OutputMode },
+    InvalidScale { output: OutputId, scale: u32 },
 }
 
 impl fmt::Display for OutputManagerError {
@@ -180,11 +168,7 @@ impl OutputManager {
     }
 
     /// Changes the scale of an output.
-    pub fn set_scale(
-        &mut self,
-        output_id: OutputId,
-        scale: u32,
-    ) -> Result<(), OutputManagerError> {
+    pub fn set_scale(&mut self, output_id: OutputId, scale: u32) -> Result<(), OutputManagerError> {
         if scale == 0 {
             return Err(OutputManagerError::InvalidScale {
                 output: output_id,

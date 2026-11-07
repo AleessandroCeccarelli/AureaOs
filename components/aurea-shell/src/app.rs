@@ -120,7 +120,6 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
     Ok(())
 }
 
-
 #[cfg(test)]
 #[path = "../tests/unit/app.rs"]
 mod tests;

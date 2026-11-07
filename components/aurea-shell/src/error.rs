@@ -51,7 +51,6 @@ impl From<io::Error> for ShellError {
     }
 }
 
-
 #[cfg(test)]
 #[path = "../tests/unit/error.rs"]
 mod tests;

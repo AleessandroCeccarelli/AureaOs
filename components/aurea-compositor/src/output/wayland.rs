@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -15,11 +14,7 @@ use smithay::{
 };
 
 use crate::output::{
-    layout::OutputPosition,
-    manager::OutputManager,
-    DisplayOutput,
-    OutputId,
-    OutputMode,
+    DisplayOutput, OutputId, OutputMode, layout::OutputPosition, manager::OutputManager,
 };
 
 /// Error returned when an output cannot be represented by Wayland.
@@ -31,11 +26,7 @@ pub struct OutputPublicationError {
 }
 
 impl OutputPublicationError {
-    fn value_out_of_range(
-        output: OutputId,
-        field: &'static str,
-        value: u32,
-    ) -> Self {
+    fn value_out_of_range(output: OutputId, field: &'static str, value: u32) -> Self {
         Self {
             output,
             field,
@@ -49,9 +40,7 @@ impl fmt::Display for OutputPublicationError {
         write!(
             formatter,
             "Output {} has a {} value ({}) that exceeds the Wayland range",
-            self.output,
-            self.field,
-            self.value,
+            self.output, self.field, self.value,
         )
     }
 }
@@ -79,15 +68,10 @@ impl WaylandOutputConfig {
             .map(|mode| Self::convert_mode(output.id(), *mode))
             .collect::<Result<Vec<_>, _>>()?;
 
-        let current_mode =
-            Self::convert_mode(output.id(), output.current_mode())?;
+        let current_mode = Self::convert_mode(output.id(), output.current_mode())?;
 
         let scale = i32::try_from(output.scale()).map_err(|_| {
-            OutputPublicationError::value_out_of_range(
-                output.id(),
-                "scale",
-                output.scale(),
-            )
+            OutputPublicationError::value_out_of_range(output.id(), "scale", output.scale())
         })?;
 
         Ok(Self {
@@ -100,24 +84,13 @@ impl WaylandOutputConfig {
     }
 
     /// Converts a display mode into its Wayland representation.
-    fn convert_mode(
-        output: OutputId,
-        mode: OutputMode,
-    ) -> Result<Mode, OutputPublicationError> {
+    fn convert_mode(output: OutputId, mode: OutputMode) -> Result<Mode, OutputPublicationError> {
         let width = i32::try_from(mode.width()).map_err(|_| {
-            OutputPublicationError::value_out_of_range(
-                output,
-                "mode width",
-                mode.width(),
-            )
+            OutputPublicationError::value_out_of_range(output, "mode width", mode.width())
         })?;
 
         let height = i32::try_from(mode.height()).map_err(|_| {
-            OutputPublicationError::value_out_of_range(
-                output,
-                "mode height",
-                mode.height(),
-            )
+            OutputPublicationError::value_out_of_range(output, "mode height", mode.height())
         })?;
 
         let refresh = i32::try_from(mode.refresh_millihz()).map_err(|_| {
@@ -139,10 +112,7 @@ impl WaylandOutputConfig {
 ///
 /// The caller must retain the returned output for its entire lifetime.
 /// Dropping it removes the corresponding Wayland global.
-fn create_wayland_output(
-    display: &DisplayHandle,
-    config: WaylandOutputConfig,
-) -> Output {
+fn create_wayland_output(display: &DisplayHandle, config: WaylandOutputConfig) -> Output {
     let properties = PhysicalProperties {
         size: (0, 0).into(),
         subpixel: Subpixel::Unknown,
@@ -162,15 +132,10 @@ fn create_wayland_output(
         Some(config.current_mode),
         Some(Transform::Normal),
         Some(config.scale),
-        Some(Point::from((
-            config.position.x(),
-            config.position.y(),
-        ))),
+        Some(Point::from((config.position.x(), config.position.y()))),
     );
 
-    wayland_output.create_global::<crate::compositor::AureaCompositor>(
-        display,
-    );
+    wayland_output.create_global::<crate::compositor::AureaCompositor>(display);
 
     wayland_output
 }
@@ -208,10 +173,7 @@ pub fn publish_outputs(
         .iter()
         .filter(|output| output.is_enabled())
         .map(|output| {
-            let position = output_manager
-                .layout()
-                .get(output.id())
-                .unwrap_or_default();
+            let position = output_manager.layout().get(output.id()).unwrap_or_default();
 
             WaylandOutputConfig::from_output(output, position)
         })

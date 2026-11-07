@@ -19,11 +19,7 @@ pub struct OutputMode {
 }
 impl OutputMode {
     /// Creates a mode if its dimensions and refresh rate are valid.
-    pub fn new(
-        width: u32,
-        height: u32,
-        refresh_millihz: u32,
-    ) -> Option<Self> {
+    pub fn new(width: u32, height: u32, refresh_millihz: u32) -> Option<Self> {
         if width == 0 || height == 0 || refresh_millihz == 0 {
             return None;
         }
@@ -63,11 +59,7 @@ impl DisplayOutput {
         scale: u32,
     ) -> Option<Self> {
         let name = name.into();
-        if name.is_empty()
-            || scale == 0
-            || modes.is_empty()
-            || !modes.contains(&current_mode)
-        {
+        if name.is_empty() || scale == 0 || modes.is_empty() || !modes.contains(&current_mode) {
             return None;
         }
         Some(Self {

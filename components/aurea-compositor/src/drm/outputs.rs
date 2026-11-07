@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -6,21 +5,17 @@
 
 //! Initializes compositor outputs from the DRM backend.
 
-use std::{
-    collections::BTreeSet,
-    error::Error,
-    fmt,
-};
+use std::{collections::BTreeSet, error::Error, fmt};
 
 use crate::{
     drm::{
         device::DrmDevice,
-        discovery::{discover_connected_outputs, DrmDiscoveryError},
+        discovery::{DrmDiscoveryError, discover_connected_outputs},
         output::DrmOutputError,
     },
     output::{
-        manager::{OutputManager, OutputManagerError},
         OutputId,
+        manager::{OutputManager, OutputManagerError},
     },
 };
 
@@ -49,11 +44,12 @@ impl fmt::Display for DrmOutputsError {
                 )
             }
             Self::Manager(source) => {
-                write!(formatter, "Output manager failed to register DRM outputs: {source}")
+                write!(
+                    formatter,
+                    "Output manager failed to register DRM outputs: {source}"
+                )
             }
-            Self::PositionOverflow => {
-                formatter.write_str("DRM output layout position overflow")
-            }
+            Self::PositionOverflow => formatter.write_str("DRM output layout position overflow"),
         }
     }
 }
@@ -83,8 +79,8 @@ pub fn initialize_drm_outputs(
     manager: &mut OutputManager,
     first_output_id: OutputId,
 ) -> Result<usize, DrmOutputsError> {
-    let descriptors = discover_connected_outputs(device, first_output_id)
-        .map_err(DrmOutputsError::Discovery)?;
+    let descriptors =
+        discover_connected_outputs(device, first_output_id).map_err(DrmOutputsError::Discovery)?;
 
     let mut staged_outputs = Vec::with_capacity(descriptors.len());
     let mut staged_ids = BTreeSet::new();
@@ -93,9 +89,7 @@ pub fn initialize_drm_outputs(
     for descriptor in descriptors {
         let output_id = descriptor.id();
 
-        if manager.registry().get(output_id).is_some()
-            || !staged_ids.insert(output_id)
-        {
+        if manager.registry().get(output_id).is_some() || !staged_ids.insert(output_id) {
             return Err(DrmOutputsError::Registration {
                 output_id,
                 source: DrmOutputError::DuplicateOutputId,
@@ -107,10 +101,7 @@ pub fn initialize_drm_outputs(
 
         let output = descriptor
             .into_display_output()
-            .map_err(|source| DrmOutputsError::Registration {
-                output_id,
-                source,
-            })?;
+            .map_err(|source| DrmOutputsError::Registration { output_id, source })?;
 
         staged_outputs.push((output, (next_x, 0)));
 

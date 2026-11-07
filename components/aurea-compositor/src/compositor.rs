@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -11,22 +10,15 @@ use std::{collections::BTreeMap, error::Error};
 use smithay::{
     input::{SeatHandler, SeatState},
     output::Output,
-    reexports::wayland_server::{protocol::wl_surface::WlSurface, DisplayHandle},
-    wayland::{
-        compositor::CompositorState,
-        shell::xdg::XdgShellState,
-    },
+    reexports::wayland_server::{DisplayHandle, protocol::wl_surface::WlSurface},
+    wayland::{compositor::CompositorState, shell::xdg::XdgShellState},
 };
 
 use crate::{
     output::{
-        manager::OutputManager,
-        wayland::{
-            publish_output,
-            publish_outputs,
-            OutputPublicationError,
-        },
         OutputId,
+        manager::OutputManager,
+        wayland::{OutputPublicationError, publish_output, publish_outputs},
     },
     render::RenderScene,
     renderer::{RenderBackend, RenderTarget},
@@ -145,11 +137,8 @@ impl AureaCompositor {
             .get(output_id)
             .unwrap_or_default();
 
-        if let Some(wayland_output) =
-            publish_output(display, output, position)?
-        {
-            self.wayland_outputs
-                .insert(output_id, wayland_output);
+        if let Some(wayland_output) = publish_output(display, output, position)? {
+            self.wayland_outputs.insert(output_id, wayland_output);
         }
 
         Ok(())
@@ -159,10 +148,7 @@ impl AureaCompositor {
     ///
     /// Dropping the retained Smithay output removes its global.
     /// Returns whether an output was actually removed.
-    pub fn unpublish_wayland_output(
-        &mut self,
-        output_id: OutputId,
-    ) -> bool {
+    pub fn unpublish_wayland_output(&mut self, output_id: OutputId) -> bool {
         self.wayland_outputs.remove(&output_id).is_some()
     }
 

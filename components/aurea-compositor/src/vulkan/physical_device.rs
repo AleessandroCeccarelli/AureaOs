@@ -1,15 +1,11 @@
-
- // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
 //! Physical-device information and selection.
 
-use smithay::{
-    backend::vulkan::PhysicalDevice,
-    reexports::ash::vk,
-};
+use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 
 use crate::renderer::RenderPreference;
 
@@ -36,10 +32,7 @@ pub struct VulkanDeviceInfo {
 }
 
 impl VulkanDeviceInfo {
-    pub(super) fn from_device(
-        device: &PhysicalDevice,
-        has_graphics_queue: bool,
-    ) -> Self {
+    pub(super) fn from_device(device: &PhysicalDevice, has_graphics_queue: bool) -> Self {
         Self {
             name: device.name().to_owned(),
             api_version: format!("{:?}", device.api_version()),
@@ -67,10 +60,7 @@ impl VulkanContext {
     }
 
     /// Selects a graphics-capable physical device by preference.
-    pub fn select_device(
-        &self,
-        preference: RenderPreference,
-    ) -> Option<&PhysicalDevice> {
+    pub fn select_device(&self, preference: RenderPreference) -> Option<&PhysicalDevice> {
         let preferred_type = match preference {
             RenderPreference::PowerSaving => Some(VulkanDeviceType::Integrated),
             RenderPreference::Performance => Some(VulkanDeviceType::Discrete),
@@ -102,10 +92,7 @@ impl VulkanContext {
         }
     }
 
-    pub(super) fn graphics_queue_family(
-        &self,
-        device: &PhysicalDevice,
-    ) -> Option<u32> {
+    pub(super) fn graphics_queue_family(&self, device: &PhysicalDevice) -> Option<u32> {
         self.queue_families(device)
             .into_iter()
             .find(|family| family.supports_graphics && family.queue_count > 0)

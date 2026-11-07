@@ -39,11 +39,7 @@ impl WindowManager {
     }
 
     /// Updates mapping state when a toplevel's buffer changes.
-    pub fn update_surface_buffer(
-        &mut self,
-        surface: &WlSurface,
-        mapped: Option<bool>,
-    ) {
+    pub fn update_surface_buffer(&mut self, surface: &WlSurface, mapped: Option<bool>) {
         self.remove_dead_toplevels();
 
         if let Some(mapped) = mapped
@@ -58,8 +54,7 @@ impl WindowManager {
 
     /// Removes handles for windows that have been destroyed.
     pub fn remove_dead_toplevels(&mut self) {
-        self.toplevels
-            .retain(|toplevel| toplevel.surface.alive());
+        self.toplevels.retain(|toplevel| toplevel.surface.alive());
     }
 
     /// Returns the number of currently alive toplevels.

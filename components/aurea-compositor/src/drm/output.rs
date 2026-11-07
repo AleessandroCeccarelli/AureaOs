@@ -1,5 +1,4 @@
-
- // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -8,11 +7,7 @@
 use std::{error::Error, fmt};
 
 use crate::output::{
-    layout::OutputPosition,
-    manager::OutputManager,
-    DisplayOutput,
-    OutputId,
-    OutputMode,
+    DisplayOutput, OutputId, OutputMode, layout::OutputPosition, manager::OutputManager,
 };
 
 /// Describes a display mode reported by the DRM backend.
@@ -25,11 +20,7 @@ pub struct DrmModeInfo {
 
 impl DrmModeInfo {
     /// Creates a display mode description.
-    pub const fn new(
-        width: u32,
-        height: u32,
-        refresh_millihz: u32,
-    ) -> Self {
+    pub const fn new(width: u32, height: u32, refresh_millihz: u32) -> Self {
         Self {
             width,
             height,
@@ -54,11 +45,7 @@ impl DrmModeInfo {
 
     /// Converts the DRM mode into the compositor's output mode.
     pub fn to_output_mode(self) -> Option<OutputMode> {
-        OutputMode::new(
-            self.width,
-            self.height,
-            self.refresh_millihz,
-        )
+        OutputMode::new(self.width, self.height, self.refresh_millihz)
     }
 }
 
@@ -116,9 +103,7 @@ impl DrmOutputDescriptor {
     }
 
     /// Converts this descriptor into the compositor output model.
-    pub fn into_display_output(
-        self,
-    ) -> Result<DisplayOutput, DrmOutputError> {
+    pub fn into_display_output(self) -> Result<DisplayOutput, DrmOutputError> {
         let modes = self
             .modes
             .into_iter()
@@ -141,14 +126,8 @@ impl DrmOutputDescriptor {
             return Err(DrmOutputError::UnsupportedCurrentMode);
         }
 
-        DisplayOutput::new(
-            self.id,
-            self.name,
-            modes,
-            current_mode,
-            self.scale,
-        )
-        .ok_or(DrmOutputError::InvalidOutput)
+        DisplayOutput::new(self.id, self.name, modes, current_mode, self.scale)
+            .ok_or(DrmOutputError::InvalidOutput)
     }
 }
 
@@ -165,23 +144,13 @@ pub enum DrmOutputError {
 impl fmt::Display for DrmOutputError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidMode => {
-                formatter.write_str("DRM reported an invalid display mode")
-            }
-            Self::DuplicateMode => {
-                formatter.write_str("DRM reported duplicate display modes")
-            }
+            Self::InvalidMode => formatter.write_str("DRM reported an invalid display mode"),
+            Self::DuplicateMode => formatter.write_str("DRM reported duplicate display modes"),
             Self::UnsupportedCurrentMode => {
-                formatter.write_str(
-                    "The current display mode is not in the supported mode list",
-                )
+                formatter.write_str("The current display mode is not in the supported mode list")
             }
-            Self::InvalidOutput => {
-                formatter.write_str("The DRM output description is invalid")
-            }
-            Self::DuplicateOutputId => {
-                formatter.write_str("The output ID is already registered")
-            }
+            Self::InvalidOutput => formatter.write_str("The DRM output description is invalid"),
+            Self::DuplicateOutputId => formatter.write_str("The output ID is already registered"),
         }
     }
 }

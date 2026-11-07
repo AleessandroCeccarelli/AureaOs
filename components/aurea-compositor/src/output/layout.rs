@@ -3,8 +3,8 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 //! Logical positioning of display outputs.
-use std::collections::BTreeMap;
 use super::OutputId;
+use std::collections::BTreeMap;
 /// Position of an output in compositor logical coordinates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct OutputPosition {
@@ -65,9 +65,7 @@ impl OutputLayout {
         self.positions.is_empty()
     }
     pub fn iter(&self) -> impl Iterator<Item = (OutputId, OutputPosition)> + '_ {
-        self.positions
-            .iter()
-            .map(|(&id, &position)| (id, position))
+        self.positions.iter().map(|(&id, &position)| (id, position))
     }
 }
 #[cfg(test)]

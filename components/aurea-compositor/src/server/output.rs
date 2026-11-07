@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -6,10 +5,7 @@
 
 //! Wayland output protocol handling.
 
-use smithay::{
-    delegate_output,
-    wayland::output::OutputHandler,
-};
+use smithay::{delegate_output, wayland::output::OutputHandler};
 
 use crate::AureaCompositor;
 

@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -8,11 +7,7 @@
 
 use std::{error::Error, fmt};
 
-use smithay::reexports::drm::control::{
-    connector,
-    Device as DrmControlDevice,
-    ModeTypeFlags,
-};
+use smithay::reexports::drm::control::{Device as DrmControlDevice, ModeTypeFlags, connector};
 
 use crate::drm::{
     device::DrmDevice,
@@ -30,10 +25,7 @@ pub enum DrmDiscoveryError {
     ResourceQueryFailed(String),
 
     /// The DRM device could not provide connector information.
-    ConnectorQueryFailed {
-        connector_id: u32,
-        message: String,
-    },
+    ConnectorQueryFailed { connector_id: u32, message: String },
 
     /// An output identifier could not be represented.
     OutputIdOverflow,
@@ -43,9 +35,7 @@ impl fmt::Display for DrmDiscoveryError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::DeviceInactive => {
-                formatter.write_str(
-                    "Cannot discover DRM outputs while the device is inactive",
-                )
+                formatter.write_str("Cannot discover DRM outputs while the device is inactive")
             }
             Self::ResourceQueryFailed(message) => {
                 write!(formatter, "Failed to query DRM resources: {message}")
@@ -59,9 +49,7 @@ impl fmt::Display for DrmDiscoveryError {
                     "Failed to query DRM connector {connector_id}: {message}"
                 )
             }
-            Self::OutputIdOverflow => {
-                formatter.write_str("DRM output identifier overflow")
-            }
+            Self::OutputIdOverflow => formatter.write_str("DRM output identifier overflow"),
         }
     }
 }
@@ -103,20 +91,19 @@ pub fn discover_connected_outputs(
     let resources = device
         .fd()
         .resource_handles()
-        .map_err(|error| {
-            DrmDiscoveryError::ResourceQueryFailed(error.to_string())
-        })?;
+        .map_err(|error| DrmDiscoveryError::ResourceQueryFailed(error.to_string()))?;
 
     let mut descriptors = Vec::new();
 
     for connector_handle in resources.connectors() {
-        let connector_info = device
-            .fd()
-            .get_connector(*connector_handle, true)
-            .map_err(|error| DrmDiscoveryError::ConnectorQueryFailed {
-                connector_id: u32::from(*connector_handle),
-                message: error.to_string(),
-            })?;
+        let connector_info =
+            device
+                .fd()
+                .get_connector(*connector_handle, true)
+                .map_err(|error| DrmDiscoveryError::ConnectorQueryFailed {
+                    connector_id: u32::from(*connector_handle),
+                    message: error.to_string(),
+                })?;
 
         if connector_info.state() != connector::State::Connected {
             continue;
@@ -143,24 +130,19 @@ pub fn discover_connected_outputs(
 
         let preferred_index = drm_modes
             .iter()
-            .position(|mode| {
-                mode.mode_type().contains(ModeTypeFlags::PREFERRED)
-            })
+            .position(|mode| mode.mode_type().contains(ModeTypeFlags::PREFERRED))
             .unwrap_or(0);
 
-        let (current_width, current_height) =
-            drm_modes[preferred_index].size();
+        let (current_width, current_height) = drm_modes[preferred_index].size();
 
         let current_mode = DrmModeInfo::new(
             u32::from(current_width),
             u32::from(current_height),
-            u32::from(drm_modes[preferred_index].vrefresh())
-                .saturating_mul(1_000),
+            u32::from(drm_modes[preferred_index].vrefresh()).saturating_mul(1_000),
         );
 
         let connector_id = u32::from(*connector_handle);
-        let output_id =
-            output_id_for_connector(first_output_id, connector_id)?;
+        let output_id = output_id_for_connector(first_output_id, connector_id)?;
 
         let name = format!(
             "{}-{}",

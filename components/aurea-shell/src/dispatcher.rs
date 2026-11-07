@@ -24,7 +24,6 @@ pub fn dispatch(event: ShellEvent) -> RuntimeCommand {
     }
 }
 
-
 #[cfg(test)]
 #[path = "../tests/unit/dispatcher.rs"]
 mod tests;

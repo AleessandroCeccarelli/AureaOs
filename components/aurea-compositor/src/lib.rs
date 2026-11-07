@@ -10,10 +10,9 @@ pub mod server;
 mod window_manager;
 mod xdg_shell;
 
+pub mod output;
 pub mod render;
 pub mod renderer;
-pub mod output;
-
 
 #[cfg(feature = "drm")]
 pub mod drm;

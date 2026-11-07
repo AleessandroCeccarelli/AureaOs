@@ -32,9 +32,7 @@ pub struct VulkanCommandBuffer<'device> {
 
 impl<'device> VulkanCommandBuffer<'device> {
     /// Allocates a primary command buffer from the device's command pool.
-    pub fn new(
-        device: &'device VulkanLogicalDevice,
-    ) -> Result<Self, vk::Result> {
+    pub fn new(device: &'device VulkanLogicalDevice) -> Result<Self, vk::Result> {
         let handle = device.allocate_primary_command_buffer()?;
 
         Ok(Self {
@@ -48,16 +46,12 @@ impl<'device> VulkanCommandBuffer<'device> {
     /// Begins recording commands.
     ///
     /// The command buffer must be in the initial state.
-    pub fn begin(
-        &mut self,
-        usage: vk::CommandBufferUsageFlags,
-    ) -> Result<(), vk::Result> {
+    pub fn begin(&mut self, usage: vk::CommandBufferUsageFlags) -> Result<(), vk::Result> {
         if self.state != CommandBufferState::Initial {
             return Err(vk::Result::ERROR_VALIDATION_FAILED_EXT);
         }
 
-        let begin_info =
-            vk::CommandBufferBeginInfo::default().flags(usage);
+        let begin_info = vk::CommandBufferBeginInfo::default().flags(usage);
 
         unsafe {
             self.device
@@ -65,8 +59,7 @@ impl<'device> VulkanCommandBuffer<'device> {
                 .begin_command_buffer(self.handle, &begin_info)?
         };
 
-        self.one_time_submit =
-            usage.contains(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
+        self.one_time_submit = usage.contains(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
 
         self.state = CommandBufferState::Recording;
 
@@ -81,11 +74,7 @@ impl<'device> VulkanCommandBuffer<'device> {
             return Err(vk::Result::ERROR_VALIDATION_FAILED_EXT);
         }
 
-        unsafe {
-            self.device
-                .handle()
-                .end_command_buffer(self.handle)?
-        };
+        unsafe { self.device.handle().end_command_buffer(self.handle)? };
 
         self.state = CommandBufferState::Executable;
 
@@ -95,13 +84,9 @@ impl<'device> VulkanCommandBuffer<'device> {
     /// Resets the command buffer so it can be recorded again.
     ///
     /// Recording or pending command buffers cannot be reset.
-    pub fn reset(
-        &mut self,
-        flags: vk::CommandBufferResetFlags,
-    ) -> Result<(), vk::Result> {
+    pub fn reset(&mut self, flags: vk::CommandBufferResetFlags) -> Result<(), vk::Result> {
         match self.state {
-            CommandBufferState::Recording
-            | CommandBufferState::Pending => {
+            CommandBufferState::Recording | CommandBufferState::Pending => {
                 return Err(vk::Result::ERROR_VALIDATION_FAILED_EXT);
             }
             CommandBufferState::Initial
@@ -154,9 +139,7 @@ impl<'device> VulkanCommandBuffer<'device> {
 impl Drop for VulkanCommandBuffer<'_> {
     fn drop(&mut self) {
         if self.state == CommandBufferState::Pending {
-            let wait_result = unsafe {
-                self.device.handle().device_wait_idle()
-            };
+            let wait_result = unsafe { self.device.handle().device_wait_idle() };
 
             if wait_result.is_err() {
                 // Do not free a buffer that may still be in use.

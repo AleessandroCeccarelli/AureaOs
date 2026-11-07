@@ -15,10 +15,7 @@ pub struct VulkanQueueSubmitter<'device> {
 
 impl<'device> VulkanQueueSubmitter<'device> {
     /// Creates a submitter for the specified device queue.
-    pub(super) fn new(
-        device: &'device ash::Device,
-        queue: vk::Queue,
-    ) -> Self {
+    pub(super) fn new(device: &'device ash::Device, queue: vk::Queue) -> Self {
         Self { device, queue }
     }
 
@@ -26,30 +23,16 @@ impl<'device> VulkanQueueSubmitter<'device> {
     ///
     /// The command buffer must have been ended and must not already be
     /// pending execution.
-    pub fn submit_and_wait(
-        &self,
-        command_buffer: vk::CommandBuffer,
-    ) -> Result<(), vk::Result> {
+    pub fn submit_and_wait(&self, command_buffer: vk::CommandBuffer) -> Result<(), vk::Result> {
         let command_buffers = [command_buffer];
 
-        let submit_info = [
-            vk::SubmitInfo::default()
-                .command_buffers(&command_buffers),
-        ];
+        let submit_info = [vk::SubmitInfo::default().command_buffers(&command_buffers)];
 
         let fence_info = vk::FenceCreateInfo::default();
 
-        let fence = unsafe {
-            self.device.create_fence(&fence_info, None)
-        }?;
+        let fence = unsafe { self.device.create_fence(&fence_info, None) }?;
 
-        let submit_result = unsafe {
-            self.device.queue_submit(
-                self.queue,
-                &submit_info,
-                fence,
-            )
-        };
+        let submit_result = unsafe { self.device.queue_submit(self.queue, &submit_info, fence) };
 
         if let Err(error) = submit_result {
             unsafe {
@@ -59,13 +42,7 @@ impl<'device> VulkanQueueSubmitter<'device> {
             return Err(error);
         }
 
-        let wait_result = unsafe {
-            self.device.wait_for_fences(
-                &[fence],
-                true,
-                u64::MAX,
-            )
-        };
+        let wait_result = unsafe { self.device.wait_for_fences(&[fence], true, u64::MAX) };
 
         if wait_result.is_ok() {
             unsafe {
@@ -75,9 +52,7 @@ impl<'device> VulkanQueueSubmitter<'device> {
             return Ok(());
         }
 
-        let idle_result = unsafe {
-            self.device.device_wait_idle()
-        };
+        let idle_result = unsafe { self.device.device_wait_idle() };
 
         if idle_result.is_ok() {
             unsafe {

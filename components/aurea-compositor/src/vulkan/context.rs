@@ -5,7 +5,7 @@
 
 //! Vulkan instance and physical-device context.
 
-use smithay::backend::vulkan::{version::Version, Instance, PhysicalDevice};
+use smithay::backend::vulkan::{Instance, PhysicalDevice, version::Version};
 
 use super::VulkanInitError;
 

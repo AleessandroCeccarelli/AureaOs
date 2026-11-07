@@ -29,7 +29,6 @@ impl EventBus {
     }
 }
 
-
 #[cfg(test)]
 #[path = "../tests/unit/event_bus.rs"]
 mod tests;

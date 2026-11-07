@@ -19,7 +19,6 @@ impl Default for ShellConfig {
     }
 }
 
-
 #[cfg(test)]
 #[path = "../tests/unit/config.rs"]
 mod tests;

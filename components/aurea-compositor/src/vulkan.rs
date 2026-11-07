@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -6,13 +5,13 @@
 
 //! Vulkan integration for the AureaOS compositor.
 
+mod backend;
+mod command_buffer;
 mod context;
 mod logical_device;
 mod physical_device;
 mod queue;
-mod command_buffer;
 mod queue_submitter;
-mod backend;
 
 use std::{error::Error, fmt};
 
@@ -38,11 +37,11 @@ impl fmt::Display for VulkanInitError {
 
 impl Error for VulkanInitError {}
 
+pub use backend::VulkanBackend;
+pub use command_buffer::VulkanCommandBuffer;
 pub use context::VulkanContext;
 pub use logical_device::VulkanLogicalDevice;
 pub use physical_device::{VulkanDeviceInfo, VulkanDeviceType};
 pub use queue::VulkanQueueFamilyInfo;
-pub use command_buffer::VulkanCommandBuffer;
-pub use backend::VulkanBackend;
 
 pub(super) use queue_submitter::VulkanQueueSubmitter;

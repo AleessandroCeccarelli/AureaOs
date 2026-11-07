@@ -43,10 +43,7 @@ impl ShellRuntime {
     }
 
     /// Runs the event loop until shutdown is requested or the channel closes.
-    pub fn run_event_loop(
-        &mut self,
-        receiver: Receiver<ShellEvent>,
-    ) -> Result<(), ShellError> {
+    pub fn run_event_loop(&mut self, receiver: Receiver<ShellEvent>) -> Result<(), ShellError> {
         while self.state() == ShellState::Running {
             match receiver.recv() {
                 Ok(event) => self.handle_event(event)?,

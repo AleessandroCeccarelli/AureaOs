@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -11,16 +10,12 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use smithay::reexports::wayland_server::{
-    backend::ClientId,
-    Client,
-    Display,
-};
+use smithay::reexports::wayland_server::{Client, Display, backend::ClientId};
 
 use crate::AureaCompositor;
 
 #[cfg(feature = "drm")]
-use crate::drm::{device::DrmDevice, DrmSession};
+use crate::drm::{DrmSession, device::DrmDevice};
 
 /// Runtime state accessed by the server event loop.
 pub(super) struct WaylandState {

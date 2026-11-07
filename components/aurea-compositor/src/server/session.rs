@@ -1,5 +1,4 @@
-
- // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -7,7 +6,7 @@
 //! Native session and DRM device initialization.
 
 #[cfg(feature = "drm")]
-use crate::drm::{device::DrmDevice, DrmSession};
+use crate::drm::{DrmSession, device::DrmDevice};
 
 #[cfg(feature = "drm")]
 use std::{io, path::Path};
@@ -20,10 +19,7 @@ pub(super) fn create_session() -> io::Result<DrmSession> {
 
 /// Opens the primary GPU associated with the requested seat.
 #[cfg(feature = "drm")]
-pub(super) fn open_primary_device(
-    session: &DrmSession,
-    seat: &str,
-) -> io::Result<DrmDevice> {
+pub(super) fn open_primary_device(session: &DrmSession, seat: &str) -> io::Result<DrmDevice> {
     DrmDevice::open_primary(session, seat).map_err(io::Error::other)
 }
 

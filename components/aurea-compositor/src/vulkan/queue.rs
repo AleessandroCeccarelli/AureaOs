@@ -5,10 +5,7 @@
 
 //! Physical-device queue-family inspection.
 
-use smithay::{
-    backend::vulkan::PhysicalDevice,
-    reexports::ash::vk,
-};
+use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 
 use super::VulkanContext;
 
@@ -24,10 +21,7 @@ pub struct VulkanQueueFamilyInfo {
 
 impl VulkanContext {
     /// Returns queue-family capabilities for a physical device.
-    pub fn queue_families(
-        &self,
-        device: &PhysicalDevice,
-    ) -> Vec<VulkanQueueFamilyInfo> {
+    pub fn queue_families(&self, device: &PhysicalDevice) -> Vec<VulkanQueueFamilyInfo> {
         // SAFETY: Smithay's `PhysicalDevice` is enumerated from the same live
         // instance returned by `device.instance()`, so both handles are valid.
         let properties = unsafe {

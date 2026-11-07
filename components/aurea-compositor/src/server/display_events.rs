@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -6,18 +5,9 @@
 
 //! Wayland display file descriptor registration and client dispatch.
 
-use std::{
-    io,
-    os::fd::OwnedFd,
-};
+use std::{io, os::fd::OwnedFd};
 
-use smithay::reexports::calloop::{
-    generic::Generic,
-    Interest,
-    LoopHandle,
-    Mode,
-    PostAction,
-};
+use smithay::reexports::calloop::{Interest, LoopHandle, Mode, PostAction, generic::Generic};
 
 use super::state::WaylandState;
 
@@ -39,10 +29,7 @@ fn remove_disconnected_clients(state: &mut WaylandState) {
         !disconnected_clients.contains(&client_id)
     });
 
-    state
-        .compositor
-        .window_manager()
-        .remove_dead_toplevels();
+    state.compositor.window_manager().remove_dead_toplevels();
 }
 
 /// Registers the display fd and dispatches incoming client requests.
@@ -54,9 +41,7 @@ pub(super) fn register_display_events(
         .insert_source(
             Generic::new(display_fd, Interest::READ, Mode::Level),
             move |_, _, state| {
-                if let Err(error) =
-                    state.display.dispatch_clients(&mut state.compositor)
-                {
+                if let Err(error) = state.display.dispatch_clients(&mut state.compositor) {
                     state.error = Some(io::Error::other(error));
                     return Ok(PostAction::Continue);
                 }
