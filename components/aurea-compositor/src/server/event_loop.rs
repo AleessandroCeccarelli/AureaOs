@@ -122,6 +122,8 @@ impl WaylandServer {
             #[cfg(feature = "drm")]
             gpu_manager: crate::gpu::GpuManager::new(),
             #[cfg(feature = "drm")]
+            drm_device_registry: crate::drm::registry::DrmDeviceRegistry::new(),
+            #[cfg(feature = "drm")]
             udev_device_ids: Vec::new(),
             #[cfg(feature = "drm")]
             udev_changed_devices: Vec::new(),
@@ -129,18 +131,23 @@ impl WaylandServer {
 
         let loop_handle = event_loop.handle();
 
-        // Register Udev monitoring and obtain the initial GPU inventory.
+        // Register Udev monitoring and obtain the initial DRM inventory.
         #[cfg(feature = "drm")]
         if let Some(seat) = state.drm_session.as_ref().map(DrmSession::seat) {
             let initial_devices = super::udev_events::register_udev_events(&loop_handle, &seat)?;
 
-            for (device_id, path) in initial_devices {
+            for (node, path) in initial_devices {
+                state
+                    .drm_device_registry
+                    .register(node, path.clone())
+                    .map_err(io::Error::other)?;
+
                 state
                     .gpu_manager
                     .register_device(path.clone())
                     .map_err(io::Error::other)?;
 
-                state.udev_device_ids.push((device_id, path));
+                state.udev_device_ids.push((node, path));
             }
         }
 

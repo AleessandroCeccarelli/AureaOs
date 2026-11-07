@@ -15,11 +15,14 @@ use std::path::PathBuf;
 
 use smithay::reexports::wayland_server::{Client, Display, backend::ClientId};
 
+#[cfg(feature = "drm")]
+use smithay::backend::drm::DrmNode;
+
 use crate::AureaCompositor;
 
 #[cfg(feature = "drm")]
 use crate::{
-    drm::{DrmSession, device::DrmDevice},
+    drm::{DrmSession, device::DrmDevice, registry::DrmDeviceRegistry},
     gpu::GpuManager,
 };
 
@@ -44,11 +47,15 @@ pub(super) struct WaylandState {
     #[cfg(feature = "drm")]
     pub(super) gpu_manager: GpuManager,
 
-    /// Maps Udev device identifiers to their DRM paths.
+    /// Canonical registry of discovered DRM devices.
     #[cfg(feature = "drm")]
-    pub(super) udev_device_ids: Vec<(String, PathBuf)>,
+    pub(super) drm_device_registry: DrmDeviceRegistry,
 
-    /// Changed GPU identifiers waiting for output discovery.
+    /// Maps Udev DRM device identities to their device paths.
     #[cfg(feature = "drm")]
-    pub(super) udev_changed_devices: Vec<String>,
+    pub(super) udev_device_ids: Vec<(DrmNode, PathBuf)>,
+
+    /// Changed DRM devices waiting for output discovery.
+    #[cfg(feature = "drm")]
+    pub(super) udev_changed_devices: Vec<DrmNode>,
 }
