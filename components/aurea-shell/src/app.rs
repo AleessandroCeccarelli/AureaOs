@@ -33,22 +33,29 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
     let shutdown = Arc::new(AtomicBool::new(false));
     let server_shutdown = Arc::clone(&shutdown);
     let server_bus = event_bus.clone();
+
     let (ready_sender, ready_receiver) = mpsc::sync_channel(0);
     let (start_sender, start_receiver) = mpsc::sync_channel(0);
 
     let server_thread = thread::spawn(move || {
         // Calloop's event loop is thread-bound, so construct it in the thread
-        // that will dispatch it. Signal readiness before the shell starts.
-        let mut server = match WaylandServer::new("wayland-0") {
-            Ok(server) => server,
-            Err(error) => return Err(error),
-        };
+        // that will dispatch it.
+        //
+        // Initialize a native libseat session and open the primary DRM device
+        // associated with the default Linux seat.
+        let mut server =
+            match WaylandServer::new_with_primary_drm("wayland-0", "seat0") {
+                Ok(server) => server,
+                Err(error) => return Err(error),
+            };
+
+        // Signal readiness only after native compositor initialization.
         ready_sender
             .send(())
             .map_err(|_| std::io::Error::other("Shell startup was cancelled"))?;
 
-        // Keep the server bound, but do not dispatch clients until the shell
-        // lifecycle and shutdown handler are ready.
+        // Keep the server initialized, but do not dispatch clients until the
+        // shell lifecycle and shutdown handler are ready.
         if start_receiver.recv().is_err() {
             return Ok(());
         }
@@ -62,6 +69,7 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
         result
     });
 
+    // Wait for native compositor initialization.
     if ready_receiver.recv().is_err() {
         return match server_thread.join() {
             Ok(Err(error)) => Err(ShellError::Compositor(error)),
@@ -81,6 +89,7 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
     println!("Starting {}...", config.name);
 
     let shutdown_bus = event_bus.clone();
+
     if ctrlc::set_handler(move || {
         request_shutdown(&shutdown_bus);
     })
@@ -88,7 +97,9 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
     {
         runtime.stop()?;
         drop(start_sender);
+
         let server_result = server_thread.join();
+
         if server_result.is_err() {
             return Err(ShellError::CompositorThreadPanicked);
         }
