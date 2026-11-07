@@ -47,22 +47,35 @@ pub(super) fn register_udev_events(
                     }
                 };
 
-                if state.drm_device_registry.get(node).is_none() {
+                // Preserve an existing registry entry. A rollback must never
+                // remove metadata that was registered before this event.
+                let registry_entry_exists = state.drm_device_registry.get(node).is_some();
+
+                if !registry_entry_exists {
                     if let Err(error) = state.drm_device_registry.register(node, path.clone()) {
                         state.error = Some(io::Error::other(error));
                         return;
                     }
                 }
 
+                // Keep the path-based GPU inventory synchronized.
                 if state.gpu_manager.get_device(&path).is_none() {
                     if let Err(error) = state.gpu_manager.register_device(path.clone()) {
-                        state.drm_device_registry.remove(node);
+                        if !registry_entry_exists {
+                            state.drm_device_registry.remove(node);
+                        }
+
                         state.error = Some(io::Error::other(error));
                         return;
                     }
                 }
 
-                if !state.udev_device_ids.iter().any(|(id, _)| *id == node) {
+                // Track each DRM identity only once.
+                if !state
+                    .udev_device_ids
+                    .iter()
+                    .any(|(registered_node, _)| *registered_node == node)
+                {
                     state.udev_device_ids.push((node, path));
                 }
             }
@@ -76,7 +89,11 @@ pub(super) fn register_udev_events(
                     }
                 };
 
-                if state.udev_device_ids.iter().any(|(id, _)| *id == node)
+                // Queue only known devices and avoid duplicate refresh requests.
+                if state
+                    .udev_device_ids
+                    .iter()
+                    .any(|(registered_node, _)| *registered_node == node)
                     && !state.udev_changed_devices.contains(&node)
                 {
                     state.udev_changed_devices.push(node);
@@ -92,13 +109,31 @@ pub(super) fn register_udev_events(
                     }
                 };
 
-                if let Some(index) = state.udev_device_ids.iter().position(|(id, _)| *id == node) {
-                    let (_, path) = state.udev_device_ids.remove(index);
+                // Remove the identity from the Udev inventory.
+                let removed_path = state
+                    .udev_device_ids
+                    .iter()
+                    .position(|(registered_node, _)| *registered_node == node)
+                    .map(|index| state.udev_device_ids.remove(index).1);
 
-                    state.drm_device_registry.remove(node);
-                    state.gpu_manager.remove_device(&path);
+                // Remove registry metadata even if the Udev inventory entry
+                // was already absent.
+                state.drm_device_registry.remove(node);
+
+                // A path is removed from the GPU inventory only when no
+                // remaining DRM identity refers to it.
+                if let Some(path) = removed_path {
+                    let path_still_in_use = state
+                        .udev_device_ids
+                        .iter()
+                        .any(|(_, registered_path)| registered_path == &path);
+
+                    if !path_still_in_use {
+                        state.gpu_manager.remove_device(&path);
+                    }
                 }
 
+                // A removed device must not remain queued for output refresh.
                 state
                     .udev_changed_devices
                     .retain(|changed_node| *changed_node != node);
