@@ -121,7 +121,23 @@ impl WaylandServer {
             _drm_device: drm_device,
             #[cfg(feature = "drm")]
             session_active,
+            #[cfg(feature = "drm")]
+            udev_device_paths: Vec::new(),
+            #[cfg(feature = "drm")]
+            udev_events: Vec::new(),
         };
+
+        let loop_handle = event_loop.handle();
+
+        // Register Udev monitoring and capture the initial DRM device list.
+        //
+        // The initial snapshot is collected before the backend is inserted
+        // into Calloop, as required by Smithay.
+        #[cfg(feature = "drm")]
+        if let Some(seat) = state.drm_session.as_ref().map(DrmSession::seat) {
+            state.udev_device_paths =
+                super::udev_events::register_udev_events(&loop_handle, &seat)?;
+        }
 
         // Discover connected connectors and register their output metadata.
         #[cfg(feature = "drm")]
@@ -139,8 +155,6 @@ impl WaylandServer {
             .compositor
             .publish_wayland_outputs(&display_handle)
             .map_err(io::Error::other)?;
-
-        let loop_handle = event_loop.handle();
 
         // Register the listening socket and incoming client handling.
         register_wayland_socket(&loop_handle, socket_name)?;

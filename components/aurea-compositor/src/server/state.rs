@@ -10,7 +10,13 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+#[cfg(feature = "drm")]
+use std::path::PathBuf;
+
 use smithay::reexports::wayland_server::{Client, Display, backend::ClientId};
+
+#[cfg(feature = "drm")]
+use smithay::backend::udev::UdevEvent;
 
 use crate::AureaCompositor;
 
@@ -33,4 +39,12 @@ pub(super) struct WaylandState {
 
     #[cfg(feature = "drm")]
     pub(super) session_active: bool,
+
+    /// DRM device paths discovered during initial Udev enumeration.
+    #[cfg(feature = "drm")]
+    pub(super) udev_device_paths: Vec<PathBuf>,
+
+    /// Udev events waiting for DRM device lifecycle processing.
+    #[cfg(feature = "drm")]
+    pub(super) udev_events: Vec<UdevEvent>,
 }

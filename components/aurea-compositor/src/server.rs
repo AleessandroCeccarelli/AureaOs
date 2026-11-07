@@ -14,4 +14,7 @@ mod session_events;
 mod socket;
 mod state;
 
+#[cfg(feature = "drm")]
+mod udev_events;
+
 pub use event_loop::WaylandServer;

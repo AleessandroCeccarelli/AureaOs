@@ -58,6 +58,11 @@ impl DrmSession {
         self.session.is_active()
     }
 
+    /// Returns the name of the seat associated with this session.
+    pub fn seat(&self) -> String {
+        self.session.seat()
+    }
+
     /// Returns mutable access to the session handle used to open devices.
     pub fn session(&mut self) -> &mut LibSeatSession {
         &mut self.session
