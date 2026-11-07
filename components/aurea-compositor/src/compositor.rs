@@ -15,6 +15,7 @@ use smithay::{
 };
 
 use crate::{
+    input::shortcuts::{ShortcutAction, resolve_shortcut},
     output::{
         OutputId,
         manager::{OutputManager, OutputReconciliation},
@@ -275,6 +276,29 @@ impl AureaCompositor {
     /// Returns `false` when the index is outside the four-workspace set.
     pub fn switch_workspace(&mut self, workspace: usize) -> bool {
         self.window_manager.switch_workspace(workspace)
+    }
+
+    /// Applies a resolved global keyboard shortcut to the desktop state.
+    ///
+    /// Returns `true` when the shortcut was recognized and applied. The input
+    /// backend is responsible for calling this only for key press events.
+    pub fn handle_keyboard_shortcut(
+        &mut self,
+        keysym: smithay::input::keyboard::Keysym,
+        modifiers: smithay::input::keyboard::ModifiersState,
+    ) -> bool {
+        let Some(action) = resolve_shortcut(keysym, modifiers) else {
+            return false;
+        };
+
+        let current = self.window_manager.active_workspace();
+        let count = WindowManager::WORKSPACE_COUNT;
+        let next = match action {
+            ShortcutAction::PreviousWorkspace => (current + count - 1) % count,
+            ShortcutAction::NextWorkspace => (current + 1) % count,
+        };
+
+        self.window_manager.switch_workspace(next)
     }
 
     /// Moves a managed toplevel surface to a workspace by its zero-based index.
