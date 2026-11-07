@@ -6,7 +6,7 @@
 use super::layout::{OutputLayout, OutputPosition};
 use super::{DisplayOutput, OutputId, OutputMode, OutputRegistry};
 use std::{
-    collections::{BTreeSet, HashSet},
+    collections::{BTreeSet, HashMap, HashSet},
     fmt,
 };
 
@@ -164,25 +164,24 @@ impl OutputManager {
             .iter()
             .map(DisplayOutput::id)
             .collect::<HashSet<_>>();
-        let discovered_widths = discovered
-            .iter()
-            .map(|output| (output.id(), output.current_mode().width()))
-            .collect::<std::collections::HashMap<_, _>>();
         let mut changes = OutputReconciliation::default();
         let mut updates = Vec::new();
         let mut additions = Vec::new();
+        let mut effective_widths = HashMap::new();
 
         for output in discovered {
             let id = output.id();
             if let Some(current) = self.registry.get(id) {
                 let mut replacement = current.clone();
                 replacement.update_from_discovery(output);
+                effective_widths.insert(id, replacement.current_mode().width());
                 if *current != replacement {
                     changes.updated.push(id);
                     updates.push((id, replacement));
                 }
             } else {
                 changes.added.push(id);
+                effective_widths.insert(id, output.current_mode().width());
                 additions.push(output);
             }
         }
@@ -197,7 +196,7 @@ impl OutputManager {
                 return Ok(right);
             }
             let position = self.layout.get(output.id()).unwrap_or_default();
-            let width = discovered_widths
+            let width = effective_widths
                 .get(&output.id())
                 .copied()
                 .unwrap_or_else(|| output.current_mode().width());

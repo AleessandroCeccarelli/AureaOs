@@ -10,6 +10,10 @@ fn sample_output(id: OutputId) -> DisplayOutput {
     DisplayOutput::new(id, format!("HDMI-{id}"), vec![mode], mode, 1).unwrap()
 }
 
+fn output_with_modes(id: OutputId, modes: &[OutputMode], current: OutputMode) -> DisplayOutput {
+    DisplayOutput::new(id, format!("HDMI-{id}"), modes.to_vec(), current, 1).unwrap()
+}
+
 #[test]
 fn manager_starts_empty() {
     let manager = OutputManager::new();
@@ -193,7 +197,7 @@ fn reconciliation_updates_changed_output_and_only_removes_or_adds_owned_ids() {
     assert!(manager.registry().get(unrelated_id).is_some());
     assert_eq!(
         manager.layout().get(added_id),
-        Some(OutputPosition::new(2591, 0))
+        Some(OutputPosition::new(1951, 0))
     );
 }
 
@@ -231,12 +235,11 @@ fn reconciliation_uses_replacement_width_when_placing_addition() {
     manager
         .register(sample_output(updated_id), (100, 20))
         .unwrap();
-    let old_mode = OutputMode::new(1920, 1080, 60_000).unwrap();
     let replacement_mode = OutputMode::new(2560, 1440, 60_000).unwrap();
     let replacement = DisplayOutput::new(
         updated_id,
         "HDMI-updated",
-        vec![old_mode, replacement_mode],
+        vec![replacement_mode],
         replacement_mode,
         1,
     )
@@ -251,6 +254,148 @@ fn reconciliation_uses_replacement_width_when_placing_addition() {
         Some(OutputPosition::new(100, 20))
     );
     assert_eq!(manager.layout().get(2), Some(OutputPosition::new(2660, 0)));
+}
+
+#[test]
+fn reconciliation_preserves_wider_selected_mode_for_layout() {
+    let mut manager = OutputManager::new();
+    let id = 1;
+    let narrow = OutputMode::new(1280, 720, 60_000).unwrap();
+    let wide = OutputMode::new(2560, 1440, 60_000).unwrap();
+    manager
+        .register(output_with_modes(id, &[narrow, wide], wide), (40, 10))
+        .unwrap();
+
+    manager
+        .reconcile_outputs(
+            &[id],
+            vec![
+                output_with_modes(id, &[narrow, wide], narrow),
+                sample_output(2),
+            ],
+        )
+        .unwrap();
+
+    let retained = manager.registry().get(id).unwrap();
+    assert_eq!(retained.current_mode(), wide);
+    assert_eq!(retained.current_mode().width(), 2560);
+    assert_eq!(manager.layout().get(id), Some(OutputPosition::new(40, 10)));
+    assert_eq!(manager.layout().get(2), Some(OutputPosition::new(2600, 0)));
+}
+
+#[test]
+fn reconciliation_preserves_narrower_selected_mode_for_layout() {
+    let mut manager = OutputManager::new();
+    let id = 1;
+    let narrow = OutputMode::new(1280, 720, 60_000).unwrap();
+    let wide = OutputMode::new(2560, 1440, 60_000).unwrap();
+    manager
+        .register(output_with_modes(id, &[narrow, wide], narrow), (25, 5))
+        .unwrap();
+
+    manager
+        .reconcile_outputs(
+            &[id],
+            vec![
+                output_with_modes(id, &[narrow, wide], wide),
+                sample_output(2),
+            ],
+        )
+        .unwrap();
+
+    let retained = manager.registry().get(id).unwrap();
+    assert_eq!(retained.current_mode(), narrow);
+    assert_eq!(manager.layout().get(id), Some(OutputPosition::new(25, 5)));
+    assert_eq!(manager.layout().get(2), Some(OutputPosition::new(1305, 0)));
+}
+
+#[test]
+fn reconciliation_uses_discovered_current_mode_when_previous_mode_disappears() {
+    let mut manager = OutputManager::new();
+    let id = 1;
+    let previous = OutputMode::new(2560, 1440, 60_000).unwrap();
+    let discovered = OutputMode::new(1600, 900, 60_000).unwrap();
+    manager
+        .register(output_with_modes(id, &[previous], previous), (50, 0))
+        .unwrap();
+
+    manager
+        .reconcile_outputs(
+            &[id],
+            vec![
+                output_with_modes(id, &[discovered], discovered),
+                sample_output(2),
+            ],
+        )
+        .unwrap();
+
+    assert_eq!(
+        manager.registry().get(id).unwrap().current_mode(),
+        discovered
+    );
+    assert_eq!(
+        manager.registry().get(id).unwrap().current_mode().width(),
+        1600
+    );
+    assert_eq!(manager.layout().get(2), Some(OutputPosition::new(1650, 0)));
+}
+
+#[test]
+fn reconciliation_preserves_multiple_retained_modes_positions_and_unrelated_output() {
+    let mut manager = OutputManager::new();
+    let first = 1;
+    let second = 2;
+    let unrelated = 9;
+    let first_mode = OutputMode::new(1600, 900, 60_000).unwrap();
+    let second_mode = OutputMode::new(1280, 720, 60_000).unwrap();
+    manager
+        .register(
+            output_with_modes(first, &[first_mode], first_mode),
+            (100, 30),
+        )
+        .unwrap();
+    manager
+        .register(
+            output_with_modes(second, &[second_mode], second_mode),
+            (1900, 45),
+        )
+        .unwrap();
+    manager
+        .register(sample_output(unrelated), (5000, 100))
+        .unwrap();
+
+    manager
+        .reconcile_outputs(
+            &[first, second],
+            vec![
+                output_with_modes(first, &[first_mode], first_mode),
+                output_with_modes(second, &[second_mode], second_mode),
+                sample_output(3),
+            ],
+        )
+        .unwrap();
+
+    assert_eq!(
+        manager.registry().get(first).unwrap().current_mode(),
+        first_mode
+    );
+    assert_eq!(
+        manager.registry().get(second).unwrap().current_mode(),
+        second_mode
+    );
+    assert_eq!(
+        manager.layout().get(first),
+        Some(OutputPosition::new(100, 30))
+    );
+    assert_eq!(
+        manager.layout().get(second),
+        Some(OutputPosition::new(1900, 45))
+    );
+    assert_eq!(
+        manager.layout().get(unrelated),
+        Some(OutputPosition::new(5000, 100))
+    );
+    assert_eq!(manager.layout().get(3), Some(OutputPosition::new(6920, 0)));
 }
 
 #[test]
