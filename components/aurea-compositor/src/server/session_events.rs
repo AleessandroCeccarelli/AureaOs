@@ -16,8 +16,8 @@ use smithay::{
 
 #[cfg(feature = "drm")]
 use crate::drm::{
-    device::{DrmDevice, DrmDeviceError},
     DrmSession,
+    device::{DrmDevice, DrmDeviceError},
 };
 
 #[cfg(feature = "drm")]
@@ -60,11 +60,8 @@ pub(super) fn register_session_events(
 
     loop_handle
         .insert_source(notifier, |event, _, state| {
-            let result = apply_session_event(
-                event,
-                &mut state.session_active,
-                state._drm_device.as_mut(),
-            );
+            let result =
+                apply_session_event(event, &mut state.session_active, state._drm_device.as_mut());
 
             if let Err(error) = result {
                 state.error = Some(io::Error::other(error));

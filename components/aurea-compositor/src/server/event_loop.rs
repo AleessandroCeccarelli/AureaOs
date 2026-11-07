@@ -9,8 +9,7 @@ use std::{
     io,
     os::fd::AsFd,
     sync::{
-        Arc,
-        Mutex,
+        Arc, Mutex,
         atomic::{AtomicBool, Ordering},
     },
     time::Duration,
@@ -22,12 +21,10 @@ use smithay::reexports::wayland_server::Display;
 use smithay::backend::drm::DrmEvent;
 
 #[cfg(feature = "drm")]
-use crate::drm::{device::DrmDevice, DrmSession};
+use crate::drm::{DrmSession, device::DrmDevice};
 
 use super::{
-    display_events::register_display_events,
-    socket::register_wayland_socket,
-    state::WaylandState,
+    display_events::register_display_events, socket::register_wayland_socket, state::WaylandState,
 };
 
 #[cfg(feature = "drm")]
@@ -73,10 +70,7 @@ impl WaylandServer {
     ///
     /// The GPU is discovered automatically; no `/dev/dri/cardN` path is needed.
     #[cfg(feature = "drm")]
-    pub fn new_with_primary_drm(
-        socket_name: &str,
-        seat: &str,
-    ) -> io::Result<Self> {
+    pub fn new_with_primary_drm(socket_name: &str, seat: &str) -> io::Result<Self> {
         let drm_session = session::create_session()?;
         let drm_device = session::open_primary_device(&drm_session, seat)?;
         Self::build(socket_name, Some(drm_session), Some(drm_device))
@@ -84,10 +78,7 @@ impl WaylandServer {
 
     /// Creates a server with a native libseat session and an opened DRM device.
     #[cfg(feature = "drm")]
-    pub fn new_with_drm_device(
-        socket_name: &str,
-        device_path: &str,
-    ) -> io::Result<Self> {
+    pub fn new_with_drm_device(socket_name: &str, device_path: &str) -> io::Result<Self> {
         let drm_session = session::create_session()?;
         let drm_device = session::open_device(&drm_session, device_path)?;
         Self::build(socket_name, Some(drm_session), Some(drm_device))
@@ -104,11 +95,9 @@ impl WaylandServer {
         #[cfg(feature = "drm")] drm_session: Option<DrmSession>,
         #[cfg(feature = "drm")] drm_device: Option<DrmDevice>,
     ) -> io::Result<Self> {
-        let event_loop =
-            EventLoop::<WaylandState>::try_new().map_err(io::Error::other)?;
+        let event_loop = EventLoop::<WaylandState>::try_new().map_err(io::Error::other)?;
 
-        let display =
-            Display::<AureaCompositor>::new().map_err(io::Error::other)?;
+        let display = Display::<AureaCompositor>::new().map_err(io::Error::other)?;
         let display_handle = display.handle();
         let compositor = AureaCompositor::new(&display_handle);
 

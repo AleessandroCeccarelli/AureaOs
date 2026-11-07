@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -14,12 +13,7 @@ use std::{
 };
 
 use smithay::backend::{
-    drm::{
-        DeviceFd,
-        DrmDevice as SmithayDrmDevice,
-        DrmDeviceFd,
-        DrmDeviceNotifier,
-    },
+    drm::{DeviceFd, DrmDevice as SmithayDrmDevice, DrmDeviceFd, DrmDeviceNotifier},
     session::Session,
     udev,
 };
@@ -55,9 +49,7 @@ pub enum DrmDeviceError {
 impl fmt::Display for DrmDeviceError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::NoDevice => {
-                formatter.write_str("No primary DRM device was found")
-            }
+            Self::NoDevice => formatter.write_str("No primary DRM device was found"),
             Self::SessionInactive => {
                 formatter.write_str("Cannot open DRM device: session is inactive")
             }
@@ -68,7 +60,10 @@ impl fmt::Display for DrmDeviceError {
                 write!(formatter, "Failed to discover DRM device: {message}")
             }
             Self::OpenFailed(message) => {
-                write!(formatter, "Failed to open or initialize DRM device: {message}")
+                write!(
+                    formatter,
+                    "Failed to open or initialize DRM device: {message}"
+                )
             }
             Self::ActivationFailed(message) => {
                 write!(formatter, "Failed to activate DRM device: {message}")
@@ -90,14 +85,9 @@ pub struct DrmDevice {
 
 impl DrmDevice {
     /// Discovers and opens the primary GPU for the specified seat.
-    pub fn open_primary(
-        session: &DrmSession,
-        seat: &str,
-    ) -> Result<Self, DrmDeviceError> {
+    pub fn open_primary(session: &DrmSession, seat: &str) -> Result<Self, DrmDeviceError> {
         let device_path = udev::primary_gpu(seat)
-            .map_err(|error| {
-                DrmDeviceError::DiscoveryFailed(error.to_string())
-            })?
+            .map_err(|error| DrmDeviceError::DiscoveryFailed(error.to_string()))?
             .ok_or(DrmDeviceError::NoDevice)?;
 
         Self::open(session, &device_path)
@@ -111,9 +101,7 @@ impl DrmDevice {
         let device_path = device_path.as_ref();
 
         if !device_path.is_absolute() {
-            return Err(DrmDeviceError::InvalidDevicePath(
-                device_path.to_path_buf(),
-            ));
+            return Err(DrmDeviceError::InvalidDevicePath(device_path.to_path_buf()));
         }
 
         if !session.session().is_active() {
@@ -126,17 +114,12 @@ impl DrmDevice {
                 device_path,
                 OFlags::RDWR | OFlags::CLOEXEC | OFlags::NOCTTY | OFlags::NONBLOCK,
             )
-            .map_err(|error| {
-                DrmDeviceError::OpenFailed(error.to_string())
-            })?;
+            .map_err(|error| DrmDeviceError::OpenFailed(error.to_string()))?;
 
         let device_fd = DrmDeviceFd::new(DeviceFd::from(fd));
 
-        let (device, notifier) =
-            SmithayDrmDevice::new(device_fd, true)
-                .map_err(|error| {
-                    DrmDeviceError::OpenFailed(error.to_string())
-                })?;
+        let (device, notifier) = SmithayDrmDevice::new(device_fd, true)
+            .map_err(|error| DrmDeviceError::OpenFailed(error.to_string()))?;
 
         Ok(Self {
             device,
@@ -162,9 +145,7 @@ impl DrmDevice {
     /// Transfers the DRM event notifier to the Calloop event loop.
     ///
     /// This can only be called once.
-    pub fn take_notifier(
-        &mut self,
-    ) -> Result<DrmDeviceNotifier, DrmDeviceError> {
+    pub fn take_notifier(&mut self) -> Result<DrmDeviceNotifier, DrmDeviceError> {
         self.notifier
             .take()
             .ok_or(DrmDeviceError::NotifierAlreadyTransferred)
@@ -181,9 +162,7 @@ impl DrmDevice {
     pub fn activate(&mut self) -> Result<(), DrmDeviceError> {
         self.device
             .activate(true)
-            .map_err(|error| {
-                DrmDeviceError::ActivationFailed(error.to_string())
-            })
+            .map_err(|error| DrmDeviceError::ActivationFailed(error.to_string()))
     }
 
     /// Returns whether the DRM device is active.
