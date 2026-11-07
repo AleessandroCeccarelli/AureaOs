@@ -108,6 +108,7 @@ The current prototype includes:
 - Initial XDG shell integration.
 - Client and toplevel surface tracking.
 - An initial window-management model.
+- Conversion of mapped XDG surface trees into Smithay render elements, including logical window positions and output scaling.
 - DRM device discovery and management.
 - DRM device event integration with the compositor event loop.
 - Session pause and activation handling.

@@ -10,7 +10,7 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
     mpsc,
 };
-use std::thread;
+use std::thread::{self, JoinHandle};
 
 use aurea_compositor::WaylandServer;
 
@@ -23,6 +23,14 @@ use crate::runtime::ShellRuntime;
 /// Requests runtime shutdown through the event bus.
 fn request_shutdown(event_bus: &EventBus) {
     let _ = event_bus.publish(ShellEvent::ShutdownRequested);
+}
+
+/// Joins the compositor thread and translates its result into a shell error.
+fn join_server_thread(server_thread: JoinHandle<std::io::Result<()>>) -> Result<(), ShellError> {
+    match server_thread.join() {
+        Ok(result) => result.map_err(ShellError::Compositor),
+        Err(_) => Err(ShellError::CompositorThreadPanicked),
+    }
 }
 
 /// Starts the Aurea Shell application.
@@ -43,11 +51,10 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
         //
         // Initialize a native libseat session and open the primary DRM device
         // associated with the default Linux seat.
-        let mut server =
-            match WaylandServer::new_with_primary_drm("wayland-0", "seat0") {
-                Ok(server) => server,
-                Err(error) => return Err(error),
-            };
+        let mut server = match WaylandServer::new_with_primary_drm("wayland-0", "seat0") {
+            Ok(server) => server,
+            Err(error) => return Err(error),
+        };
 
         // Signal readiness only after native compositor initialization.
         ready_sender
@@ -95,33 +102,38 @@ pub fn run(config: ShellConfig) -> Result<(), ShellError> {
     })
     .is_err()
     {
-        runtime.stop()?;
+        let runtime_result = runtime.stop();
         drop(start_sender);
+        let server_result = join_server_thread(server_thread);
 
-        let server_result = server_thread.join();
-
-        if server_result.is_err() {
-            return Err(ShellError::CompositorThreadPanicked);
-        }
+        // Complete both cleanups before returning either error.
+        runtime_result?;
+        server_result?;
 
         return Err(ShellError::InitializationFailed(
             "Failed to register shutdown handler",
         ));
     }
 
-    start_sender
-        .send(())
-        .map_err(|_| ShellError::InitializationFailed("Wayland server stopped"))?;
+    if start_sender.send(()).is_err() {
+        // The compositor exited after reporting readiness. Stop the shell
+        // runtime and join the thread before reporting the startup failure.
+        let runtime_result = runtime.stop();
+        shutdown.store(true, Ordering::Release);
+        drop(start_sender);
+        let server_result = join_server_thread(server_thread);
+
+        runtime_result?;
+        server_result?;
+        return Err(ShellError::InitializationFailed("Wayland server stopped"));
+    }
 
     let runtime_result = runtime.run_event_loop(receiver);
 
     // Signal the compositor to exit regardless of runtime success.
     shutdown.store(true, Ordering::Release);
 
-    let server_result = match server_thread.join() {
-        Ok(result) => result.map_err(ShellError::Compositor),
-        Err(_) => Err(ShellError::CompositorThreadPanicked),
-    };
+    let server_result = join_server_thread(server_thread);
 
     // Preserve the runtime error if it failed; otherwise report compositor
     // termination errors.

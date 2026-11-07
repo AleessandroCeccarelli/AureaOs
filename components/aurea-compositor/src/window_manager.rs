@@ -6,7 +6,7 @@
 //! Top-level window management.
 
 use smithay::{
-    reexports::wayland_server::protocol::wl_surface::WlSurface,
+    reexports::wayland_server::protocol::wl_surface::WlSurface, utils::Point,
     wayland::shell::xdg::ToplevelSurface,
 };
 
@@ -19,6 +19,7 @@ pub struct WindowManager {
 struct ManagedToplevel {
     surface: ToplevelSurface,
     mapped: bool,
+    location: Point<i32, smithay::utils::Logical>,
 }
 
 impl WindowManager {
@@ -35,7 +36,26 @@ impl WindowManager {
         self.toplevels.push(ManagedToplevel {
             surface,
             mapped: false,
+            location: Point::from((0, 0)),
         });
+    }
+
+    /// Sets the logical position of a managed toplevel.
+    ///
+    /// Returns `false` when the surface is not a managed toplevel.
+    pub fn set_toplevel_location(&mut self, surface: &WlSurface, location: (i32, i32)) -> bool {
+        self.remove_dead_toplevels();
+
+        let Some(toplevel) = self
+            .toplevels
+            .iter_mut()
+            .find(|toplevel| toplevel.surface.wl_surface() == surface)
+        else {
+            return false;
+        };
+
+        toplevel.location = Point::from(location);
+        true
     }
 
     /// Updates mapping state when a toplevel's buffer changes.
@@ -79,5 +99,15 @@ impl WindowManager {
             .iter()
             .filter(|toplevel| toplevel.surface.alive() && toplevel.mapped)
             .map(|toplevel| &toplevel.surface)
+    }
+
+    /// Returns mapped toplevels and their logical positions in registration order.
+    pub(crate) fn mapped_toplevels_with_location(
+        &self,
+    ) -> impl Iterator<Item = (&ToplevelSurface, Point<i32, smithay::utils::Logical>)> {
+        self.toplevels
+            .iter()
+            .filter(|toplevel| toplevel.surface.alive() && toplevel.mapped)
+            .map(|toplevel| (&toplevel.surface, toplevel.location))
     }
 }

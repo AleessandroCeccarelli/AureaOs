@@ -32,3 +32,7 @@ Use this folder to test:
 - interaction flow
 - spacing and layout patterns
 - system consistency across apps
+
+## Current prototypes
+
+- [Aurea Desktop — Roma concept 02](2026-11-aurea-desktop-preview-02.html): interactive desktop preview with Fides, launcher, quick settings, and light/dark appearance. It reuses the canonical design tokens and is an exploration, not a production interface.

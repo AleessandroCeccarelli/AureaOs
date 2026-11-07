@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="it" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#edf4ff">
+  <title>Aurea Desktop · Roma concept 02</title>
+  <link rel="stylesheet" href="../design-system/tokens/index.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: var(--aurea-text-primary);
+      --muted: var(--aurea-text-muted);
+      --line: var(--aurea-border-subtle);
+      --glass: var(--aurea-surface-panel);
+      --blue: var(--aurea-accent-strong);
+      --desktop-glow: rgba(255,255,255,.78);
+      --desktop-haze: rgba(129,183,255,.28);
+      --window-shadow: 0 28px 72px rgba(31,64,106,.16), 0 4px 16px rgba(33,66,110,.08);
+      --sidebar: rgba(237,244,255,.62);
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --desktop-glow: rgba(85,124,174,.18);
+      --desktop-haze: rgba(35,94,165,.28);
+      --window-shadow: 0 28px 72px rgba(0,0,0,.35), 0 4px 16px rgba(0,0,0,.22);
+      --sidebar: rgba(10,20,33,.52);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #dceaff; color: var(--ink); font: 14px/1.45 var(--aurea-font-ui); }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    .desktop {
+      position: relative; isolation: isolate; min-height: 100vh; overflow: hidden;
+      background:
+        radial-gradient(ellipse at 15% 9%, var(--desktop-glow) 0 10%, transparent 33%),
+        radial-gradient(ellipse at 76% 19%, rgba(255,255,255,.68) 0 4%, transparent 26%),
+        radial-gradient(ellipse at 85% 77%, var(--desktop-haze) 0 4%, transparent 34%),
+        linear-gradient(146deg, #d9eaff 0%, #bcd9fc 33%, #e8f3ff 58%, #8ebef4 100%);
+      transition: background .35s ease;
+    }
+    [data-theme="dark"] .desktop {
+      background:
+        radial-gradient(ellipse at 15% 9%, var(--desktop-glow) 0 10%, transparent 33%),
+        radial-gradient(ellipse at 76% 19%, rgba(110,151,199,.14) 0 4%, transparent 26%),
+        radial-gradient(ellipse at 85% 77%, var(--desktop-haze) 0 4%, transparent 34%),
+        linear-gradient(146deg, #15263b 0%, #1c3b5d 36%, #203c59 58%, #10263e 100%);
+    }
+    .desktop::before, .desktop::after { content:""; position:absolute; inset:0; z-index:-1; pointer-events:none; }
+    .desktop::before {
+      opacity:.44;
+      background: radial-gradient(120% 55% at 10% 107%, transparent 49%, rgba(255,255,255,.9) 49.2%, transparent 50.2%),
+                  radial-gradient(120% 56% at 90% 114%, transparent 49%, rgba(255,255,255,.68) 49.2%, transparent 50.1%);
+    }
+    .desktop::after { background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.12) 50%, transparent 64%); mix-blend-mode: screen; }
+    .desktop-inner { position:relative; width:min(1500px,100%); min-height:100vh; margin:auto; padding:clamp(24px,4vw,58px); }
+    .brand-mark { position:absolute; top:34px; left:clamp(24px,4vw,58px); display:flex; align-items:center; gap:11px; color:var(--ink); text-decoration:none; }
+    .brand-mark img { width:34px; height:34px; object-fit:contain; filter:drop-shadow(0 3px 5px rgba(184,116,27,.18)); }
+    .brand-name { font-size:14px; font-weight:750; letter-spacing:.025em; }
+    .brand-edition { display:block; margin-top:-2px; color:var(--muted); font-size:10px; letter-spacing:.06em; }
+    .hero-copy { position:absolute; left:clamp(24px,4vw,58px); top:clamp(100px,15vh,170px); max-width:350px; pointer-events:none; }
+    .eyebrow { color:var(--aurea-accent-warm); font-size:11px; font-weight:750; letter-spacing:.17em; text-transform:uppercase; }
+    .hero-copy h1 { margin:12px 0 8px; font-size:clamp(32px,4.2vw,55px); line-height:1.03; letter-spacing:-.055em; font-weight:650; }
+    .hero-copy p { max-width:290px; margin:0; color:var(--aurea-text-secondary); font-size:14px; }
+    .desktop-shortcuts { position:absolute; left:clamp(24px,4vw,58px); top:clamp(310px,47vh,440px); display:grid; gap:12px; }
+    .shortcut { width:76px; padding:9px 5px 8px; border:1px solid transparent; border-radius:15px; background:transparent; cursor:pointer; text-align:center; transition:.18s ease; }
+    .shortcut:hover, .shortcut:focus-visible { border-color:rgba(255,255,255,.48); background:rgba(255,255,255,.24); outline:0; }
+    .shortcut-icon { display:grid; place-items:center; width:42px; height:42px; margin:0 auto 5px; border:1px solid rgba(255,255,255,.7); border-radius:13px; background:linear-gradient(150deg,rgba(255,255,255,.8),rgba(109,171,245,.44)); box-shadow:0 8px 16px rgba(46,100,166,.14); color:#2878d4; }
+    .shortcut span:last-child { font-size:11px; font-weight:600; text-shadow:0 1px 12px rgba(255,255,255,.75); }
+    .workspace { position:absolute; inset:0; pointer-events:none; }
+    .window, .widget, .dock, .popover { pointer-events:auto; }
+    .window {
+      position:absolute; top:50%; left:50%; width:min(760px,calc(100vw - 420px)); min-width:540px; height:min(560px,calc(100vh - 210px));
+      transform:translate(-43%,-48%); display:flex; flex-direction:column; overflow:hidden;
+      border:1px solid rgba(255,255,255,.76); border-radius:19px; background:var(--aurea-surface-window);
+      box-shadow:var(--window-shadow); color:var(--ink); backdrop-filter:blur(24px); transition:opacity .18s ease, transform .18s ease;
+    }
+    .window.is-hidden { display:none; }
+    .window.is-minimized { opacity:0; transform:translate(-43%,30%); pointer-events:none; }
+    .titlebar { height:54px; padding:0 17px; display:flex; align-items:center; gap:11px; border-bottom:1px solid var(--line); cursor:grab; user-select:none; }
+    .titlebar:active { cursor:grabbing; }
+    .app-symbol { width:28px; height:28px; display:grid; place-items:center; border-radius:9px; background:var(--aurea-accent-soft); color:var(--blue); }
+    .window-title { flex:1; font-size:13px; font-weight:700; }
+    .window-controls { display:flex; gap:7px; }
+    .window-control { width:28px; height:28px; display:grid; place-items:center; border:0; border-radius:9px; background:transparent; color:var(--muted); cursor:pointer; }
+    .window-control:hover { background:var(--aurea-surface-strong); color:var(--ink); }
+    .window-control.close:hover { background:#ffdddd; color:#9b3535; }
+    .toolbar { display:flex; align-items:center; gap:9px; padding:12px 17px; border-bottom:1px solid var(--line); }
+    .tool-button { width:32px; height:32px; border:0; border-radius:9px; background:transparent; color:var(--aurea-text-secondary); display:grid; place-items:center; cursor:pointer; }
+    .tool-button:hover { background:var(--aurea-surface-strong); }
+    .crumb { flex:1; display:flex; align-items:center; gap:8px; padding-left:6px; font-size:12px; }
+    .crumb strong { font-weight:700; }
+    .search { width:205px; height:34px; display:flex; align-items:center; gap:8px; padding:0 10px; border:1px solid var(--line); border-radius:10px; background:var(--aurea-surface-elevated); color:var(--muted); }
+    .search input { width:100%; border:0; outline:0; background:transparent; color:var(--ink); font-size:11px; }
+    .file-layout { min-height:0; flex:1; display:grid; grid-template-columns:174px 1fr; }
+    .file-sidebar { padding:15px 10px; border-right:1px solid var(--line); background:var(--sidebar); }
+    .sidebar-label { padding:0 10px 8px; color:var(--muted); font-size:10px; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
+    .nav-item { width:100%; display:flex; align-items:center; gap:10px; padding:8px 10px; border:0; border-radius:9px; background:transparent; color:var(--aurea-text-secondary); text-align:left; font-size:12px; cursor:pointer; }
+    .nav-item:hover, .nav-item.active { background:var(--aurea-accent-soft); color:var(--ink); }
+    .nav-item.active { font-weight:700; }
+    .nav-item svg { color:var(--blue); }
+    .sidebar-gap { height:18px; }
+    .file-content { min-width:0; padding:22px; overflow:auto; }
+    .content-heading { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:18px; }
+    .content-heading h2 { margin:0; font-size:19px; letter-spacing:-.035em; }
+    .content-heading p { margin:3px 0 0; color:var(--muted); font-size:11px; }
+    .view-toggle { display:flex; gap:3px; padding:3px; border:1px solid var(--line); border-radius:9px; }
+    .view-toggle button { width:25px; height:24px; display:grid; place-items:center; border:0; border-radius:6px; background:transparent; color:var(--muted); }
+    .view-toggle button.selected { background:var(--aurea-accent-soft); color:var(--blue); }
+    .file-grid { display:grid; grid-template-columns:repeat(4,minmax(72px,1fr)); gap:10px; }
+    .file-card { min-height:116px; padding:13px 7px 9px; display:flex; align-items:center; flex-direction:column; justify-content:center; gap:9px; border:1px solid transparent; border-radius:13px; background:transparent; cursor:pointer; color:var(--aurea-text-secondary); }
+    .file-card:hover, .file-card.selected { border-color:var(--line); background:var(--aurea-surface-elevated); }
+    .file-card span { overflow:hidden; max-width:100%; text-overflow:ellipsis; white-space:nowrap; font-size:10px; }
+    .file-icon { width:44px; height:40px; display:grid; place-items:center; border-radius:12px; background:linear-gradient(150deg,#e7f2ff,#b4d7ff); color:#3689dc; box-shadow:inset 0 1px rgba(255,255,255,.8),0 4px 10px rgba(38,101,169,.1); }
+    .file-icon.doc { background:linear-gradient(150deg,#f1f4ff,#dce6ff); color:#647de0; }
+    .file-icon.photo { background:linear-gradient(150deg,#e7f7ee,#b8dfd0); color:#39836d; }
+    .file-icon.pdf { background:linear-gradient(150deg,#fff1ee,#ffd8cf); color:#c45d4b; }
+    .file-list { display:none; }
+    .file-layout.list .file-grid { display:none; }
+    .file-layout.list .file-list { display:grid; gap:3px; }
+    .file-row { display:grid; grid-template-columns:1fr 110px 90px; align-items:center; gap:10px; padding:9px 11px; border-radius:8px; font-size:11px; }
+    .file-row:hover { background:var(--aurea-surface-elevated); }
+    .file-row span:not(:first-child) { color:var(--muted); font-size:10px; }
+    .statusbar { height:34px; display:flex; align-items:center; justify-content:space-between; padding:0 17px; border-top:1px solid var(--line); color:var(--muted); font-size:10px; }
+    .right-rail { position:absolute; top:75px; right:clamp(24px,4vw,58px); width:252px; display:grid; gap:12px; }
+    .widget { border:1px solid rgba(255,255,255,.64); border-radius:17px; background:var(--aurea-surface-panel); box-shadow:0 12px 28px rgba(37,79,128,.08); backdrop-filter:blur(24px); }
+    .welcome-widget { padding:17px 18px; }
+    .welcome-top { display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:11px; }
+    .weather-icon { color:var(--aurea-accent-warm); }
+    .temperature { margin:9px 0 0; font-size:38px; line-height:1; letter-spacing:-.06em; font-weight:600; }
+    .weather-desc { margin-top:6px; font-size:12px; color:var(--aurea-text-secondary); }
+    .weather-meta { margin-top:12px; display:flex; gap:14px; color:var(--muted); font-size:10px; }
+    .agenda-widget { padding:15px 17px 14px; }
+    .widget-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .widget-heading strong { font-size:12px; }
+    .widget-heading span { color:var(--muted); font-size:10px; }
+    .agenda-event { display:grid; grid-template-columns:4px 1fr; gap:10px; padding:8px 0; border-top:1px solid var(--line); }
+    .event-bar { border-radius:99px; background:var(--aurea-accent-strong); }
+    .event-title { font-size:11px; font-weight:650; }
+    .event-time { margin-top:2px; color:var(--muted); font-size:10px; }
+    .focus-widget { padding:14px 16px; display:flex; align-items:center; gap:12px; }
+    .focus-orb { width:34px; height:34px; display:grid; place-items:center; border-radius:50%; background:var(--aurea-accent-warm-soft); color:var(--aurea-accent-warm); }
+    .focus-copy { flex:1; }
+    .focus-copy strong { display:block; font-size:11px; }
+    .focus-copy span { color:var(--muted); font-size:10px; }
+    .focus-toggle { width:34px; height:20px; padding:2px; border:0; border-radius:99px; background:#c6d3e1; cursor:pointer; }
+    .focus-toggle i { display:block; width:16px; height:16px; border-radius:50%; background:white; transition:transform .2s; box-shadow:0 1px 3px #0002; }
+    .focus-toggle[aria-pressed="true"] { background:var(--aurea-accent-strong); }
+    .focus-toggle[aria-pressed="true"] i { transform:translateX(14px); }
+    .dock-wrap { position:fixed; left:50%; bottom:20px; z-index:30; display:flex; align-items:center; gap:9px; transform:translateX(-50%); max-width:calc(100vw - 24px); }
+    .dock, .status-pill { height:66px; border:1px solid var(--aurea-glass-border); background:var(--aurea-dock-bg); box-shadow:0 12px 36px rgba(30,65,108,.18),inset 0 1px rgba(255,255,255,.48); backdrop-filter:blur(28px) saturate(1.2); }
+    .dock { display:flex; align-items:center; gap:7px; padding:8px 12px; border-radius:21px; }
+    .dock-divider { width:1px; height:33px; margin:0 3px; background:var(--aurea-border-strong); }
+    .dock-app { position:relative; width:46px; height:46px; display:grid; place-items:center; border:0; border-radius:14px; background:transparent; color:var(--ink); cursor:pointer; transition:transform .16s ease,background .16s ease; }
+    .dock-app:hover { transform:translateY(-5px); background:rgba(255,255,255,.36); }
+    .dock-app.active::after { content:""; position:absolute; bottom:-4px; width:4px; height:4px; border-radius:50%; background:var(--blue); }
+    .dock-app.launcher { color:var(--aurea-accent-warm); }
+    .dock-app .app-tile { width:36px; height:36px; display:grid; place-items:center; border-radius:11px; background:linear-gradient(155deg,rgba(255,255,255,.9),rgba(163,202,250,.75)); color:#337ec6; box-shadow:0 3px 9px rgba(28,75,128,.16),inset 0 1px rgba(255,255,255,.9); }
+    .dock-app:nth-of-type(4) .app-tile { color:#5b78d5; }
+    .dock-app:nth-of-type(5) .app-tile { color:#4a987d; }
+    .dock-app:nth-of-type(6) .app-tile { color:#b56550; }
+    .dock-app .app-label { position:absolute; bottom:57px; left:50%; opacity:0; transform:translate(-50%,4px); padding:5px 9px; border:1px solid var(--line); border-radius:7px; background:var(--aurea-surface-window); color:var(--ink); white-space:nowrap; font-size:10px; box-shadow:var(--aurea-shadow-soft); pointer-events:none; transition:.14s; }
+    .dock-app:hover .app-label { opacity:1; transform:translate(-50%,0); }
+    .status-pill { display:flex; align-items:center; gap:12px; padding:0 15px; border-radius:19px; }
+    .status-action { display:grid; place-items:center; width:28px; height:32px; border:0; border-radius:9px; background:transparent; color:var(--aurea-text-secondary); cursor:pointer; }
+    .status-action:hover, .status-action[aria-expanded="true"] { background:var(--aurea-accent-soft); color:var(--blue); }
+    .status-clock { min-width:82px; text-align:right; font-size:11px; font-weight:650; line-height:1.2; }
+    .status-clock small { display:block; color:var(--muted); font-size:9px; font-weight:500; }
+    .popover { position:fixed; z-index:40; bottom:99px; right:max(22px,calc((100vw - 1500px)/2 + 62px)); width:318px; padding:17px; border:1px solid var(--aurea-glass-border); border-radius:19px; background:var(--aurea-surface-panel); box-shadow:var(--window-shadow); backdrop-filter:blur(30px) saturate(1.2); color:var(--ink); }
+    .popover[hidden] { display:none; }
+    .popover-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .popover-head h3 { margin:0; font-size:14px; }
+    .popover-head button { border:0; background:transparent; color:var(--muted); cursor:pointer; }
+    .setting-tile-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .setting-tile { min-height:66px; display:flex; align-items:center; gap:10px; padding:11px; border:1px solid var(--line); border-radius:12px; background:var(--aurea-surface-elevated); text-align:left; cursor:pointer; }
+    .setting-tile.selected { border-color:rgba(77,141,247,.3); background:var(--aurea-accent-soft); }
+    .setting-tile .tile-icon { width:30px; height:30px; display:grid; place-items:center; border-radius:9px; background:var(--aurea-surface-window); color:var(--blue); }
+    .setting-tile strong { display:block; font-size:10px; }
+    .setting-tile small { display:block; margin-top:2px; color:var(--muted); font-size:9px; }
+    .slider-row { display:grid; grid-template-columns:25px 1fr 25px; align-items:center; gap:9px; padding:16px 4px 2px; color:var(--muted); }
+    .slider-row input { width:100%; accent-color:var(--aurea-accent-strong); }
+    .launcher-panel { position:fixed; z-index:40; left:50%; bottom:100px; width:min(560px,calc(100vw - 28px)); padding:17px; border:1px solid var(--aurea-glass-border); border-radius:21px; background:var(--aurea-surface-panel); box-shadow:var(--window-shadow); backdrop-filter:blur(32px) saturate(1.2); transform:translateX(-50%); }
+    .launcher-panel[hidden] { display:none; }
+    .launcher-search { display:flex; align-items:center; gap:10px; height:46px; padding:0 13px; border:1px solid var(--line); border-radius:13px; background:var(--aurea-surface-window); color:var(--muted); }
+    .launcher-search input { width:100%; border:0; outline:0; background:transparent; color:var(--ink); }
+    .launcher-label { margin:18px 3px 10px; color:var(--muted); font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+    .launcher-apps { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+    .launcher-app { display:grid; justify-items:center; gap:8px; padding:12px 5px; border:1px solid transparent; border-radius:12px; background:transparent; font-size:10px; cursor:pointer; }
+    .launcher-app:hover { border-color:var(--line); background:var(--aurea-surface-elevated); }
+    .launcher-app .app-tile { width:39px; height:39px; display:grid; place-items:center; border:1px solid var(--line); border-radius:12px; background:var(--aurea-surface-window); color:var(--blue); box-shadow:0 3px 8px rgba(34,73,121,.08); }
+    .settings-content { flex:1; display:grid; grid-template-columns:190px 1fr; min-height:0; }
+    .settings-nav { padding:15px 11px; border-right:1px solid var(--line); background:var(--sidebar); }
+    .settings-main { overflow:auto; padding:25px; }
+    .settings-main h2 { margin:0; font-size:22px; letter-spacing:-.04em; }
+    .settings-main>p { margin:5px 0 21px; color:var(--muted); font-size:11px; }
+    .theme-choice { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .theme-card { padding:8px; border:1px solid var(--line); border-radius:13px; background:var(--aurea-surface-window); cursor:pointer; text-align:left; }
+    .theme-card[aria-pressed="true"] { border:2px solid var(--blue); padding:7px; }
+    .theme-swatch { height:86px; overflow:hidden; display:flex; border-radius:8px; background:#dbeaff; }
+    .theme-swatch.dark { background:#15243a; }
+    .theme-swatch span { align-self:flex-end; width:72%; height:52px; margin:auto auto 8px; border-radius:8px; background:#fff; box-shadow:0 4px 10px #274a7020; }
+    .theme-swatch.dark span { background:#23344a; }
+    .theme-card strong { display:block; padding:8px 3px 2px; font-size:10px; }
+    .settings-section { margin-top:20px; padding:14px; border:1px solid var(--line); border-radius:12px; background:var(--aurea-surface-elevated); }
+    .settings-section strong { font-size:11px; }
+    .settings-section p { margin:5px 0 0; color:var(--muted); font-size:10px; }
+    .toast { position:fixed; left:50%; bottom:103px; z-index:50; padding:10px 14px; border:1px solid var(--aurea-glass-border); border-radius:11px; background:var(--aurea-surface-window); box-shadow:var(--aurea-shadow-soft); font-size:11px; opacity:0; transform:translate(-50%,8px); pointer-events:none; transition:.2s ease; }
+    .toast.visible { opacity:1; transform:translate(-50%,0); }
+    svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .large-icon { width:21px; height:21px; }
+    @media (max-width: 1100px) {
+      .hero-copy { top:95px; max-width:260px; }
+      .hero-copy h1 { font-size:35px; }
+      .right-rail { top:90px; width:220px; }
+      .window { left:47%; width:min(680px,calc(100vw - 310px)); min-width:480px; transform:translate(-37%,-43%); }
+      .desktop-shortcuts { top:auto; bottom:120px; }
+    }
+    @media (max-width: 760px) {
+      .desktop-inner { min-height:100svh; padding:18px; }
+      .brand-mark { top:20px; left:18px; }
+      .hero-copy { top:78px; left:20px; max-width:230px; }
+      .hero-copy h1 { font-size:30px; }
+      .hero-copy p { font-size:11px; }
+      .desktop-shortcuts { display:none; }
+      .right-rail { display:none; }
+      .window { top:52%; left:50%; width:calc(100vw - 20px); min-width:0; height:min(600px,calc(100svh - 205px)); transform:translate(-50%,-41%); border-radius:15px; }
+      .file-layout { grid-template-columns:118px 1fr; }
+      .file-sidebar { padding:13px 7px; }
+      .file-content { padding:15px 11px; }
+      .file-grid { grid-template-columns:repeat(3,minmax(55px,1fr)); gap:4px; }
+      .file-card { min-height:94px; }
+      .search { width:130px; }
+      .dock-wrap { bottom:10px; gap:0; }
+      .status-pill { display:none; }
+      .dock { height:59px; gap:3px; padding:6px 8px; }
+      .dock-app { width:40px; height:42px; }
+      .dock-app .app-tile { width:33px; height:33px; }
+      .dock-divider { margin:0 1px; }
+      .popover { right:12px; bottom:80px; width:min(318px,calc(100vw - 24px)); }
+      .launcher-panel { bottom:80px; }
+      .settings-content { grid-template-columns:125px 1fr; }
+      .settings-main { padding:19px 15px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition:none!important; } }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" width="0" height="0" style="position:absolute">
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/><path d="M3 10h18"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-6h6v6"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></symbol>
+    <symbol id="i-grid-small" viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7M7 12h14"/></symbol>
+    <symbol id="i-forward" viewBox="0 0 24 24"><path d="m10 5 7 7-7 7M17 12H3"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .3-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18Z"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4M17 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.1 1.8-1.7 3-2.1-.6a8 8 0 0 1-1.5.9l-.4 2.2h-3.5l-.4-2.2a8 8 0 0 1-1.5-.9l-2.1.6-1.7-3 1.1-1.8A8 8 0 0 1 6.5 13l-2.1-1 1.1-3.3 2.2-.1a8 8 0 0 1 1.2-1.2l-.1-2.2 3.3-1.2 1.2 1.9a8 8 0 0 1 1.9.1l1.3-1.8 3.2 1.5-.3 2.2a8 8 0 0 1 1.1 1.4l2.2.4.5 3.4-2 1a8 8 0 0 1-.7 1.9Z" transform="translate(-1 -1) scale(.93)"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3 9a14 14 0 0 1 18 0M6.5 12.5a9 9 0 0 1 11 0M10 16a4 4 0 0 1 4 0M12 20h.01"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4zM16 9a5 5 0 0 1 0 6M18.5 6.5a9 9 0 0 1 0 11"/></symbol>
+    <symbol id="i-battery" viewBox="0 0 24 24"><rect x="3" y="7" width="17" height="10" rx="2"/><path d="M23 10v4M6 10h8v4H6z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.8 14A8.8 8.8 0 0 1 10 3.2 9 9 0 1 0 20.8 14Z"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6zM14 3v5h5M9 13h7M9 17h7"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Zm12-2a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Z"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 9 3 3-3 3m6 0h4"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></symbol>
+  </svg>
+
+  <main class="desktop" id="desktop">
+    <div class="desktop-inner">
+      <a class="brand-mark" href="#desktop" aria-label="AureaOS Roma">
+        <img src="../../assets/AureaOS-Icon.png" alt="">
+        <span><span class="brand-name">AureaOS</span><span class="brand-edition">ROMA · DESKTOP CONCEPT</span></span>
+      </a>
+      <section class="hero-copy" aria-label="Benvenuto">
+        <div class="eyebrow">Sabato · Roma</div>
+        <h1>Buongiorno,<br>Alessandro.</h1>
+        <p>Il tuo spazio, pronto per quello che conta oggi.</p>
+      </section>
+
+      <nav class="desktop-shortcuts" aria-label="Collegamenti sul desktop">
+        <button class="shortcut" data-open="files-window"><span class="shortcut-icon"><svg class="large-icon"><use href="#i-home"/></svg></span><span>Home</span></button>
+        <button class="shortcut" data-open="files-window"><span class="shortcut-icon"><svg class="large-icon"><use href="#i-folder"/></svg></span><span>Documenti</span></button>
+        <button class="shortcut" data-open="photos-window"><span class="shortcut-icon"><svg class="large-icon"><use href="#i-image"/></svg></span><span>Foto</span></button>
+      </nav>
+
+      <section class="workspace" aria-label="Finestre aperte">
+        <article class="window" id="files-window" aria-label="Fides, Gestore file">
+          <header class="titlebar" data-drag-handle>
+            <span class="app-symbol"><svg><use href="#i-folder"/></svg></span>
+            <span class="window-title">Fides <span style="color:var(--muted);font-weight:500">— Documenti</span></span>
+            <div class="window-controls">
+              <button class="window-control" data-minimize aria-label="Riduci"><svg><use href="#i-minus"/></svg></button>
+              <button class="window-control close" data-close aria-label="Chiudi"><svg><use href="#i-close"/></svg></button>
+            </div>
+          </header>
+          <div class="toolbar">
+            <button class="tool-button" aria-label="Indietro"><svg><use href="#i-back"/></svg></button>
+            <button class="tool-button" aria-label="Avanti"><svg><use href="#i-forward"/></svg></button>
+            <div class="crumb"><span>Home</span><span style="color:var(--muted)">›</span><strong id="current-folder">Documenti</strong></div>
+            <label class="search"><svg style="width:15px;height:15px"><use href="#i-search"/></svg><input id="file-search" type="search" placeholder="Cerca in Documenti"></label>
+            <div class="view-toggle" aria-label="Vista file">
+              <button class="selected" data-view="grid" aria-label="Vista griglia"><svg style="width:15px;height:15px"><use href="#i-grid-small"/></svg></button>
+              <button data-view="list" aria-label="Vista elenco"><svg style="width:15px;height:15px"><use href="#i-list"/></svg></button>
+            </div>
+          </div>
+          <div class="file-layout" id="file-layout">
+            <aside class="file-sidebar">
+              <div class="sidebar-label">Preferiti</div>
+              <button class="nav-item" data-folder="Home"><svg><use href="#i-home"/></svg>Home</button>
+              <button class="nav-item active" data-folder="Documenti"><svg><use href="#i-folder"/></svg>Documenti</button>
+              <button class="nav-item" data-folder="Immagini"><svg><use href="#i-image"/></svg>Immagini</button>
+              <button class="nav-item" data-folder="Musica"><svg><use href="#i-music"/></svg>Musica</button>
+              <div class="sidebar-gap"></div>
+              <div class="sidebar-label">Posizioni</div>
+              <button class="nav-item" data-folder="AureaOS"><svg><use href="#i-shield"/></svg>AureaOS</button>
+              <button class="nav-item" data-folder="Rete"><svg><use href="#i-wifi"/></svg>Rete</button>
+            </aside>
+            <section class="file-content">
+              <div class="content-heading"><div><h2 id="folder-heading">Documenti</h2><p>Il tuo lavoro, raccolto in un unico posto.</p></div></div>
+              <div class="file-grid" id="file-grid">
+                <button class="file-card" data-name="Lavoro"><span class="file-icon"><svg class="large-icon"><use href="#i-folder"/></svg></span><span>Lavoro</span></button>
+                <button class="file-card" data-name="Progetti"><span class="file-icon"><svg class="large-icon"><use href="#i-folder"/></svg></span><span>Progetti</span></button>
+                <button class="file-card" data-name="Personale"><span class="file-icon"><svg class="large-icon"><use href="#i-folder"/></svg></span><span>Personale</span></button>
+                <button class="file-card" data-name="Foto"><span class="file-icon photo"><svg class="large-icon"><use href="#i-image"/></svg></span><span>Foto</span></button>
+                <button class="file-card" data-name="Relazione trimestrale.pdf"><span class="file-icon pdf"><svg class="large-icon"><use href="#i-doc"/></svg></span><span>Relazione trimestrale.pdf</span></button>
+                <button class="file-card" data-name="Note di progetto"><span class="file-icon doc"><svg class="large-icon"><use href="#i-doc"/></svg></span><span>Note di progetto</span></button>
+                <button class="file-card" data-name="Budget 2026"><span class="file-icon doc"><svg class="large-icon"><use href="#i-doc"/></svg></span><span>Budget 2026</span></button>
+                <button class="file-card" data-name="Weekend sul lago"><span class="file-icon photo"><svg class="large-icon"><use href="#i-image"/></svg></span><span>Weekend sul lago</span></button>
+              </div>
+              <div class="file-list" id="file-list"></div>
+            </section>
+          </div>
+          <footer class="statusbar"><span>8 elementi</span><span>Disponibile su questo dispositivo</span></footer>
+        </article>
+
+        <article class="window is-hidden" id="settings-window" aria-label="Impostazioni">
+          <header class="titlebar" data-drag-handle>
+            <span class="app-symbol"><svg><use href="#i-settings"/></svg></span><span class="window-title">Impostazioni</span>
+            <div class="window-controls"><button class="window-control" data-minimize aria-label="Riduci"><svg><use href="#i-minus"/></svg></button><button class="window-control close" data-close aria-label="Chiudi"><svg><use href="#i-close"/></svg></button></div>
+          </header>
+          <div class="settings-content">
+            <aside class="settings-nav"><div class="sidebar-label">Sistema</div><button class="nav-item active"><svg><use href="#i-sun"/></svg>Aspetto</button><button class="nav-item"><svg><use href="#i-wifi"/></svg>Rete</button><button class="nav-item"><svg><use href="#i-volume"/></svg>Audio</button><button class="nav-item"><svg><use href="#i-calendar"/></svg>Data e ora</button></aside>
+            <section class="settings-main"><h2>Aspetto</h2><p>Personalizza il modo in cui AureaOS ti accompagna durante la giornata.</p>
+              <div class="theme-choice">
+                <button class="theme-card" data-theme-choice="light" aria-pressed="true"><span class="theme-swatch"><span></span></span><strong>Chiaro</strong></button>
+                <button class="theme-card" data-theme-choice="dark" aria-pressed="false"><span class="theme-swatch dark"><span></span></span><strong>Scuro</strong></button>
+              </div>
+              <div class="settings-section"><strong>Colore d'accento</strong><p>Azzurro Aurea · un tocco caldo, senza distrazioni.</p></div>
+              <div class="settings-section"><strong>Movimento e trasparenza</strong><p>Effetti leggeri, con rispetto per le preferenze di accessibilità.</p></div>
+            </section>
+          </div>
+        </article>
+
+        <article class="window is-hidden" id="photos-window" aria-label="Visio">
+          <header class="titlebar" data-drag-handle><span class="app-symbol"><svg><use href="#i-image"/></svg></span><span class="window-title">Visio <span style="color:var(--muted);font-weight:500">— Ricordi</span></span><div class="window-controls"><button class="window-control close" data-close aria-label="Chiudi"><svg><use href="#i-close"/></svg></button></div></header>
+          <div class="file-content" style="display:grid;place-items:center;text-align:center"><span class="file-icon photo" style="width:74px;height:68px"><svg style="width:34px;height:34px"><use href="#i-image"/></svg></span><h2 style="margin:14px 0 4px">I tuoi momenti, in bella vista.</h2><p style="margin:0;color:var(--muted)">La libreria fotografica si riempirà qui.</p></div>
+        </article>
+      </section>
+
+      <aside class="right-rail" aria-label="Riepilogo della giornata">
+        <section class="widget welcome-widget"><div class="welcome-top"><span>Roma · Oggi</span><svg class="weather-icon"><use href="#i-sun"/></svg></div><div class="temperature">18°</div><div class="weather-desc">Una giornata luminosa</div><div class="weather-meta"><span>Massima 22°</span><span>Minima 14°</span></div></section>
+        <section class="widget agenda-widget"><div class="widget-heading"><strong>La tua giornata</strong><span id="today-date">Oggi</span></div><div class="agenda-event"><i class="event-bar"></i><div><div class="event-title">Rassegna progetto Aurea</div><div class="event-time">10:30 · Studio</div></div></div><div class="agenda-event"><i class="event-bar" style="background:var(--aurea-accent-warm)"></i><div><div class="event-title">Pausa pranzo</div><div class="event-time">13:00 · Libera</div></div></div></section>
+        <section class="widget focus-widget"><span class="focus-orb"><svg><use href="#i-sun"/></svg></span><span class="focus-copy"><strong>Tempo per te</strong><span>Concentrazione</span></span><button class="focus-toggle" aria-label="Attiva concentrazione" aria-pressed="false"><i></i></button></section>
+      </aside>
+    </div>
+
+    <div class="dock-wrap" aria-label="Dock AureaOS">
+      <nav class="dock">
+        <button class="dock-app launcher" id="launcher-toggle" aria-label="Apri applicazioni" aria-expanded="false"><span class="app-tile"><svg class="large-icon"><use href="#i-grid"/></svg></span><span class="app-label">Applicazioni</span></button>
+        <span class="dock-divider"></span>
+        <button class="dock-app active" data-open="files-window" aria-label="Fides"><span class="app-tile"><svg class="large-icon"><use href="#i-folder"/></svg></span><span class="app-label">Fides</span></button>
+        <button class="dock-app" data-open="photos-window" aria-label="Visio"><span class="app-tile"><svg class="large-icon"><use href="#i-image"/></svg></span><span class="app-label">Visio</span></button>
+        <button class="dock-app" data-open="browser-window" aria-label="Quaero"><span class="app-tile"><svg class="large-icon"><use href="#i-search"/></svg></span><span class="app-label">Quaero</span></button>
+        <button class="dock-app" data-toast="Messaggi in arrivo" aria-label="Messaggi"><span class="app-tile"><svg class="large-icon"><use href="#i-bell"/></svg></span><span class="app-label">Messaggi</span></button>
+        <button class="dock-app" data-open="settings-window" aria-label="Impostazioni"><span class="app-tile"><svg class="large-icon"><use href="#i-settings"/></svg></span><span class="app-label">Impostazioni</span></button>
+      </nav>
+      <div class="status-pill">
+        <button class="status-action" aria-label="Rete e connessioni" data-quick-settings aria-expanded="false"><svg><use href="#i-wifi"/></svg></button>
+        <button class="status-action" aria-label="Audio" data-quick-settings aria-expanded="false"><svg><use href="#i-volume"/></svg></button>
+        <button class="status-action" aria-label="Batteria" data-toast="Batteria carica · 96%"><svg><use href="#i-battery"/></svg></button>
+        <button class="status-action" aria-label="Notifiche" data-toast="Non ci sono nuove notifiche"><svg><use href="#i-bell"/></svg></button>
+        <button class="status-action" aria-label="Apri impostazioni rapide" data-quick-settings aria-expanded="false"><svg><use href="#i-grid"/></svg></button>
+        <time class="status-clock" id="clock"><small id="clock-date"></small><span id="clock-time">22:00</span></time>
+      </div>
+    </div>
+
+    <section class="popover" id="quick-settings" hidden aria-label="Impostazioni rapide">
+      <div class="popover-head"><h3>Impostazioni rapide</h3><button data-close-popover aria-label="Chiudi"><svg><use href="#i-close"/></svg></button></div>
+      <div class="setting-tile-grid">
+        <button class="setting-tile selected" data-toggle-tile><span class="tile-icon"><svg><use href="#i-wifi"/></svg></span><span><strong>Wi‑Fi</strong><small>Rete Aurea</small></span></button>
+        <button class="setting-tile selected" data-toggle-tile><span class="tile-icon"><svg><use href="#i-battery"/></svg></span><span><strong>Risparmio</strong><small>Disattivato</small></span></button>
+        <button class="setting-tile" data-toggle-tile><span class="tile-icon"><svg><use href="#i-moon"/></svg></span><span><strong>Non disturbare</strong><small>Solo priorità</small></span></button>
+        <button class="setting-tile" data-open="settings-window"><span class="tile-icon"><svg><use href="#i-settings"/></svg></span><span><strong>Impostazioni</strong><small>Tutte le opzioni</small></span></button>
+      </div>
+      <label class="slider-row"><svg><use href="#i-sun"/></svg><input type="range" min="10" max="100" value="72" aria-label="Luminosità"><span>72%</span></label>
+      <label class="slider-row" style="padding-top:10px"><svg><use href="#i-volume"/></svg><input type="range" min="0" max="100" value="48" aria-label="Volume"><span>48%</span></label>
+    </section>
+
+    <section class="launcher-panel" id="launcher-panel" hidden aria-label="Applicazioni">
+      <label class="launcher-search"><svg><use href="#i-search"/></svg><input id="launcher-search-input" type="search" placeholder="Cerca app, file e impostazioni" autocomplete="off"><kbd>⌘ K</kbd></label>
+      <div class="launcher-label">Le tue applicazioni</div>
+      <div class="launcher-apps" id="launcher-apps">
+        <button class="launcher-app" data-open="files-window" data-searchable="fides file documenti"><span class="app-tile"><svg><use href="#i-folder"/></svg></span><span>Fides</span></button>
+        <button class="launcher-app" data-open="photos-window" data-searchable="visio foto immagini"><span class="app-tile"><svg><use href="#i-image"/></svg></span><span>Visio</span></button>
+        <button class="launcher-app" data-toast="Quaero sarà disponibile nel desktop completo" data-searchable="quaero cerca ricerca"><span class="app-tile"><svg><use href="#i-search"/></svg></span><span>Quaero</span></button>
+        <button class="launcher-app" data-toast="Aurea Store sarà disponibile nel desktop completo" data-searchable="store applicazioni"><span class="app-tile"><svg><use href="#i-grid"/></svg></span><span>Aurea Store</span></button>
+        <button class="launcher-app" data-open="settings-window" data-searchable="impostazioni aspetto rete audio"><span class="app-tile"><svg><use href="#i-settings"/></svg></span><span>Impostazioni</span></button>
+        <button class="launcher-app" data-toast="Il Terminale è un'applicazione di sistema" data-searchable="terminale console"><span class="app-tile"><svg><use href="#i-terminal"/></svg></span><span>Terminale</span></button>
+        <button class="launcher-app" data-toast="Calendario · nessun evento urgente" data-searchable="calendario agenda"><span class="app-tile"><svg><use href="#i-calendar"/></svg></span><span>Calendario</span></button>
+        <button class="launcher-app" data-toast="Tutti i sistemi sono operativi" data-searchable="sicurezza sistema"><span class="app-tile"><svg><use href="#i-shield"/></svg></span><span>Sicurezza</span></button>
+      </div>
+    </section>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <script>
+    const root = document.documentElement;
+    const quickSettings = document.getElementById('quick-settings');
+    const launcher = document.getElementById('launcher-panel');
+    const launcherToggle = document.getElementById('launcher-toggle');
+    const toast = document.getElementById('toast');
+    let toastTimer;
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('visible'), 2300);
+    }
+    function closePopovers() {
+      quickSettings.hidden = true;
+      launcher.hidden = true;
+      launcherToggle.setAttribute('aria-expanded', 'false');
+      document.querySelectorAll('[data-quick-settings]').forEach(button => button.setAttribute('aria-expanded', 'false'));
+    }
+    function openWindow(id) {
+      closePopovers();
+      const window = document.getElementById(id);
+      if (!window) return;
+      window.classList.remove('is-hidden', 'is-minimized');
+      document.querySelectorAll('.window').forEach(item => item.style.zIndex = item === window ? 5 : 2);
+      window.dataset.open = 'true';
+    }
+    document.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => {
+      const id = button.dataset.open;
+      if (id === 'browser-window') { showToast('Quaero · ricerca di sistema'); closePopovers(); return; }
+      if (id) openWindow(id);
+    }));
+    document.querySelectorAll('[data-toast]').forEach(button => button.addEventListener('click', () => { showToast(button.dataset.toast); closePopovers(); }));
+    document.querySelectorAll('[data-close]').forEach(button => button.addEventListener('click', () => button.closest('.window').classList.add('is-hidden')));
+    document.querySelectorAll('[data-minimize]').forEach(button => button.addEventListener('click', () => button.closest('.window').classList.add('is-minimized')));
+
+    launcherToggle.addEventListener('click', () => {
+      const opening = launcher.hidden;
+      closePopovers();
+      launcher.hidden = !opening;
+      launcherToggle.setAttribute('aria-expanded', String(opening));
+      if (opening) document.getElementById('launcher-search-input').focus();
+    });
+    document.querySelectorAll('[data-quick-settings]').forEach(button => button.addEventListener('click', () => {
+      const opening = quickSettings.hidden;
+      closePopovers();
+      quickSettings.hidden = !opening;
+      document.querySelectorAll('[data-quick-settings]').forEach(item => item.setAttribute('aria-expanded', String(opening)));
+    }));
+    document.querySelector('[data-close-popover]').addEventListener('click', closePopovers);
+    document.querySelectorAll('[data-toggle-tile]').forEach(button => button.addEventListener('click', () => button.classList.toggle('selected')));
+    document.querySelectorAll('.slider-row input').forEach(input => input.addEventListener('input', () => { input.nextElementSibling.textContent = `${input.value}%`; }));
+
+    function setTheme(theme) {
+      root.dataset.theme = theme;
+      try { localStorage.setItem('aurea-preview-theme', theme); } catch (_) { /* Private browsing may disable storage. */ }
+      document.querySelectorAll('[data-theme-choice]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.themeChoice === theme)));
+    }
+    let savedTheme = null;
+    try { savedTheme = localStorage.getItem('aurea-preview-theme'); } catch (_) { /* Keep the default theme. */ }
+    if (savedTheme === 'dark' || savedTheme === 'light') setTheme(savedTheme);
+    document.querySelectorAll('[data-theme-choice]').forEach(button => button.addEventListener('click', () => setTheme(button.dataset.themeChoice)));
+
+    document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => {
+      document.querySelectorAll('[data-view]').forEach(item => item.classList.toggle('selected', item === button));
+      document.getElementById('file-layout').classList.toggle('list', button.dataset.view === 'list');
+      updateFileList();
+    }));
+    document.querySelectorAll('[data-folder]').forEach(button => button.addEventListener('click', () => {
+      document.querySelectorAll('[data-folder]').forEach(item => item.classList.toggle('active', item === button));
+      document.getElementById('current-folder').textContent = button.dataset.folder;
+      document.getElementById('folder-heading').textContent = button.dataset.folder;
+      showToast(`Aperto ${button.dataset.folder}`);
+    }));
+    function updateFileList() {
+      const list = document.getElementById('file-list');
+      list.replaceChildren(...[...document.querySelectorAll('.file-card:not([hidden])')].map(card => {
+        const row = document.createElement('div'); row.className = 'file-row';
+        const name = document.createElement('span'); name.textContent = card.dataset.name;
+        const kind = document.createElement('span'); kind.textContent = card.dataset.name.includes('.') ? 'Documento' : 'Cartella';
+        const date = document.createElement('span'); date.textContent = 'Oggi';
+        row.append(name, kind, date); return row;
+      }));
+    }
+    document.getElementById('file-search').addEventListener('input', event => {
+      const query = event.target.value.trim().toLocaleLowerCase('it');
+      document.querySelectorAll('.file-card').forEach(card => { card.hidden = !card.dataset.name.toLocaleLowerCase('it').includes(query); });
+      document.querySelector('.statusbar span:first-child').textContent = `${document.querySelectorAll('.file-card:not([hidden])').length} elementi`;
+      updateFileList();
+    });
+    document.querySelectorAll('.file-card').forEach(card => card.addEventListener('click', () => {
+      document.querySelectorAll('.file-card').forEach(item => item.classList.toggle('selected', item === card));
+    }));
+    document.querySelector('.focus-toggle').addEventListener('click', event => {
+      const button = event.currentTarget, active = button.getAttribute('aria-pressed') !== 'true';
+      button.setAttribute('aria-pressed', String(active));
+      showToast(active ? 'Modalità concentrazione attivata' : 'Modalità concentrazione disattivata');
+    });
+    document.getElementById('launcher-search-input').addEventListener('input', event => {
+      const query = event.target.value.trim().toLocaleLowerCase('it');
+      document.querySelectorAll('.launcher-app').forEach(app => { app.hidden = !app.dataset.searchable.includes(query); });
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closePopovers();
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); launcherToggle.click(); }
+    });
+
+    // Drag windows with the titlebar while keeping them inside the viewport.
+    document.querySelectorAll('[data-drag-handle]').forEach(handle => {
+      let drag = null;
+      handle.addEventListener('pointerdown', event => {
+        if (event.target.closest('button')) return;
+        const window = handle.closest('.window');
+        const rect = window.getBoundingClientRect();
+        window.style.transform = 'none'; window.style.left = `${rect.left}px`; window.style.top = `${rect.top}px`;
+        drag = { x:event.clientX-rect.left, y:event.clientY-rect.top, window };
+        handle.setPointerCapture(event.pointerId);
+      });
+      handle.addEventListener('pointermove', event => {
+        if (!drag) return;
+        const maxX = window.innerWidth - drag.window.offsetWidth;
+        const maxY = window.innerHeight - drag.window.offsetHeight;
+        drag.window.style.left = `${Math.max(8,Math.min(maxX,event.clientX-drag.x))}px`;
+        drag.window.style.top = `${Math.max(8,Math.min(maxY,event.clientY-drag.y))}px`;
+      });
+      handle.addEventListener('pointerup', () => { drag = null; });
+    });
+
+    const clockTime = document.getElementById('clock-time');
+    function updateClock() {
+      const now = new Date();
+      clockTime.textContent = new Intl.DateTimeFormat('it-IT',{hour:'2-digit',minute:'2-digit'}).format(now);
+      document.getElementById('clock-date').textContent = new Intl.DateTimeFormat('it-IT',{weekday:'short',day:'numeric',month:'short'}).format(now);
+      document.getElementById('today-date').textContent = new Intl.DateTimeFormat('it-IT',{day:'numeric',month:'long'}).format(now);
+    }
+    updateClock(); setInterval(updateClock, 30000);
+  </script>
+</body>
+</html>
