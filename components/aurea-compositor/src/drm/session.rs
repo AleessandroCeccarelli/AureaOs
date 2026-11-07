@@ -7,7 +7,10 @@
 
 use std::{error::Error, fmt};
 
-use smithay::backend::session::libseat::{LibSeatSession, LibSeatSessionNotifier};
+use smithay::backend::session::{
+    Session,
+    libseat::{LibSeatSession, LibSeatSessionNotifier},
+};
 
 /// Error returned while initializing or managing the DRM session.
 #[derive(Debug)]
@@ -50,9 +53,14 @@ impl DrmSession {
         })
     }
 
-    /// Returns the session handle used to open privileged devices.
-    pub fn session(&self) -> &LibSeatSession {
-        &self.session
+    /// Returns whether the native session is currently active.
+    pub fn is_active(&self) -> bool {
+        self.session.is_active()
+    }
+
+    /// Returns mutable access to the session handle used to open devices.
+    pub fn session(&mut self) -> &mut LibSeatSession {
+        &mut self.session
     }
 
     /// Transfers the notifier to the Calloop event loop.

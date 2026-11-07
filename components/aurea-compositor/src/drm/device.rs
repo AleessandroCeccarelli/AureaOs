@@ -5,6 +5,8 @@
 
 //! DRM device discovery, access and lifecycle through Smithay and libseat.
 
+use smithay::backend::session::Session;
+
 use std::{
     error::Error,
     fmt,
@@ -12,12 +14,14 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use smithay::backend::{
-    drm::{DeviceFd, DrmDevice as SmithayDrmDevice, DrmDeviceFd, DrmDeviceNotifier},
-    session::Session,
-    udev,
+use smithay::{
+    backend::{
+        drm::{DrmDevice as SmithayDrmDevice, DrmDeviceFd, DrmDeviceNotifier},
+        udev,
+    },
+    reexports::rustix::fs::OFlags,
+    utils::DeviceFd,
 };
-use smithay::reexports::rustix::fs::OFlags;
 
 use crate::drm::DrmSession;
 
@@ -85,7 +89,7 @@ pub struct DrmDevice {
 
 impl DrmDevice {
     /// Discovers and opens the primary GPU for the specified seat.
-    pub fn open_primary(session: &DrmSession, seat: &str) -> Result<Self, DrmDeviceError> {
+    pub fn open_primary(session: &mut DrmSession, seat: &str) -> Result<Self, DrmDeviceError> {
         let device_path = udev::primary_gpu(seat)
             .map_err(|error| DrmDeviceError::DiscoveryFailed(error.to_string()))?
             .ok_or(DrmDeviceError::NoDevice)?;
@@ -95,7 +99,7 @@ impl DrmDevice {
 
     /// Opens and initializes a DRM device through the active libseat session.
     pub fn open(
-        session: &DrmSession,
+        session: &mut DrmSession,
         device_path: impl AsRef<Path>,
     ) -> Result<Self, DrmDeviceError> {
         let device_path = device_path.as_ref();
@@ -104,7 +108,7 @@ impl DrmDevice {
             return Err(DrmDeviceError::InvalidDevicePath(device_path.to_path_buf()));
         }
 
-        if !session.session().is_active() {
+        if !session.is_active() {
             return Err(DrmDeviceError::SessionInactive);
         }
 

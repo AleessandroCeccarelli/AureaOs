@@ -9,10 +9,7 @@
 use std::io;
 
 #[cfg(feature = "drm")]
-use smithay::{
-    backend::session::{Event as SessionEvent, Session},
-    reexports::calloop::LoopHandle,
-};
+use smithay::{backend::session::Event as SessionEvent, reexports::calloop::LoopHandle};
 
 #[cfg(feature = "drm")]
 use crate::drm::{
@@ -67,7 +64,7 @@ pub(super) fn register_session_events(
                 state.error = Some(io::Error::other(error));
             }
         })
-        .map_err(io::Error::other)?;
+        .map_err(|_| io::Error::other("Failed to register the libseat session event notifier"))?;
 
     Ok(())
 }

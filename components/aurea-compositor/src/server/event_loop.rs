@@ -71,16 +71,18 @@ impl WaylandServer {
     /// The GPU is discovered automatically; no `/dev/dri/cardN` path is needed.
     #[cfg(feature = "drm")]
     pub fn new_with_primary_drm(socket_name: &str, seat: &str) -> io::Result<Self> {
-        let drm_session = session::create_session()?;
-        let drm_device = session::open_primary_device(&drm_session, seat)?;
+        let mut drm_session = session::create_session()?;
+        let drm_device = session::open_primary_device(&mut drm_session, seat)?;
+
         Self::build(socket_name, Some(drm_session), Some(drm_device))
     }
 
     /// Creates a server with a native libseat session and an opened DRM device.
     #[cfg(feature = "drm")]
     pub fn new_with_drm_device(socket_name: &str, device_path: &str) -> io::Result<Self> {
-        let drm_session = session::create_session()?;
-        let drm_device = session::open_device(&drm_session, device_path)?;
+        let mut drm_session = session::create_session()?;
+        let drm_device = session::open_device(&mut drm_session, device_path)?;
+
         Self::build(socket_name, Some(drm_session), Some(drm_device))
     }
 
@@ -104,7 +106,7 @@ impl WaylandServer {
         #[cfg(feature = "drm")]
         let session_active = drm_session
             .as_ref()
-            .map(|session| session.session().is_active())
+            .map(DrmSession::is_active)
             .unwrap_or(true);
 
         let mut state = WaylandState {
