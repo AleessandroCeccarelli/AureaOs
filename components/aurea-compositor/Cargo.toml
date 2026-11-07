@@ -18,11 +18,13 @@ default = []
 # Multi-GPU support is provided by Smithay's renderer_multi module.
 drm = [
     "smithay/backend_drm",
+    "smithay/backend_egl",
     "smithay/backend_gbm",
     "smithay/backend_libinput",
     "smithay/backend_udev",
     "smithay/backend_session_libseat",
     "smithay/renderer_multi",
+    "smithay/renderer_gl",
 ]
 
 # Vulkan remains an independent, opt-in rendering feature.

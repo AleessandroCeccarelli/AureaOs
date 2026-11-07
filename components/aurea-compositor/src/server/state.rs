@@ -24,6 +24,7 @@ use crate::AureaCompositor;
 
 #[cfg(feature = "drm")]
 use crate::{
+    drm::renderer::GbmGlesRendererManager,
     drm::{DrmSession, device_manager::DrmDeviceManager, registry::DrmDeviceRegistry},
     gpu::GpuManager,
 };
@@ -55,6 +56,10 @@ pub(super) struct WaylandState {
     /// GPU inventory and rendering preference manager.
     #[cfg(feature = "drm")]
     pub(super) gpu_manager: GpuManager,
+
+    /// OpenGL ES renderers available for the opened DRM devices.
+    #[cfg(feature = "drm")]
+    pub(super) renderers: GbmGlesRendererManager,
 
     /// Canonical registry of discovered DRM devices.
     #[cfg(feature = "drm")]

@@ -133,6 +133,9 @@ impl WaylandServer {
             #[cfg(feature = "drm")]
             gpu_manager: crate::gpu::GpuManager::new(),
             #[cfg(feature = "drm")]
+            renderers: crate::drm::renderer::GbmGlesRendererManager::new()
+                .map_err(io::Error::other)?,
+            #[cfg(feature = "drm")]
             drm_device_registry: crate::drm::registry::DrmDeviceRegistry::new(),
             #[cfg(feature = "drm")]
             udev_device_ids: Vec::new(),
@@ -185,6 +188,16 @@ impl WaylandServer {
                     }
                     let _ = state.drm_devices.register(device);
                 }
+            }
+        }
+
+        // Register one GBM-backed GLES renderer for every opened DRM device.
+        // Renderer setup is best-effort per GPU: output discovery and Wayland
+        // publication remain available when a device lacks a usable EGL stack.
+        #[cfg(feature = "drm")]
+        for (node, device) in state.drm_devices.iter() {
+            if let Err(error) = state.renderers.add_device(*node, device.fd()) {
+                eprintln!("AureaOS: GLES renderer unavailable for {node}: {error}");
             }
         }
 

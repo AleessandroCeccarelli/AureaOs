@@ -137,11 +137,18 @@ fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io::Result<()>
         .register(device)
         .map_err(io::Error::other)?;
 
+    if let Some(device) = state.drm_devices.get(node)
+        && let Err(error) = state.renderers.add_device(node, device.fd())
+    {
+        eprintln!("AureaOS: GLES renderer unavailable for {node}: {error}");
+    }
+
     let result = (|| {
         register_device_notifier(state, node)?;
         refresh_device_outputs(state, node)
     })();
     if let Err(error) = result {
+        state.renderers.remove_device(node);
         remove_device_outputs(state, node);
         remove_device_notifier(state, node);
         state.drm_devices.remove(node);
@@ -252,6 +259,7 @@ fn changed_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
 }
 
 fn remove_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
+    state.renderers.remove_device(node);
     remove_device_outputs(state, node);
     remove_device_notifier(state, node);
     state.drm_devices.remove(node);
