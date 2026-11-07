@@ -14,15 +14,20 @@ use smithay::{
 #[derive(Default)]
 pub struct WindowManager {
     toplevels: Vec<ManagedToplevel>,
+    active_workspace: usize,
 }
 
 struct ManagedToplevel {
     surface: ToplevelSurface,
     mapped: bool,
     location: Point<i32, smithay::utils::Logical>,
+    workspace: usize,
 }
 
 impl WindowManager {
+    /// Number of virtual workspaces provided by the initial desktop model.
+    pub const WORKSPACE_COUNT: usize = 4;
+
     /// Creates an empty window manager.
     pub fn new() -> Self {
         Self::default()
@@ -37,7 +42,47 @@ impl WindowManager {
             surface,
             mapped: false,
             location: Point::from((0, 0)),
+            workspace: self.active_workspace,
         });
+    }
+
+    /// Returns the zero-based index of the active workspace.
+    pub fn active_workspace(&self) -> usize {
+        self.active_workspace
+    }
+
+    /// Switches to a workspace by its zero-based index.
+    ///
+    /// Returns `false` when the index is outside the configured workspace set.
+    pub fn switch_workspace(&mut self, workspace: usize) -> bool {
+        if workspace >= Self::WORKSPACE_COUNT {
+            return false;
+        }
+
+        self.active_workspace = workspace;
+        true
+    }
+
+    /// Moves a managed toplevel to a workspace by its zero-based index.
+    ///
+    /// Returns `false` when either the surface is unmanaged or the workspace
+    /// index is outside the configured workspace set.
+    pub fn move_toplevel_to_workspace(&mut self, surface: &WlSurface, workspace: usize) -> bool {
+        if workspace >= Self::WORKSPACE_COUNT {
+            return false;
+        }
+
+        self.remove_dead_toplevels();
+        let Some(toplevel) = self
+            .toplevels
+            .iter_mut()
+            .find(|toplevel| toplevel.surface.wl_surface() == surface)
+        else {
+            return false;
+        };
+
+        toplevel.workspace = workspace;
+        true
     }
 
     /// Sets the logical position of a managed toplevel.
@@ -107,7 +152,11 @@ impl WindowManager {
     ) -> impl Iterator<Item = (&ToplevelSurface, Point<i32, smithay::utils::Logical>)> {
         self.toplevels
             .iter()
-            .filter(|toplevel| toplevel.surface.alive() && toplevel.mapped)
+            .filter(|toplevel| {
+                toplevel.surface.alive()
+                    && toplevel.mapped
+                    && toplevel.workspace == self.active_workspace
+            })
             .map(|toplevel| (&toplevel.surface, toplevel.location))
     }
 }

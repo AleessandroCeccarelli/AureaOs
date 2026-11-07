@@ -108,6 +108,8 @@ The current prototype includes:
 - Initial XDG shell integration.
 - Client and toplevel surface tracking.
 - An initial window-management model.
+- An initial four-workspace model: mapped toplevels belong to one workspace, and
+  render scenes include only windows on the active workspace.
 - Conversion of mapped XDG surface trees into Smithay render elements, including logical window positions and output scaling.
 - DRM device discovery and management.
 - DRM device event integration with the compositor event loop.
@@ -127,7 +129,8 @@ The following capabilities remain incomplete:
 - Frame rendering and presentation to physical displays.
 - Complete DRM/KMS mode setting.
 - Full input handling.
-- Complete window management and desktop interactions.
+- Complete window management and desktop interactions, including workspace UI,
+  keyboard shortcuts, and touchpad gestures.
 - Cross-GPU rendering and presentation.
 
 GPU discovery and rendering preference selection do not establish working multi-GPU rendering.

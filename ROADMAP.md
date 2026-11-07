@@ -18,6 +18,8 @@ AureaOS targets Debian GNU/Linux 13 (Trixie), `amd64` (x86-64). The first releas
 - Shell session lifecycle coordination and shutdown handling through an event bus.
 - A Smithay-based Wayland server with initial XDG shell integration.
 - Initial toplevel surface tracking and window-management structures.
+- Initial four-workspace model with workspace switching and per-window assignment.
+- Render-scene filtering so only mapped windows on the active workspace are drawn.
 - Conversion of mapped XDG surface trees into Smithay render elements, with logical window positions and output scaling.
 - DRM device discovery and lifecycle management through Udev and libseat.
 - DRM device event integration with the compositor event loop.

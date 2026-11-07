@@ -265,6 +265,24 @@ impl AureaCompositor {
         &mut self.window_manager
     }
 
+    /// Returns the zero-based index of the active virtual workspace.
+    pub fn active_workspace(&self) -> usize {
+        self.window_manager.active_workspace()
+    }
+
+    /// Switches the visible scene to a workspace by its zero-based index.
+    ///
+    /// Returns `false` when the index is outside the four-workspace set.
+    pub fn switch_workspace(&mut self, workspace: usize) -> bool {
+        self.window_manager.switch_workspace(workspace)
+    }
+
+    /// Moves a managed toplevel surface to a workspace by its zero-based index.
+    pub fn move_toplevel_to_workspace(&mut self, surface: &WlSurface, workspace: usize) -> bool {
+        self.window_manager
+            .move_toplevel_to_workspace(surface, workspace)
+    }
+
     /// Returns the output manager.
     pub fn output_manager(&mut self) -> &mut OutputManager {
         &mut self.output_manager
