@@ -1,3 +1,5 @@
+
+
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
 <p align="center">
@@ -14,15 +16,45 @@ AureaOS is a Linux distribution project built on Debian GNU/Linux 13 (Trixie) fo
 
 AureaOS is in an early prototype stage. The repository includes a minimal Debian bootstrap, package manifests, design resources, and initial Rust components for the desktop session.
 
-The current prototype separates aurea-shell and aurea-compositor. The shell coordinates session lifecycle and shutdown through an event bus and starts the compositor as a local component. The compositor provides a basic Wayland server with XDG shell handling and surface tracking.
+The project has progressed beyond its initial bootstrap stage. Its first system components are being developed as independent, modular Rust projects.
 
-This is not yet a usable graphical desktop. The compositor does not yet provide a complete rendering backend, display/output management, input handling, or full window management. The Debian bootstrap profile still requires validation and does not produce a bootable installation image.
+The current prototype separates `aurea-shell` and `aurea-compositor`.
+
+The **aurea-shell** component coordinates the desktop session lifecycle and shutdown through an event bus. It is responsible for starting and coordinating the compositor as a local component.
+
+The **aurea-compositor** component provides an early Wayland server implementation, including XDG shell handling and surface tracking. Its architecture is based on Smithay and integrates with Calloop and libseat.
+
+The compositor also includes foundational graphics-device and display-output management:
+
+- DRM device discovery and device lifecycle management.
+- GPU inventory and rendering-preference foundations.
+- Udev event handling for device discovery and removal.
+- DRM device event integration with the compositor event loop.
+- Display-output registration and removal.
+- Wayland output publication and lifecycle management.
+
+These capabilities represent an important step in the graphics architecture, but they do not yet constitute a complete display system.
+
+AureaOS is not yet a usable graphical desktop. Several essential capabilities remain under development:
+
+- A complete rendering backend and frame presentation to physical displays.
+- Full DRM/KMS mode setting and display configuration.
+- Complete keyboard and pointer input handling.
+- Full window management and desktop interaction.
+- A finished graphical shell and integrated system applications.
+- A complete, bootable AureaOS installation image.
+
+The Debian bootstrap profile also requires further validation and does not currently produce a complete bootable installation image.
 
 Visual tokens, themes, icons, illustrations, and wallpapers are present as design assets. Their presence does not mean a working desktop or shared application library exists.
 
 ## Product direction
 
 AureaOS is planned as a coherent desktop with graphical workflows for everyday use. The terminal remains available for advanced users and system work. The system is intended to support local accounts, accessible workflows, and a friendly user experience that feels at home on Linux.
+
+The desktop should provide a consistent environment in which system tools, applications, settings, notifications, and everyday workflows feel like parts of the same operating system.
+
+AureaOS aims to reduce unnecessary configuration and provide sensible defaults without preventing users from making meaningful choices.
 
 Planned components include:
 
@@ -37,15 +69,32 @@ These names describe planned work, not available features. Scope and implementat
 
 ## Technical direction
 
+AureaOS follows a modular architecture and aims to reuse established Linux infrastructure wherever it makes technical sense.
+
+Its current technical direction includes:
+
 - Debian GNU/Linux 13 (Trixie), `amd64`.
 - Btrfs is the selected default installed filesystem; backup and restore are planned through Aurea Time, not native Btrfs snapshots.
 - GUI-first and Wayland-first desktop direction.
 - Rust is the primary programming language for first-party AureaOS development where appropriate.
+- Smithay as the current Wayland compositor framework.
+- Wayland protocols for desktop communication.
+- Calloop for event-loop integration.
+- libseat for session and device access management.
+- DRM and Udev for graphics-device discovery and output lifecycle foundations.
 - Separate update channels for the Debian base and AureaOS-specific system components.
 - Flatpak and Flathub planned for application distribution.
 - Open-source and proprietary third-party components may be considered, subject to technical, licensing, and distribution review.
 
+Vulkan remains a possible rendering technology, not a confirmed implementation choice.
+
+The current graphics foundation does not imply that complete rendering, physical display presentation, cross-GPU rendering, or display configuration is already available.
+
 ## Documentation
+
+The repository includes documentation covering the project's vision, philosophy, architecture, technical direction, product experience, development roadmap, and design resources.
+
+The main documentation files are:
 
 - [Vision](VISION.md) — goals and intended user experience.
 - [Philosophy](PHILOSOPHY.md) — project principles.
@@ -70,6 +119,9 @@ These names describe planned work, not available features. Scope and implementat
 
 The interface should help people do what they want without getting in their way.
 
+Technology should support the experience rather than become an obstacle. The system should feel coherent, predictable, and approachable, allowing people to concentrate on what they want to accomplish.
+
 ## License
 
 Original AureaOS work is released under the GNU General Public License version 3 or later (GPL-3.0-or-later), unless stated otherwise. Third-party software and assets remain subject to their own licenses and terms.
+

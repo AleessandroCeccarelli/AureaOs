@@ -1,9 +1,14 @@
-<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
+
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
 # The AureaOS Philosophy
 
-This document describes the intended product, not the current implementation. AureaOS targets Debian GNU/Linux 13 (Trixie) on `amd64`; its desktop UI and applications are planned. The repository currently contains an early terminal-only Debian bootstrap and design resources.
+This document describes the intended product and the principles that guide its development. It is not a description of a finished operating system.
+
+AureaOS targets Debian GNU/Linux 13 (Trixie) on `amd64`. The project has progressed beyond its initial Debian bootstrap: it now includes early Rust-based shell and compositor components, together with foundational DRM device discovery and display-output management.
+
+These components are still under development. AureaOS does not yet provide a complete graphical desktop or a usable daily operating system. Its desktop experience and system applications remain part of the ongoing development roadmap.
 
 ## Not Another Operating System Imitation
 
@@ -92,3 +97,4 @@ An operating system that respects people's time, makes thoughtful decisions on t
 ---
 
 *Rome wasn't built in a day, and neither will AureaOS be.*
+
