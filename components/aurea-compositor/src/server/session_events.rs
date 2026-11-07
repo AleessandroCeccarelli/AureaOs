@@ -12,10 +12,7 @@ use std::io;
 use smithay::{backend::session::Event as SessionEvent, reexports::calloop::LoopHandle};
 
 #[cfg(feature = "drm")]
-use crate::drm::{
-    DrmSession,
-    device::{DrmDevice, DrmDeviceError},
-};
+use crate::drm::{DrmSession, device::DrmDeviceError};
 
 #[cfg(feature = "drm")]
 use super::state::WaylandState;
@@ -25,19 +22,26 @@ use super::state::WaylandState;
 fn apply_session_event(
     event: SessionEvent,
     session_active: &mut bool,
-    drm_device: Option<&mut DrmDevice>,
+    drm_devices: &mut crate::drm::device_manager::DrmDeviceManager,
 ) -> Result<(), DrmDeviceError> {
     match event {
         SessionEvent::PauseSession => {
-            if let Some(device) = drm_device {
+            for (_, device) in drm_devices.iter_mut() {
                 device.pause();
             }
 
             *session_active = false;
         }
         SessionEvent::ActivateSession => {
-            if let Some(device) = drm_device {
-                device.activate()?;
+            let mut first_error = None;
+            for (_, device) in drm_devices.iter_mut() {
+                if let Err(error) = device.activate() {
+                    first_error.get_or_insert(error);
+                }
+            }
+            if let Some(error) = first_error {
+                *session_active = false;
+                return Err(error);
             }
 
             *session_active = true;
@@ -58,7 +62,7 @@ pub(super) fn register_session_events(
     loop_handle
         .insert_source(notifier, |event, _, state| {
             let result =
-                apply_session_event(event, &mut state.session_active, state._drm_device.as_mut());
+                apply_session_event(event, &mut state.session_active, &mut state.drm_devices);
 
             if let Err(error) = result {
                 state.error = Some(io::Error::other(error));

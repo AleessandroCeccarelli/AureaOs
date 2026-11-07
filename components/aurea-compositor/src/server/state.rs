@@ -13,6 +13,8 @@ use std::{
 #[cfg(feature = "drm")]
 use std::path::PathBuf;
 
+#[cfg(feature = "drm")]
+use smithay::reexports::calloop::{LoopHandle, RegistrationToken};
 use smithay::reexports::wayland_server::{Client, Display, backend::ClientId};
 
 #[cfg(feature = "drm")]
@@ -22,7 +24,7 @@ use crate::AureaCompositor;
 
 #[cfg(feature = "drm")]
 use crate::{
-    drm::{DrmSession, device::DrmDevice, registry::DrmDeviceRegistry},
+    drm::{DrmSession, device_manager::DrmDeviceManager, registry::DrmDeviceRegistry},
     gpu::GpuManager,
 };
 
@@ -38,7 +40,14 @@ pub(super) struct WaylandState {
     pub(super) drm_session: Option<DrmSession>,
 
     #[cfg(feature = "drm")]
-    pub(super) _drm_device: Option<DrmDevice>,
+    pub(super) drm_devices: DrmDeviceManager,
+
+    /// Calloop source handles keyed by the corresponding DRM device.
+    #[cfg(feature = "drm")]
+    pub(super) drm_notifiers: std::collections::HashMap<DrmNode, RegistrationToken>,
+
+    #[cfg(feature = "drm")]
+    pub(super) loop_handle: Option<LoopHandle<'static, WaylandState>>,
 
     #[cfg(feature = "drm")]
     pub(super) session_active: bool,

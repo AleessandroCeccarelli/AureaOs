@@ -8,7 +8,8 @@ use super::*;
 fn pause_event_updates_session_state() {
     let mut active = true;
 
-    let result = apply_session_event(SessionEvent::PauseSession, &mut active, None);
+    let mut devices = crate::drm::device_manager::DrmDeviceManager::new();
+    let result = apply_session_event(SessionEvent::PauseSession, &mut active, &mut devices);
 
     assert!(result.is_ok());
     assert!(!active);
@@ -18,7 +19,8 @@ fn pause_event_updates_session_state() {
 fn activate_event_updates_session_state() {
     let mut active = false;
 
-    let result = apply_session_event(SessionEvent::ActivateSession, &mut active, None);
+    let mut devices = crate::drm::device_manager::DrmDeviceManager::new();
+    let result = apply_session_event(SessionEvent::ActivateSession, &mut active, &mut devices);
 
     assert!(result.is_ok());
     assert!(active);

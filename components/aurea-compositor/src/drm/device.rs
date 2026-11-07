@@ -14,6 +14,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use smithay::backend::drm::DrmNode;
 use smithay::{
     backend::{
         drm::{DrmDevice as SmithayDrmDevice, DrmDeviceFd, DrmDeviceNotifier},
@@ -134,6 +135,12 @@ impl DrmDevice {
     /// Returns a reference to the underlying Smithay DRM device.
     pub fn device(&self) -> &SmithayDrmDevice {
         &self.device
+    }
+
+    /// Returns Smithay's canonical identity for this opened DRM device.
+    pub fn node(&self) -> Result<DrmNode, DrmDeviceError> {
+        DrmNode::from_dev_id(self.device.device_id() as u64)
+            .map_err(|error| DrmDeviceError::OpenFailed(error.to_string()))
     }
 
     /// Returns a mutable reference to the underlying Smithay DRM device.

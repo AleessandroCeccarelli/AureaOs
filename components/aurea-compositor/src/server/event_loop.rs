@@ -107,6 +107,13 @@ impl WaylandServer {
             .map(DrmSession::is_active)
             .unwrap_or(true);
 
+        #[cfg(feature = "drm")]
+        let mut drm_devices = crate::drm::device_manager::DrmDeviceManager::new();
+        #[cfg(feature = "drm")]
+        if let Some(device) = drm_device {
+            drm_devices.register(device).map_err(io::Error::other)?;
+        }
+
         let mut state = WaylandState {
             display,
             compositor,
@@ -116,7 +123,11 @@ impl WaylandServer {
             #[cfg(feature = "drm")]
             drm_session,
             #[cfg(feature = "drm")]
-            _drm_device: drm_device,
+            drm_devices,
+            #[cfg(feature = "drm")]
+            drm_notifiers: std::collections::HashMap::new(),
+            #[cfg(feature = "drm")]
+            loop_handle: None,
             #[cfg(feature = "drm")]
             session_active,
             #[cfg(feature = "drm")]
@@ -130,6 +141,10 @@ impl WaylandServer {
         };
 
         let loop_handle = event_loop.handle();
+        #[cfg(feature = "drm")]
+        {
+            state.loop_handle = Some(loop_handle.clone());
+        }
 
         // Register Udev monitoring and obtain the initial DRM inventory.
         #[cfg(feature = "drm")]
@@ -151,9 +166,31 @@ impl WaylandServer {
             }
         }
 
+        // Open every discovered device that can be acquired through the active
+        // seat. A secondary GPU may be render-only or unavailable for KMS, so
+        // failures here do not prevent the primary compositor from starting.
+        #[cfg(feature = "drm")]
+        if state.session_active {
+            if let Some(session) = state.drm_session.as_mut() {
+                let discovered = state.udev_device_ids.clone();
+                for (node, path) in discovered {
+                    if state.drm_devices.contains(node) {
+                        continue;
+                    }
+                    let Ok(device) = DrmDevice::open(session, &path) else {
+                        continue;
+                    };
+                    if device.node().ok() != Some(node) {
+                        continue;
+                    }
+                    let _ = state.drm_devices.register(device);
+                }
+            }
+        }
+
         // Discover connected connectors on the currently initialized DRM device.
         #[cfg(feature = "drm")]
-        if let Some(device) = state._drm_device.as_ref() {
+        for (_, device) in state.drm_devices.iter() {
             crate::drm::outputs::initialize_drm_outputs(device, state.compositor.output_manager())
                 .map_err(io::Error::other)?;
         }
@@ -176,27 +213,30 @@ impl WaylandServer {
         // Register DRM device events with Calloop.
         #[cfg(feature = "drm")]
         {
-            let drm_notifier = state
-                ._drm_device
-                .as_mut()
-                .map(|device| device.take_notifier())
-                .transpose()
-                .map_err(io::Error::other)?;
-
-            if let Some(notifier) = drm_notifier {
-                loop_handle
-                    .insert_source(notifier, |event, _, state| {
-                        match event {
-                            DrmEvent::VBlank(_crtc) => {
-                                // Page-flip timing will be consumed when
-                                // DRM surfaces and presentation are integrated.
-                            }
-                            DrmEvent::Error(error) => {
-                                state.error = Some(io::Error::other(error));
-                            }
+            let nodes = state
+                .drm_devices
+                .iter()
+                .map(|(node, _)| *node)
+                .collect::<Vec<_>>();
+            for node in nodes {
+                let notifier = state
+                    .drm_devices
+                    .get_mut(node)
+                    .ok_or_else(|| {
+                        io::Error::other("DRM device disappeared during notifier setup")
+                    })?
+                    .take_notifier()
+                    .map_err(io::Error::other)?;
+                let token = loop_handle
+                    .insert_source(notifier, move |event, _, state| match event {
+                        DrmEvent::VBlank(_crtc) => {}
+                        DrmEvent::Error(error) => {
+                            state.error =
+                                Some(io::Error::other(format!("DRM device {node}: {error}")));
                         }
                     })
                     .map_err(io::Error::other)?;
+                state.drm_notifiers.insert(node, token);
             }
         }
 

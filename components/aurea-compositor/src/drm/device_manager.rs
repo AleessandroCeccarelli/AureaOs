@@ -16,6 +16,8 @@ use crate::drm::device::DrmDevice;
 pub enum DrmDeviceManagerError {
     /// A DRM device with this identity is already open.
     DeviceAlreadyRegistered(DrmNode),
+    /// The opened device did not expose a canonical DRM identity.
+    DeviceIdentityUnavailable,
 }
 
 impl fmt::Display for DrmDeviceManagerError {
@@ -23,6 +25,9 @@ impl fmt::Display for DrmDeviceManagerError {
         match self {
             Self::DeviceAlreadyRegistered(node) => {
                 write!(formatter, "DRM device is already open: {node}")
+            }
+            Self::DeviceIdentityUnavailable => {
+                formatter.write_str("Cannot identify opened DRM device")
             }
         }
     }
@@ -52,18 +57,17 @@ impl DrmDeviceManager {
     /// A device identity can only be registered once. If the identity
     /// is already present, the new device is dropped and the existing
     /// device remains untouched.
-    pub fn register(
-        &mut self,
-        node: DrmNode,
-        device: DrmDevice,
-    ) -> Result<(), DrmDeviceManagerError> {
+    pub fn register(&mut self, device: DrmDevice) -> Result<DrmNode, DrmDeviceManagerError> {
+        let node = device
+            .node()
+            .map_err(|_| DrmDeviceManagerError::DeviceIdentityUnavailable)?;
         if self.devices.contains_key(&node) {
             return Err(DrmDeviceManagerError::DeviceAlreadyRegistered(node));
         }
 
         self.devices.insert(node, device);
 
-        Ok(())
+        Ok(node)
     }
 
     /// Returns an opened DRM device by its canonical identity.
