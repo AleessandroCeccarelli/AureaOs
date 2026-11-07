@@ -29,6 +29,8 @@ The interface should avoid unnecessary complexity and decoration. Every visual e
 
 Familiar interaction patterns may be used where they improve usability, but AureaOS must not become a visual copy of another operating system.
 
+The desktop's visual identity should be unmistakably AureaOS: a clear blue light field, the Aurea mark treated as a source of soft light in the wallpaper, and a restrained warm gold drawn from the existing brand icon. The desktop begins as an uncluttered canvas without default file or application icons.
+
 ## 3. Visual Language
 
 AureaOS uses a blue-gray visual foundation with a clear primary blue accent.
@@ -79,6 +81,8 @@ They are not the primary palette of AureaOS.
 
 Accent colors must not replace semantic colors or reduce readability.
 
+The Aurea mark may use a warm luminous treatment in the wallpaper. Its glow should be soft and diffuse, with the blue desktop remaining the dominant color.
+
 ### 3.4 Transparency and Effects
 
 Transparency, blur and subtle shadows may be used to establish visual hierarchy and depth.
@@ -92,6 +96,8 @@ These effects must remain restrained and must never compromise:
 - Consistency between themes.
 
 The desktop must remain usable when transparency or visual effects are reduced or disabled.
+
+Glass surfaces should use blue-tinted translucency over the desktop. Keep text, icons, and controls legible against both the wallpaper and open windows.
 
 ## 4. Windows and Surfaces
 
@@ -113,28 +119,27 @@ Applications should not introduce unrelated window styles without a clear functi
 
 ## 5. Desktop Shell and Dock
 
-The intended default desktop layout uses a bottom dock as its main shell element.
+The default desktop is an open, uncluttered canvas. Its main shell element is a full-width dock along the bottom edge, with a soft blue glass surface. The Aurea mark at the left end opens the application launcher. The dock has three clear zones: launcher and workspaces on the left, running applications in the center, and system status and controls on the right.
 
 The dock should provide access to applications and essential system functions without occupying unnecessary screen space.
 
 ### 5.1 Dock Behavior
 
-The planned dock should:
+The final dock spans the full usable screen width. It supports pinned and running applications, clear active indicators, pointer and keyboard access, and an adaptive visibility behavior:
 
-- Be positioned at the bottom of the screen.
-- Use a compact and visually balanced layout.
-- Support running and pinned applications.
-- Provide clear indicators for active applications.
-- Remain accessible through pointer and keyboard interaction.
-- Support appropriate visibility behavior.
+- When the desktop has room, the full-width dock floats slightly above the lower edge.
+- When open windows need that space, the dock becomes more compact in height and attaches to the bottom edge.
+- Users may choose to keep it visible or hide it automatically to use the full desktop.
+- In auto-hide mode, it reappears when the pointer reaches the bottom edge or when the user navigates to it with the keyboard.
+- The dock must not cover window controls or important application content.
 
-The dock may use a floating or translucent appearance, provided readability and usability remain priorities.
+The middle area shows running applications with their icons and names. Hovering over a running application displays a small window preview and provides a route back to it.
 
-Its final dimensions, positioning and behavior must be validated through implementation and usability testing.
+The final dimensions, timing, and behavior must be validated through implementation and usability testing.
 
 ### 5.2 Launcher Entry Point
 
-The AureaOS logo should provide access to the application launcher.
+The AureaOS mark at the left end of the dock opens a keyboard-friendly application launcher.
 
 The launcher is intended to provide a central entry point for:
 
@@ -146,18 +151,21 @@ The launcher is intended to provide a central entry point for:
 - System tools.
 - Relevant system actions.
 
+The launcher also provides session actions to switch user, log out, restart, and shut down.
+
 ### 5.3 System Status Area
 
-The dock or an associated system area should provide access to essential status information, including:
+The right side of the dock shows the clock, network connection, and audio status. The network indicator reflects the active connection type, such as Wi-Fi or Ethernet. Selecting the status area opens Quick Settings with supported controls for:
 
 - Time and date.
 - Network connectivity.
 - Audio status.
-- Battery status on supported devices.
-- Relevant system notifications.
-- Quick system controls.
+- Bluetooth and airplane mode.
+- Brightness when a controllable hardware interface is available.
+- Screen recording, with a visible recording state and user-controlled stop action.
+- Additional controls as AureaOS services become available.
 
-The final placement and organization of these elements should prioritize clarity and consistency.
+Controls must reflect the capabilities actually available on the device. Unavailable hardware controls should not be presented as active.
 
 ## 6. Quick Settings
 
@@ -169,6 +177,8 @@ The planned controls include:
 - Display brightness.
 - Wi-Fi and network connectivity.
 - Bluetooth.
+- Airplane mode.
+- Screen recording, where the system recording service is available.
 - Light and dark appearance.
 - Accessibility options.
 - Display configuration.
@@ -198,6 +208,8 @@ Visual effects such as transparency and shadows may be used, but readability mus
 
 Notifications should integrate with the system notification infrastructure rather than relying on unrelated application-specific implementations.
 
+Desktop notifications appear along the left side in a restrained, liquid-glass inspired stack. They should be easy to scan, dismiss, and reach with a keyboard. The translucent surface must preserve contrast and support reduced-transparency settings.
+
 ## 8. Launcher and Quaero Search
 
 The application launcher should provide a straightforward way to access applications and system functions.
@@ -218,7 +230,7 @@ The launcher and Quaero should remain modular components. Their integration must
 
 ## 9. Keyboard Workflow
 
-AureaOS should support an efficient keyboard-first workflow without making the desktop intimidating to less experienced users.
+AureaOS should support an efficient keyboard-first workflow without making the desktop intimidating to less experienced users. Where practical, familiar Windows shortcuts are retained, with the Windows key mapped to Super.
 
 The following shortcuts are proposed defaults:
 
@@ -231,6 +243,9 @@ The following shortcuts are proposed defaults:
 | Super + E | Open Fides file manager |
 | Super + L | Lock the session |
 | Super + Arrow keys | Arrange or snap windows |
+| Super + Tab | Open the desktop and window overview |
+| Super + Ctrl + Left / Right | Switch virtual desktops |
+| Super + D | Show the desktop |
 
 These shortcuts are proposed behavior and may be adjusted during implementation.
 
@@ -238,7 +253,13 @@ The system should provide a discoverable way to view and customize keyboard shor
 
 Keyboard navigation must remain available throughout the desktop experience.
 
-## 10. Accessibility
+## 10. Virtual Desktops
+
+AureaOS provides four virtual desktops by default. Users can switch between them with a three-finger horizontal touchpad gesture or the Super + Ctrl + Left / Right shortcuts. The overview opened with Super + Tab shows all four workspaces and their open windows.
+
+Touchpad gestures must be configurable and must not prevent equivalent keyboard navigation.
+
+## 11. Accessibility
 
 Accessibility must be considered from the beginning of the design and implementation process.
 
@@ -257,7 +278,7 @@ Visual effects and animations should never be required to understand the interfa
 
 Accessibility behavior should be consistent across system components and applications.
 
-## 11. Typography
+## 12. Typography
 
 Typography should prioritize readability, consistency and availability across supported environments.
 
@@ -277,7 +298,7 @@ Font selection must consider licensing, language coverage, rendering quality and
 
 All applications should use shared typography tokens where possible instead of defining unrelated font systems.
 
-## 12. Motion and Interaction
+## 13. Motion and Interaction
 
 Animations should communicate state changes and help users understand the interface.
 
@@ -293,7 +314,7 @@ Transitions should not introduce unnecessary delays or make the desktop feel slo
 
 Interactive elements must provide clear visual feedback for relevant states, including hover, focus, pressed, selected, disabled and error states.
 
-## 13. Design System Integration
+## 14. Design System Integration
 
 The AureaOS Human Interfaces project is responsible for shared design foundations and reusable interface components.
 
@@ -315,7 +336,7 @@ The system should remain modular. Applications and shell components should reuse
 
 Changes to the design system should be reflected consistently across dependent components.
 
-## 14. Implementation Principles
+## 15. Implementation Principles
 
 The user interface should be implemented incrementally.
 
@@ -334,7 +355,7 @@ The implementation should preserve separation between the shell, compositor, sys
 
 The graphical experience must not depend on undocumented assumptions about hardware or system capabilities.
 
-## 15. Final Design Principle
+## 16. Final Design Principle
 
 AureaOS should feel:
 

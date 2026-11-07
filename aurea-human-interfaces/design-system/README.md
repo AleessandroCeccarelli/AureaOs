@@ -10,10 +10,14 @@ The desktop direction is intentionally familiar to people coming from Windows or
 
 - Light theme: soft blue-gray desktop, white windows, dark readable text
 - Dark theme: deep slate-blue desktop, dark windows, bright text
-- Dock: floating, translucent, and placed at the bottom of the screen
+- Wallpaper: uncluttered blue light field with the Aurea mark softly illuminating the desktop
+- Dock: full-width intelligent glass dock that floats when there is room, attaches to the bottom edge when windows need space, and can auto-hide
+- Dock: Aurea mark and launcher on the left, running apps in the center, system status and controls on the right
 - Notifications: floating glass-like panels with soft blur and strong readability
 - Windows: clean, rounded, and light in structure
 - Accent color: soft blue with a subtle warm gold highlight for identity
+- Four virtual desktops, with touchpad gestures and Windows-familiar keyboard shortcuts
+- Notifications appear on the left side of the desktop
 - No permanent top bar in the default shell layout
 
 ## Token files
