@@ -1,3 +1,4 @@
+
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # AureaOS
@@ -5,6 +6,7 @@
 
 [workspace]
 members = [
+    "components/aurea-desktop-api",
     "components/aurea-shell",
     "components/aurea-compositor",
 ]

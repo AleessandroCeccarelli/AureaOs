@@ -1,7 +1,7 @@
 
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-# AureaOS
+# AureaOS — Aurea Compositor
 # Copyright (C) 2026 Alessandro Ceccarelli
 
 [package]
@@ -32,6 +32,9 @@ drm = [
 
 # Native Vulkan rendering support.
 vulkan = ["smithay/backend_vulkan"]
+
+[dependencies]
+aurea-desktop-api = { path = "../aurea-desktop-api" }
 
 [dependencies.smithay]
 version = "0.7"

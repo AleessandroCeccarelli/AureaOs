@@ -1,3 +1,4 @@
+
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # AureaOS — Aurea Shell
@@ -12,6 +13,7 @@ license = "GPL-3.0-or-later"
 
 [dependencies]
 ctrlc = "3"
+aurea-desktop-api = { path = "../aurea-desktop-api" }
 
-# Native Wayland compositor with DRM/KMS and Vulkan support.
+# Temporary dependency during the Shell/Compositor decoupling.
 aurea-compositor = { path = "../aurea-compositor", features = ["drm", "vulkan"] }

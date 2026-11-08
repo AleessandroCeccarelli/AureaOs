@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -18,6 +19,9 @@ pub mod renderer;
 
 #[cfg(feature = "drm")]
 pub mod drm;
+
+#[cfg(feature = "drm")]
+pub mod service;
 
 #[cfg(feature = "vulkan")]
 pub mod vulkan;
