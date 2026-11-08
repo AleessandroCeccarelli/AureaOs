@@ -65,14 +65,35 @@ impl Error for DrmOutputsError {
     }
 }
 
+/// Calculates the first free horizontal position after all registered outputs.
+///
+/// Existing output positions are preserved. New outputs are placed to the
+/// right of the rightmost registered output, regardless of which DRM device
+/// owns that output.
+fn next_output_position(manager: &OutputManager) -> Result<i32, DrmOutputsError> {
+    manager
+        .registry()
+        .iter()
+        .try_fold(0_i32, |rightmost, output| {
+            let position = manager.layout().get(output.id()).unwrap_or_default();
+
+            let width = i32::try_from(output.current_mode().width())
+                .map_err(|_| DrmOutputsError::PositionOverflow)?;
+
+            let right_edge = position
+                .x()
+                .checked_add(width)
+                .ok_or(DrmOutputsError::PositionOverflow)?;
+
+            Ok(rightmost.max(right_edge))
+        })
+}
+
 /// Discovers connected DRM outputs and registers them in the output manager.
 ///
-/// Output IDs are derived from the DRM device and connector identities,
-/// so this function does not need a caller-provided ID namespace.
-///
-/// Outputs are placed horizontally from left to right, starting at `(0, 0)`.
-/// The next output's x-position is calculated from the preceding output's
-/// current mode width.
+/// Output IDs are derived from the DRM device and connector identities.
+/// Outputs are placed horizontally after all outputs already registered,
+/// including outputs belonging to other DRM devices.
 ///
 /// All descriptors, IDs, and positions are validated before the output
 /// manager is mutated. Registration is performed atomically as a batch.
@@ -94,7 +115,7 @@ pub fn register_drm_output_descriptors(
 ) -> Result<usize, DrmOutputsError> {
     let mut staged_outputs = Vec::with_capacity(descriptors.len());
     let mut staged_ids = BTreeSet::new();
-    let mut next_x = 0_i32;
+    let mut next_x = next_output_position(manager)?;
 
     for descriptor in descriptors {
         let output_id = descriptor.id();
@@ -130,6 +151,7 @@ pub fn register_drm_output_descriptors(
 }
 
 /// Reconciles a device's existing output IDs with its current connector set.
+///
 /// OutputManager preserves positions and user configuration for retained IDs.
 pub fn reconcile_drm_outputs(
     device: &DrmDevice,
@@ -138,15 +160,22 @@ pub fn reconcile_drm_outputs(
 ) -> Result<OutputReconciliation, DrmOutputsError> {
     let descriptors = discover_connected_outputs(device).map_err(DrmOutputsError::Discovery)?;
     let mut outputs = Vec::with_capacity(descriptors.len());
+
     for descriptor in descriptors {
         let output_id = descriptor.id();
+
         outputs.push(
             descriptor
                 .into_display_output()
                 .map_err(|source| DrmOutputsError::Registration { output_id, source })?,
         );
     }
+
     manager
         .reconcile_outputs(owned_ids, outputs)
         .map_err(DrmOutputsError::Manager)
 }
+
+#[cfg(test)]
+#[path = "../../tests/unit/drm_outputs.rs"]
+mod tests;
