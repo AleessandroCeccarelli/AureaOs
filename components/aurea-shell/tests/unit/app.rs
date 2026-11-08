@@ -9,7 +9,7 @@ use std::io;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle, ThreadId};
 
-use aurea_desktop_api::CompositorFactory;
+use aurea_desktop_api::{CompositorFactory, CompositorService, ShutdownSignal};
 
 use super::{join_compositor_thread, request_shutdown};
 use crate::config::ShellConfig;
@@ -24,7 +24,7 @@ struct InitializationFailureFactory {
 }
 
 impl CompositorFactory for InitializationFailureFactory {
-    fn create(&self) -> io::Result<Box<dyn aurea_desktop_api::CompositorService>> {
+    fn create(&self) -> io::Result<Box<dyn CompositorService>> {
         let current_thread = thread::current().id();
 
         *self
@@ -33,6 +33,24 @@ impl CompositorFactory for InitializationFailureFactory {
             .expect("Thread ID mutex was poisoned") = Some(current_thread);
 
         Err(io::Error::other("Compositor initialization test failure"))
+    }
+}
+
+/// Compositor service that returns a controlled runtime error.
+struct RuntimeFailureService;
+
+impl CompositorService for RuntimeFailureService {
+    fn run(&mut self, _shutdown: &ShutdownSignal) -> io::Result<()> {
+        Err(io::Error::other("Compositor runtime test failure"))
+    }
+}
+
+/// Factory that creates the controlled runtime failure service.
+struct RuntimeFailureFactory;
+
+impl CompositorFactory for RuntimeFailureFactory {
+    fn create(&self) -> io::Result<Box<dyn CompositorService>> {
+        Ok(Box::new(RuntimeFailureService))
     }
 }
 
@@ -69,6 +87,16 @@ fn compositor_factory_is_initialized_on_worker_thread() {
     assert!(
         matches!(result, Err(ShellError::Compositor(_))),
         "Compositor initialization errors must be propagated to the shell"
+    );
+}
+
+#[test]
+fn compositor_runtime_failure_is_propagated_to_shell() {
+    let result = super::run(ShellConfig::default(), RuntimeFailureFactory);
+
+    assert!(
+        matches!(result, Err(ShellError::Compositor(_))),
+        "Compositor runtime errors must be propagated to the shell"
     );
 }
 
