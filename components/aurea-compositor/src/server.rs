@@ -5,11 +5,14 @@
 
 //! Wayland server modules and public API.
 
+mod builder;
 mod client;
 mod display_events;
 mod event_loop;
+
 #[cfg(feature = "drm")]
 mod input;
+
 mod output;
 mod seat;
 mod session;
