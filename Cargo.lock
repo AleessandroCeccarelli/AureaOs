@@ -41,6 +41,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "aurea-desktop"
+version = "0.1.0"
+dependencies = [
+ "aurea-compositor",
+ "aurea-shell",
+]
+
+[[package]]
 name = "aurea-desktop-api"
 version = "0.1.0"
 

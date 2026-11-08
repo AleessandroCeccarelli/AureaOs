@@ -9,5 +9,6 @@ members = [
     "components/aurea-desktop-api",
     "components/aurea-shell",
     "components/aurea-compositor",
+    "components/aurea-desktop",
 ]
 resolver = "3"
