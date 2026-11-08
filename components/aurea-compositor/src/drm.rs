@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -11,7 +12,6 @@ pub mod discovery;
 pub mod output;
 pub mod outputs;
 pub mod registry;
-pub mod renderer;
 pub mod session;
 
 pub use session::{DrmSession, DrmSessionError};
