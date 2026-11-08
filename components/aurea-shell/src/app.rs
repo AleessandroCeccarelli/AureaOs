@@ -5,6 +5,7 @@
 //
 // Application startup and lifecycle entry point.
 
+use std::panic::{self, AssertUnwindSafe};
 use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
 
@@ -31,10 +32,24 @@ fn join_compositor_thread(
     }
 }
 
-/// Starts the Aurea Shell application using the supplied compositor factory.
+/// Starts the Aurea Shell application using the system Ctrl-C handler.
 pub fn run(
     config: ShellConfig,
     compositor_factory: impl CompositorFactory,
+) -> Result<(), ShellError> {
+    run_with_shutdown_handler(config, compositor_factory, |handler| {
+        ctrlc::set_handler(handler).is_ok()
+    })
+}
+
+/// Runs the application with an injectable shutdown handler registration.
+///
+/// Keeping handler registration injectable makes the application lifecycle
+/// testable without installing a process-global Ctrl-C handler.
+fn run_with_shutdown_handler(
+    config: ShellConfig,
+    compositor_factory: impl CompositorFactory,
+    register_shutdown_handler: impl FnOnce(Box<dyn FnMut() + Send + 'static>) -> bool,
 ) -> Result<(), ShellError> {
     let mut runtime = ShellRuntime::new();
     let (event_bus, receiver) = EventBus::new();
@@ -47,29 +62,30 @@ pub fn run(
     let (start_sender, start_receiver) = mpsc::sync_channel(0);
 
     let compositor_thread = thread::spawn(move || {
-        // The compositor service is created inside its owning thread.
-        // This keeps thread-bound event loops such as Calloop on the
-        // same thread where they are initialized and dispatched.
+        // Create the compositor inside its owning thread.
         let mut compositor = compositor_factory.create()?;
 
-        // Signal readiness only after compositor initialization.
+        // Report readiness only after successful initialization.
         ready_sender
             .send(())
             .map_err(|_| std::io::Error::other("Shell startup was cancelled"))?;
 
-        // Keep the compositor initialized, but do not dispatch clients
-        // until the shell lifecycle and shutdown handler are ready.
+        // Wait until the shell runtime and shutdown handler are ready.
         if start_receiver.recv().is_err() {
             return Ok(());
         }
 
-        let result = compositor.run(&server_shutdown);
+        // Convert a compositor panic into a shutdown event before
+        // allowing the panic to propagate to the joining thread.
+        let result = panic::catch_unwind(AssertUnwindSafe(|| compositor.run(&server_shutdown)));
 
-        if result.is_err() {
-            request_shutdown(&server_bus);
+        // Every compositor termination must release the shell runtime.
+        request_shutdown(&server_bus);
+
+        match result {
+            Ok(result) => result,
+            Err(payload) => panic::resume_unwind(payload),
         }
-
-        result
     });
 
     // Wait for compositor initialization.
@@ -93,16 +109,17 @@ pub fn run(
 
     let shutdown_bus = event_bus.clone();
 
-    if ctrlc::set_handler(move || {
+    let handler = Box::new(move || {
         request_shutdown(&shutdown_bus);
-    })
-    .is_err()
-    {
+    });
+
+    if !register_shutdown_handler(handler) {
         let runtime_result = runtime.stop();
+
         drop(start_sender);
+
         let compositor_result = join_compositor_thread(compositor_thread);
 
-        // Complete both cleanups before returning either error.
         runtime_result?;
         compositor_result?;
 
@@ -112,12 +129,12 @@ pub fn run(
     }
 
     if start_sender.send(()).is_err() {
-        // The compositor exited after reporting readiness.
-        // Stop the shell runtime and join the thread before reporting
-        // the startup failure.
         let runtime_result = runtime.stop();
+
         shutdown.request_shutdown();
+
         drop(start_sender);
+
         let compositor_result = join_compositor_thread(compositor_thread);
 
         runtime_result?;
@@ -130,13 +147,11 @@ pub fn run(
 
     let runtime_result = runtime.run_event_loop(receiver);
 
-    // Signal the compositor to exit regardless of runtime success.
+    // Always request compositor shutdown before joining its thread.
     shutdown.request_shutdown();
 
     let compositor_result = join_compositor_thread(compositor_thread);
 
-    // Preserve the runtime error if it failed; otherwise report
-    // compositor termination errors.
     runtime_result?;
     compositor_result?;
 
