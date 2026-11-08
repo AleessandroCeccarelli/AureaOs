@@ -6,7 +6,13 @@
 
 //! Physical-device information and selection.
 
-use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
+use smithay::{
+    backend::{
+        allocator::vulkan::VulkanAllocator,
+        vulkan::PhysicalDevice,
+    },
+    reexports::ash::vk,
+};
 
 #[cfg(feature = "drm")]
 use smithay::backend::drm::DrmNode;
@@ -33,16 +39,27 @@ pub struct VulkanDeviceInfo {
     pub driver: String,
     pub device_type: VulkanDeviceType,
     pub has_graphics_queue: bool,
+
+    /// Whether the device exposes all extensions required by Smithay's
+    /// Vulkan DMA-BUF allocator.
+    ///
+    /// This does not guarantee support for every DRM format or modifier.
+    pub has_dmabuf_export_extensions: bool,
 }
 
 impl VulkanDeviceInfo {
     pub(super) fn from_device(device: &PhysicalDevice, has_graphics_queue: bool) -> Self {
+        let has_dmabuf_export_extensions = VulkanAllocator::required_extensions(device)
+            .iter()
+            .all(|extension| device.has_device_extension(extension));
+
         Self {
             name: device.name().to_owned(),
             api_version: format!("{:?}", device.api_version()),
             driver: format!("{:?}", device.driver()),
             device_type: VulkanContext::classify_device(device),
             has_graphics_queue,
+            has_dmabuf_export_extensions,
         }
     }
 }

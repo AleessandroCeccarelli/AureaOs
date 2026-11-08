@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS test module relocated from production source.
@@ -55,4 +56,21 @@ fn output_id_preserves_device_and_connector_components() {
 
     assert_eq!((output_id >> 32) as u64, device_id);
     assert_eq!(output_id as u32, connector_id);
+}
+
+#[test]
+fn extracts_device_id_from_output_id() {
+    let device_id = 0x1234_5678_9ABC_DEF0;
+    let connector_id = 0x1234_5678;
+
+    let output_id = output_id_for_connector(device_id, connector_id);
+
+    assert_eq!(drm_device_id_for_output(output_id), device_id);
+}
+
+#[test]
+fn extracts_maximum_device_id_from_output_id() {
+    let output_id = output_id_for_connector(u64::MAX, u32::MAX);
+
+    assert_eq!(drm_device_id_for_output(output_id), u64::MAX);
 }
