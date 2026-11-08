@@ -53,3 +53,18 @@ fn runtime_event_loop_handles_shutdown_from_event_bus() {
     assert_eq!(runtime.state(), ShellState::Stopped);
     assert_eq!(runtime.session_state(), SessionState::Stopped);
 }
+
+#[test]
+fn runtime_stops_when_event_channel_is_disconnected() {
+    let (event_bus, receiver) = EventBus::new();
+    let mut runtime = ShellRuntime::new();
+
+    runtime.start().unwrap();
+
+    drop(event_bus);
+
+    runtime.run_event_loop(receiver).unwrap();
+
+    assert_eq!(runtime.state(), ShellState::Stopped);
+    assert_eq!(runtime.session_state(), SessionState::Stopped);
+}
