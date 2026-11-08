@@ -1,0 +1,16 @@
+
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# AureaOS — Aurea Desktop
+# Copyright (C) 2026 Alessandro Ceccarelli
+
+[package]
+name = "aurea-desktop"
+version = "0.1.0"
+edition = "2024"
+description = "Desktop entry point and composition root for AureaOS"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+aurea-shell = { path = "../aurea-shell" }
+aurea-compositor = { path = "../aurea-compositor", features = ["drm", "vulkan"] }
