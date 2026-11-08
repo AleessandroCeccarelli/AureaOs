@@ -5,9 +5,31 @@
 //
 // Shutdown signal integration tests.
 
+use std::io;
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 use std::thread;
 
-use aurea_desktop_api::ShutdownSignal;
+use aurea_desktop_api::{CompositorService, ShutdownSignal};
+
+/// Simulates a compositor service that runs until shutdown is requested.
+struct TestCompositorService {
+    stopped: Arc<AtomicBool>,
+}
+
+impl CompositorService for TestCompositorService {
+    fn run(&mut self, shutdown: &ShutdownSignal) -> io::Result<()> {
+        while !shutdown.is_shutdown_requested() {
+            thread::yield_now();
+        }
+
+        self.stopped.store(true, Ordering::Release);
+
+        Ok(())
+    }
+}
 
 #[test]
 fn shutdown_signal_starts_in_inactive_state() {
@@ -33,7 +55,7 @@ fn shutdown_request_is_visible_through_atomic_flag() {
 
     shutdown.request_shutdown();
 
-    assert!(atomic_flag.load(std::sync::atomic::Ordering::Acquire));
+    assert!(atomic_flag.load(Ordering::Acquire));
 }
 
 #[test]
@@ -62,4 +84,32 @@ fn repeated_shutdown_requests_are_safe() {
     shutdown.request_shutdown();
 
     assert!(shutdown.is_shutdown_requested());
+}
+
+#[test]
+fn compositor_service_stops_after_shutdown_request() {
+    let shutdown = ShutdownSignal::new();
+    let service_shutdown = shutdown.clone();
+
+    let stopped = Arc::new(AtomicBool::new(false));
+    let service_stopped = Arc::clone(&stopped);
+
+    let worker = thread::spawn(move || {
+        let mut service = TestCompositorService {
+            stopped: service_stopped,
+        };
+
+        service
+            .run(&service_shutdown)
+            .expect("Compositor service failed");
+    });
+
+    shutdown.request_shutdown();
+
+    worker.join().expect("Compositor worker thread panicked");
+
+    assert!(
+        stopped.load(Ordering::Acquire),
+        "Compositor service must stop after receiving the shutdown request"
+    );
 }
