@@ -19,6 +19,8 @@ use smithay::{
 use crate::{
     drm::{device::DrmDevice, outputs::reconcile_drm_outputs},
     output::OutputId,
+    renderer::RenderPreference,
+    vulkan::VulkanBackend,
 };
 
 use super::state::WaylandState;
@@ -106,9 +108,9 @@ pub(super) fn add_device(state: &mut WaylandState, node: DrmNode, path: PathBuf)
     Ok(())
 }
 
-/// Opens one discovered device, installs its notifier and output globals.
-/// Partial registration is rolled back while discovery metadata remains for
-/// a future activation retry.
+/// Opens one discovered device, installs its notifier, initializes its Vulkan
+/// backend and registers output globals. Partial registration is rolled back
+/// while discovery metadata remains available for a future activation retry.
 fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
     let Some((_, path)) = state
         .udev_device_ids
@@ -138,16 +140,32 @@ fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io::Result<()>
         .register(device)
         .map_err(io::Error::other)?;
 
+    if !state.vulkan_backends.contains_key(&node) {
+        match VulkanBackend::new_for_drm_node(node, RenderPreference::Automatic) {
+            Ok(backend) => {
+                state.vulkan_backends.insert(node, backend);
+            }
+            Err(error) => {
+                eprintln!(
+                    "AureaOS: Vulkan backend unavailable for DRM device {node}: {error}"
+                );
+            }
+        }
+    }
+
     let result = (|| {
         register_device_notifier(state, node)?;
         refresh_device_outputs(state, node)
     })();
+
     if let Err(error) = result {
         remove_device_outputs(state, node);
         remove_device_notifier(state, node);
+        state.vulkan_backends.remove(&node);
         state.drm_devices.remove(node);
         return Err(error);
     }
+
     Ok(())
 }
 
@@ -255,6 +273,7 @@ fn changed_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
 fn remove_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
     remove_device_outputs(state, node);
     remove_device_notifier(state, node);
+    state.vulkan_backends.remove(&node);
     state.drm_devices.remove(node);
     state.drm_device_registry.remove(node);
     forget_changed_device(&mut state.udev_changed_devices, node);

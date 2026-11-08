@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -6,6 +7,9 @@
 //! Physical-device information and selection.
 
 use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
+
+#[cfg(feature = "drm")]
+use smithay::backend::drm::DrmNode;
 
 use crate::renderer::RenderPreference;
 
@@ -60,6 +64,10 @@ impl VulkanContext {
     }
 
     /// Selects a graphics-capable physical device by preference.
+    ///
+    /// This selection does not guarantee compatibility with a particular
+    /// DRM output. Use `select_device_for_drm_node` when an output's DRM
+    /// device identity is known.
     pub fn select_device(&self, preference: RenderPreference) -> Option<&PhysicalDevice> {
         let preferred_type = match preference {
             RenderPreference::PowerSaving => Some(VulkanDeviceType::Integrated),
@@ -80,6 +88,44 @@ impl VulkanContext {
                     .iter()
                     .find(|device| self.graphics_queue_family(device).is_some())
             })
+    }
+
+    /// Selects a graphics-capable Vulkan device matching a DRM primary node.
+    ///
+    /// Devices whose DRM identity cannot be queried are excluded. This
+    /// prevents selecting a GPU that may not be able to drive the output.
+    ///
+    /// The preference is used when multiple matching Vulkan devices exist.
+    #[cfg(feature = "drm")]
+    pub fn select_device_for_drm_node(
+        &self,
+        node: DrmNode,
+        preference: RenderPreference,
+    ) -> Option<&PhysicalDevice> {
+        let matching_devices = self
+            .physical_devices
+            .iter()
+            .filter(|device| {
+                device.primary_node().ok().flatten() == Some(node)
+                    && self.graphics_queue_family(device).is_some()
+            })
+            .collect::<Vec<_>>();
+
+        let preferred_type = match preference {
+            RenderPreference::PowerSaving => Some(VulkanDeviceType::Integrated),
+            RenderPreference::Performance => Some(VulkanDeviceType::Discrete),
+            RenderPreference::Automatic => None,
+        };
+
+        matching_devices
+            .iter()
+            .copied()
+            .find(|device| {
+                preferred_type
+                    .map(|kind| Self::classify_device(device) == kind)
+                    .unwrap_or(true)
+            })
+            .or_else(|| matching_devices.into_iter().next())
     }
 
     pub(super) fn classify_device(device: &PhysicalDevice) -> VulkanDeviceType {

@@ -7,6 +7,7 @@
 //! State shared by Calloop event callbacks.
 
 use std::{
+    collections::HashMap,
     io,
     sync::{Arc, Mutex},
 };
@@ -15,11 +16,12 @@ use std::{
 use std::path::PathBuf;
 
 #[cfg(feature = "drm")]
-use smithay::reexports::calloop::{LoopHandle, RegistrationToken};
-use smithay::reexports::wayland_server::{Client, Display, backend::ClientId};
+use smithay::backend::drm::DrmNode;
 
 #[cfg(feature = "drm")]
-use smithay::backend::drm::DrmNode;
+use smithay::reexports::calloop::{LoopHandle, RegistrationToken};
+
+use smithay::reexports::wayland_server::{Client, Display, backend::ClientId};
 
 use crate::AureaCompositor;
 
@@ -27,6 +29,7 @@ use crate::AureaCompositor;
 use crate::{
     drm::{DrmSession, device_manager::DrmDeviceManager, registry::DrmDeviceRegistry},
     gpu::GpuManager,
+    vulkan::VulkanBackend,
 };
 
 /// Runtime state accessed by the server event loop.
@@ -45,7 +48,7 @@ pub(super) struct WaylandState {
 
     /// Calloop source handles keyed by the corresponding DRM device.
     #[cfg(feature = "drm")]
-    pub(super) drm_notifiers: std::collections::HashMap<DrmNode, RegistrationToken>,
+    pub(super) drm_notifiers: HashMap<DrmNode, RegistrationToken>,
 
     #[cfg(feature = "drm")]
     pub(super) loop_handle: Option<LoopHandle<'static, WaylandState>>,
@@ -68,4 +71,11 @@ pub(super) struct WaylandState {
     /// Changed DRM devices waiting for output discovery.
     #[cfg(feature = "drm")]
     pub(super) udev_changed_devices: Vec<DrmNode>,
+
+    /// Vulkan rendering backends keyed by their associated DRM device.
+    ///
+    /// Each backend is responsible for one GPU. Output-to-device association
+    /// is derived from the DRM identity encoded in each output ID.
+    #[cfg(feature = "drm")]
+    pub(super) vulkan_backends: HashMap<DrmNode, VulkanBackend>,
 }

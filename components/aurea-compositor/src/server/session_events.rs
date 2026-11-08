@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -68,12 +69,21 @@ pub(super) fn register_session_events(
 
     loop_handle
         .insert_source(notifier, |event, _, state| {
+            let is_pause = matches!(event, SessionEvent::PauseSession);
+
             let result =
                 apply_session_event(event, &mut state.session_active, &mut state.drm_devices);
 
             if let Err(error) = result {
                 state.error = Some(io::Error::other(error));
                 return;
+            }
+
+            if is_pause {
+                // Vulkan backends must not outlive the active DRM session.
+                // Dropping them releases their device resources before the
+                // session can be acquired again.
+                state.vulkan_backends.clear();
             }
 
             if state.session_active {

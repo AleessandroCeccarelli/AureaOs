@@ -22,7 +22,11 @@ use smithay::reexports::wayland_server::Display;
 use smithay::backend::drm::DrmEvent;
 
 #[cfg(feature = "drm")]
-use crate::drm::{DrmSession, device::DrmDevice};
+use crate::{
+    drm::{DrmSession, device::DrmDevice},
+    renderer::RenderPreference,
+    vulkan::VulkanBackend,
+};
 
 use super::{
     display_events::register_display_events, socket::register_wayland_socket, state::WaylandState,
@@ -110,6 +114,7 @@ impl WaylandServer {
 
         #[cfg(feature = "drm")]
         let mut drm_devices = crate::drm::device_manager::DrmDeviceManager::new();
+
         #[cfg(feature = "drm")]
         if let Some(device) = drm_device {
             drm_devices.register(device).map_err(io::Error::other)?;
@@ -139,13 +144,18 @@ impl WaylandServer {
             udev_device_ids: Vec::new(),
             #[cfg(feature = "drm")]
             udev_changed_devices: Vec::new(),
+            #[cfg(feature = "drm")]
+            vulkan_backends: std::collections::HashMap::new(),
         };
+
         state.compositor.initialize_keyboard()?;
 
         let loop_handle = event_loop.handle();
+
         #[cfg(feature = "drm")]
         {
             state.loop_handle = Some(loop_handle.clone());
+
             if let Some(session) = state.drm_session.as_ref() {
                 super::input::register_input_backend(&loop_handle, session)?;
             }
@@ -178,26 +188,60 @@ impl WaylandServer {
         if state.session_active {
             if let Some(session) = state.drm_session.as_mut() {
                 let discovered = state.udev_device_ids.clone();
+
                 for (node, path) in discovered {
                     if state.drm_devices.contains(node) {
                         continue;
                     }
+
                     let Ok(device) = DrmDevice::open(session, &path) else {
                         continue;
                     };
+
                     if device.node().ok() != Some(node) {
                         continue;
                     }
+
                     let _ = state.drm_devices.register(device);
                 }
             }
         }
 
-        // Discover connected connectors on the currently initialized DRM device.
+        // Initialize one Vulkan backend for each opened DRM device.
+        //
+        // A GPU without a compatible Vulkan physical device is skipped.
+        // Its failure must not prevent other devices or the Wayland server
+        // from starting.
+        #[cfg(feature = "drm")]
+        {
+            let nodes = state
+                .drm_devices
+                .iter()
+                .map(|(node, _)| *node)
+                .collect::<Vec<_>>();
+
+            for node in nodes {
+                match VulkanBackend::new_for_drm_node(node, RenderPreference::Automatic) {
+                    Ok(backend) => {
+                        state.vulkan_backends.insert(node, backend);
+                    }
+                    Err(error) => {
+                        eprintln!(
+                            "AureaOS: Vulkan backend unavailable for DRM device {node}: {error}"
+                        );
+                    }
+                }
+            }
+        }
+
+        // Discover connected connectors on the currently initialized DRM devices.
         #[cfg(feature = "drm")]
         for (_, device) in state.drm_devices.iter() {
-            crate::drm::outputs::initialize_drm_outputs(device, state.compositor.output_manager())
-                .map_err(io::Error::other)?;
+            crate::drm::outputs::initialize_drm_outputs(
+                device,
+                state.compositor.output_manager(),
+            )
+            .map_err(io::Error::other)?;
         }
 
         // Publish registered outputs as Wayland globals.
@@ -223,6 +267,7 @@ impl WaylandServer {
                 .iter()
                 .map(|(node, _)| *node)
                 .collect::<Vec<_>>();
+
             for node in nodes {
                 let notifier = state
                     .drm_devices
@@ -232,6 +277,7 @@ impl WaylandServer {
                     })?
                     .take_notifier()
                     .map_err(io::Error::other)?;
+
                 let token = loop_handle
                     .insert_source(notifier, move |event, _, state| match event {
                         DrmEvent::VBlank(_crtc) => {}
@@ -241,6 +287,7 @@ impl WaylandServer {
                         }
                     })
                     .map_err(io::Error::other)?;
+
                 state.drm_notifiers.insert(node, token);
             }
         }

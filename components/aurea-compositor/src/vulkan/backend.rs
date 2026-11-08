@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -8,6 +9,9 @@
 use std::{error::Error, fmt};
 
 use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
+
+#[cfg(feature = "drm")]
+use smithay::backend::drm::DrmNode;
 
 use crate::{
     render::RenderScene,
@@ -58,12 +62,52 @@ pub struct VulkanBackend {
 
 impl VulkanBackend {
     /// Initializes Vulkan using the requested GPU preference.
+    ///
+    /// This constructor selects a graphics-capable device without checking
+    /// whether it is associated with a particular DRM output.
+    /// Use `new_for_drm_node` when initializing a backend for a DRM device.
     pub fn new(preference: RenderPreference) -> Result<Self, VulkanInitError> {
         let context = VulkanContext::new()?;
 
         let physical_device = context
             .select_device(preference)
             .ok_or_else(|| VulkanInitError::new("No graphics-capable Vulkan device found"))?;
+
+        let queue_family_index = context
+            .graphics_queue_family(physical_device)
+            .ok_or_else(|| VulkanInitError::new("Selected device has no graphics queue"))?;
+
+        let selected_device_info = Self::build_selected_device_info(&context, physical_device);
+
+        let device = VulkanLogicalDevice::new(physical_device, queue_family_index)?;
+
+        Ok(Self {
+            context,
+            selected_device_info,
+            device,
+        })
+    }
+
+    /// Initializes Vulkan using the physical device associated with a DRM node.
+    ///
+    /// This is the preferred constructor when the backend is intended to
+    /// render for a specific DRM device.
+    ///
+    /// Cross-GPU rendering and presentation are not handled by this selection.
+    #[cfg(feature = "drm")]
+    pub fn new_for_drm_node(
+        node: DrmNode,
+        preference: RenderPreference,
+    ) -> Result<Self, VulkanInitError> {
+        let context = VulkanContext::new()?;
+
+        let physical_device = context
+            .select_device_for_drm_node(node, preference)
+            .ok_or_else(|| {
+                VulkanInitError::new(
+                    "No graphics-capable Vulkan device matches the requested DRM node",
+                )
+            })?;
 
         let queue_family_index = context
             .graphics_queue_family(physical_device)
