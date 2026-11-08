@@ -43,7 +43,10 @@ impl fmt::Display for GbmGlesRendererError {
                 write!(formatter, "Failed to initialize the GBM device: {message}")
             }
             Self::Renderer(message) => {
-                write!(formatter, "Failed to initialize the GLES renderer: {message}")
+                write!(
+                    formatter,
+                    "Failed to initialize the GLES renderer: {message}"
+                )
             }
         }
     }

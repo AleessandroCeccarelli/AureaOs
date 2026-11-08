@@ -3,109 +3,31 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Core Wayland compositor state.
+//! Core Wayland compositor state and module coordination.
 
-use std::{
-    collections::{BTreeMap, HashSet},
-    error::Error,
-    io,
-};
+use std::collections::{BTreeMap, HashSet};
 
 use smithay::{
-    backend::input::{KeyState, Keycode},
-    input::{
-        Seat, SeatHandler, SeatState,
-        keyboard::{FilterResult, XkbConfig},
-    },
+    backend::input::Keycode,
+    input::{Seat, SeatHandler, SeatState},
     output::Output,
     reexports::wayland_server::{DisplayHandle, protocol::wl_surface::WlSurface},
-    utils::SERIAL_COUNTER,
     wayland::{compositor::CompositorState, shell::xdg::XdgShellState},
 };
 
 use crate::{
-    input::shortcuts::{ShortcutAction, resolve_shortcut},
-    output::{
-        OutputId,
-        manager::{OutputManager, OutputReconciliation},
-        wayland::{OutputPublicationError, publish_output, publish_outputs},
-    },
-    render::RenderScene,
-    renderer::{RenderBackend, RenderTarget},
+    output::{OutputId, manager::OutputManager},
     window_manager::WindowManager,
 };
 
-/// Errors returned while rendering a compositor output.
-#[derive(Debug)]
-pub enum CompositorRenderError<E> {
-    /// The requested output is not registered.
-    UnknownOutput(OutputId),
+mod keyboard;
+mod output_publication;
+mod output_reconciliation;
+mod rendering;
+mod workspace;
 
-    /// The requested output is disabled.
-    OutputDisabled(OutputId),
-
-    /// The rendering backend failed.
-    Backend(E),
-}
-
-impl<E: Error + 'static> std::fmt::Display for CompositorRenderError<E> {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::UnknownOutput(output_id) => {
-                write!(formatter, "Unknown output: {output_id}")
-            }
-            Self::OutputDisabled(output_id) => {
-                write!(formatter, "Output {output_id} is disabled")
-            }
-            Self::Backend(error) => {
-                write!(formatter, "Rendering backend failed: {error}")
-            }
-        }
-    }
-}
-
-impl<E: Error + 'static> Error for CompositorRenderError<E> {}
-
-/// Failure while publishing a committed output reconciliation.
-#[derive(Debug)]
-pub struct OutputReconciliationError {
-    output_id: OutputId,
-    source: OutputPublicationError,
-    rollback_error: Option<OutputPublicationError>,
-}
-
-impl std::fmt::Display for OutputReconciliationError {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            formatter,
-            "Failed to publish reconciled output {}: {}",
-            self.output_id, self.source
-        )?;
-        if let Some(error) = &self.rollback_error {
-            write!(
-                formatter,
-                "; restoring prior output globals also failed: {error}"
-            )?;
-        }
-        Ok(())
-    }
-}
-
-impl Error for OutputReconciliationError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(&self.source)
-    }
-}
-
-impl SeatHandler for AureaCompositor {
-    type KeyboardFocus = WlSurface;
-    type PointerFocus = WlSurface;
-    type TouchFocus = WlSurface;
-
-    fn seat_state(&mut self) -> &mut SeatState<Self> {
-        &mut self.seat_state
-    }
-}
+pub use output_reconciliation::OutputReconciliationError;
+pub use rendering::CompositorRenderError;
 
 /// Core state owned by the AureaOS compositor.
 pub struct AureaCompositor {
@@ -117,6 +39,16 @@ pub struct AureaCompositor {
     window_manager: WindowManager,
     output_manager: OutputManager,
     wayland_outputs: BTreeMap<OutputId, Output>,
+}
+
+impl SeatHandler for AureaCompositor {
+    type KeyboardFocus = WlSurface;
+    type PointerFocus = WlSurface;
+    type TouchFocus = WlSurface;
+
+    fn seat_state(&mut self) -> &mut SeatState<Self> {
+        &mut self.seat_state
+    }
 }
 
 impl AureaCompositor {
@@ -139,182 +71,6 @@ impl AureaCompositor {
         }
     }
 
-    /// Initializes the Wayland keyboard using Smithay's default XKB layout.
-    pub fn initialize_keyboard(&mut self) -> io::Result<()> {
-        if self.seat.get_keyboard().is_none() {
-            self.seat
-                .add_keyboard(XkbConfig::default(), 200, 25)
-                .map_err(io::Error::other)?;
-        }
-        Ok(())
-    }
-
-    /// Feeds one backend key event through the compositor shortcut filter and
-    /// forwards unhandled events to the focused Wayland client.
-    pub fn handle_keyboard_input(&mut self, keycode: Keycode, state: KeyState, time_millis: u32) {
-        let Some(keyboard) = self.seat.get_keyboard() else {
-            return;
-        };
-        let serial = SERIAL_COUNTER.next_serial();
-        keyboard.input(
-            self,
-            keycode,
-            state,
-            serial,
-            time_millis,
-            |compositor, modifiers, key| {
-                if state == KeyState::Released
-                    && compositor.suppressed_shortcut_releases.remove(&keycode)
-                {
-                    return FilterResult::Intercept(());
-                }
-
-                if state == KeyState::Pressed
-                    && compositor.handle_keyboard_shortcut(key.modified_sym(), *modifiers)
-                {
-                    compositor.suppressed_shortcut_releases.insert(keycode);
-                    return FilterResult::Intercept(());
-                }
-
-                FilterResult::Forward
-            },
-        );
-    }
-
-    /// Changes the focused Wayland surface for the compositor seat.
-    pub fn focus_surface(&mut self, surface: Option<WlSurface>) {
-        if let Some(keyboard) = self.seat.get_keyboard() {
-            keyboard.set_focus(self, surface, SERIAL_COUNTER.next_serial());
-        }
-    }
-
-    /// Publishes all registered outputs as Wayland globals.
-    ///
-    /// All outputs are validated before their globals are created.
-    /// Existing Wayland outputs are replaced only after publication succeeds.
-    pub fn publish_wayland_outputs(
-        &mut self,
-        display: &DisplayHandle,
-    ) -> Result<(), OutputPublicationError> {
-        let outputs = publish_outputs(display, &self.output_manager)?;
-
-        let output_ids = self
-            .output_manager
-            .registry()
-            .iter()
-            .filter(|output| output.is_enabled())
-            .map(|output| output.id());
-
-        self.wayland_outputs = output_ids.zip(outputs).collect();
-
-        Ok(())
-    }
-
-    /// Publishes one registered output as a Wayland global.
-    ///
-    /// An already published output is left unchanged.
-    /// Disabled outputs are not published.
-    pub fn publish_wayland_output(
-        &mut self,
-        display: &DisplayHandle,
-        output_id: OutputId,
-    ) -> Result<(), OutputPublicationError> {
-        if self.wayland_outputs.contains_key(&output_id) {
-            return Ok(());
-        }
-
-        let Some(output) = self.output_manager.registry().get(output_id) else {
-            return Ok(());
-        };
-
-        let position = self
-            .output_manager
-            .layout()
-            .get(output_id)
-            .unwrap_or_default();
-
-        if let Some(wayland_output) = publish_output(display, output, position)? {
-            self.wayland_outputs.insert(output_id, wayland_output);
-        }
-
-        Ok(())
-    }
-
-    /// Republishes one output after its description or position changed.
-    /// The replacement is fully validated and created before the retained
-    /// output handle is swapped, so a publication error leaves the old global.
-    pub fn refresh_wayland_output(
-        &mut self,
-        display: &DisplayHandle,
-        output_id: OutputId,
-    ) -> Result<(), OutputPublicationError> {
-        let Some(output) = self.output_manager.registry().get(output_id) else {
-            self.wayland_outputs.remove(&output_id);
-            return Ok(());
-        };
-        if !output.is_enabled() {
-            self.wayland_outputs.remove(&output_id);
-            return Ok(());
-        }
-        let position = self
-            .output_manager
-            .layout()
-            .get(output_id)
-            .unwrap_or_default();
-        if let Some(replacement) = publish_output(display, output, position)? {
-            self.wayland_outputs.insert(output_id, replacement);
-        } else {
-            self.wayland_outputs.remove(&output_id);
-        }
-        Ok(())
-    }
-
-    /// Publishes a per-device model reconciliation, rolling back the output
-    /// manager and affected Wayland globals if any changed global is invalid.
-    pub fn publish_output_reconciliation(
-        &mut self,
-        display: &DisplayHandle,
-        previous: OutputManager,
-        changes: &OutputReconciliation,
-    ) -> Result<(), OutputReconciliationError> {
-        let mut affected = changes.added.clone();
-        affected.extend(changes.updated.iter().copied());
-        affected.extend(changes.removed.iter().copied());
-
-        for id in &changes.removed {
-            self.unpublish_wayland_output(*id);
-        }
-        for id in changes.added.iter().chain(&changes.updated) {
-            if let Err(source) = self.refresh_wayland_output(display, *id) {
-                self.output_manager = previous.clone();
-                let mut rollback_error = None;
-                for rollback_id in &affected {
-                    if previous.registry().get(*rollback_id).is_some() {
-                        if let Err(error) = self.refresh_wayland_output(display, *rollback_id) {
-                            rollback_error.get_or_insert(error);
-                        }
-                    } else {
-                        self.unpublish_wayland_output(*rollback_id);
-                    }
-                }
-                return Err(OutputReconciliationError {
-                    output_id: *id,
-                    source,
-                    rollback_error,
-                });
-            }
-        }
-        Ok(())
-    }
-
-    /// Removes one published Wayland output.
-    ///
-    /// Dropping the retained Smithay output removes its global.
-    /// Returns whether an output was actually removed.
-    pub fn unpublish_wayland_output(&mut self, output_id: OutputId) -> bool {
-        self.wayland_outputs.remove(&output_id).is_some()
-    }
-
     /// Returns the Smithay compositor protocol state.
     pub fn compositor_state(&mut self) -> &mut CompositorState {
         &mut self.compositor_state
@@ -330,94 +86,9 @@ impl AureaCompositor {
         &mut self.window_manager
     }
 
-    /// Returns the zero-based index of the active virtual workspace.
-    pub fn active_workspace(&self) -> usize {
-        self.window_manager.active_workspace()
-    }
-
-    /// Switches the visible scene to a workspace by its zero-based index.
-    ///
-    /// Returns `false` when the index is outside the four-workspace set.
-    pub fn switch_workspace(&mut self, workspace: usize) -> bool {
-        if !self.window_manager.switch_workspace(workspace) {
-            return false;
-        }
-        self.focus_surface(self.window_manager.active_workspace_surface());
-        true
-    }
-
-    /// Applies a resolved global keyboard shortcut to the desktop state.
-    ///
-    /// Returns `true` when the shortcut was recognized and applied. The input
-    /// backend is responsible for calling this only for key press events.
-    pub fn handle_keyboard_shortcut(
-        &mut self,
-        keysym: smithay::input::keyboard::Keysym,
-        modifiers: smithay::input::keyboard::ModifiersState,
-    ) -> bool {
-        let Some(action) = resolve_shortcut(keysym, modifiers) else {
-            return false;
-        };
-
-        let current = self.window_manager.active_workspace();
-        let count = WindowManager::WORKSPACE_COUNT;
-        let next = match action {
-            ShortcutAction::PreviousWorkspace => (current + count - 1) % count,
-            ShortcutAction::NextWorkspace => (current + 1) % count,
-        };
-
-        self.window_manager.switch_workspace(next)
-    }
-
-    /// Moves a managed toplevel surface to a workspace by its zero-based index.
-    pub fn move_toplevel_to_workspace(&mut self, surface: &WlSurface, workspace: usize) -> bool {
-        if !self
-            .window_manager
-            .move_toplevel_to_workspace(surface, workspace)
-        {
-            return false;
-        }
-        self.focus_surface(self.window_manager.active_workspace_surface());
-        true
-    }
-
     /// Returns the output manager.
     pub fn output_manager(&mut self) -> &mut OutputManager {
         &mut self.output_manager
-    }
-
-    /// Builds a snapshot of the currently mapped surfaces.
-    pub fn render_scene(&self) -> RenderScene<'_> {
-        RenderScene::from_window_manager(&self.window_manager)
-    }
-
-    /// Renders the current scene on the requested enabled output.
-    ///
-    /// The backend owns graphics-API details and is responsible for
-    /// presenting the completed frame.
-    pub fn render_output<B: RenderBackend>(
-        &self,
-        backend: &mut B,
-        output_id: OutputId,
-    ) -> Result<(), CompositorRenderError<B::Error>> {
-        let output = self
-            .output_manager
-            .registry()
-            .get(output_id)
-            .ok_or(CompositorRenderError::UnknownOutput(output_id))?;
-
-        if !output.is_enabled() {
-            return Err(CompositorRenderError::OutputDisabled(output_id));
-        }
-
-        let target = RenderTarget::from_output(output)
-            .ok_or(CompositorRenderError::OutputDisabled(output_id))?;
-
-        let scene = self.render_scene();
-
-        backend
-            .render_frame(&target, &scene)
-            .map_err(CompositorRenderError::Backend)
     }
 }
 
