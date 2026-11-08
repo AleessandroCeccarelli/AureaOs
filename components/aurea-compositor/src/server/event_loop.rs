@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -237,11 +236,8 @@ impl WaylandServer {
         // Discover connected connectors on the currently initialized DRM devices.
         #[cfg(feature = "drm")]
         for (_, device) in state.drm_devices.iter() {
-            crate::drm::outputs::initialize_drm_outputs(
-                device,
-                state.compositor.output_manager(),
-            )
-            .map_err(io::Error::other)?;
+            crate::drm::outputs::initialize_drm_outputs(device, state.compositor.output_manager())
+                .map_err(io::Error::other)?;
         }
 
         // Publish registered outputs as Wayland globals.

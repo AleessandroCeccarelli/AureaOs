@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS — Aurea Compositor
@@ -8,11 +7,7 @@
 
 use std::io;
 
-use aurea_desktop_api::{
-    CompositorFactory,
-    CompositorService,
-    ShutdownSignal,
-};
+use aurea_desktop_api::{CompositorFactory, CompositorService, ShutdownSignal};
 
 use crate::WaylandServer;
 
@@ -25,10 +20,7 @@ pub struct WaylandCompositorFactory {
 
 impl WaylandCompositorFactory {
     /// Creates a factory with the requested Wayland socket and seat.
-    pub fn new(
-        socket_name: impl Into<String>,
-        seat: impl Into<String>,
-    ) -> Self {
+    pub fn new(socket_name: impl Into<String>, seat: impl Into<String>) -> Self {
         Self {
             socket_name: socket_name.into(),
             seat: seat.into(),
@@ -44,10 +36,7 @@ impl Default for WaylandCompositorFactory {
 
 impl CompositorFactory for WaylandCompositorFactory {
     fn create(&self) -> io::Result<Box<dyn CompositorService>> {
-        let server = WaylandServer::new_with_primary_drm(
-            &self.socket_name,
-            &self.seat,
-        )?;
+        let server = WaylandServer::new_with_primary_drm(&self.socket_name, &self.seat)?;
 
         Ok(Box::new(WaylandCompositorService { server }))
     }

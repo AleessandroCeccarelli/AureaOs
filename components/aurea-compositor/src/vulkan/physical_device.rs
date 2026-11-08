@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -7,10 +6,7 @@
 //! Physical-device information and selection.
 
 use smithay::{
-    backend::{
-        allocator::vulkan::VulkanAllocator,
-        vulkan::PhysicalDevice,
-    },
+    backend::{allocator::vulkan::VulkanAllocator, vulkan::PhysicalDevice},
     reexports::ash::vk,
 };
 

@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -17,11 +16,7 @@ use smithay::{
 };
 
 use crate::{
-    drm::{
-        device::DrmDevice,
-        discovery::drm_device_id_for_output,
-        outputs::reconcile_drm_outputs,
-    },
+    drm::{device::DrmDevice, discovery::drm_device_id_for_output, outputs::reconcile_drm_outputs},
     output::OutputId,
     renderer::RenderPreference,
     vulkan::VulkanBackend,
@@ -150,9 +145,7 @@ fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io::Result<()>
                 state.vulkan_backends.insert(node, backend);
             }
             Err(error) => {
-                eprintln!(
-                    "AureaOS: Vulkan backend unavailable for DRM device {node}: {error}"
-                );
+                eprintln!("AureaOS: Vulkan backend unavailable for DRM device {node}: {error}");
             }
         }
     }
