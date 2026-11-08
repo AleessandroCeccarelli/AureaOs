@@ -48,7 +48,6 @@ version = "0.1.0"
 name = "aurea-shell"
 version = "0.1.0"
 dependencies = [
- "aurea-compositor",
  "aurea-desktop-api",
  "ctrlc",
 ]

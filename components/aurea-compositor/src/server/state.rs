@@ -6,13 +6,12 @@
 //! State shared by Calloop event callbacks.
 
 use std::{
-    collections::HashMap,
     io,
     sync::{Arc, Mutex},
 };
 
 #[cfg(feature = "drm")]
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 #[cfg(feature = "drm")]
 use smithay::backend::drm::DrmNode;
