@@ -8,26 +8,29 @@
 name = "aurea-compositor"
 version = "0.1.0"
 edition = "2024"
-description = "Wayland compositor for AureaOS"
+description = "Native Wayland compositor for AureaOS"
 license = "GPL-3.0-or-later"
 
 [features]
 default = []
 
-# Native Linux desktop backend: DRM/KMS, GBM, libinput, udev and libseat.
-# Multi-GPU support is provided by Smithay's renderer_multi module.
+# Native Linux desktop backend.
+#
+# DRM/KMS manages physical displays.
+# GBM provides graphics buffer allocation.
+# Vulkan is the exclusive rendering API.
+# libinput, Udev and libseat provide input, device discovery
+# and session/device access.
 drm = [
     "smithay/backend_drm",
-    "smithay/backend_egl",
     "smithay/backend_gbm",
     "smithay/backend_libinput",
     "smithay/backend_udev",
     "smithay/backend_session_libseat",
-    "smithay/renderer_multi",
-    "smithay/renderer_gl",
+    "vulkan",
 ]
 
-# Vulkan remains an independent, opt-in rendering feature.
+# Native Vulkan rendering support.
 vulkan = ["smithay/backend_vulkan"]
 
 [dependencies.smithay]
