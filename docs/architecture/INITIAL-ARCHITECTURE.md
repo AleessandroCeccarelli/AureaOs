@@ -301,6 +301,8 @@ AureaOs/
 ├── CONTRIBUTING.md
 └── LICENSE
 
+
+
 ## 7. Dependencies and Licensing
 
 Third-party components remain subject to their respective licenses.
