@@ -1,5 +1,3 @@
-
-
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
 <p align="center">
@@ -10,9 +8,11 @@
 
 **Take the simplicity people love in operating systems, and shape it to fit Linux.**
 
-AureaOS is a Linux distribution project built on Debian GNU/Linux 13 (Trixie) for `amd64` (x86-64). Its first release is **AureaOS Roma 1.0**. The project aims to make Linux feel natural, coherent, and designed to respect users.
+AureaOS is a Linux distribution project built on Debian GNU/Linux 13 (Trixie) for `amd64` (x86-64). Its first release is **AureaOS Roma 1.0**.
 
-## Project status
+AureaOS aims to make Linux feel natural, coherent, and designed to respect users. Debian provides the lower-level system foundation, while AureaOS develops its own desktop experience, system integration, visual identity, and core applications.
+
+## Project Status
 
 AureaOS is in an early prototype stage. The repository includes a minimal Debian bootstrap, package manifests, design resources, and initial Rust components for the desktop session.
 
@@ -37,9 +37,9 @@ These capabilities represent an important step in the graphics architecture, but
 
 AureaOS is not yet a usable graphical desktop. Several essential capabilities remain under development:
 
-- A complete rendering backend and frame presentation to physical displays.
+- A complete Vulkan rendering backend and frame presentation to physical displays.
 - Full DRM/KMS mode setting and display configuration.
-- Complete keyboard and pointer input handling.
+- Complete keyboard, pointer, touch, and gesture input handling.
 - Full window management and desktop interaction.
 - A finished graphical shell and integrated system applications.
 - A complete, bootable AureaOS installation image.
@@ -48,47 +48,78 @@ The Debian bootstrap profile also requires further validation and does not curre
 
 Visual tokens, themes, icons, illustrations, and wallpapers are present as design assets. Their presence does not mean a working desktop or shared application library exists.
 
-## Product direction
+## Product Direction
 
-AureaOS is planned as a coherent desktop with graphical workflows for everyday use. The terminal remains available for advanced users and system work. The system is intended to support local accounts, accessible workflows, and a friendly user experience that feels at home on Linux.
+AureaOS is planned as a coherent, GUI-first desktop with graphical workflows for everyday use.
+
+The terminal remains available for advanced users, developers, and administrators. Ordinary desktop operations should not require terminal commands.
 
 The desktop should provide a consistent environment in which system tools, applications, settings, notifications, and everyday workflows feel like parts of the same operating system.
 
 AureaOS aims to reduce unnecessary configuration and provide sensible defaults without preventing users from making meaningful choices.
 
-Planned components include:
+### Core AureaOS Experience
 
-- **Aurea Desktop:** desktop shell and window management.
+The first release, Roma 1.0, focuses on a proprietary desktop experience and a selected group of first-party applications:
+
+- **Aurea Desktop:** the graphical desktop environment, shell, and window management.
+- **AureaOS Human Interfaces:** shared design system and the planned native UI component library.
+- **Aurea Wallet:** a first-party system application and an important pillar of the AureaOS experience.
+- **Fides:** the graphical file manager.
 - **Quaero:** global search for applications, files, folders, and settings.
-- **Fides:** graphical file manager.
-- **Aurea Store:** graphical application discovery and management, planned around Flatpak and Flathub.
-- **Aurea Update:** system updates for AureaOS components, separate from Debian base updates and application updates.
-- **Aurea Time:** planned system backup and restore, from individual files through the full system, using compatible USB disks or network storage.
+- **Aurea Store:** the official graphical application store.
+- **Aurea Update:** system updates for AureaOS components.
+- **Aurea Time:** system backup and restore, from individual files through the full system.
 
-These names describe planned work, not available features. Scope and implementation choices may change as the project develops.
+The scope and implementation of these components remain under development. Their inclusion describes the current Roma 1.0 product direction, not completed functionality.
 
-## Technical direction
+### Third-Party Applications
+
+AureaOS will not attempt to develop every desktop application from scratch for its first release.
+
+Common application categories will initially be covered by established third-party software, including:
+
+- Web browsers.
+- Email clients.
+- Office and productivity suites.
+- Other useful desktop applications.
+
+Aurea Store will integrate with **Flathub** as an application source and **Flatpak** for application installation, execution, sandboxing, and updates.
+
+Third-party applications will run in their respective sandbox environments. They remain separate from AureaOS first-party applications and system components.
+
+Future releases may introduce first-party alternatives for selected application categories when development resources and technical priorities make this practical.
+
+## Technical Direction
 
 AureaOS follows a modular architecture and aims to reuse established Linux infrastructure wherever it makes technical sense.
 
 Its current technical direction includes:
 
 - Debian GNU/Linux 13 (Trixie), `amd64`.
-- Btrfs is the selected default installed filesystem; backup and restore are planned through Aurea Time, not native Btrfs snapshots.
-- GUI-first and Wayland-first desktop direction.
-- Rust is the primary programming language for first-party AureaOS development where appropriate.
+- Btrfs as the selected default installed filesystem.
+- GUI-first and Wayland-first desktop architecture.
+- Rust as the primary programming language for first-party AureaOS development where appropriate.
 - Smithay as the current Wayland compositor framework.
 - Wayland protocols for desktop communication.
 - Calloop for event-loop integration.
 - libseat for session and device access management.
 - DRM and Udev for graphics-device discovery and output lifecycle foundations.
-- Separate update channels for the Debian base and AureaOS-specific system components.
-- Flatpak and Flathub planned for application distribution.
-- Open-source and proprietary third-party components may be considered, subject to technical, licensing, and distribution review.
+- Vulkan as the selected and exclusive graphics rendering API.
+- PipeWire for multimedia infrastructure.
+- NetworkManager for network management.
+- systemd for system and service management.
+- GRUB2 as the planned bootloader.
+- Separate update domains for Debian base packages, AureaOS system components, and Flatpak applications.
+- Flatpak and Flathub for third-party application distribution.
 
-Vulkan remains a possible rendering technology, not a confirmed implementation choice.
+The selected technologies do not imply that their complete integration is already implemented.
 
-The current graphics foundation does not imply that complete rendering, physical display presentation, cross-GPU rendering, or display configuration is already available.
+In particular, Vulkan rendering, physical frame presentation, complete display configuration, and the final bootable system image remain under development.
+
+Aurea Time will own system backup and restore. Btrfs native snapshots are not the planned backup and restore workflow.
+
+Open-source and proprietary third-party components may be considered, subject to technical, licensing, security, and distribution review.
 
 ## Documentation
 
@@ -111,7 +142,7 @@ The main documentation files are:
 - [Contributing](CONTRIBUTING.md) — ways to contribute.
 - [License](LICENSE) — license for original AureaOS work.
 
-## Guiding idea
+## Guiding Idea
 
 **“La tecnologia è bella quando c’è e non si vede.”**
 
@@ -124,4 +155,3 @@ Technology should support the experience rather than become an obstacle. The sys
 ## License
 
 Original AureaOS work is released under the GNU General Public License version 3 or later (GPL-3.0-or-later), unless stated otherwise. Third-party software and assets remain subject to their own licenses and terms.
-
