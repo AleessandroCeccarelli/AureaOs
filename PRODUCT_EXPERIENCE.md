@@ -1,0 +1,354 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
+# AureaOS Product Experience
+
+This document describes the product direction and planned user experience of AureaOS.
+
+AureaOS targets Debian GNU/Linux 13 (Trixie), `amd64` (x86-64), with a GUI-first, Wayland-first desktop.
+
+The repository includes initial Rust implementations of the desktop session coordinator and Wayland compositor, together with early DRM device and output management foundations.
+
+These are technical prototypes, not a complete graphical desktop. The desktop UI, complete graphics pipeline, installer, bootable system image, and first-party end-user applications remain under development or planned.
+
+Requirements below describe the intended product experience and do not imply that the corresponding features are already available.
+
+## 1. What AureaOS Wants to Be
+
+AureaOS wants to bring the user experience of Windows and macOS to Linux, without forgetting its roots.
+
+It is not intended to be another generic Linux distribution, nor a Linux system disguised with a Windows-like theme.
+
+AureaOS aims to become a complete, coherent and carefully designed operating system: one that combines the freedom, openness and technical foundations of Linux with the simplicity, accessibility, hardware integration and attention to detail that users expect from a modern desktop operating system.
+
+The goal is to make Linux approachable without stripping away its identity.
+
+AureaOS should offer an experience in which the desktop, system settings, applications, hardware management, security, updates and everyday workflows feel like parts of the same product.
+
+Users should not have to assemble their own operating system from unrelated components before they can start using their computer.
+
+AureaOS should feel like a complete operating system, not a collection of packages that the user must finish configuring.
+
+The guiding principle is simple:
+
+**The technology should be there when people need it, and invisible when they don't.**
+
+## 2. Windows and macOS as Inspiration, Linux as Our Foundation
+
+Windows and macOS have established important expectations for personal computing: a recognizable desktop, intuitive settings, straightforward application installation, consistent interactions, automatic hardware configuration and integrated system services.
+
+AureaOS wants to deliver that level of usability on Linux.
+
+We do not intend to copy the interface of Windows or macOS, reproduce their branding, or turn Linux into an imitation of another operating system.
+
+Instead, we want to learn from the experiences they provide and build our own interpretation, with a distinct visual identity, original applications and a coherent design philosophy.
+
+Linux remains the foundation. Its flexibility, transparency, openness and technical capabilities are strengths to build upon, not obstacles to hide.
+
+AureaOS will make deliberate choices about its default experience.
+
+The system should be ready to use after installation, with sensible defaults and essential functionality already integrated.
+
+Customization will remain possible, but users should not need to spend hours configuring the desktop to obtain a polished and productive environment.
+
+We want the approachability of Windows and macOS, the foundations of Linux, and the identity of AureaOS.
+
+## 3. Debian as the Foundation, AureaOS as the Product
+
+AureaOS targets Debian GNU/Linux 13 (Trixie) as its initial technical foundation, retaining the Linux kernel and proven system infrastructure wherever they serve the project's goals.
+
+There is no reason to reinvent mature technologies simply to claim that everything is new.
+
+The objective is to build a better integrated experience on top of reliable foundations.
+
+**Debian provides the foundation; AureaOS defines the experience.**
+
+The project will develop its own desktop environment, system tools, first-party applications and integration layer.
+
+The result should have a clear identity and consistent behavior instead of feeling like a standard Debian installation with a different wallpaper and theme.
+
+AureaOS is intended to be an independent product with its own design decisions, workflows and long-term technical direction.
+
+The initial target is x86-64 hardware.
+
+Hardware compatibility, installation, usability, security and system maintenance are core parts of the product, not secondary concerns.
+
+## 4. Hardware Recognition and Vendor Drivers
+
+Hardware should work without forcing users to become Linux administrators.
+
+AureaOS aims to detect and configure supported hardware automatically, minimizing manual intervention and making the computer usable as soon as possible after installation.
+
+This includes graphics, audio, Wi-Fi, Bluetooth, touchpads, keyboards, printers, cameras, power management, suspend and resume, and other essential hardware features.
+
+When a suitable driver or firmware supplied by the hardware manufacturer is available, AureaOS will prioritize evaluating and using the manufacturer's solution.
+
+Vendor-provided drivers can offer access to hardware-specific functionality, performance optimizations, power-management features and compatibility that may not be available to the same extent in alternative implementations.
+
+AureaOS will not reject proprietary drivers simply because they are proprietary.
+
+The objective is to provide the best practical experience on supported hardware, rather than impose ideological restrictions on which technologies can be used.
+
+This does not mean assuming that every proprietary driver is always superior.
+
+Results depend on the manufacturer, device, driver quality, maintenance, security, compatibility and update support.
+
+Where an open driver provides a better or more sustainable result, it remains a valid choice.
+
+Driver selection must also respect licensing, redistribution conditions, security requirements and long-term maintainability.
+
+The principle is straightforward: hardware support should be guided by compatibility, reliability and user experience, with vendor drivers preferred when they are the most suitable available solution.
+
+Users should not have to search forums, execute obscure terminal commands or manually hunt for drivers to make essential hardware function.
+
+## 5. Aurea Desktop — A Desktop Environment Built for AureaOS
+
+AureaOS will develop its own desktop environment rather than making an existing desktop the identity of the product.
+
+Aurea Desktop will be designed as an integrated environment, bringing together the graphical shell, window management, panels, dock, workspaces, notifications, system tray, application launcher and system settings.
+
+Every part should follow a shared design language and behave consistently.
+
+The desktop must be responsive, accessible, visually coherent and pleasant to use.
+
+Animations, transparency, typography and visual effects should support the experience rather than compromise performance or distract from the user's work.
+
+The goal is not to recreate the Windows desktop or the macOS interface.
+
+Aurea Desktop should establish its own identity while offering the familiarity and predictability people expect from a modern operating system.
+
+### Technical foundation
+
+The desktop architecture is Wayland-first, with separate shell and compositor components.
+
+The repository already contains two initial Rust implementations:
+
+- **Aurea Shell (`aurea-shell`):** coordinates the desktop session lifecycle, manages lifecycle events, starts and coordinates the compositor, and handles shutdown.
+- **Aurea Compositor (`aurea-compositor`):** provides the initial Wayland server, XDG shell integration, surface tracking, DRM device management, and output lifecycle management.
+
+The compositor uses Smithay 0.7, Calloop, libseat, Udev, and Linux DRM interfaces.
+
+The current implementation also includes initial connector and display-mode discovery, output registration and reconciliation, logical output layout, and Wayland output publication.
+
+These components establish the technical foundation for Aurea Desktop, but they do not yet provide a complete desktop experience.
+
+A concrete rendering backend, physical frame presentation, complete DRM/KMS mode setting, full input handling, complete window management, and the graphical shell interface remain incomplete.
+
+Rust is the primary programming language for AureaOS components where appropriate.
+
+**Vulkan is the selected and exclusive graphics rendering API for AureaOS.** The architectural decision is established, but the complete rendering and presentation pipeline remains under development.
+
+## 6. First-Party Applications and System Integration
+
+AureaOS will develop its own applications and system tools for the functions that define its experience.
+
+These applications should not merely share a logo.
+
+They should share design principles, interaction patterns, accessibility, security expectations and integration with the operating system.
+
+The first-release product direction includes:
+
+- **Aurea Desktop** — the native desktop environment and graphical shell.
+- **Aurea Wallet** — an important first-party system application and one of the core pillars of AureaOS Roma 1.0.
+- **Quaero** — global search for applications, files, folders, settings and other relevant system content.
+- **Fides** — the AureaOS file manager, designed for everyday file management and integrated with the desktop and system services.
+- **Aurea Store** — the proprietary graphical application store, integrating with Flathub and Flatpak.
+- **Aurea Update** — a graphical update experience for AureaOS-specific system components, separate from Debian base updates.
+- **Aurea Time** — system backup and restore, from an individual file through the full system, using compatible USB disks or network storage.
+
+AureaOS will also provide selected third-party applications for common tasks that are not priorities for first-party development in Roma 1.0.
+
+Web browsers, email clients and office suites are examples of applications that will initially come from established external projects rather than being developed from scratch by AureaOS.
+
+This is a deliberate product decision. It allows development to focus on the desktop, system integration and the applications that establish the identity of AureaOS.
+
+The [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md) is the authoritative inventory and records status, name origins, and technology choices.
+
+## 7. Fides — A File Manager That Belongs to AureaOS
+
+File management is one of the most frequent tasks performed on a computer.
+
+It should be intuitive, efficient and consistent with the rest of the operating system.
+
+Fides will be AureaOS's own file manager, designed around everyday workflows such as browsing folders, searching for files, copying and moving content, managing external drives, handling archives and accessing network locations where supported.
+
+It should integrate naturally with Quaero, the desktop, application dialogs and other system services.
+
+The objective is to make file management accessible to new users without unnecessarily limiting experienced users.
+
+Common actions should be easy to discover, while advanced functionality should remain available when needed.
+
+Fides should feel like a native part of AureaOS, not an unrelated application that happens to run on it.
+
+## 8. Quaero — Global Search Across the System
+
+Quaero will provide a unified way to find and access content throughout AureaOS.
+
+Instead of forcing users to navigate menus and folders to locate every item, global search should offer a direct route to applications, files, folders, settings and other supported system functions.
+
+The long-term direction is a search experience that becomes a central entry point for working with the computer: open an application, locate a document, find a setting or reach a supported action from one consistent interface.
+
+Search should be fast, predictable and relevant.
+
+Its results must respect user permissions and privacy, and users should have control over which content sources are indexed.
+
+Quaero should reduce the distance between what a user wants to do and the action that accomplishes it.
+
+## 9. Aurea Wallet — A Core Application for Roma 1.0
+
+Aurea Wallet is a first-party system application and an important pillar of AureaOS Roma 1.0.
+
+It is part of the intended AureaOS product experience, not merely a long-term exploratory concept.
+
+Its detailed functional scope, credential model, security architecture, supported standards and integration with other applications still need to be defined.
+
+Security must be treated as a fundamental requirement from the beginning.
+
+Credential storage, access controls, user consent, protection against unauthorized access and appropriate recovery mechanisms must be considered before implementation.
+
+Aurea Wallet must not be treated as an ordinary file manager or an unprotected database of secrets.
+
+Any integration with system-level authentication or passkeys requires separate technical and security decisions. Such capabilities must not be assumed to exist simply because Aurea Wallet is part of the first-release product.
+
+The objective is to make the Wallet a reliable and well-integrated AureaOS application, with a clearly defined responsibility and a security model appropriate to the data it manages.
+
+## 10. ChatGPT Integration — Exploratory
+
+An Aurea AI / ChatGPT integration is an exploratory, long-term idea, not a Roma 1.0 commitment.
+
+The intention is to make AI assistance available where it can genuinely help users, rather than limiting access to a separate browser tab.
+
+Depending on technical feasibility, available APIs, privacy requirements and service terms, the planned integration could provide an accessible system entry point for asking questions, understanding information, getting help with everyday tasks and interacting with supported workflows.
+
+The integration should feel native to AureaOS, with clear boundaries between the operating system, the AI service and the applications involved.
+
+It must not be represented as though ChatGPT were an offline system component or as though it automatically had unrestricted access to files, applications or personal data.
+
+Privacy, transparency and user control are essential.
+
+Users should understand when information is sent to an external service, what information is involved and which permissions or integrations are active.
+
+Sensitive actions should require appropriate confirmation, and access to local content must be governed by explicit permissions and secure implementation.
+
+The goal is to make AI a useful part of the computing experience without sacrificing user control or turning the operating system into an opaque service.
+
+## 11. Aurea Store — Applications Without Unnecessary Complexity
+
+Aurea Store is an AureaOS-developed application and the official graphical application store for the AureaOS environment.
+
+For Roma 1.0, the Store will integrate with Flathub as an application source and use Flatpak to install, run and update third-party applications.
+
+Users should be able to discover, install, launch, remove and update applications through a clear interface without needing to understand package managers or execute terminal commands for ordinary software installation.
+
+The Store should present useful application information, including descriptions, origin and relevant permissions.
+
+Third-party Flatpak applications run in their respective sandbox environments. The Store should explain sandbox permissions and access to system resources in understandable language.
+
+Flatpak is intended for distributing third-party applications. It does not replace the AureaOS desktop, first-party system applications or the underlying Debian foundation.
+
+Aurea Store must distinguish clearly between AureaOS system components and externally maintained applications.
+
+Application provenance, permissions, maintenance, licensing and security remain important considerations. Availability through a graphical store does not automatically guarantee that an application is safe.
+
+The aim is to make software installation feel like a natural part of AureaOS rather than a separate technical task.
+
+## 12. Updates, Backup and Reliability
+
+A system that is easy to use must also be easy to maintain.
+
+AureaOS should provide clear update workflows, meaningful progress information and understandable explanations when something goes wrong.
+
+Users should not have to guess whether an update has completed or whether the system needs attention.
+
+Software maintenance is divided into three distinct domains:
+
+1. **Debian base updates** — the Linux kernel, system packages, drivers and underlying Debian infrastructure.
+2. **AureaOS system updates** — the desktop environment, system services and first-party components maintained by the project.
+3. **Third-party application updates** — Flatpak applications managed through Aurea Store and configured Flatpak remotes, including Flathub.
+
+These domains must have clear ownership and separate update responsibilities.
+
+Aurea Time is the planned system for protecting data and restoring it at file or full-system level.
+
+It should support compatible USB disks and network storage.
+
+The default AureaOS filesystem will be Btrfs, but AureaOS will not use Btrfs's native snapshot workflow for backups or restore points; Aurea Time will manage these tasks.
+
+Its backup format, scheduling, validation, and exact supported network-storage types remain open technical decisions.
+
+Reliability must be considered throughout the design: safe defaults, clear error handling, predictable behavior, maintainable components and careful testing are all part of the user experience.
+
+AureaOS should favor dependable functionality over unnecessary complexity and avoid introducing features that cannot be maintained responsibly.
+
+## 13. Privacy, Freedom and Linux Roots
+
+Bringing a more approachable experience to Linux must not mean abandoning the principles that make Linux valuable.
+
+AureaOS aims to preserve user control, support open technologies and remain transparent about its architecture and dependencies.
+
+The system should not require a cloud account simply to use the desktop or perform ordinary local tasks.
+
+At the same time, the project recognizes that a practical operating system may need proprietary drivers, firmware, third-party applications or online services to provide the best possible experience on particular hardware or for particular tasks.
+
+Those choices should be made deliberately, documented honestly and evaluated according to compatibility, security, licensing, privacy and maintainability.
+
+Openness is a technical and philosophical strength.
+
+It should enable informed choices, not become a reason to ignore the needs of ordinary users.
+
+AureaOS should respect Linux's roots while making the benefits of Linux accessible to more people.
+
+## 14. Technical Direction
+
+The intended technical direction includes:
+
+- Debian GNU/Linux 13 (Trixie) as the initial system foundation.
+- Linux kernel and established system infrastructure.
+- Rust as the primary programming language for AureaOS applications and components where appropriate; see [Technology Principles](TECHNOLOGY.md).
+- Wayland as the native desktop display architecture.
+- Smithay as the current foundation for the Wayland compositor prototype.
+- Calloop, libseat, Udev, and Linux DRM interfaces for current compositor integration.
+- **Vulkan as the selected and exclusive graphics rendering API.**
+- PipeWire and WirePlumber for audio.
+- NetworkManager for network connectivity.
+- systemd for system startup and service management.
+- Flatpak and Flathub for third-party application distribution through Aurea Store.
+- Vendor drivers and firmware when they are the most suitable supported solution and their use is permitted.
+- Native AureaOS applications and system services to provide the integrated product experience.
+
+These choices describe the intended direction.
+
+Specific dependencies, technical requirements, licensing conditions and implementation details must be validated during development.
+
+The project will not rewrite mature infrastructure merely for the sake of originality.
+
+It will focus its development effort on the components that establish AureaOS's identity and improve the experience as a whole.
+
+## 15. What Success Looks Like
+
+AureaOS will be moving toward its goal when a user can install it on supported hardware and immediately access a coherent desktop, working connectivity, functional audio and graphics, useful system settings, global search, an integrated file manager, Aurea Wallet and straightforward application installation through Aurea Store.
+
+The user should be able to manage updates, protect personal data and use the applications needed for everyday work without being forced to understand the underlying system.
+
+Common application needs such as web browsing, email and office productivity should be covered by suitable third-party applications in Roma 1.0.
+
+The project may consider developing its own replacements for some of these applications in future releases, when resources and technical priorities make that a responsible decision.
+
+System-level passkeys and Aurea AI / ChatGPT integration remain possible longer-term directions, subject to their technical, privacy and security requirements.
+
+Experienced users should retain access to Linux tools and the underlying system.
+
+Simplicity must not mean removing capability, hiding important choices or taking control away from the user.
+
+AureaOS is not about hiding Linux, imitating Windows or copying macOS.
+
+It is about building a distinct operating system that brings the familiarity and ease of use people expect from mainstream desktop platforms to the flexibility and foundations of Linux.
+
+**AureaOS: the experience people expect, built on the foundations we believe in.**
+
+---
+
+The components and workflows described here are planned unless explicitly identified as implemented foundations or prototypes.
+
+Their presence in this document does not mean that they are complete or available to users.
+
+Technical decisions and development status are recorded in the [roadmap](ROADMAP.md), the [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md), and the architecture documents.
