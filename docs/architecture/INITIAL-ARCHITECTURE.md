@@ -300,3 +300,125 @@ AureaOs/
 ├── PRODUCT_EXPERIENCE.md
 ├── CONTRIBUTING.md
 └── LICENSE
+
+## 7. Dependencies and Licensing
+
+Third-party components remain subject to their respective licenses.
+
+AureaOS is not restricted to open-source-only components. Proprietary software and firmware may be considered when they materially improve compatibility or the user experience and their distribution terms permit the intended use.
+
+The project license applies to original AureaOS work and does not automatically relicense third-party components.
+
+Before integrating a dependency, AureaOS should record, as applicable:
+
+- Component name and version.
+- Source and upstream project.
+- License.
+- Intended purpose.
+- Maintenance and security considerations.
+- Compatibility with the target architecture and desktop direction.
+
+Dependency and license-review procedures must be maintained as the project grows.
+
+## 8. Security and System Maintenance
+
+Security and maintainability are architectural requirements, not optional additions.
+
+The system design must account for:
+
+- Supported security updates.
+- Appropriate system permissions.
+- Documented service responsibilities.
+- Safe system configuration and upgrade procedures.
+- Recovery and troubleshooting.
+- Clear separation between system-managed files and user data.
+- Controlled access to hardware devices and privileged operations.
+- Appropriate sandboxing and permissions for third-party applications.
+
+Detailed security policies, update mechanisms, and recovery procedures remain to be designed and validated.
+
+## 9. Testing and Validation
+
+The technical foundation must be validated incrementally.
+
+Current Rust components include automated tests for selected desktop API, shell, compositor, output-management, DRM lifecycle, and session-handling behavior.
+
+Further validation must include:
+
+- Workspace formatting and compilation checks.
+- Automated tests for component behavior and integration boundaries.
+- Hardware-independent testing wherever possible.
+- Physical DRM device and display testing.
+- Hotplug and session lifecycle validation.
+- Vulkan rendering and physical presentation testing.
+- Boot and installation testing once a bootable image exists.
+- Hardware compatibility testing across representative systems.
+
+A successful build alone does not establish that the resulting operating system is reliable.
+
+Testing must verify the resulting artifacts and their behavior.
+
+## 10. Decisions Still to Be Defined
+
+The following decisions require evaluation and documentation before the corresponding implementation is considered complete:
+
+- Debian repository policy beyond the current Trixie bootstrap sources.
+- The complete system build technology and build environment.
+- The final initial package selection.
+- Service configuration and security policy.
+- The concrete Vulkan rendering and presentation implementation.
+- Physical DRM/KMS mode-setting and presentation strategy.
+- Complete input handling and window-management behavior.
+- Display Intelligence interfaces and policy ownership.
+- Graphics, networking, audio, and hardware integration details.
+- Separate update mechanisms for Debian base packages and AureaOS system components.
+- Aurea Store integration and application management details.
+- Aurea Wallet functional scope and security architecture.
+- Dependency inventory and license-review process.
+- Bootable image generation and installation strategy.
+
+Existing implementation choices should be documented accurately and should not be presented as unresolved decisions.
+
+Vulkan is the selected and exclusive graphics rendering API. Its implementation and presentation pipeline remain incomplete; the API selection itself is not an open decision.
+
+## 11. Implementation Priorities
+
+Development will proceed incrementally:
+
+1. Continue validating the desktop API, shell, and compositor components.
+2. Complete the concrete Vulkan rendering and physical presentation foundation.
+3. Complete physical DRM/KMS mode setting and display configuration.
+4. Implement input handling and advance window and surface lifecycle management.
+5. Validate output discovery, hotplug, and session handling on physical hardware.
+6. Develop Display Intelligence on top of a reliable display pipeline.
+7. Complete and validate the Debian 13 system foundation.
+8. Define image generation, boot, installation, security, and update boundaries.
+9. Produce and test a bootable development image.
+10. Develop the shared graphical foundation and Aurea Desktop experience.
+11. Develop and integrate the first-party Roma 1.0 applications, prioritizing Aurea Wallet and the essential system workflows.
+12. Integrate third-party applications through Aurea Store and Flatpak.
+
+Desktop application development will expand as the technical foundation becomes sufficiently reliable.
+
+## 12. Current Status
+
+AureaOS has progressed beyond the initial Debian bootstrap and documentation stage.
+
+The Rust workspace includes four principal desktop components:
+
+- `aurea-desktop-api`
+- `aurea-shell`
+- `aurea-compositor`
+- `aurea-desktop`
+
+The repository includes early implementations of desktop contracts, session coordination, and Wayland compositor infrastructure, together with initial DRM device discovery, output lifecycle management, and Wayland output publication.
+
+These are meaningful technical foundations, but they do not yet constitute a usable graphical desktop.
+
+The Debian package profile, bootable image, installer, complete Vulkan rendering and presentation pipeline, physical display presentation, full input handling, finished desktop UI, and first-party end-user applications remain incomplete.
+
+Architecture decisions and implementation status must be updated as the project progresses.
+
+---
+
+**AureaOS Roma 1.0 — Reliability first. A coherent experience. Built on proven foundations.**
