@@ -35,6 +35,7 @@ mod frame_scheduling;
 
 pub use output_reconciliation::OutputReconciliationError;
 pub use rendering::CompositorRenderError;
+pub use frame_scheduling::CompositorFrameError;
 
 /// Core state owned by the AureaOS compositor.
 pub struct AureaCompositor {
