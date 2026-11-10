@@ -6,7 +6,7 @@
 //! Physical-device information and selection.
 
 use smithay::{
-    backend::{allocator::vulkan::VulkanAllocator, vulkan::PhysicalDevice},
+    backend::vulkan::PhysicalDevice,
     reexports::ash::vk,
 };
 
