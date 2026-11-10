@@ -11,8 +11,8 @@ pub mod device_manager;
 pub mod discovery;
 pub mod gbm;
 pub mod output;
-pub mod plane_formats;
 pub mod outputs;
+pub mod plane_formats;
 pub mod registry;
 pub mod session;
 
