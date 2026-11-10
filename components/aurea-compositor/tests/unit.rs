@@ -1,11 +1,29 @@
 
- // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
+use aurea_compositor::output::{
+    DisplayOutput,
+    OutputId,
+    OutputMode,
+    OutputRegistry,
+    layout::{OutputLayout, OutputPosition},
+    manager::{OutputManager, OutputManagerError, OutputReconciliation},
+};
+
 #[path = "unit/frame_scheduler.rs"]
 mod frame_scheduler;
+
+#[path = "unit/output.rs"]
+mod output;
+
+#[path = "unit/output_layout.rs"]
+mod output_layout;
+
+#[path = "unit/output_manager.rs"]
+mod output_manager;
 
 #[path = "unit/compositor_output_reconciliation.rs"]
 mod compositor_output_reconciliation;
