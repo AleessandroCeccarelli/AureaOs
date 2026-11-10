@@ -25,7 +25,12 @@ use crate::AureaCompositor;
 
 #[cfg(feature = "drm")]
 use crate::{
-    drm::{DrmSession, device_manager::DrmDeviceManager, registry::DrmDeviceRegistry},
+    drm::{
+    DrmSession,
+    device_manager::DrmDeviceManager,
+    gbm::GbmDeviceManager,
+    registry::DrmDeviceRegistry,
+},
     gpu::GpuManager,
     vulkan::VulkanBackend,
 };
@@ -43,6 +48,10 @@ pub(super) struct WaylandState {
 
     #[cfg(feature = "drm")]
     pub(super) drm_devices: DrmDeviceManager,
+
+    /// GBM buffer allocation devices keyed by their DRM identity.
+#[cfg(feature = "drm")]
+pub(super) gbm_devices: GbmDeviceManager,
 
     /// Calloop source handles keyed by the corresponding DRM device.
     #[cfg(feature = "drm")]
