@@ -8,6 +8,7 @@
 mod backend;
 mod command_buffer;
 mod context;
+mod external_memory;
 mod logical_device;
 mod physical_device;
 mod queue;
@@ -40,6 +41,7 @@ impl Error for VulkanInitError {}
 pub use backend::VulkanBackend;
 pub use command_buffer::VulkanCommandBuffer;
 pub use context::VulkanContext;
+pub use external_memory::VulkanExternalMemoryCapabilities;
 pub use logical_device::VulkanLogicalDevice;
 pub use physical_device::{VulkanDeviceInfo, VulkanDeviceType};
 pub use queue::VulkanQueueFamilyInfo;
