@@ -11,8 +11,14 @@ pub mod device_manager;
 pub mod discovery;
 pub mod gbm;
 pub mod output;
+pub mod plane_formats;
 pub mod outputs;
 pub mod registry;
 pub mod session;
 
+pub use plane_formats::{
+    DrmPlaneFormatError,
+    DrmPrimaryPlaneFormatCapabilities,
+    discover_primary_plane_formats,
+};
 pub use session::{DrmSession, DrmSessionError};
