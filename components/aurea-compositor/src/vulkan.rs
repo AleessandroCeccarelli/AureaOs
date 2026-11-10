@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -43,7 +44,10 @@ pub use backend::VulkanBackend;
 pub use command_buffer::VulkanCommandBuffer;
 pub use context::VulkanContext;
 pub use external_memory::VulkanExternalMemoryCapabilities;
-pub use format_capabilities::{VulkanFormatCapabilities, VulkanFormatModifierInfo};
+pub use format_capabilities::{
+    VulkanFormatCapabilities,
+    VulkanFormatModifierInfo,
+};
 pub use logical_device::VulkanLogicalDevice;
 pub use physical_device::{VulkanDeviceInfo, VulkanDeviceType};
 pub use queue::VulkanQueueFamilyInfo;
