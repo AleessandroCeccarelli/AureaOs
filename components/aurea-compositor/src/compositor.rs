@@ -20,11 +20,18 @@ use crate::{
     window_manager::WindowManager,
 };
 
+use crate::{
+    frame::FrameScheduler,
+    output::{OutputId, manager::OutputManager},
+    window_manager::WindowManager,
+};
+
 mod keyboard;
 mod output_publication;
 mod output_reconciliation;
 mod rendering;
 mod workspace;
+mod frame_scheduling;
 
 pub use output_reconciliation::OutputReconciliationError;
 pub use rendering::CompositorRenderError;
