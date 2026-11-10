@@ -221,3 +221,29 @@ fn completing_removed_output_returns_error() {
         Err(FrameLifecycleError::NoFrameInFlight(OUTPUT_A))
     );
 }
+
+
+#[test]
+fn reconnecting_output_does_not_reuse_previous_frame_token() {
+    let mut scheduler = FrameScheduler::new();
+
+    scheduler.request_frame(OUTPUT_A);
+    let first = scheduler.begin_frame(OUTPUT_A).unwrap();
+
+    scheduler.remove_output(OUTPUT_A);
+
+    scheduler.request_frame(OUTPUT_A);
+    let second = scheduler.begin_frame(OUTPUT_A).unwrap();
+
+    assert_ne!(first.sequence(), second.sequence());
+
+    assert_eq!(
+        scheduler.complete_frame(first),
+        Err(FrameLifecycleError::StaleFrameToken(OUTPUT_A))
+    );
+
+    assert!(scheduler.has_frame_in_flight(OUTPUT_A));
+
+    scheduler.complete_frame(second).unwrap();
+}
+
