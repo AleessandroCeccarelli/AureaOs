@@ -12,9 +12,7 @@
 use std::{error::Error, fmt};
 
 use smithay::{
-    backend::{
-        allocator::Format,
-    },
+    backend::allocator::Format,
     reexports::drm::control::{PlaneType, crtc},
 };
 
@@ -90,7 +88,9 @@ impl Error for DrmPlaneFormatError {}
 /// exposes the resulting pairs through PlaneInfo::formats.
 ///
 /// This is a capability inventory, not a guarantee that every framebuffer
-/// configuration will succeed. Final compatibility can still depend on
+/// configuration will succeed. Smithay may synthesize an ARGB8888/INVALID
+/// entry when the driver reports no formats, so that entry is not proof of
+/// explicit modifier support. Final compatibility can also depend on
 /// dimensions, scaling, other plane state and an atomic test-only commit.
 ///
 /// The returned CRTC and plane identifiers are local to the supplied DRM
