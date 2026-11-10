@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -9,6 +10,9 @@ mod builder;
 mod client;
 mod display_events;
 mod event_loop;
+
+#[cfg(feature = "drm")]
+mod gbm_lifecycle;
 
 #[cfg(feature = "drm")]
 mod input;
