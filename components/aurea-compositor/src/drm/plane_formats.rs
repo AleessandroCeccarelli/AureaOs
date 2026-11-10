@@ -14,7 +14,6 @@ use std::{error::Error, fmt};
 use smithay::{
     backend::{
         allocator::Format,
-        drm::DrmDevice as SmithayDrmDevice,
     },
     reexports::drm::control::{PlaneType, crtc},
 };
