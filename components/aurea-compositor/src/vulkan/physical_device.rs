@@ -15,7 +15,7 @@ use smithay::backend::drm::DrmNode;
 
 use crate::renderer::RenderPreference;
 
-use super::VulkanContext;
+use super::{VulkanContext, VulkanExternalMemoryCapabilities};
 
 /// General category of a Vulkan physical device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -45,9 +45,8 @@ pub struct VulkanDeviceInfo {
 
 impl VulkanDeviceInfo {
     pub(super) fn from_device(device: &PhysicalDevice, has_graphics_queue: bool) -> Self {
-        let has_dmabuf_export_extensions = VulkanAllocator::required_extensions(device)
-            .iter()
-            .all(|extension| device.has_device_extension(extension));
+        let external_memory = VulkanExternalMemoryCapabilities::from_device(device);
+        let has_dmabuf_export_extensions = external_memory.supports_dmabuf_export;
 
         Self {
             name: device.name().to_owned(),
