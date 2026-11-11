@@ -271,3 +271,17 @@ fn foreign_release_cannot_be_recorded_twice_without_acquire() {
         Err(VulkanFrameResourceError::ForeignOwnershipAlreadyReleased)
     );
 }
+
+#[test]
+fn foreign_acquire_is_rejected_while_kms_still_owns_the_image() {
+    let mut resource = VulkanFrameResource::new();
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+    resource.mark_foreign_release_submitted().unwrap();
+    resource.mark_kms_committed_with_sync_fd().unwrap();
+
+    assert_eq!(
+        resource.mark_foreign_acquired(),
+        Err(VulkanFrameResourceError::KmsAlreadyOwnsResource)
+    );
+}
