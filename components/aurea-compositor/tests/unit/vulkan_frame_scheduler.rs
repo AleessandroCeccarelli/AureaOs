@@ -22,3 +22,14 @@ fn frame_ring_supports_three_slots() {
 fn empty_frame_ring_is_stable() {
     assert_eq!(VulkanFrameScheduler::next_slot_index(0, 0), 0);
 }
+
+#[test]
+fn out_of_range_index_is_normalized() {
+    assert_eq!(VulkanFrameScheduler::next_slot_index(4, 3), 2);
+    assert_eq!(VulkanFrameScheduler::next_slot_index(6, 3), 1);
+}
+
+#[test]
+fn maximum_index_does_not_overflow() {
+    assert_eq!(VulkanFrameScheduler::next_slot_index(usize::MAX, 2), 0);
+}
