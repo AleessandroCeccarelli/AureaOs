@@ -7,6 +7,8 @@
 //! Vulkan integration for the AureaOS compositor.
 
 mod backend;
+#[cfg(feature = "drm")]
+mod buffer_allocator;
 mod command_buffer;
 mod context;
 #[cfg(feature = "drm")]
@@ -43,6 +45,8 @@ impl fmt::Display for VulkanInitError {
 impl Error for VulkanInitError {}
 
 pub use backend::VulkanBackend;
+#[cfg(feature = "drm")]
+pub use buffer_allocator::{VulkanBufferAllocator, VulkanBufferError, VulkanRenderTargetRequest};
 pub use command_buffer::VulkanCommandBuffer;
 pub use context::VulkanContext;
 #[cfg(feature = "drm")]
