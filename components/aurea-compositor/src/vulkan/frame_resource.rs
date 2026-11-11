@@ -82,6 +82,11 @@ impl VulkanFrameResource {
         matches!(self.state, FrameResourceState::Available)
     }
 
+    /// Returns whether a GPU submission has been recorded for this resource.
+    pub const fn is_submitted(&self) -> bool {
+        matches!(self.state, FrameResourceState::Submitted { .. })
+    }
+
     /// Begins recording/rendering into this resource.
     pub fn begin_render(&mut self) -> Result<(), VulkanFrameResourceError> {
         if !self.is_available() {
