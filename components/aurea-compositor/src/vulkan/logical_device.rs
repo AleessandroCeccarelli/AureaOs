@@ -97,6 +97,8 @@ impl VulkanLogicalDevice {
             }
         };
 
+        let supports_foreign_queue_family = extension_plan.supports_foreign_queue_family();
+
         Ok(Self {
             device,
             graphics_queue,
@@ -108,7 +110,7 @@ impl VulkanLogicalDevice {
             instance: physical_device.instance().handle().clone(),
             physical_device: physical_device.handle(),
             supports_sync_fd,
-            supports_foreign_queue_family: extension_plan.supports_foreign_queue_family(),
+            supports_foreign_queue_family,
         })
     }
 
