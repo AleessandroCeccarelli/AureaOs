@@ -13,7 +13,7 @@ use smithay::{
 };
 
 use crate::{
-    drm::{device::DrmDevice, discovery::discover_connected_outputs, output::DrmOutputDescriptor},
+    drm::{device::DrmDevice, discovery::discover_connected_outputs, output::DrmOutputDescriptor, presentation_backend::{DrmPresentationBackend, DrmPresentationBackendError}},
     output::OutputId,
 };
 
@@ -50,6 +50,7 @@ pub struct ManagedDrmSurface {
     output_id: OutputId,
     connector: connector::Handle,
     surface: DrmSurface,
+    presentation: DrmPresentationBackend,
 }
 
 impl ManagedDrmSurface {
@@ -57,6 +58,8 @@ impl ManagedDrmSurface {
     pub fn connector(&self) -> connector::Handle { self.connector }
     pub fn crtc(&self) -> crtc::Handle { self.surface.crtc() }
     pub fn surface(&self) -> &DrmSurface { &self.surface }
+    pub fn presentation(&self) -> &DrmPresentationBackend { &self.presentation }
+    pub fn presentation_mut(&mut self) -> &mut DrmPresentationBackend { &mut self.presentation }
 }
 
 /// Owns all KMS surfaces created for one DRM device.
@@ -146,15 +149,35 @@ impl DrmSurfaceManager {
                     output_id, message: error.to_string()
                 })?;
 
+            let presentation = DrmPresentationBackend::new(device.node().map_err(|error| DrmSurfaceManagerError::Discovery(error.to_string()))?, &surface);
             manager.crtc_owners.insert(crtc, output_id);
             manager.surfaces.insert(output_id, ManagedDrmSurface {
                 output_id,
                 connector: connector_handle,
                 surface,
+                presentation,
             });
         }
 
         Ok(manager)
+    }
+
+    /// Routes a VBlank event to the presentation lifecycle for its CRTC.
+    pub fn on_vblank(
+        &mut self,
+        node: DrmNode,
+        crtc: crtc::Handle,
+    ) -> Result<Option<crate::drm::presentation::DrmFramebufferId>, DrmPresentationBackendError> {
+        let Some(output_id) = self.crtc_owners.get(&crtc).copied() else {
+            return Ok(None);
+        };
+        let Some(output) = self.surfaces.get_mut(&output_id) else {
+            return Ok(None);
+        };
+        if output.presentation().pending().is_none() {
+            return Ok(None);
+        }
+        output.presentation_mut().on_vblank(node, crtc)
     }
 
     /// Drops all surfaces before their owning DRM device is torn down.
