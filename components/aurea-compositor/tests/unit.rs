@@ -55,3 +55,7 @@ mod vulkan_frame_scheduler;
 #[cfg(feature = "vulkan")]
 #[path = "unit/vulkan_shader.rs"]
 mod vulkan_shader;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_clear_pass.rs"]
+mod vulkan_clear_pass;
