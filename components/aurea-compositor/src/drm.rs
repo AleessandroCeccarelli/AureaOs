@@ -17,6 +17,7 @@ pub mod presentation_backend;
 pub mod plane_formats;
 pub mod registry;
 pub mod session;
+pub mod surfaces;
 
 pub use plane_formats::{
     DrmPlaneFormatError,
