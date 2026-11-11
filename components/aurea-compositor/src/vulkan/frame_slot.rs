@@ -15,6 +15,7 @@ use super::VulkanLogicalDevice;
 pub(super) struct VulkanFrameSlot {
     pub(super) command_pool: vk::CommandPool,
     pub(super) completion_fence: vk::Fence,
+    command_buffer: Option<vk::CommandBuffer>,
     pub(super) sync_fd_semaphore: Option<vk::Semaphore>,
 }
 
@@ -58,6 +59,7 @@ impl VulkanFrameSlot {
         Ok(Self {
             command_pool,
             completion_fence,
+            command_buffer: None,
             sync_fd_semaphore,
         })
     }
@@ -101,13 +103,20 @@ impl VulkanFrameSlot {
             self.sync_fd_semaphore = Some(Self::create_sync_fd_semaphore(device)?);
         }
 
-        let allocation = vk::CommandBufferAllocateInfo::default()
-            .command_pool(self.command_pool)
-            .level(vk::CommandBufferLevel::PRIMARY)
-            .command_buffer_count(1);
-        let command_buffer = unsafe {
-            device.handle().allocate_command_buffers(&allocation)
-        }?[0];
+        let command_buffer = match self.command_buffer {
+            Some(command_buffer) => command_buffer,
+            None => {
+                let allocation = vk::CommandBufferAllocateInfo::default()
+                    .command_pool(self.command_pool)
+                    .level(vk::CommandBufferLevel::PRIMARY)
+                    .command_buffer_count(1);
+                let command_buffer = unsafe {
+                    device.handle().allocate_command_buffers(&allocation)
+                }?[0];
+                self.command_buffer = Some(command_buffer);
+                command_buffer
+            }
+        };
 
         let begin_info = vk::CommandBufferBeginInfo::default()
             .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
