@@ -27,3 +27,7 @@ mod output_manager;
 
 #[path = "unit/compositor_output_reconciliation.rs"]
 mod compositor_output_reconciliation;
+
+#[cfg(all(feature = "drm", feature = "vulkan"))]
+#[path = "unit/vulkan_drm_compatibility.rs"]
+mod vulkan_drm_compatibility;
