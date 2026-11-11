@@ -63,7 +63,7 @@ AureaOS aims to reduce unnecessary configuration and provide sensible defaults w
 
 ### Core AureaOS Experience
 
-The first release, Roma 1.0, focuses on a proprietary desktop experience and a selected group of first-party applications:
+The first release, Roma 1.0, focuses on an AureaOS-designed and project-controlled desktop experience and a selected group of first-party applications:
 
 - **Aurea Desktop:** the graphical desktop environment, shell, and window management.
 - **AureaOS Human Interfaces:** shared design system and the planned native UI component library.
@@ -158,3 +158,12 @@ Technology should support the experience rather than become an obstacle. The sys
 ## License
 
 Original AureaOS work is released under the GNU General Public License version 3 or later (GPL-3.0-or-later), unless stated otherwise. Third-party software and assets remain subject to their own licenses and terms.
+
+
+## Licensing
+
+Original AureaOS project work is currently distributed under **GPL-3.0-or-later**, including the desktop, system components, first-party applications, documentation, and design-system source authored for the project, unless a specific file clearly identifies a different license for third-party material.
+
+AureaOS product ownership and visual identity are separate from software licensing. Describing the desktop, Store, or applications as AureaOS-owned or first-party does not mean that their source code is closed or exempt from the current project license. Third-party components retain their own licenses and notices.
+
+The project is not adopting a proprietary or dual-licensing model at this stage. Any future change to the licensing or distribution model is an open strategic decision and must be reviewed separately, with attention to copyright ownership, contributor permissions, and applicable license obligations.
