@@ -147,6 +147,34 @@ impl VulkanFrameResource {
         Ok(())
     }
 
+    /// Records KMS ownership after an exported Vulkan sync-file fence has
+    /// been attached to the accepted atomic commit.
+    ///
+    /// Unlike `mark_kms_committed`, this permits GPU work to remain pending:
+    /// the kernel waits on the imported IN_FENCE_FD before scan-out access.
+    pub fn mark_kms_committed_with_sync_fd(
+        &mut self,
+    ) -> Result<(), VulkanFrameResourceError> {
+        let FrameResourceState::Submitted {
+            gpu_complete,
+            presentation_resolved,
+            kms_owned,
+        } = self.state
+        else {
+            return Err(VulkanFrameResourceError::NotSubmitted);
+        };
+
+        if presentation_resolved {
+            return Err(VulkanFrameResourceError::PresentationAlreadyResolved);
+        }
+        if kms_owned {
+            return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource);
+        }
+
+        self.update_submitted(gpu_complete, true, true);
+        Ok(())
+    }
+
     /// Records that KMS has released a previously committed resource.
     pub fn mark_kms_released(&mut self) -> Result<(), VulkanFrameResourceError> {
         let FrameResourceState::Submitted {
