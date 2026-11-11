@@ -40,7 +40,6 @@ pub struct VulkanImageView<'image, 'device> {
 impl<'image, 'device> VulkanImageView<'image, 'device> {
     /// Creates a 2D color view over a Vulkan image.
     pub fn color(
-        device: &'device VulkanLogicalDevice,
         image: &'image VulkanImage<'device>,
     ) -> Result<Self, VulkanImageViewError> {
         let subresource_range = vk::ImageSubresourceRange::default()
@@ -56,6 +55,7 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
             .format(image.format())
             .subresource_range(subresource_range);
 
+        let device = image.device();
         let handle = unsafe {
             device.handle().create_image_view(&create_info, None)
         }.map_err(VulkanImageViewError::Creation)?;
