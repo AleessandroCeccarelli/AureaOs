@@ -58,15 +58,20 @@ impl<'device> VulkanOffscreenRenderer<'device> {
     }
 
     /// Clears an RGBA8 image and returns the completed pixel data.
+    pub fn validate_dimensions(width: u32, height: u32) -> Result<(), VulkanOffscreenError> {
+        if width == 0 || height == 0 {
+            return Err(VulkanOffscreenError::InvalidDimensions);
+        }
+        Ok(())
+    }
+
     pub fn render_clear(
         &self,
         width: u32,
         height: u32,
         clear_color: [f32; 4],
     ) -> Result<Vec<u8>, VulkanOffscreenError> {
-        if width == 0 || height == 0 {
-            return Err(VulkanOffscreenError::InvalidDimensions);
-        }
+        Self::validate_dimensions(width, height)?;
 
         let allocator = VulkanImageAllocator::new(self.device);
         let image = allocator.allocate(VulkanImageRequest::render_target(
