@@ -22,6 +22,8 @@ pub struct VulkanLogicalDevice {
     command_pool: vk::CommandPool,
     extension_plan: VulkanDeviceExtensionPlan,
     memory_properties: vk::PhysicalDeviceMemoryProperties,
+    instance: ash::Instance,
+    physical_device: vk::PhysicalDevice,
 }
 
 impl VulkanLogicalDevice {
@@ -76,6 +78,8 @@ impl VulkanLogicalDevice {
             command_pool,
             extension_plan,
             memory_properties,
+            instance: physical_device.instance().handle().clone(),
+            physical_device: physical_device.handle(),
         })
     }
 
@@ -86,6 +90,12 @@ impl VulkanLogicalDevice {
     pub(super) fn memory_properties(&self) -> &vk::PhysicalDeviceMemoryProperties {
         &self.memory_properties
     }
+
+    /// Vulkan instance used to query physical-device image capabilities.
+    pub(super) fn instance(&self) -> &ash::Instance { &self.instance }
+
+    /// Physical device paired with this logical device.
+    pub(super) fn physical_device(&self) -> vk::PhysicalDevice { self.physical_device }
 
     /// Returns the graphics queue handle.
     pub fn graphics_queue(&self) -> vk::Queue { self.graphics_queue }
