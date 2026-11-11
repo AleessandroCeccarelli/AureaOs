@@ -226,3 +226,48 @@ fn sync_file_handoff_still_requires_gpu_and_kms_release() {
     resource.mark_gpu_complete().unwrap();
     assert!(resource.is_available());
 }
+
+#[test]
+fn foreign_owned_resource_cannot_be_reused_until_acquire_completes() {
+    let mut resource = VulkanFrameResource::new();
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+    resource.mark_foreign_release_submitted().unwrap();
+    resource.mark_kms_committed_with_sync_fd().unwrap();
+    resource.mark_gpu_complete().unwrap();
+    resource.mark_kms_released().unwrap();
+
+    assert!(!resource.is_available());
+    assert_eq!(
+        resource.begin_render(),
+        Err(VulkanFrameResourceError::AlreadyInUse)
+    );
+
+    resource.mark_foreign_acquired().unwrap();
+    assert!(resource.is_available());
+}
+
+#[test]
+fn foreign_acquire_is_rejected_before_foreign_release() {
+    let mut resource = VulkanFrameResource::new();
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+
+    assert_eq!(
+        resource.mark_foreign_acquired(),
+        Err(VulkanFrameResourceError::ForeignOwnershipNotReleased)
+    );
+}
+
+#[test]
+fn foreign_release_cannot_be_recorded_twice_without_acquire() {
+    let mut resource = VulkanFrameResource::new();
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+    resource.mark_foreign_release_submitted().unwrap();
+
+    assert_eq!(
+        resource.mark_foreign_release_submitted(),
+        Err(VulkanFrameResourceError::ForeignOwnershipAlreadyReleased)
+    );
+}
