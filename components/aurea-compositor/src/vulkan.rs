@@ -20,6 +20,8 @@ mod drm_image;
 mod device_extensions;
 mod external_memory;
 mod format_capabilities;
+mod frame_scheduler;
+mod frame_slot;
 mod logical_device;
 mod memory_type;
 mod image_allocator;
@@ -66,6 +68,7 @@ pub use drm_image::{VulkanDrmImage, VulkanDrmImageAllocator, VulkanDrmImageError
 pub use device_extensions::VulkanDeviceExtensionPlan;
 pub use external_memory::VulkanExternalMemoryCapabilities;
 pub use format_capabilities::{VulkanFormatCapabilities, VulkanFormatModifierInfo};
+pub use frame_scheduler::{DEFAULT_FRAMES_IN_FLIGHT, VulkanFrame, VulkanFrameScheduler, VulkanFrameSchedulerError};
 pub use logical_device::VulkanLogicalDevice;
 pub use memory_type::select_memory_type_index;
 pub use image_allocator::{VulkanImage, VulkanImageAllocator, VulkanImageError, VulkanImageRequest};
