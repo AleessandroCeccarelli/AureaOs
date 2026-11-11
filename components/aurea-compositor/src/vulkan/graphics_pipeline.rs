@@ -132,8 +132,13 @@ impl<'device> VulkanGraphicsPipeline<'device> {
                 None,
             )
         } {
-            Ok(mut pipelines) => pipelines.pop()
-                .ok_or(VulkanGraphicsPipelineError::InvalidPipelineCount)?,
+            Ok(mut pipelines) => match pipelines.pop() {
+                Some(pipeline) => pipeline,
+                None => {
+                    unsafe { device.handle().destroy_pipeline_layout(layout, None) };
+                    return Err(VulkanGraphicsPipelineError::InvalidPipelineCount);
+                }
+            },
             Err((partial, error)) => {
                 for pipeline in partial {
                     unsafe { device.handle().destroy_pipeline(pipeline, None) };
