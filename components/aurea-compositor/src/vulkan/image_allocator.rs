@@ -149,6 +149,7 @@ impl<'device> VulkanImageAllocator<'device> {
             width: request.width,
             height: request.height,
             format: request.format,
+            usage: request.usage,
         })
     }
 }
@@ -161,6 +162,7 @@ pub struct VulkanImage<'device> {
     width: u32,
     height: u32,
     format: vk::Format,
+    usage: vk::ImageUsageFlags,
 }
 
 impl VulkanImage<'_> {
@@ -169,6 +171,7 @@ impl VulkanImage<'_> {
     pub fn width(&self) -> u32 { self.width }
     pub fn height(&self) -> u32 { self.height }
     pub fn format(&self) -> vk::Format { self.format }
+    pub fn usage(&self) -> vk::ImageUsageFlags { self.usage }
     pub(super) fn device(&self) -> &'_ VulkanLogicalDevice { self.device }
 }
 
