@@ -7,6 +7,7 @@
 //! Native DRM/KMS backend modules.
 
 pub mod device;
+pub mod frame_coordinator;
 pub mod device_manager;
 pub mod discovery;
 pub mod gbm;
