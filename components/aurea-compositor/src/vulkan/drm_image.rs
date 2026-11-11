@@ -123,8 +123,12 @@ impl<'device> VulkanDrmImageAllocator<'device> {
                 &mut image_properties,
             )
         }.map_err(VulkanDrmImageError::ModifierImageQuery)?;
-        if !external_properties.external_memory_properties.external_memory_features
+        let external_memory = external_properties.external_memory_properties;
+        let dma_buf_handle = vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT;
+        if !external_memory
+            .external_memory_features
             .contains(vk::ExternalMemoryFeatureFlags::EXPORTABLE)
+            || !external_memory.compatible_handle_types.contains(dma_buf_handle)
         {
             return Err(VulkanDrmImageError::DmabufExportUnsupported);
         }
