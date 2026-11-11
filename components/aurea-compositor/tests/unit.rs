@@ -63,3 +63,7 @@ mod vulkan_clear_pass;
 #[cfg(feature = "vulkan")]
 #[path = "unit/vulkan_readback.rs"]
 mod vulkan_readback;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_draw_pass.rs"]
+mod vulkan_draw_pass;
