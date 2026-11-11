@@ -52,7 +52,7 @@ impl VulkanImageState {
                 vk::AccessFlags2::COLOR_ATTACHMENT_READ
                     | vk::AccessFlags2::COLOR_ATTACHMENT_WRITE
             }
-            Self::ShaderRead => vk::AccessFlags2::SHADER_SAMPLED_READ,
+            Self::ShaderRead => vk::AccessFlags2::SHADER_READ,
             Self::TransferSource => vk::AccessFlags2::TRANSFER_READ,
             Self::TransferDestination => vk::AccessFlags2::TRANSFER_WRITE,
             Self::General => vk::AccessFlags2::MEMORY_READ | vk::AccessFlags2::MEMORY_WRITE,
