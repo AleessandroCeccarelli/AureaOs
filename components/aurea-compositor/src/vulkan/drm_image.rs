@@ -256,6 +256,7 @@ impl<'device> VulkanDrmImageAllocator<'device> {
             height,
             format: vk_format,
             drm_format: format,
+            usage,
             planes,
         })
     }
@@ -272,11 +273,14 @@ pub struct VulkanDrmImage<'device> {
     height: u32,
     format: vk::Format,
     drm_format: DrmVulkanFormat,
+    usage: vk::ImageUsageFlags,
     planes: Vec<VulkanDrmPlaneLayout>,
 }
 
 impl VulkanDrmImage<'_> {
     pub fn image(&self) -> vk::Image { self.image }
+    pub fn usage(&self) -> vk::ImageUsageFlags { self.usage }
+    pub(super) fn device(&self) -> &VulkanLogicalDevice { self.device }
     pub fn dmabuf(&self) -> &OwnedFd { &self.dmabuf }
     pub fn allocation_size(&self) -> vk::DeviceSize { self.allocation_size }
     pub fn width(&self) -> u32 { self.width }
