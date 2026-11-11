@@ -31,6 +31,7 @@ use crate::{
         device_manager::DrmDeviceManager,
         gbm::GbmDeviceManager,
         registry::DrmDeviceRegistry,
+        surfaces::DrmSurfaceManager,
     },
     gpu::GpuManager,
     vulkan::VulkanBackend,
@@ -49,6 +50,10 @@ pub(super) struct WaylandState {
 
     #[cfg(feature = "drm")]
     pub(super) drm_devices: DrmDeviceManager,
+
+    /// Native KMS surfaces grouped by their owning DRM device.
+    #[cfg(feature = "drm")]
+    pub(super) drm_surfaces: HashMap<DrmNode, DrmSurfaceManager>,
 
     /// GBM buffer allocation devices keyed by their DRM identity.
     #[cfg(feature = "drm")]
