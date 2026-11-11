@@ -163,11 +163,13 @@ fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io::Result<()>
 
     let result = (|| {
         register_device_notifier(state, node)?;
-        refresh_device_outputs(state, node)
+        refresh_device_outputs(state, node)?;
+        initialize_drm_surfaces(state, node)
     })();
 
     if let Err(error) = result {
         remove_device_outputs(state, node);
+        state.drm_surfaces.remove(&node);
         remove_device_notifier(state, node);
         super::gbm_lifecycle::remove_gbm_device(state, node);
         state.vulkan_backends.remove(&node);
@@ -199,6 +201,18 @@ fn initialize_vulkan_backend(state: &mut WaylandState, node: DrmNode) {
     }
 }
 
+fn initialize_drm_surfaces(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
+    state.drm_surfaces.remove(&node);
+    let manager = {
+        let Some(device) = state.drm_devices.get_mut(node) else {
+            return Ok(());
+        };
+        crate::drm::surfaces::DrmSurfaceManager::initialize(device).map_err(io::Error::other)?
+    };
+    state.drm_surfaces.insert(node, manager);
+    Ok(())
+}
+
 fn register_device_notifier(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
     if state.drm_notifiers.contains_key(&node) {
         return Ok(());
@@ -218,10 +232,17 @@ fn register_device_notifier(state: &mut WaylandState, node: DrmNode) -> io::Resu
 
     let token = handle
         .insert_source(notifier, move |event, _, state| {
-            if let smithay::backend::drm::DrmEvent::Error(error) = event {
-                state.error = Some(io::Error::other(format!(
-                    "DRM device {node}: {error}"
-                )));
+            match event {
+                smithay::backend::drm::DrmEvent::VBlank(crtc) => {
+                    if let Some(surfaces) = state.drm_surfaces.get_mut(&node) {
+                        if let Err(error) = surfaces.on_vblank(node, crtc) {
+                            eprintln!("AureaOS: DRM presentation completion failed for {node}: {error}");
+                        }
+                    }
+                }
+                smithay::backend::drm::DrmEvent::Error(error) => {
+                    state.error = Some(io::Error::other(format!("DRM device {node}: {error}")));
+                }
             }
         })
         .map_err(io::Error::other)?;
@@ -304,6 +325,7 @@ fn changed_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
     if state.session_active {
         if state.drm_devices.contains(node) {
             refresh_device_outputs(state, node)?;
+            initialize_drm_surfaces(state, node)?;
             forget_changed_device(&mut state.udev_changed_devices, node);
         } else {
             open_and_integrate(state, node)?;
@@ -319,12 +341,14 @@ fn changed_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
 
 fn remove_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
     remove_device_outputs(state, node);
+    state.drm_surfaces.remove(&node);
     remove_device_notifier(state, node);
 
     // Release GBM resources before removing the DRM device they depend on.
     super::gbm_lifecycle::remove_gbm_device(state, node);
 
     state.vulkan_backends.remove(&node);
+    state.drm_surfaces.remove(&node);
     state.drm_devices.remove(node);
     state.drm_device_registry.remove(node);
 
@@ -435,6 +459,9 @@ pub(super) fn activate_discovered_devices(state: &mut WaylandState) {
 
     for node in existing_nodes {
         initialize_vulkan_backend(state, node);
+        if let Err(error) = initialize_drm_surfaces(state, node) {
+            eprintln!("AureaOS: unable to restore KMS surfaces for {node}: {error}");
+        }
     }
 
     // Integrate devices discovered while the session was inactive.
@@ -464,7 +491,7 @@ pub(super) fn activate_discovered_devices(state: &mut WaylandState) {
     let pending = std::mem::take(&mut state.udev_changed_devices);
 
     let (pending, failures) = retry_pending_changes(pending, &managed, |node| {
-        refresh_device_outputs(state, node)
+        refresh_device_outputs(state, node).and_then(|()| initialize_drm_surfaces(state, node))
     });
 
     state.udev_changed_devices = pending;
