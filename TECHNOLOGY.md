@@ -40,7 +40,9 @@ AureaOS should reuse mature Linux infrastructure rather than rewrite established
 
 Development effort should focus on the components that define the AureaOS experience and the integration that makes the system coherent.
 
-Third-party components retain their own licenses. GPL-3.0-or-later applies to original AureaOS work as stated in the repository license; it does not automatically apply to third-party components.
+Original AureaOS project work is currently licensed under **GPL-3.0-or-later**, including the AureaOS-developed desktop, system components, first-party applications, documentation, and project-authored design-system source unless a specific file clearly identifies a different license for third-party material. First-party product ownership does not mean closed-source distribution: the current source-licensing policy applies to the original AureaOS work.
+
+Third-party components retain their own licenses. GPL-3.0-or-later does not automatically apply to third-party components merely because they are used by AureaOS. Any future change to the project licensing or distribution model is undecided and must be evaluated separately, including copyright ownership, contributor permissions, and license obligations.
 
 ## 3. Programming Language
 
