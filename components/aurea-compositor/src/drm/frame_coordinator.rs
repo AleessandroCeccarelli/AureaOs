@@ -157,6 +157,23 @@ impl DrmOutputFrameCoordinator {
         Ok(framebuffer)
     }
 
+    /// Validates ownership preconditions before issuing the non-blocking KMS commit.
+    pub fn validate_commit_ready(
+        &self,
+        sync_file_attached: bool,
+    ) -> Result<DrmFramebufferId, DrmOutputFrameError> {
+        let framebuffer = self.presentation.transaction_candidate()
+            .ok_or(DrmOutputFrameError::Lifecycle(DrmPresentationError::NoTransaction))?;
+        let resource = self.resource_for(framebuffer)?;
+        if !self.resources.can_present(resource)? {
+            return Err(DrmOutputFrameError::ResourceAlreadyResolved(framebuffer));
+        }
+        if !sync_file_attached && !self.resources.is_gpu_complete(resource)? {
+            return Err(DrmOutputFrameError::GpuWorkIncomplete(framebuffer));
+        }
+        Ok(framebuffer)
+    }
+
     /// Records an accepted KMS commit and transfers ownership to KMS.
     ///
     /// Use the sync-file variant only when the exact exported fence was
