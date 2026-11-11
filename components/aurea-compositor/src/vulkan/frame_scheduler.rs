@@ -108,15 +108,28 @@ impl<'device> VulkanFrameScheduler<'device> {
     }
 
     /// Computes the next slot in a bounded frame ring.
+    ///
+    /// The current index is normalized first, keeping the result in range
+    /// even when callers provide an out-of-range index.
     pub fn next_slot_index(current: usize, slot_count: usize) -> usize {
-        if slot_count == 0 { 0 } else { (current + 1) % slot_count }
+        if slot_count == 0 {
+            return 0;
+        }
+
+        (current % slot_count + 1) % slot_count
     }
 }
 
 impl Drop for VulkanFrameScheduler<'_> {
     fn drop(&mut self) {
         unsafe {
-            let _ = self.device.handle().device_wait_idle();
+            // Destroying pools or fences while the device may still be using
+            // them is invalid. If the idle wait fails, intentionally leak the
+            // Vulkan handles rather than risk freeing in-flight resources.
+            if self.device.handle().device_wait_idle().is_err() {
+                return;
+            }
+
             for slot in &mut self.slots {
                 if slot.completion_fence != vk::Fence::null() {
                     self.device.handle().destroy_fence(slot.completion_fence, None);
