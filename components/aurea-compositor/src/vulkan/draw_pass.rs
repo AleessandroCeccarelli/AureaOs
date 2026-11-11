@@ -66,6 +66,7 @@ impl VulkanDrawPass {
         pipeline: &VulkanGraphicsPipeline<'_>,
         previous_state: VulkanImageState,
         final_state: VulkanImageState,
+        load: VulkanColorLoad,
         vertex_count: u32,
         instance_count: u32,
     ) -> Result<(), VulkanDrawPassError> {
@@ -88,7 +89,7 @@ impl VulkanDrawPass {
         let scope = VulkanDynamicRenderingScope::begin_color(
             command_buffer,
             view,
-            VulkanColorLoad::DontCare,
+            load,
         );
         pipeline.bind(command_buffer);
         pipeline.set_viewport_and_scissor(command_buffer, view.width(), view.height());
