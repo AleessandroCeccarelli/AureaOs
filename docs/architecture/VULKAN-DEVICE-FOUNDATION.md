@@ -36,14 +36,18 @@ image usage, memory allocation, DMA-BUF import/export, or KMS presentation
 will succeed. Each operation needs a separate capability query and a
 runtime error path.
 
-The first implementation does not yet create native AureaOS VkImages,
-import DMA-BUF memory, or provide explicit synchronization. Those are
-separate modules to be implemented after the logical-device foundation has
-been validated on Fedora and on supported GPU hardware.
+The native image foundation creates and binds VkImage/VkDeviceMemory using
+AureaOS's logical device and owns both resources through RAII. The DRM path
+queries support for the exact format, modifier, usage and DMA-BUF export
+handle; creates a modifier-tiled image with dedicated exportable memory;
+exports an owned DMA-BUF FD; and queries each memory-plane offset and row pitch
+from Vulkan. This path still requires Fedora compilation and hardware
+validation. DMA-BUF import, explicit synchronization and KMS presentation are
+not yet implemented.
 
 ## Next modules
 
-1. DRM modifier-specific image creation and DMA-BUF export.
-3. DMA-BUF import with per-memory-plane binding and FD ownership handling.
-4. Explicit synchronization and buffer retirement across GPU and KMS.
-5. KMS framebuffer creation, atomic test-only commit and page-flip lifecycle.
+1. Validate modifier-image allocation and DMA-BUF export on Fedora hardware.
+2. DMA-BUF import with per-memory-plane binding and FD ownership handling.
+3. Explicit synchronization and buffer retirement across GPU and KMS.
+4. KMS framebuffer creation, atomic test-only commit and page-flip lifecycle.
