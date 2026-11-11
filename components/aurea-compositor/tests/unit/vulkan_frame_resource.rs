@@ -42,8 +42,8 @@ fn resource_waits_for_kms_release_after_gpu_completion() {
     let mut resource = VulkanFrameResource::new();
     resource.begin_render().unwrap();
     resource.mark_submitted().unwrap();
-    resource.mark_kms_committed().unwrap();
     resource.mark_gpu_complete().unwrap();
+    resource.mark_kms_committed().unwrap();
 
     assert!(!resource.is_available());
 
@@ -52,16 +52,20 @@ fn resource_waits_for_kms_release_after_gpu_completion() {
 }
 
 #[test]
-fn resource_waits_for_gpu_completion_after_kms_release() {
+fn kms_cannot_take_ownership_before_gpu_completion() {
     let mut resource = VulkanFrameResource::new();
     resource.begin_render().unwrap();
     resource.mark_submitted().unwrap();
-    resource.mark_kms_committed().unwrap();
-    resource.mark_kms_released().unwrap();
 
+    assert_eq!(
+        resource.mark_kms_committed(),
+        Err(VulkanFrameResourceError::GpuWorkIncomplete)
+    );
     assert!(!resource.is_available());
 
     resource.mark_gpu_complete().unwrap();
+    resource.mark_kms_committed().unwrap();
+    resource.mark_kms_released().unwrap();
     assert!(resource.is_available());
 }
 
@@ -182,8 +186,8 @@ fn fully_released_resource_can_be_reused_for_a_second_frame() {
 
     resource.begin_render().unwrap();
     resource.mark_submitted().unwrap();
-    resource.mark_kms_committed().unwrap();
     resource.mark_gpu_complete().unwrap();
+    resource.mark_kms_committed().unwrap();
     resource.mark_kms_released().unwrap();
     assert!(resource.is_available());
 
