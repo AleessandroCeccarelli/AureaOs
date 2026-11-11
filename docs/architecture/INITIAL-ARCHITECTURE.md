@@ -18,7 +18,7 @@ The initial release targets `amd64` (x86-64) hardware and prioritizes:
 
 - A reproducible and testable system foundation.
 - A modern Wayland-based desktop architecture.
-- A proprietary AureaOS desktop experience.
+- An AureaOS-designed and project-maintained desktop experience.
 - First-party system applications with clear responsibilities.
 - Sensible defaults and consistent system behavior.
 - Local user accounts without a mandatory cloud account.
@@ -88,9 +88,16 @@ It is responsible for bringing together the desktop session, shell, compositor, 
 
 The composition root must coordinate the components without taking ownership of responsibilities that belong to them.
 
+The Cargo workspace is defined at the repository root and its current members are located under `components/`:
+
+- `components/aurea-desktop` — desktop entry point and composition root.
+- `components/aurea-shell` — session lifecycle and event coordination.
+- `components/aurea-desktop-api` — shared contracts between desktop components.
+- `components/aurea-compositor` — Wayland compositor and graphics/display responsibilities.
+
 The intended component relationship is:
 
-- `aurea-desktop` composes and starts the desktop environment.
+- `aurea-desktop` composes and starts the desktop components without taking over their internal responsibilities.
 - `aurea-shell` coordinates session lifecycle and events.
 - `aurea-desktop-api` provides technology-neutral contracts shared between desktop components.
 - `aurea-compositor` implements the Wayland compositor and owns graphics and display responsibilities.
@@ -301,3 +308,8 @@ AureaOs/
 ├── CONTRIBUTING.md
 └── LICENSE
 
+
+
+## 10. Project Licensing
+
+Original AureaOS project work is currently licensed under **GPL-3.0-or-later**. The AureaOS product layer is first-party and project-maintained, but it is not currently closed-source or separately licensed on that basis. Product ownership, branding, design control, and software licensing are distinct matters. Third-party dependencies and assets retain their own licenses. Any future licensing or distribution-model change remains undecided and requires a separate legal and contributor-rights review.

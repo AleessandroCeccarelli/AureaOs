@@ -1,4 +1,4 @@
- <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
 # AureaOS Technology Principles
 
@@ -40,7 +40,9 @@ AureaOS should reuse mature Linux infrastructure rather than rewrite established
 
 Development effort should focus on the components that define the AureaOS experience and the integration that makes the system coherent.
 
-Third-party components retain their own licenses. GPL-3.0-or-later applies to original AureaOS work as stated in the repository license; it does not automatically apply to third-party components.
+Original AureaOS project work is currently licensed under **GPL-3.0-or-later**, including the AureaOS-developed desktop, system components, first-party applications, documentation, and project-authored design-system source unless a specific file clearly identifies a different license for third-party material. First-party product ownership does not mean closed-source distribution: the current source-licensing policy applies to the original AureaOS work.
+
+Third-party components retain their own licenses. GPL-3.0-or-later does not automatically apply to third-party components merely because they are used by AureaOS. Any future change to the project licensing or distribution model is undecided and must be evaluated separately, including copyright ownership, contributor permissions, and license obligations.
 
 ## 3. Programming Language
 
@@ -68,7 +70,14 @@ The current aurea-compositor implementation uses:
 * libseat for session and device access management.
 * DRM and Udev for graphics-device discovery and output-device lifecycle foundations.
 
-The aurea-shell component coordinates the desktop session lifecycle and compositor startup and shutdown.
+The current Rust workspace is located under `components/` and contains four crates with distinct responsibilities:
+
+* `aurea-desktop`: desktop entry point and composition root.
+* `aurea-shell`: session lifecycle and event coordination, including compositor startup and shutdown.
+* `aurea-desktop-api`: shared contracts between desktop components.
+* `aurea-compositor`: Wayland compositor, graphics-device, and output responsibilities.
+
+The composition root wires these components together; it must not absorb their internal responsibilities. The shell coordinates the session and does not own compositor rendering or display-device management.
 
 These components establish the initial technical foundation. They do not yet constitute a complete graphical desktop.
 

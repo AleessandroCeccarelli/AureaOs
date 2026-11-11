@@ -28,69 +28,53 @@ Visual effects must never compromise readability, responsiveness, or usability.
 
 ## 3. Visual Identity
 
-The AureaOS identity combines contemporary neutral surfaces with restrained gold and bronze accents.
+AureaOS uses a blue-gray visual foundation with a soft blue primary accent. A restrained warm gold/amber accent is reserved for selected identity highlights.
 
 The visual language is based on:
 
 - Clean geometric shapes.
-- Rounded square application icons.
+- Rounded-square application icons.
 - Carefully balanced spacing.
 - Subtle borders and shadows.
 - Smooth, restrained transitions.
 - Light and dark surfaces adapted to their context.
-- A distinctive AureaOS gold identity.
+- A recognizable AureaOS identity without imitating another operating system.
 
-Gold and bronze are accent colors, not dominant background colors. Most interface surfaces should remain neutral.
-
-The desktop must feel modern and refined without excessive decoration or skeuomorphic effects.
+The interface should feel modern and refined without excessive decoration or skeuomorphic effects.
 
 ## 4. Color System
 
+The canonical semantic color tokens are maintained in `aurea-human-interfaces/design-system/tokens/index.css`. The [Color System](COLOR-SYSTEM.md) document records their intended roles and approved values.
+
 ### 4.1 Light Theme
 
-The light theme is the primary visual reference for the initial design.
+The light theme uses:
 
-It uses:
-
-- Warm white and ivory surfaces.
-- Pale grey neutral backgrounds.
-- Dark, high-contrast text.
-- Restrained gold and bronze accents.
-- Soft shadows and subtle borders.
-- Translucent panels with controlled background blur.
-
-The launcher and general-purpose system interfaces should feel bright, spacious, and welcoming.
+- A soft blue-gray desktop background.
+- White or near-white window surfaces.
+- Dark, readable text.
+- Soft blue primary actions and focus states.
+- Restrained warm identity accents.
+- Subtle borders and shadows.
 
 ### 4.2 Dark Theme
 
-The dark theme must be a complete, intentionally designed alternative.
+The dark theme uses:
 
-It uses:
+- Deep blue-gray desktop backgrounds.
+- Dark slate window surfaces.
+- Soft, readable foreground text.
+- Consistent blue primary accents.
+- Restrained warm identity highlights.
+- Carefully controlled contrast and transparency.
 
-- Dark charcoal and graphite surfaces.
-- Light, readable text.
-- Restrained gold and bronze highlights.
-- Subtle borders that distinguish adjacent surfaces.
-- Controlled transparency and background blur.
-
-Pure black should not be the default background for every component. Deep black or glossy dark surfaces may be used selectively, especially for multimedia controls and specific contextual panels.
-
-The dark theme must preserve the same hierarchy, functionality, and visual identity as the light theme.
+Pure black must not become the default background for every component.
 
 ### 4.3 Color Consistency
 
-Colors must be defined through shared design tokens rather than independently chosen in each application.
+Colors must be defined through shared semantic tokens rather than independently selected in each application.
 
-The design system should distinguish:
-
-- Primary and secondary accents.
-- Main and secondary surfaces.
-- Primary and secondary text.
-- Borders and separators.
-- Hover, focus, pressed, and disabled states.
-- Success, warning, and error states.
-
-The shared color values and semantic tokens are defined in [Color System](COLOR-SYSTEM.md). Desktop services, native applications, and notifications must consume the same tokens and theme selection.
+The design system distinguishes primary and secondary accents, surfaces, text, borders, focus, selection, and status states. The warm accent is not a replacement for semantic colors and must not be used as the dominant interface palette.
 
 ## 5. Transparency and Glass Effects
 

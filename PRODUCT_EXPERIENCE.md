@@ -48,7 +48,7 @@ AureaOS will make deliberate choices about its default experience.
 
 The system should be ready to use after installation, with sensible defaults and essential functionality already integrated.
 
-Customization will remain possible, but users should not need to spend hours configuring the desktop to obtain a polished and productive environment.
+AureaOS will provide a deliberately curated set of user-facing choices rather than an unrestricted theming environment. Supported settings may include practical preferences such as light or dark appearance, accessibility, and other documented desktop options. Third-party themes and unapproved fonts will not be part of the supported desktop customization model; visual consistency and compatibility are maintained through AureaOS Human Interfaces and its approved resources.
 
 We want the approachability of Windows and macOS, the foundations of Linux, and the identity of AureaOS.
 
@@ -151,7 +151,7 @@ The first-release product direction includes:
 - **Aurea Wallet** — an important first-party system application and one of the core pillars of AureaOS Roma 1.0.
 - **Quaero** — global search for applications, files, folders, settings and other relevant system content.
 - **Fides** — the AureaOS file manager, designed for everyday file management and integrated with the desktop and system services.
-- **Aurea Store** — the proprietary graphical application store, integrating with Flathub and Flatpak.
+- **Aurea Store** — the official AureaOS graphical application store, integrating with Flathub and Flatpak.
 - **Aurea Update** — a graphical update experience for AureaOS-specific system components, separate from Debian base updates.
 - **Aurea Time** — system backup and restore, from an individual file through the full system, using compatible USB disks or network storage.
 

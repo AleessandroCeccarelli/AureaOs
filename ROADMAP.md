@@ -14,7 +14,7 @@ The first release focuses on delivering a complete and coherent AureaOS desktop 
 
 The Roma 1.0 product direction includes:
 
-- A proprietary AureaOS graphical desktop and Wayland session.
+- An AureaOS-designed graphical desktop and Wayland session, developed and maintained as first-party project software.
 - AureaOS Human Interfaces and a consistent visual design system.
 - Aurea Wallet as a first-party system application and a core product pillar.
 - Fides, the AureaOS file manager.
@@ -37,7 +37,9 @@ Developing first-party replacements for these application categories may be cons
 - Project vision, contribution guidance, technical direction, and initial architecture documentation.
 - Debian package manifests and a bootstrap script for a minimal, terminal-only Debian root filesystem.
 - AureaOS visual design resources, including design tokens, themes, icons, illustrations, and wallpapers.
-- Initial Rust implementations of `aurea-shell` and `aurea-compositor`.
+- A four-crate Rust workspace under `components/`: `aurea-desktop`, `aurea-shell`, `aurea-desktop-api`, and `aurea-compositor`.
+- An initial `aurea-desktop` composition root that wires the desktop components together; this is not a finished desktop session or graphical interface.
+- Shared desktop contracts in `aurea-desktop-api`.
 - Shell session lifecycle coordination and shutdown handling through an event bus.
 - A Smithay-based Wayland server with initial XDG shell integration.
 - Initial Wayland seat and XKB keyboard support, with libinput event routing under the DRM feature.

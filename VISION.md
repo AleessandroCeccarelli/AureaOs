@@ -58,7 +58,7 @@ AureaOS is responsible for its own desktop experience and the system application
 
 The first release is centered on:
 
-- **Aurea Desktop:** the proprietary graphical desktop environment and window-management experience.
+- **Aurea Desktop:** the AureaOS-designed graphical desktop environment and window-management experience.
 - **AureaOS Human Interfaces:** the shared design system and planned native UI library.
 - **Aurea Wallet:** a first-party system application and an important pillar of the product.
 - **Fides:** the AureaOS file manager.
@@ -142,3 +142,8 @@ The objective is not to develop every possible application. It is to deliver a u
 **Take the simplicity people love in operating systems, and shape it to fit Linux.**
 
 AureaOS aims to make Linux capabilities easier to reach while respecting the openness and flexibility of the platform.
+
+
+## Project Licensing
+
+Original AureaOS work is currently licensed under **GPL-3.0-or-later**. The project's ownership of its product identity, design direction, desktop experience, and first-party applications does not imply closed-source software. Third-party components remain under their respective licenses. Any future change to this policy is undecided and will be evaluated separately.

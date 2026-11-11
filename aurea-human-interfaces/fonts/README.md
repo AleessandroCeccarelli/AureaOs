@@ -6,25 +6,15 @@ This directory contains the type and font sources used by the AureaOS design sys
 
 The system should rely on modern sans-serif fonts for the desktop and a clear monospaced family for terminal and developer workflows.
 
-## Recommended font stack
+## Font direction
 
-### UI font
+AureaOS is developing an original type family under the name **Aurea Sans**. It is intended to become the primary typeface for the AureaOS desktop and first-party applications after design, language-coverage, rendering, and accessibility validation.
 
-- Segoe UI Variable
-- Segoe UI
-- Inter
-- SF Pro Display
-- Helvetica Neue
-- Arial
-- sans-serif
+Aurea Sans is not yet an approved production system font. Until the family is ready and formally approved, development builds may use temporary host-provided fallback fonts. Those fallbacks are not approved product fonts and must not be treated as part of the final AureaOS typography specification.
 
-### Monospace font
+The shipped desktop and first-party applications should use AureaOS-approved and certified font assets. Third-party font installation and arbitrary external font stacks are outside the supported product customization model.
 
-- Cascadia Code
-- JetBrains Mono
-- SFMono-Regular
-- Consolas
-- monospace
+The Aurea Sans project is intended to use the **GPL-3.0-or-later** license. Its font metadata should identify AureaOS and the relevant Aurea Sans family and style information. Final font files must be reviewed for originality, glyph coverage, naming, metadata, rendering quality, and license compliance before they are approved for system use.
 
 ## Design intent
 
