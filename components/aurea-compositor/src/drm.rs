@@ -12,6 +12,7 @@ pub mod discovery;
 pub mod gbm;
 pub mod output;
 pub mod outputs;
+pub mod presentation;
 pub mod plane_formats;
 pub mod registry;
 pub mod session;
