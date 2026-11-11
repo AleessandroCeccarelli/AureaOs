@@ -98,7 +98,10 @@ impl VulkanContext {
             .or_else(|| {
                 self.physical_devices
                     .iter()
-                    .find(|device| self.graphics_queue_family(device).is_some())
+                    .find(|device| {
+                        self.graphics_queue_family(device).is_some()
+                            && VulkanRenderingFeaturePlan::from_device(device).is_ok()
+                    })
             })
     }
 
