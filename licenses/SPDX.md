@@ -43,7 +43,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 ## Notes
 
 - The project as a whole is not a single license bundle if third-party components with different licenses are redistributed.
-- The project license applies to the original AureaOS work unless a specific file states otherwise.
+- Original AureaOS project work is currently licensed under GPL-3.0-or-later, including project-authored source, documentation, scripts, and design-system material unless a specific file clearly identifies a different license.
+- First-party status, product ownership, branding, and design control do not imply closed-source licensing. The AureaOS product layer remains under the current GPL-3.0-or-later policy.
+- No proprietary or dual-licensing exception is being adopted at this stage. Any future licensing-model change is undecided and requires separate review of copyright ownership, contributor permissions, and applicable obligations.
 - Third-party components keep their own licenses and must be tracked in `THIRD_PARTY_NOTICES.md`.
 - This summary should be updated whenever a new dependency, font, icon set, asset, or vendored library is introduced.
 
