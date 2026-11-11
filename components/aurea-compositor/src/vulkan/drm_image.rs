@@ -124,7 +124,6 @@ impl<'device> VulkanDrmImageAllocator<'device> {
             )
         }.map_err(VulkanDrmImageError::ModifierImageQuery)?;
         let limits = image_properties.image_format_properties;
-        drop(image_properties);
         let external_memory = external_properties.external_memory_properties;
         let dma_buf_handle = vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT;
         if !external_memory
