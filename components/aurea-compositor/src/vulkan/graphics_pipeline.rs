@@ -20,6 +20,7 @@ pub struct VulkanGraphicsShaders<'shader, 'device> {
 /// Errors returned while creating a graphics pipeline.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VulkanGraphicsPipelineError {
+    DeviceMismatch,
     Creation(vk::Result),
     InvalidPipelineCount,
 }
@@ -27,6 +28,7 @@ pub enum VulkanGraphicsPipelineError {
 impl fmt::Display for VulkanGraphicsPipelineError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::DeviceMismatch => formatter.write_str("Shader modules and graphics pipeline must use the same Vulkan device"),
             Self::Creation(error) => write!(formatter, "Vulkan graphics-pipeline creation failed: {error:?}"),
             Self::InvalidPipelineCount => formatter.write_str("Vulkan returned no graphics pipeline"),
         }
@@ -52,6 +54,12 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         shaders: VulkanGraphicsShaders<'_, 'device>,
         color_format: vk::Format,
     ) -> Result<Self, VulkanGraphicsPipelineError> {
+        if shaders.vertex.device_handle() != device.handle().handle()
+            || shaders.fragment.device_handle() != device.handle().handle()
+        {
+            return Err(VulkanGraphicsPipelineError::DeviceMismatch);
+        }
+
         let layout_info = vk::PipelineLayoutCreateInfo::default();
         let layout = unsafe {
             device.handle().create_pipeline_layout(&layout_info, None)
