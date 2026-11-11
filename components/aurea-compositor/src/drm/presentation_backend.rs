@@ -31,6 +31,8 @@ pub enum DrmPresentationBackendError {
     /// Atomic TEST_ONLY is required; legacy KMS cannot provide that guarantee.
     LegacySurfaceUnsupported,
     /// Every active Vulkan plane must provide a sync-file IN_FENCE_FD.
+    MissingActivePlane,
+    /// Every active Vulkan plane must provide a sync-file IN_FENCE_FD.
     MissingInFence,
     /// The event belongs to a different DRM device or CRTC.
     UnexpectedCrtc,
@@ -45,6 +47,9 @@ impl fmt::Display for DrmPresentationBackendError {
         match self {
             Self::LegacySurfaceUnsupported => formatter.write_str(
                 "Vulkan presentation requires atomic DRM TEST_ONLY support",
+            ),
+            Self::MissingActivePlane => formatter.write_str(
+                "Vulkan presentation requires at least one configured DRM plane",
             ),
             Self::MissingInFence => formatter.write_str(
                 "Vulkan KMS presentation requires a sync-file fence on every active plane",
@@ -123,9 +128,15 @@ impl DrmPresentationBackend {
             return Err(DrmPresentationBackendError::UnexpectedCrtc);
         }
 
-        if planes.iter().any(|plane| {
-            plane.config.as_ref().is_some_and(|config| config.fence.is_none())
-        }) {
+        let active_planes = planes
+            .iter()
+            .filter_map(|plane| plane.config.as_ref())
+            .collect::<Vec<_>>();
+
+        if active_planes.is_empty() {
+            return Err(DrmPresentationBackendError::MissingActivePlane);
+        }
+        if active_planes.iter().any(|config| config.fence.is_none()) {
             return Err(DrmPresentationBackendError::MissingInFence);
         }
 
