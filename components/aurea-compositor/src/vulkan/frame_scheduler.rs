@@ -9,7 +9,7 @@ use std::{error::Error, fmt};
 
 use smithay::reexports::ash::vk;
 
-use super::{VulkanFrameSlot, VulkanLogicalDevice};
+use super::{VulkanLogicalDevice, frame_slot::VulkanFrameSlot};
 
 /// Default number of frames that may be submitted without blocking the CPU.
 pub const DEFAULT_FRAMES_IN_FLIGHT: usize = 2;
