@@ -50,6 +50,10 @@ impl DrmVulkanCompatibility {
     /// - Vulkan reports at least one memory plane;
     /// - Vulkan supports color-attachment image usage for that modifier.
     ///
+    /// The caller must pass Vulkan capabilities from the physical device
+    /// associated with the DRM device that owns this plane. Plane identifiers
+    /// are local to that DRM device and are not globally unique.
+    ///
     /// This is a capability intersection only. It does not guarantee that a
     /// particular image allocation, DMA-BUF import, framebuffer creation or
     /// atomic KMS commit will succeed.
