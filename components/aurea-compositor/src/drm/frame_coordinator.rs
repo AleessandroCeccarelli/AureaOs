@@ -5,7 +5,7 @@
 
 //! Coordinates Vulkan image ownership with one output's KMS page-flip lifecycle.
 
-use std::{collections::BTreeMap, error::Error, fmt};
+use std::{collections::HashMap, error::Error, fmt};
 
 use crate::vulkan::{
     VulkanFrameResourceId,
@@ -61,7 +61,7 @@ impl From<VulkanFrameResourceRegistryError> for DrmOutputFrameError {
 #[derive(Debug, Default)]
 pub struct DrmOutputFrameCoordinator {
     resources: VulkanFrameResourceRegistry,
-    framebuffer_resources: BTreeMap<DrmFramebufferId, VulkanFrameResourceId>,
+    framebuffer_resources: HashMap<DrmFramebufferId, VulkanFrameResourceId>,
     presentation: DrmPresentationLifecycle,
 }
 
