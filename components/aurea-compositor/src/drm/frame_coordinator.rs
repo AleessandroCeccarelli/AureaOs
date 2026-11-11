@@ -24,6 +24,7 @@ use super::presentation::{
 pub enum DrmOutputFrameError {
     DuplicateFramebuffer(DrmFramebufferId),
     UnknownFramebuffer(DrmFramebufferId),
+    ResourceNotSubmitted(DrmFramebufferId),
     FramebufferStillScannedOut(DrmFramebufferId),
     Lifecycle(DrmPresentationError),
     Resource(VulkanFrameResourceRegistryError),
@@ -34,6 +35,7 @@ impl fmt::Display for DrmOutputFrameError {
         match self {
             Self::DuplicateFramebuffer(id) => write!(formatter, "DRM framebuffer {} is already registered", id.value()),
             Self::UnknownFramebuffer(id) => write!(formatter, "DRM framebuffer {} is not registered", id.value()),
+            Self::ResourceNotSubmitted(id) => write!(formatter, "DRM framebuffer {} has not been submitted to the GPU", id.value()),
             Self::FramebufferStillScannedOut(id) => write!(formatter, "DRM framebuffer {} is still pending or scanned out", id.value()),
             Self::Lifecycle(error) => write!(formatter, "KMS presentation lifecycle failed: {error}"),
             Self::Resource(error) => write!(formatter, "Vulkan frame-resource lifecycle failed: {error}"),
@@ -125,10 +127,8 @@ impl DrmOutputFrameCoordinator {
         framebuffer: DrmFramebufferId,
     ) -> Result<(), DrmOutputFrameError> {
         let resource = self.resource_for(framebuffer)?;
-        if self.resources.is_available(resource)? {
-            return Err(DrmOutputFrameError::Resource(
-                VulkanFrameResourceRegistryError::ResourceBusy(resource),
-            ));
+        if !self.resources.is_submitted(resource)? {
+            return Err(DrmOutputFrameError::ResourceNotSubmitted(framebuffer));
         }
         self.presentation.begin_test(framebuffer)?;
         Ok(())
@@ -159,9 +159,9 @@ impl DrmOutputFrameCoordinator {
         framebuffer: DrmFramebufferId,
         sync_file_attached: bool,
     ) -> Result<(), DrmOutputFrameError> {
-        if self.presentation.pending_candidate().is_some() {
+        if self.presentation.pending_candidate() != Some(framebuffer) {
             return Err(DrmOutputFrameError::Lifecycle(
-                DrmPresentationError::TransactionInProgress,
+                DrmPresentationError::NoTransaction,
             ));
         }
         self.presentation.commit_accepted()?;
