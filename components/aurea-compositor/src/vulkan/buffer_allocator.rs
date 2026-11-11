@@ -11,7 +11,6 @@ use smithay::backend::{
     allocator::{
         dmabuf::{AsDmabuf, Dmabuf},
         vulkan::{Error as SmithayVulkanError, ImageUsageFlags, VulkanAllocator, VulkanImage},
-        Fourcc, Modifier,
     },
     vulkan::PhysicalDevice,
 };
@@ -123,8 +122,8 @@ impl VulkanBufferAllocator {
             .create_buffer_with_usage(
                 request.width,
                 request.height,
-                request.format.code as Fourcc,
-                &[request.format.modifier as Modifier],
+                request.format.code,
+                &[request.format.modifier],
                 ImageUsageFlags::COLOR_ATTACHMENT,
             )
             .map_err(VulkanBufferError::Allocation)
