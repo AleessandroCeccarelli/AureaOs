@@ -64,6 +64,12 @@ impl fmt::Display for DrmPresentationBackendError {
 
 impl Error for DrmPresentationBackendError {}
 
+impl From<DrmOutputFrameError> for DrmPresentationBackendError {
+    fn from(error: DrmOutputFrameError) -> Self {
+        Self::Lifecycle(error)
+    }
+}
+
 impl From<DrmPresentationError> for DrmPresentationBackendError {
     fn from(error: DrmPresentationError) -> Self {
         Self::Lifecycle(error)
