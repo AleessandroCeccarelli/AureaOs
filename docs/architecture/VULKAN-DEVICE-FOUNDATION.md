@@ -72,3 +72,8 @@ wait for both before recycling a buffer.
 4. Build the scene compositor and damage-aware rendering path.
 5. Integrate DMA-BUF import, explicit GPU/KMS synchronization and buffer retirement.
 6. Add KMS framebuffer creation, atomic TEST_ONLY commit and page-flip presentation.
+
+
+## First color-pass recording
+
+The renderer includes a minimal `VulkanClearPass`. It records a Synchronization 2 transition into `COLOR_ATTACHMENT_OPTIMAL`, begins Vulkan 1.3 dynamic rendering with a clear load operation, ends the rendering scope, and records the requested transition for the next consumer. The pass intentionally does not submit work: `VulkanFrameScheduler` remains responsible for frame-slot acquisition and submission. The clear pass validates finite color components and rejects an undefined final state before recording commands. This is a real color-attachment operation, but it is not yet a complete visible desktop frame: presentation, readback validation, and KMS scanout remain separate stages.
