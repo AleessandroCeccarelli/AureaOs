@@ -74,6 +74,7 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
     pub fn format(&self) -> vk::Format { self.format }
     pub fn width(&self) -> u32 { self.width }
     pub fn height(&self) -> u32 { self.height }
+    pub(super) fn device(&self) -> &'device VulkanLogicalDevice { self.device }
 }
 
 impl Drop for VulkanImageView<'_, '_> {
