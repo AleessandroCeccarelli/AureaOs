@@ -21,6 +21,7 @@ pub struct VulkanLogicalDevice {
     graphics_queue_family: u32,
     command_pool: vk::CommandPool,
     extension_plan: VulkanDeviceExtensionPlan,
+    memory_properties: vk::PhysicalDeviceMemoryProperties,
 }
 
 impl VulkanLogicalDevice {
@@ -50,6 +51,9 @@ impl VulkanLogicalDevice {
             VulkanInitError::new(format!("Failed to create Vulkan logical device: {error}"))
         })?;
 
+        let memory_properties = unsafe {
+            physical_device.instance().handle().get_physical_device_memory_properties(physical_device.handle())
+        };
         let graphics_queue = unsafe { device.get_device_queue(queue_family_index, 0) };
         let pool_info = vk::CommandPoolCreateInfo::default()
             .queue_family_index(queue_family_index)
@@ -71,11 +75,17 @@ impl VulkanLogicalDevice {
             graphics_queue_family: queue_family_index,
             command_pool,
             extension_plan,
+            memory_properties,
         })
     }
 
     /// Returns the underlying Vulkan device handle.
     pub(super) fn handle(&self) -> &ash::Device { &self.device }
+
+    /// Returns physical-device memory types for allocation decisions.
+    pub(super) fn memory_properties(&self) -> &vk::PhysicalDeviceMemoryProperties {
+        &self.memory_properties
+    }
 
     /// Returns the graphics queue handle.
     pub fn graphics_queue(&self) -> vk::Queue { self.graphics_queue }
