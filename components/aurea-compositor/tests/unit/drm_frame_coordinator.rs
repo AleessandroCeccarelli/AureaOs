@@ -236,3 +236,23 @@ fn failed_presentation_cannot_be_retried_with_the_same_framebuffer() {
         Err(DrmOutputFrameError::ResourceAlreadyResolved(id))
     );
 }
+
+#[test]
+fn separate_outputs_keep_independent_frame_lifecycles() {
+    let mut left_output = DrmOutputFrameCoordinator::new();
+    let mut right_output = DrmOutputFrameCoordinator::new();
+    let left = fb(80);
+    let right = fb(80);
+
+    left_output.register_framebuffer(left).unwrap();
+    right_output.register_framebuffer(right).unwrap();
+
+    submit_for_render(&mut left_output, left);
+    left_output.mark_gpu_complete(left).unwrap();
+    commit_frame(&mut left_output, left, false);
+    left_output.page_flip_complete(left).unwrap();
+
+    assert_eq!(left_output.current(), Some(left));
+    assert_eq!(right_output.current(), None);
+    assert!(right_output.is_available(right).unwrap());
+}
