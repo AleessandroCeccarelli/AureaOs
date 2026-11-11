@@ -40,17 +40,12 @@ pub struct VulkanShaderModule<'device> {
 }
 
 impl<'device> VulkanShaderModule<'device> {
-    /// Creates a shader module from native-endian SPIR-V words.
+    /// Creates a shader module from SPIR-V words.
     pub fn from_words(
         device: &'device VulkanLogicalDevice,
         words: &[u32],
     ) -> Result<Self, VulkanShaderError> {
-        if words.is_empty() {
-            return Err(VulkanShaderError::EmptyCode);
-        }
-        if words[0] != 0x0723_0203 {
-            return Err(VulkanShaderError::InvalidMagic);
-        }
+        Self::validate_words(words)?;
 
         let create_info = vk::ShaderModuleCreateInfo::default().code(words);
         let handle = unsafe {
@@ -60,7 +55,7 @@ impl<'device> VulkanShaderModule<'device> {
         Ok(Self { device, handle })
     }
 
-    /// Creates a shader module from bytes containing native-endian SPIR-V.
+    /// Creates a shader module from bytes containing little-endian SPIR-V.
     pub fn from_bytes(
         device: &'device VulkanLogicalDevice,
         bytes: &[u8],
@@ -73,13 +68,28 @@ impl<'device> VulkanShaderModule<'device> {
         }
 
         let words = bytes.chunks_exact(4)
-            .map(|chunk| u32::from_ne_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
+            .map(|chunk| u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
             .collect::<Vec<_>>();
 
         Self::from_words(device, &words)
     }
 
+    /// Validates the minimum SPIR-V container invariants without a GPU.
+    pub fn validate_words(words: &[u32]) -> Result<(), VulkanShaderError> {
+        if words.is_empty() {
+            return Err(VulkanShaderError::EmptyCode);
+        }
+        if words[0] != 0x0723_0203 {
+            return Err(VulkanShaderError::InvalidMagic);
+        }
+        Ok(())
+    }
+
     pub fn handle(&self) -> vk::ShaderModule { self.handle }
+
+    pub(super) fn device_handle(&self) -> vk::Device {
+        self.device.handle().handle()
+    }
 }
 
 impl Drop for VulkanShaderModule<'_> {
