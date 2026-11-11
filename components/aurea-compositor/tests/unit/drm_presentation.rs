@@ -114,3 +114,57 @@ fn current_framebuffer_cannot_be_submitted_again() {
         Err(DrmPresentationError::CandidateIsCurrent)
     );
 }
+
+
+#[test]
+fn test_passed_without_an_active_test_is_rejected() {
+    let mut lifecycle = DrmPresentationLifecycle::new();
+
+    assert_eq!(
+        lifecycle.test_passed(),
+        Err(DrmPresentationError::NoTransaction)
+    );
+}
+
+#[test]
+fn page_flip_cannot_complete_before_commit_acceptance() {
+    let mut lifecycle = DrmPresentationLifecycle::new();
+    lifecycle.begin_test(fb(1)).unwrap();
+    lifecycle.test_passed().unwrap();
+
+    assert_eq!(
+        lifecycle.page_flip_complete(fb(1)),
+        Err(DrmPresentationError::NoTransaction)
+    );
+    assert_eq!(lifecycle.current(), None);
+    assert!(lifecycle.has_pending_transaction());
+}
+
+#[test]
+fn failed_atomic_test_can_be_retried_with_the_same_candidate() {
+    let mut lifecycle = DrmPresentationLifecycle::new();
+    lifecycle.begin_test(fb(7)).unwrap();
+    assert_eq!(lifecycle.test_failed(), Ok(fb(7)));
+
+    lifecycle.begin_test(fb(7)).unwrap();
+    lifecycle.test_passed().unwrap();
+    lifecycle.commit_accepted().unwrap();
+    assert_eq!(lifecycle.page_flip_complete(fb(7)), Ok(None));
+    assert_eq!(lifecycle.current(), Some(fb(7)));
+}
+
+#[test]
+fn commit_failure_before_test_pass_is_rejected_without_losing_transaction() {
+    let mut lifecycle = DrmPresentationLifecycle::new();
+    lifecycle.begin_test(fb(3)).unwrap();
+
+    assert_eq!(
+        lifecycle.commit_failed(),
+        Err(DrmPresentationError::TestNotPassed)
+    );
+    assert!(lifecycle.has_pending_transaction());
+
+    lifecycle.test_passed().unwrap();
+    assert_eq!(lifecycle.commit_failed(), Ok(fb(3)));
+    assert!(!lifecycle.has_pending_transaction());
+}
