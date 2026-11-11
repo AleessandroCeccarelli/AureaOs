@@ -15,19 +15,21 @@ The compositor keeps four responsibilities separate:
 
 ## Smithay Vulkan allocator assessment
 
-Smithay 0.7's `VulkanAllocator` is useful and should not be discarded merely because it owns an internal Vulkan logical device. It can allocate images with DRM modifiers, validate image usage for requested dimensions, and export `VulkanImage` as DMA-BUF. The exported DMA-BUF is the interoperability boundary.
+Smithay 0.7's Vulkan allocator is a useful reference and a possible transitional adapter, but it is not the target owner of AureaOS render targets. It creates and owns its own Vulkan logical device and does not expose its internal raw image as an AureaOS renderer resource.
 
-The allocator does not expose its internal `ash::Device` or raw `VkImage` as a renderer-owned resource. AureaOS must therefore not record commands against an image it does not own.
+The earlier adapter around Smithay's allocator may remain temporarily for compatibility experiments and comparison tests. It must not be treated as the production allocator for the AureaOS renderer.
 
-For initial integration, AureaOS may use Smithay's allocator as a DMA-BUF producer and import the exported DMA-BUF into the AureaOS-owned Vulkan logical device. This must be treated as a real external-memory import, not as shared raw Vulkan handles.
+AureaOS will implement its own allocator using the logical Vulkan device owned by the compositor. The native allocator will create, bind, track and destroy its own VkImage and VkDeviceMemory objects, and export DMA-BUF handles for KMS interoperability. It will expose an AureaOS-owned resource contract, not Smithay allocator types.
 
-A later AureaOS-native allocator may replace the Smithay allocator if it provides a concrete benefit. It must implement the same internal buffer-allocation contract and pass the same interoperability tests.
+Smithay remains useful for DRM, Wayland and public DMA-BUF integration types. If a Smithay abstraction prevents AureaOS from meeting a documented requirement, the compositor may use a narrower adapter or a native implementation behind the same internal interface.
 
 ## Device identity
 
-The Vulkan physical device used for capability discovery and allocation must correspond to the DRM device used for scan-out. Query both primary and render node identities through `VK_EXT_physical_device_drm`. A missing extension or unavailable identity is a reason to reject the direct path, not to guess.
+The Vulkan physical device used for capability discovery and allocation must correspond to the DRM device used for scan-out. Query both primary and render node identities through VK_EXT_physical_device_drm. A missing extension or unavailable identity is a reason to reject the direct path, not to guess.
 
 When selecting a device for a known DRM node, match either its primary node or render node. The exact node used for KMS operations remains the primary DRM node owned by the DRM device manager.
+
+The extension plan is specific to one physical device and is passed into logical-device creation. A DRM-bound backend must fail closed when required DMA-BUF interoperability extensions are unavailable.
 
 ## Format and layout contract
 
@@ -36,18 +38,14 @@ A DMA-BUF is not just a file descriptor. The importer must preserve and validate
 - FourCC format and DRM modifier;
 - width and height;
 - number of memory planes;
-- one FD handle per plane as represented by the DMA-BUF object;
-- each plane's offset and stride;
+- each plane's FD handle, offset and stride;
 - Y-inversion and other relevant buffer flags.
 
-Never infer the Vulkan DRM modifier layout from FourCC alone. Never silently replace an explicit modifier with linear or implicit layout. Reject unsupported layouts explicitly.
+Never infer the Vulkan DRM modifier layout from FourCC alone. Never silently replace an explicit modifier with linear or implicit layout. Reject unsupported layouts explicitly. Multi-plane formats must be handled according to their Vulkan DRM modifier memory-plane binding rules, not by assuming one FD equals one Vulkan image plane.
 
 ## Synchronization contract
 
-The full producer-to-consumer chain must use a consistent synchronization model. AureaOS must choose and document either:
-
-1. explicit synchronization, using supported Vulkan semaphore-FD / sync-file and DRM synchronization interfaces; or
-2. a fully implicit synchronization path where every participating API and driver supports the required implicit fences.
+The full producer-to-consumer chain must use a consistent synchronization model. AureaOS will implement explicit synchronization where supported, with a documented and capability-checked fallback only when the complete producer/consumer path supports implicit synchronization.
 
 Do not mix explicit and implicit synchronization assumptions. Buffer reuse and destruction must wait for all relevant GPU and KMS consumers to finish.
 
@@ -57,12 +55,13 @@ The planned path is:
 
 1. Discover DRM device and output capabilities.
 2. Select the Vulkan physical device associated with that DRM node.
-3. Intersect exact FourCC/modifier pairs and verify image usage for the intended dimensions.
-4. Allocate a render target and export/import its DMA-BUF into the AureaOS renderer device.
-5. Render using AureaOS-owned Vulkan resources and synchronization.
-6. Import the DMA-BUF into DRM/KMS, create a framebuffer, and issue an atomic test-only commit.
-7. Only after a successful test-only commit, schedule a real atomic commit/page flip.
-8. Retire and recycle buffers only after GPU and KMS completion.
+3. Negotiate required device extensions and intersect exact FourCC/modifier pairs.
+4. Verify image-format properties and the requested usage for the intended dimensions.
+5. Allocate a render target with the AureaOS-owned allocator and export its DMA-BUF.
+6. Render using AureaOS-owned Vulkan resources and synchronization.
+7. Import the DMA-BUF into DRM/KMS, create a framebuffer, and issue an atomic test-only commit.
+8. Only after a successful test-only commit, schedule a real atomic commit/page flip.
+9. Retire and recycle buffers only after GPU and KMS completion.
 
 ## Validation policy
 
