@@ -82,3 +82,20 @@ The renderer includes a minimal `VulkanClearPass`. It records a Synchronization 
 ## Offscreen execution and readback
 
 `VulkanOffscreenRenderer` provides a synchronous diagnostic execution path for a headless Vulkan device. It allocates an RGBA8 image with color-attachment and transfer-source usage, creates a host-visible staging buffer, records the clear pass and image-to-buffer copy, inserts a transfer-write-to-host-read buffer barrier, submits the command buffer and waits for its fence, then maps and returns the pixel bytes. Non-coherent host memory is invalidated before CPU access. This path is intended for real GPU validation (including Mesa lavapipe); it is not the interactive frames-in-flight or DRM/KMS presentation path.
+
+
+## First graphics draw pass
+
+`VulkanDrawPass` records a non-indexed draw into a single dynamic-rendering
+color attachment. It validates non-zero vertex/instance counts, rejects an
+undefined final image state, checks attachment usage, and verifies that the
+pipeline belongs to the same logical device and targets the attachment format.
+The pass records the transition into color-attachment layout, begins a
+load-discard rendering scope, binds the pipeline, sets viewport/scissor, issues
+the draw, ends rendering and records the requested final transition.
+
+The pass does not own shader assets, submit commands or wait for completion.
+A caller must provide compatible SPIR-V modules when creating the pipeline and
+must keep all resources alive until GPU completion. The next step is to provide
+a reproducible known-good shader pair and connect this pass to the synchronous
+offscreen readback path for pixel-level GPU validation.
