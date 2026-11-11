@@ -10,7 +10,7 @@ use std::{error::Error, fmt};
 use smithay::reexports::ash::vk;
 
 use super::{
-    VulkanClearPass, VulkanClearPassError, VulkanCommandBuffer, VulkanDrawPass,
+    VulkanClearPass, VulkanClearPassError, VulkanColorLoad, VulkanCommandBuffer, VulkanDrawPass,
     VulkanDrawPassError, VulkanGraphicsPipeline, VulkanGraphicsPipelineError,
     VulkanGraphicsShaders, VulkanImageAllocator, VulkanImageError, VulkanImageRequest,
     VulkanImageState, VulkanImageView, VulkanImageViewError, VulkanLogicalDevice,
@@ -162,6 +162,7 @@ impl<'device> VulkanOffscreenRenderer<'device> {
             &pipeline,
             VulkanImageState::Undefined,
             VulkanImageState::TransferSource,
+            VulkanColorLoad::Clear([0.0, 0.0, 0.0, 1.0]),
             3,
             1,
         ).map_err(VulkanOffscreenError::DrawPass)?;
