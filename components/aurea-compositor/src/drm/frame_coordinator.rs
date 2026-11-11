@@ -22,6 +22,7 @@ use super::presentation::{
 /// Errors returned while coordinating one output's Vulkan/KMS frame lifecycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DrmOutputFrameError {
+    NoPendingFrame,
     DuplicateFramebuffer(DrmFramebufferId),
     UnknownFramebuffer(DrmFramebufferId),
     ResourceNotSubmitted(DrmFramebufferId),
@@ -35,6 +36,7 @@ pub enum DrmOutputFrameError {
 impl fmt::Display for DrmOutputFrameError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::NoPendingFrame => formatter.write_str("No DRM framebuffer is awaiting a page-flip event"),
             Self::DuplicateFramebuffer(id) => write!(formatter, "DRM framebuffer {} is already registered", id.value()),
             Self::UnknownFramebuffer(id) => write!(formatter, "DRM framebuffer {} is not registered", id.value()),
             Self::ResourceNotSubmitted(id) => write!(formatter, "DRM framebuffer {} has not been submitted to the GPU", id.value()),
