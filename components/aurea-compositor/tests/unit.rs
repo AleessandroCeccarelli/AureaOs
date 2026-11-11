@@ -51,3 +51,7 @@ mod vulkan_memory_type;
 #[cfg(feature = "vulkan")]
 #[path = "unit/vulkan_frame_scheduler.rs"]
 mod vulkan_frame_scheduler;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_shader.rs"]
+mod vulkan_shader;
