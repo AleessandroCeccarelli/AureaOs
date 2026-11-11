@@ -5,7 +5,7 @@
 
 //! Conservative compatibility checks between Vulkan DMA-BUF export and DRM scan-out.
 
-use smithay::backend::allocator::{Format, Fourcc, Modifier};
+use smithay::backend::allocator::{Fourcc, Modifier};
 use smithay::reexports::ash::vk;
 
 use crate::drm::DrmPrimaryPlaneFormatCapabilities;
@@ -121,7 +121,3 @@ impl DrmVulkanCompatibility {
     }
 }
 
-/// Builds the DRM format value used by tests and capability adapters.
-pub(super) fn drm_format(code: Fourcc, modifier: Modifier) -> Format {
-    Format { code, modifier }
-}
