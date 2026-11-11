@@ -14,7 +14,7 @@ The first release focuses on delivering a complete and coherent AureaOS desktop 
 
 The Roma 1.0 product direction includes:
 
-- A proprietary AureaOS graphical desktop and Wayland session.
+- An AureaOS-designed graphical desktop and Wayland session, developed and maintained as first-party project software.
 - AureaOS Human Interfaces and a consistent visual design system.
 - Aurea Wallet as a first-party system application and a core product pillar.
 - Fides, the AureaOS file manager.
