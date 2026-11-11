@@ -38,7 +38,7 @@ pub enum DrmPresentationBackendError {
     /// Smithay rejected the KMS operation.
     KmsOperation(String),
     /// The lifecycle tracker rejected an invalid transition.
-    Lifecycle(DrmPresentationError),
+    Lifecycle(DrmOutputFrameError),
 }
 
 impl fmt::Display for DrmPresentationBackendError {
@@ -70,11 +70,6 @@ impl From<DrmOutputFrameError> for DrmPresentationBackendError {
     }
 }
 
-impl From<DrmPresentationError> for DrmPresentationBackendError {
-    fn from(error: DrmPresentationError) -> Self {
-        Self::Lifecycle(error)
-    }
-}
 
 /// Owns the per-CRTC presentation state for one Smithay DRM surface.
 #[derive(Debug)]
@@ -200,11 +195,9 @@ impl DrmPresentationBackend {
             return Err(DrmPresentationBackendError::UnexpectedCrtc);
         }
 
-        let displayed = self
-            .lifecycle
-            .pending_candidate()
+        let displayed = self.frames.pending()
             .ok_or(DrmPresentationBackendError::Lifecycle(
-                DrmPresentationError::NoTransaction,
+                DrmOutputFrameError::NoPendingFrame,
             ))?;
 
         self.frames.page_flip_complete(displayed).map_err(Into::into)
