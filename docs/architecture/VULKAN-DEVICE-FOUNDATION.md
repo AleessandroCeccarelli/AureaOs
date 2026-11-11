@@ -134,3 +134,15 @@ A GPU-backed smoke test should load the two generated files, create a Vulkan
 black corner pixel and a non-black pixel in the triangle interior. Run it
 first with Mesa lavapipe, then on the target GPU. No hardware execution is
 claimed by this change.
+
+The opt-in GPU smoke test lives in
+`components/aurea-compositor/tests/unit/vulkan_offscreen_triangle.rs`.
+After compiling the shaders, run it explicitly with:
+
+```sh
+cargo test -p aurea-compositor --features vulkan --test unit -- --ignored
+```
+
+The test checks the output byte count, an opaque-black corner outside the
+triangle and a non-black opaque pixel at the triangle center. It is ignored
+by default so ordinary unit tests do not require a Vulkan-capable host.
