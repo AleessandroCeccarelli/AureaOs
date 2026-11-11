@@ -197,3 +197,32 @@ fn fully_released_resource_can_be_reused_for_a_second_frame() {
     resource.mark_gpu_complete().unwrap();
     assert!(resource.is_available());
 }
+
+#[test]
+fn sync_file_handoff_allows_kms_to_own_frame_before_gpu_completion() {
+    let mut resource = VulkanFrameResource::new();
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+
+    resource.mark_kms_committed_with_sync_fd().unwrap();
+    assert!(!resource.is_available());
+
+    resource.mark_gpu_complete().unwrap();
+    assert!(!resource.is_available());
+
+    resource.mark_kms_released().unwrap();
+    assert!(resource.is_available());
+}
+
+#[test]
+fn sync_file_handoff_still_requires_gpu_and_kms_release() {
+    let mut resource = VulkanFrameResource::new();
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+    resource.mark_kms_committed_with_sync_fd().unwrap();
+    resource.mark_kms_released().unwrap();
+
+    assert!(!resource.is_available());
+    resource.mark_gpu_complete().unwrap();
+    assert!(resource.is_available());
+}
