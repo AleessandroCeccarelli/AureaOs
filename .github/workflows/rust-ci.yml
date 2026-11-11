@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# AureaOS Rust continuous integration.
+# Validates formatting, workspace compilation and DRM/Vulkan compositor tests.
+
+name: Rust CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Format, build and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+
+      - name: Install native Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends \
+            libdrm-dev \
+            libgbm-dev \
+            libinput-dev \
+            libseat-dev \
+            libudev-dev \
+            libvulkan-dev \
+            libwayland-dev \
+            libxkbcommon-dev \
+            pkg-config
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Check workspace
+        run: cargo check --workspace --locked
+
+      - name: Check compositor with DRM and Vulkan
+        run: cargo check -p aurea-compositor --features drm --locked
+
+      - name: Test workspace
+        run: cargo test --workspace --locked
+
+      - name: Test compositor with DRM and Vulkan
+        run: cargo test -p aurea-compositor --features drm --locked
