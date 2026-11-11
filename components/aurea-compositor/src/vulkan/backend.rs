@@ -18,7 +18,8 @@ use crate::{
 };
 
 use super::{
-    VulkanCommandBuffer, VulkanContext, VulkanDeviceInfo, VulkanInitError, VulkanLogicalDevice,
+    VulkanCommandBuffer, VulkanContext, VulkanDeviceExtensionPlan, VulkanDeviceInfo,
+    VulkanInitError, VulkanLogicalDevice,
 };
 
 /// Error returned while recording Vulkan commands.
@@ -30,7 +31,6 @@ impl fmt::Display for VulkanCommandError {
         write!(formatter, "Vulkan command-buffer error: {:?}", self.0)
     }
 }
-
 impl Error for VulkanCommandError {}
 
 /// Error returned when Vulkan cannot render or present a frame.
@@ -39,17 +39,15 @@ pub enum VulkanRenderError {
     /// Swapchain and output presentation are not implemented yet.
     PresentationUnavailable,
 }
-
 impl fmt::Display for VulkanRenderError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::PresentationUnavailable => {
-                formatter.write_str("Vulkan output presentation is not implemented yet")
-            }
+            Self::PresentationUnavailable => formatter.write_str(
+                "Vulkan output presentation is not implemented yet"
+            ),
         }
     }
 }
-
 impl Error for VulkanRenderError {}
 
 /// Owns the Vulkan context, selected GPU and logical device.
@@ -62,81 +60,63 @@ pub struct VulkanBackend {
 impl VulkanBackend {
     /// Initializes Vulkan using the requested GPU preference.
     ///
-    /// This constructor selects a graphics-capable device without checking
-    /// whether it is associated with a particular DRM output.
-    /// Use `new_for_drm_node` when initializing a backend for a DRM device.
+    /// This constructor is for generic/offscreen work. DRM presentation should
+    /// use new_for_drm_node so the selected GPU is bound to the output device.
     pub fn new(preference: RenderPreference) -> Result<Self, VulkanInitError> {
         let context = VulkanContext::new()?;
-
-        let physical_device = context
-            .select_device(preference)
+        let physical_device = context.select_device(preference)
             .ok_or_else(|| VulkanInitError::new("No graphics-capable Vulkan device found"))?;
-
-        let queue_family_index = context
-            .graphics_queue_family(physical_device)
-            .ok_or_else(|| VulkanInitError::new("Selected device has no graphics queue"))?;
-
-        let selected_device_info = Self::build_selected_device_info(&context, physical_device);
-
-        let device = VulkanLogicalDevice::new(physical_device, queue_family_index)?;
-
-        Ok(Self {
-            context,
-            selected_device_info,
-            device,
-        })
+        Self::from_selected_device(context, physical_device, false)
     }
 
-    /// Initializes Vulkan using the physical device associated with a DRM node.
-    ///
-    /// This is the preferred constructor when the backend is intended to
-    /// render for a specific DRM device.
-    ///
-    /// Cross-GPU rendering and presentation are not handled by this selection.
+    /// Initializes Vulkan for the physical device associated with a DRM node.
     #[cfg(feature = "drm")]
     pub fn new_for_drm_node(
         node: DrmNode,
         preference: RenderPreference,
     ) -> Result<Self, VulkanInitError> {
         let context = VulkanContext::new()?;
+        let physical_device = context.select_device_for_drm_node(node, preference)
+            .ok_or_else(|| VulkanInitError::new(
+                "No graphics-capable Vulkan device matches the requested DRM node"
+            ))?;
+        Self::from_selected_device(context, physical_device, true)
+    }
 
-        let physical_device = context
-            .select_device_for_drm_node(node, preference)
-            .ok_or_else(|| {
-                VulkanInitError::new(
-                    "No graphics-capable Vulkan device matches the requested DRM node",
-                )
-            })?;
-
-        let queue_family_index = context
-            .graphics_queue_family(physical_device)
+    fn from_selected_device(
+        context: VulkanContext,
+        physical_device: &PhysicalDevice,
+        require_dmabuf_interop: bool,
+    ) -> Result<Self, VulkanInitError> {
+        let queue_family_index = context.graphics_queue_family(physical_device)
             .ok_or_else(|| VulkanInitError::new("Selected device has no graphics queue"))?;
+        let extension_plan = VulkanDeviceExtensionPlan::from_device(physical_device);
+
+        if require_dmabuf_interop && !extension_plan.supports_dmabuf_interop() {
+            return Err(VulkanInitError::new(format!(
+                "Selected Vulkan device lacks required DMA-BUF extensions: {}",
+                extension_plan.missing_extensions().join(", ")
+            )));
+        }
 
         let selected_device_info = Self::build_selected_device_info(&context, physical_device);
+        let device = VulkanLogicalDevice::new(
+            physical_device,
+            queue_family_index,
+            extension_plan,
+        )?;
 
-        let device = VulkanLogicalDevice::new(physical_device, queue_family_index)?;
-
-        Ok(Self {
-            context,
-            selected_device_info,
-            device,
-        })
+        Ok(Self { context, selected_device_info, device })
     }
 
     /// Returns the Vulkan context.
-    pub fn context(&self) -> &VulkanContext {
-        &self.context
-    }
+    pub fn context(&self) -> &VulkanContext { &self.context }
 
     /// Returns information about the selected physical GPU.
-    pub fn selected_device_info(&self) -> &VulkanDeviceInfo {
-        &self.selected_device_info
-    }
+    pub fn selected_device_info(&self) -> &VulkanDeviceInfo { &self.selected_device_info }
 
     /// Returns the logical device.
-    pub fn device(&self) -> &VulkanLogicalDevice {
-        &self.device
-    }
+    pub fn device(&self) -> &VulkanLogicalDevice { &self.device }
 
     /// Records an empty one-time command buffer.
     ///
@@ -147,13 +127,9 @@ impl VulkanBackend {
     ) -> Result<VulkanCommandBuffer<'_>, VulkanCommandError> {
         let mut command_buffer =
             VulkanCommandBuffer::new(&self.device).map_err(VulkanCommandError)?;
-
-        command_buffer
-            .begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
+        command_buffer.begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
             .map_err(VulkanCommandError)?;
-
         command_buffer.end().map_err(VulkanCommandError)?;
-
         Ok(command_buffer)
     }
 
@@ -161,11 +137,8 @@ impl VulkanBackend {
         context: &VulkanContext,
         device: &PhysicalDevice,
     ) -> VulkanDeviceInfo {
-        let has_graphics_queue = context
-            .queue_families(device)
-            .iter()
+        let has_graphics_queue = context.queue_families(device).iter()
             .any(|family| family.supports_graphics && family.queue_count > 0);
-
         VulkanDeviceInfo::from_device(device, has_graphics_queue)
     }
 }
