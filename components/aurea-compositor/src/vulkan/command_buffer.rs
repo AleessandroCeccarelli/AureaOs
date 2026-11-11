@@ -44,7 +44,9 @@ impl<'device> VulkanCommandBuffer<'device> {
     }
 
     /// Raw command-buffer handle for recording renderer commands.
-    pub fn handle(&self) -> vk::CommandBuffer { self.handle }
+    pub fn handle(&self) -> vk::CommandBuffer {
+        self.handle
+    }
 
     /// Begins recording commands.
     ///

@@ -10,15 +10,15 @@ use std::{error::Error, fmt};
 use smithay::{
     backend::{
         allocator::dmabuf::{Dmabuf, DmabufFlags, MAX_PLANES},
-        drm::{DrmNode, gbm::{GbmFramebuffer, framebuffer_from_dmabuf}},
+        drm::{
+            DrmNode,
+            gbm::{GbmFramebuffer, framebuffer_from_dmabuf},
+        },
     },
     reexports::drm::control::framebuffer::Handle,
 };
 
-use crate::drm::{
-    device::DrmDevice,
-    gbm::GbmDeviceManager,
-};
+use crate::drm::{device::DrmDevice, gbm::GbmDeviceManager};
 
 use super::VulkanDrmImage;
 
@@ -41,17 +41,44 @@ pub enum VulkanDrmFramebufferError {
 impl fmt::Display for VulkanDrmFramebufferError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidDimensions => formatter.write_str("DRM framebuffer dimensions are invalid"),
-            Self::InvalidPlaneCount => formatter.write_str("DRM framebuffer plane count does not match the negotiated Vulkan modifier"),
-            Self::PlaneValueOutOfRange { plane } => write!(formatter, "DMA-BUF plane {plane} metadata exceeds DRM limits"),
-            Self::ZeroPlaneStride { plane } => write!(formatter, "DMA-BUF plane {plane} has a zero row stride"),
-            Self::PlaneLayoutOverflow { plane } => write!(formatter, "DMA-BUF plane {plane} offset and size overflow"),
-            Self::PlaneLayoutOutOfBounds { plane } => write!(formatter, "DMA-BUF plane {plane} extends beyond the exported Vulkan allocation"),
-            Self::DmabufDescriptorClone { plane, message } => write!(formatter, "Could not duplicate DMA-BUF descriptor for plane {plane}: {message}"),
-            Self::DmabufBuildFailed => formatter.write_str("Could not construct Smithay DMA-BUF metadata"),
-            Self::DrmNodeUnavailable(message) => write!(formatter, "Could not identify DRM device: {message}"),
-            Self::GbmDeviceUnavailable(node) => write!(formatter, "No GBM import device is registered for DRM node {node}"),
-            Self::ImportOrRegistrationFailed(message) => write!(formatter, "GBM DMA-BUF import or DRM framebuffer registration failed: {message}"),
+            Self::InvalidDimensions => {
+                formatter.write_str("DRM framebuffer dimensions are invalid")
+            }
+            Self::InvalidPlaneCount => formatter.write_str(
+                "DRM framebuffer plane count does not match the negotiated Vulkan modifier",
+            ),
+            Self::PlaneValueOutOfRange { plane } => write!(
+                formatter,
+                "DMA-BUF plane {plane} metadata exceeds DRM limits"
+            ),
+            Self::ZeroPlaneStride { plane } => {
+                write!(formatter, "DMA-BUF plane {plane} has a zero row stride")
+            }
+            Self::PlaneLayoutOverflow { plane } => {
+                write!(formatter, "DMA-BUF plane {plane} offset and size overflow")
+            }
+            Self::PlaneLayoutOutOfBounds { plane } => write!(
+                formatter,
+                "DMA-BUF plane {plane} extends beyond the exported Vulkan allocation"
+            ),
+            Self::DmabufDescriptorClone { plane, message } => write!(
+                formatter,
+                "Could not duplicate DMA-BUF descriptor for plane {plane}: {message}"
+            ),
+            Self::DmabufBuildFailed => {
+                formatter.write_str("Could not construct Smithay DMA-BUF metadata")
+            }
+            Self::DrmNodeUnavailable(message) => {
+                write!(formatter, "Could not identify DRM device: {message}")
+            }
+            Self::GbmDeviceUnavailable(node) => write!(
+                formatter,
+                "No GBM import device is registered for DRM node {node}"
+            ),
+            Self::ImportOrRegistrationFailed(message) => write!(
+                formatter,
+                "GBM DMA-BUF import or DRM framebuffer registration failed: {message}"
+            ),
         }
     }
 }
@@ -79,7 +106,8 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
         gbm_devices: &GbmDeviceManager,
         image: &'image VulkanDrmImage<'vk>,
     ) -> Result<Self, VulkanDrmFramebufferError> {
-        if image.width() == 0 || image.height() == 0
+        if image.width() == 0
+            || image.height() == 0
             || i32::try_from(image.width()).is_err()
             || i32::try_from(image.height()).is_err()
         {
@@ -126,24 +154,25 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
             }
         }
 
-        let dmabuf = dmabuf.build().ok_or(VulkanDrmFramebufferError::DmabufBuildFailed)?;
-        let node = device.node()
+        let dmabuf = dmabuf
+            .build()
+            .ok_or(VulkanDrmFramebufferError::DmabufBuildFailed)?;
+        let node = device
+            .node()
             .map_err(|error| VulkanDrmFramebufferError::DrmNodeUnavailable(error.to_string()))?;
 
         // Preserve the exact import target so Smithay/GBM cannot select a
         // different DRM device when resolving the DMA-BUF.
         dmabuf.set_node(node.clone());
 
-        let gbm = gbm_devices.get(node.clone())
+        let gbm = gbm_devices
+            .get(node.clone())
             .ok_or_else(|| VulkanDrmFramebufferError::GbmDeviceUnavailable(node.clone()))?;
 
-        let framebuffer = framebuffer_from_dmabuf(
-            device.fd(),
-            gbm,
-            &dmabuf,
-            false,
-            false,
-        ).map_err(|error| VulkanDrmFramebufferError::ImportOrRegistrationFailed(error.to_string()))?;
+        let framebuffer = framebuffer_from_dmabuf(device.fd(), gbm, &dmabuf, false, false)
+            .map_err(|error| {
+                VulkanDrmFramebufferError::ImportOrRegistrationFailed(error.to_string())
+            })?;
 
         Ok(Self {
             image,

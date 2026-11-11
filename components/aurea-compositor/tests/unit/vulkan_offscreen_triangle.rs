@@ -15,8 +15,7 @@ use aurea_compositor::{
 #[test]
 #[ignore = "requires a Vulkan 1.3 GPU or lavapipe and compiled triangle shaders"]
 fn renders_triangle_and_reads_back_expected_pixels() {
-    let shader_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../target/aurea-shaders");
+    let shader_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../target/aurea-shaders");
     let vertex = fs::read(shader_dir.join("triangle.vert.spv"))
         .expect("compile triangle.vert with tools/shaders/compile-vulkan-shaders.sh");
     let fragment = fs::read(shader_dir.join("triangle.frag.spv"))
@@ -34,10 +33,18 @@ fn renders_triangle_and_reads_back_expected_pixels() {
     assert_eq!(pixels.len(), 128 * 128 * 4);
 
     let corner = &pixels[0..4];
-    assert_eq!(corner, &[0, 0, 0, 255], "corner must retain opaque black clear");
+    assert_eq!(
+        corner,
+        &[0, 0, 0, 255],
+        "corner must retain opaque black clear"
+    );
 
     let center_offset = (64 * 128 + 64) * 4;
     let center = &pixels[center_offset..center_offset + 4];
-    assert_ne!(center, &[0, 0, 0, 255], "triangle interior must contain rendered color");
+    assert_ne!(
+        center,
+        &[0, 0, 0, 255],
+        "triangle interior must contain rendered color"
+    );
     assert_eq!(center[3], 255, "triangle output must be opaque");
 }

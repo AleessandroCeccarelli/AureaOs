@@ -1,5 +1,4 @@
-
- // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -10,11 +9,7 @@ use std::collections::BTreeMap;
 
 use crate::output::OutputId;
 
-use super::token::{
-    FrameLifecycleError,
-    FrameRequestResult,
-    FrameToken,
-};
+use super::token::{FrameLifecycleError, FrameRequestResult, FrameToken};
 
 /// Internal scheduling state for one output.
 #[derive(Debug, Default)]
@@ -43,10 +38,7 @@ impl FrameScheduler {
     }
 
     /// Requests a frame for the specified output.
-    pub fn request_frame(
-        &mut self,
-        output_id: OutputId,
-    ) -> FrameRequestResult {
+    pub fn request_frame(&mut self, output_id: OutputId) -> FrameRequestResult {
         let state = self.outputs.entry(output_id).or_default();
 
         if state.in_flight {
@@ -71,10 +63,7 @@ impl FrameScheduler {
     /// Starts a previously requested frame.
     ///
     /// Sequence numbers are never reused during the scheduler lifetime.
-    pub fn begin_frame(
-        &mut self,
-        output_id: OutputId,
-    ) -> Option<FrameToken> {
+    pub fn begin_frame(&mut self, output_id: OutputId) -> Option<FrameToken> {
         let state = self.outputs.get(&output_id)?;
 
         if !state.requested || state.in_flight || self.sequence_exhausted {
@@ -99,27 +88,18 @@ impl FrameScheduler {
     }
 
     /// Completes the frame identified by its token.
-    pub fn complete_frame(
-        &mut self,
-        token: FrameToken,
-    ) -> Result<(), FrameLifecycleError> {
+    pub fn complete_frame(&mut self, token: FrameToken) -> Result<(), FrameLifecycleError> {
         let state = self
             .outputs
             .get_mut(&token.output_id())
-            .ok_or(
-                FrameLifecycleError::NoFrameInFlight(token.output_id())
-            )?;
+            .ok_or(FrameLifecycleError::NoFrameInFlight(token.output_id()))?;
 
         if !state.in_flight {
-            return Err(
-                FrameLifecycleError::NoFrameInFlight(token.output_id())
-            );
+            return Err(FrameLifecycleError::NoFrameInFlight(token.output_id()));
         }
 
         if state.active_sequence != Some(token.sequence()) {
-            return Err(
-                FrameLifecycleError::StaleFrameToken(token.output_id())
-            );
+            return Err(FrameLifecycleError::StaleFrameToken(token.output_id()));
         }
 
         state.in_flight = false;

@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -78,11 +77,7 @@ pub(super) fn register_udev_events(
 
 /// Registers discovery metadata once, then integrates the opened device if the
 /// seat is active. Open failures are non-fatal so unrelated GPUs keep running.
-pub(super) fn add_device(
-    state: &mut WaylandState,
-    node: DrmNode,
-    path: PathBuf,
-) -> io::Result<()> {
+pub(super) fn add_device(state: &mut WaylandState, node: DrmNode, path: PathBuf) -> io::Result<()> {
     if !state
         .udev_device_ids
         .iter()
@@ -154,9 +149,7 @@ fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io::Result<()>
         .map_err(io::Error::other)?;
 
     if let Err(error) = super::gbm_lifecycle::register_gbm_device(state, node) {
-        eprintln!(
-            "AureaOS: GBM unavailable for newly opened DRM device {node}: {error}"
-        );
+        eprintln!("AureaOS: GBM unavailable for newly opened DRM device {node}: {error}");
     }
 
     initialize_vulkan_backend(state, node);
@@ -194,9 +187,7 @@ fn initialize_vulkan_backend(state: &mut WaylandState, node: DrmNode) {
             state.vulkan_backends.insert(node, backend);
         }
         Err(error) => {
-            eprintln!(
-                "AureaOS: Vulkan backend unavailable for DRM device {node}: {error}"
-            );
+            eprintln!("AureaOS: Vulkan backend unavailable for DRM device {node}: {error}");
         }
     }
 }
@@ -231,18 +222,18 @@ fn register_device_notifier(state: &mut WaylandState, node: DrmNode) -> io::Resu
         .map_err(io::Error::other)?;
 
     let token = handle
-        .insert_source(notifier, move |event, _, state| {
-            match event {
-                smithay::backend::drm::DrmEvent::VBlank(crtc) => {
-                    if let Some(surfaces) = state.drm_surfaces.get_mut(&node) {
-                        if let Err(error) = surfaces.on_vblank(node, crtc) {
-                            eprintln!("AureaOS: DRM presentation completion failed for {node}: {error}");
-                        }
+        .insert_source(notifier, move |event, _, state| match event {
+            smithay::backend::drm::DrmEvent::VBlank(crtc) => {
+                if let Some(surfaces) = state.drm_surfaces.get_mut(&node) {
+                    if let Err(error) = surfaces.on_vblank(node, crtc) {
+                        eprintln!(
+                            "AureaOS: DRM presentation completion failed for {node}: {error}"
+                        );
                     }
                 }
-                smithay::backend::drm::DrmEvent::Error(error) => {
-                    state.error = Some(io::Error::other(format!("DRM device {node}: {error}")));
-                }
+            }
+            smithay::backend::drm::DrmEvent::Error(error) => {
+                state.error = Some(io::Error::other(format!("DRM device {node}: {error}")));
             }
         })
         .map_err(io::Error::other)?;
@@ -366,11 +357,7 @@ fn remove_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
     Ok(())
 }
 
-fn track_device<N: Copy + Eq>(
-    devices: &mut Vec<(N, PathBuf)>,
-    node: N,
-    path: PathBuf,
-) -> bool {
+fn track_device<N: Copy + Eq>(devices: &mut Vec<(N, PathBuf)>, node: N, path: PathBuf) -> bool {
     if devices.iter().any(|(known, _)| *known == node) {
         return false;
     }
@@ -380,10 +367,7 @@ fn track_device<N: Copy + Eq>(
     true
 }
 
-fn forget_device<N: Copy + Eq>(
-    devices: &mut Vec<(N, PathBuf)>,
-    node: N,
-) -> Option<PathBuf> {
+fn forget_device<N: Copy + Eq>(devices: &mut Vec<(N, PathBuf)>, node: N) -> Option<PathBuf> {
     devices
         .iter()
         .position(|(known, _)| *known == node)
@@ -473,19 +457,13 @@ pub(super) fn activate_discovered_devices(state: &mut WaylandState) {
     for node in discovered {
         if !state.drm_devices.contains(node) {
             if let Err(error) = open_and_integrate(state, node) {
-                eprintln!(
-                    "AureaOS: deferred DRM device integration failed for {node}: {error}"
-                );
+                eprintln!("AureaOS: deferred DRM device integration failed for {node}: {error}");
             }
         }
     }
 
     // Retry connector changes that arrived while the session was inactive.
-    let managed = state
-        .drm_devices
-        .iter()
-        .map(|(node, _)| *node)
-        .collect();
+    let managed = state.drm_devices.iter().map(|(node, _)| *node).collect();
 
     let pending = std::mem::take(&mut state.udev_changed_devices);
 
@@ -496,8 +474,6 @@ pub(super) fn activate_discovered_devices(state: &mut WaylandState) {
     state.udev_changed_devices = pending;
 
     for (node, error) in failures {
-        eprintln!(
-            "AureaOS: deferred DRM output refresh failed for {node}: {error}"
-        );
+        eprintln!("AureaOS: deferred DRM output refresh failed for {node}: {error}");
     }
 }

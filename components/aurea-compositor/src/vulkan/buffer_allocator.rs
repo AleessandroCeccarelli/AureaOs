@@ -79,11 +79,22 @@ impl fmt::Display for VulkanBufferError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidDimensions { width, height } => {
-                write!(formatter, "Invalid Vulkan buffer dimensions: {width}x{height}")
+                write!(
+                    formatter,
+                    "Invalid Vulkan buffer dimensions: {width}x{height}"
+                )
             }
-            Self::Allocation(error) => write!(formatter, "Vulkan buffer allocation failed: {error}"),
-            Self::DeviceIdentityQuery(message) => write!(formatter, "Failed to query Vulkan device DRM identity: {message}"),
-            Self::DeviceNodeMismatch { requested } => write!(formatter, "Vulkan physical device does not match DRM node {requested:?}"),
+            Self::Allocation(error) => {
+                write!(formatter, "Vulkan buffer allocation failed: {error}")
+            }
+            Self::DeviceIdentityQuery(message) => write!(
+                formatter,
+                "Failed to query Vulkan device DRM identity: {message}"
+            ),
+            Self::DeviceNodeMismatch { requested } => write!(
+                formatter,
+                "Vulkan physical device does not match DRM node {requested:?}"
+            ),
             Self::Export(error) => write!(formatter, "Vulkan DMA-BUF export failed: {error}"),
         }
     }

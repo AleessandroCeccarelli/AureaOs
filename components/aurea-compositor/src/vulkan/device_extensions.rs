@@ -44,11 +44,7 @@ impl VulkanDeviceExtensionPlan {
         let supports_foreign_queue_family =
             device.has_device_extension(FOREIGN_QUEUE_FAMILY_EXTENSION);
 
-        Self::from_available_extensions(
-            available,
-            supports_sync_fd,
-            supports_foreign_queue_family,
-        )
+        Self::from_available_extensions(available, supports_sync_fd, supports_foreign_queue_family)
     }
 
     /// Builds a deterministic plan from extension names for policy tests.
@@ -62,17 +58,14 @@ impl VulkanDeviceExtensionPlan {
             .map(|name| name.as_ref().to_owned())
             .collect::<std::collections::HashSet<_>>();
 
-        let supports_sync_fd =
-            available.contains(SYNC_FD_EXTENSION.to_str().unwrap_or_default());
-        let supports_foreign_queue_family = available
-            .contains(FOREIGN_QUEUE_FAMILY_EXTENSION.to_str().unwrap_or_default());
+        let supports_sync_fd = available.contains(SYNC_FD_EXTENSION.to_str().unwrap_or_default());
+        let supports_foreign_queue_family =
+            available.contains(FOREIGN_QUEUE_FAMILY_EXTENSION.to_str().unwrap_or_default());
 
         let mut enabled = REQUIRED_DMABUF_EXTENSIONS
             .iter()
             .copied()
-            .filter(|extension| {
-                available.contains(extension.to_str().unwrap_or_default())
-            })
+            .filter(|extension| available.contains(extension.to_str().unwrap_or_default()))
             .collect::<Vec<_>>();
 
         if supports_sync_fd {
@@ -84,9 +77,7 @@ impl VulkanDeviceExtensionPlan {
 
         let missing = REQUIRED_DMABUF_EXTENSIONS
             .iter()
-            .filter(|extension| {
-                !available.contains(extension.to_str().unwrap_or_default())
-            })
+            .filter(|extension| !available.contains(extension.to_str().unwrap_or_default()))
             .map(|extension| extension.to_string_lossy().into_owned())
             .collect();
 

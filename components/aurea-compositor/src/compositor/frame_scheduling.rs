@@ -1,5 +1,4 @@
-
- // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -9,11 +8,7 @@
 use std::{error::Error, fmt};
 
 use crate::{
-    frame::{
-        FrameLifecycleError,
-        FrameRequestResult,
-        FrameToken,
-    },
+    frame::{FrameLifecycleError, FrameRequestResult, FrameToken},
     output::OutputId,
 };
 
@@ -83,10 +78,7 @@ impl AureaCompositor {
     /// Begins a pending frame for an enabled output.
     ///
     /// Returns `None` when no request is waiting.
-    pub fn begin_output_frame(
-        &mut self,
-        output_id: OutputId,
-    ) -> Option<FrameToken> {
+    pub fn begin_output_frame(&mut self, output_id: OutputId) -> Option<FrameToken> {
         let Some(output) = self.output_manager.registry().get(output_id) else {
             self.frame_scheduler.remove_output(output_id);
             return None;
@@ -101,10 +93,7 @@ impl AureaCompositor {
     }
 
     /// Completes an active frame.
-    pub fn complete_output_frame(
-        &mut self,
-        token: FrameToken,
-    ) -> Result<(), FrameLifecycleError> {
+    pub fn complete_output_frame(&mut self, token: FrameToken) -> Result<(), FrameLifecycleError> {
         self.frame_scheduler.complete_frame(token)
     }
 

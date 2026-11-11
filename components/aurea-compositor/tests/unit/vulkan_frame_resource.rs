@@ -3,10 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-use aurea_compositor::vulkan::{
-    VulkanFrameResource,
-    VulkanFrameResourceError,
-};
+use aurea_compositor::vulkan::{VulkanFrameResource, VulkanFrameResourceError};
 
 #[test]
 fn resource_is_available_on_creation() {
@@ -131,7 +128,6 @@ fn gpu_completion_before_submission_is_rejected() {
     );
 }
 
-
 #[test]
 fn submission_before_rendering_is_rejected() {
     let mut resource = VulkanFrameResource::new();
@@ -245,7 +241,10 @@ fn foreign_owned_resource_cannot_be_reused_until_acquire_completes() {
         Err(VulkanFrameResourceError::AlreadyInUse)
     );
 
-    assert_eq!(resource.mark_foreign_acquired(), Err(VulkanFrameResourceError::ForeignAcquireNotSubmitted));
+    assert_eq!(
+        resource.mark_foreign_acquired(),
+        Err(VulkanFrameResourceError::ForeignAcquireNotSubmitted)
+    );
     resource.mark_foreign_acquire_submitted().unwrap();
     assert!(!resource.is_available());
     resource.mark_foreign_acquired().unwrap();

@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -85,8 +84,6 @@ impl OutputLayout {
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (OutputId, OutputPosition)> + '_ {
-        self.positions
-            .iter()
-            .map(|(&id, &position)| (id, position))
+        self.positions.iter().map(|(&id, &position)| (id, position))
     }
 }

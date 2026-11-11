@@ -7,11 +7,7 @@
 
 use smithay::{
     backend::{
-        allocator::{
-            Fourcc,
-            Modifier,
-            vulkan::format::get_vk_format,
-        },
+        allocator::{Fourcc, Modifier, vulkan::format::get_vk_format},
         vulkan::PhysicalDevice,
     },
     reexports::ash::vk,
@@ -51,10 +47,7 @@ impl VulkanFormatCapabilities {
     ///
     /// An error is returned when the device does not expose the
     /// VK_EXT_image_drm_format_modifier capability.
-    pub fn query(
-        device: &PhysicalDevice,
-        format: Fourcc,
-    ) -> Result<Self, String> {
+    pub fn query(device: &PhysicalDevice, format: Fourcc) -> Result<Self, String> {
         let Some(vulkan_format) = get_vk_format(format) else {
             return Ok(Self {
                 format,

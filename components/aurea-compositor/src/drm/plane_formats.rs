@@ -48,25 +48,17 @@ pub enum DrmPlaneFormatError {
     DeviceInactive,
 
     /// Smithay could not query the planes compatible with the CRTC.
-    PlaneQueryFailed {
-        crtc_id: u32,
-        message: String,
-    },
+    PlaneQueryFailed { crtc_id: u32, message: String },
 
     /// No primary plane was reported for the requested CRTC.
-    NoPrimaryPlane {
-        crtc_id: u32,
-    },
+    NoPrimaryPlane { crtc_id: u32 },
 }
 
 impl fmt::Display for DrmPlaneFormatError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::DeviceInactive => {
-                formatter.write_str(
-                    "Cannot discover DRM plane formats while the device is inactive",
-                )
-            }
+            Self::DeviceInactive => formatter
+                .write_str("Cannot discover DRM plane formats while the device is inactive"),
             Self::PlaneQueryFailed { crtc_id, message } => {
                 write!(
                     formatter,
@@ -74,7 +66,10 @@ impl fmt::Display for DrmPlaneFormatError {
                 )
             }
             Self::NoPrimaryPlane { crtc_id } => {
-                write!(formatter, "No primary DRM plane is available for CRTC {crtc_id}")
+                write!(
+                    formatter,
+                    "No primary DRM plane is available for CRTC {crtc_id}"
+                )
             }
         }
     }
@@ -104,13 +99,14 @@ pub fn discover_primary_plane_formats(
     }
 
     let crtc_id = u32::from(crtc);
-    let planes = device
-        .device()
-        .planes(&crtc)
-        .map_err(|error| DrmPlaneFormatError::PlaneQueryFailed {
-            crtc_id,
-            message: error.to_string(),
-        })?;
+    let planes =
+        device
+            .device()
+            .planes(&crtc)
+            .map_err(|error| DrmPlaneFormatError::PlaneQueryFailed {
+                crtc_id,
+                message: error.to_string(),
+            })?;
 
     if planes.primary.is_empty() {
         return Err(DrmPlaneFormatError::NoPrimaryPlane { crtc_id });

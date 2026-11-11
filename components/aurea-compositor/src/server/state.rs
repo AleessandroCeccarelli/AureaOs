@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -27,11 +26,8 @@ use crate::AureaCompositor;
 #[cfg(feature = "drm")]
 use crate::{
     drm::{
-        DrmSession,
-        device_manager::DrmDeviceManager,
-        gbm::GbmDeviceManager,
-        registry::DrmDeviceRegistry,
-        surfaces::DrmSurfaceManager,
+        DrmSession, device_manager::DrmDeviceManager, gbm::GbmDeviceManager,
+        registry::DrmDeviceRegistry, surfaces::DrmSurfaceManager,
     },
     gpu::GpuManager,
     vulkan::VulkanBackend,

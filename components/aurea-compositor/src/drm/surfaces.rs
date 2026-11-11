@@ -5,15 +5,24 @@
 
 //! Owns native Smithay DRM surfaces for discovered physical outputs.
 
-use std::{collections::{HashMap, HashSet}, error::Error, fmt};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+    fmt,
+};
 
 use smithay::{
     backend::drm::{DrmNode, DrmSurface},
-    reexports::drm::control::{crtc, connector, Device as DrmControlDevice},
+    reexports::drm::control::{Device as DrmControlDevice, connector, crtc},
 };
 
 use crate::{
-    drm::{device::DrmDevice, discovery::discover_connected_outputs, output::DrmOutputDescriptor, presentation_backend::{DrmPresentationBackend, DrmPresentationBackendError}},
+    drm::{
+        device::DrmDevice,
+        discovery::discover_connected_outputs,
+        output::DrmOutputDescriptor,
+        presentation_backend::{DrmPresentationBackend, DrmPresentationBackendError},
+    },
     output::OutputId,
 };
 
@@ -22,23 +31,51 @@ use crate::{
 pub enum DrmSurfaceManagerError {
     Discovery(String),
     MissingNativeConfiguration(OutputId),
-    ConnectorQuery { output_id: OutputId, message: String },
-    EncoderQuery { output_id: OutputId, encoder_id: u32, message: String },
+    ConnectorQuery {
+        output_id: OutputId,
+        message: String,
+    },
+    EncoderQuery {
+        output_id: OutputId,
+        encoder_id: u32,
+        message: String,
+    },
     NoCompatibleCrtc(OutputId),
     DuplicateCrtc(crtc::Handle),
-    SurfaceCreation { output_id: OutputId, message: String },
+    SurfaceCreation {
+        output_id: OutputId,
+        message: String,
+    },
 }
 
 impl fmt::Display for DrmSurfaceManagerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Discovery(message) => write!(f, "DRM output discovery failed: {message}"),
-            Self::MissingNativeConfiguration(id) => write!(f, "DRM output {id} has no native connector/mode configuration"),
-            Self::ConnectorQuery { output_id, message } => write!(f, "Failed to query connector for output {output_id}: {message}"),
-            Self::EncoderQuery { output_id, encoder_id, message } => write!(f, "Failed to query encoder {encoder_id} for output {output_id}: {message}"),
-            Self::NoCompatibleCrtc(id) => write!(f, "No unused compatible CRTC is available for output {id}"),
+            Self::MissingNativeConfiguration(id) => write!(
+                f,
+                "DRM output {id} has no native connector/mode configuration"
+            ),
+            Self::ConnectorQuery { output_id, message } => write!(
+                f,
+                "Failed to query connector for output {output_id}: {message}"
+            ),
+            Self::EncoderQuery {
+                output_id,
+                encoder_id,
+                message,
+            } => write!(
+                f,
+                "Failed to query encoder {encoder_id} for output {output_id}: {message}"
+            ),
+            Self::NoCompatibleCrtc(id) => {
+                write!(f, "No unused compatible CRTC is available for output {id}")
+            }
             Self::DuplicateCrtc(crtc) => write!(f, "CRTC {crtc:?} was assigned more than once"),
-            Self::SurfaceCreation { output_id, message } => write!(f, "Failed to create DRM surface for output {output_id}: {message}"),
+            Self::SurfaceCreation { output_id, message } => write!(
+                f,
+                "Failed to create DRM surface for output {output_id}: {message}"
+            ),
         }
     }
 }
@@ -54,12 +91,24 @@ pub struct ManagedDrmSurface {
 }
 
 impl ManagedDrmSurface {
-    pub fn output_id(&self) -> OutputId { self.output_id }
-    pub fn connector(&self) -> connector::Handle { self.connector }
-    pub fn crtc(&self) -> crtc::Handle { self.surface.crtc() }
-    pub fn surface(&self) -> &DrmSurface { &self.surface }
-    pub fn presentation(&self) -> &DrmPresentationBackend { &self.presentation }
-    pub fn presentation_mut(&mut self) -> &mut DrmPresentationBackend { &mut self.presentation }
+    pub fn output_id(&self) -> OutputId {
+        self.output_id
+    }
+    pub fn connector(&self) -> connector::Handle {
+        self.connector
+    }
+    pub fn crtc(&self) -> crtc::Handle {
+        self.surface.crtc()
+    }
+    pub fn surface(&self) -> &DrmSurface {
+        &self.surface
+    }
+    pub fn presentation(&self) -> &DrmPresentationBackend {
+        &self.presentation
+    }
+    pub fn presentation_mut(&mut self) -> &mut DrmPresentationBackend {
+        &mut self.presentation
+    }
 }
 
 /// Owns all KMS surfaces created for one DRM device.
@@ -73,7 +122,9 @@ pub struct DrmSurfaceManager {
 }
 
 impl DrmSurfaceManager {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn get(&self, output_id: OutputId) -> Option<&ManagedDrmSurface> {
         self.surfaces.get(&output_id)
@@ -103,22 +154,30 @@ impl DrmSurfaceManager {
         descriptors: &[DrmOutputDescriptor],
     ) -> Result<Self, DrmSurfaceManagerError> {
         let mut manager = Self::new();
-        let resources = device.fd().resource_handles()
+        let resources = device
+            .fd()
+            .resource_handles()
             .map_err(|error| DrmSurfaceManagerError::Discovery(error.to_string()))?;
         let available_crtcs = device.device().crtcs().to_vec();
         let mut reserved = HashSet::new();
 
         for descriptor in descriptors {
             let output_id = descriptor.id();
-            let connector_handle = descriptor.connector_handle()
-                .ok_or(DrmSurfaceManagerError::MissingNativeConfiguration(output_id))?;
-            let mode = descriptor.native_mode()
-                .ok_or(DrmSurfaceManagerError::MissingNativeConfiguration(output_id))?;
+            let connector_handle = descriptor.connector_handle().ok_or(
+                DrmSurfaceManagerError::MissingNativeConfiguration(output_id),
+            )?;
+            let mode = descriptor.native_mode().ok_or(
+                DrmSurfaceManagerError::MissingNativeConfiguration(output_id),
+            )?;
 
-            let connector_info = device.fd().get_connector(connector_handle, true)
-                .map_err(|error| DrmSurfaceManagerError::ConnectorQuery {
-                    output_id, message: error.to_string()
-                })?;
+            let connector_info =
+                device
+                    .fd()
+                    .get_connector(connector_handle, true)
+                    .map_err(|error| DrmSurfaceManagerError::ConnectorQuery {
+                        output_id,
+                        message: error.to_string(),
+                    })?;
 
             if connector_info.state() != connector::State::Connected {
                 continue;
@@ -126,17 +185,21 @@ impl DrmSurfaceManager {
 
             let mut selected_crtc = None;
             for encoder_handle in connector_info.encoders() {
-                let encoder = device.fd().get_encoder(*encoder_handle)
-                    .map_err(|error| DrmSurfaceManagerError::EncoderQuery {
+                let encoder = device.fd().get_encoder(*encoder_handle).map_err(|error| {
+                    DrmSurfaceManagerError::EncoderQuery {
                         output_id,
                         encoder_id: u32::from(*encoder_handle),
                         message: error.to_string(),
-                    })?;
+                    }
+                })?;
                 let compatible = resources.filter_crtcs(encoder.possible_crtcs());
-                selected_crtc = available_crtcs.iter()
+                selected_crtc = available_crtcs
+                    .iter()
                     .copied()
                     .find(|crtc| compatible.contains(crtc) && !reserved.contains(crtc));
-                if selected_crtc.is_some() { break; }
+                if selected_crtc.is_some() {
+                    break;
+                }
             }
 
             let crtc = selected_crtc.ok_or(DrmSurfaceManagerError::NoCompatibleCrtc(output_id))?;
@@ -144,19 +207,30 @@ impl DrmSurfaceManager {
                 return Err(DrmSurfaceManagerError::DuplicateCrtc(crtc));
             }
 
-            let surface = device.device_mut().create_surface(crtc, mode, &[connector_handle])
+            let surface = device
+                .device_mut()
+                .create_surface(crtc, mode, &[connector_handle])
                 .map_err(|error| DrmSurfaceManagerError::SurfaceCreation {
-                    output_id, message: error.to_string()
+                    output_id,
+                    message: error.to_string(),
                 })?;
 
-            let presentation = DrmPresentationBackend::new(device.node().map_err(|error| DrmSurfaceManagerError::Discovery(error.to_string()))?, &surface);
+            let presentation = DrmPresentationBackend::new(
+                device
+                    .node()
+                    .map_err(|error| DrmSurfaceManagerError::Discovery(error.to_string()))?,
+                &surface,
+            );
             manager.crtc_owners.insert(crtc, output_id);
-            manager.surfaces.insert(output_id, ManagedDrmSurface {
+            manager.surfaces.insert(
                 output_id,
-                connector: connector_handle,
-                surface,
-                presentation,
-            });
+                ManagedDrmSurface {
+                    output_id,
+                    connector: connector_handle,
+                    surface,
+                    presentation,
+                },
+            );
         }
 
         Ok(manager)
@@ -167,7 +241,8 @@ impl DrmSurfaceManager {
         &mut self,
         node: DrmNode,
         crtc: crtc::Handle,
-    ) -> Result<Option<crate::drm::presentation::DrmFramebufferId>, DrmPresentationBackendError> {
+    ) -> Result<Option<crate::drm::presentation::DrmFramebufferId>, DrmPresentationBackendError>
+    {
         let Some(output_id) = self.crtc_owners.get(&crtc).copied() else {
             return Ok(None);
         };

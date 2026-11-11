@@ -34,7 +34,9 @@ pub enum VulkanOffscreenError {
 impl fmt::Display for VulkanOffscreenError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidDimensions => formatter.write_str("Offscreen frame dimensions must be non-zero"),
+            Self::InvalidDimensions => {
+                formatter.write_str("Offscreen frame dimensions must be non-zero")
+            }
             Self::Image(error) => write!(formatter, "Offscreen image error: {error}"),
             Self::ImageView(error) => write!(formatter, "Offscreen image-view error: {error}"),
             Self::Readback(error) => write!(formatter, "Offscreen readback error: {error}"),
@@ -82,20 +84,22 @@ impl<'device> VulkanOffscreenRenderer<'device> {
         Self::validate_dimensions(width, height)?;
 
         let allocator = VulkanImageAllocator::new(self.device);
-        let image = allocator.allocate(VulkanImageRequest::render_target(
-            width,
-            height,
-            vk::Format::R8G8B8A8_UNORM,
-            vk::ImageUsageFlags::COLOR_ATTACHMENT | vk::ImageUsageFlags::TRANSFER_SRC,
-        )).map_err(VulkanOffscreenError::Image)?;
-        let view = VulkanImageView::color(&image)
-            .map_err(VulkanOffscreenError::ImageView)?;
+        let image = allocator
+            .allocate(VulkanImageRequest::render_target(
+                width,
+                height,
+                vk::Format::R8G8B8A8_UNORM,
+                vk::ImageUsageFlags::COLOR_ATTACHMENT | vk::ImageUsageFlags::TRANSFER_SRC,
+            ))
+            .map_err(VulkanOffscreenError::Image)?;
+        let view = VulkanImageView::color(&image).map_err(VulkanOffscreenError::ImageView)?;
         let readback = VulkanReadbackBuffer::new(self.device, width, height)
             .map_err(VulkanOffscreenError::Readback)?;
 
-        let mut commands = VulkanCommandBuffer::new(self.device)
-            .map_err(VulkanOffscreenError::Command)?;
-        commands.begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
+        let mut commands =
+            VulkanCommandBuffer::new(self.device).map_err(VulkanOffscreenError::Command)?;
+        commands
+            .begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
             .map_err(VulkanOffscreenError::Command)?;
 
         VulkanClearPass::record_color(
@@ -104,15 +108,21 @@ impl<'device> VulkanOffscreenRenderer<'device> {
             VulkanImageState::Undefined,
             VulkanImageState::TransferSource,
             clear_color,
-        ).map_err(VulkanOffscreenError::ClearPass)?;
+        )
+        .map_err(VulkanOffscreenError::ClearPass)?;
 
-        readback.record_copy_rgba8(commands.handle(), &view)
+        readback
+            .record_copy_rgba8(commands.handle(), &view)
             .map_err(VulkanOffscreenError::Readback)?;
 
         commands.end().map_err(VulkanOffscreenError::Command)?;
-        commands.submit_and_wait().map_err(VulkanOffscreenError::Command)?;
+        commands
+            .submit_and_wait()
+            .map_err(VulkanOffscreenError::Command)?;
 
-        readback.read_rgba8().map_err(VulkanOffscreenError::Readback)
+        readback
+            .read_rgba8()
+            .map_err(VulkanOffscreenError::Readback)
     }
 
     /// Draws a shader-driven RGB triangle and returns completed RGBA8 pixels.
@@ -130,14 +140,15 @@ impl<'device> VulkanOffscreenRenderer<'device> {
         Self::validate_dimensions(width, height)?;
 
         let allocator = VulkanImageAllocator::new(self.device);
-        let image = allocator.allocate(VulkanImageRequest::render_target(
-            width,
-            height,
-            vk::Format::R8G8B8A8_UNORM,
-            vk::ImageUsageFlags::COLOR_ATTACHMENT | vk::ImageUsageFlags::TRANSFER_SRC,
-        )).map_err(VulkanOffscreenError::Image)?;
-        let view = VulkanImageView::color(&image)
-            .map_err(VulkanOffscreenError::ImageView)?;
+        let image = allocator
+            .allocate(VulkanImageRequest::render_target(
+                width,
+                height,
+                vk::Format::R8G8B8A8_UNORM,
+                vk::ImageUsageFlags::COLOR_ATTACHMENT | vk::ImageUsageFlags::TRANSFER_SRC,
+            ))
+            .map_err(VulkanOffscreenError::Image)?;
+        let view = VulkanImageView::color(&image).map_err(VulkanOffscreenError::ImageView)?;
         let readback = VulkanReadbackBuffer::new(self.device, width, height)
             .map_err(VulkanOffscreenError::Readback)?;
 
@@ -147,13 +158,18 @@ impl<'device> VulkanOffscreenRenderer<'device> {
             .map_err(VulkanOffscreenError::Shader)?;
         let pipeline = VulkanGraphicsPipeline::new(
             self.device,
-            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            VulkanGraphicsShaders {
+                vertex: &vertex,
+                fragment: &fragment,
+            },
             vk::Format::R8G8B8A8_UNORM,
-        ).map_err(VulkanOffscreenError::Pipeline)?;
+        )
+        .map_err(VulkanOffscreenError::Pipeline)?;
 
-        let mut commands = VulkanCommandBuffer::new(self.device)
-            .map_err(VulkanOffscreenError::Command)?;
-        commands.begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
+        let mut commands =
+            VulkanCommandBuffer::new(self.device).map_err(VulkanOffscreenError::Command)?;
+        commands
+            .begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
             .map_err(VulkanOffscreenError::Command)?;
 
         VulkanDrawPass::record(
@@ -165,14 +181,20 @@ impl<'device> VulkanOffscreenRenderer<'device> {
             VulkanColorLoad::Clear([0.0, 0.0, 0.0, 1.0]),
             3,
             1,
-        ).map_err(VulkanOffscreenError::DrawPass)?;
+        )
+        .map_err(VulkanOffscreenError::DrawPass)?;
 
-        readback.record_copy_rgba8(commands.handle(), &view)
+        readback
+            .record_copy_rgba8(commands.handle(), &view)
             .map_err(VulkanOffscreenError::Readback)?;
 
         commands.end().map_err(VulkanOffscreenError::Command)?;
-        commands.submit_and_wait().map_err(VulkanOffscreenError::Command)?;
+        commands
+            .submit_and_wait()
+            .map_err(VulkanOffscreenError::Command)?;
 
-        readback.read_rgba8().map_err(VulkanOffscreenError::Readback)
+        readback
+            .read_rgba8()
+            .map_err(VulkanOffscreenError::Readback)
     }
 }

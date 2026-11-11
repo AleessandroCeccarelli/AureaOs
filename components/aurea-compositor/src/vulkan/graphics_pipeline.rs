@@ -28,9 +28,15 @@ pub enum VulkanGraphicsPipelineError {
 impl fmt::Display for VulkanGraphicsPipelineError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::DeviceMismatch => formatter.write_str("Shader modules and graphics pipeline must use the same Vulkan device"),
-            Self::Creation(error) => write!(formatter, "Vulkan graphics-pipeline creation failed: {error:?}"),
-            Self::InvalidPipelineCount => formatter.write_str("Vulkan returned no graphics pipeline"),
+            Self::DeviceMismatch => formatter
+                .write_str("Shader modules and graphics pipeline must use the same Vulkan device"),
+            Self::Creation(error) => write!(
+                formatter,
+                "Vulkan graphics-pipeline creation failed: {error:?}"
+            ),
+            Self::InvalidPipelineCount => {
+                formatter.write_str("Vulkan returned no graphics pipeline")
+            }
         }
     }
 }
@@ -62,9 +68,8 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         }
 
         let layout_info = vk::PipelineLayoutCreateInfo::default();
-        let layout = unsafe {
-            device.handle().create_pipeline_layout(&layout_info, None)
-        }.map_err(VulkanGraphicsPipelineError::Creation)?;
+        let layout = unsafe { device.handle().create_pipeline_layout(&layout_info, None) }
+            .map_err(VulkanGraphicsPipelineError::Creation)?;
 
         let entry = CString::new("main").expect("static shader entry point has no NUL");
         let stages = [
@@ -102,15 +107,11 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         let blend = vk::PipelineColorBlendStateCreateInfo::default()
             .logic_op_enable(false)
             .attachments(&blend_attachment);
-        let dynamic_states = [
-            vk::DynamicState::VIEWPORT,
-            vk::DynamicState::SCISSOR,
-        ];
-        let dynamic = vk::PipelineDynamicStateCreateInfo::default()
-            .dynamic_states(&dynamic_states);
+        let dynamic_states = [vk::DynamicState::VIEWPORT, vk::DynamicState::SCISSOR];
+        let dynamic = vk::PipelineDynamicStateCreateInfo::default().dynamic_states(&dynamic_states);
         let color_formats = [color_format];
-        let mut rendering = vk::PipelineRenderingCreateInfo::default()
-            .color_attachment_formats(&color_formats);
+        let mut rendering =
+            vk::PipelineRenderingCreateInfo::default().color_attachment_formats(&color_formats);
 
         let pipeline_info = [vk::GraphicsPipelineCreateInfo::default()
             .stages(&stages)
@@ -149,11 +150,20 @@ impl<'device> VulkanGraphicsPipeline<'device> {
             }
         };
 
-        Ok(Self { device, layout, pipeline, color_format })
+        Ok(Self {
+            device,
+            layout,
+            pipeline,
+            color_format,
+        })
     }
 
-    pub fn handle(&self) -> vk::Pipeline { self.pipeline }
-    pub fn layout(&self) -> vk::PipelineLayout { self.layout }
+    pub fn handle(&self) -> vk::Pipeline {
+        self.pipeline
+    }
+    pub fn layout(&self) -> vk::PipelineLayout {
+        self.layout
+    }
 
     pub(super) fn is_compatible_with(
         &self,
@@ -179,20 +189,11 @@ impl<'device> VulkanGraphicsPipeline<'device> {
     ///
     /// The caller must be inside a compatible dynamic-rendering scope and
     /// must have configured all required dynamic state.
-    pub fn draw(
-        &self,
-        command_buffer: vk::CommandBuffer,
-        vertex_count: u32,
-        instance_count: u32,
-    ) {
+    pub fn draw(&self, command_buffer: vk::CommandBuffer, vertex_count: u32, instance_count: u32) {
         unsafe {
-            self.device.handle().cmd_draw(
-                command_buffer,
-                vertex_count,
-                instance_count,
-                0,
-                0,
-            );
+            self.device
+                .handle()
+                .cmd_draw(command_buffer, vertex_count, instance_count, 0, 0);
         }
     }
 
@@ -216,8 +217,12 @@ impl<'device> VulkanGraphicsPipeline<'device> {
             extent: vk::Extent2D { width, height },
         }];
         unsafe {
-            self.device.handle().cmd_set_viewport(command_buffer, 0, &viewport);
-            self.device.handle().cmd_set_scissor(command_buffer, 0, &scissor);
+            self.device
+                .handle()
+                .cmd_set_viewport(command_buffer, 0, &viewport);
+            self.device
+                .handle()
+                .cmd_set_scissor(command_buffer, 0, &scissor);
         }
     }
 }
@@ -226,7 +231,9 @@ impl Drop for VulkanGraphicsPipeline<'_> {
     fn drop(&mut self) {
         unsafe {
             self.device.handle().destroy_pipeline(self.pipeline, None);
-            self.device.handle().destroy_pipeline_layout(self.layout, None);
+            self.device
+                .handle()
+                .destroy_pipeline_layout(self.layout, None);
         }
     }
 }

@@ -51,8 +51,7 @@ impl VulkanImageState {
         match self {
             Self::Undefined => vk::AccessFlags2::NONE,
             Self::ColorAttachment => {
-                vk::AccessFlags2::COLOR_ATTACHMENT_READ
-                    | vk::AccessFlags2::COLOR_ATTACHMENT_WRITE
+                vk::AccessFlags2::COLOR_ATTACHMENT_READ | vk::AccessFlags2::COLOR_ATTACHMENT_WRITE
             }
             Self::ShaderRead => vk::AccessFlags2::SHADER_READ,
             Self::TransferSource => vk::AccessFlags2::TRANSFER_READ,
@@ -71,9 +70,8 @@ pub enum VulkanImageTransitionError {
 impl fmt::Display for VulkanImageTransitionError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::ForeignQueueFamilyUnsupported => formatter.write_str(
-                "VK_EXT_queue_family_foreign is not enabled on this Vulkan device",
-            ),
+            Self::ForeignQueueFamilyUnsupported => formatter
+                .write_str("VK_EXT_queue_family_foreign is not enabled on this Vulkan device"),
         }
     }
 }
@@ -117,7 +115,9 @@ impl VulkanImageTransition {
 
         let dependency = vk::DependencyInfo::default().image_memory_barriers(&barrier);
         unsafe {
-            device.handle().cmd_pipeline_barrier2(command_buffer, &dependency);
+            device
+                .handle()
+                .cmd_pipeline_barrier2(command_buffer, &dependency);
         }
         Ok(())
     }
@@ -151,7 +151,9 @@ impl VulkanImageTransition {
 
         let dependency = vk::DependencyInfo::default().image_memory_barriers(&barrier);
         unsafe {
-            device.handle().cmd_pipeline_barrier2(command_buffer, &dependency);
+            device
+                .handle()
+                .cmd_pipeline_barrier2(command_buffer, &dependency);
         }
         Ok(())
     }
@@ -188,11 +190,12 @@ impl VulkanImageTransition {
             .image(image)
             .subresource_range(Self::color_subresource_range())];
 
-        let dependency = vk::DependencyInfo::default()
-            .image_memory_barriers(&barrier);
+        let dependency = vk::DependencyInfo::default().image_memory_barriers(&barrier);
 
         unsafe {
-            device.handle().cmd_pipeline_barrier2(command_buffer, &dependency);
+            device
+                .handle()
+                .cmd_pipeline_barrier2(command_buffer, &dependency);
         }
     }
 }

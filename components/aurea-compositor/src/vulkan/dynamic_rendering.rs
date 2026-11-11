@@ -60,13 +60,18 @@ impl<'view, 'image, 'device> VulkanDynamicRenderingScope<'view, 'image, 'device>
         let rendering_info = vk::RenderingInfo::default()
             .render_area(vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
-                extent: vk::Extent2D { width: view.width(), height: view.height() },
+                extent: vk::Extent2D {
+                    width: view.width(),
+                    height: view.height(),
+                },
             })
             .layer_count(1)
             .color_attachments(&attachment);
 
         unsafe {
-            view.device().handle().cmd_begin_rendering(command_buffer, &rendering_info);
+            view.device()
+                .handle()
+                .cmd_begin_rendering(command_buffer, &rendering_info);
         }
 
         Self {
@@ -84,7 +89,10 @@ impl<'view, 'image, 'device> VulkanDynamicRenderingScope<'view, 'image, 'device>
     fn end_recording(&mut self) {
         if !self.ended {
             unsafe {
-                self._view.device().handle().cmd_end_rendering(self.command_buffer);
+                self._view
+                    .device()
+                    .handle()
+                    .cmd_end_rendering(self.command_buffer);
             }
             self.ended = true;
         }

@@ -91,11 +91,11 @@ impl AureaCompositor {
             }
         }
 
-                // Remove frame scheduling state only after reconciliation succeeds.
+        // Remove frame scheduling state only after reconciliation succeeds.
         for output_id in &changes.removed {
             self.frame_scheduler.remove_output(*output_id);
         }
-        
+
         Ok(())
     }
 }

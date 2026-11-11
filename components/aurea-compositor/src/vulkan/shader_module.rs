@@ -25,10 +25,16 @@ impl fmt::Display for VulkanShaderError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::EmptyCode => formatter.write_str("SPIR-V shader code is empty"),
-            Self::InvalidByteLength => formatter.write_str("SPIR-V byte length is not divisible by four"),
+            Self::InvalidByteLength => {
+                formatter.write_str("SPIR-V byte length is not divisible by four")
+            }
             Self::InvalidMagic => formatter.write_str("SPIR-V module has an invalid magic number"),
-            Self::InvalidHeader => formatter.write_str("SPIR-V module is shorter than its five-word header"),
-            Self::Creation(error) => write!(formatter, "Vulkan shader-module creation failed: {error:?}"),
+            Self::InvalidHeader => {
+                formatter.write_str("SPIR-V module is shorter than its five-word header")
+            }
+            Self::Creation(error) => {
+                write!(formatter, "Vulkan shader-module creation failed: {error:?}")
+            }
         }
     }
 }
@@ -50,9 +56,8 @@ impl<'device> VulkanShaderModule<'device> {
         Self::validate_words(words)?;
 
         let create_info = vk::ShaderModuleCreateInfo::default().code(words);
-        let handle = unsafe {
-            device.handle().create_shader_module(&create_info, None)
-        }.map_err(VulkanShaderError::Creation)?;
+        let handle = unsafe { device.handle().create_shader_module(&create_info, None) }
+            .map_err(VulkanShaderError::Creation)?;
 
         Ok(Self { device, handle })
     }
@@ -69,7 +74,8 @@ impl<'device> VulkanShaderModule<'device> {
             return Err(VulkanShaderError::InvalidByteLength);
         }
 
-        let words = bytes.chunks_exact(4)
+        let words = bytes
+            .chunks_exact(4)
             .map(|chunk| u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
             .collect::<Vec<_>>();
 
@@ -90,7 +96,9 @@ impl<'device> VulkanShaderModule<'device> {
         Ok(())
     }
 
-    pub fn handle(&self) -> vk::ShaderModule { self.handle }
+    pub fn handle(&self) -> vk::ShaderModule {
+        self.handle
+    }
 
     pub(super) fn device_handle(&self) -> vk::Device {
         self.device.handle().handle()
@@ -100,7 +108,9 @@ impl<'device> VulkanShaderModule<'device> {
 impl Drop for VulkanShaderModule<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.handle().destroy_shader_module(self.handle, None);
+            self.device
+                .handle()
+                .destroy_shader_module(self.handle, None);
         }
     }
 }

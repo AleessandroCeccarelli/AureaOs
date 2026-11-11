@@ -5,10 +5,7 @@
 
 //! Required Vulkan 1.3 rendering-feature negotiation.
 
-use smithay::{
-    backend::vulkan::PhysicalDevice,
-    reexports::ash::vk,
-};
+use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 
 /// Verified Vulkan 1.3 features required by the native renderer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -23,9 +20,7 @@ impl VulkanRenderingFeaturePlan {
         let instance = device.instance().handle();
         let physical_device = device.handle();
 
-        let properties = unsafe {
-            instance.get_physical_device_properties(physical_device)
-        };
+        let properties = unsafe { instance.get_physical_device_properties(physical_device) };
 
         if properties.api_version < vk::API_VERSION_1_3 {
             return Err(format!(
@@ -36,8 +31,7 @@ impl VulkanRenderingFeaturePlan {
         }
 
         let mut vulkan13 = vk::PhysicalDeviceVulkan13Features::default();
-        let mut features = vk::PhysicalDeviceFeatures2::default()
-            .push_next(&mut vulkan13);
+        let mut features = vk::PhysicalDeviceFeatures2::default().push_next(&mut vulkan13);
 
         unsafe {
             instance.get_physical_device_features2(physical_device, &mut features);
@@ -52,8 +46,16 @@ impl VulkanRenderingFeaturePlan {
             return Err(format!(
                 "GPU '{}' lacks required Vulkan 1.3 features: {}{}",
                 device.name(),
-                if plan.dynamic_rendering { "" } else { "dynamicRendering " },
-                if plan.synchronization2 { "" } else { "synchronization2" },
+                if plan.dynamic_rendering {
+                    ""
+                } else {
+                    "dynamicRendering "
+                },
+                if plan.synchronization2 {
+                    ""
+                } else {
+                    "synchronization2"
+                },
             ));
         }
 

@@ -20,20 +20,14 @@ pub(super) struct VulkanFrameSlot {
 }
 
 impl VulkanFrameSlot {
-    pub(super) fn new(
-        device: &VulkanLogicalDevice,
-        queue_family: u32,
-    ) -> Result<Self, vk::Result> {
+    pub(super) fn new(device: &VulkanLogicalDevice, queue_family: u32) -> Result<Self, vk::Result> {
         let pool_info = vk::CommandPoolCreateInfo::default()
             .queue_family_index(queue_family)
             .flags(vk::CommandPoolCreateFlags::TRANSIENT);
         let command_pool = unsafe { device.handle().create_command_pool(&pool_info, None) }?;
 
-        let fence_info = vk::FenceCreateInfo::default()
-            .flags(vk::FenceCreateFlags::SIGNALED);
-        let completion_fence = match unsafe {
-            device.handle().create_fence(&fence_info, None)
-        } {
+        let fence_info = vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
+        let completion_fence = match unsafe { device.handle().create_fence(&fence_info, None) } {
             Ok(fence) => fence,
             Err(error) => {
                 unsafe { device.handle().destroy_command_pool(command_pool, None) };
@@ -64,9 +58,7 @@ impl VulkanFrameSlot {
         })
     }
 
-    fn create_sync_fd_semaphore(
-        device: &VulkanLogicalDevice,
-    ) -> Result<vk::Semaphore, vk::Result> {
+    fn create_sync_fd_semaphore(device: &VulkanLogicalDevice) -> Result<vk::Semaphore, vk::Result> {
         let mut export_info = vk::ExportSemaphoreCreateInfo::default()
             .handle_types(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD);
         let create_info = vk::SemaphoreCreateInfo::default().push_next(&mut export_info);
@@ -82,15 +74,12 @@ impl VulkanFrameSlot {
         }
 
         unsafe {
-            device.handle().wait_for_fences(
-                &[self.completion_fence],
-                true,
-                u64::MAX,
-            )?;
-            device.handle().reset_command_pool(
-                self.command_pool,
-                vk::CommandPoolResetFlags::empty(),
-            )?;
+            device
+                .handle()
+                .wait_for_fences(&[self.completion_fence], true, u64::MAX)?;
+            device
+                .handle()
+                .reset_command_pool(self.command_pool, vk::CommandPoolResetFlags::empty())?;
         }
 
         // Recreate the export semaphore only after this slot's completion
@@ -110,9 +99,8 @@ impl VulkanFrameSlot {
                     .command_pool(self.command_pool)
                     .level(vk::CommandBufferLevel::PRIMARY)
                     .command_buffer_count(1);
-                let command_buffer = unsafe {
-                    device.handle().allocate_command_buffers(&allocation)
-                }?[0];
+                let command_buffer =
+                    unsafe { device.handle().allocate_command_buffers(&allocation) }?[0];
                 self.command_buffer = Some(command_buffer);
                 command_buffer
             }
@@ -121,7 +109,9 @@ impl VulkanFrameSlot {
         let begin_info = vk::CommandBufferBeginInfo::default()
             .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
         unsafe {
-            device.handle().begin_command_buffer(command_buffer, &begin_info)?;
+            device
+                .handle()
+                .begin_command_buffer(command_buffer, &begin_info)?;
         }
 
         Ok(command_buffer)
@@ -140,17 +130,16 @@ impl VulkanFrameSlot {
         device: &VulkanLogicalDevice,
         command_buffer: vk::CommandBuffer,
     ) -> Result<OwnedFd, vk::Result> {
-        let semaphore = self.sync_fd_semaphore
+        let semaphore = self
+            .sync_fd_semaphore
             .ok_or(vk::Result::ERROR_FEATURE_NOT_PRESENT)?;
         self.submit_internal(device, command_buffer, Some(semaphore))?;
 
         let fd_info = vk::SemaphoreGetFdInfoKHR::default()
             .semaphore(semaphore)
             .handle_type(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD);
-        let loader = ash::khr::external_semaphore_fd::Device::new(
-            device.instance(),
-            device.handle(),
-        );
+        let loader =
+            ash::khr::external_semaphore_fd::Device::new(device.instance(), device.handle());
         let raw_fd = unsafe { loader.get_semaphore_fd(&fd_info) }?;
         Ok(unsafe { OwnedFd::from_raw_fd(raw_fd) })
     }
@@ -168,8 +157,7 @@ impl VulkanFrameSlot {
 
         let command_buffers = [command_buffer];
         let signal_semaphores = signal_semaphore.into_iter().collect::<Vec<_>>();
-        let mut submit_info = vk::SubmitInfo::default()
-            .command_buffers(&command_buffers);
+        let mut submit_info = vk::SubmitInfo::default().command_buffers(&command_buffers);
         if !signal_semaphores.is_empty() {
             submit_info = submit_info.signal_semaphores(&signal_semaphores);
         }
@@ -183,11 +171,9 @@ impl VulkanFrameSlot {
 
         if let Err(error) = result {
             unsafe { device.handle().destroy_fence(self.completion_fence, None) };
-            let signaled = vk::FenceCreateInfo::default()
-                .flags(vk::FenceCreateFlags::SIGNALED);
-            self.completion_fence = unsafe {
-                device.handle().create_fence(&signaled, None)
-            }.unwrap_or(vk::Fence::null());
+            let signaled = vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
+            self.completion_fence = unsafe { device.handle().create_fence(&signaled, None) }
+                .unwrap_or(vk::Fence::null());
             return Err(error);
         }
 

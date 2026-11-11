@@ -22,8 +22,7 @@ pub fn select_memory_type_index(
         .iter()
         .enumerate()
         .filter(|(index, memory_type)| {
-            (memory_type_bits & (1 << index)) != 0
-                && memory_type.property_flags.contains(required)
+            (memory_type_bits & (1 << index)) != 0 && memory_type.property_flags.contains(required)
         });
 
     let candidates = compatible.collect::<Vec<_>>();

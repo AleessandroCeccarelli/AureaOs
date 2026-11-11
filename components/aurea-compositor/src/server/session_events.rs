@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -10,17 +9,10 @@
 use std::io;
 
 #[cfg(feature = "drm")]
-use smithay::{
-    backend::session::Event as SessionEvent,
-    reexports::calloop::LoopHandle,
-};
+use smithay::{backend::session::Event as SessionEvent, reexports::calloop::LoopHandle};
 
 #[cfg(feature = "drm")]
-use crate::drm::{
-    DrmSession,
-    device::DrmDeviceError,
-    device_manager::ManagedDrmDevice,
-};
+use crate::drm::{DrmSession, device::DrmDeviceError, device_manager::ManagedDrmDevice};
 
 #[cfg(feature = "drm")]
 use super::state::WaylandState;
@@ -97,9 +89,7 @@ pub(super) fn register_session_events(
                 super::udev_events::activate_discovered_devices(state);
             }
         })
-        .map_err(|_| {
-            io::Error::other("Failed to register the libseat session event notifier")
-        })?;
+        .map_err(|_| io::Error::other("Failed to register the libseat session event notifier"))?;
 
     Ok(())
 }

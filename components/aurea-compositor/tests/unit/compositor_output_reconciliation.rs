@@ -1,16 +1,11 @@
-
- // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
 use aurea_compositor::{
     AureaCompositor,
-    output::{
-        DisplayOutput,
-        OutputMode,
-        manager::OutputReconciliation,
-    },
+    output::{DisplayOutput, OutputMode, manager::OutputReconciliation},
 };
 
 use smithay::reexports::wayland_server::Display;
@@ -24,14 +19,8 @@ fn failed_wayland_refresh_keeps_the_previously_published_global() {
     let output_id = (4_u128 << 32) | 1;
     let initial_mode = OutputMode::new(1920, 1080, 60_000).unwrap();
 
-    let initial = DisplayOutput::new(
-        output_id,
-        "HDMI-A-1",
-        vec![initial_mode],
-        initial_mode,
-        1,
-    )
-    .unwrap();
+    let initial =
+        DisplayOutput::new(output_id, "HDMI-A-1", vec![initial_mode], initial_mode, 1).unwrap();
 
     compositor
         .output_manager()

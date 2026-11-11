@@ -1,14 +1,10 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
 use aurea_compositor::output::{
-    DisplayOutput,
-    OutputId,
-    OutputMode,
-    OutputRegistry,
+    DisplayOutput, OutputId, OutputMode, OutputRegistry,
     layout::{OutputLayout, OutputPosition},
     manager::{OutputManager, OutputManagerError, OutputReconciliation},
 };

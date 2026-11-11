@@ -9,9 +9,9 @@ use std::{error::Error, fmt, marker::PhantomData};
 
 use smithay::reexports::ash::vk;
 
-use super::{VulkanImage, VulkanLogicalDevice};
 #[cfg(feature = "drm")]
 use super::VulkanDrmImage;
+use super::{VulkanImage, VulkanLogicalDevice};
 
 /// Errors returned while creating an image view.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -22,7 +22,9 @@ pub enum VulkanImageViewError {
 impl fmt::Display for VulkanImageViewError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Creation(error) => write!(formatter, "Vulkan image-view creation failed: {error:?}"),
+            Self::Creation(error) => {
+                write!(formatter, "Vulkan image-view creation failed: {error:?}")
+            }
         }
     }
 }
@@ -43,9 +45,7 @@ pub struct VulkanImageView<'image, 'device> {
 
 impl<'image, 'device> VulkanImageView<'image, 'device> {
     /// Creates a 2D color view over a Vulkan image.
-    pub fn color(
-        image: &'image VulkanImage<'device>,
-    ) -> Result<Self, VulkanImageViewError> {
+    pub fn color(image: &'image VulkanImage<'device>) -> Result<Self, VulkanImageViewError> {
         let subresource_range = vk::ImageSubresourceRange::default()
             .aspect_mask(vk::ImageAspectFlags::COLOR)
             .base_mip_level(0)
@@ -60,9 +60,8 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
             .subresource_range(subresource_range);
 
         let device = image.device();
-        let handle = unsafe {
-            device.handle().create_image_view(&create_info, None)
-        }.map_err(VulkanImageViewError::Creation)?;
+        let handle = unsafe { device.handle().create_image_view(&create_info, None) }
+            .map_err(VulkanImageViewError::Creation)?;
 
         Ok(Self {
             device,
@@ -78,9 +77,7 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
 
     /// Creates a 2D color view over a modifier-aware DRM export image.
     #[cfg(feature = "drm")]
-    pub fn color_drm(
-        image: &'image VulkanDrmImage<'device>,
-    ) -> Result<Self, VulkanImageViewError> {
+    pub fn color_drm(image: &'image VulkanDrmImage<'device>) -> Result<Self, VulkanImageViewError> {
         let subresource_range = vk::ImageSubresourceRange::default()
             .aspect_mask(vk::ImageAspectFlags::COLOR)
             .base_mip_level(0)
@@ -95,9 +92,8 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
             .subresource_range(subresource_range);
 
         let device = image.device();
-        let handle = unsafe {
-            device.handle().create_image_view(&create_info, None)
-        }.map_err(VulkanImageViewError::Creation)?;
+        let handle = unsafe { device.handle().create_image_view(&create_info, None) }
+            .map_err(VulkanImageViewError::Creation)?;
 
         Ok(Self {
             device,
@@ -111,13 +107,27 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
         })
     }
 
-    pub fn handle(&self) -> vk::ImageView { self.handle }
-    pub(super) fn image_handle(&self) -> vk::Image { self.image }
-    pub fn format(&self) -> vk::Format { self.format }
-    pub fn width(&self) -> u32 { self.width }
-    pub fn height(&self) -> u32 { self.height }
-    pub fn usage(&self) -> vk::ImageUsageFlags { self.usage }
-    pub(super) fn device(&self) -> &'device VulkanLogicalDevice { self.device }
+    pub fn handle(&self) -> vk::ImageView {
+        self.handle
+    }
+    pub(super) fn image_handle(&self) -> vk::Image {
+        self.image
+    }
+    pub fn format(&self) -> vk::Format {
+        self.format
+    }
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+    pub fn usage(&self) -> vk::ImageUsageFlags {
+        self.usage
+    }
+    pub(super) fn device(&self) -> &'device VulkanLogicalDevice {
+        self.device
+    }
 }
 
 impl Drop for VulkanImageView<'_, '_> {

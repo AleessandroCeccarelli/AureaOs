@@ -60,9 +60,15 @@ impl fmt::Display for VulkanImageError {
             Self::InvalidDimensions => f.write_str("Vulkan image dimensions must be non-zero"),
             Self::EmptyUsage => f.write_str("Vulkan image usage flags must not be empty"),
             Self::ImageCreation(error) => write!(f, "Vulkan image creation failed: {error:?}"),
-            Self::MemoryTypeUnavailable => f.write_str("No Vulkan memory type satisfies the image requirements"),
-            Self::MemoryAllocation(error) => write!(f, "Vulkan image memory allocation failed: {error:?}"),
-            Self::MemoryBinding(error) => write!(f, "Vulkan image memory binding failed: {error:?}"),
+            Self::MemoryTypeUnavailable => {
+                f.write_str("No Vulkan memory type satisfies the image requirements")
+            }
+            Self::MemoryAllocation(error) => {
+                write!(f, "Vulkan image memory allocation failed: {error:?}")
+            }
+            Self::MemoryBinding(error) => {
+                write!(f, "Vulkan image memory binding failed: {error:?}")
+            }
         }
     }
 }
@@ -81,7 +87,10 @@ impl<'device> VulkanImageAllocator<'device> {
 
     /// Creates and binds an image. The returned resource destroys its image
     /// before releasing the bound memory.
-    pub fn allocate(&self, request: VulkanImageRequest) -> Result<VulkanImage<'device>, VulkanImageError> {
+    pub fn allocate(
+        &self,
+        request: VulkanImageRequest,
+    ) -> Result<VulkanImage<'device>, VulkanImageError> {
         if request.width == 0 || request.height == 0 {
             return Err(VulkanImageError::InvalidDimensions);
         }
@@ -166,13 +175,27 @@ pub struct VulkanImage<'device> {
 }
 
 impl<'device> VulkanImage<'device> {
-    pub fn handle(&self) -> vk::Image { self.image }
-    pub fn memory(&self) -> vk::DeviceMemory { self.memory }
-    pub fn width(&self) -> u32 { self.width }
-    pub fn height(&self) -> u32 { self.height }
-    pub fn format(&self) -> vk::Format { self.format }
-    pub fn usage(&self) -> vk::ImageUsageFlags { self.usage }
-    pub(super) fn device(&self) -> &'device VulkanLogicalDevice { self.device }
+    pub fn handle(&self) -> vk::Image {
+        self.image
+    }
+    pub fn memory(&self) -> vk::DeviceMemory {
+        self.memory
+    }
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+    pub fn format(&self) -> vk::Format {
+        self.format
+    }
+    pub fn usage(&self) -> vk::ImageUsageFlags {
+        self.usage
+    }
+    pub(super) fn device(&self) -> &'device VulkanLogicalDevice {
+        self.device
+    }
 }
 
 impl Drop for VulkanImage<'_> {

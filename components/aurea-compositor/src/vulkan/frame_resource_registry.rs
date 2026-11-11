@@ -15,7 +15,9 @@ pub struct VulkanFrameResourceId(u64);
 
 impl VulkanFrameResourceId {
     /// Numeric identifier suitable for diagnostics and external registries.
-    pub const fn get(self) -> u64 { self.0 }
+    pub const fn get(self) -> u64 {
+        self.0
+    }
 }
 
 /// Errors returned by the frame-resource registry.
@@ -30,10 +32,20 @@ pub enum VulkanFrameResourceRegistryError {
 impl fmt::Display for VulkanFrameResourceRegistryError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::IdentifierExhausted => formatter.write_str("Vulkan frame-resource identifiers are exhausted"),
-            Self::UnknownResource(id) => write!(formatter, "Unknown Vulkan frame resource {}", id.get()),
-            Self::ResourceBusy(id) => write!(formatter, "Vulkan frame resource {} is still owned", id.get()),
-            Self::Lifecycle(error) => write!(formatter, "Vulkan frame-resource lifecycle failed: {error}"),
+            Self::IdentifierExhausted => {
+                formatter.write_str("Vulkan frame-resource identifiers are exhausted")
+            }
+            Self::UnknownResource(id) => {
+                write!(formatter, "Unknown Vulkan frame resource {}", id.get())
+            }
+            Self::ResourceBusy(id) => write!(
+                formatter,
+                "Vulkan frame resource {} is still owned",
+                id.get()
+            ),
+            Self::Lifecycle(error) => {
+                write!(formatter, "Vulkan frame-resource lifecycle failed: {error}")
+            }
         }
     }
 }
@@ -41,7 +53,9 @@ impl fmt::Display for VulkanFrameResourceRegistryError {
 impl Error for VulkanFrameResourceRegistryError {}
 
 impl From<VulkanFrameResourceError> for VulkanFrameResourceRegistryError {
-    fn from(error: VulkanFrameResourceError) -> Self { Self::Lifecycle(error) }
+    fn from(error: VulkanFrameResourceError) -> Self {
+        Self::Lifecycle(error)
+    }
 }
 
 /// Owns lifecycle records for render-target images registered with one output.
@@ -58,22 +72,30 @@ pub struct VulkanFrameResourceRegistry {
 
 impl VulkanFrameResourceRegistry {
     /// Creates an empty registry.
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     /// Registers a new resource and returns its stable identifier.
     pub fn register(&mut self) -> Result<VulkanFrameResourceId, VulkanFrameResourceRegistryError> {
         let id = VulkanFrameResourceId(self.next_id);
-        self.next_id = self.next_id.checked_add(1)
+        self.next_id = self
+            .next_id
+            .checked_add(1)
             .ok_or(VulkanFrameResourceRegistryError::IdentifierExhausted)?;
         self.resources.insert(id, VulkanFrameResource::new());
         Ok(id)
     }
 
     /// Returns the number of registered resources.
-    pub fn len(&self) -> usize { self.resources.len() }
+    pub fn len(&self) -> usize {
+        self.resources.len()
+    }
 
     /// Returns whether no resources are registered.
-    pub fn is_empty(&self) -> bool { self.resources.is_empty() }
+    pub fn is_empty(&self) -> bool {
+        self.resources.is_empty()
+    }
 
     /// Returns whether a registered resource is ready for rendering.
     pub fn is_available(
@@ -213,7 +235,8 @@ impl VulkanFrameResourceRegistry {
         &self,
         id: VulkanFrameResourceId,
     ) -> Result<&VulkanFrameResource, VulkanFrameResourceRegistryError> {
-        self.resources.get(&id)
+        self.resources
+            .get(&id)
             .ok_or(VulkanFrameResourceRegistryError::UnknownResource(id))
     }
 
@@ -221,7 +244,8 @@ impl VulkanFrameResourceRegistry {
         &mut self,
         id: VulkanFrameResourceId,
     ) -> Result<&mut VulkanFrameResource, VulkanFrameResourceRegistryError> {
-        self.resources.get_mut(&id)
+        self.resources
+            .get_mut(&id)
             .ok_or(VulkanFrameResourceRegistryError::UnknownResource(id))
     }
 }

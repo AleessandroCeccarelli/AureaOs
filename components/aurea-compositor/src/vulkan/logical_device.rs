@@ -11,7 +11,8 @@ use smithay::{
 };
 
 use super::{
-    VulkanContext, VulkanDeviceExtensionPlan, VulkanInitError, VulkanQueueSubmitter, VulkanRenderingFeaturePlan,
+    VulkanContext, VulkanDeviceExtensionPlan, VulkanInitError, VulkanQueueSubmitter,
+    VulkanRenderingFeaturePlan,
 };
 
 /// A logical Vulkan device, graphics queue and command pool.
@@ -41,7 +42,9 @@ impl VulkanLogicalDevice {
                 .handle_type(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD);
             let mut semaphore_properties = vk::ExternalSemaphoreProperties::default();
             unsafe {
-                physical_device.instance().handle()
+                physical_device
+                    .instance()
+                    .handle()
                     .get_physical_device_external_semaphore_properties(
                         physical_device.handle(),
                         &semaphore_info,
@@ -50,7 +53,8 @@ impl VulkanLogicalDevice {
             }
             let features = semaphore_properties.external_semaphore_features;
             features.contains(vk::ExternalSemaphoreFeatureFlags::EXPORTABLE)
-                && semaphore_properties.compatible_handle_types
+                && semaphore_properties
+                    .compatible_handle_types
                     .contains(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD)
         } else {
             false
@@ -80,7 +84,10 @@ impl VulkanLogicalDevice {
         })?;
 
         let memory_properties = unsafe {
-            physical_device.instance().handle().get_physical_device_memory_properties(physical_device.handle())
+            physical_device
+                .instance()
+                .handle()
+                .get_physical_device_memory_properties(physical_device.handle())
         };
         let graphics_queue = unsafe { device.get_device_queue(queue_family_index, 0) };
         let pool_info = vk::CommandPoolCreateInfo::default()
@@ -115,7 +122,9 @@ impl VulkanLogicalDevice {
     }
 
     /// Returns the underlying Vulkan device handle.
-    pub(super) fn handle(&self) -> &ash::Device { &self.device }
+    pub(super) fn handle(&self) -> &ash::Device {
+        &self.device
+    }
 
     /// Returns physical-device memory types for allocation decisions.
     pub(super) fn memory_properties(&self) -> &vk::PhysicalDeviceMemoryProperties {
@@ -123,25 +132,39 @@ impl VulkanLogicalDevice {
     }
 
     /// Vulkan instance used to query physical-device image capabilities.
-    pub(super) fn instance(&self) -> &ash::Instance { &self.instance }
+    pub(super) fn instance(&self) -> &ash::Instance {
+        &self.instance
+    }
 
     /// Physical device paired with this logical device.
-    pub(super) fn physical_device(&self) -> vk::PhysicalDevice { self.physical_device }
+    pub(super) fn physical_device(&self) -> vk::PhysicalDevice {
+        self.physical_device
+    }
 
     /// Returns the graphics queue handle.
-    pub fn graphics_queue(&self) -> vk::Queue { self.graphics_queue }
+    pub fn graphics_queue(&self) -> vk::Queue {
+        self.graphics_queue
+    }
 
     /// Returns the graphics queue-family index.
-    pub fn graphics_queue_family(&self) -> u32 { self.graphics_queue_family }
+    pub fn graphics_queue_family(&self) -> u32 {
+        self.graphics_queue_family
+    }
 
     /// Returns the command pool used by this device.
-    pub fn command_pool(&self) -> vk::CommandPool { self.command_pool }
+    pub fn command_pool(&self) -> vk::CommandPool {
+        self.command_pool
+    }
 
     /// Returns the extension plan used to create this logical device.
-    pub fn extension_plan(&self) -> &VulkanDeviceExtensionPlan { &self.extension_plan }
+    pub fn extension_plan(&self) -> &VulkanDeviceExtensionPlan {
+        &self.extension_plan
+    }
 
     /// Whether this device can export semaphore payloads as Linux sync files.
-    pub fn supports_sync_fd(&self) -> bool { self.supports_sync_fd }
+    pub fn supports_sync_fd(&self) -> bool {
+        self.supports_sync_fd
+    }
 
     /// Whether foreign queue-family ownership transfers are enabled on this device.
     pub fn supports_foreign_queue_family(&self) -> bool {
@@ -149,7 +172,9 @@ impl VulkanLogicalDevice {
     }
 
     /// Returns the Vulkan 1.3 rendering features enabled on this device.
-    pub fn rendering_features(&self) -> &VulkanRenderingFeaturePlan { &self.rendering_features }
+    pub fn rendering_features(&self) -> &VulkanRenderingFeaturePlan {
+        &self.rendering_features
+    }
 
     /// Allocates one primary command buffer from this device's command pool.
     pub(super) fn allocate_primary_command_buffer(&self) -> Result<vk::CommandBuffer, vk::Result> {
@@ -163,11 +188,17 @@ impl VulkanLogicalDevice {
 
     /// Frees a command buffer allocated from this device's pool.
     pub(super) fn free_command_buffer(&self, command_buffer: vk::CommandBuffer) {
-        unsafe { self.device.free_command_buffers(self.command_pool, &[command_buffer]); }
+        unsafe {
+            self.device
+                .free_command_buffers(self.command_pool, &[command_buffer]);
+        }
     }
 
     /// Submits a recorded command buffer and waits for its completion.
-    pub(super) fn submit_and_wait(&self, command_buffer: vk::CommandBuffer) -> Result<(), vk::Result> {
+    pub(super) fn submit_and_wait(
+        &self,
+        command_buffer: vk::CommandBuffer,
+    ) -> Result<(), vk::Result> {
         VulkanQueueSubmitter::new(&self.device, self.graphics_queue).submit_and_wait(command_buffer)
     }
 }
@@ -188,9 +219,11 @@ impl VulkanContext {
         &self,
         preference: crate::renderer::RenderPreference,
     ) -> Result<VulkanLogicalDevice, VulkanInitError> {
-        let physical_device = self.select_device(preference)
+        let physical_device = self
+            .select_device(preference)
             .ok_or_else(|| VulkanInitError::new("No graphics-capable Vulkan device found"))?;
-        let queue_family_index = self.graphics_queue_family(physical_device)
+        let queue_family_index = self
+            .graphics_queue_family(physical_device)
             .ok_or_else(|| VulkanInitError::new("Selected device has no graphics queue"))?;
         let extension_plan = VulkanDeviceExtensionPlan::from_device(physical_device);
         VulkanLogicalDevice::new(physical_device, queue_family_index, extension_plan)

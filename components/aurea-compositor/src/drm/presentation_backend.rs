@@ -42,20 +42,21 @@ pub enum DrmPresentationBackendError {
 impl fmt::Display for DrmPresentationBackendError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::LegacySurfaceUnsupported => formatter.write_str(
-                "Vulkan presentation requires atomic DRM TEST_ONLY support",
-            ),
-            Self::MissingActivePlane => formatter.write_str(
-                "Vulkan presentation requires at least one configured DRM plane",
-            ),
+            Self::LegacySurfaceUnsupported => {
+                formatter.write_str("Vulkan presentation requires atomic DRM TEST_ONLY support")
+            }
+            Self::MissingActivePlane => formatter
+                .write_str("Vulkan presentation requires at least one configured DRM plane"),
             Self::MissingInFence => formatter.write_str(
                 "Vulkan KMS presentation requires a sync-file fence on every active plane",
             ),
-            Self::UnexpectedCrtc => formatter.write_str(
-                "DRM vblank event does not belong to this presentation surface",
-            ),
+            Self::UnexpectedCrtc => {
+                formatter.write_str("DRM vblank event does not belong to this presentation surface")
+            }
             Self::KmsOperation(message) => write!(formatter, "KMS presentation failed: {message}"),
-            Self::Lifecycle(error) => write!(formatter, "Invalid KMS presentation lifecycle: {error}"),
+            Self::Lifecycle(error) => {
+                write!(formatter, "Invalid KMS presentation lifecycle: {error}")
+            }
         }
     }
 }
@@ -114,7 +115,9 @@ impl DrmPresentationBackend {
         &mut self,
         framebuffer: DrmFramebufferId,
     ) -> Result<crate::vulkan::VulkanFrameResourceId, DrmPresentationBackendError> {
-        self.frames.register_framebuffer(framebuffer).map_err(Into::into)
+        self.frames
+            .register_framebuffer(framebuffer)
+            .map_err(Into::into)
     }
 
     /// Accesses the per-output frame lifecycle for GPU completion and resource ownership.
@@ -192,11 +195,15 @@ impl DrmPresentationBackend {
             return Err(DrmPresentationBackendError::UnexpectedCrtc);
         }
 
-        let displayed = self.frames.pending()
+        let displayed = self
+            .frames
+            .pending()
             .ok_or(DrmPresentationBackendError::Lifecycle(
                 DrmOutputFrameError::NoPendingFrame,
             ))?;
 
-        self.frames.page_flip_complete(displayed).map_err(Into::into)
+        self.frames
+            .page_flip_complete(displayed)
+            .map_err(Into::into)
     }
 }

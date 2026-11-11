@@ -1,5 +1,4 @@
-
- // SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
@@ -16,12 +15,8 @@ use smithay::{
         protocol::wl_surface::WlSurface,
     },
     wayland::compositor::{
-        BufferAssignment,
-        CompositorClientState,
-        CompositorHandler,
-        CompositorState,
-        SurfaceAttributes,
-        with_states,
+        BufferAssignment, CompositorClientState, CompositorHandler, CompositorState,
+        SurfaceAttributes, with_states,
     },
 };
 

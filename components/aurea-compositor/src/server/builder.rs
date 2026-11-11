@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -28,9 +27,7 @@ use crate::{
 use crate::AureaCompositor;
 
 use super::{
-    display_events::register_display_events,
-    socket::register_wayland_socket,
-    state::WaylandState,
+    display_events::register_display_events, socket::register_wayland_socket, state::WaylandState,
 };
 
 #[cfg(feature = "drm")]
@@ -191,9 +188,7 @@ pub(super) fn build(
                     state.vulkan_backends.insert(node, backend);
                 }
                 Err(error) => {
-                    eprintln!(
-                        "AureaOS: Vulkan backend unavailable for DRM device {node}: {error}"
-                    );
+                    eprintln!("AureaOS: Vulkan backend unavailable for DRM device {node}: {error}");
                 }
             }
         }
@@ -202,22 +197,27 @@ pub(super) fn build(
     // Discover connected connectors on the currently initialized DRM devices.
     #[cfg(feature = "drm")]
     for (_, device) in state.drm_devices.iter() {
-        crate::drm::outputs::initialize_drm_outputs(
-            device,
-            state.compositor.output_manager(),
-        )
-        .map_err(io::Error::other)?;
+        crate::drm::outputs::initialize_drm_outputs(device, state.compositor.output_manager())
+            .map_err(io::Error::other)?;
     }
 
     // Create native KMS surfaces after logical outputs have been registered.
     #[cfg(feature = "drm")]
     {
-        let nodes = state.drm_devices.iter().map(|(node, _)| *node).collect::<Vec<_>>();
+        let nodes = state
+            .drm_devices
+            .iter()
+            .map(|(node, _)| *node)
+            .collect::<Vec<_>>();
         for node in nodes {
             if let Some(device) = state.drm_devices.get_mut(node) {
                 match crate::drm::surfaces::DrmSurfaceManager::initialize(device) {
-                    Ok(manager) => { state.drm_surfaces.insert(node, manager); }
-                    Err(error) => eprintln!("AureaOS: KMS surfaces unavailable for DRM device {node}: {error}"),
+                    Ok(manager) => {
+                        state.drm_surfaces.insert(node, manager);
+                    }
+                    Err(error) => eprintln!(
+                        "AureaOS: KMS surfaces unavailable for DRM device {node}: {error}"
+                    ),
                 }
             }
         }
@@ -251,9 +251,7 @@ pub(super) fn build(
             let notifier = state
                 .drm_devices
                 .get_mut(node)
-                .ok_or_else(|| {
-                    io::Error::other("DRM device disappeared during notifier setup")
-                })?
+                .ok_or_else(|| io::Error::other("DRM device disappeared during notifier setup"))?
                 .take_notifier()
                 .map_err(io::Error::other)?;
 

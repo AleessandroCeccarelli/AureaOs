@@ -23,17 +23,27 @@ pub struct DrmModeInfo {
 impl DrmModeInfo {
     /// Creates a display mode description.
     pub const fn new(width: u32, height: u32, refresh_millihz: u32) -> Self {
-        Self { width, height, refresh_millihz }
+        Self {
+            width,
+            height,
+            refresh_millihz,
+        }
     }
 
     /// Returns the mode width in pixels.
-    pub const fn width(&self) -> u32 { self.width }
+    pub const fn width(&self) -> u32 {
+        self.width
+    }
 
     /// Returns the mode height in pixels.
-    pub const fn height(&self) -> u32 { self.height }
+    pub const fn height(&self) -> u32 {
+        self.height
+    }
 
     /// Returns the refresh rate in millihertz.
-    pub const fn refresh_millihz(&self) -> u32 { self.refresh_millihz }
+    pub const fn refresh_millihz(&self) -> u32 {
+        self.refresh_millihz
+    }
 
     /// Converts the DRM mode into the compositor's output mode.
     pub fn to_output_mode(self) -> Option<OutputMode> {
@@ -69,15 +79,19 @@ impl DrmOutputDescriptor {
         current_mode: DrmModeInfo,
         scale: u32,
     ) -> Self {
-        Self { id, name: name.into(), modes, current_mode, scale, connector: None, native_mode: None }
+        Self {
+            id,
+            name: name.into(),
+            modes,
+            current_mode,
+            scale,
+            connector: None,
+            native_mode: None,
+        }
     }
 
     /// Attaches the native DRM connector and selected mode to this descriptor.
-    pub fn with_drm_configuration(
-        mut self,
-        connector: connector::Handle,
-        mode: Mode,
-    ) -> Self {
+    pub fn with_drm_configuration(mut self, connector: connector::Handle, mode: Mode) -> Self {
         self.connector = Some(connector);
         self.native_mode = Some(mode);
         self
@@ -99,19 +113,29 @@ impl DrmOutputDescriptor {
     }
 
     /// Returns the output identifier.
-    pub const fn id(&self) -> OutputId { self.id }
+    pub const fn id(&self) -> OutputId {
+        self.id
+    }
 
     /// Returns the output name.
-    pub fn name(&self) -> &str { &self.name }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
 
     /// Returns the supported display modes.
-    pub fn modes(&self) -> &[DrmModeInfo] { &self.modes }
+    pub fn modes(&self) -> &[DrmModeInfo] {
+        &self.modes
+    }
 
     /// Returns the current display mode.
-    pub const fn current_mode(&self) -> DrmModeInfo { self.current_mode }
+    pub const fn current_mode(&self) -> DrmModeInfo {
+        self.current_mode
+    }
 
     /// Returns the output scale.
-    pub const fn scale(&self) -> u32 { self.scale }
+    pub const fn scale(&self) -> u32 {
+        self.scale
+    }
 
     /// Converts this descriptor into the compositor output model.
     ///
@@ -119,7 +143,10 @@ impl DrmOutputDescriptor {
     /// conversion; callers retaining the descriptor can still create a
     /// corresponding `DrmSurface`.
     pub fn into_display_output(self) -> Result<DisplayOutput, DrmOutputError> {
-        let modes = self.modes.iter().copied()
+        let modes = self
+            .modes
+            .iter()
+            .copied()
             .map(DrmModeInfo::to_output_mode)
             .collect::<Option<Vec<_>>>()
             .ok_or(DrmOutputError::InvalidMode)?;
@@ -130,7 +157,9 @@ impl DrmOutputDescriptor {
             }
         }
 
-        let current_mode = self.current_mode.to_output_mode()
+        let current_mode = self
+            .current_mode
+            .to_output_mode()
             .ok_or(DrmOutputError::InvalidMode)?;
 
         if !modes.contains(&current_mode) {
@@ -157,7 +186,9 @@ impl fmt::Display for DrmOutputError {
         match self {
             Self::InvalidMode => formatter.write_str("DRM reported an invalid display mode"),
             Self::DuplicateMode => formatter.write_str("DRM reported duplicate display modes"),
-            Self::UnsupportedCurrentMode => formatter.write_str("The current display mode is not in the supported mode list"),
+            Self::UnsupportedCurrentMode => {
+                formatter.write_str("The current display mode is not in the supported mode list")
+            }
             Self::InvalidOutput => formatter.write_str("The DRM output description is invalid"),
             Self::DuplicateOutputId => formatter.write_str("The output ID is already registered"),
         }
@@ -173,7 +204,8 @@ pub fn register_output(
     position: OutputPosition,
 ) -> Result<(), DrmOutputError> {
     let output = descriptor.into_display_output()?;
-    manager.register(output, (position.x(), position.y()))
+    manager
+        .register(output, (position.x(), position.y()))
         .map_err(|_| DrmOutputError::DuplicateOutputId)
 }
 

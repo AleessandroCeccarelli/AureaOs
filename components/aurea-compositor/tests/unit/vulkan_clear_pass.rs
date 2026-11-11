@@ -8,10 +8,7 @@ use aurea_compositor::vulkan::{VulkanClearPass, VulkanClearPassError, VulkanImag
 #[test]
 fn accepts_finite_clear_color_and_defined_final_state() {
     assert_eq!(
-        VulkanClearPass::validate(
-            [0.08, 0.12, 0.18, 1.0],
-            VulkanImageState::TransferSource,
-        ),
+        VulkanClearPass::validate([0.08, 0.12, 0.18, 1.0], VulkanImageState::TransferSource,),
         Ok(()),
     );
 }
@@ -19,10 +16,7 @@ fn accepts_finite_clear_color_and_defined_final_state() {
 #[test]
 fn rejects_non_finite_clear_color() {
     assert_eq!(
-        VulkanClearPass::validate(
-            [0.0, f32::NAN, 0.0, 1.0],
-            VulkanImageState::TransferSource,
-        ),
+        VulkanClearPass::validate([0.0, f32::NAN, 0.0, 1.0], VulkanImageState::TransferSource,),
         Err(VulkanClearPassError::NonFiniteClearColor),
     );
 }
@@ -30,10 +24,7 @@ fn rejects_non_finite_clear_color() {
 #[test]
 fn rejects_undefined_final_state() {
     assert_eq!(
-        VulkanClearPass::validate(
-            [0.0, 0.0, 0.0, 1.0],
-            VulkanImageState::Undefined,
-        ),
+        VulkanClearPass::validate([0.0, 0.0, 0.0, 1.0], VulkanImageState::Undefined,),
         Err(VulkanClearPassError::UndefinedFinalState),
     );
 }

@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -19,14 +18,8 @@ use super::{DisplayOutput, OutputId, OutputMode, OutputRegistry};
 pub enum OutputManagerError {
     DuplicateOutput(OutputId),
     UnknownOutput(OutputId),
-    InvalidMode {
-        output: OutputId,
-        mode: OutputMode,
-    },
-    InvalidScale {
-        output: OutputId,
-        scale: u32,
-    },
+    InvalidMode { output: OutputId, mode: OutputMode },
+    InvalidScale { output: OutputId, scale: u32 },
     PositionOverflow,
 }
 
@@ -45,9 +38,7 @@ impl fmt::Display for OutputManagerError {
             Self::InvalidScale { output, scale } => {
                 write!(f, "Invalid scale {scale} for output {output}")
             }
-            Self::PositionOverflow => {
-                f.write_str("Output layout position overflow")
-            }
+            Self::PositionOverflow => f.write_str("Output layout position overflow"),
         }
     }
 }
@@ -207,9 +198,7 @@ impl OutputManager {
 
         changes.removed = owned
             .into_iter()
-            .filter(|id| {
-                !discovered_ids.contains(id) && self.registry.get(*id).is_some()
-            })
+            .filter(|id| !discovered_ids.contains(id) && self.registry.get(*id).is_some())
             .collect();
 
         let removed = changes.removed.iter().copied().collect::<HashSet<_>>();
@@ -226,8 +215,7 @@ impl OutputManager {
                 .copied()
                 .unwrap_or_else(|| output.current_mode().width());
 
-            let width =
-                i32::try_from(width).map_err(|_| OutputManagerError::PositionOverflow)?;
+            let width = i32::try_from(width).map_err(|_| OutputManagerError::PositionOverflow)?;
 
             let edge = position
                 .x()
@@ -316,11 +304,7 @@ impl OutputManager {
     }
 
     /// Changes the scale of an output.
-    pub fn set_scale(
-        &mut self,
-        output_id: OutputId,
-        scale: u32,
-    ) -> Result<(), OutputManagerError> {
+    pub fn set_scale(&mut self, output_id: OutputId, scale: u32) -> Result<(), OutputManagerError> {
         if scale == 0 {
             return Err(OutputManagerError::InvalidScale {
                 output: output_id,

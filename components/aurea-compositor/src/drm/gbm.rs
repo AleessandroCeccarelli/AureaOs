@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -20,10 +19,7 @@ pub enum GbmDeviceManagerError {
     DeviceAlreadyRegistered(DrmNode),
 
     /// GBM initialization failed for the requested DRM node.
-    InitializationFailed {
-        node: DrmNode,
-        message: String,
-    },
+    InitializationFailed { node: DrmNode, message: String },
 }
 
 impl fmt::Display for GbmDeviceManagerError {
@@ -33,7 +29,10 @@ impl fmt::Display for GbmDeviceManagerError {
                 write!(formatter, "GBM device is already registered: {node}")
             }
             Self::InitializationFailed { node, message } => {
-                write!(formatter, "Failed to initialize GBM device {node}: {message}")
+                write!(
+                    formatter,
+                    "Failed to initialize GBM device {node}: {message}"
+                )
             }
         }
     }

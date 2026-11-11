@@ -123,4 +123,3 @@ impl DrmVulkanCompatibility {
         self.status == DrmVulkanCompatibilityStatus::Compatible
     }
 }
-

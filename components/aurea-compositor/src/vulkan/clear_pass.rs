@@ -25,15 +25,15 @@ pub enum VulkanClearPassError {
 impl fmt::Display for VulkanClearPassError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::NonFiniteClearColor => formatter.write_str(
-                "Vulkan clear color components must all be finite",
-            ),
-            Self::UndefinedFinalState => formatter.write_str(
-                "A clear pass cannot leave its image in the undefined state",
-            ),
-            Self::MissingColorAttachmentUsage => formatter.write_str(
-                "The Vulkan image was not created with color-attachment usage",
-            ),
+            Self::NonFiniteClearColor => {
+                formatter.write_str("Vulkan clear color components must all be finite")
+            }
+            Self::UndefinedFinalState => {
+                formatter.write_str("A clear pass cannot leave its image in the undefined state")
+            }
+            Self::MissingColorAttachmentUsage => {
+                formatter.write_str("The Vulkan image was not created with color-attachment usage")
+            }
         }
     }
 }

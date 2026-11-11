@@ -8,9 +8,8 @@
 use aurea_compositor::{
     drm::DrmPrimaryPlaneFormatCapabilities,
     vulkan::{
-        DrmVulkanCompatibility, DrmVulkanCompatibilityStatus,
-        VulkanExternalMemoryCapabilities, VulkanFormatCapabilities,
-        VulkanFormatModifierInfo,
+        DrmVulkanCompatibility, DrmVulkanCompatibilityStatus, VulkanExternalMemoryCapabilities,
+        VulkanFormatCapabilities, VulkanFormatModifierInfo,
     },
 };
 use smithay::{

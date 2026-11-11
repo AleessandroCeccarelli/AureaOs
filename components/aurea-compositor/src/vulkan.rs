@@ -8,41 +8,41 @@
 mod backend;
 #[cfg(feature = "drm")]
 mod buffer_allocator;
+mod clear_pass;
 mod command_buffer;
 mod context;
+mod device_extensions;
 #[cfg(feature = "drm")]
 mod dmabuf_layout;
+mod draw_pass;
 #[cfg(feature = "drm")]
 mod drm_compatibility;
 #[cfg(feature = "drm")]
+mod drm_framebuffer;
+#[cfg(feature = "drm")]
 mod drm_image;
+mod dynamic_rendering;
+mod external_memory;
+mod format_capabilities;
 #[cfg(feature = "drm")]
 mod frame_resource;
 #[cfg(feature = "drm")]
 mod frame_resource_registry;
-#[cfg(feature = "drm")]
-mod drm_framebuffer;
-mod device_extensions;
-mod external_memory;
-mod format_capabilities;
-mod dynamic_rendering;
-mod clear_pass;
-mod draw_pass;
-mod readback_buffer;
-mod offscreen_renderer;
-mod graphics_pipeline;
-mod image_view;
-mod image_transition;
-mod rendering_features;
-mod shader_module;
 mod frame_scheduler;
 mod frame_slot;
+mod graphics_pipeline;
+mod image_allocator;
+mod image_transition;
+mod image_view;
 mod logical_device;
 mod memory_type;
-mod image_allocator;
+mod offscreen_renderer;
 mod physical_device;
 mod queue;
 mod queue_submitter;
+mod readback_buffer;
+mod rendering_features;
+mod shader_module;
 
 use std::{error::Error, fmt};
 
@@ -54,7 +54,9 @@ pub struct VulkanInitError {
 
 impl VulkanInitError {
     pub(super) fn new(message: impl Into<String>) -> Self {
-        Self { message: message.into() }
+        Self {
+            message: message.into(),
+        }
     }
 }
 
@@ -68,46 +70,50 @@ impl Error for VulkanInitError {}
 pub use backend::VulkanBackend;
 #[cfg(feature = "drm")]
 pub use buffer_allocator::{VulkanBufferAllocator, VulkanBufferError, VulkanRenderTargetRequest};
+pub use clear_pass::{VulkanClearPass, VulkanClearPassError};
 pub use command_buffer::VulkanCommandBuffer;
 pub use context::VulkanContext;
+pub use device_extensions::VulkanDeviceExtensionPlan;
 #[cfg(feature = "drm")]
 pub use dmabuf_layout::{DmabufImportLayout, DmabufLayoutError, DmabufPlaneLayout};
+pub use draw_pass::{VulkanDrawPass, VulkanDrawPassError};
 #[cfg(feature = "drm")]
 pub use drm_compatibility::{
-    DrmVulkanCompatibility,
-    DrmVulkanCompatibilityStatus,
-    DrmVulkanFormat,
+    DrmVulkanCompatibility, DrmVulkanCompatibilityStatus, DrmVulkanFormat,
 };
 #[cfg(feature = "drm")]
-pub use drm_image::{VulkanDrmImage, VulkanDrmImageAllocator, VulkanDrmImageError, VulkanDrmPlaneLayout};
+pub use drm_framebuffer::{VulkanDrmFramebuffer, VulkanDrmFramebufferError};
+#[cfg(feature = "drm")]
+pub use drm_image::{
+    VulkanDrmImage, VulkanDrmImageAllocator, VulkanDrmImageError, VulkanDrmPlaneLayout,
+};
+pub use dynamic_rendering::{VulkanColorLoad, VulkanDynamicRenderingScope};
+pub use external_memory::VulkanExternalMemoryCapabilities;
+pub use format_capabilities::{VulkanFormatCapabilities, VulkanFormatModifierInfo};
 #[cfg(feature = "drm")]
 pub use frame_resource::{VulkanFrameResource, VulkanFrameResourceError};
 #[cfg(feature = "drm")]
 pub use frame_resource_registry::{
-    VulkanFrameResourceId,
-    VulkanFrameResourceRegistry,
-    VulkanFrameResourceRegistryError,
+    VulkanFrameResourceId, VulkanFrameResourceRegistry, VulkanFrameResourceRegistryError,
 };
-#[cfg(feature = "drm")]
-pub use drm_framebuffer::{VulkanDrmFramebuffer, VulkanDrmFramebufferError};
-pub use device_extensions::VulkanDeviceExtensionPlan;
-pub use external_memory::VulkanExternalMemoryCapabilities;
-pub use format_capabilities::{VulkanFormatCapabilities, VulkanFormatModifierInfo};
-pub use dynamic_rendering::{VulkanColorLoad, VulkanDynamicRenderingScope};
-pub use clear_pass::{VulkanClearPass, VulkanClearPassError};
-pub use draw_pass::{VulkanDrawPass, VulkanDrawPassError};
-pub use readback_buffer::{VulkanReadbackBuffer, VulkanReadbackError};
-pub use offscreen_renderer::{VulkanOffscreenError, VulkanOffscreenRenderer};
-pub use graphics_pipeline::{VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders};
-pub use image_view::{VulkanImageView, VulkanImageViewError};
+pub use frame_scheduler::{
+    DEFAULT_FRAMES_IN_FLIGHT, VulkanFrame, VulkanFrameScheduler, VulkanFrameSchedulerError,
+};
+pub use graphics_pipeline::{
+    VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
+};
+pub use image_allocator::{
+    VulkanImage, VulkanImageAllocator, VulkanImageError, VulkanImageRequest,
+};
 pub use image_transition::{VulkanImageState, VulkanImageTransition, VulkanImageTransitionError};
-pub use rendering_features::VulkanRenderingFeaturePlan;
-pub use shader_module::{VulkanShaderError, VulkanShaderModule};
-pub use frame_scheduler::{DEFAULT_FRAMES_IN_FLIGHT, VulkanFrame, VulkanFrameScheduler, VulkanFrameSchedulerError};
+pub use image_view::{VulkanImageView, VulkanImageViewError};
 pub use logical_device::VulkanLogicalDevice;
 pub use memory_type::select_memory_type_index;
-pub use image_allocator::{VulkanImage, VulkanImageAllocator, VulkanImageError, VulkanImageRequest};
+pub use offscreen_renderer::{VulkanOffscreenError, VulkanOffscreenRenderer};
 pub use physical_device::{VulkanDeviceInfo, VulkanDeviceType};
 pub use queue::VulkanQueueFamilyInfo;
+pub use readback_buffer::{VulkanReadbackBuffer, VulkanReadbackError};
+pub use rendering_features::VulkanRenderingFeaturePlan;
+pub use shader_module::{VulkanShaderError, VulkanShaderModule};
 
 pub(super) use queue_submitter::VulkanQueueSubmitter;

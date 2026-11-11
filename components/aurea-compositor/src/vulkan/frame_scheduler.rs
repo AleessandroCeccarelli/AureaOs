@@ -25,12 +25,11 @@ pub enum VulkanFrameSchedulerError {
 impl fmt::Display for VulkanFrameSchedulerError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidFrameCount => formatter.write_str(
-                "Vulkan frames-in-flight count must be between one and three"
-            ),
-            Self::SyncFdUnavailable => formatter.write_str(
-                "The selected Vulkan device cannot export Linux sync-file fences"
-            ),
+            Self::InvalidFrameCount => {
+                formatter.write_str("Vulkan frames-in-flight count must be between one and three")
+            }
+            Self::SyncFdUnavailable => formatter
+                .write_str("The selected Vulkan device cannot export Linux sync-file fences"),
             Self::Vulkan(error) => write!(
                 formatter,
                 "Vulkan frame scheduling operation failed: {error:?}"
@@ -53,9 +52,7 @@ pub struct VulkanFrameScheduler<'device> {
 
 impl<'device> VulkanFrameScheduler<'device> {
     /// Creates a scheduler with two frames in flight by default.
-    pub fn new(
-        device: &'device VulkanLogicalDevice,
-    ) -> Result<Self, VulkanFrameSchedulerError> {
+    pub fn new(device: &'device VulkanLogicalDevice) -> Result<Self, VulkanFrameSchedulerError> {
         Self::with_frame_count(device, DEFAULT_FRAMES_IN_FLIGHT)
     }
 
@@ -79,7 +76,9 @@ impl<'device> VulkanFrameScheduler<'device> {
                             if let Some(semaphore) = slot.sync_fd_semaphore {
                                 device.handle().destroy_semaphore(semaphore, None);
                             }
-                            device.handle().destroy_command_pool(slot.command_pool, None);
+                            device
+                                .handle()
+                                .destroy_command_pool(slot.command_pool, None);
                         }
                     }
                     return Err(VulkanFrameSchedulerError::Vulkan(error));
@@ -87,16 +86,18 @@ impl<'device> VulkanFrameScheduler<'device> {
             }
         }
 
-        Ok(Self { device, slots, next_slot: 0 })
+        Ok(Self {
+            device,
+            slots,
+            next_slot: 0,
+        })
     }
 
     /// Acquires the next slot and begins a one-time primary command buffer.
     ///
     /// The call waits for the selected slot only. Other submitted frames may
     /// continue executing on the GPU.
-    pub fn begin_frame(
-        &mut self,
-    ) -> Result<VulkanFrame<'_, 'device>, VulkanFrameSchedulerError> {
+    pub fn begin_frame(&mut self) -> Result<VulkanFrame<'_, 'device>, VulkanFrameSchedulerError> {
         let slot_index = self.next_slot;
         let command_buffer = self.slots[slot_index]
             .prepare(self.device)
@@ -139,12 +140,16 @@ impl Drop for VulkanFrameScheduler<'_> {
 
             for slot in &mut self.slots {
                 if slot.completion_fence != vk::Fence::null() {
-                    self.device.handle().destroy_fence(slot.completion_fence, None);
+                    self.device
+                        .handle()
+                        .destroy_fence(slot.completion_fence, None);
                 }
                 if let Some(semaphore) = slot.sync_fd_semaphore.take() {
                     self.device.handle().destroy_semaphore(semaphore, None);
                 }
-                self.device.handle().destroy_command_pool(slot.command_pool, None);
+                self.device
+                    .handle()
+                    .destroy_command_pool(slot.command_pool, None);
             }
         }
     }
@@ -173,10 +178,8 @@ impl VulkanFrame<'_, '_> {
             .submit(scheduler.device, self.command_buffer)
             .map_err(VulkanFrameSchedulerError::Vulkan)?;
 
-        scheduler.next_slot = VulkanFrameScheduler::next_slot_index(
-            self.slot_index,
-            scheduler.slots.len(),
-        );
+        scheduler.next_slot =
+            VulkanFrameScheduler::next_slot_index(self.slot_index, scheduler.slots.len());
         Ok(())
     }
 
@@ -195,10 +198,8 @@ impl VulkanFrame<'_, '_> {
             .submit_with_sync_fd(scheduler.device, self.command_buffer)
             .map_err(VulkanFrameSchedulerError::Vulkan)?;
 
-        scheduler.next_slot = VulkanFrameScheduler::next_slot_index(
-            self.slot_index,
-            scheduler.slots.len(),
-        );
+        scheduler.next_slot =
+            VulkanFrameScheduler::next_slot_index(self.slot_index, scheduler.slots.len());
         Ok(sync_fd)
     }
 }

@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
@@ -24,18 +23,13 @@ pub(super) fn initialize_gbm_devices(state: &mut WaylandState) {
 
     for node in nodes {
         if let Err(error) = register_gbm_device(state, node) {
-            eprintln!(
-                "AureaOS: GBM initialization unavailable for DRM device {node}: {error}"
-            );
+            eprintln!("AureaOS: GBM initialization unavailable for DRM device {node}: {error}");
         }
     }
 }
 
 /// Initializes GBM for one opened DRM device.
-pub(super) fn register_gbm_device(
-    state: &mut WaylandState,
-    node: DrmNode,
-) -> io::Result<()> {
+pub(super) fn register_gbm_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
     if state.gbm_devices.contains(node) {
         return Ok(());
     }

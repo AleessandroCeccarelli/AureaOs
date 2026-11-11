@@ -31,14 +31,28 @@ impl fmt::Display for VulkanReadbackError {
         match self {
             Self::InvalidDimensions => formatter.write_str("Readback dimensions must be non-zero"),
             Self::SizeOverflow => formatter.write_str("Readback byte size overflowed"),
-            Self::BufferCreation(error) => write!(formatter, "Readback buffer creation failed: {error:?}"),
-            Self::MemoryTypeUnavailable => formatter.write_str("No host-visible Vulkan memory type is available"),
-            Self::MemoryAllocation(error) => write!(formatter, "Readback memory allocation failed: {error:?}"),
-            Self::MemoryBinding(error) => write!(formatter, "Readback memory binding failed: {error:?}"),
+            Self::BufferCreation(error) => {
+                write!(formatter, "Readback buffer creation failed: {error:?}")
+            }
+            Self::MemoryTypeUnavailable => {
+                formatter.write_str("No host-visible Vulkan memory type is available")
+            }
+            Self::MemoryAllocation(error) => {
+                write!(formatter, "Readback memory allocation failed: {error:?}")
+            }
+            Self::MemoryBinding(error) => {
+                write!(formatter, "Readback memory binding failed: {error:?}")
+            }
             Self::Mapping(error) => write!(formatter, "Readback memory mapping failed: {error:?}"),
-            Self::Invalidation(error) => write!(formatter, "Readback memory invalidation failed: {error:?}"),
-            Self::UnsupportedImageFormat => formatter.write_str("Readback currently supports R8G8B8A8_UNORM images only"),
-            Self::MissingTransferSourceUsage => formatter.write_str("Readback image lacks TRANSFER_SRC usage"),
+            Self::Invalidation(error) => {
+                write!(formatter, "Readback memory invalidation failed: {error:?}")
+            }
+            Self::UnsupportedImageFormat => {
+                formatter.write_str("Readback currently supports R8G8B8A8_UNORM images only")
+            }
+            Self::MissingTransferSourceUsage => {
+                formatter.write_str("Readback image lacks TRANSFER_SRC usage")
+            }
         }
     }
 }
@@ -68,8 +82,8 @@ impl<'device> VulkanReadbackBuffer<'device> {
             .checked_mul(height as usize)
             .and_then(|pixels| pixels.checked_mul(4))
             .ok_or(VulkanReadbackError::SizeOverflow)?;
-        let size = vk::DeviceSize::try_from(byte_len)
-            .map_err(|_| VulkanReadbackError::SizeOverflow)?;
+        let size =
+            vk::DeviceSize::try_from(byte_len).map_err(|_| VulkanReadbackError::SizeOverflow)?;
 
         let create_info = vk::BufferCreateInfo::default()
             .size(size)
@@ -114,7 +128,13 @@ impl<'device> VulkanReadbackBuffer<'device> {
             return Err(VulkanReadbackError::MemoryBinding(error));
         }
 
-        Ok(Self { device, buffer, memory, byte_len, coherent })
+        Ok(Self {
+            device,
+            buffer,
+            memory,
+            byte_len,
+            coherent,
+        })
     }
 
     /// Records a tightly packed image-to-buffer copy.
@@ -177,10 +197,11 @@ impl<'device> VulkanReadbackBuffer<'device> {
             .buffer(self.buffer)
             .offset(0)
             .size(vk::WHOLE_SIZE)];
-        let dependency = vk::DependencyInfo::default()
-            .buffer_memory_barriers(&buffer_barrier);
+        let dependency = vk::DependencyInfo::default().buffer_memory_barriers(&buffer_barrier);
         unsafe {
-            self.device.handle().cmd_pipeline_barrier2(command_buffer, &dependency);
+            self.device
+                .handle()
+                .cmd_pipeline_barrier2(command_buffer, &dependency);
         }
         Ok(())
     }
@@ -197,7 +218,8 @@ impl<'device> VulkanReadbackBuffer<'device> {
                 vk::WHOLE_SIZE,
                 vk::MemoryMapFlags::empty(),
             )
-        }.map_err(VulkanReadbackError::Mapping)?;
+        }
+        .map_err(VulkanReadbackError::Mapping)?;
 
         if !self.coherent {
             let ranges = [vk::MappedMemoryRange::default()
@@ -205,23 +227,25 @@ impl<'device> VulkanReadbackBuffer<'device> {
                 .offset(0)
                 .size(vk::WHOLE_SIZE)];
             if let Err(error) = unsafe {
-                self.device.handle().invalidate_mapped_memory_ranges(&ranges)
+                self.device
+                    .handle()
+                    .invalidate_mapped_memory_ranges(&ranges)
             } {
                 unsafe { self.device.handle().unmap_memory(self.memory) };
                 return Err(VulkanReadbackError::Invalidation(error));
             }
         }
 
-        let bytes = unsafe {
-            slice::from_raw_parts(mapped.cast::<u8>(), self.byte_len).to_vec()
-        };
+        let bytes = unsafe { slice::from_raw_parts(mapped.cast::<u8>(), self.byte_len).to_vec() };
         unsafe {
             self.device.handle().unmap_memory(self.memory);
         }
         Ok(bytes)
     }
 
-    pub fn byte_len(&self) -> usize { self.byte_len }
+    pub fn byte_len(&self) -> usize {
+        self.byte_len
+    }
 }
 
 impl Drop for VulkanReadbackBuffer<'_> {

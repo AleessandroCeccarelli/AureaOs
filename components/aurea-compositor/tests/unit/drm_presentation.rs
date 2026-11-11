@@ -4,9 +4,7 @@
 // Copyright (C) 2026 Alessandro Ceccarelli
 
 use aurea_compositor::drm::presentation::{
-    DrmFramebufferId,
-    DrmPresentationError,
-    DrmPresentationLifecycle,
+    DrmFramebufferId, DrmPresentationError, DrmPresentationLifecycle,
 };
 
 fn fb(value: u64) -> DrmFramebufferId {
@@ -114,7 +112,6 @@ fn current_framebuffer_cannot_be_submitted_again() {
         Err(DrmPresentationError::CandidateIsCurrent)
     );
 }
-
 
 #[test]
 fn test_passed_without_an_active_test_is_rejected() {

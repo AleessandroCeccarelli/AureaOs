@@ -16,11 +16,7 @@ use smithay::{
     reexports::ash::{khr, vk},
 };
 
-use super::{
-    DrmVulkanFormat,
-    VulkanLogicalDevice,
-    memory_type::select_memory_type_index,
-};
+use super::{DrmVulkanFormat, VulkanLogicalDevice, memory_type::select_memory_type_index};
 
 /// Layout of one Vulkan DRM memory plane in the exported DMA-BUF.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -114,22 +110,27 @@ impl<'device> VulkanDrmImageAllocator<'device> {
             .push_next(&mut modifier_query)
             .push_next(&mut external_query);
         let mut external_properties = vk::ExternalImageFormatProperties::default();
-        let mut image_properties = vk::ImageFormatProperties2::default()
-            .push_next(&mut external_properties);
+        let mut image_properties =
+            vk::ImageFormatProperties2::default().push_next(&mut external_properties);
         unsafe {
-            self.device.instance().get_physical_device_image_format_properties2(
-                self.device.physical_device(),
-                &image_query,
-                &mut image_properties,
-            )
-        }.map_err(VulkanDrmImageError::ModifierImageQuery)?;
+            self.device
+                .instance()
+                .get_physical_device_image_format_properties2(
+                    self.device.physical_device(),
+                    &image_query,
+                    &mut image_properties,
+                )
+        }
+        .map_err(VulkanDrmImageError::ModifierImageQuery)?;
         let limits = image_properties.image_format_properties;
         let external_memory = external_properties.external_memory_properties;
         let dma_buf_handle = vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT;
         if !external_memory
             .external_memory_features
             .contains(vk::ExternalMemoryFeatureFlags::EXPORTABLE)
-            || !external_memory.compatible_handle_types.contains(dma_buf_handle)
+            || !external_memory
+                .compatible_handle_types
+                .contains(dma_buf_handle)
         {
             return Err(VulkanDrmImageError::DmabufExportUnsupported);
         }
@@ -138,14 +139,18 @@ impl<'device> VulkanDrmImageAllocator<'device> {
         }
 
         let modifiers = [modifier];
-        let mut modifier_list = vk::ImageDrmFormatModifierListCreateInfoEXT::default()
-            .drm_format_modifiers(&modifiers);
+        let mut modifier_list =
+            vk::ImageDrmFormatModifierListCreateInfoEXT::default().drm_format_modifiers(&modifiers);
         let mut external_image = vk::ExternalMemoryImageCreateInfo::default()
             .handle_types(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
         let image_info = vk::ImageCreateInfo::default()
             .image_type(vk::ImageType::TYPE_2D)
             .format(vk_format)
-            .extent(vk::Extent3D { width, height, depth: 1 })
+            .extent(vk::Extent3D {
+                width,
+                height,
+                depth: 1,
+            })
             .mip_levels(1)
             .array_layers(1)
             .samples(vk::SampleCountFlags::TYPE_1)
@@ -201,10 +206,7 @@ impl<'device> VulkanDrmImageAllocator<'device> {
         let fd_info = vk::MemoryGetFdInfoKHR::default()
             .memory(memory)
             .handle_type(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
-        let fd_loader = khr::external_memory_fd::Device::new(
-            self.device.instance(),
-            raw,
-        );
+        let fd_loader = khr::external_memory_fd::Device::new(self.device.instance(), raw);
         let raw_fd = match unsafe { fd_loader.get_memory_fd(&fd_info) } {
             Ok(fd) => fd,
             Err(error) => {
@@ -224,7 +226,10 @@ impl<'device> VulkanDrmImageAllocator<'device> {
             vk::ImageAspectFlags::MEMORY_PLANE_3_EXT,
         ];
         let mut planes = Vec::with_capacity(format.memory_plane_count as usize);
-        for aspect in plane_aspects.iter().take(format.memory_plane_count as usize) {
+        for aspect in plane_aspects
+            .iter()
+            .take(format.memory_plane_count as usize)
+        {
             let subresource = vk::ImageSubresource::default().aspect_mask(*aspect);
             let layout = unsafe { raw.get_image_subresource_layout(image, subresource) };
             let plane_end = layout.offset.checked_add(layout.size);
@@ -278,16 +283,36 @@ pub struct VulkanDrmImage<'device> {
 }
 
 impl<'device> VulkanDrmImage<'device> {
-    pub fn image(&self) -> vk::Image { self.image }
-    pub fn usage(&self) -> vk::ImageUsageFlags { self.usage }
-    pub(super) fn device(&self) -> &'device VulkanLogicalDevice { self.device }
-    pub fn dmabuf(&self) -> &OwnedFd { &self.dmabuf }
-    pub fn allocation_size(&self) -> vk::DeviceSize { self.allocation_size }
-    pub fn width(&self) -> u32 { self.width }
-    pub fn height(&self) -> u32 { self.height }
-    pub fn format(&self) -> vk::Format { self.format }
-    pub fn drm_format(&self) -> DrmVulkanFormat { self.drm_format }
-    pub fn planes(&self) -> &[VulkanDrmPlaneLayout] { &self.planes }
+    pub fn image(&self) -> vk::Image {
+        self.image
+    }
+    pub fn usage(&self) -> vk::ImageUsageFlags {
+        self.usage
+    }
+    pub(super) fn device(&self) -> &'device VulkanLogicalDevice {
+        self.device
+    }
+    pub fn dmabuf(&self) -> &OwnedFd {
+        &self.dmabuf
+    }
+    pub fn allocation_size(&self) -> vk::DeviceSize {
+        self.allocation_size
+    }
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+    pub fn format(&self) -> vk::Format {
+        self.format
+    }
+    pub fn drm_format(&self) -> DrmVulkanFormat {
+        self.drm_format
+    }
+    pub fn planes(&self) -> &[VulkanDrmPlaneLayout] {
+        &self.planes
+    }
 }
 
 impl Drop for VulkanDrmImage<'_> {

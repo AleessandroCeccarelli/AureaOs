@@ -40,7 +40,9 @@ impl fmt::Display for DrmPresentationError {
             Self::NoTransaction => "There is no KMS presentation transaction in progress",
             Self::TestNotPassed => "The atomic TEST_ONLY validation has not succeeded",
             Self::CandidateIsCurrent => "The candidate framebuffer is already active on this CRTC",
-            Self::UnexpectedFramebuffer => "The page-flip event does not match the pending framebuffer",
+            Self::UnexpectedFramebuffer => {
+                "The page-flip event does not match the pending framebuffer"
+            }
         };
         formatter.write_str(message)
     }
@@ -50,15 +52,9 @@ impl Error for DrmPresentationError {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum TransactionState {
-    Testing {
-        candidate: DrmFramebufferId,
-    },
-    Ready {
-        candidate: DrmFramebufferId,
-    },
-    PendingFlip {
-        candidate: DrmFramebufferId,
-    },
+    Testing { candidate: DrmFramebufferId },
+    Ready { candidate: DrmFramebufferId },
+    PendingFlip { candidate: DrmFramebufferId },
 }
 
 /// Tracks the framebuffer currently scanned out and the next framebuffer.
@@ -111,10 +107,7 @@ impl DrmPresentationLifecycle {
     }
 
     /// Starts validation of a candidate framebuffer before atomic commit.
-    pub fn begin_test(
-        &mut self,
-        candidate: DrmFramebufferId,
-    ) -> Result<(), DrmPresentationError> {
+    pub fn begin_test(&mut self, candidate: DrmFramebufferId) -> Result<(), DrmPresentationError> {
         if self.transaction.is_some() {
             return Err(DrmPresentationError::TransactionInProgress);
         }

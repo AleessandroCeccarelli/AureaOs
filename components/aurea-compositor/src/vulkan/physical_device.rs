@@ -5,10 +5,7 @@
 
 //! Physical-device information and selection.
 
-use smithay::{
-    backend::vulkan::PhysicalDevice,
-    reexports::ash::vk,
-};
+use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 
 #[cfg(feature = "drm")]
 use smithay::backend::drm::DrmNode;
@@ -89,19 +86,20 @@ impl VulkanContext {
 
         self.physical_devices
             .iter()
-            .filter(|device| self.graphics_queue_family(device).is_some() && VulkanRenderingFeaturePlan::from_device(device).is_ok())
+            .filter(|device| {
+                self.graphics_queue_family(device).is_some()
+                    && VulkanRenderingFeaturePlan::from_device(device).is_ok()
+            })
             .find(|device| {
                 preferred_type
                     .map(|kind| Self::classify_device(device) == kind)
                     .unwrap_or(true)
             })
             .or_else(|| {
-                self.physical_devices
-                    .iter()
-                    .find(|device| {
-                        self.graphics_queue_family(device).is_some()
-                            && VulkanRenderingFeaturePlan::from_device(device).is_ok()
-                    })
+                self.physical_devices.iter().find(|device| {
+                    self.graphics_queue_family(device).is_some()
+                        && VulkanRenderingFeaturePlan::from_device(device).is_ok()
+                })
             })
     }
 

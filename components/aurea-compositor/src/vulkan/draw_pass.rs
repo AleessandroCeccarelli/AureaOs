@@ -10,8 +10,8 @@ use std::{error::Error, fmt};
 use smithay::reexports::ash::vk;
 
 use super::{
-    VulkanColorLoad, VulkanDynamicRenderingScope, VulkanGraphicsPipeline,
-    VulkanImageState, VulkanImageTransition, VulkanImageView,
+    VulkanColorLoad, VulkanDynamicRenderingScope, VulkanGraphicsPipeline, VulkanImageState,
+    VulkanImageTransition, VulkanImageView,
 };
 
 /// Invalid draw requests rejected before commands are recorded.
@@ -27,11 +27,21 @@ pub enum VulkanDrawPassError {
 impl fmt::Display for VulkanDrawPassError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::EmptyDraw => formatter.write_str("A Vulkan draw requires at least one vertex and instance"),
-            Self::UndefinedFinalState => formatter.write_str("A draw pass cannot leave its image undefined"),
-            Self::MissingColorAttachmentUsage => formatter.write_str("The Vulkan image lacks color-attachment usage"),
-            Self::IncompatiblePipeline => formatter.write_str("The graphics pipeline is incompatible with the attachment"),
-            Self::NonFiniteClearColor => formatter.write_str("Draw-pass clear color components must all be finite"),
+            Self::EmptyDraw => {
+                formatter.write_str("A Vulkan draw requires at least one vertex and instance")
+            }
+            Self::UndefinedFinalState => {
+                formatter.write_str("A draw pass cannot leave its image undefined")
+            }
+            Self::MissingColorAttachmentUsage => {
+                formatter.write_str("The Vulkan image lacks color-attachment usage")
+            }
+            Self::IncompatiblePipeline => {
+                formatter.write_str("The graphics pipeline is incompatible with the attachment")
+            }
+            Self::NonFiniteClearColor => {
+                formatter.write_str("Draw-pass clear color components must all be finite")
+            }
         }
     }
 }
@@ -94,11 +104,7 @@ impl VulkanDrawPass {
             VulkanImageState::ColorAttachment,
         );
 
-        let scope = VulkanDynamicRenderingScope::begin_color(
-            command_buffer,
-            view,
-            load,
-        );
+        let scope = VulkanDynamicRenderingScope::begin_color(command_buffer, view, load);
         pipeline.bind(command_buffer);
         pipeline.set_viewport_and_scissor(command_buffer, view.width(), view.height());
         pipeline.draw(command_buffer, vertex_count, instance_count);

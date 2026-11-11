@@ -1,14 +1,9 @@
-
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-use aurea_compositor::frame::{
-    FrameLifecycleError,
-    FrameRequestResult,
-    FrameScheduler,
-};
+use aurea_compositor::frame::{FrameLifecycleError, FrameRequestResult, FrameScheduler};
 
 use aurea_compositor::output::OutputId;
 
@@ -222,7 +217,6 @@ fn completing_removed_output_returns_error() {
     );
 }
 
-
 #[test]
 fn reconnecting_output_does_not_reuse_previous_frame_token() {
     let mut scheduler = FrameScheduler::new();
@@ -246,4 +240,3 @@ fn reconnecting_output_does_not_reuse_previous_frame_token() {
 
     scheduler.complete_frame(second).unwrap();
 }
-

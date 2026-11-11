@@ -29,14 +29,26 @@ impl fmt::Display for VulkanFrameResourceError {
             Self::AlreadyInUse => "Frame resource is not available for rendering",
             Self::NotRendering => "Frame resource is not currently being rendered",
             Self::NotSubmitted => "Frame resource has no pending GPU submission",
-            Self::GpuWorkIncomplete => "GPU work must complete before KMS can take ownership of the frame",
-            Self::PresentationAlreadyResolved => "Frame resource presentation has already been resolved",
+            Self::GpuWorkIncomplete => {
+                "GPU work must complete before KMS can take ownership of the frame"
+            }
+            Self::PresentationAlreadyResolved => {
+                "Frame resource presentation has already been resolved"
+            }
             Self::KmsDoesNotOwnResource => "KMS does not currently own this frame resource",
             Self::KmsAlreadyOwnsResource => "KMS already owns this frame resource",
-            Self::ForeignOwnershipNotReleased => "The frame resource has not been released to the foreign queue family",
-            Self::ForeignOwnershipAlreadyReleased => "The frame resource is not currently owned by the foreign queue family",
-            Self::ForeignAcquireNotSubmitted => "The foreign ownership acquire barrier has not been submitted",
-            Self::ForeignAcquireAlreadySubmitted => "The foreign ownership acquire barrier is already pending",
+            Self::ForeignOwnershipNotReleased => {
+                "The frame resource has not been released to the foreign queue family"
+            }
+            Self::ForeignOwnershipAlreadyReleased => {
+                "The frame resource is not currently owned by the foreign queue family"
+            }
+            Self::ForeignAcquireNotSubmitted => {
+                "The foreign ownership acquire barrier has not been submitted"
+            }
+            Self::ForeignAcquireAlreadySubmitted => {
+                "The foreign ownership acquire barrier is already pending"
+            }
         };
         formatter.write_str(message)
     }
@@ -68,13 +80,17 @@ pub struct VulkanFrameResource {
 }
 
 impl Default for VulkanFrameResource {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl VulkanFrameResource {
     /// Creates a resource that is immediately available for rendering.
     pub const fn new() -> Self {
-        Self { state: FrameResourceState::Available }
+        Self {
+            state: FrameResourceState::Available,
+        }
     }
 
     /// Returns whether the resource may begin a new rendering operation.
@@ -105,7 +121,10 @@ impl VulkanFrameResource {
         matches!(
             self.state,
             FrameResourceState::Available
-                | FrameResourceState::Submitted { gpu_complete: true, .. }
+                | FrameResourceState::Submitted {
+                    gpu_complete: true,
+                    ..
+                }
         )
     }
 
@@ -136,12 +155,22 @@ impl VulkanFrameResource {
     /// Records completion of the GPU submission associated with this resource.
     pub fn mark_gpu_complete(&mut self) -> Result<(), VulkanFrameResourceError> {
         let FrameResourceState::Submitted {
-            presentation_resolved, kms_owned, foreign_owned,
-            foreign_acquire_pending, ..
-        } = self.state else {
+            presentation_resolved,
+            kms_owned,
+            foreign_owned,
+            foreign_acquire_pending,
+            ..
+        } = self.state
+        else {
             return Err(VulkanFrameResourceError::NotSubmitted);
         };
-        self.update_submitted(true, presentation_resolved, kms_owned, foreign_owned, foreign_acquire_pending);
+        self.update_submitted(
+            true,
+            presentation_resolved,
+            kms_owned,
+            foreign_owned,
+            foreign_acquire_pending,
+        );
         Ok(())
     }
 
@@ -149,27 +178,49 @@ impl VulkanFrameResource {
     /// The GPU must have completed before this conservative hand-off.
     pub fn mark_kms_committed(&mut self) -> Result<(), VulkanFrameResourceError> {
         let FrameResourceState::Submitted {
-            gpu_complete, presentation_resolved, kms_owned, foreign_owned,
+            gpu_complete,
+            presentation_resolved,
+            kms_owned,
+            foreign_owned,
             foreign_acquire_pending,
-        } = self.state else {
+        } = self.state
+        else {
             return Err(VulkanFrameResourceError::NotSubmitted);
         };
-        if !gpu_complete { return Err(VulkanFrameResourceError::GpuWorkIncomplete); }
+        if !gpu_complete {
+            return Err(VulkanFrameResourceError::GpuWorkIncomplete);
+        }
         self.validate_kms_commit(presentation_resolved, kms_owned)?;
-        self.update_submitted(gpu_complete, true, true, foreign_owned, foreign_acquire_pending);
+        self.update_submitted(
+            gpu_complete,
+            true,
+            true,
+            foreign_owned,
+            foreign_acquire_pending,
+        );
         Ok(())
     }
 
     /// Records KMS ownership after an accepted atomic commit with IN_FENCE_FD.
     pub fn mark_kms_committed_with_sync_fd(&mut self) -> Result<(), VulkanFrameResourceError> {
         let FrameResourceState::Submitted {
-            gpu_complete, presentation_resolved, kms_owned, foreign_owned,
+            gpu_complete,
+            presentation_resolved,
+            kms_owned,
+            foreign_owned,
             foreign_acquire_pending,
-        } = self.state else {
+        } = self.state
+        else {
             return Err(VulkanFrameResourceError::NotSubmitted);
         };
         self.validate_kms_commit(presentation_resolved, kms_owned)?;
-        self.update_submitted(gpu_complete, true, true, foreign_owned, foreign_acquire_pending);
+        self.update_submitted(
+            gpu_complete,
+            true,
+            true,
+            foreign_owned,
+            foreign_acquire_pending,
+        );
         Ok(())
     }
 
@@ -178,48 +229,90 @@ impl VulkanFrameResource {
         presentation_resolved: bool,
         kms_owned: bool,
     ) -> Result<(), VulkanFrameResourceError> {
-        if presentation_resolved { return Err(VulkanFrameResourceError::PresentationAlreadyResolved); }
-        if kms_owned { return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource); }
+        if presentation_resolved {
+            return Err(VulkanFrameResourceError::PresentationAlreadyResolved);
+        }
+        if kms_owned {
+            return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource);
+        }
         Ok(())
     }
 
     /// Records that KMS has released a previously committed resource.
     pub fn mark_kms_released(&mut self) -> Result<(), VulkanFrameResourceError> {
         let FrameResourceState::Submitted {
-            gpu_complete, presentation_resolved, kms_owned, foreign_owned,
+            gpu_complete,
+            presentation_resolved,
+            kms_owned,
+            foreign_owned,
             foreign_acquire_pending,
-        } = self.state else {
+        } = self.state
+        else {
             return Err(VulkanFrameResourceError::NotSubmitted);
         };
-        if !kms_owned { return Err(VulkanFrameResourceError::KmsDoesNotOwnResource); }
-        self.update_submitted(gpu_complete, presentation_resolved, false, foreign_owned, foreign_acquire_pending);
+        if !kms_owned {
+            return Err(VulkanFrameResourceError::KmsDoesNotOwnResource);
+        }
+        self.update_submitted(
+            gpu_complete,
+            presentation_resolved,
+            false,
+            foreign_owned,
+            foreign_acquire_pending,
+        );
         Ok(())
     }
 
     /// Resolves a frame that will not be presented by KMS.
     pub fn mark_presentation_skipped(&mut self) -> Result<(), VulkanFrameResourceError> {
         let FrameResourceState::Submitted {
-            gpu_complete, presentation_resolved, kms_owned, foreign_owned,
+            gpu_complete,
+            presentation_resolved,
+            kms_owned,
+            foreign_owned,
             foreign_acquire_pending,
-        } = self.state else {
+        } = self.state
+        else {
             return Err(VulkanFrameResourceError::NotSubmitted);
         };
-        if kms_owned { return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource); }
-        if presentation_resolved { return Err(VulkanFrameResourceError::PresentationAlreadyResolved); }
-        self.update_submitted(gpu_complete, true, false, foreign_owned, foreign_acquire_pending);
+        if kms_owned {
+            return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource);
+        }
+        if presentation_resolved {
+            return Err(VulkanFrameResourceError::PresentationAlreadyResolved);
+        }
+        self.update_submitted(
+            gpu_complete,
+            true,
+            false,
+            foreign_owned,
+            foreign_acquire_pending,
+        );
         Ok(())
     }
 
     /// Records submission of the Vulkan release barrier to foreign ownership.
     pub fn mark_foreign_release_submitted(&mut self) -> Result<(), VulkanFrameResourceError> {
         let FrameResourceState::Submitted {
-            gpu_complete, presentation_resolved, kms_owned, foreign_owned,
+            gpu_complete,
+            presentation_resolved,
+            kms_owned,
+            foreign_owned,
             foreign_acquire_pending,
-        } = self.state else {
+        } = self.state
+        else {
             return Err(VulkanFrameResourceError::NotSubmitted);
         };
-        if foreign_owned { return Err(VulkanFrameResourceError::ForeignOwnershipAlreadyReleased); }
-        self.update_submitted(gpu_complete, presentation_resolved, kms_owned, true, foreign_acquire_pending);
+        if foreign_owned {
+            return Err(VulkanFrameResourceError::ForeignOwnershipAlreadyReleased);
+        }
+        self.update_submitted(
+            gpu_complete,
+            presentation_resolved,
+            kms_owned,
+            true,
+            foreign_acquire_pending,
+        );
         Ok(())
     }
 
@@ -227,15 +320,31 @@ impl VulkanFrameResource {
     /// the framebuffer. This does not yet make the resource reusable.
     pub fn mark_foreign_acquire_submitted(&mut self) -> Result<(), VulkanFrameResourceError> {
         let FrameResourceState::Submitted {
-            gpu_complete, presentation_resolved, kms_owned, foreign_owned,
+            gpu_complete,
+            presentation_resolved,
+            kms_owned,
+            foreign_owned,
             foreign_acquire_pending,
-        } = self.state else {
+        } = self.state
+        else {
             return Err(VulkanFrameResourceError::NotSubmitted);
         };
-        if !foreign_owned { return Err(VulkanFrameResourceError::ForeignOwnershipNotReleased); }
-        if !presentation_resolved || kms_owned { return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource); }
-        if foreign_acquire_pending { return Err(VulkanFrameResourceError::ForeignAcquireAlreadySubmitted); }
-        self.update_submitted(gpu_complete, presentation_resolved, kms_owned, foreign_owned, true);
+        if !foreign_owned {
+            return Err(VulkanFrameResourceError::ForeignOwnershipNotReleased);
+        }
+        if !presentation_resolved || kms_owned {
+            return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource);
+        }
+        if foreign_acquire_pending {
+            return Err(VulkanFrameResourceError::ForeignAcquireAlreadySubmitted);
+        }
+        self.update_submitted(
+            gpu_complete,
+            presentation_resolved,
+            kms_owned,
+            foreign_owned,
+            true,
+        );
         Ok(())
     }
 
@@ -243,14 +352,24 @@ impl VulkanFrameResource {
     /// Vulkan completion fence has signalled.
     pub fn mark_foreign_acquired(&mut self) -> Result<(), VulkanFrameResourceError> {
         let FrameResourceState::Submitted {
-            gpu_complete, presentation_resolved, kms_owned, foreign_owned,
+            gpu_complete,
+            presentation_resolved,
+            kms_owned,
+            foreign_owned,
             foreign_acquire_pending,
-        } = self.state else {
+        } = self.state
+        else {
             return Err(VulkanFrameResourceError::NotSubmitted);
         };
-        if kms_owned { return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource); }
-        if !foreign_owned { return Err(VulkanFrameResourceError::ForeignOwnershipNotReleased); }
-        if !foreign_acquire_pending { return Err(VulkanFrameResourceError::ForeignAcquireNotSubmitted); }
+        if kms_owned {
+            return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource);
+        }
+        if !foreign_owned {
+            return Err(VulkanFrameResourceError::ForeignOwnershipNotReleased);
+        }
+        if !foreign_acquire_pending {
+            return Err(VulkanFrameResourceError::ForeignAcquireNotSubmitted);
+        }
         self.update_submitted(gpu_complete, presentation_resolved, kms_owned, false, false);
         Ok(())
     }
@@ -263,12 +382,19 @@ impl VulkanFrameResource {
         foreign_owned: bool,
         foreign_acquire_pending: bool,
     ) {
-        self.state = if gpu_complete && presentation_resolved && !kms_owned
-            && !foreign_owned && !foreign_acquire_pending {
+        self.state = if gpu_complete
+            && presentation_resolved
+            && !kms_owned
+            && !foreign_owned
+            && !foreign_acquire_pending
+        {
             FrameResourceState::Available
         } else {
             FrameResourceState::Submitted {
-                gpu_complete, presentation_resolved, kms_owned, foreign_owned,
+                gpu_complete,
+                presentation_resolved,
+                kms_owned,
+                foreign_owned,
                 foreign_acquire_pending,
             }
         };

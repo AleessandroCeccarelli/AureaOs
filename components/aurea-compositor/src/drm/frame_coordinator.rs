@@ -8,16 +8,10 @@
 use std::{collections::HashMap, error::Error, fmt};
 
 use crate::vulkan::{
-    VulkanFrameResourceId,
-    VulkanFrameResourceRegistry,
-    VulkanFrameResourceRegistryError,
+    VulkanFrameResourceId, VulkanFrameResourceRegistry, VulkanFrameResourceRegistryError,
 };
 
-use super::presentation::{
-    DrmFramebufferId,
-    DrmPresentationError,
-    DrmPresentationLifecycle,
-};
+use super::presentation::{DrmFramebufferId, DrmPresentationError, DrmPresentationLifecycle};
 
 /// Errors returned while coordinating one output's Vulkan/KMS frame lifecycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,15 +30,45 @@ pub enum DrmOutputFrameError {
 impl fmt::Display for DrmOutputFrameError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::NoPendingFrame => formatter.write_str("No DRM framebuffer is awaiting a page-flip event"),
-            Self::DuplicateFramebuffer(id) => write!(formatter, "DRM framebuffer {} is already registered", id.value()),
-            Self::UnknownFramebuffer(id) => write!(formatter, "DRM framebuffer {} is not registered", id.value()),
-            Self::ResourceNotSubmitted(id) => write!(formatter, "DRM framebuffer {} has not been submitted to the GPU", id.value()),
-            Self::ResourceAlreadyResolved(id) => write!(formatter, "DRM framebuffer {} has already been resolved for presentation", id.value()),
-            Self::GpuWorkIncomplete(id) => write!(formatter, "DRM framebuffer {} has unfinished GPU work and no sync-file handoff", id.value()),
-            Self::FramebufferStillScannedOut(id) => write!(formatter, "DRM framebuffer {} is still pending or scanned out", id.value()),
-            Self::Lifecycle(error) => write!(formatter, "KMS presentation lifecycle failed: {error}"),
-            Self::Resource(error) => write!(formatter, "Vulkan frame-resource lifecycle failed: {error}"),
+            Self::NoPendingFrame => {
+                formatter.write_str("No DRM framebuffer is awaiting a page-flip event")
+            }
+            Self::DuplicateFramebuffer(id) => write!(
+                formatter,
+                "DRM framebuffer {} is already registered",
+                id.value()
+            ),
+            Self::UnknownFramebuffer(id) => write!(
+                formatter,
+                "DRM framebuffer {} is not registered",
+                id.value()
+            ),
+            Self::ResourceNotSubmitted(id) => write!(
+                formatter,
+                "DRM framebuffer {} has not been submitted to the GPU",
+                id.value()
+            ),
+            Self::ResourceAlreadyResolved(id) => write!(
+                formatter,
+                "DRM framebuffer {} has already been resolved for presentation",
+                id.value()
+            ),
+            Self::GpuWorkIncomplete(id) => write!(
+                formatter,
+                "DRM framebuffer {} has unfinished GPU work and no sync-file handoff",
+                id.value()
+            ),
+            Self::FramebufferStillScannedOut(id) => write!(
+                formatter,
+                "DRM framebuffer {} is still pending or scanned out",
+                id.value()
+            ),
+            Self::Lifecycle(error) => {
+                write!(formatter, "KMS presentation lifecycle failed: {error}")
+            }
+            Self::Resource(error) => {
+                write!(formatter, "Vulkan frame-resource lifecycle failed: {error}")
+            }
         }
     }
 }
@@ -52,11 +76,15 @@ impl fmt::Display for DrmOutputFrameError {
 impl Error for DrmOutputFrameError {}
 
 impl From<DrmPresentationError> for DrmOutputFrameError {
-    fn from(error: DrmPresentationError) -> Self { Self::Lifecycle(error) }
+    fn from(error: DrmPresentationError) -> Self {
+        Self::Lifecycle(error)
+    }
 }
 
 impl From<VulkanFrameResourceRegistryError> for DrmOutputFrameError {
-    fn from(error: VulkanFrameResourceRegistryError) -> Self { Self::Resource(error) }
+    fn from(error: VulkanFrameResourceRegistryError) -> Self {
+        Self::Resource(error)
+    }
 }
 
 /// Coordinates the framebuffer pool and KMS state for exactly one output.
@@ -73,7 +101,9 @@ pub struct DrmOutputFrameCoordinator {
 
 impl DrmOutputFrameCoordinator {
     /// Creates an empty coordinator for one output/CRTC.
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     /// Registers a framebuffer and its associated Vulkan lifecycle record.
     pub fn register_framebuffer(
@@ -93,7 +123,9 @@ impl DrmOutputFrameCoordinator {
         &self,
         framebuffer: DrmFramebufferId,
     ) -> Result<VulkanFrameResourceId, DrmOutputFrameError> {
-        self.framebuffer_resources.get(&framebuffer).copied()
+        self.framebuffer_resources
+            .get(&framebuffer)
+            .copied()
             .ok_or(DrmOutputFrameError::UnknownFramebuffer(framebuffer))
     }
 
@@ -150,9 +182,7 @@ impl DrmOutputFrameCoordinator {
     }
 
     /// Resolves a failed TEST_ONLY attempt without releasing unfinished GPU work.
-    pub fn presentation_test_failed(
-        &mut self,
-    ) -> Result<DrmFramebufferId, DrmOutputFrameError> {
+    pub fn presentation_test_failed(&mut self) -> Result<DrmFramebufferId, DrmOutputFrameError> {
         let framebuffer = self.presentation.test_failed()?;
         let resource = self.resource_for(framebuffer)?;
         self.resources.mark_presentation_skipped(resource)?;
@@ -164,8 +194,12 @@ impl DrmOutputFrameCoordinator {
         &self,
         sync_file_attached: bool,
     ) -> Result<DrmFramebufferId, DrmOutputFrameError> {
-        let framebuffer = self.presentation.transaction_candidate()
-            .ok_or(DrmOutputFrameError::Lifecycle(DrmPresentationError::NoTransaction))?;
+        let framebuffer =
+            self.presentation
+                .transaction_candidate()
+                .ok_or(DrmOutputFrameError::Lifecycle(
+                    DrmPresentationError::NoTransaction,
+                ))?;
         let resource = self.resource_for(framebuffer)?;
         if !self.resources.can_present(resource)? {
             return Err(DrmOutputFrameError::ResourceAlreadyResolved(framebuffer));
@@ -184,8 +218,12 @@ impl DrmOutputFrameCoordinator {
         &mut self,
         sync_file_attached: bool,
     ) -> Result<(), DrmOutputFrameError> {
-        let framebuffer = self.presentation.transaction_candidate()
-            .ok_or(DrmOutputFrameError::Lifecycle(DrmPresentationError::NoTransaction))?;
+        let framebuffer =
+            self.presentation
+                .transaction_candidate()
+                .ok_or(DrmOutputFrameError::Lifecycle(
+                    DrmPresentationError::NoTransaction,
+                ))?;
         let resource = self.resource_for(framebuffer)?;
         if !self.resources.can_present(resource)? {
             return Err(DrmOutputFrameError::ResourceAlreadyResolved(framebuffer));
@@ -203,9 +241,7 @@ impl DrmOutputFrameCoordinator {
     }
 
     /// Resolves a failed KMS commit and leaves the previous scan-out untouched.
-    pub fn presentation_commit_failed(
-        &mut self,
-    ) -> Result<DrmFramebufferId, DrmOutputFrameError> {
+    pub fn presentation_commit_failed(&mut self) -> Result<DrmFramebufferId, DrmOutputFrameError> {
         let framebuffer = self.presentation.commit_failed()?;
         let resource = self.resource_for(framebuffer)?;
         self.resources.mark_presentation_skipped(resource)?;
@@ -239,10 +275,7 @@ impl DrmOutputFrameCoordinator {
     }
 
     /// Returns whether a framebuffer's Vulkan image is ready for reuse.
-    pub fn is_available(
-        &self,
-        framebuffer: DrmFramebufferId,
-    ) -> Result<bool, DrmOutputFrameError> {
+    pub fn is_available(&self, framebuffer: DrmFramebufferId) -> Result<bool, DrmOutputFrameError> {
         let resource = self.resource_for(framebuffer)?;
         Ok(self.resources.is_available(resource)?)
     }
@@ -262,8 +295,12 @@ impl DrmOutputFrameCoordinator {
     }
 
     /// Number of framebuffer resources registered for this output.
-    pub fn len(&self) -> usize { self.framebuffer_resources.len() }
+    pub fn len(&self) -> usize {
+        self.framebuffer_resources.len()
+    }
 
     /// Whether this output has no registered framebuffer resources.
-    pub fn is_empty(&self) -> bool { self.framebuffer_resources.is_empty() }
+    pub fn is_empty(&self) -> bool {
+        self.framebuffer_resources.is_empty()
+    }
 }

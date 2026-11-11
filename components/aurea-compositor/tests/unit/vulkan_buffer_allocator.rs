@@ -5,9 +5,7 @@
 
 //! Hardware-independent tests for Vulkan render-target request validation.
 
-use aurea_compositor::vulkan::{
-    DrmVulkanFormat, VulkanBufferError, VulkanRenderTargetRequest,
-};
+use aurea_compositor::vulkan::{DrmVulkanFormat, VulkanBufferError, VulkanRenderTargetRequest};
 use smithay::backend::allocator::{Fourcc, Modifier};
 
 fn format() -> DrmVulkanFormat {
