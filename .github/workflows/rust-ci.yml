@@ -86,8 +86,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          ICD_PATH="$(find /usr/share/vulkan/icd.d -maxdepth 1 -type f \\
-            \\( -iname '*lvp*.json' -o -iname '*lavapipe*.json' \\) \\
+          ICD_PATH="$(find /usr/share/vulkan/icd.d -maxdepth 1 -type f \
+            \( -iname '*lvp*.json' -o -iname '*lavapipe*.json' \) \
             -print -quit)"
 
           if [[ -z "${ICD_PATH}" ]]; then
@@ -107,5 +107,5 @@ jobs:
           echo "Vulkan device discovery:"
           vulkaninfo --summary
 
-          cargo test -p aurea-compositor --features drm --test unit \\
+          cargo test -p aurea-compositor --features drm --test unit \
             renders_triangle_and_reads_back_expected_pixels -- --ignored --nocapture
