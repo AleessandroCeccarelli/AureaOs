@@ -1,4 +1,4 @@
- <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
 # AureaOS Technology Principles
 
@@ -68,7 +68,14 @@ The current aurea-compositor implementation uses:
 * libseat for session and device access management.
 * DRM and Udev for graphics-device discovery and output-device lifecycle foundations.
 
-The aurea-shell component coordinates the desktop session lifecycle and compositor startup and shutdown.
+The current Rust workspace is located under `components/` and contains four crates with distinct responsibilities:
+
+* `aurea-desktop`: desktop entry point and composition root.
+* `aurea-shell`: session lifecycle and event coordination, including compositor startup and shutdown.
+* `aurea-desktop-api`: shared contracts between desktop components.
+* `aurea-compositor`: Wayland compositor, graphics-device, and output responsibilities.
+
+The composition root wires these components together; it must not absorb their internal responsibilities. The shell coordinates the session and does not own compositor rendering or display-device management.
 
 These components establish the initial technical foundation. They do not yet constitute a complete graphical desktop.
 
