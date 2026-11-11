@@ -42,6 +42,7 @@ pub struct VulkanGraphicsPipeline<'device> {
     device: &'device VulkanLogicalDevice,
     layout: vk::PipelineLayout,
     pipeline: vk::Pipeline,
+    color_format: vk::Format,
 }
 
 impl<'device> VulkanGraphicsPipeline<'device> {
@@ -148,11 +149,20 @@ impl<'device> VulkanGraphicsPipeline<'device> {
             }
         };
 
-        Ok(Self { device, layout, pipeline })
+        Ok(Self { device, layout, pipeline, color_format })
     }
 
     pub fn handle(&self) -> vk::Pipeline { self.pipeline }
     pub fn layout(&self) -> vk::PipelineLayout { self.layout }
+
+    pub(super) fn is_compatible_with(
+        &self,
+        device: &VulkanLogicalDevice,
+        color_format: vk::Format,
+    ) -> bool {
+        self.device.handle().handle() == device.handle().handle()
+            && self.color_format == color_format
+    }
 
     /// Binds this pipeline to a recording graphics command buffer.
     pub fn bind(&self, command_buffer: vk::CommandBuffer) {

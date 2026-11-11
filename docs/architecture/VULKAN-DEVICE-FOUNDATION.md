@@ -82,3 +82,67 @@ The renderer includes a minimal `VulkanClearPass`. It records a Synchronization 
 ## Offscreen execution and readback
 
 `VulkanOffscreenRenderer` provides a synchronous diagnostic execution path for a headless Vulkan device. It allocates an RGBA8 image with color-attachment and transfer-source usage, creates a host-visible staging buffer, records the clear pass and image-to-buffer copy, inserts a transfer-write-to-host-read buffer barrier, submits the command buffer and waits for its fence, then maps and returns the pixel bytes. Non-coherent host memory is invalidated before CPU access. This path is intended for real GPU validation (including Mesa lavapipe); it is not the interactive frames-in-flight or DRM/KMS presentation path.
+
+
+## First graphics draw pass
+
+`VulkanDrawPass` records a non-indexed draw into a single dynamic-rendering
+color attachment. It validates non-zero vertex/instance counts, rejects an
+undefined final image state, checks attachment usage, and verifies that the
+pipeline belongs to the same logical device and targets the attachment format.
+The pass records the transition into color-attachment layout, begins a
+load-discard rendering scope, binds the pipeline, sets viewport/scissor, issues
+the draw, ends rendering and records the requested final transition.
+
+The pass does not own shader assets, submit commands or wait for completion.
+A caller must provide compatible SPIR-V modules when creating the pipeline and
+must keep all resources alive until GPU completion. The next step is to provide
+a reproducible known-good shader pair and connect this pass to the synchronous
+offscreen readback path for pixel-level GPU validation.
+
+
+## First shader-driven offscreen triangle
+
+The compositor now includes small GLSL 450 vertex and fragment shaders under
+`components/aurea-compositor/shaders/`. The vertex shader generates three
+positions and interpolated RGB colors from `gl_VertexIndex`, so no vertex
+buffer or descriptor set is required. The fragment shader writes the
+interpolated color.
+
+Compile the sources reproducibly on Fedora with:
+
+```sh
+sudo dnf install glslang
+bash tools/shaders/compile-vulkan-shaders.sh
+```
+
+The script targets Vulkan 1.3 and writes the two SPIR-V modules to
+`target/aurea-shaders/` by default. The output directory can be overridden
+with its first argument. Generated binaries stay out of source control; GLSL
+is the maintained source of truth.
+
+`VulkanOffscreenRenderer::render_triangle` accepts the compiled vertex and
+fragment SPIR-V bytes, creates the shader modules and compatible graphics
+pipeline, clears an RGBA8 target to opaque black, records a three-vertex draw,
+copies the result to host-visible memory, waits for completion and returns
+RGBA8 pixels. The background clear is intentional: pixels outside the
+triangle are deterministic rather than undefined. This is a synchronous
+diagnostic route; the interactive frame scheduler remains a separate path.
+
+A GPU-backed smoke test should load the two generated files, create a Vulkan
+1.3 logical device, call `render_triangle(128, 128, ...)`, and verify both a
+black corner pixel and a non-black pixel in the triangle interior. Run it
+first with Mesa lavapipe, then on the target GPU. No hardware execution is
+claimed by this change.
+
+The opt-in GPU smoke test lives in
+`components/aurea-compositor/tests/unit/vulkan_offscreen_triangle.rs`.
+After compiling the shaders, run it explicitly with:
+
+```sh
+cargo test -p aurea-compositor --features vulkan --test unit -- --ignored
+```
+
+The test checks the output byte count, an opaque-black corner outside the
+triangle and a non-black opaque pixel at the triangle center. It is ignored
+by default so ordinary unit tests do not require a Vulkan-capable host.
