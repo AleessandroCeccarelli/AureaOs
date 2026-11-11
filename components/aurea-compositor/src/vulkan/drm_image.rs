@@ -13,7 +13,7 @@ use std::{
 
 use smithay::{
     backend::allocator::vulkan::format::get_vk_format,
-    reexports::ash::vk,
+    reexports::ash::{khr, vk},
 };
 
 use super::{
@@ -201,7 +201,7 @@ impl<'device> VulkanDrmImageAllocator<'device> {
         let fd_info = vk::MemoryGetFdInfoKHR::default()
             .memory(memory)
             .handle_type(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
-        let fd_loader = ash::khr::external_memory_fd::Device::new(
+        let fd_loader = khr::external_memory_fd::Device::new(
             self.device.instance(),
             raw,
         );
