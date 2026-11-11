@@ -48,7 +48,7 @@ AureaOS will make deliberate choices about its default experience.
 
 The system should be ready to use after installation, with sensible defaults and essential functionality already integrated.
 
-Customization will remain possible, but users should not need to spend hours configuring the desktop to obtain a polished and productive environment.
+AureaOS will provide a deliberately curated set of user-facing choices rather than an unrestricted theming environment. Supported settings may include practical preferences such as light or dark appearance, accessibility, and other documented desktop options. Third-party themes and unapproved fonts will not be part of the supported desktop customization model; visual consistency and compatibility are maintained through AureaOS Human Interfaces and its approved resources.
 
 We want the approachability of Windows and macOS, the foundations of Linux, and the identity of AureaOS.
 
