@@ -199,3 +199,40 @@ fn unknown_framebuffer_is_rejected() {
         Err(DrmOutputFrameError::UnknownFramebuffer(fb(999)))
     );
 }
+
+#[test]
+fn unfenced_kms_commit_is_rejected_until_gpu_completion() {
+    let mut coordinator = DrmOutputFrameCoordinator::new();
+    let id = fb(70);
+    coordinator.register_framebuffer(id).unwrap();
+    submit_for_render(&mut coordinator, id);
+
+    coordinator.begin_presentation(id).unwrap();
+    coordinator.presentation_test_passed().unwrap();
+
+    assert_eq!(
+        coordinator.validate_commit_ready(false),
+        Err(DrmOutputFrameError::GpuWorkIncomplete(id))
+    );
+
+    coordinator.mark_gpu_complete(id).unwrap();
+    assert_eq!(coordinator.validate_commit_ready(false), Ok(id));
+    coordinator.presentation_commit_accepted(false).unwrap();
+    coordinator.page_flip_complete(id).unwrap();
+}
+
+#[test]
+fn failed_presentation_cannot_be_retried_with_the_same_framebuffer() {
+    let mut coordinator = DrmOutputFrameCoordinator::new();
+    let id = fb(71);
+    coordinator.register_framebuffer(id).unwrap();
+    submit_for_render(&mut coordinator, id);
+
+    coordinator.begin_presentation(id).unwrap();
+    coordinator.presentation_test_failed().unwrap();
+
+    assert_eq!(
+        coordinator.begin_presentation(id),
+        Err(DrmOutputFrameError::ResourceAlreadyResolved(id))
+    );
+}
