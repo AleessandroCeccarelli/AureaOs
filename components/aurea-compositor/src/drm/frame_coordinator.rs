@@ -156,15 +156,11 @@ impl DrmOutputFrameCoordinator {
     /// attached to every active plane in the accepted atomic commit.
     pub fn presentation_commit_accepted(
         &mut self,
-        framebuffer: DrmFramebufferId,
         sync_file_attached: bool,
     ) -> Result<(), DrmOutputFrameError> {
-        if self.presentation.pending_candidate() != Some(framebuffer) {
-            return Err(DrmOutputFrameError::Lifecycle(
-                DrmPresentationError::NoTransaction,
-            ));
-        }
         self.presentation.commit_accepted()?;
+        let framebuffer = self.presentation.pending_candidate()
+            .ok_or(DrmOutputFrameError::Lifecycle(DrmPresentationError::NoTransaction))?;
         let resource = self.resource_for(framebuffer)?;
         if sync_file_attached {
             self.resources.mark_kms_committed_with_sync_fd(resource)?;
