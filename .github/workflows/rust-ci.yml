@@ -58,6 +58,8 @@ jobs:
             libvulkan-dev \
             libwayland-dev \
             libxkbcommon-dev \
+            glslang-tools \
+            mesa-vulkan-drivers \
             pkg-config
 
       - name: Install stable Rust
@@ -74,3 +76,13 @@ jobs:
 
       - name: Test compositor with DRM and Vulkan
         run: cargo test -p aurea-compositor --features drm --locked
+
+      - name: Compile Vulkan diagnostic shaders
+        run: bash tools/shaders/compile-vulkan-shaders.sh
+
+      - name: Run offscreen Vulkan triangle smoke test with Mesa lavapipe
+        env:
+          VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
+        run: >
+          cargo test -p aurea-compositor --features drm --test unit
+          renders_triangle_and_reads_back_expected_pixels -- --ignored --nocapture
