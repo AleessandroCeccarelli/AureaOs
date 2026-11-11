@@ -77,3 +77,8 @@ wait for both before recycling a buffer.
 ## First color-pass recording
 
 The renderer includes a minimal `VulkanClearPass`. It records a Synchronization 2 transition into `COLOR_ATTACHMENT_OPTIMAL`, begins Vulkan 1.3 dynamic rendering with a clear load operation, ends the rendering scope, and records the requested transition for the next consumer. The pass intentionally does not submit work: `VulkanFrameScheduler` remains responsible for frame-slot acquisition and submission. The clear pass validates finite color components and rejects an undefined final state before recording commands. This is a real color-attachment operation, but it is not yet a complete visible desktop frame: presentation, readback validation, and KMS scanout remain separate stages.
+
+
+## Offscreen execution and readback
+
+`VulkanOffscreenRenderer` provides a synchronous diagnostic execution path for a headless Vulkan device. It allocates an RGBA8 image with color-attachment and transfer-source usage, creates a host-visible staging buffer, records the clear pass and image-to-buffer copy, inserts a transfer-write-to-host-read buffer barrier, submits the command buffer and waits for its fence, then maps and returns the pixel bytes. Non-coherent host memory is invalidated before CPU access. This path is intended for real GPU validation (including Mesa lavapipe); it is not the interactive frames-in-flight or DRM/KMS presentation path.
