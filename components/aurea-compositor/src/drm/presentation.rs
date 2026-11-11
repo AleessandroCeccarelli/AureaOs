@@ -95,6 +95,16 @@ impl DrmPresentationLifecycle {
         }
     }
 
+    /// Returns the candidate in any active test, ready or pending transaction.
+    pub const fn transaction_candidate(&self) -> Option<DrmFramebufferId> {
+        match self.transaction {
+            Some(TransactionState::Testing { candidate })
+            | Some(TransactionState::Ready { candidate })
+            | Some(TransactionState::PendingFlip { candidate }) => Some(candidate),
+            None => None,
+        }
+    }
+
     /// Returns whether an atomic test/commit transaction is in progress.
     pub const fn has_pending_transaction(&self) -> bool {
         self.transaction.is_some()
