@@ -151,7 +151,7 @@ The first-release product direction includes:
 - **Aurea Wallet** — an important first-party system application and one of the core pillars of AureaOS Roma 1.0.
 - **Quaero** — global search for applications, files, folders, settings and other relevant system content.
 - **Fides** — the AureaOS file manager, designed for everyday file management and integrated with the desktop and system services.
-- **Aurea Store** — the proprietary graphical application store, integrating with Flathub and Flatpak.
+- **Aurea Store** — the official AureaOS graphical application store, integrating with Flathub and Flatpak.
 - **Aurea Update** — a graphical update experience for AureaOS-specific system components, separate from Debian base updates.
 - **Aurea Time** — system backup and restore, from an individual file through the full system, using compatible USB disks or network storage.
 
