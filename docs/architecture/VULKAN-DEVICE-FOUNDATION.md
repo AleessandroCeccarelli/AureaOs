@@ -43,8 +43,7 @@ been validated on Fedora and on supported GPU hardware.
 
 ## Next modules
 
-1. Vulkan image allocation and memory-type selection.
-2. DRM modifier-specific image creation and DMA-BUF export.
+1. DRM modifier-specific image creation and DMA-BUF export.
 3. DMA-BUF import with per-memory-plane binding and FD ownership handling.
 4. Explicit synchronization and buffer retirement across GPU and KMS.
 5. KMS framebuffer creation, atomic test-only commit and page-flip lifecycle.
