@@ -15,7 +15,7 @@ use super::VulkanLogicalDevice;
 pub(super) struct VulkanFrameSlot {
     pub(super) command_pool: vk::CommandPool,
     pub(super) completion_fence: vk::Fence,
-    sync_fd_semaphore: Option<vk::Semaphore>,
+    pub(super) sync_fd_semaphore: Option<vk::Semaphore>,
 }
 
 impl VulkanFrameSlot {
