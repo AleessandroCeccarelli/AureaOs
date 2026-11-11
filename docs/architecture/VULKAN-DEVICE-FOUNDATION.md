@@ -1,6 +1,6 @@
 # AureaOS Vulkan device foundation
 
-Status: native device and image foundations implemented in draft changes; Fedora compilation and hardware validation pending.
+Status: native device, image, and dynamic-rendering foundations implemented in draft changes; Fedora compilation and hardware validation pending.
 
 ## Ownership
 
@@ -11,7 +11,12 @@ synchronization and KMS presentation. Smithay remains an integration layer
 for Wayland and DRM plumbing and may provide adapters where its abstractions
 are useful.
 
-## Device-extension policy
+## Device and rendering-feature policy
+
+The logical-device path verifies that the selected physical GPU supports
+Vulkan 1.3, Dynamic Rendering and Synchronization 2. Both Vulkan 1.3 features
+are explicitly enabled during logical-device creation. AureaOS does not infer
+feature availability from the instance API version alone.
 
 The compositor creates an immutable extension plan for the selected physical
 device. The plan records which required DMA-BUF extensions are available and
@@ -19,16 +24,8 @@ which are missing. Only supported names are passed to logical-device creation.
 
 The DRM-bound Vulkan backend fails closed if the selected physical device
 does not expose the complete DMA-BUF interoperability extension set. Generic
-offscreen Vulkan initialization may still proceed with the subset available.
-
-The required Linux interop extensions are:
-
-- VK_KHR_external_memory_fd
-- VK_EXT_external_memory_dma_buf
-- VK_EXT_image_drm_format_modifier
-
-The extension plan is device-specific. It must never be reused to create a
-logical device from another physical device.
+offscreen Vulkan initialization may still proceed with the supported subset,
+but still requires the renderer's Vulkan 1.3 feature baseline.
 
 ## Native image and DMA-BUF path
 
@@ -39,9 +36,17 @@ handle; creates a modifier-tiled image with dedicated exportable memory;
 exports an owned DMA-BUF FD; and queries each memory-plane offset and row pitch
 from Vulkan.
 
-This path still requires Fedora compilation and hardware validation. The
-exported FD and plane metadata are not proof that KMS can create a framebuffer
-or scan it out successfully.
+## Dynamic rendering
+
+AureaOS uses Vulkan 1.3 Dynamic Rendering instead of introducing a fixed
+VkRenderPass/VkFramebuffer object graph for the initial compositor path.
+Color attachment views are owned separately from their underlying images.
+A rendering scope records vkCmdBeginRendering/vkCmdEndRendering and keeps the
+attachment view borrowed for the lifetime of the scope.
+
+The scope does not perform image-layout transitions. Callers must record
+explicit Synchronization 2 barriers before and after attachment use. The
+rendering scope is not itself a synchronization primitive.
 
 ## GPU frame scheduling
 
@@ -63,17 +68,20 @@ the future presentation backend must wait for both before recycling a buffer.
 
 Extension presence alone does not prove that a specific format, modifier,
 image usage, memory allocation, DMA-BUF import/export, or KMS presentation
-will succeed. Each operation needs a separate capability query and a
-runtime error path.
+will succeed. Each operation needs a separate capability query and runtime
+error path.
 
-DMA-BUF import, cross-API explicit synchronization, KMS framebuffer creation,
-atomic TEST_ONLY commit and page-flip retirement are not yet implemented.
-The renderer still does not draw and present a complete AureaOS scene.
+The current dynamic-rendering scope supports one color attachment. It does
+not yet create graphics pipelines, load SPIR-V shaders, bind descriptor sets,
+record draw calls, or composite Wayland surfaces. DMA-BUF import,
+cross-API explicit synchronization, KMS framebuffer creation, atomic TEST_ONLY
+commit and page-flip retirement are not yet implemented.
 
 ## Next modules
 
-1. Validate modifier-image allocation and DMA-BUF export on Fedora hardware.
-2. Add a Vulkan render-pass/pipeline foundation and command recording.
-3. Import external buffers with per-memory-plane binding and FD ownership.
-4. Implement explicit GPU/KMS synchronization and buffer retirement.
-5. Add KMS framebuffer creation, atomic test-only commit and page-flip lifecycle.
+1. Add Synchronization 2 image-layout transition helpers.
+2. Add shader-module loading and pipeline-layout ownership.
+3. Add a graphics pipeline compatible with the dynamic-rendering attachment format.
+4. Record a first clear-and-draw command sequence and validate it on Fedora.
+5. Connect scene elements to textures and compositing.
+6. Integrate KMS presentation and buffer retirement.
