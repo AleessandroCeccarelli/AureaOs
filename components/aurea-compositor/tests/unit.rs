@@ -47,3 +47,7 @@ mod vulkan_device_extensions;
 #[cfg(feature = "vulkan")]
 #[path = "unit/vulkan_memory_type.rs"]
 mod vulkan_memory_type;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_frame_scheduler.rs"]
+mod vulkan_frame_scheduler;
