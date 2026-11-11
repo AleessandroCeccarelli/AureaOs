@@ -243,8 +243,53 @@ fn foreign_owned_resource_cannot_be_reused_until_acquire_completes() {
         Err(VulkanFrameResourceError::AlreadyInUse)
     );
 
+    assert_eq!(resource.mark_foreign_acquired(), Err(VulkanFrameResourceError::ForeignAcquireNotSubmitted));
+    resource.mark_foreign_acquire_submitted().unwrap();
+    assert!(!resource.is_available());
     resource.mark_foreign_acquired().unwrap();
     assert!(resource.is_available());
+}
+
+#[test]
+fn foreign_resource_cannot_be_reused_after_acquire_submission_until_completion() {
+    let mut resource = VulkanFrameResource::new();
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+    resource.mark_foreign_release_submitted().unwrap();
+    resource.mark_kms_committed_with_sync_fd().unwrap();
+    resource.mark_gpu_complete().unwrap();
+    resource.mark_kms_released().unwrap();
+    resource.mark_foreign_acquire_submitted().unwrap();
+
+    assert!(!resource.is_available());
+    assert_eq!(
+        resource.mark_foreign_acquire_submitted(),
+        Err(VulkanFrameResourceError::ForeignAcquireAlreadySubmitted)
+    );
+    assert_eq!(
+        resource.begin_render(),
+        Err(VulkanFrameResourceError::AlreadyInUse)
+    );
+
+    resource.mark_foreign_acquired().unwrap();
+    assert!(resource.is_available());
+}
+
+#[test]
+fn foreign_acquire_completion_is_rejected_without_acquire_submission() {
+    let mut resource = VulkanFrameResource::new();
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+    resource.mark_foreign_release_submitted().unwrap();
+    resource.mark_kms_committed_with_sync_fd().unwrap();
+    resource.mark_gpu_complete().unwrap();
+    resource.mark_kms_released().unwrap();
+
+    assert_eq!(
+        resource.mark_foreign_acquired(),
+        Err(VulkanFrameResourceError::ForeignAcquireNotSubmitted)
+    );
+    assert!(!resource.is_available());
 }
 
 #[test]
