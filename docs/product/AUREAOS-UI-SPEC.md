@@ -230,28 +230,17 @@ The launcher and Quaero should remain modular components. Their integration must
 
 ## 9. Keyboard Workflow
 
-AureaOS should support an efficient keyboard-first workflow without making the desktop intimidating to less experienced users. Where practical, familiar Windows shortcuts are retained, with the Windows key mapped to Super.
+AureaOS prioritizes familiar, widely used Windows 11 keyboard conventions so that users can move to AureaOS without having to relearn everyday computer interactions. The Windows logo key is represented by **Super**.
 
-The following shortcuts are proposed defaults:
+The compatibility policy and authoritative shortcut catalogue are maintained in:
 
-| Shortcut | Intended action |
-|---|---|
-| Super | Open launcher or desktop overview |
-| Alt + Tab | Switch between applications |
-| Alt + F4 | Close the active window |
-| Ctrl + Alt + T | Open terminal |
-| Super + E | Open Fides file manager |
-| Super + L | Lock the session |
-| Super + Arrow keys | Arrange or snap windows |
-| Super + Tab | Open the desktop and window overview |
-| Super + Ctrl + Left / Right | Switch virtual desktops |
-| Super + D | Show the desktop |
+`docs/product/KEYBOARD-SHORTCUT-POLICY.md`
 
-These shortcuts are proposed behavior and may be adjusted during implementation.
+The catalogue distinguishes application shortcuts from global desktop shortcuts and records whether each desktop action is implemented or planned. A documented shortcut must never be presented as functional until its corresponding action and tests exist.
 
-The system should provide a discoverable way to view and customize keyboard shortcuts.
+AureaOS should prefer established combinations over inventing new ones. Application-level shortcuts must normally be forwarded to the focused application; the compositor should only intercept combinations assigned to real desktop actions.
 
-Keyboard navigation must remain available throughout the desktop experience.
+The system should provide a discoverable way to view and customize keyboard shortcuts. Keyboard navigation must remain available throughout the desktop experience.
 
 ## 10. Virtual Desktops
 
