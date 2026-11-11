@@ -8,8 +8,8 @@
 use std::{collections::{HashMap, HashSet}, error::Error, fmt};
 
 use smithay::{
-    backend::drm::{crtc, DrmNode, DrmSurface},
-    reexports::drm::control::{Device as DrmControlDevice, connector},
+    backend::drm::{DrmNode, DrmSurface},
+    reexports::drm::control::{crtc, connector, Device as DrmControlDevice},
 };
 
 use crate::{
