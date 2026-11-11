@@ -18,7 +18,7 @@ The initial release targets `amd64` (x86-64) hardware and prioritizes:
 
 - A reproducible and testable system foundation.
 - A modern Wayland-based desktop architecture.
-- A proprietary AureaOS desktop experience.
+- An AureaOS-designed and project-maintained desktop experience.
 - First-party system applications with clear responsibilities.
 - Sensible defaults and consistent system behavior.
 - Local user accounts without a mandatory cloud account.
@@ -308,3 +308,8 @@ AureaOs/
 ├── CONTRIBUTING.md
 └── LICENSE
 
+
+
+## 10. Project Licensing
+
+Original AureaOS project work is currently licensed under **GPL-3.0-or-later**. The AureaOS product layer is first-party and project-maintained, but it is not currently closed-source or separately licensed on that basis. Product ownership, branding, design control, and software licensing are distinct matters. Third-party dependencies and assets retain their own licenses. Any future licensing or distribution-model change remains undecided and requires a separate legal and contributor-rights review.
