@@ -11,7 +11,7 @@ use smithay::{
 };
 
 use super::{
-    VulkanContext, VulkanDeviceExtensionPlan, VulkanInitError, VulkanQueueSubmitter,
+    VulkanContext, VulkanDeviceExtensionPlan, VulkanInitError, VulkanQueueSubmitter, VulkanRenderingFeaturePlan,
 };
 
 /// A logical Vulkan device, graphics queue and command pool.
@@ -21,6 +21,7 @@ pub struct VulkanLogicalDevice {
     graphics_queue_family: u32,
     command_pool: vk::CommandPool,
     extension_plan: VulkanDeviceExtensionPlan,
+    rendering_features: VulkanRenderingFeaturePlan,
     memory_properties: vk::PhysicalDeviceMemoryProperties,
     instance: ash::Instance,
     physical_device: vk::PhysicalDevice,
@@ -33,14 +34,18 @@ impl VulkanLogicalDevice {
         queue_family_index: u32,
         extension_plan: VulkanDeviceExtensionPlan,
     ) -> Result<Self, VulkanInitError> {
+        let rendering_features = VulkanRenderingFeaturePlan::from_device(physical_device)
+            .map_err(VulkanInitError::new)?;
         let priorities = [1.0_f32];
         let queue_info = [vk::DeviceQueueCreateInfo::default()
             .queue_family_index(queue_family_index)
             .queue_priorities(&priorities)];
         let extension_names = extension_plan.enabled_name_pointers();
+        let mut enabled_rendering_features = rendering_features.enabled_features();
         let create_info = vk::DeviceCreateInfo::default()
             .queue_create_infos(&queue_info)
-            .enabled_extension_names(&extension_names);
+            .enabled_extension_names(&extension_names)
+            .push_next(&mut enabled_rendering_features);
 
         let device = unsafe {
             physical_device.instance().handle().create_device(
@@ -77,6 +82,7 @@ impl VulkanLogicalDevice {
             graphics_queue_family: queue_family_index,
             command_pool,
             extension_plan,
+            rendering_features,
             memory_properties,
             instance: physical_device.instance().handle().clone(),
             physical_device: physical_device.handle(),
@@ -108,6 +114,9 @@ impl VulkanLogicalDevice {
 
     /// Returns the extension plan used to create this logical device.
     pub fn extension_plan(&self) -> &VulkanDeviceExtensionPlan { &self.extension_plan }
+
+    /// Returns the Vulkan 1.3 rendering features enabled on this device.
+    pub fn rendering_features(&self) -> &VulkanRenderingFeaturePlan { &self.rendering_features }
 
     /// Allocates one primary command buffer from this device's command pool.
     pub(super) fn allocate_primary_command_buffer(&self) -> Result<vk::CommandBuffer, vk::Result> {
