@@ -9,11 +9,8 @@ use std::{error::Error, fmt};
 
 use smithay::backend::{
     allocator::dmabuf::{Dmabuf, DmabufFlags, MAX_PLANES},
-    drm::{
-        DrmNode,
-        framebuffer::Handle,
-        gbm::{GbmFramebuffer, framebuffer_from_dmabuf},
-    },
+    drm::{DrmNode, gbm::{GbmFramebuffer, framebuffer_from_dmabuf}},
+    reexports::drm::control::framebuffer::Handle,
 };
 
 use crate::drm::{
@@ -109,7 +106,8 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
             if stride == 0 {
                 return Err(VulkanDrmFramebufferError::ZeroPlaneStride { plane: index });
             }
-            let plane_end = offset.checked_add(plane.size)
+            let plane_end = u64::from(offset)
+                .checked_add(plane.size)
                 .ok_or(VulkanDrmFramebufferError::PlaneLayoutOverflow { plane: index })?;
             if plane.size == 0 || plane_end > image.allocation_size() {
                 return Err(VulkanDrmFramebufferError::PlaneLayoutOutOfBounds { plane: index });
