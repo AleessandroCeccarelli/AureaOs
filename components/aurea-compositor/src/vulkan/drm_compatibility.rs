@@ -68,20 +68,19 @@ impl DrmVulkanCompatibility {
         let mut formats = Vec::new();
 
         for drm_format in &plane.formats {
-            let Some(vulkan_format) = vulkan_formats
+            let modifier = vulkan_formats
                 .iter()
-                .find(|capability| capability.format == drm_format.code)
-            else {
-                continue;
-            };
+                .filter(|capability| capability.format == drm_format.code)
+                .flat_map(|capability| capability.modifiers.iter())
+                .find(|modifier| {
+                    modifier.modifier == drm_format.modifier
+                        && modifier.plane_count > 0
+                        && modifier
+                            .tiling_features
+                            .contains(vk::FormatFeatureFlags::COLOR_ATTACHMENT)
+                });
 
-            let Some(modifier) = vulkan_format.modifiers.iter().find(|modifier| {
-                modifier.modifier == drm_format.modifier
-                    && modifier.plane_count > 0
-                    && modifier
-                        .tiling_features
-                        .contains(vk::FormatFeatureFlags::COLOR_ATTACHMENT)
-            }) else {
+            let Some(modifier) = modifier else {
                 continue;
             };
 
