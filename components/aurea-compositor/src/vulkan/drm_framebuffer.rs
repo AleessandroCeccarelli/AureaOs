@@ -7,9 +7,9 @@
 
 use std::{error::Error, fmt};
 
-use smithay::backend::{
-    allocator::dmabuf::{Dmabuf, DmabufFlags},
-    drm::framebuffer::Handle,
+use smithay::{
+    backend::allocator::dmabuf::{Dmabuf, DmabufFlags},
+    reexports::drm::control::{Device as DrmControlDevice, FbCmd2Flags, framebuffer::Handle},
 };
 
 use crate::drm::device::DrmDevice;
@@ -101,7 +101,7 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
         let dmabuf = dmabuf.build().ok_or(VulkanDrmFramebufferError::DmabufBuildFailed)?;
         let raw_device = device.device();
         let handle = raw_device
-            .add_planar_framebuffer(&dmabuf, smithay::backend::drm::control::FbCmd2Flags::MODIFIERS)
+            .add_planar_framebuffer(&dmabuf, FbCmd2Flags::MODIFIERS)
             .map_err(|error| VulkanDrmFramebufferError::RegistrationFailed(error.to_string()))?;
 
         Ok(Self {
