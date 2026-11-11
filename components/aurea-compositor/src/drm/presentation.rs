@@ -87,6 +87,14 @@ impl DrmPresentationLifecycle {
         self.current
     }
 
+    /// Returns the framebuffer waiting for its KMS completion event.
+    pub const fn pending_candidate(&self) -> Option<DrmFramebufferId> {
+        match self.transaction {
+            Some(TransactionState::PendingFlip { candidate }) => Some(candidate),
+            _ => None,
+        }
+    }
+
     /// Returns whether an atomic test/commit transaction is in progress.
     pub const fn has_pending_transaction(&self) -> bool {
         self.transaction.is_some()

@@ -13,6 +13,7 @@ pub mod gbm;
 pub mod output;
 pub mod outputs;
 pub mod presentation;
+pub mod presentation_backend;
 pub mod plane_formats;
 pub mod registry;
 pub mod session;
