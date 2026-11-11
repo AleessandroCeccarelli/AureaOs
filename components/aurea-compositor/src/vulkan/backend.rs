@@ -66,7 +66,11 @@ impl VulkanBackend {
         let context = VulkanContext::new()?;
         let physical_device = context.select_device(preference)
             .ok_or_else(|| VulkanInitError::new("No graphics-capable Vulkan device found"))?;
-        Self::from_selected_device(context, physical_device, false)
+        let physical_device_index = context.physical_devices()
+            .iter()
+            .position(|candidate| std::ptr::eq(candidate, physical_device))
+            .ok_or_else(|| VulkanInitError::new("Selected Vulkan device is not owned by its context"))?;
+        Self::from_selected_device(context, physical_device_index, false)
     }
 
     /// Initializes Vulkan for the physical device associated with a DRM node.
@@ -80,14 +84,21 @@ impl VulkanBackend {
             .ok_or_else(|| VulkanInitError::new(
                 "No graphics-capable Vulkan device matches the requested DRM node"
             ))?;
-        Self::from_selected_device(context, physical_device, true)
+        let physical_device_index = context.physical_devices()
+            .iter()
+            .position(|candidate| std::ptr::eq(candidate, physical_device))
+            .ok_or_else(|| VulkanInitError::new("Selected Vulkan device is not owned by its context"))?;
+        Self::from_selected_device(context, physical_device_index, true)
     }
 
     fn from_selected_device(
         context: VulkanContext,
-        physical_device: &PhysicalDevice,
+        physical_device_index: usize,
         require_dmabuf_interop: bool,
     ) -> Result<Self, VulkanInitError> {
+        let physical_device = context.physical_devices()
+            .get(physical_device_index)
+            .ok_or_else(|| VulkanInitError::new("Selected Vulkan device index is invalid"))?;
         let queue_family_index = context.graphics_queue_family(physical_device)
             .ok_or_else(|| VulkanInitError::new("Selected device has no graphics queue"))?;
         let extension_plan = VulkanDeviceExtensionPlan::from_device(physical_device);
