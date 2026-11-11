@@ -37,6 +37,7 @@ pub enum VulkanDrmImageError {
     InvalidDimensions,
     InvalidPlaneCount,
     ImageDimensionsUnsupported,
+    DmabufExportUnsupported,
     ModifierImageQuery(vk::Result),
     ImageCreation(vk::Result),
     MemoryTypeUnavailable,
@@ -53,6 +54,7 @@ impl fmt::Display for VulkanDrmImageError {
             Self::InvalidDimensions => f.write_str("DRM image dimensions must be non-zero"),
             Self::InvalidPlaneCount => f.write_str("DRM modifier memory-plane count is invalid"),
             Self::ImageDimensionsUnsupported => f.write_str("Requested dimensions exceed Vulkan image-format limits"),
+            Self::DmabufExportUnsupported => f.write_str("Vulkan does not report DMA-BUF external-memory export support for this image configuration"),
             Self::ModifierImageQuery(error) => write!(f, "DRM modifier image-format query failed: {error:?}"),
             Self::ImageCreation(error) => write!(f, "DRM modifier image creation failed: {error:?}"),
             Self::MemoryTypeUnavailable => f.write_str("No compatible device-local memory type is available"),
@@ -99,13 +101,18 @@ impl<'device> VulkanDrmImageAllocator<'device> {
 
         let mut modifier_query = vk::PhysicalDeviceImageDrmFormatModifierInfoEXT::default()
             .drm_format_modifier(modifier);
+        let mut external_query = vk::PhysicalDeviceExternalImageFormatInfo::default()
+            .handle_type(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
         let image_query = vk::PhysicalDeviceImageFormatInfo2::default()
             .format(vk_format)
             .ty(vk::ImageType::TYPE_2D)
             .tiling(vk::ImageTiling::DRM_FORMAT_MODIFIER_EXT)
             .usage(usage)
-            .push_next(&mut modifier_query);
-        let mut image_properties = vk::ImageFormatProperties2::default();
+            .push_next(&mut modifier_query)
+            .push_next(&mut external_query);
+        let mut external_properties = vk::ExternalImageFormatProperties::default();
+        let mut image_properties = vk::ImageFormatProperties2::default()
+            .push_next(&mut external_properties);
         unsafe {
             self.device.instance().get_physical_device_image_format_properties2(
                 self.device.physical_device(),
@@ -113,6 +120,11 @@ impl<'device> VulkanDrmImageAllocator<'device> {
                 &mut image_properties,
             )
         }.map_err(VulkanDrmImageError::ModifierImageQuery)?;
+        if !external_properties.external_memory_properties.external_memory_features
+            .contains(vk::ExternalMemoryFeatureFlags::EXPORTABLE)
+        {
+            return Err(VulkanDrmImageError::DmabufExportUnsupported);
+        }
         let limits = image_properties.image_format_properties;
         if width > limits.max_extent.width || height > limits.max_extent.height {
             return Err(VulkanDrmImageError::ImageDimensionsUnsupported);
