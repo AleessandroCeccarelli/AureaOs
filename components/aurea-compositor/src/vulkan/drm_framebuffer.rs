@@ -8,7 +8,7 @@
 use std::{error::Error, fmt};
 
 use smithay::backend::{
-    allocator::dmabuf::{Dmabuf, DmabufFlags},
+    allocator::dmabuf::{Dmabuf, DmabufFlags, MAX_PLANES},
     drm::{
         DrmNode,
         framebuffer::Handle,
@@ -86,7 +86,7 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
         }
 
         if image.planes().is_empty()
-            || image.planes().len() > 4
+            || image.planes().len() > MAX_PLANES
             || image.planes().len() != image.drm_format().memory_plane_count as usize
         {
             return Err(VulkanDrmFramebufferError::InvalidPlaneCount);
