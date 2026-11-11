@@ -204,8 +204,8 @@ impl VulkanFrameResource {
         } = self.state else {
             return Err(VulkanFrameResourceError::NotSubmitted);
         };
-        if presentation_resolved { return Err(VulkanFrameResourceError::PresentationAlreadyResolved); }
         if kms_owned { return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource); }
+        if presentation_resolved { return Err(VulkanFrameResourceError::PresentationAlreadyResolved); }
         self.update_submitted(gpu_complete, true, false, foreign_owned, foreign_acquire_pending);
         Ok(())
     }
@@ -248,6 +248,7 @@ impl VulkanFrameResource {
         } = self.state else {
             return Err(VulkanFrameResourceError::NotSubmitted);
         };
+        if kms_owned { return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource); }
         if !foreign_owned { return Err(VulkanFrameResourceError::ForeignOwnershipNotReleased); }
         if !foreign_acquire_pending { return Err(VulkanFrameResourceError::ForeignAcquireNotSubmitted); }
         self.update_submitted(gpu_complete, presentation_resolved, kms_owned, false, false);

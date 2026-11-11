@@ -112,6 +112,7 @@ fn kms_cannot_commit_a_resource_twice() {
     let mut resource = VulkanFrameResource::new();
     resource.begin_render().unwrap();
     resource.mark_submitted().unwrap();
+    resource.mark_gpu_complete().unwrap();
     resource.mark_kms_committed().unwrap();
 
     assert_eq!(
@@ -171,6 +172,7 @@ fn presentation_cannot_be_skipped_after_kms_has_taken_ownership() {
     let mut resource = VulkanFrameResource::new();
     resource.begin_render().unwrap();
     resource.mark_submitted().unwrap();
+    resource.mark_gpu_complete().unwrap();
     resource.mark_kms_committed().unwrap();
 
     assert_eq!(

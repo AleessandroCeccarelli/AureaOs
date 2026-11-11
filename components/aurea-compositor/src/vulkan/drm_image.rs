@@ -123,6 +123,7 @@ impl<'device> VulkanDrmImageAllocator<'device> {
                 &mut image_properties,
             )
         }.map_err(VulkanDrmImageError::ModifierImageQuery)?;
+        let limits = image_properties.image_format_properties;
         let external_memory = external_properties.external_memory_properties;
         let dma_buf_handle = vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT;
         if !external_memory
@@ -132,7 +133,6 @@ impl<'device> VulkanDrmImageAllocator<'device> {
         {
             return Err(VulkanDrmImageError::DmabufExportUnsupported);
         }
-        let limits = image_properties.image_format_properties;
         if width > limits.max_extent.width || height > limits.max_extent.height {
             return Err(VulkanDrmImageError::ImageDimensionsUnsupported);
         }
@@ -277,10 +277,10 @@ pub struct VulkanDrmImage<'device> {
     planes: Vec<VulkanDrmPlaneLayout>,
 }
 
-impl VulkanDrmImage<'_> {
+impl<'device> VulkanDrmImage<'device> {
     pub fn image(&self) -> vk::Image { self.image }
     pub fn usage(&self) -> vk::ImageUsageFlags { self.usage }
-    pub(super) fn device(&self) -> &VulkanLogicalDevice { self.device }
+    pub(super) fn device(&self) -> &'device VulkanLogicalDevice { self.device }
     pub fn dmabuf(&self) -> &OwnedFd { &self.dmabuf }
     pub fn allocation_size(&self) -> vk::DeviceSize { self.allocation_size }
     pub fn width(&self) -> u32 { self.width }

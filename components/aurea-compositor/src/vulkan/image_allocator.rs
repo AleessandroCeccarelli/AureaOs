@@ -165,14 +165,14 @@ pub struct VulkanImage<'device> {
     usage: vk::ImageUsageFlags,
 }
 
-impl VulkanImage<'_> {
+impl<'device> VulkanImage<'device> {
     pub fn handle(&self) -> vk::Image { self.image }
     pub fn memory(&self) -> vk::DeviceMemory { self.memory }
     pub fn width(&self) -> u32 { self.width }
     pub fn height(&self) -> u32 { self.height }
     pub fn format(&self) -> vk::Format { self.format }
     pub fn usage(&self) -> vk::ImageUsageFlags { self.usage }
-    pub(super) fn device(&self) -> &'_ VulkanLogicalDevice { self.device }
+    pub(super) fn device(&self) -> &'device VulkanLogicalDevice { self.device }
 }
 
 impl Drop for VulkanImage<'_> {

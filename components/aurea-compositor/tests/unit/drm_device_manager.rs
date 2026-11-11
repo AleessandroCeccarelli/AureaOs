@@ -5,7 +5,7 @@
 
 //! Tests for DRM device manager registration and lifecycle.
 
-use aurea_compositor::drm::{
+use crate::drm::{
     device::{DrmDevice, DrmDeviceError},
     device_manager::{DrmDeviceManager, DrmDeviceManagerError, ManagedDrmDevice},
 };
