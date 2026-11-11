@@ -17,6 +17,7 @@ pub enum VulkanShaderError {
     EmptyCode,
     InvalidByteLength,
     InvalidMagic,
+    InvalidHeader,
     Creation(vk::Result),
 }
 
@@ -26,6 +27,7 @@ impl fmt::Display for VulkanShaderError {
             Self::EmptyCode => formatter.write_str("SPIR-V shader code is empty"),
             Self::InvalidByteLength => formatter.write_str("SPIR-V byte length is not divisible by four"),
             Self::InvalidMagic => formatter.write_str("SPIR-V module has an invalid magic number"),
+            Self::InvalidHeader => formatter.write_str("SPIR-V module is shorter than its five-word header"),
             Self::Creation(error) => write!(formatter, "Vulkan shader-module creation failed: {error:?}"),
         }
     }
@@ -81,6 +83,9 @@ impl<'device> VulkanShaderModule<'device> {
         }
         if words[0] != 0x0723_0203 {
             return Err(VulkanShaderError::InvalidMagic);
+        }
+        if words.len() < 5 {
+            return Err(VulkanShaderError::InvalidHeader);
         }
         Ok(())
     }
