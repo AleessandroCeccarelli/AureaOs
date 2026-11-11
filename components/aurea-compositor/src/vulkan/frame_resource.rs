@@ -59,7 +59,8 @@ enum FrameResourceState {
 ///
 /// GPU completion and KMS release are independent events. A resource becomes
 /// available again only after GPU work has completed and presentation has
-/// either been skipped or KMS has released its ownership of the buffer.
+/// either been skipped or KMS has released its ownership of the buffer, and any
+/// explicit foreign queue-family ownership transfer has been reacquired by Vulkan.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VulkanFrameResource {
     state: FrameResourceState,
@@ -283,7 +284,7 @@ impl VulkanFrameResource {
         if !foreign_owned {
             return Err(VulkanFrameResourceError::ForeignOwnershipNotReleased);
         }
-        if kms_owned {
+        if !presentation_resolved || kms_owned {
             return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource);
         }
         self.update_submitted(gpu_complete, presentation_resolved, false, false);
