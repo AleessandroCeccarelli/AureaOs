@@ -92,7 +92,7 @@ pub use readback_buffer::{VulkanReadbackBuffer, VulkanReadbackError};
 pub use offscreen_renderer::{VulkanOffscreenError, VulkanOffscreenRenderer};
 pub use graphics_pipeline::{VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders};
 pub use image_view::{VulkanImageView, VulkanImageViewError};
-pub use image_transition::{VulkanImageState, VulkanImageTransition};
+pub use image_transition::{VulkanImageState, VulkanImageTransition, VulkanImageTransitionError};
 pub use rendering_features::VulkanRenderingFeaturePlan;
 pub use shader_module::{VulkanShaderError, VulkanShaderModule};
 pub use frame_scheduler::{DEFAULT_FRAMES_IN_FLIGHT, VulkanFrame, VulkanFrameScheduler, VulkanFrameSchedulerError};
