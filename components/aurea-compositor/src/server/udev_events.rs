@@ -348,7 +348,6 @@ fn remove_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
     super::gbm_lifecycle::remove_gbm_device(state, node);
 
     state.vulkan_backends.remove(&node);
-    state.drm_surfaces.remove(&node);
     state.drm_devices.remove(node);
     state.drm_device_registry.remove(node);
 
