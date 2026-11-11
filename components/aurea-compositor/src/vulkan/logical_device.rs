@@ -26,6 +26,7 @@ pub struct VulkanLogicalDevice {
     instance: ash::Instance,
     physical_device: vk::PhysicalDevice,
     supports_sync_fd: bool,
+    supports_foreign_queue_family: bool,
 }
 
 impl VulkanLogicalDevice {
@@ -107,6 +108,7 @@ impl VulkanLogicalDevice {
             instance: physical_device.instance().handle().clone(),
             physical_device: physical_device.handle(),
             supports_sync_fd,
+            supports_foreign_queue_family: extension_plan.supports_foreign_queue_family(),
         })
     }
 
@@ -138,6 +140,11 @@ impl VulkanLogicalDevice {
 
     /// Whether this device can export semaphore payloads as Linux sync files.
     pub fn supports_sync_fd(&self) -> bool { self.supports_sync_fd }
+
+    /// Whether foreign queue-family ownership transfers are enabled on this device.
+    pub fn supports_foreign_queue_family(&self) -> bool {
+        self.supports_foreign_queue_family
+    }
 
     /// Returns the Vulkan 1.3 rendering features enabled on this device.
     pub fn rendering_features(&self) -> &VulkanRenderingFeaturePlan { &self.rendering_features }
