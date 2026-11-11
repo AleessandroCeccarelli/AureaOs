@@ -5,10 +5,10 @@
 
 //! Executes the KMS side of a Vulkan framebuffer presentation.
 //!
-//! This adapter is deliberately independent from output discovery and frame
-//! scheduling. The caller supplies the primary-plane state and keeps both
-//! the candidate and current framebuffer objects alive until their respective
-//! KMS and GPU ownership conditions have completed.
+//! The adapter owns one output's frame-lifecycle coordinator while leaving
+//! framebuffer object storage and render scheduling to their respective
+//! owners. The caller supplies primary-plane state and keeps candidate and
+//! current framebuffer objects alive until KMS and GPU ownership are resolved.
 
 use std::{error::Error, fmt};
 
@@ -69,7 +69,6 @@ impl From<DrmOutputFrameError> for DrmPresentationBackendError {
         Self::Lifecycle(error)
     }
 }
-
 
 /// Owns the per-CRTC presentation state for one Smithay DRM surface.
 #[derive(Debug)]
