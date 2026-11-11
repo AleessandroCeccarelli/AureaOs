@@ -5,11 +5,11 @@
 
 //! DRM framebuffer registration for native Vulkan DMA-BUF images.
 
-use std::{error::Error, fmt, os::fd::AsFd};
+use std::{error::Error, fmt};
 
 use smithay::backend::{
     allocator::dmabuf::{Dmabuf, DmabufFlags},
-    drm::{DrmDevice as SmithayDrmDevice, framebuffer::Handle, DrmDevice as _},
+    drm::framebuffer::Handle,
 };
 
 use crate::drm::device::DrmDevice;
@@ -50,22 +50,28 @@ impl Error for VulkanDrmFramebufferError {}
 /// being destroyed while the kernel framebuffer may still reference it.
 /// The caller must additionally wait for KMS release before retiring this
 /// object; GPU completion alone is not sufficient.
-pub struct VulkanDrmFramebuffer<'device, 'image> {
-    device: &'device DrmDevice,
-    image: &'image VulkanDrmImage<'image>,
+pub struct VulkanDrmFramebuffer<'drm, 'image, 'vk> {
+    device: &'drm DrmDevice,
+    image: &'image VulkanDrmImage<'vk>,
     handle: Option<Handle>,
 }
 
-impl<'device, 'image> VulkanDrmFramebuffer<'device, 'image> {
+impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
     /// Registers the exact image FourCC/modifier and plane layout with KMS.
     pub fn register(
-        device: &'device DrmDevice,
-        image: &'image VulkanDrmImage<'image>,
+        device: &'drm DrmDevice,
+        image: &'image VulkanDrmImage<'vk>,
     ) -> Result<Self, VulkanDrmFramebufferError> {
-        if image.width() == 0 || image.height() == 0 {
+        if image.width() == 0 || image.height() == 0
+            || i32::try_from(image.width()).is_err()
+            || i32::try_from(image.height()).is_err()
+        {
             return Err(VulkanDrmFramebufferError::InvalidDimensions);
         }
-        if image.planes().is_empty() || image.planes().len() > 4 {
+        if image.planes().is_empty()
+            || image.planes().len() > 4
+            || image.planes().len() != image.drm_format().memory_plane_count as usize
+        {
             return Err(VulkanDrmFramebufferError::InvalidPlaneCount);
         }
 
@@ -111,7 +117,7 @@ impl<'device, 'image> VulkanDrmFramebuffer<'device, 'image> {
     }
 
     /// Returns the backing Vulkan image.
-    pub fn image(&self) -> &'image VulkanDrmImage<'image> {
+    pub fn image(&self) -> &'image VulkanDrmImage<'vk> {
         self.image
     }
 
@@ -127,7 +133,7 @@ impl<'device, 'image> VulkanDrmFramebuffer<'device, 'image> {
     }
 }
 
-impl Drop for VulkanDrmFramebuffer<'_, '_> {
+impl Drop for VulkanDrmFramebuffer<'_, '_, '_> {
     fn drop(&mut self) {
         if let Some(handle) = self.handle.take() {
             // Best effort only. Call retire() when the caller needs an
