@@ -99,3 +99,38 @@ A caller must provide compatible SPIR-V modules when creating the pipeline and
 must keep all resources alive until GPU completion. The next step is to provide
 a reproducible known-good shader pair and connect this pass to the synchronous
 offscreen readback path for pixel-level GPU validation.
+
+
+## First shader-driven offscreen triangle
+
+The compositor now includes small GLSL 450 vertex and fragment shaders under
+`components/aurea-compositor/shaders/`. The vertex shader generates three
+positions and interpolated RGB colors from `gl_VertexIndex`, so no vertex
+buffer or descriptor set is required. The fragment shader writes the
+interpolated color.
+
+Compile the sources reproducibly on Fedora with:
+
+```sh
+sudo dnf install glslang
+bash tools/shaders/compile-vulkan-shaders.sh
+```
+
+The script targets Vulkan 1.3 and writes the two SPIR-V modules to
+`target/aurea-shaders/` by default. The output directory can be overridden
+with its first argument. Generated binaries stay out of source control; GLSL
+is the maintained source of truth.
+
+`VulkanOffscreenRenderer::render_triangle` accepts the compiled vertex and
+fragment SPIR-V bytes, creates the shader modules and compatible graphics
+pipeline, clears an RGBA8 target to opaque black, records a three-vertex draw,
+copies the result to host-visible memory, waits for completion and returns
+RGBA8 pixels. The background clear is intentional: pixels outside the
+triangle are deterministic rather than undefined. This is a synchronous
+diagnostic route; the interactive frame scheduler remains a separate path.
+
+A GPU-backed smoke test should load the two generated files, create a Vulkan
+1.3 logical device, call `render_triangle(128, 128, ...)`, and verify both a
+black corner pixel and a non-black pixel in the triangle interior. Run it
+first with Mesa lavapipe, then on the target GPU. No hardware execution is
+claimed by this change.
