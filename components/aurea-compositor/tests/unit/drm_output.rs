@@ -70,3 +70,21 @@ fn rejects_zero_scale() {
         Err(DrmOutputError::InvalidOutput),
     );
 }
+
+#[test]
+fn logical_descriptor_does_not_claim_to_have_native_drm_configuration() {
+    let descriptor = valid_descriptor();
+
+    assert!(!descriptor.has_drm_configuration());
+    assert!(descriptor.connector_handle().is_none());
+    assert!(descriptor.native_mode().is_none());
+}
+
+#[test]
+fn logical_conversion_keeps_descriptor_native_data_available() {
+    let descriptor = valid_descriptor();
+    let _output = descriptor.clone().into_display_output().unwrap();
+
+    assert_eq!(descriptor, valid_descriptor());
+    assert!(!descriptor.has_drm_configuration());
+}

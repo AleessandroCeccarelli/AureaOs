@@ -5,7 +5,7 @@
 
 //! Bounded frames-in-flight scheduling for the AureaOS Vulkan renderer.
 
-use std::{error::Error, fmt};
+use std::{error::Error, fmt, os::fd::OwnedFd};
 
 use smithay::reexports::ash::vk;
 
@@ -18,6 +18,7 @@ pub const DEFAULT_FRAMES_IN_FLIGHT: usize = 2;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VulkanFrameSchedulerError {
     InvalidFrameCount,
+    SyncFdUnavailable,
     Vulkan(vk::Result),
 }
 
@@ -26,6 +27,9 @@ impl fmt::Display for VulkanFrameSchedulerError {
         match self {
             Self::InvalidFrameCount => formatter.write_str(
                 "Vulkan frames-in-flight count must be between one and three"
+            ),
+            Self::SyncFdUnavailable => formatter.write_str(
+                "The selected Vulkan device cannot export Linux sync-file fences"
             ),
             Self::Vulkan(error) => write!(
                 formatter,
@@ -72,6 +76,9 @@ impl<'device> VulkanFrameScheduler<'device> {
                     for slot in slots.drain(..) {
                         unsafe {
                             device.handle().destroy_fence(slot.completion_fence, None);
+                            if let Some(semaphore) = slot.sync_fd_semaphore {
+                                device.handle().destroy_semaphore(semaphore, None);
+                            }
                             device.handle().destroy_command_pool(slot.command_pool, None);
                         }
                     }
@@ -134,6 +141,9 @@ impl Drop for VulkanFrameScheduler<'_> {
                 if slot.completion_fence != vk::Fence::null() {
                     self.device.handle().destroy_fence(slot.completion_fence, None);
                 }
+                if let Some(semaphore) = slot.sync_fd_semaphore.take() {
+                    self.device.handle().destroy_semaphore(semaphore, None);
+                }
                 self.device.handle().destroy_command_pool(slot.command_pool, None);
             }
         }
@@ -168,5 +178,27 @@ impl VulkanFrame<'_, '_> {
             scheduler.slots.len(),
         );
         Ok(())
+    }
+
+    /// Submits this frame and exports its completion semaphore as a Linux
+    /// sync-file FD for DRM's plane IN_FENCE_FD property.
+    ///
+    /// Keep the returned descriptor open through the atomic TEST_ONLY and
+    /// commit calls. DRM imports its own sync-file reference during each ioctl.
+    pub fn submit_with_sync_fd(self) -> Result<OwnedFd, VulkanFrameSchedulerError> {
+        let scheduler = self.scheduler;
+        if !scheduler.device.supports_sync_fd() {
+            return Err(VulkanFrameSchedulerError::SyncFdUnavailable);
+        }
+
+        let sync_fd = scheduler.slots[self.slot_index]
+            .submit_with_sync_fd(scheduler.device, self.command_buffer)
+            .map_err(VulkanFrameSchedulerError::Vulkan)?;
+
+        scheduler.next_slot = VulkanFrameScheduler::next_slot_index(
+            self.slot_index,
+            scheduler.slots.len(),
+        );
+        Ok(sync_fd)
     }
 }

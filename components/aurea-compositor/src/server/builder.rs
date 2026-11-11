@@ -79,6 +79,9 @@ pub(super) fn build(
         drm_devices,
 
         #[cfg(feature = "drm")]
+        drm_surfaces: std::collections::HashMap::new(),
+
+        #[cfg(feature = "drm")]
         gbm_devices: crate::drm::gbm::GbmDeviceManager::new(),
 
         #[cfg(feature = "drm")]
@@ -206,6 +209,20 @@ pub(super) fn build(
         .map_err(io::Error::other)?;
     }
 
+    // Create native KMS surfaces after logical outputs have been registered.
+    #[cfg(feature = "drm")]
+    {
+        let nodes = state.drm_devices.iter().map(|(node, _)| *node).collect::<Vec<_>>();
+        for node in nodes {
+            if let Some(device) = state.drm_devices.get_mut(node) {
+                match crate::drm::surfaces::DrmSurfaceManager::initialize(device) {
+                    Ok(manager) => { state.drm_surfaces.insert(node, manager); }
+                    Err(error) => eprintln!("AureaOS: KMS surfaces unavailable for DRM device {node}: {error}"),
+                }
+            }
+        }
+    }
+
     // Publish registered outputs as Wayland globals.
     state
         .compositor
@@ -242,7 +259,13 @@ pub(super) fn build(
 
             let token = loop_handle
                 .insert_source(notifier, move |event, _, state| match event {
-                    DrmEvent::VBlank(_crtc) => {}
+                    DrmEvent::VBlank(crtc) => {
+                        if let Some(surfaces) = state.drm_surfaces.get_mut(&node) {
+                            if let Err(error) = surfaces.on_vblank(node, crtc) {
+                                eprintln!("AureaOS: DRM presentation completion failed for {node}: {error}");
+                            }
+                        }
+                    }
                     DrmEvent::Error(error) => {
                         state.error =
                             Some(io::Error::other(format!("DRM device {node}: {error}")));

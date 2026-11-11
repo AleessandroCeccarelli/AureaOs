@@ -80,6 +80,7 @@ pub(super) fn register_session_events(
 
             if is_pause {
                 // Release graphics resources while DRM access is still valid.
+                state.drm_surfaces.clear();
                 super::gbm_lifecycle::clear_gbm_devices(state);
                 state.vulkan_backends.clear();
             }

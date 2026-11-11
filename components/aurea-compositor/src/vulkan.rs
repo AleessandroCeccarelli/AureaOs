@@ -18,6 +18,8 @@ mod drm_compatibility;
 mod drm_image;
 #[cfg(feature = "drm")]
 mod frame_resource;
+#[cfg(feature = "drm")]
+mod drm_framebuffer;
 mod device_extensions;
 mod external_memory;
 mod format_capabilities;
@@ -78,6 +80,8 @@ pub use drm_compatibility::{
 pub use drm_image::{VulkanDrmImage, VulkanDrmImageAllocator, VulkanDrmImageError, VulkanDrmPlaneLayout};
 #[cfg(feature = "drm")]
 pub use frame_resource::{VulkanFrameResource, VulkanFrameResourceError};
+#[cfg(feature = "drm")]
+pub use drm_framebuffer::{VulkanDrmFramebuffer, VulkanDrmFramebufferError};
 pub use device_extensions::VulkanDeviceExtensionPlan;
 pub use external_memory::VulkanExternalMemoryCapabilities;
 pub use format_capabilities::{VulkanFormatCapabilities, VulkanFormatModifierInfo};
@@ -88,7 +92,7 @@ pub use readback_buffer::{VulkanReadbackBuffer, VulkanReadbackError};
 pub use offscreen_renderer::{VulkanOffscreenError, VulkanOffscreenRenderer};
 pub use graphics_pipeline::{VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders};
 pub use image_view::{VulkanImageView, VulkanImageViewError};
-pub use image_transition::{VulkanImageState, VulkanImageTransition};
+pub use image_transition::{VulkanImageState, VulkanImageTransition, VulkanImageTransitionError};
 pub use rendering_features::VulkanRenderingFeaturePlan;
 pub use shader_module::{VulkanShaderError, VulkanShaderModule};
 pub use frame_scheduler::{DEFAULT_FRAMES_IN_FLIGHT, VulkanFrame, VulkanFrameScheduler, VulkanFrameSchedulerError};

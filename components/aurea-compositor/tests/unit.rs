@@ -13,6 +13,10 @@ use aurea_compositor::output::{
     manager::{OutputManager, OutputManagerError, OutputReconciliation},
 };
 
+#[cfg(feature = "drm")]
+#[path = "unit/drm_presentation.rs"]
+mod drm_presentation;
+
 #[path = "unit/frame_scheduler.rs"]
 mod frame_scheduler;
 
