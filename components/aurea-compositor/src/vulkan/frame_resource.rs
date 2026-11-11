@@ -13,6 +13,7 @@ pub enum VulkanFrameResourceError {
     AlreadyInUse,
     NotRendering,
     NotSubmitted,
+    GpuWorkIncomplete,
     PresentationAlreadyResolved,
     KmsDoesNotOwnResource,
     KmsAlreadyOwnsResource,
@@ -24,6 +25,7 @@ impl fmt::Display for VulkanFrameResourceError {
             Self::AlreadyInUse => "Frame resource is not available for rendering",
             Self::NotRendering => "Frame resource is not currently being rendered",
             Self::NotSubmitted => "Frame resource has no pending GPU submission",
+            Self::GpuWorkIncomplete => "GPU work must complete before KMS can take ownership of the frame",
             Self::PresentationAlreadyResolved => {
                 "Frame resource presentation has already been resolved"
             }
@@ -118,8 +120,9 @@ impl VulkanFrameResource {
 
     /// Records that an accepted KMS commit now owns the resource.
     ///
-    /// This event may arrive before or after GPU completion. The resource is
-    /// not reusable until both sides of the ownership hand-off are complete.
+    /// KMS may only take ownership after GPU completion. Until explicit
+    /// Vulkan-to-KMS fence synchronization is implemented, this conservative
+    /// ordering prevents the display engine from reading an unfinished frame.
     pub fn mark_kms_committed(&mut self) -> Result<(), VulkanFrameResourceError> {
         let FrameResourceState::Submitted {
             gpu_complete,
@@ -130,6 +133,9 @@ impl VulkanFrameResource {
             return Err(VulkanFrameResourceError::NotSubmitted);
         };
 
+        if !gpu_complete {
+            return Err(VulkanFrameResourceError::GpuWorkIncomplete);
+        }
         if presentation_resolved {
             return Err(VulkanFrameResourceError::PresentationAlreadyResolved);
         }
