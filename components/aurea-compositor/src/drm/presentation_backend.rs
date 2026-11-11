@@ -12,11 +12,9 @@
 
 use std::{error::Error, fmt};
 
-use smithay::backend::drm::{
-    crtc,
-    DrmNode,
-    DrmSurface,
-    PlaneState,
+use smithay::{
+    backend::drm::{DrmNode, DrmSurface, PlaneState},
+    reexports::drm::control::crtc,
 };
 
 use super::{
