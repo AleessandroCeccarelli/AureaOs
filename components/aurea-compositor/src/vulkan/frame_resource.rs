@@ -120,9 +120,8 @@ impl VulkanFrameResource {
 
     /// Records that an accepted KMS commit now owns the resource.
     ///
-    /// KMS may only take ownership after GPU completion. Until explicit
-    /// Vulkan-to-KMS fence synchronization is implemented, this conservative
-    /// ordering prevents the display engine from reading an unfinished frame.
+    /// Use this conservative path when no explicit Vulkan-to-KMS fence was
+    /// attached to the atomic commit. The GPU must have completed first.
     pub fn mark_kms_committed(&mut self) -> Result<(), VulkanFrameResourceError> {
         let FrameResourceState::Submitted {
             gpu_complete,
