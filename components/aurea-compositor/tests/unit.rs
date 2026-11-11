@@ -43,3 +43,7 @@ mod vulkan_dmabuf_layout;
 #[cfg(feature = "vulkan")]
 #[path = "unit/vulkan_device_extensions.rs"]
 mod vulkan_device_extensions;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_memory_type.rs"]
+mod vulkan_memory_type;
