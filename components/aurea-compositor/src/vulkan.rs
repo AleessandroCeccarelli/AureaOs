@@ -17,7 +17,7 @@ mod drm_compatibility;
 #[cfg(feature = "drm")]
 mod drm_image;
 #[cfg(feature = "drm")]
-mod frame_resource;
+mod frame_resource;\n#[cfg(feature = "drm")]\nmod frame_resource_registry;
 #[cfg(feature = "drm")]
 mod drm_framebuffer;
 mod device_extensions;
@@ -79,7 +79,7 @@ pub use drm_compatibility::{
 #[cfg(feature = "drm")]
 pub use drm_image::{VulkanDrmImage, VulkanDrmImageAllocator, VulkanDrmImageError, VulkanDrmPlaneLayout};
 #[cfg(feature = "drm")]
-pub use frame_resource::{VulkanFrameResource, VulkanFrameResourceError};
+pub use frame_resource::{VulkanFrameResource, VulkanFrameResourceError};\n#[cfg(feature = "drm")]\npub use frame_resource_registry::{\n    VulkanFrameResourceId,\n    VulkanFrameResourceRegistry,\n    VulkanFrameResourceRegistryError,\n};
 #[cfg(feature = "drm")]
 pub use drm_framebuffer::{VulkanDrmFramebuffer, VulkanDrmFramebufferError};
 pub use device_extensions::VulkanDeviceExtensionPlan;
