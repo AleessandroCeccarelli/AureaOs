@@ -8,6 +8,8 @@
 
 **Take the simplicity people love in operating systems, and shape it to fit Linux.**
 
+> **[A note about the origin of AureaOS](AUREAOS_ORIGIN.txt)** — a small record of the human vision and AI-assisted work that are helping turn this project from ideas into code.
+
 AureaOS is a Linux distribution project built on Debian GNU/Linux 13 (Trixie) for `amd64` (x86-64). Its first release is **AureaOS Roma 1.0**.
 
 AureaOS aims to make Linux feel natural, coherent, and designed to respect users. Debian provides the lower-level system foundation, while AureaOS develops its own desktop experience, system integration, visual identity, and core applications.
