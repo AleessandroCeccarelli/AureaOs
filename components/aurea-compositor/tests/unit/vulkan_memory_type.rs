@@ -43,7 +43,7 @@ fn falls_back_to_required_flags_when_preference_is_unavailable() {
     properties.memory_types[0].property_flags = vk::MemoryPropertyFlags::DEVICE_LOCAL;
 
     assert_eq!(
-        select_memory_type_for_test(
+        select_memory_type_index(
             &properties,
             0b1,
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
@@ -60,7 +60,7 @@ fn rejects_memory_types_outside_requirement_bitmask() {
     properties.memory_types[0].property_flags = vk::MemoryPropertyFlags::DEVICE_LOCAL;
 
     assert_eq!(
-        select_memory_type_for_test(
+        select_memory_type_index(
             &properties,
             0,
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
