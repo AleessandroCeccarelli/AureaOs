@@ -12,6 +12,7 @@ use smithay::backend::{
         dmabuf::{AsDmabuf, Dmabuf},
         vulkan::{Error as SmithayVulkanError, ImageUsageFlags, VulkanAllocator, VulkanImage},
     },
+    drm::DrmNode,
     vulkan::PhysicalDevice,
 };
 
@@ -66,6 +67,10 @@ pub enum VulkanBufferError {
     InvalidDimensions { width: u32, height: u32 },
     /// Smithay could not initialize its Vulkan allocator or allocate an image.
     Allocation(SmithayVulkanError),
+    /// The physical device could not report its DRM identity.
+    DeviceIdentityQuery(String),
+    /// The selected Vulkan physical device does not match the requested DRM node.
+    DeviceNodeMismatch { requested: DrmNode },
     /// Smithay could not export the allocated image as a DMA-BUF.
     Export(smithay::backend::allocator::vulkan::ExportError),
 }
@@ -77,6 +82,8 @@ impl fmt::Display for VulkanBufferError {
                 write!(formatter, "Invalid Vulkan buffer dimensions: {width}x{height}")
             }
             Self::Allocation(error) => write!(formatter, "Vulkan buffer allocation failed: {error}"),
+            Self::DeviceIdentityQuery(message) => write!(formatter, "Failed to query Vulkan device DRM identity: {message}"),
+            Self::DeviceNodeMismatch { requested } => write!(formatter, "Vulkan physical device does not match DRM node {requested:?}"),
             Self::Export(error) => write!(formatter, "Vulkan DMA-BUF export failed: {error}"),
         }
     }
@@ -87,6 +94,7 @@ impl Error for VulkanBufferError {
         match self {
             Self::InvalidDimensions { .. } => None,
             Self::Allocation(error) => Some(error),
+            Self::DeviceIdentityQuery(_) | Self::DeviceNodeMismatch { .. } => None,
             Self::Export(error) => Some(error),
         }
     }
@@ -102,8 +110,33 @@ pub struct VulkanBufferAllocator {
 }
 
 impl VulkanBufferAllocator {
-    /// Creates a DMA-BUF-capable allocator for a selected Vulkan physical device.
-    pub fn new(device: &PhysicalDevice) -> Result<Self, VulkanBufferError> {
+    /// Creates an allocator only when the Vulkan physical device belongs to the DRM node.
+    ///
+    /// The match is established through VK_EXT_physical_device_drm, checking
+    /// both the primary and render node reported by the physical device.
+    pub fn new_for_drm_node(
+        device: &PhysicalDevice,
+        requested_node: DrmNode,
+    ) -> Result<Self, VulkanBufferError> {
+        let primary_node = device
+            .primary_node()
+            .map_err(|error| VulkanBufferError::DeviceIdentityQuery(error.to_string()))?;
+        let render_node = device
+            .render_node()
+            .map_err(|error| VulkanBufferError::DeviceIdentityQuery(error.to_string()))?;
+
+        if primary_node.as_ref() != Some(&requested_node)
+            && render_node.as_ref() != Some(&requested_node)
+        {
+            return Err(VulkanBufferError::DeviceNodeMismatch {
+                requested: requested_node,
+            });
+        }
+
+        Self::new(device)
+    }
+
+    fn new(device: &PhysicalDevice) -> Result<Self, VulkanBufferError> {
         let allocator = VulkanAllocator::new(device, ImageUsageFlags::COLOR_ATTACHMENT)
             .map_err(VulkanBufferError::Allocation)?;
 
