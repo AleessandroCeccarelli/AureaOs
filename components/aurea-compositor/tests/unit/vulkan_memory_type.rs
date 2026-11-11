@@ -5,7 +5,7 @@
 
 use smithay::reexports::ash::vk;
 
-use aurea_compositor::vulkan::memory_type_test_support::select_memory_type_for_test;
+use aurea_compositor::vulkan::select_memory_type_index;
 
 #[test]
 fn selects_preferred_compatible_memory_type() {
@@ -26,7 +26,7 @@ fn selects_preferred_compatible_memory_type() {
     };
 
     assert_eq!(
-        select_memory_type_for_test(
+        select_memory_type_index(
             &properties,
             0b110,
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
