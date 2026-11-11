@@ -15,7 +15,7 @@ use smithay::backend::drm::DrmNode;
 
 use crate::renderer::RenderPreference;
 
-use super::{VulkanContext, VulkanExternalMemoryCapabilities};
+use super::{VulkanContext, VulkanExternalMemoryCapabilities, VulkanRenderingFeaturePlan};
 
 /// General category of a Vulkan physical device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -89,7 +89,7 @@ impl VulkanContext {
 
         self.physical_devices
             .iter()
-            .filter(|device| self.graphics_queue_family(device).is_some())
+            .filter(|device| self.graphics_queue_family(device).is_some() && VulkanRenderingFeaturePlan::from_device(device).is_ok())
             .find(|device| {
                 preferred_type
                     .map(|kind| Self::classify_device(device) == kind)
@@ -124,6 +124,7 @@ impl VulkanContext {
 
                 (primary_matches || render_matches)
                     && self.graphics_queue_family(device).is_some()
+                    && VulkanRenderingFeaturePlan::from_device(device).is_ok()
             })
             .collect::<Vec<_>>();
 
