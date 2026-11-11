@@ -39,3 +39,7 @@ mod vulkan_buffer_allocator;
 #[cfg(all(feature = "drm", feature = "vulkan"))]
 #[path = "unit/vulkan_dmabuf_layout.rs"]
 mod vulkan_dmabuf_layout;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_device_extensions.rs"]
+mod vulkan_device_extensions;
