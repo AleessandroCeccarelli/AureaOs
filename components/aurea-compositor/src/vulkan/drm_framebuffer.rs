@@ -112,11 +112,16 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
             }
         }
 
-        let dmabuf = dmabuf.build().ok_or(VulkanDrmFramebufferError::DmabufBuildFailed)?;
+        let mut dmabuf = dmabuf.build().ok_or(VulkanDrmFramebufferError::DmabufBuildFailed)?;
         let node = device.node()
             .map_err(|error| VulkanDrmFramebufferError::DrmNodeUnavailable(error.to_string()))?;
-        let gbm = gbm_devices.get(node)
-            .ok_or(VulkanDrmFramebufferError::GbmDeviceUnavailable(node))?;
+
+        // Preserve the exact import target so Smithay/GBM cannot select a
+        // different DRM device when resolving the DMA-BUF.
+        dmabuf.set_node(node.clone());
+
+        let gbm = gbm_devices.get(node.clone())
+            .ok_or_else(|| VulkanDrmFramebufferError::GbmDeviceUnavailable(node.clone()))?;
 
         let framebuffer = framebuffer_from_dmabuf(
             device.fd(),
