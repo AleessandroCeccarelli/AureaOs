@@ -19,6 +19,8 @@ mod device_extensions;
 mod external_memory;
 mod format_capabilities;
 mod logical_device;
+mod memory_type;
+mod image_allocator;
 mod physical_device;
 mod queue;
 mod queue_submitter;
@@ -61,6 +63,8 @@ pub use device_extensions::VulkanDeviceExtensionPlan;
 pub use external_memory::VulkanExternalMemoryCapabilities;
 pub use format_capabilities::{VulkanFormatCapabilities, VulkanFormatModifierInfo};
 pub use logical_device::VulkanLogicalDevice;
+pub use memory_type::select_memory_type_index;
+pub use image_allocator::{VulkanImage, VulkanImageAllocator, VulkanImageError, VulkanImageRequest};
 pub use physical_device::{VulkanDeviceInfo, VulkanDeviceType};
 pub use queue::VulkanQueueFamilyInfo;
 
