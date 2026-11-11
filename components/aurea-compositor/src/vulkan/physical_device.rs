@@ -15,7 +15,7 @@ use smithay::backend::drm::DrmNode;
 
 use crate::renderer::RenderPreference;
 
-use super::{VulkanContext, VulkanExternalMemoryCapabilities};
+use super::{VulkanContext, VulkanExternalMemoryCapabilities, VulkanRenderingFeaturePlan};
 
 /// General category of a Vulkan physical device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -89,7 +89,7 @@ impl VulkanContext {
 
         self.physical_devices
             .iter()
-            .filter(|device| self.graphics_queue_family(device).is_some())
+            .filter(|device| self.graphics_queue_family(device).is_some() && VulkanRenderingFeaturePlan::from_device(device).is_ok())
             .find(|device| {
                 preferred_type
                     .map(|kind| Self::classify_device(device) == kind)
@@ -98,14 +98,18 @@ impl VulkanContext {
             .or_else(|| {
                 self.physical_devices
                     .iter()
-                    .find(|device| self.graphics_queue_family(device).is_some())
+                    .find(|device| {
+                        self.graphics_queue_family(device).is_some()
+                            && VulkanRenderingFeaturePlan::from_device(device).is_ok()
+                    })
             })
     }
 
-    /// Selects a graphics-capable Vulkan device matching a DRM primary node.
+    /// Selects a graphics-capable Vulkan device matching a DRM node.
     ///
-    /// Devices whose DRM identity cannot be queried are excluded. This
-    /// prevents selecting a GPU that may not be able to drive the output.
+    /// Both primary and render-node identities are considered. Devices whose
+    /// DRM identity cannot be queried are excluded. This is useful when the
+    /// caller has a render node rather than the primary node.
     ///
     /// The preference is used when multiple matching Vulkan devices exist.
     #[cfg(feature = "drm")]
@@ -118,8 +122,12 @@ impl VulkanContext {
             .physical_devices
             .iter()
             .filter(|device| {
-                device.primary_node().ok().flatten() == Some(node)
+                let primary_matches = device.primary_node().ok().flatten() == Some(node);
+                let render_matches = device.render_node().ok().flatten() == Some(node);
+
+                (primary_matches || render_matches)
                     && self.graphics_queue_family(device).is_some()
+                    && VulkanRenderingFeaturePlan::from_device(device).is_ok()
             })
             .collect::<Vec<_>>();
 
