@@ -29,6 +29,8 @@ pub enum VulkanDrmFramebufferError {
     InvalidDimensions,
     InvalidPlaneCount,
     PlaneValueOutOfRange { plane: usize },
+    ZeroPlaneStride { plane: usize },
+    PlaneLayoutOverflow { plane: usize },
     DmabufDescriptorClone { plane: usize, message: String },
     DmabufBuildFailed,
     DrmNodeUnavailable(String),
@@ -42,6 +44,8 @@ impl fmt::Display for VulkanDrmFramebufferError {
             Self::InvalidDimensions => formatter.write_str("DRM framebuffer dimensions are invalid"),
             Self::InvalidPlaneCount => formatter.write_str("DRM framebuffer plane count does not match the negotiated Vulkan modifier"),
             Self::PlaneValueOutOfRange { plane } => write!(formatter, "DMA-BUF plane {plane} metadata exceeds DRM limits"),
+            Self::ZeroPlaneStride { plane } => write!(formatter, "DMA-BUF plane {plane} has a zero row stride"),
+            Self::PlaneLayoutOverflow { plane } => write!(formatter, "DMA-BUF plane {plane} offset and stride overflow DRM limits"),
             Self::DmabufDescriptorClone { plane, message } => write!(formatter, "Could not duplicate DMA-BUF descriptor for plane {plane}: {message}"),
             Self::DmabufBuildFailed => formatter.write_str("Could not construct Smithay DMA-BUF metadata"),
             Self::DrmNodeUnavailable(message) => write!(formatter, "Could not identify DRM device: {message}"),
@@ -100,6 +104,11 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
                 .map_err(|_| VulkanDrmFramebufferError::PlaneValueOutOfRange { plane: index })?;
             let stride = u32::try_from(plane.stride)
                 .map_err(|_| VulkanDrmFramebufferError::PlaneValueOutOfRange { plane: index })?;
+            if stride == 0 {
+                return Err(VulkanDrmFramebufferError::ZeroPlaneStride { plane: index });
+            }
+            offset.checked_add(stride)
+                .ok_or(VulkanDrmFramebufferError::PlaneLayoutOverflow { plane: index })?;
             let fd = image.dmabuf().try_clone().map_err(|error| {
                 VulkanDrmFramebufferError::DmabufDescriptorClone {
                     plane: index,
