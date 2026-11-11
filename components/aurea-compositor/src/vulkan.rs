@@ -15,6 +15,7 @@ mod context;
 mod dmabuf_layout;
 #[cfg(feature = "drm")]
 mod drm_compatibility;
+mod device_extensions;
 mod external_memory;
 mod format_capabilities;
 mod logical_device;
@@ -32,9 +33,7 @@ pub struct VulkanInitError {
 
 impl VulkanInitError {
     pub(super) fn new(message: impl Into<String>) -> Self {
-        Self {
-            message: message.into(),
-        }
+        Self { message: message.into() }
     }
 }
 
@@ -43,7 +42,6 @@ impl fmt::Display for VulkanInitError {
         formatter.write_str(&self.message)
     }
 }
-
 impl Error for VulkanInitError {}
 
 pub use backend::VulkanBackend;
@@ -59,11 +57,9 @@ pub use drm_compatibility::{
     DrmVulkanCompatibilityStatus,
     DrmVulkanFormat,
 };
+pub use device_extensions::VulkanDeviceExtensionPlan;
 pub use external_memory::VulkanExternalMemoryCapabilities;
-pub use format_capabilities::{
-    VulkanFormatCapabilities,
-    VulkanFormatModifierInfo,
-};
+pub use format_capabilities::{VulkanFormatCapabilities, VulkanFormatModifierInfo};
 pub use logical_device::VulkanLogicalDevice;
 pub use physical_device::{VulkanDeviceInfo, VulkanDeviceType};
 pub use queue::VulkanQueueFamilyInfo;
