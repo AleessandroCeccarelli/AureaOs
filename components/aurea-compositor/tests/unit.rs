@@ -35,3 +35,7 @@ mod vulkan_drm_compatibility;
 #[cfg(all(feature = "drm", feature = "vulkan"))]
 #[path = "unit/vulkan_buffer_allocator.rs"]
 mod vulkan_buffer_allocator;
+
+#[cfg(all(feature = "drm", feature = "vulkan"))]
+#[path = "unit/vulkan_dmabuf_layout.rs"]
+mod vulkan_dmabuf_layout;
