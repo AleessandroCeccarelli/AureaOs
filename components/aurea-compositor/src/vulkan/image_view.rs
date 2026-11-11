@@ -35,6 +35,7 @@ pub struct VulkanImageView<'image, 'device> {
     format: vk::Format,
     width: u32,
     height: u32,
+    usage: vk::ImageUsageFlags,
 }
 
 impl<'image, 'device> VulkanImageView<'image, 'device> {
@@ -67,6 +68,7 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
             format: image.format(),
             width: image.width(),
             height: image.height(),
+            usage: image.usage(),
         })
     }
 
@@ -75,6 +77,7 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
     pub fn format(&self) -> vk::Format { self.format }
     pub fn width(&self) -> u32 { self.width }
     pub fn height(&self) -> u32 { self.height }
+    pub fn usage(&self) -> vk::ImageUsageFlags { self.usage }
     pub(super) fn device(&self) -> &'device VulkanLogicalDevice { self.device }
 }
 
