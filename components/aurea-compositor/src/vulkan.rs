@@ -9,6 +9,8 @@
 mod backend;
 mod command_buffer;
 mod context;
+#[cfg(feature = "drm")]
+mod drm_compatibility;
 mod external_memory;
 mod format_capabilities;
 mod logical_device;
@@ -43,6 +45,12 @@ impl Error for VulkanInitError {}
 pub use backend::VulkanBackend;
 pub use command_buffer::VulkanCommandBuffer;
 pub use context::VulkanContext;
+#[cfg(feature = "drm")]
+pub use drm_compatibility::{
+    DrmVulkanCompatibility,
+    DrmVulkanCompatibilityStatus,
+    DrmVulkanFormat,
+};
 pub use external_memory::VulkanExternalMemoryCapabilities;
 pub use format_capabilities::{
     VulkanFormatCapabilities,
