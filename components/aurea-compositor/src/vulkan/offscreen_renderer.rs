@@ -3,7 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Synchronous offscreen Vulkan clear-and-readback execution path.
+//! Synchronous offscreen Vulkan rendering and readback path.
 
 use std::{error::Error, fmt};
 
