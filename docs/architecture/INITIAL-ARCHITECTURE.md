@@ -88,9 +88,16 @@ It is responsible for bringing together the desktop session, shell, compositor, 
 
 The composition root must coordinate the components without taking ownership of responsibilities that belong to them.
 
+The Cargo workspace is defined at the repository root and its current members are located under `components/`:
+
+- `components/aurea-desktop` — desktop entry point and composition root.
+- `components/aurea-shell` — session lifecycle and event coordination.
+- `components/aurea-desktop-api` — shared contracts between desktop components.
+- `components/aurea-compositor` — Wayland compositor and graphics/display responsibilities.
+
 The intended component relationship is:
 
-- `aurea-desktop` composes and starts the desktop environment.
+- `aurea-desktop` composes and starts the desktop components without taking over their internal responsibilities.
 - `aurea-shell` coordinates session lifecycle and events.
 - `aurea-desktop-api` provides technology-neutral contracts shared between desktop components.
 - `aurea-compositor` implements the Wayland compositor and owns graphics and display responsibilities.
