@@ -7,9 +7,11 @@
 
 use std::{error::Error, fmt};
 
-use smithay::backend::{
-    allocator::dmabuf::{Dmabuf, DmabufFlags, MAX_PLANES},
-    drm::{DrmNode, gbm::{GbmFramebuffer, framebuffer_from_dmabuf}},
+use smithay::{
+    backend::{
+        allocator::dmabuf::{Dmabuf, DmabufFlags, MAX_PLANES},
+        drm::{DrmNode, gbm::{GbmFramebuffer, framebuffer_from_dmabuf}},
+    },
     reexports::drm::control::framebuffer::Handle,
 };
 
@@ -124,7 +126,7 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
             }
         }
 
-        let mut dmabuf = dmabuf.build().ok_or(VulkanDrmFramebufferError::DmabufBuildFailed)?;
+        let dmabuf = dmabuf.build().ok_or(VulkanDrmFramebufferError::DmabufBuildFailed)?;
         let node = device.node()
             .map_err(|error| VulkanDrmFramebufferError::DrmNodeUnavailable(error.to_string()))?;
 
