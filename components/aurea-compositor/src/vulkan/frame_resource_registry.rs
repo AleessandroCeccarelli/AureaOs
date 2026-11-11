@@ -83,6 +83,14 @@ impl VulkanFrameResourceRegistry {
         Ok(self.resource(id)?.is_available())
     }
 
+    /// Returns whether the resource has completed the render-to-submit transition.
+    pub fn is_submitted(
+        &self,
+        id: VulkanFrameResourceId,
+    ) -> Result<bool, VulkanFrameResourceRegistryError> {
+        Ok(self.resource(id)?.is_submitted())
+    }
+
     /// Begins rendering into a registered resource.
     pub fn begin_render(
         &mut self,
