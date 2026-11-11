@@ -9,7 +9,7 @@ use std::{error::Error, fmt};
 
 use smithay::reexports::ash::vk;
 
-use super::{VulkanLogicalDevice, memory_type::select_memory_type};
+use super::{VulkanLogicalDevice, memory_type::select_memory_type_index};
 
 /// Description of a two-dimensional Vulkan image allocation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -110,7 +110,7 @@ impl<'device> VulkanImageAllocator<'device> {
             .map_err(VulkanImageError::ImageCreation)?;
         let requirements = unsafe { raw.get_image_memory_requirements(image) };
 
-        let memory_type_index = match select_memory_type(
+        let memory_type_index = match select_memory_type_index(
             self.device.memory_properties(),
             requirements.memory_type_bits,
             request.required_memory,
