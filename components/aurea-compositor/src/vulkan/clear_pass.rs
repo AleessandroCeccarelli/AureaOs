@@ -19,6 +19,7 @@ use super::{
 pub enum VulkanClearPassError {
     NonFiniteClearColor,
     UndefinedFinalState,
+    MissingColorAttachmentUsage,
 }
 
 impl fmt::Display for VulkanClearPassError {
@@ -29,6 +30,9 @@ impl fmt::Display for VulkanClearPassError {
             ),
             Self::UndefinedFinalState => formatter.write_str(
                 "A clear pass cannot leave its image in the undefined state",
+            ),
+            Self::MissingColorAttachmentUsage => formatter.write_str(
+                "The Vulkan image was not created with color-attachment usage",
             ),
         }
     }
@@ -72,6 +76,9 @@ impl VulkanClearPass {
         clear_color: [f32; 4],
     ) -> Result<(), VulkanClearPassError> {
         Self::validate(clear_color, final_state)?;
+        if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
+            return Err(VulkanClearPassError::MissingColorAttachmentUsage);
+        }
         let device = view.device();
         let image = view.image_handle();
 
