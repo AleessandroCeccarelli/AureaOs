@@ -84,10 +84,6 @@ impl Error for VulkanImageTransitionError {}
 pub struct VulkanImageTransition;
 
 impl VulkanImageTransition {
-    /// Records a color image barrier in the supplied command buffer.
-    ///
-    /// This helper intentionally does not track image state across submissions.
-    /// The caller owns that state machine and must serialize conflicting access.
     /// Releases a DMA-BUF-backed image from the graphics queue to KMS/foreign ownership.
     ///
     /// The image is transitioned to GENERAL before the external consumer accesses
@@ -169,6 +165,10 @@ impl VulkanImageTransition {
             .layer_count(1)
     }
 
+    /// Records a color image barrier in the supplied command buffer.
+    ///
+    /// This helper intentionally does not track image state across submissions.
+    /// The caller owns that state machine and must serialize conflicting access.
     pub fn record_color(
         device: &VulkanLogicalDevice,
         command_buffer: vk::CommandBuffer,
