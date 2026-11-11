@@ -5,14 +5,14 @@
 
 //! Per-frame Vulkan command-pool and fence ownership.
 
-use smithay::reexports::ash::{self, vk};
+use smithay::reexports::ash::vk;
 
 use super::VulkanLogicalDevice;
 
 /// Resources that may be reused only after their previous GPU submission ends.
 pub(super) struct VulkanFrameSlot {
-    command_pool: vk::CommandPool,
-    completion_fence: vk::Fence,
+    pub(super) command_pool: vk::CommandPool,
+    pub(super) completion_fence: vk::Fence,
 }
 
 impl VulkanFrameSlot {
@@ -117,16 +117,3 @@ impl VulkanFrameSlot {
     }
 }
 
-impl Drop for VulkanFrameSlot {
-    fn drop(&mut self) {
-        // The owning scheduler waits for the device before dropping its slots.
-        // A null fence means fence recreation failed after a rejected submit.
-        // Pool destruction remains safe once the device is idle.
-        // The device handle is intentionally not stored here; destruction is
-        // performed by VulkanFrameScheduler while its device borrow is alive.
-    }
-}
-
-pub(super) fn next_frame_slot(current: usize, slot_count: usize) -> usize {
-    if slot_count == 0 { 0 } else { (current + 1) % slot_count }
-}
