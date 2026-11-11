@@ -25,6 +25,8 @@ pub enum DrmOutputFrameError {
     DuplicateFramebuffer(DrmFramebufferId),
     UnknownFramebuffer(DrmFramebufferId),
     ResourceNotSubmitted(DrmFramebufferId),
+    ResourceAlreadyResolved(DrmFramebufferId),
+    GpuWorkIncomplete(DrmFramebufferId),
     FramebufferStillScannedOut(DrmFramebufferId),
     Lifecycle(DrmPresentationError),
     Resource(VulkanFrameResourceRegistryError),
@@ -36,6 +38,8 @@ impl fmt::Display for DrmOutputFrameError {
             Self::DuplicateFramebuffer(id) => write!(formatter, "DRM framebuffer {} is already registered", id.value()),
             Self::UnknownFramebuffer(id) => write!(formatter, "DRM framebuffer {} is not registered", id.value()),
             Self::ResourceNotSubmitted(id) => write!(formatter, "DRM framebuffer {} has not been submitted to the GPU", id.value()),
+            Self::ResourceAlreadyResolved(id) => write!(formatter, "DRM framebuffer {} has already been resolved for presentation", id.value()),
+            Self::GpuWorkIncomplete(id) => write!(formatter, "DRM framebuffer {} has unfinished GPU work and no sync-file handoff", id.value()),
             Self::FramebufferStillScannedOut(id) => write!(formatter, "DRM framebuffer {} is still pending or scanned out", id.value()),
             Self::Lifecycle(error) => write!(formatter, "KMS presentation lifecycle failed: {error}"),
             Self::Resource(error) => write!(formatter, "Vulkan frame-resource lifecycle failed: {error}"),
@@ -130,6 +134,9 @@ impl DrmOutputFrameCoordinator {
         if !self.resources.is_submitted(resource)? {
             return Err(DrmOutputFrameError::ResourceNotSubmitted(framebuffer));
         }
+        if !self.resources.can_present(resource)? {
+            return Err(DrmOutputFrameError::ResourceAlreadyResolved(framebuffer));
+        }
         self.presentation.begin_test(framebuffer)?;
         Ok(())
     }
@@ -158,10 +165,16 @@ impl DrmOutputFrameCoordinator {
         &mut self,
         sync_file_attached: bool,
     ) -> Result<(), DrmOutputFrameError> {
-        self.presentation.commit_accepted()?;
-        let framebuffer = self.presentation.pending_candidate()
+        let framebuffer = self.presentation.transaction_candidate()
             .ok_or(DrmOutputFrameError::Lifecycle(DrmPresentationError::NoTransaction))?;
         let resource = self.resource_for(framebuffer)?;
+        if !self.resources.can_present(resource)? {
+            return Err(DrmOutputFrameError::ResourceAlreadyResolved(framebuffer));
+        }
+        if !sync_file_attached && !self.resources.is_gpu_complete(resource)? {
+            return Err(DrmOutputFrameError::GpuWorkIncomplete(framebuffer));
+        }
+        self.presentation.commit_accepted()?;
         if sync_file_attached {
             self.resources.mark_kms_committed_with_sync_fd(resource)?;
         } else {
