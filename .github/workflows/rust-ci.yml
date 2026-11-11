@@ -60,6 +60,7 @@ jobs:
             libxkbcommon-dev \
             glslang-tools \
             mesa-vulkan-drivers \
+            vulkan-tools \
             pkg-config
 
       - name: Install stable Rust
@@ -81,8 +82,30 @@ jobs:
         run: bash tools/shaders/compile-vulkan-shaders.sh
 
       - name: Run offscreen Vulkan triangle smoke test with Mesa lavapipe
-        env:
-          VK_ICD_FILENAMES: /usr/share/vulkan/icd.d/lvp_icd.x86_64.json
-        run: >
-          cargo test -p aurea-compositor --features drm --test unit
-          renders_triangle_and_reads_back_expected_pixels -- --ignored --nocapture
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ICD_PATH="$(find /usr/share/vulkan/icd.d -maxdepth 1 -type f \\
+            \\( -iname '*lvp*.json' -o -iname '*lavapipe*.json' \\) \\
+            -print -quit)"
+
+          if [[ -z "${ICD_PATH}" ]]; then
+            echo "Mesa lavapipe Vulkan ICD was not installed."
+            find /usr/share/vulkan -maxdepth 3 -type f -print || true
+            exit 1
+          fi
+
+          echo "Using Vulkan ICD: ${ICD_PATH}"
+          cat "${ICD_PATH}"
+          export VK_ICD_FILENAMES="${ICD_PATH}"
+          export VK_DRIVER_FILES="${ICD_PATH}"
+
+          echo "Installed Vulkan loader and drivers:"
+          ldconfig -p | grep -E 'libvulkan|libVkLayer' || true
+
+          echo "Vulkan device discovery:"
+          vulkaninfo --summary
+
+          cargo test -p aurea-compositor --features drm --test unit \\
+            renders_triangle_and_reads_back_expected_pixels -- --ignored --nocapture
