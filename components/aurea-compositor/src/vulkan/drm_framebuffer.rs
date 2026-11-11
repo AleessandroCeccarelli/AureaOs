@@ -7,16 +7,23 @@
 
 use std::{error::Error, fmt};
 
-use smithay::{
-    backend::allocator::dmabuf::{Dmabuf, DmabufFlags},
-    reexports::drm::control::{Device as DrmControlDevice, FbCmd2Flags, framebuffer::Handle},
+use smithay::backend::{
+    allocator::dmabuf::{Dmabuf, DmabufFlags},
+    drm::{
+        DrmNode,
+        framebuffer::Handle,
+        gbm::{GbmFramebuffer, framebuffer_from_dmabuf},
+    },
 };
 
-use crate::drm::device::DrmDevice;
+use crate::drm::{
+    device::DrmDevice,
+    gbm::GbmDeviceManager,
+};
 
 use super::VulkanDrmImage;
 
-/// Errors returned while registering or retiring a Vulkan DRM framebuffer.
+/// Errors returned while registering a Vulkan DMA-BUF as a KMS framebuffer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VulkanDrmFramebufferError {
     InvalidDimensions,
@@ -24,42 +31,47 @@ pub enum VulkanDrmFramebufferError {
     PlaneValueOutOfRange { plane: usize },
     DmabufDescriptorClone { plane: usize, message: String },
     DmabufBuildFailed,
-    RegistrationFailed(String),
-    RetirementFailed(String),
+    DrmNodeUnavailable(String),
+    GbmDeviceUnavailable(DrmNode),
+    ImportOrRegistrationFailed(String),
 }
 
 impl fmt::Display for VulkanDrmFramebufferError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidDimensions => formatter.write_str("DRM framebuffer dimensions are invalid"),
-            Self::InvalidPlaneCount => formatter.write_str("DRM framebuffer plane count is invalid"),
+            Self::InvalidPlaneCount => formatter.write_str("DRM framebuffer plane count does not match the negotiated Vulkan modifier"),
             Self::PlaneValueOutOfRange { plane } => write!(formatter, "DMA-BUF plane {plane} metadata exceeds DRM limits"),
             Self::DmabufDescriptorClone { plane, message } => write!(formatter, "Could not duplicate DMA-BUF descriptor for plane {plane}: {message}"),
             Self::DmabufBuildFailed => formatter.write_str("Could not construct Smithay DMA-BUF metadata"),
-            Self::RegistrationFailed(message) => write!(formatter, "DRM framebuffer registration failed: {message}"),
-            Self::RetirementFailed(message) => write!(formatter, "DRM framebuffer retirement failed: {message}"),
+            Self::DrmNodeUnavailable(message) => write!(formatter, "Could not identify DRM device: {message}"),
+            Self::GbmDeviceUnavailable(node) => write!(formatter, "No GBM import device is registered for DRM node {node}"),
+            Self::ImportOrRegistrationFailed(message) => write!(formatter, "GBM DMA-BUF import or DRM framebuffer registration failed: {message}"),
         }
     }
 }
 
 impl Error for VulkanDrmFramebufferError {}
 
-/// A KMS framebuffer whose backing Vulkan image is kept alive for its lifetime.
+/// Owns Smithay's GBM framebuffer wrapper and borrows the backing Vulkan image.
 ///
-/// The borrow prevents the Vulkan image and its exported DMA-BUF memory from
-/// being destroyed while the kernel framebuffer may still reference it.
-/// The caller must additionally wait for KMS release before retiring this
-/// object; GPU completion alone is not sufficient.
+/// Smithay imports the DMA-BUF into the GBM device associated with this DRM
+/// node, obtains the driver's GEM handles and registers the framebuffer.
+/// The GBM wrapper owns framebuffer retirement. Keep this object alive until
+/// KMS has released the framebuffer; GPU completion alone is not sufficient.
 pub struct VulkanDrmFramebuffer<'drm, 'image, 'vk> {
-    device: &'drm DrmDevice,
     image: &'image VulkanDrmImage<'vk>,
-    handle: Option<Handle>,
+    framebuffer: GbmFramebuffer,
+    node: DrmNode,
+    _device: &'drm DrmDevice,
 }
 
 impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
-    /// Registers the exact image FourCC/modifier and plane layout with KMS.
+    /// Imports the image into the GBM device for the exact DRM node and
+    /// registers a modifier-aware framebuffer. Legacy fallback is disabled.
     pub fn register(
         device: &'drm DrmDevice,
+        gbm_devices: &GbmDeviceManager,
         image: &'image VulkanDrmImage<'vk>,
     ) -> Result<Self, VulkanDrmFramebufferError> {
         if image.width() == 0 || image.height() == 0
@@ -68,6 +80,7 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
         {
             return Err(VulkanDrmFramebufferError::InvalidDimensions);
         }
+
         if image.planes().is_empty()
             || image.planes().len() > 4
             || image.planes().len() != image.drm_format().memory_plane_count as usize
@@ -93,27 +106,42 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
                     message: error.to_string(),
                 }
             })?;
+
             if !dmabuf.add_plane(fd, index as u32, offset, stride) {
                 return Err(VulkanDrmFramebufferError::InvalidPlaneCount);
             }
         }
 
         let dmabuf = dmabuf.build().ok_or(VulkanDrmFramebufferError::DmabufBuildFailed)?;
-        let raw_device = device.device();
-        let handle = raw_device
-            .add_planar_framebuffer(&dmabuf, FbCmd2Flags::MODIFIERS)
-            .map_err(|error| VulkanDrmFramebufferError::RegistrationFailed(error.to_string()))?;
+        let node = device.node()
+            .map_err(|error| VulkanDrmFramebufferError::DrmNodeUnavailable(error.to_string()))?;
+        let gbm = gbm_devices.get(node)
+            .ok_or(VulkanDrmFramebufferError::GbmDeviceUnavailable(node))?;
+
+        let framebuffer = framebuffer_from_dmabuf(
+            device.fd(),
+            gbm,
+            &dmabuf,
+            false,
+            false,
+        ).map_err(|error| VulkanDrmFramebufferError::ImportOrRegistrationFailed(error.to_string()))?;
 
         Ok(Self {
-            device,
             image,
-            handle: Some(handle),
+            framebuffer,
+            node,
+            _device: device,
         })
     }
 
-    /// Returns the DRM framebuffer handle while it remains registered.
+    /// Returns the kernel framebuffer identifier.
     pub fn handle(&self) -> Handle {
-        self.handle.expect("live framebuffer always has a handle")
+        *self.framebuffer.as_ref()
+    }
+
+    /// Returns the DRM node that owns this framebuffer.
+    pub fn node(&self) -> DrmNode {
+        self.node
     }
 
     /// Returns the backing Vulkan image.
@@ -121,24 +149,11 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
         self.image
     }
 
-    /// Explicitly unregisters the framebuffer after KMS has released it.
-    pub fn retire(mut self) -> Result<(), VulkanDrmFramebufferError> {
-        let Some(handle) = self.handle.take() else {
-            return Ok(());
-        };
-        self.device
-            .device()
-            .destroy_framebuffer(handle)
-            .map_err(|error| VulkanDrmFramebufferError::RetirementFailed(error.to_string()))
-    }
-}
-
-impl Drop for VulkanDrmFramebuffer<'_, '_, '_> {
-    fn drop(&mut self) {
-        if let Some(handle) = self.handle.take() {
-            // Best effort only. Call retire() when the caller needs an
-            // observable error and has already received KMS release.
-            let _ = self.device.device().destroy_framebuffer(handle);
-        }
+    /// Explicitly retires the framebuffer.
+    ///
+    /// Call only after the KMS page-flip/release event confirms that no
+    /// active plane references this framebuffer.
+    pub fn retire(self) {
+        drop(self);
     }
 }
