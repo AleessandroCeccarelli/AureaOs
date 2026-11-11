@@ -102,10 +102,11 @@ impl VulkanContext {
             })
     }
 
-    /// Selects a graphics-capable Vulkan device matching a DRM primary node.
+    /// Selects a graphics-capable Vulkan device matching a DRM node.
     ///
-    /// Devices whose DRM identity cannot be queried are excluded. This
-    /// prevents selecting a GPU that may not be able to drive the output.
+    /// Both primary and render-node identities are considered. Devices whose
+    /// DRM identity cannot be queried are excluded. This is useful when the
+    /// caller has a render node rather than the primary node.
     ///
     /// The preference is used when multiple matching Vulkan devices exist.
     #[cfg(feature = "drm")]
@@ -118,7 +119,10 @@ impl VulkanContext {
             .physical_devices
             .iter()
             .filter(|device| {
-                device.primary_node().ok().flatten() == Some(node)
+                let primary_matches = device.primary_node().ok().flatten() == Some(node);
+                let render_matches = device.render_node().ok().flatten() == Some(node);
+
+                (primary_matches || render_matches)
                     && self.graphics_queue_family(device).is_some()
             })
             .collect::<Vec<_>>();
