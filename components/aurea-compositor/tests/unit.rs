@@ -59,3 +59,7 @@ mod vulkan_shader;
 #[cfg(feature = "vulkan")]
 #[path = "unit/vulkan_clear_pass.rs"]
 mod vulkan_clear_pass;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_readback.rs"]
+mod vulkan_readback;
