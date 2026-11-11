@@ -87,6 +87,28 @@ impl VulkanFrameResource {
         matches!(self.state, FrameResourceState::Submitted { .. })
     }
 
+    /// Returns whether the resource is submitted and has not been presented or
+    /// transferred to KMS yet.
+    pub const fn can_present(&self) -> bool {
+        matches!(
+            self.state,
+            FrameResourceState::Submitted {
+                presentation_resolved: false,
+                kms_owned: false,
+                ..
+            }
+        )
+    }
+
+    /// Returns whether the last GPU submission has completed.
+    pub const fn is_gpu_complete(&self) -> bool {
+        matches!(
+            self.state,
+            FrameResourceState::Available
+                | FrameResourceState::Submitted { gpu_complete: true, .. }
+        )
+    }
+
     /// Begins recording/rendering into this resource.
     pub fn begin_render(&mut self) -> Result<(), VulkanFrameResourceError> {
         if !self.is_available() {
