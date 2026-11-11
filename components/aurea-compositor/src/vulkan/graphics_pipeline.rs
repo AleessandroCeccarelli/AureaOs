@@ -165,6 +165,27 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         }
     }
 
+    /// Records a non-indexed draw using this pipeline.
+    ///
+    /// The caller must be inside a compatible dynamic-rendering scope and
+    /// must have configured all required dynamic state.
+    pub fn draw(
+        &self,
+        command_buffer: vk::CommandBuffer,
+        vertex_count: u32,
+        instance_count: u32,
+    ) {
+        unsafe {
+            self.device.handle().cmd_draw(
+                command_buffer,
+                vertex_count,
+                instance_count,
+                0,
+                0,
+            );
+        }
+    }
+
     /// Sets the viewport and scissor to cover the specified target extent.
     pub fn set_viewport_and_scissor(
         &self,
