@@ -71,6 +71,7 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
     }
 
     pub fn handle(&self) -> vk::ImageView { self.handle }
+    pub(super) fn image_handle(&self) -> vk::Image { self._image.handle() }
     pub fn format(&self) -> vk::Format { self.format }
     pub fn width(&self) -> u32 { self.width }
     pub fn height(&self) -> u32 { self.height }
