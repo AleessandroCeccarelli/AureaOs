@@ -125,3 +125,71 @@ fn gpu_completion_before_submission_is_rejected() {
         Err(VulkanFrameResourceError::NotSubmitted)
     );
 }
+
+
+#[test]
+fn submission_before_rendering_is_rejected() {
+    let mut resource = VulkanFrameResource::new();
+
+    assert_eq!(
+        resource.mark_submitted(),
+        Err(VulkanFrameResourceError::NotRendering)
+    );
+    assert!(resource.is_available());
+}
+
+#[test]
+fn kms_cannot_commit_before_gpu_submission() {
+    let mut resource = VulkanFrameResource::new();
+
+    assert_eq!(
+        resource.mark_kms_committed(),
+        Err(VulkanFrameResourceError::NotSubmitted)
+    );
+    assert!(resource.is_available());
+}
+
+#[test]
+fn kms_cannot_release_after_presentation_was_skipped() {
+    let mut resource = VulkanFrameResource::new();
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+    resource.mark_presentation_skipped().unwrap();
+
+    assert_eq!(
+        resource.mark_kms_released(),
+        Err(VulkanFrameResourceError::KmsDoesNotOwnResource)
+    );
+}
+
+#[test]
+fn presentation_cannot_be_skipped_after_kms_has_taken_ownership() {
+    let mut resource = VulkanFrameResource::new();
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+    resource.mark_kms_committed().unwrap();
+
+    assert_eq!(
+        resource.mark_presentation_skipped(),
+        Err(VulkanFrameResourceError::KmsAlreadyOwnsResource)
+    );
+    assert!(!resource.is_available());
+}
+
+#[test]
+fn fully_released_resource_can_be_reused_for_a_second_frame() {
+    let mut resource = VulkanFrameResource::new();
+
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+    resource.mark_kms_committed().unwrap();
+    resource.mark_gpu_complete().unwrap();
+    resource.mark_kms_released().unwrap();
+    assert!(resource.is_available());
+
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+    resource.mark_presentation_skipped().unwrap();
+    resource.mark_gpu_complete().unwrap();
+    assert!(resource.is_available());
+}
