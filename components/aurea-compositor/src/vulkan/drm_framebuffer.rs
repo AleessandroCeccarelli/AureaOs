@@ -31,6 +31,7 @@ pub enum VulkanDrmFramebufferError {
     PlaneValueOutOfRange { plane: usize },
     ZeroPlaneStride { plane: usize },
     PlaneLayoutOverflow { plane: usize },
+    PlaneLayoutOutOfBounds { plane: usize },
     DmabufDescriptorClone { plane: usize, message: String },
     DmabufBuildFailed,
     DrmNodeUnavailable(String),
@@ -45,7 +46,8 @@ impl fmt::Display for VulkanDrmFramebufferError {
             Self::InvalidPlaneCount => formatter.write_str("DRM framebuffer plane count does not match the negotiated Vulkan modifier"),
             Self::PlaneValueOutOfRange { plane } => write!(formatter, "DMA-BUF plane {plane} metadata exceeds DRM limits"),
             Self::ZeroPlaneStride { plane } => write!(formatter, "DMA-BUF plane {plane} has a zero row stride"),
-            Self::PlaneLayoutOverflow { plane } => write!(formatter, "DMA-BUF plane {plane} offset and stride overflow DRM limits"),
+            Self::PlaneLayoutOverflow { plane } => write!(formatter, "DMA-BUF plane {plane} offset and size overflow"),
+            Self::PlaneLayoutOutOfBounds { plane } => write!(formatter, "DMA-BUF plane {plane} extends beyond the exported Vulkan allocation"),
             Self::DmabufDescriptorClone { plane, message } => write!(formatter, "Could not duplicate DMA-BUF descriptor for plane {plane}: {message}"),
             Self::DmabufBuildFailed => formatter.write_str("Could not construct Smithay DMA-BUF metadata"),
             Self::DrmNodeUnavailable(message) => write!(formatter, "Could not identify DRM device: {message}"),
@@ -107,8 +109,11 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
             if stride == 0 {
                 return Err(VulkanDrmFramebufferError::ZeroPlaneStride { plane: index });
             }
-            offset.checked_add(stride)
+            let plane_end = offset.checked_add(plane.size)
                 .ok_or(VulkanDrmFramebufferError::PlaneLayoutOverflow { plane: index })?;
+            if plane.size == 0 || plane_end > image.allocation_size() {
+                return Err(VulkanDrmFramebufferError::PlaneLayoutOutOfBounds { plane: index });
+            }
             let fd = image.dmabuf().try_clone().map_err(|error| {
                 VulkanDrmFramebufferError::DmabufDescriptorClone {
                     plane: index,
