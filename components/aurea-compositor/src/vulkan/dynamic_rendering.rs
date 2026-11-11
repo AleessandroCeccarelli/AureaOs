@@ -7,7 +7,7 @@
 
 use smithay::reexports::ash::vk;
 
-use super::{VulkanImageView, VulkanLogicalDevice};
+use super::VulkanImageView;
 
 /// Load behavior for a color attachment at the start of a rendering scope.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -22,7 +22,6 @@ pub enum VulkanColorLoad {
 /// The scope borrows its attachment view so the view and underlying image
 /// cannot be destroyed while the rendering commands are being recorded.
 pub struct VulkanDynamicRenderingScope<'view, 'image, 'device> {
-    device: &'device VulkanLogicalDevice,
     command_buffer: vk::CommandBuffer,
     _view: &'view VulkanImageView<'image, 'device>,
     ended: bool,
@@ -34,7 +33,6 @@ impl<'view, 'image, 'device> VulkanDynamicRenderingScope<'view, 'image, 'device>
     /// The caller must transition the image into COLOR_ATTACHMENT_OPTIMAL
     /// before this call and transition it to its next use afterward.
     pub fn begin_color(
-        device: &'device VulkanLogicalDevice,
         command_buffer: vk::CommandBuffer,
         view: &'view VulkanImageView<'image, 'device>,
         load: VulkanColorLoad,
@@ -68,11 +66,10 @@ impl<'view, 'image, 'device> VulkanDynamicRenderingScope<'view, 'image, 'device>
             .color_attachments(&attachment);
 
         unsafe {
-            device.handle().cmd_begin_rendering(command_buffer, &rendering_info);
+            view.device().handle().cmd_begin_rendering(command_buffer, &rendering_info);
         }
 
         Self {
-            device,
             command_buffer,
             _view: view,
             ended: false,
@@ -87,7 +84,7 @@ impl<'view, 'image, 'device> VulkanDynamicRenderingScope<'view, 'image, 'device>
     fn end_recording(&mut self) {
         if !self.ended {
             unsafe {
-                self.device.handle().cmd_end_rendering(self.command_buffer);
+                self._view.device().handle().cmd_end_rendering(self.command_buffer);
             }
             self.ended = true;
         }
