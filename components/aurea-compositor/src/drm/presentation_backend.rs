@@ -19,10 +19,9 @@ use smithay::backend::drm::{
     PlaneState,
 };
 
-use super::presentation::{
-    DrmFramebufferId,
-    DrmPresentationError,
-    DrmPresentationLifecycle,
+use super::{
+    frame_coordinator::{DrmOutputFrameCoordinator, DrmOutputFrameError},
+    presentation::DrmFramebufferId,
 };
 
 /// Errors returned while submitting or completing a KMS presentation.
@@ -76,7 +75,7 @@ impl From<DrmPresentationError> for DrmPresentationBackendError {
 pub struct DrmPresentationBackend {
     node: DrmNode,
     crtc: crtc::Handle,
-    lifecycle: DrmPresentationLifecycle,
+    frames: DrmOutputFrameCoordinator,
 }
 
 impl DrmPresentationBackend {
@@ -85,7 +84,7 @@ impl DrmPresentationBackend {
         Self {
             node,
             crtc: surface.crtc(),
-            lifecycle: DrmPresentationLifecycle::new(),
+            frames: DrmOutputFrameCoordinator::new(),
         }
     }
 
@@ -101,12 +100,28 @@ impl DrmPresentationBackend {
 
     /// Returns the framebuffer currently known to be scanned out.
     pub fn current(&self) -> Option<DrmFramebufferId> {
-        self.lifecycle.current()
+        self.frames.current()
     }
 
     /// Returns the candidate awaiting its KMS completion event.
     pub fn pending(&self) -> Option<DrmFramebufferId> {
-        self.lifecycle.pending_candidate()
+        self.frames.pending()
+    }
+
+    /// Registers a framebuffer before it can be submitted to this output.
+    ///
+    /// The caller must also drive the returned resource through rendering and
+    /// GPU submission using frame_coordinator_mut before KMS presentation.
+    pub fn register_framebuffer(
+        &mut self,
+        framebuffer: DrmFramebufferId,
+    ) -> Result<crate::vulkan::VulkanFrameResourceId, DrmPresentationBackendError> {
+        self.frames.register_framebuffer(framebuffer).map_err(Into::into)
+    }
+
+    /// Accesses the per-output frame lifecycle for GPU completion and resource ownership.
+    pub fn frame_coordinator_mut(&mut self) -> &mut DrmOutputFrameCoordinator {
+        &mut self.frames
     }
 
     /// Tests and submits one primary-plane state.
@@ -141,15 +156,16 @@ impl DrmPresentationBackend {
         }
 
         let requires_modeset = surface.commit_pending();
-        self.lifecycle.begin_test(candidate)?;
+        self.frames.begin_presentation(candidate)?;
 
         if let Err(error) = surface.test_state(planes.iter().cloned(), requires_modeset) {
-            let _ = self.lifecycle.test_failed();
+            let _ = self.frames.presentation_test_failed();
             return Err(DrmPresentationBackendError::KmsOperation(error.to_string()));
         }
 
-        self.lifecycle.test_passed()?;
+        self.frames.presentation_test_passed()?;
 
+        self.frames.validate_commit_ready(true)?;
         let submission = if requires_modeset {
             surface.commit(planes.iter().cloned(), true)
         } else {
@@ -157,11 +173,11 @@ impl DrmPresentationBackend {
         };
 
         if let Err(error) = submission {
-            let _ = self.lifecycle.commit_failed();
+            let _ = self.frames.presentation_commit_failed();
             return Err(DrmPresentationBackendError::KmsOperation(error.to_string()));
         }
 
-        self.lifecycle.commit_accepted()?;
+        self.frames.presentation_commit_accepted(true)?;
         Ok(())
     }
 
@@ -185,8 +201,6 @@ impl DrmPresentationBackend {
                 DrmPresentationError::NoTransaction,
             ))?;
 
-        self.lifecycle
-            .page_flip_complete(displayed)
-            .map_err(Into::into)
+        self.frames.page_flip_complete(displayed).map_err(Into::into)
     }
 }
