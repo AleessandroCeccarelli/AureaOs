@@ -15,6 +15,8 @@ mod context;
 mod dmabuf_layout;
 #[cfg(feature = "drm")]
 mod drm_compatibility;
+#[cfg(feature = "drm")]
+mod drm_image;
 mod device_extensions;
 mod external_memory;
 mod format_capabilities;
@@ -59,6 +61,8 @@ pub use drm_compatibility::{
     DrmVulkanCompatibilityStatus,
     DrmVulkanFormat,
 };
+#[cfg(feature = "drm")]
+pub use drm_image::{VulkanDrmImage, VulkanDrmImageAllocator, VulkanDrmImageError, VulkanDrmPlaneLayout};
 pub use device_extensions::VulkanDeviceExtensionPlan;
 pub use external_memory::VulkanExternalMemoryCapabilities;
 pub use format_capabilities::{VulkanFormatCapabilities, VulkanFormatModifierInfo};
