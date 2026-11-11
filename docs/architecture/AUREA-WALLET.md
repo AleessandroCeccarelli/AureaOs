@@ -156,7 +156,22 @@ Rust is the primary programming language for AureaOS-developed components wherev
 
 Security-driven exceptions may be considered when a mature, established implementation provides a stronger or more appropriate solution.
 
-The native UI toolkit, internal service protocol, and final component boundaries remain undecided.
+The native UI toolkit and internal IPC protocol remain undecided. The security architecture must nevertheless preserve separate responsibilities for the user interface, credential service, authenticator operations, and encrypted storage.
+
+### 2.1 Passkey and Authenticator Boundary
+
+Passkeys must be implemented against established standards, including WebAuthn and the relevant FIDO2/CTAP specifications. AureaOS should provide a platform-authenticator service that can be used by compatible browsers and, where appropriate, native applications.
+
+The platform authenticator and the Wallet user interface are related but distinct responsibilities:
+
+- The authenticator service performs credential creation, user verification checks, and assertion signing.
+- The Wallet interface lets the user inspect and manage supported credentials and security settings.
+- The secure vault stores protected credential records and key material according to the selected key-management design.
+- Browser integration conveys standards-compliant requests and responses while preserving the requesting website's origin and relying-party identity.
+
+An application must not receive unrestricted access to private keys or the vault database. Each sensitive operation must be authorized for the specific requesting application and relying party. User consent and user verification must be enforced by trusted system components, not by an ordinary application window alone.
+
+The exact process layout, daemon names, IPC transport, consent UI integration, and hardware-provider implementation are proposed design work and have not been implemented or finalized. TPM 2.0 is a hardware capability to evaluate, not a guarantee that every device provides a complete isolated authenticator. A software-protected fallback and its security limitations must be documented where hardware-backed protection is unavailable.
 
 ## 3. Secure Storage Environment
 
