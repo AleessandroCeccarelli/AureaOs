@@ -169,6 +169,7 @@ impl VulkanImage<'_> {
     pub fn width(&self) -> u32 { self.width }
     pub fn height(&self) -> u32 { self.height }
     pub fn format(&self) -> vk::Format { self.format }
+    pub(super) fn device(&self) -> &'_ VulkanLogicalDevice { self.device }
 }
 
 impl Drop for VulkanImage<'_> {
