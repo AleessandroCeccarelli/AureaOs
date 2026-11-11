@@ -36,6 +36,7 @@ pub enum VulkanDrmImageError {
     UnsupportedFourcc,
     InvalidDimensions,
     InvalidPlaneCount,
+    ImageDimensionsUnsupported,
     ModifierImageQuery(vk::Result),
     ImageCreation(vk::Result),
     MemoryTypeUnavailable,
@@ -51,6 +52,7 @@ impl fmt::Display for VulkanDrmImageError {
             Self::UnsupportedFourcc => f.write_str("DRM FourCC has no Vulkan format mapping"),
             Self::InvalidDimensions => f.write_str("DRM image dimensions must be non-zero"),
             Self::InvalidPlaneCount => f.write_str("DRM modifier memory-plane count is invalid"),
+            Self::ImageDimensionsUnsupported => f.write_str("Requested dimensions exceed Vulkan image-format limits"),
             Self::ModifierImageQuery(error) => write!(f, "DRM modifier image-format query failed: {error:?}"),
             Self::ImageCreation(error) => write!(f, "DRM modifier image creation failed: {error:?}"),
             Self::MemoryTypeUnavailable => f.write_str("No compatible device-local memory type is available"),
@@ -111,6 +113,10 @@ impl<'device> VulkanDrmImageAllocator<'device> {
                 &mut image_properties,
             )
         }.map_err(VulkanDrmImageError::ModifierImageQuery)?;
+        let limits = image_properties.image_format_properties;
+        if width > limits.max_extent.width || height > limits.max_extent.height {
+            return Err(VulkanDrmImageError::ImageDimensionsUnsupported);
+        }
 
         let modifiers = [modifier];
         let mut modifier_list = vk::ImageDrmFormatModifierListCreateInfoEXT::default()
