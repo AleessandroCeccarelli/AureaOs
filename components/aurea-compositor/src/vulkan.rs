@@ -12,6 +12,8 @@ mod buffer_allocator;
 mod command_buffer;
 mod context;
 #[cfg(feature = "drm")]
+mod dmabuf_layout;
+#[cfg(feature = "drm")]
 mod drm_compatibility;
 mod external_memory;
 mod format_capabilities;
@@ -49,6 +51,8 @@ pub use backend::VulkanBackend;
 pub use buffer_allocator::{VulkanBufferAllocator, VulkanBufferError, VulkanRenderTargetRequest};
 pub use command_buffer::VulkanCommandBuffer;
 pub use context::VulkanContext;
+#[cfg(feature = "drm")]
+pub use dmabuf_layout::{DmabufImportLayout, DmabufLayoutError, DmabufPlaneLayout};
 #[cfg(feature = "drm")]
 pub use drm_compatibility::{
     DrmVulkanCompatibility,
