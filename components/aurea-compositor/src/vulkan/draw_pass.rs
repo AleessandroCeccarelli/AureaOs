@@ -21,6 +21,7 @@ pub enum VulkanDrawPassError {
     UndefinedFinalState,
     MissingColorAttachmentUsage,
     IncompatiblePipeline,
+    NonFiniteClearColor,
 }
 
 impl fmt::Display for VulkanDrawPassError {
@@ -30,6 +31,7 @@ impl fmt::Display for VulkanDrawPassError {
             Self::UndefinedFinalState => formatter.write_str("A draw pass cannot leave its image undefined"),
             Self::MissingColorAttachmentUsage => formatter.write_str("The Vulkan image lacks color-attachment usage"),
             Self::IncompatiblePipeline => formatter.write_str("The graphics pipeline is incompatible with the attachment"),
+            Self::NonFiniteClearColor => formatter.write_str("Draw-pass clear color components must all be finite"),
         }
     }
 }
@@ -49,12 +51,18 @@ impl VulkanDrawPass {
         vertex_count: u32,
         instance_count: u32,
         final_state: VulkanImageState,
+        load: VulkanColorLoad,
     ) -> Result<(), VulkanDrawPassError> {
         if vertex_count == 0 || instance_count == 0 {
             return Err(VulkanDrawPassError::EmptyDraw);
         }
         if final_state == VulkanImageState::Undefined {
             return Err(VulkanDrawPassError::UndefinedFinalState);
+        }
+        if let VulkanColorLoad::Clear(color) = load {
+            if !color.iter().all(|component| component.is_finite()) {
+                return Err(VulkanDrawPassError::NonFiniteClearColor);
+            }
         }
         Ok(())
     }
@@ -70,7 +78,7 @@ impl VulkanDrawPass {
         vertex_count: u32,
         instance_count: u32,
     ) -> Result<(), VulkanDrawPassError> {
-        Self::validate(vertex_count, instance_count, final_state)?;
+        Self::validate(vertex_count, instance_count, final_state, load)?;
         if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
             return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
         }
