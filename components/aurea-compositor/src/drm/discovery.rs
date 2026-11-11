@@ -149,13 +149,10 @@ pub fn discover_connected_outputs(
             connector_info.interface_id()
         );
 
-        descriptors.push(DrmOutputDescriptor::new(
-            output_id,
-            name,
-            modes,
-            current_mode,
-            1,
-        ));
+        descriptors.push(
+            DrmOutputDescriptor::new(output_id, name, modes, current_mode, 1)
+                .with_drm_configuration(*connector_handle, drm_modes[preferred_index]),
+        );
     }
 
     Ok(descriptors)
