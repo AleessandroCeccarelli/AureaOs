@@ -12,7 +12,7 @@ use smithay::reexports::ash::vk;
 /// Returns the first preferred match. If no preferred match exists, returns
 /// the first type satisfying the required flags. A missing compatible type
 /// is reported explicitly; callers must not silently weaken required flags.
-pub(super) fn select_memory_type(
+pub fn select_memory_type_index(
     properties: &vk::PhysicalDeviceMemoryProperties,
     memory_type_bits: u32,
     required: vk::MemoryPropertyFlags,
