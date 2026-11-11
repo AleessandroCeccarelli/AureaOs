@@ -1,6 +1,6 @@
 # AureaOS Vulkan renderer foundation
 
-Status: the Vulkan device, resource, rendering-pass, offscreen-readback and DRM/KMS lifecycle foundations are present on `main`. GitHub Actions has passed workspace compilation and tests, including the compositor with the `drm` feature. The formatting check currently fails and must be corrected. No physical-display validation is claimed.
+Status: the Vulkan device, resource, rendering-pass, offscreen-readback and DRM/KMS lifecycle foundations are present on `main`. GitHub Actions now passes formatting, workspace compilation, workspace tests, DRM/Vulkan compositor tests, GLSL compilation and a real offscreen triangle render/readback on Mesa lavapipe. No physical-display validation is claimed: the interactive Vulkan-to-KMS path is not connected yet.
 
 ## Ownership and device baseline
 
@@ -55,17 +55,17 @@ The latest checked GitHub Actions run for `main` passed all four build/test comm
 - `cargo test --workspace --locked`
 - `cargo test -p aurea-compositor --features drm --locked`
 
-The same run failed only at `cargo fmt --all -- --check`. Formatting differences are reported across compositor source and test files. The CI runner is a hosted Ubuntu VM; it does not validate physical DRM/KMS scanout on the target laptop.
+The formatting check now passes. The workflow also compiles both GLSL shaders and runs the previously opt-in triangle smoke test on Mesa lavapipe. The test completed successfully: it created a Vulkan 1.3 device, rendered the triangle, read back the RGBA8 pixels and verified both the clear corner and triangle interior. The CI runner is a hosted Ubuntu VM; this validates offscreen GPU rendering through software Vulkan, not physical DRM/KMS scanout on the target laptop.
 
 ## Remaining work
 
-1. Apply `cargo fmt --all` to the Rust workspace and require the formatting check to pass.
-2. Connect `VulkanBackend::render_frame` to an actual rendering path; it currently returns `PresentationUnavailable`.
-3. Connect the renderer's output frame lifecycle to the per-output DRM surface and KMS presentation backend.
-4. Validate the full GPU-to-KMS synchronization and framebuffer retirement path on real DRM/KMS hardware.
-5. Connect Wayland surface buffers to Vulkan sampled-image resources and descriptors.
-6. Build scene composition, damage tracking and the interactive frame scheduling path.
-7. Run the opt-in offscreen triangle smoke test with Mesa lavapipe and then on the target GPU.
+1. Implement the first interactive Vulkan output path: render into a DRM-compatible image, register its DMA-BUF as a KMS framebuffer and present it on the matching CRTC.
+2. Connect output frame requests and the Wayland event loop to the renderer and KMS completion events.
+3. Put a compositor-owned diagnostic frame on the physical monitor as the first end-to-end scan-out milestone.
+4. Validate GPU-to-KMS synchronization, page-flip completion and framebuffer retirement on the target laptop.
+5. Import Wayland client surface buffers into Vulkan sampled-image resources and descriptors.
+6. Build scene composition, damage tracking and the full interactive frame scheduler.
+7. Implement the actual visual shell as a Wayland client; the current `aurea-shell` crate coordinates application lifecycle and events but does not yet draw the desktop interface.
 
 ## Offscreen execution and readback
 
@@ -79,4 +79,4 @@ bash tools/shaders/compile-vulkan-shaders.sh
 cargo test -p aurea-compositor --features vulkan --test unit -- --ignored
 ```
 
-The test checks the output byte count, an opaque-black corner outside the triangle and a non-black opaque pixel at the triangle center. It is ignored by default so ordinary unit tests do not require a Vulkan-capable host.
+The test checks the output byte count, an opaque-black corner outside the triangle and a non-black opaque pixel at the triangle center. It remains ignored in ordinary test runs so hosts without Vulkan are not required to provide a GPU. GitHub Actions explicitly enables it with Mesa lavapipe after discovering the installed ICD.
