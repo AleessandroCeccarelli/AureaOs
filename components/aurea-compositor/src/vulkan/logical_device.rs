@@ -25,6 +25,7 @@ pub struct VulkanLogicalDevice {
     memory_properties: vk::PhysicalDeviceMemoryProperties,
     instance: ash::Instance,
     physical_device: vk::PhysicalDevice,
+    supports_sync_fd: bool,
 }
 
 impl VulkanLogicalDevice {
@@ -34,6 +35,25 @@ impl VulkanLogicalDevice {
         queue_family_index: u32,
         extension_plan: VulkanDeviceExtensionPlan,
     ) -> Result<Self, VulkanInitError> {
+        let supports_sync_fd = if extension_plan.supports_sync_fd() {
+            let semaphore_info = vk::PhysicalDeviceExternalSemaphoreInfo::default()
+                .handle_type(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD);
+            let mut semaphore_properties = vk::ExternalSemaphoreProperties::default();
+            unsafe {
+                physical_device.instance().handle()
+                    .get_physical_device_external_semaphore_properties(
+                        physical_device.handle(),
+                        &semaphore_info,
+                        &mut semaphore_properties,
+                    );
+            }
+            let features = semaphore_properties.external_semaphore_features;
+            features.contains(vk::ExternalSemaphoreFeatureFlags::EXPORTABLE)
+                && semaphore_properties.compatible_handle_types
+                    .contains(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD)
+        } else {
+            false
+        };
         let rendering_features = VulkanRenderingFeaturePlan::from_device(physical_device)
             .map_err(VulkanInitError::new)?;
         let priorities = [1.0_f32];
@@ -86,6 +106,7 @@ impl VulkanLogicalDevice {
             memory_properties,
             instance: physical_device.instance().handle().clone(),
             physical_device: physical_device.handle(),
+            supports_sync_fd,
         })
     }
 
@@ -114,6 +135,9 @@ impl VulkanLogicalDevice {
 
     /// Returns the extension plan used to create this logical device.
     pub fn extension_plan(&self) -> &VulkanDeviceExtensionPlan { &self.extension_plan }
+
+    /// Whether this device can export semaphore payloads as Linux sync files.
+    pub fn supports_sync_fd(&self) -> bool { self.supports_sync_fd }
 
     /// Returns the Vulkan 1.3 rendering features enabled on this device.
     pub fn rendering_features(&self) -> &VulkanRenderingFeaturePlan { &self.rendering_features }
