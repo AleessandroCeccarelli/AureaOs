@@ -91,6 +91,22 @@ impl VulkanFrameResourceRegistry {
         Ok(self.resource(id)?.is_submitted())
     }
 
+    /// Returns whether a submitted resource can be handed to KMS.
+    pub fn can_present(
+        &self,
+        id: VulkanFrameResourceId,
+    ) -> Result<bool, VulkanFrameResourceRegistryError> {
+        Ok(self.resource(id)?.can_present())
+    }
+
+    /// Returns whether the resource's GPU submission has completed.
+    pub fn is_gpu_complete(
+        &self,
+        id: VulkanFrameResourceId,
+    ) -> Result<bool, VulkanFrameResourceRegistryError> {
+        Ok(self.resource(id)?.is_gpu_complete())
+    }
+
     /// Begins rendering into a registered resource.
     pub fn begin_render(
         &mut self,
