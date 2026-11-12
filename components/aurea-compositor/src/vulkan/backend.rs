@@ -54,6 +54,7 @@ impl Error for VulkanRenderError {}
 pub struct VulkanBackend {
     context: Arc<VulkanContext>,
     selected_device_info: VulkanDeviceInfo,
+    physical_device_index: usize,
     device: Arc<VulkanLogicalDevice>,
 }
 
@@ -133,6 +134,7 @@ impl VulkanBackend {
         Ok(Self {
             context,
             selected_device_info,
+            physical_device_index,
             device,
         })
     }
@@ -145,6 +147,11 @@ impl VulkanBackend {
     /// Returns information about the selected physical GPU.
     pub fn selected_device_info(&self) -> &VulkanDeviceInfo {
         &self.selected_device_info
+    }
+
+    /// Returns the exact physical device used to create this logical device.
+    pub fn selected_physical_device(&self) -> &PhysicalDevice {
+        &self.context.physical_devices()[self.physical_device_index]
     }
 
     /// Returns the logical device.

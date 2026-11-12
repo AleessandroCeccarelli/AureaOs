@@ -24,7 +24,7 @@ use crate::{
         presentation_backend::{DrmPresentationBackend, DrmPresentationBackendError},
     },
     output::OutputId,
-    vulkan::VulkanDrmFramePool,
+    vulkan::{VulkanDrmFramePool, VulkanDrmFramePoolError},
 };
 
 /// Failures encountered while assigning CRTCs and creating DRM surfaces.
@@ -117,6 +117,13 @@ impl ManagedDrmSurface {
     pub fn frame_pool_mut(&mut self) -> &mut VulkanDrmFramePool {
         &mut self.frame_pool
     }
+
+    /// Borrows the KMS surface and its mutable scanout ownership resources.
+    pub fn scanout_parts_mut(
+        &mut self,
+    ) -> (&DrmSurface, &mut VulkanDrmFramePool, &mut DrmPresentationBackend) {
+        (&self.surface, &mut self.frame_pool, &mut self.presentation)
+    }
 }
 
 /// Owns all KMS surfaces created for one DRM device.
@@ -136,6 +143,30 @@ impl DrmSurfaceManager {
 
     pub fn get(&self, output_id: OutputId) -> Option<&ManagedDrmSurface> {
         self.surfaces.get(&output_id)
+    }
+
+    pub fn get_mut(&mut self, output_id: OutputId) -> Option<&mut ManagedDrmSurface> {
+        self.surfaces.get_mut(&output_id)
+    }
+
+    /// Completes the Vulkan acquire and retires a framebuffer released by KMS.
+    ///
+    /// `None` means the CRTC no longer belongs to a managed output.
+    pub fn retire_released_frame(
+        &mut self,
+        crtc: crtc::Handle,
+        framebuffer: crate::drm::presentation::DrmFramebufferId,
+    ) -> Option<Result<(), VulkanDrmFramePoolError>> {
+        let output_id = self.crtc_owners.get(&crtc).copied()?;
+        let output = self.surfaces.get_mut(&output_id)?;
+        let (_, frame_pool, presentation) = output.scanout_parts_mut();
+
+        Some((|| {
+            let coordinator = presentation.frame_coordinator_mut();
+            frame_pool.acquire_after_foreign_release(framebuffer, coordinator)?;
+            frame_pool.retire(framebuffer, coordinator)?;
+            Ok(())
+        })())
     }
 
     pub fn iter(&self) -> impl Iterator<Item = (&OutputId, &ManagedDrmSurface)> {

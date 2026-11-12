@@ -225,10 +225,21 @@ fn register_device_notifier(state: &mut WaylandState, node: DrmNode) -> io::Resu
         .insert_source(notifier, move |event, _, state| match event {
             smithay::backend::drm::DrmEvent::VBlank(crtc) => {
                 if let Some(surfaces) = state.drm_surfaces.get_mut(&node) {
-                    if let Err(error) = surfaces.on_vblank(node, crtc) {
-                        eprintln!(
-                            "AureaOS: DRM presentation completion failed for {node}: {error}"
-                        );
+                    match surfaces.on_vblank(node, crtc) {
+                        Ok(Some(released)) => {
+                            if let Some(Err(error)) = surfaces.retire_released_frame(crtc, released)
+                            {
+                                eprintln!(
+                                    "AureaOS: failed to reacquire released scanout frame on {node}: {error}"
+                                );
+                            }
+                        }
+                        Ok(None) => {}
+                        Err(error) => {
+                            eprintln!(
+                                "AureaOS: DRM presentation completion failed for {node}: {error}"
+                            );
+                        }
                     }
                 }
             }
