@@ -382,9 +382,26 @@ if ! sudo grep -q \
   exit 1
 fi
 
-if ! run_in_rootfs dpkg-query -W \
-  -f='${Status}\n' systemd linux-image-amd64 |
-  grep -q '^install ok installed ${CODENAME} (${ARCH}) creata, configurata e verificata."
+for required_package in systemd linux-image-amd64; do
+  if ! package_status="$(
+    run_in_rootfs dpkg-query -W \
+      -f='${db:Status-Status}' "$required_package" 2>/dev/null
+  )"; then
+    echo "Errore: impossibile verificare il pacchetto $required_package." >&2
+    exit 1
+  fi
+
+  if [[ "$package_status" != "installed" ]]; then
+    echo "Errore: pacchetto fondamentale non installato: $required_package (stato: $package_status)." >&2
+    exit 1
+  fi
+done
+
+# Audit real ownership and mode bits after package installation. Run as root
+# because the rootfs /root directory is intentionally not readable by users.
+sudo bash "$REPO_ROOT/tools/security/audit-rootfs-permissions.sh" "$TARGET"
+
+echo "Rootfs Debian ${CODENAME} (${ARCH}) creata, configurata e verificata."
 echo "Percorso: ${TARGET}"
 echo "Nota: non è ancora un'immagine avviabile o installabile."
 
