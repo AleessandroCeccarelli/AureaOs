@@ -3,6 +3,9 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
+# Keep bootstrap-generated temporary data private by default.
+umask 077
+
 # AureaOS Roma 1.0 — Debian bootstrap and package-profile installer.
 # Creates a Debian root filesystem outside the repository.
 # Installs the version-controlled terminal-only package manifests.
@@ -186,18 +189,40 @@ if [[ -e "$TARGET" || -L "$TARGET" ]]; then
   exit 1
 fi
 
-read_manifest() {
-  local file="$1"
+declare -A SEEN_PACKAGES=()
+packages=()
 
-  if [[ ! -f "$file" ]]; then
-    echo "Errore: manifesto non trovato: $file" >&2
+# Load manifests directly so a missing/unreadable file cannot be hidden by
+# process substitution. Validate every token before it reaches apt-get.
+load_manifest() {
+  local manifest="$1"
+  local file="$PACKAGE_DIR/$manifest"
+  local line package
+  local -a entries=()
+
+  if [[ ! -f "$file" || -L "$file" ]]; then
+    echo "Errore: manifesto assente, non regolare o symlink: $file" >&2
     return 1
   fi
 
-  awk '{ sub(/#.*/, ""); for (i = 1; i <= NF; i++) print $i }' "$file"
-}
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%%#*}"
+    entries=()
+    read -r -a entries <<< "$line"
 
-packages=()
+    for package in "${entries[@]}"; do
+      if [[ ! "$package" =~ ^[a-z0-9][a-z0-9+.-]*(:[a-z0-9][a-z0-9-]*)?$ ]]; then
+        echo "Errore: nome pacchetto non valido in $manifest: $package" >&2
+        return 1
+      fi
+
+      if [[ -z "${SEEN_PACKAGES[$package]+present}" ]]; then
+        SEEN_PACKAGES["$package"]=1
+        packages+=("$package")
+      fi
+    done
+  done < "$file"
+}
 
 for manifest in \
   base.list \
@@ -209,28 +234,21 @@ for manifest in \
   firmware.list \
   boot.list
 do
-  while IFS= read -r package; do
-    packages+=("$package")
-  done < <(read_manifest "$PACKAGE_DIR/$manifest")
+  load_manifest "$manifest"
 done
 
 case "$BOOT_MODE" in
-  bios)
-    while IFS= read -r package; do
-      packages+=("$package")
-    done < <(read_manifest "$PACKAGE_DIR/boot-bios.list")
-    ;;
-  uefi)
-    while IFS= read -r package; do
-      packages+=("$package")
-    done < <(read_manifest "$PACKAGE_DIR/boot-uefi.list")
-    ;;
+  bios) load_manifest "boot-bios.list" ;;
+  uefi) load_manifest "boot-uefi.list" ;;
 esac
 
 if ((WITH_RAR)); then
-  while IFS= read -r package; do
-    packages+=("$package")
-  done < <(read_manifest "$PACKAGE_DIR/rar-extraction-optional.list")
+  load_manifest "rar-extraction-optional.list"
+fi
+
+if (("${#packages[@]}" == 0)); then
+  echo "Errore: nessun pacchetto valido nei manifesti." >&2
+  exit 1
 fi
 
 printf '%s\n' \
@@ -333,7 +351,7 @@ POLICY_INSTALLED=1
 echo
 echo "===== Installazione manifesto AureaOS ====="
 run_in_rootfs env DEBIAN_FRONTEND=noninteractive \
-  apt-get install --yes --no-install-recommends "${packages[@]}"
+  apt-get install --yes --no-install-recommends -- "${packages[@]}"
 
 # Remove the temporary service-start policy before final validation.
 sudo rm -f -- "$TARGET/usr/sbin/policy-rc.d"
