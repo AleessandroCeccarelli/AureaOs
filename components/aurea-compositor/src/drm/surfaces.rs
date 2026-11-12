@@ -24,6 +24,7 @@ use crate::{
         presentation_backend::{DrmPresentationBackend, DrmPresentationBackendError},
     },
     output::OutputId,
+    vulkan::VulkanDrmFramePool,
 };
 
 /// Failures encountered while assigning CRTCs and creating DRM surfaces.
@@ -88,6 +89,7 @@ pub struct ManagedDrmSurface {
     connector: connector::Handle,
     surface: DrmSurface,
     presentation: DrmPresentationBackend,
+    frame_pool: VulkanDrmFramePool,
 }
 
 impl ManagedDrmSurface {
@@ -108,6 +110,12 @@ impl ManagedDrmSurface {
     }
     pub fn presentation_mut(&mut self) -> &mut DrmPresentationBackend {
         &mut self.presentation
+    }
+    pub fn frame_pool(&self) -> &VulkanDrmFramePool {
+        &self.frame_pool
+    }
+    pub fn frame_pool_mut(&mut self) -> &mut VulkanDrmFramePool {
+        &mut self.frame_pool
     }
 }
 
@@ -229,6 +237,7 @@ impl DrmSurfaceManager {
                     connector: connector_handle,
                     surface,
                     presentation,
+                    frame_pool: VulkanDrmFramePool::new(),
                 },
             );
         }
