@@ -26,4 +26,7 @@ mod state;
 #[cfg(feature = "drm")]
 mod udev_events;
 
+#[cfg(feature = "drm")]
+mod rendering;
+
 pub use event_loop::WaylandServer;

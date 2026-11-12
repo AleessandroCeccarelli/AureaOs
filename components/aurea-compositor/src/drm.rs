@@ -23,3 +23,5 @@ pub use plane_formats::{
     DrmPlaneFormatError, DrmPrimaryPlaneFormatCapabilities, discover_primary_plane_formats,
 };
 pub use session::{DrmSession, DrmSessionError};
+
+pub(crate) mod scanout_renderer;

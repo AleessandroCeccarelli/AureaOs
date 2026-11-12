@@ -87,10 +87,16 @@ impl WaylandServer {
 
     /// Runs the server until shutdown is requested.
     pub fn run(&mut self, shutdown: &AtomicBool) -> io::Result<()> {
+        #[cfg(feature = "drm")]
+        self.state.compositor.request_all_output_frames();
+
         while !shutdown.load(Ordering::Acquire) {
             self.event_loop
                 .dispatch(Duration::from_millis(100), &mut self.state)
                 .map_err(io::Error::other)?;
+
+            #[cfg(feature = "drm")]
+            super::rendering::render_pending_outputs(&mut self.state);
 
             if let Some(error) = self.state.error.take() {
                 return Err(error);

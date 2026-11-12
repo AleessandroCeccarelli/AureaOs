@@ -201,6 +201,7 @@ fn initialize_drm_surfaces(state: &mut WaylandState, node: DrmNode) -> io::Resul
         crate::drm::surfaces::DrmSurfaceManager::initialize(device).map_err(io::Error::other)?
     };
     state.drm_surfaces.insert(node, manager);
+    state.compositor.request_all_output_frames();
     Ok(())
 }
 
