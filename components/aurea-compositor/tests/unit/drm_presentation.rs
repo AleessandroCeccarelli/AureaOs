@@ -169,8 +169,6 @@ fn commit_failure_before_test_pass_is_rejected_without_losing_transaction() {
     assert!(!lifecycle.has_pending_transaction());
 }
 
-
-
 #[test]
 fn synchronized_scanout_accepts_planes_without_in_fences() {
     assert_eq!(
