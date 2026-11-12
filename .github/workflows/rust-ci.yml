@@ -53,7 +53,7 @@ jobs:
         run: cargo install cargo-audit --locked
 
       - name: Audit locked Rust dependencies
-        run: cargo audit --locked
+        run: cargo audit
 
   build-and-test:
     name: Build and test workspace
