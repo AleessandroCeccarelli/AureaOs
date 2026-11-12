@@ -125,17 +125,40 @@ impl DrmPresentationBackend {
         &mut self.frames
     }
 
-    /// Tests and submits one primary-plane state.
+    /// Tests and submits one primary-plane state using explicit IN_FENCE_FD synchronization.
     ///
-    /// Atomic TEST_ONLY is mandatory. The initial/pending modeset uses
-    /// Smithay's `commit`; steady-state frames use `page_flip`. Both ask
-    /// Smithay to emit a completion event. The supplied plane states are
-    /// cloned so the exact same state is validated and then submitted.
+    /// Every active plane must provide a sync-file fence. This is the preferred
+    /// path when GPU work is submitted asynchronously.
     pub fn submit(
         &mut self,
         surface: &DrmSurface,
         candidate: DrmFramebufferId,
         planes: &[PlaneState<'_>],
+    ) -> Result<(), DrmPresentationBackendError> {
+        self.submit_with_sync_policy(surface, candidate, planes, true)
+    }
+
+    /// Tests and submits a frame after the caller has synchronously waited for
+    /// all Vulkan work that writes its framebuffer to complete.
+    ///
+    /// This path intentionally permits planes without IN_FENCE_FD because the
+    /// GPU-completion wait has already established that KMS can safely read
+    /// the image. Do not use it with an in-flight Vulkan submission.
+    pub fn submit_after_gpu_completion(
+        &mut self,
+        surface: &DrmSurface,
+        candidate: DrmFramebufferId,
+        planes: &[PlaneState<'_>],
+    ) -> Result<(), DrmPresentationBackendError> {
+        self.submit_with_sync_policy(surface, candidate, planes, false)
+    }
+
+    fn submit_with_sync_policy(
+        &mut self,
+        surface: &DrmSurface,
+        candidate: DrmFramebufferId,
+        planes: &[PlaneState<'_>],
+        require_in_fence: bool,
     ) -> Result<(), DrmPresentationBackendError> {
         if surface.is_legacy() {
             return Err(DrmPresentationBackendError::LegacySurfaceUnsupported);
@@ -152,7 +175,7 @@ impl DrmPresentationBackend {
         if active_planes.is_empty() {
             return Err(DrmPresentationBackendError::MissingActivePlane);
         }
-        if active_planes.iter().any(|config| config.fence.is_none()) {
+        if require_in_fence && active_planes.iter().any(|config| config.fence.is_none()) {
             return Err(DrmPresentationBackendError::MissingInFence);
         }
 
@@ -165,8 +188,8 @@ impl DrmPresentationBackend {
         }
 
         self.frames.presentation_test_passed()?;
-
         self.frames.validate_commit_ready(true)?;
+
         let submission = if requires_modeset {
             surface.commit(planes.iter().cloned(), true)
         } else {
