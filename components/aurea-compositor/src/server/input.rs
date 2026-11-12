@@ -40,6 +40,12 @@ pub(super) fn register_input_backend(
 }
 
 fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut WaylandState) {
+    // Do not forward stale or queued input while libseat has paused this
+    // compositor session (for example, after switching to another VT).
+    if !state.session_active {
+        return;
+    }
+
     if let InputEvent::Keyboard { event } = event {
         state.compositor.handle_keyboard_input(
             event.key_code(),
