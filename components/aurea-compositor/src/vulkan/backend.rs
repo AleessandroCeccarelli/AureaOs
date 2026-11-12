@@ -5,7 +5,7 @@
 
 //! Vulkan rendering-backend initialization and renderer integration.
 
-use std::{error::Error, fmt};
+use std::{error::Error, fmt, sync::Arc};
 
 use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 
@@ -54,7 +54,7 @@ impl Error for VulkanRenderError {}
 pub struct VulkanBackend {
     context: VulkanContext,
     selected_device_info: VulkanDeviceInfo,
-    device: VulkanLogicalDevice,
+    device: Arc<VulkanLogicalDevice>,
 }
 
 impl VulkanBackend {
@@ -123,7 +123,7 @@ impl VulkanBackend {
         }
 
         let selected_device_info = Self::build_selected_device_info(&context, physical_device);
-        let device = VulkanLogicalDevice::new(physical_device, queue_family_index, extension_plan)?;
+        let device = Arc::new(VulkanLogicalDevice::new(physical_device, queue_family_index, extension_plan)?);
 
         Ok(Self {
             context,
@@ -144,7 +144,13 @@ impl VulkanBackend {
 
     /// Returns the logical device.
     pub fn device(&self) -> &VulkanLogicalDevice {
-        &self.device
+        self.device.as_ref()
+    }
+
+    /// Returns shared ownership for resources that must outlive this backend borrow.
+    #[cfg(feature = "drm")]
+    pub fn shared_device(&self) -> Arc<VulkanLogicalDevice> {
+        Arc::clone(&self.device)
     }
 
     /// Records an empty one-time command buffer.
