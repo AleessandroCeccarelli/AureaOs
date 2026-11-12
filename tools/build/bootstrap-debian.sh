@@ -30,7 +30,23 @@ WITH_RAR=0
 SOURCES_TMP=""
 POLICY_TMP=""
 POLICY_INSTALLED=0
-MOUNTS_ACTIVE=0
+
+# Execute all Debian package configuration inside systemd-nspawn. It provides
+# private API filesystems and a restricted capability set instead of exposing
+# the host /dev and /sys trees through recursive bind mounts.
+run_in_rootfs() {
+  sudo systemd-nspawn \
+    --quiet \
+    --register=no \
+    --directory="$TARGET" \
+    --as-pid2 \
+    --drop-capability=CAP_SYS_ADMIN \
+    --drop-capability=CAP_SYS_MODULE \
+    --drop-capability=CAP_SYS_RAWIO \
+    --drop-capability=CAP_SYS_BOOT \
+    --drop-capability=CAP_SYS_PTRACE \
+    -- "$@"
+}
 
 usage() {
   cat <<'USAGE'
@@ -67,15 +83,7 @@ cleanup() {
       sudo rm -f -- "$TARGET/usr/sbin/policy-rc.d"
     fi
 
-    if ((MOUNTS_ACTIVE)); then
-      echo "Pulizia: smontaggio dei filesystem del chroot..." >&2
-
-      # Unmount nested mounts before their parent mounts.
-      sudo umount -R "$TARGET/sys" 2>/dev/null
-      sudo umount "$TARGET/proc" 2>/dev/null
-      sudo umount -R "$TARGET/dev" 2>/dev/null
-    fi
-  fi
+mount cleanup  fi
 
   [[ -z "$SOURCES_TMP" ]] || rm -f -- "$SOURCES_TMP"
   [[ -z "$POLICY_TMP" ]] || rm -f -- "$POLICY_TMP"
@@ -141,6 +149,12 @@ fi
 if ! command -v debootstrap >/dev/null 2>&1; then
   echo "Errore: debootstrap non è installato." >&2
   echo "Su Fedora: sudo dnf install debootstrap" >&2
+  exit 1
+fi
+
+if ! command -v systemd-nspawn >/dev/null 2>&1; then
+  echo "Errore: systemd-nspawn non è installato." >&2
+  echo "Su Fedora: sudo dnf install systemd-container" >&2
   exit 1
 fi
 
@@ -287,33 +301,22 @@ if sudo test -f "$TARGET/etc/apt/sources.list"; then
     "$TARGET/etc/apt/sources.list.bootstrap-backup"
 fi
 
-# Mount the virtual filesystems required by package maintainer scripts,
-# systemd-related package configuration and initramfs generation.
+# Run package maintainer scripts in an isolated container. The container
+# retains outbound network access for authenticated Debian repository traffic,
+# but does not receive recursive host /dev or /sys bind mounts.
 echo
-echo "===== Preparazione filesystem del chroot ====="
-
-for mountpoint in dev proc sys; do
+echo "===== Preparazione ambiente Debian isolato ====="
+for mountpoint in dev proc sys run; do
   if sudo mountpoint -q "$TARGET/$mountpoint"; then
     echo "Errore: $TARGET/$mountpoint è già un mountpoint." >&2
     exit 1
   fi
 done
 
-sudo mount --rbind /dev "$TARGET/dev"
-MOUNTS_ACTIVE=1
-sudo mount --make-rslave "$TARGET/dev"
-
-sudo mount -t proc proc "$TARGET/proc"
-
-sudo mount --rbind /sys "$TARGET/sys"
-sudo mount --make-rslave "$TARGET/sys"
-
-echo "Filesystem /dev, /proc e /sys montati."
-
 # Use deb822 sources to refresh package metadata.
 echo
 echo "===== Aggiornamento cataloghi APT ====="
-sudo chroot "$TARGET" apt-get update
+run_in_rootfs apt-get update
 
 # Suppress automatic service starts inside the build chroot.
 cat > "$POLICY_TMP" <<'POLICY_RC'
@@ -332,7 +335,7 @@ POLICY_INSTALLED=1
 
 echo
 echo "===== Installazione manifesto AureaOS ====="
-sudo chroot "$TARGET" env DEBIAN_FRONTEND=noninteractive \
+run_in_rootfs env DEBIAN_FRONTEND=noninteractive \
   apt-get install --yes --no-install-recommends "${packages[@]}"
 
 # Remove the temporary service-start policy before final validation.
@@ -352,7 +355,7 @@ if ! sudo grep -q '^VERSION_CODENAME=trixie$' "$TARGET/etc/os-release"; then
   exit 1
 fi
 
-if ! sudo chroot "$TARGET" dpkg --print-architecture | grep -qx "$ARCH"; then
+if ! run_in_rootfs dpkg --print-architecture | grep -qx "$ARCH"; then
   echo "Errore: architettura della rootfs non corretta." >&2
   exit 1
 fi
@@ -364,7 +367,7 @@ if ! sudo grep -q \
   exit 1
 fi
 
-if ! sudo chroot "$TARGET" dpkg-query -W \
+if ! run_in_rootfs dpkg-query -W \
   -f='${Status}\n' systemd linux-image-amd64 |
   grep -q '^install ok installed$'; then
   echo "Errore: verifica dei pacchetti fondamentali non riuscita." >&2
