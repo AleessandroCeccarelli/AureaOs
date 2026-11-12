@@ -63,7 +63,10 @@ impl fmt::Display for VulkanDrmFramePoolError {
                 write!(formatter, "Vulkan acquire command failed: {error:?}")
             }
             Self::ImageTransition(error) => {
-                write!(formatter, "Vulkan foreign-ownership acquire failed: {error}")
+                write!(
+                    formatter,
+                    "Vulkan foreign-ownership acquire failed: {error}"
+                )
             }
         }
     }
