@@ -77,7 +77,9 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
 
     /// Creates a 2D color view over a modifier-aware DRM export image.
     #[cfg(feature = "drm")]
-    pub fn color_drm(image: &'image VulkanDrmImage<'device>) -> Result<Self, VulkanImageViewError> {
+    pub fn color_drm(
+        image: &'image VulkanDrmImage,
+    ) -> Result<VulkanImageView<'image, 'image>, VulkanImageViewError> {
         let subresource_range = vk::ImageSubresourceRange::default()
             .aspect_mask(vk::ImageAspectFlags::COLOR)
             .base_mip_level(0)
@@ -95,7 +97,7 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
         let handle = unsafe { device.handle().create_image_view(&create_info, None) }
             .map_err(VulkanImageViewError::Creation)?;
 
-        Ok(Self {
+        Ok(VulkanImageView {
             device,
             _image: PhantomData,
             image: image.image(),
