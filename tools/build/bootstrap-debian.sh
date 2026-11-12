@@ -77,13 +77,10 @@ cleanup() {
   trap - EXIT
   set +e
 
-  if [[ -n "$TARGET" && -d "$TARGET" ]]; then
-    if ((POLICY_INSTALLED)); then
-      echo "Pulizia: rimozione di policy-rc.d..." >&2
-      sudo rm -f -- "$TARGET/usr/sbin/policy-rc.d"
-    fi
-
-mount cleanup  fi
+  if [[ -n "$TARGET" && -d "$TARGET" ]] && ((POLICY_INSTALLED)); then
+    echo "Pulizia: rimozione di policy-rc.d..." >&2
+    sudo rm -f -- "$TARGET/usr/sbin/policy-rc.d"
+  fi
 
   [[ -z "$SOURCES_TMP" ]] || rm -f -- "$SOURCES_TMP"
   [[ -z "$POLICY_TMP" ]] || rm -f -- "$POLICY_TMP"
