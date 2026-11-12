@@ -52,7 +52,7 @@ impl Error for VulkanRenderError {}
 
 /// Owns the Vulkan context, selected GPU and logical device.
 pub struct VulkanBackend {
-    context: VulkanContext,
+    context: Arc<VulkanContext>,
     selected_device_info: VulkanDeviceInfo,
     device: Arc<VulkanLogicalDevice>,
 }
@@ -63,7 +63,7 @@ impl VulkanBackend {
     /// This constructor is for generic/offscreen work. DRM presentation should
     /// use new_for_drm_node so the selected GPU is bound to the output device.
     pub fn new(preference: RenderPreference) -> Result<Self, VulkanInitError> {
-        let context = VulkanContext::new()?;
+        let context = Arc::new(VulkanContext::new()?);
         let physical_device = context
             .select_device(preference)
             .ok_or_else(|| VulkanInitError::new("No graphics-capable Vulkan device found"))?;
@@ -102,7 +102,7 @@ impl VulkanBackend {
     }
 
     fn from_selected_device(
-        context: VulkanContext,
+        context: Arc<VulkanContext>,
         physical_device_index: usize,
         require_dmabuf_interop: bool,
     ) -> Result<Self, VulkanInitError> {
@@ -123,7 +123,12 @@ impl VulkanBackend {
         }
 
         let selected_device_info = Self::build_selected_device_info(&context, physical_device);
-        let device = Arc::new(VulkanLogicalDevice::new(physical_device, queue_family_index, extension_plan)?);
+        let device = Arc::new(VulkanLogicalDevice::new(
+            physical_device,
+            queue_family_index,
+            extension_plan,
+            Some(Arc::clone(&context)),
+        )?);
 
         Ok(Self {
             context,
@@ -134,7 +139,7 @@ impl VulkanBackend {
 
     /// Returns the Vulkan context.
     pub fn context(&self) -> &VulkanContext {
-        &self.context
+        self.context.as_ref()
     }
 
     /// Returns information about the selected physical GPU.
