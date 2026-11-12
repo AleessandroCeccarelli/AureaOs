@@ -83,7 +83,7 @@ impl VulkanBackend {
         node: DrmNode,
         preference: RenderPreference,
     ) -> Result<Self, VulkanInitError> {
-        let context = VulkanContext::new()?;
+        let context = Arc::new(VulkanContext::new()?);
         let physical_device = context
             .select_device_for_drm_node(node, preference)
             .ok_or_else(|| {
