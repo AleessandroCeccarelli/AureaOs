@@ -9,6 +9,7 @@ use std::{
     error::Error,
     fmt,
     os::fd::{FromRawFd, OwnedFd},
+    sync::Arc,
 };
 
 use smithay::{
@@ -67,12 +68,12 @@ impl fmt::Display for VulkanDrmImageError {
 impl Error for VulkanDrmImageError {}
 
 /// Allocates scan-out candidates using an exact DRM FourCC/modifier pair.
-pub struct VulkanDrmImageAllocator<'device> {
-    device: &'device VulkanLogicalDevice,
+pub struct VulkanDrmImageAllocator {
+    device: Arc<VulkanLogicalDevice>,
 }
 
-impl<'device> VulkanDrmImageAllocator<'device> {
-    pub fn new(device: &'device VulkanLogicalDevice) -> Result<Self, VulkanDrmImageError> {
+impl VulkanDrmImageAllocator {
+    pub fn new(device: Arc<VulkanLogicalDevice>) -> Result<Self, VulkanDrmImageError> {
         if !device.extension_plan().supports_dmabuf_interop() {
             return Err(VulkanDrmImageError::MissingInteropExtensions);
         }
@@ -88,7 +89,7 @@ impl<'device> VulkanDrmImageAllocator<'device> {
         height: u32,
         format: DrmVulkanFormat,
         usage: vk::ImageUsageFlags,
-    ) -> Result<VulkanDrmImage<'device>, VulkanDrmImageError> {
+    ) -> Result<VulkanDrmImage, VulkanDrmImageError> {
         if width == 0 || height == 0 {
             return Err(VulkanDrmImageError::InvalidDimensions);
         }
@@ -252,7 +253,7 @@ impl<'device> VulkanDrmImageAllocator<'device> {
         }
 
         Ok(VulkanDrmImage {
-            device: self.device,
+            device: Arc::clone(&self.device),
             image,
             memory,
             allocation_size: requirements.size,
@@ -268,8 +269,8 @@ impl<'device> VulkanDrmImageAllocator<'device> {
 }
 
 /// Owns the modifier image, its dedicated exportable memory and DMA-BUF FD.
-pub struct VulkanDrmImage<'device> {
-    device: &'device VulkanLogicalDevice,
+pub struct VulkanDrmImage {
+    device: Arc<VulkanLogicalDevice>,
     image: vk::Image,
     memory: vk::DeviceMemory,
     allocation_size: vk::DeviceSize,
@@ -282,15 +283,15 @@ pub struct VulkanDrmImage<'device> {
     planes: Vec<VulkanDrmPlaneLayout>,
 }
 
-impl<'device> VulkanDrmImage<'device> {
+impl VulkanDrmImage {
     pub fn image(&self) -> vk::Image {
         self.image
     }
     pub fn usage(&self) -> vk::ImageUsageFlags {
         self.usage
     }
-    pub(super) fn device(&self) -> &'device VulkanLogicalDevice {
-        self.device
+    pub(super) fn device(&self) -> &VulkanLogicalDevice {
+        self.device.as_ref()
     }
     pub fn dmabuf(&self) -> &OwnedFd {
         &self.dmabuf
@@ -315,7 +316,7 @@ impl<'device> VulkanDrmImage<'device> {
     }
 }
 
-impl Drop for VulkanDrmImage<'_> {
+impl Drop for VulkanDrmImage {
     fn drop(&mut self) {
         let raw = self.device.handle();
         unsafe {
