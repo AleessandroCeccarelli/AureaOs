@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- AureaOS File Manager icon: polished blue folder, matching Wallet materials and lighting. Transparent canvas. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 560" role="img" aria-labelledby="title desc">
+<title id="title">AureaOS File Manager</title>
+<desc id="desc">A dimensional deep-blue folder with a raised tab, layered silver and cyan bevels, glossy enamel surfaces and subtle luminous highlights. Transparent background.</desc>
+<defs>
+ <linearGradient id="silver" x1="50" y1="40" x2="590" y2="520" gradientUnits="userSpaceOnUse">
+  <stop stop-color="#faffff"/><stop offset=".13" stop-color="#a8e4ff"/><stop offset=".27" stop-color="#f5ffff"/><stop offset=".47" stop-color="#83b6d9"/><stop offset=".67" stop-color="#e9fbff"/><stop offset=".84" stop-color="#80b8dc"/><stop offset="1" stop-color="#faffff"/>
+ </linearGradient>
+ <linearGradient id="cyan" x1="35" y1="55" x2="600" y2="500" gradientUnits="userSpaceOnUse">
+  <stop stop-color="#eaffff"/><stop offset=".2" stop-color="#13d9ff"/><stop offset=".42" stop-color="#9af8ff"/><stop offset=".68" stop-color="#078fe0"/><stop offset=".86" stop-color="#dfffff"/><stop offset="1" stop-color="#29cfff"/>
+ </linearGradient>
+ <linearGradient id="enamel" x1="85" y1="110" x2="555" y2="475" gradientUnits="userSpaceOnUse">
+  <stop stop-color="#62dcff"/><stop offset=".2" stop-color="#168bd1"/><stop offset=".48" stop-color="#0755a6"/><stop offset=".76" stop-color="#06438d"/><stop offset="1" stop-color="#087ac2"/>
+ </linearGradient>
+ <linearGradient id="leftFacet" x1="90" y1="160" x2="320" y2="450" gradientUnits="userSpaceOnUse">
+  <stop stop-color="#b4f7ff" stop-opacity=".48"/><stop offset=".48" stop-color="#5bcdf5" stop-opacity=".16"/><stop offset="1" stop-color="#00346e" stop-opacity=".1"/>
+ </linearGradient>
+ <linearGradient id="rightFacet" x1="320" y1="145" x2="570" y2="475" gradientUnits="userSpaceOnUse">
+  <stop stop-color="#002d70" stop-opacity=".24"/><stop offset=".52" stop-color="#001e5b" stop-opacity=".08"/><stop offset="1" stop-color="#001943" stop-opacity=".34"/>
+ </linearGradient>
+ <linearGradient id="tabFace" x1="100" y1="70" x2="340" y2="220" gradientUnits="userSpaceOnUse">
+  <stop stop-color="#8cecff"/><stop offset=".32" stop-color="#168bd2"/><stop offset="1" stop-color="#06448e"/>
+ </linearGradient>
+ <filter id="shadow" x="-25%" y="-25%" width="150%" height="165%">
+  <feGaussianBlur in="SourceAlpha" stdDeviation="12" result="b"/><feOffset dy="10" result="o"/>
+  <feColorMatrix in="o" type="matrix" values="0 0 0 0 .02 0 0 0 0 .12 0 0 0 0 .26 0 0 0 .42 0" result="s"/>
+  <feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge>
+ </filter>
+ <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+  <feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+ </filter>
+ <filter id="wideGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="20"/></filter>
+ <clipPath id="folderClip">
+  <path d="M66 178 Q66 146 100 146 H239 Q258 146 275 164 L315 205 H536 Q572 205 572 242 V428 Q572 464 536 464 H103 Q66 464 66 427Z"/>
+ </clipPath>
+</defs>
+
+<!-- Soft cyan spill, contained around the silhouette -->
+<path d="M66 178 Q66 146 100 146 H239 Q258 146 275 164 L315 205 H536 Q572 205 572 242 V428 Q572 464 536 464 H103 Q66 464 66 427Z"
+      fill="#17dfff" opacity=".22" filter="url(#wideGlow)"/>
+
+<g filter="url(#shadow)">
+ <!-- Raised rear folder/tab: silver outer bevel -->
+ <path d="M66 178 Q66 146 100 146 H239 Q258 146 275 164 L315 205 H536 Q572 205 572 242 V428 Q572 464 536 464 H103 Q66 464 66 427Z"
+       fill="url(#silver)" stroke="#faffff" stroke-width="5" stroke-linejoin="round"/>
+ <!-- Cyan bevel under the tab -->
+ <path d="M78 183 Q78 158 103 158 H236 Q254 158 270 175 L311 216 H531 Q560 216 560 245 V423 Q560 451 532 451 H105 Q78 451 78 423Z"
+       fill="#07539b" stroke="url(#cyan)" stroke-width="8" stroke-linejoin="round"/>
+ <!-- Tab enamel surface -->
+ <path d="M91 190 Q91 171 109 171 H232 Q249 171 262 186 L296 221 H531 V255 H91Z"
+       fill="url(#tabFace)" stroke="#bff8ff" stroke-opacity=".65" stroke-width="3" stroke-linejoin="round"/>
+ <!-- Main front panel: metallic outer rim -->
+ <path d="M76 245 Q76 220 103 220 H538 Q572 220 572 254 V427 Q572 464 536 464 H103 Q66 464 66 427 V257 Q66 245 76 245Z"
+       fill="url(#silver)" stroke="#faffff" stroke-width="5" stroke-linejoin="round"/>
+ <!-- Front cyan raised bevel -->
+ <path d="M85 253 Q85 233 106 233 H534 Q559 233 559 258 V422 Q559 451 532 451 H106 Q79 451 79 422 V259Z"
+       fill="#064b91" stroke="url(#cyan)" stroke-width="8" stroke-linejoin="round"/>
+ <!-- Blue enamel face -->
+ <path d="M96 264 Q96 247 113 247 H525 Q547 247 547 269 V416 Q547 439 524 439 H113 Q91 439 91 416 V269Z"
+       fill="url(#enamel)" stroke="url(#silver)" stroke-width="3" stroke-linejoin="round"/>
+ <g clip-path="url(#folderClip)">
+  <path d="M90 245 H320 V465 H90Z" fill="url(#leftFacet)"/>
+  <path d="M320 220 H580 V465 H320Z" fill="url(#rightFacet)"/>
+  <path d="M106 258 Q300 270 530 258" fill="none" stroke="#eaffff" stroke-opacity=".44" stroke-width="5"/>
+  <path d="M104 425 Q300 443 534 425" fill="none" stroke="#8ceeff" stroke-opacity=".24" stroke-width="4"/>
+ </g>
+ <!-- Thin technical highlight along the folder's upper edge -->
+ <path d="M108 247 H522 Q541 247 544 265" fill="none" stroke="#f1ffff" stroke-opacity=".82" stroke-width="5" stroke-linecap="round"/>
+ <path d="M96 183 Q96 171 110 171 H232 Q249 171 262 186 L295 219" fill="none" stroke="#ffffff" stroke-opacity=".8" stroke-width="5" stroke-linecap="round"/>
+</g>
+</svg>
