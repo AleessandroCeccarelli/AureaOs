@@ -117,6 +117,13 @@ impl WindowManager {
                 .iter_mut()
                 .find(|toplevel| toplevel.surface.wl_surface() == surface)
         {
+            // A buffer replacement on an already mapped surface is not a
+            // mapping transition. Returning None avoids reapplying focus on
+            // every subsequent content update.
+            if toplevel.mapped == mapped {
+                return None;
+            }
+
             toplevel.mapped = mapped;
             return Some(mapped);
         }

@@ -66,6 +66,12 @@ jobs:
       - name: Install stable Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Install Rust dependency security auditor
+        run: cargo install cargo-audit --locked
+
+      - name: Audit locked Rust dependencies
+        run: cargo audit --locked
+
       - name: Check workspace
         run: cargo check --workspace --locked
 

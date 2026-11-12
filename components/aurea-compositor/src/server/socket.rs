@@ -12,6 +12,12 @@ use smithay::wayland::socket::ListeningSocketSource;
 
 use super::{client::AureaClientState, state::WaylandState};
 
+/// Maximum number of simultaneous local Wayland clients accepted by the server.
+///
+/// Disconnected clients are removed by the display event handler, so this
+/// limit applies to live clients rather than the lifetime number of connections.
+const MAX_WAYLAND_CLIENTS: usize = 64;
+
 /// Creates the listening socket and registers incoming Wayland clients.
 pub(super) fn register_wayland_socket(
     loop_handle: &LoopHandle<'_, WaylandState>,
@@ -22,6 +28,13 @@ pub(super) fn register_wayland_socket(
 
     loop_handle
         .insert_source(listening_socket, |stream, _, state| {
+            // Drop excess connections before allocating client state or
+            // registering another Wayland client.
+            if state.clients.len() >= MAX_WAYLAND_CLIENTS {
+                drop(stream);
+                return;
+            }
+
             let client_state = AureaClientState::new(Arc::clone(&state.disconnected_clients));
 
             match state
