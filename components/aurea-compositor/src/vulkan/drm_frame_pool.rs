@@ -5,7 +5,7 @@
 
 //! Owns Vulkan scanout images and their imported KMS framebuffer wrappers.
 
-use std::{collections::HashMap, error::Error, fmt};
+use std::{collections::HashMap, error::Error, fmt, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
@@ -81,22 +81,22 @@ impl From<DrmOutputFrameError> for VulkanDrmFramePoolError {
 }
 
 /// One allocation whose Vulkan image and GBM framebuffer share a lifetime.
-pub struct VulkanDrmScanoutFrame<'drm, 'device> {
+pub struct VulkanDrmScanoutFrame {
     // Drop the imported KMS framebuffer before releasing its Vulkan image.
-    framebuffer: VulkanDrmFramebuffer<'drm>,
-    image: VulkanDrmImage<'device>,
+    framebuffer: VulkanDrmFramebuffer,
+    image: VulkanDrmImage,
 }
 
-impl<'drm, 'device> VulkanDrmScanoutFrame<'drm, 'device> {
+impl VulkanDrmScanoutFrame {
     pub fn allocate(
-        logical_device: &'device VulkanLogicalDevice,
+        logical_device: Arc<VulkanLogicalDevice>,
         drm_device: &'drm DrmDevice,
         gbm_devices: &GbmDeviceManager,
         width: u32,
         height: u32,
         format: DrmVulkanFormat,
         usage: vk::ImageUsageFlags,
-    ) -> Result<Self, VulkanDrmFramePoolError> {
+     ) -> Result<Self, VulkanDrmFramePoolError> {
         let allocator = VulkanDrmImageAllocator::new(logical_device)?;
         let image = allocator.allocate_exportable(width, height, format, usage)?;
         let framebuffer = VulkanDrmFramebuffer::register(drm_device, gbm_devices, &image)?;
@@ -111,25 +111,25 @@ impl<'drm, 'device> VulkanDrmScanoutFrame<'drm, 'device> {
         self.framebuffer.handle()
     }
 
-    pub fn image(&self) -> &VulkanDrmImage<'device> {
+    pub fn image(&self) -> &VulkanDrmImage {
         &self.image
     }
 }
 
 /// Retains each image/framebuffer pair until GPU and KMS ownership are released.
 #[derive(Default)]
-pub struct VulkanDrmFramePool<'drm, 'device> {
-    frames: HashMap<DrmFramebufferId, VulkanDrmScanoutFrame<'drm, 'device>>,
+pub struct VulkanDrmFramePool {
+    frames: HashMap<DrmFramebufferId, VulkanDrmScanoutFrame>,
 }
 
-impl<'drm, 'device> VulkanDrmFramePool<'drm, 'device> {
+impl VulkanDrmFramePool {
     pub fn new() -> Self {
         Self::default()
     }
 
     pub fn insert(
         &mut self,
-        frame: VulkanDrmScanoutFrame<'drm, 'device>,
+        frame: VulkanDrmScanoutFrame,
         coordinator: &mut DrmOutputFrameCoordinator,
     ) -> Result<DrmFramebufferId, VulkanDrmFramePoolError> {
         let id = frame.framebuffer_id();
@@ -141,7 +141,7 @@ impl<'drm, 'device> VulkanDrmFramePool<'drm, 'device> {
         Ok(id)
     }
 
-    pub fn get(&self, id: DrmFramebufferId) -> Option<&VulkanDrmScanoutFrame<'drm, 'device>> {
+    pub fn get(&self, id: DrmFramebufferId) -> Option<&VulkanDrmScanoutFrame> {
         self.frames.get(&id)
     }
 
@@ -150,7 +150,7 @@ impl<'drm, 'device> VulkanDrmFramePool<'drm, 'device> {
         &mut self,
         id: DrmFramebufferId,
         coordinator: &mut DrmOutputFrameCoordinator,
-    ) -> Result<VulkanDrmScanoutFrame<'drm, 'device>, VulkanDrmFramePoolError> {
+    ) -> Result<VulkanDrmScanoutFrame, VulkanDrmFramePoolError> {
         if !self.frames.contains_key(&id) {
             return Err(VulkanDrmFramePoolError::UnknownFramebuffer(id));
         }
