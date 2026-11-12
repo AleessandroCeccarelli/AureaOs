@@ -17,9 +17,9 @@ use smithay::{
 
 use crate::{
     drm::{
-        device::DrmDevice, gbm::GbmDeviceManager, presentation::DrmFramebufferId,
-        presentation_backend::DrmPresentationBackend, surfaces::ManagedDrmSurface,
-        DrmPrimaryPlaneFormatCapabilities,
+        DrmPrimaryPlaneFormatCapabilities, device::DrmDevice, gbm::GbmDeviceManager,
+        presentation::DrmFramebufferId, presentation_backend::DrmPresentationBackend,
+        surfaces::ManagedDrmSurface,
     },
     render::RenderScene,
     renderer::{RenderBackend, RenderTarget},
