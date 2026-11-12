@@ -125,6 +125,23 @@ impl DrmPresentationBackend {
         &mut self.frames
     }
 
+    /// Validates the synchronization contract for a set of active DRM planes.
+    ///
+    /// Each boolean indicates whether the corresponding active plane has an
+    /// IN_FENCE_FD. An empty set is never a valid presentation.
+    pub fn validate_plane_synchronization(
+        active_plane_fences: &[bool],
+        require_in_fence: bool,
+    ) -> Result<(), DrmPresentationBackendError> {
+        if active_plane_fences.is_empty() {
+            return Err(DrmPresentationBackendError::MissingActivePlane);
+        }
+        if require_in_fence && active_plane_fences.iter().any(|has_fence| !has_fence) {
+            return Err(DrmPresentationBackendError::MissingInFence);
+        }
+        Ok(())
+    }
+
     /// Tests and submits one primary-plane state using explicit IN_FENCE_FD synchronization.
     ///
     /// Every active plane must provide a sync-file fence. This is the preferred
@@ -167,17 +184,12 @@ impl DrmPresentationBackend {
             return Err(DrmPresentationBackendError::UnexpectedCrtc);
         }
 
-        let active_planes = planes
+        let active_plane_fences = planes
             .iter()
             .filter_map(|plane| plane.config.as_ref())
+            .map(|config| config.fence.is_some())
             .collect::<Vec<_>>();
-
-        if active_planes.is_empty() {
-            return Err(DrmPresentationBackendError::MissingActivePlane);
-        }
-        if require_in_fence && active_planes.iter().any(|config| config.fence.is_none()) {
-            return Err(DrmPresentationBackendError::MissingInFence);
-        }
+        Self::validate_plane_synchronization(&active_plane_fences, require_in_fence)?;
 
         let requires_modeset = surface.commit_pending();
         self.frames.begin_presentation(candidate)?;
