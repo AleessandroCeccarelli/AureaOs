@@ -85,7 +85,7 @@ impl fmt::Display for VulkanDrmFramebufferError {
 
 impl Error for VulkanDrmFramebufferError {}
 
-/// Owns Smithay's GBM framebuffer wrapper and borrows the backing Vulkan image.
+/// Owns Smithay's GBM framebuffer wrapper; the scanout frame pool owns the image.
 ///
 /// Smithay imports the DMA-BUF into the GBM device associated with this DRM
 /// node, obtains the driver's GEM handles and registers the framebuffer.
