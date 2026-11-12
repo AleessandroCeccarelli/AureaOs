@@ -3,10 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-use aurea_compositor::vulkan::{
-    VulkanFrameResourceRegistry,
-    VulkanFrameResourceRegistryError,
-};
+use aurea_compositor::vulkan::{VulkanFrameResourceRegistry, VulkanFrameResourceRegistryError};
 
 #[test]
 fn registry_assigns_distinct_stable_identifiers() {

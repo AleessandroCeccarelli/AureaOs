@@ -24,7 +24,9 @@ fn commit_frame(
 ) {
     coordinator.begin_presentation(framebuffer).unwrap();
     coordinator.presentation_test_passed().unwrap();
-    coordinator.presentation_commit_accepted(sync_file_attached).unwrap();
+    coordinator
+        .presentation_commit_accepted(sync_file_attached)
+        .unwrap();
 }
 
 #[test]
