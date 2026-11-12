@@ -204,12 +204,14 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
                 Ok(()) => frame_pool
                     .retire(framebuffer, presentation.frame_coordinator_mut())
                     .map(|_| ()),
-                Err(acquire_error) => frame_pool
+                Err(acquire_error) => match frame_pool
                     .retire(framebuffer, presentation.frame_coordinator_mut())
-                    .map(|_| ())
-                    .map_err(|retire_error| {
-                        format!("{acquire_error}; retirement also failed: {retire_error}")
-                    }),
+                {
+                    Ok(_) => Ok(()),
+                    Err(retire_error) => {
+                        Err(format!("{acquire_error}; retirement also failed: {retire_error}"))
+                    }
+                },
             };
 
             if let Err(cleanup_error) = cleanup_result {

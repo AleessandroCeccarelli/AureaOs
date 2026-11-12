@@ -37,11 +37,11 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) {
             compositor.cancel_output_frame(output_id);
             continue;
         }
-        let Some(vulkan) = vulkan_backends.get(node) else {
+        let Some(vulkan) = vulkan_backends.get(&node) else {
             compositor.cancel_output_frame(output_id);
             continue;
         };
-        let Some(surface_manager) = drm_surfaces.get_mut(node) else {
+        let Some(surface_manager) = drm_surfaces.get_mut(&node) else {
             compositor.cancel_output_frame(output_id);
             continue;
         };
@@ -49,6 +49,9 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) {
             compositor.cancel_output_frame(output_id);
             continue;
         };
+        if output.presentation().pending().is_some() {
+            continue;
+        }
 
         let mut backend = VulkanOutputScanoutBackend::new(device, gbm_devices, output, vulkan);
         if let Err(error) = compositor.render_output(&mut backend, output_id) {
