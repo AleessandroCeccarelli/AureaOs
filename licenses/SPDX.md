@@ -2,9 +2,7 @@
 
 # SPDX Summary for AureaOS
 
-This file provides a simple SPDX-style summary of the licensing status for the AureaOS project and its reviewed third-party content.
-
-This document supports project review and auditing. It does not replace the project license file or the detailed third-party registry in `THIRD_PARTY_NOTICES.md`.
+This document summarizes the licensing status of original AureaOS work and reviewed third-party content. It complements `LICENSE` and `THIRD_PARTY_NOTICES.md`.
 
 ## Project target
 
@@ -13,54 +11,28 @@ This document supports project review and auditing. It does not replace the proj
 - Primary project license: GPL-3.0-or-later
 - License file: `LICENSE`
 
-## SPDX overview
+## Original AureaOS content
 
-SPDX-License-Identifier: GPL-3.0-or-later
+- SPDX-License-Identifier: GPL-3.0-or-later
+- Scope: project-authored source, documentation, scripts, and design-system material unless a file states otherwise.
 
-### Original AureaOS project content
+## Bundled third-party content
 
-- License: GPL-3.0-or-later
-- Scope: original project source files, documentation, scripts, and project-authored content unless otherwise stated
-- Reference: `LICENSE`
-
-### Bundled or reviewed third-party content
-
-- Microsoft Fluent UI Symbols
-  - SPDX-License-Identifier: MIT
-  - Source: `aurea-human-interfaces/symbols/source/fluent-ui`
-  - Notes: Included as source design assets. Review status: reviewed.
-
-- Google Noto Color Emoji
-  - SPDX-License-Identifier: OFL-1.1
-  - Source: `aurea-human-interfaces/fonts/source/google-fonts/noto-color-emoji`
-  - Notes: Included as a font source package. Review status: reviewed.
-
-- Debian package ecosystem
-  - SPDX-License-Identifier: varies by package and license
-  - Source: Debian package repositories
-  - Notes: Runtime dependencies are managed through Debian package metadata and system package policy. They are not all vendored in this repository and must be reviewed at build and release time.
+- Microsoft Fluent UI System Icons — MIT; curated reference subset at `aurea-human-interfaces/symbols/source/fluent-ui`.
+- Google Noto Sans, Noto Color Emoji, Noto Sans Symbols 2, and Noto Sans Math — OFL-1.1; temporary font and glyph-coverage sources under `aurea-human-interfaces/fonts/source/google-fonts`.
+- Adobe Source Code Pro — OFL-1.1; temporary monospaced fallback at `aurea-human-interfaces/fonts/source/adobe/source-code-pro`.
+- Debian packages — licenses vary by package; review through package metadata and release records.
 
 ## Notes
 
-- The project as a whole is not a single license bundle if third-party components with different licenses are redistributed.
-- Original AureaOS project work is currently licensed under GPL-3.0-or-later, including project-authored source, documentation, scripts, and design-system material unless a specific file clearly identifies a different license.
-- First-party status, product ownership, branding, and design control do not imply closed-source licensing. The AureaOS product layer remains under the current GPL-3.0-or-later policy.
-- No proprietary or dual-licensing exception is being adopted at this stage. Any future licensing-model change is undecided and requires separate review of copyright ownership, contributor permissions, and applicable obligations.
-- Third-party components keep their own licenses and must be tracked in `THIRD_PARTY_NOTICES.md`.
-- This summary should be updated whenever a new dependency, font, icon set, asset, or vendored library is introduced.
+- The repository is not a single-license bundle when third-party components are redistributed.
+- Original AureaOS work remains under GPL-3.0-or-later. Third-party components retain their own licenses.
+- First-party product identity and design control do not imply a proprietary or dual-licensing exception.
+- Update this summary and `THIRD_PARTY_NOTICES.md` whenever third-party material is added, removed, or materially changed.
 
-## Current review status
+## Review status
 
-- `LICENSE` (project): reviewed
-- `aurea-human-interfaces/symbols/source/fluent-ui`: reviewed
-- `aurea-human-interfaces/fonts/source/google-fonts/noto-color-emoji`: reviewed
-- Debian base dependencies: pending package-level review as the OS matures
-
-## Outstanding verification items
-
-The following are known to require confirmation when the corresponding resources are used in release builds or distribution bundles:
-
-- exact package-origin provenance for any Debian packages included in project bundles
-- any additional third-party font or icon assets newly added in the future
-- any third-party image, wallpaper, or artwork not yet listed in `THIRD_PARTY_NOTICES.md`
-- any proprietary or external runtime components that might be introduced later
+- Project `LICENSE`: reviewed.
+- Retained Fluent UI reference subset: license file retained; MIT attribution recorded.
+- Retained font sources: upstream license files retained; OFL-1.1 recorded.
+- Debian base dependencies: package-level review required for release bundles.

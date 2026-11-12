@@ -2,68 +2,27 @@
 
 # Third-Party Notices
 
-This file is the project register for third-party code, assets, fonts, icons, and other components included in AureaOS or referenced by the project.
-
-The original AureaOS project content is licensed under the GNU General Public License version 3 or later (GPL-3.0-or-later), unless otherwise stated. That license does not automatically cover third-party software, fonts, assets, or vendor code. Each third-party component must be reviewed, documented, and tracked here.
-
-This document is intended to be updated over time as the project grows and new dependencies are added.
-
-## Purpose
-
-This file helps us do the following:
-
-- keep a clear record of all third-party components used by the project
-- document the license and source for each item
-- reduce legal and compliance risk
-- make it easier to review and replace dependencies later
-- keep the repository transparent and professional
+This file records third-party code, assets, fonts, icons, and other components included in AureaOS. Original AureaOS project content is licensed under GPL-3.0-or-later unless otherwise stated. That license does not automatically cover third-party material.
 
 ## Current third-party inventory
 
-| Component | Version / Origin | Source | License | Used in | Purpose | Status |
-| --- | --- | --- | --- | --- | --- | --- |
-| Microsoft Fluent UI Symbols | upstream symbol source package | https://github.com/microsoft/fluentui-system-icons | MIT | `aurea-human-interfaces/symbols/source/fluent-ui` | Symbol set used as design reference and source assets | Verified |
-| Google Noto Color Emoji | upstream font package | https://github.com/googlefonts/noto-emoji | SIL Open Font License 1.1 | `aurea-human-interfaces/fonts/source/google-fonts/noto-color-emoji` | Emoji font source | Verified |
-| Debian GNU/Linux Trixie packages | Debian package versions from official repositories | https://www.debian.org/ | Debian package licenses and upstream package licenses | `debian/packages/` | Runtime system foundation | Verified at package level when included; review required for release bundles |
+| Component | Origin | Source | License | Repository path | Purpose |
+| --- | --- | --- | --- | --- | --- |
+| Microsoft Fluent UI System Icons | Microsoft | https://github.com/microsoft/fluentui-system-icons | MIT | `aurea-human-interfaces/symbols/source/fluent-ui/` | Curated 24 px Regular/Filled reference symbols |
+| Noto Sans | Google Fonts | https://github.com/notofonts/latin-greek-cyrillic | SIL Open Font License 1.1 | `aurea-human-interfaces/fonts/source/google-fonts/noto-sans/` | Temporary sans-serif fallback |
+| Noto Color Emoji | Google Fonts | https://github.com/googlefonts/noto-emoji | SIL Open Font License 1.1 | `aurea-human-interfaces/fonts/source/google-fonts/noto-color-emoji/` | Temporary emoji glyph coverage |
+| Noto Sans Symbols 2 | Google Fonts | https://github.com/notofonts/symbols | SIL Open Font License 1.1 | `aurea-human-interfaces/fonts/source/google-fonts/noto-sans-symbols-2/` | Supplementary Unicode symbols |
+| Noto Sans Math | Google Fonts | https://github.com/notofonts/math | SIL Open Font License 1.1 | `aurea-human-interfaces/fonts/source/google-fonts/noto-sans-math/` | Mathematical glyph coverage |
+| Source Code Pro | Adobe | https://github.com/adobe-fonts/source-code-pro | SIL Open Font License 1.1 | `aurea-human-interfaces/fonts/source/adobe/source-code-pro/` | Temporary monospaced developer fallback |
+| Debian GNU/Linux packages | Debian | https://www.debian.org/ | Varies by package | `debian/packages/` | Runtime system foundation; review at package/release level |
 
-## Notes on license handling
+## License handling
 
-- The GPL-3.0-or-later license applies to the original AureaOS project work unless another file clearly states a different license.
-- Third-party components keep their own licenses and terms.
-- This file is a compliance and transparency record, not legal advice.
-- Some runtime dependencies are managed by Debian and are not vendored in this repository. They still need to be reviewed and documented in package manifests and release notes.
+- Third-party components retain their own licenses and notices.
+- The license files shipped with each retained font family and the Fluent source directory must remain alongside those assets.
+- This register is a compliance aid, not legal advice.
+- Runtime dependencies managed by Debian must be reviewed through package metadata and release records.
 
 ## Review rules
 
-Before any third-party material is added to the repository, the following should be checked:
-
-- license compatibility with the project goals
-- whether the component is source-available or vendored
-- whether redistribution is allowed for this project
-- whether attribution is required
-- whether any trademark or brand restrictions apply
-- whether the component is stable and maintained upstream
-
-## Items still requiring verification
-
-These items are not yet sufficiently documented for full compliance confidence:
-
-- any additional wallpaper or artwork added later without explicit source and license metadata
-- any font family or icon pack not yet listed in this file
-- any future proprietary or external runtime component introduced into build or release images
-
-## Template for future entries
-
-Use this format when adding a new item:
-
-```text
-### Component Name
-- Version / Origin: x.y.z or commit SHA / upstream source
-- Author / Upstream: Name
-- Source: https://example.com/project
-- License: MIT / GPL-3.0-or-later / Apache-2.0 / SIL OFL 1.1 / etc.
-- Repository path: path/to/file_or_directory
-- Purpose: UI, font, asset, library, runtime dependency, build tool, etc.
-- Review status: Verified / Pending review / DA VERIFICARE
-- Notes: short description, compatibility notes, attribution requirements, or limitations.
-```
+Before adding third-party material, review its license, redistribution terms, attribution requirements, source provenance, and relevance to AureaOS. Avoid importing broad asset collections without a concrete product need.

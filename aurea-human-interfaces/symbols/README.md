@@ -4,34 +4,30 @@
 
 ## Purpose
 
-This directory holds the symbol source assets and the documentation for a planned AureaOS symbol catalog.
+This directory contains a small, curated reference subset of Fluent UI System Icons and the documentation for the future AureaOS symbol catalog.
 
-AureaOS intends to keep the full Fluent UI System Icons set available as a source collection, so the operating system and its applications can draw on the coverage needed by a modern OS. The AureaOS catalog is intended to provide stable, descriptive names and mappings over time; that catalog and its mappings are not yet fully verified or implemented.
+The upstream collection was intentionally reduced. AureaOS keeps only commonly useful desktop and system symbols, in the 24 px Regular and Filled variants where those variants exist. This is a reference and development resource, not the final proprietary AureaOS symbol identity.
 
-## Source
+## Source and license
 
 - Upstream project: Microsoft Fluent UI System Icons
-- Source assets, relative to this `symbols/` directory: `source/fluent-ui/`
-- License: MIT, as recorded in the source directory's license file
+- Source assets: `source/fluent-ui/`
+- License: MIT, recorded in `source/fluent-ui/LICENSE`
 
-The source collection is not itself the verified AureaOS catalog. Do not assume that a proposed AureaOS name has a matching Fluent asset until the mapping has been checked against the actual files.
+The retained source files remain third-party assets. They must not be presented as original AureaOS artwork.
 
 ## Organization
 
-- `source/` — upstream source assets, preserved separately from AureaOS catalog documentation
-- `catalog/` — proposed AureaOS names, categories, naming rules, and future mapping guidance
-- `distribution/` — reserved for any future prepared distribution assets; its contents and process are not defined here
+- `source/` — the limited upstream reference assets
+- `catalog/` — proposed AureaOS names, categories, naming rules, and mapping guidance
+- `generated/` — reserved for future generated assets
 
 ## Naming and compatibility
 
-AureaOS plans to expose stable, descriptive names that do not depend on upstream filenames. The names shown in the catalog documents—for example, `folder`, `document-open`, `settings`, and `network-wireless`—are proposed conceptual names. They are examples of intent, not verified Fluent asset names or completed mappings.
+Applications should ultimately request symbols through a shared AureaOS interface and stable AureaOS catalog names, rather than depend directly on upstream filenames. The shared interface and verified mappings have not yet been implemented.
 
-When a catalog entry is verified, its record should preserve the exact upstream asset name and source location, plus any verified variant or size metadata. Do not infer this information from a conceptual name.
+Catalog examples are proposals until each entry is checked against a retained source asset. Record the exact upstream filename and available variant when a mapping is verified.
 
-## Application integration
+## Curation policy
 
-The planned direction is for applications to use AureaOS catalog names rather than depend directly on source paths. The shared symbol interface and runtime integration have not been implemented. See `catalog/INTEGRATION.md` for the current design status.
-
-## Completeness
-
-The project intends to keep the full Fluent set available for the needs of a modern desktop operating system. The AureaOS catalog may organize and map useful entries, but it must not narrow or discard the source collection merely to keep the catalog small.
+Keep the source collection focused on common operating-system needs. Do not re-import the full upstream pack by default. Add a symbol only when a concrete AureaOS interface requirement justifies it; prefer original AureaOS artwork for distinctive product and brand identities.
