@@ -121,7 +121,11 @@ impl ManagedDrmSurface {
     /// Borrows the KMS surface and its mutable scanout ownership resources.
     pub fn scanout_parts_mut(
         &mut self,
-    ) -> (&DrmSurface, &mut VulkanDrmFramePool, &mut DrmPresentationBackend) {
+    ) -> (
+        &DrmSurface,
+        &mut VulkanDrmFramePool,
+        &mut DrmPresentationBackend,
+    ) {
         (&self.surface, &mut self.frame_pool, &mut self.presentation)
     }
 }
