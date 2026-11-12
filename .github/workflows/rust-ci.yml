@@ -37,6 +37,24 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
+  security-audit:
+    name: Rust dependency security audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Rust dependency security auditor
+        run: cargo install cargo-audit --locked
+
+      - name: Audit locked Rust dependencies
+        run: cargo audit --locked
+
   build-and-test:
     name: Build and test workspace
     runs-on: ubuntu-24.04
@@ -65,12 +83,6 @@ jobs:
 
       - name: Install stable Rust
         uses: dtolnay/rust-toolchain@stable
-
-      - name: Install Rust dependency security auditor
-        run: cargo install cargo-audit --locked
-
-      - name: Audit locked Rust dependencies
-        run: cargo audit --locked
 
       - name: Check workspace
         run: cargo check --workspace --locked
