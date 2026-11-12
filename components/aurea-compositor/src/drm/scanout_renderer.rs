@@ -17,20 +17,17 @@ use smithay::{
 
 use crate::{
     drm::{
-        device::DrmDevice,
-        gbm::GbmDeviceManager,
-        presentation::DrmFramebufferId,
-        presentation_backend::DrmPresentationBackend,
-        surfaces::ManagedDrmSurface,
+        device::DrmDevice, gbm::GbmDeviceManager, presentation::DrmFramebufferId,
+        presentation_backend::DrmPresentationBackend, surfaces::ManagedDrmSurface,
         DrmPrimaryPlaneFormatCapabilities,
     },
     render::RenderScene,
     renderer::{RenderBackend, RenderTarget},
     vulkan::{
-        DrmVulkanCompatibility, VulkanBackend,
-        VulkanClearPass, VulkanCommandBuffer, VulkanDrmFramePool, VulkanDrmScanoutFrame,
-        VulkanExternalMemoryCapabilities, VulkanFormatCapabilities, VulkanImageState,
-        VulkanImageTransition, VulkanImageView, VulkanLogicalDevice,
+        DrmVulkanCompatibility, VulkanBackend, VulkanClearPass, VulkanCommandBuffer,
+        VulkanDrmFramePool, VulkanDrmScanoutFrame, VulkanExternalMemoryCapabilities,
+        VulkanFormatCapabilities, VulkanImageState, VulkanImageTransition, VulkanImageView,
+        VulkanLogicalDevice,
     },
 };
 
@@ -252,12 +249,15 @@ fn render_and_present(
 
     let view = VulkanImageView::color_drm(image)
         .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
-    let mut command_buffer = VulkanCommandBuffer::new(device)
-        .map_err(|error| VulkanScanoutError::new(format!("Vulkan command allocation failed: {error:?}")))?;
+    let mut command_buffer = VulkanCommandBuffer::new(device).map_err(|error| {
+        VulkanScanoutError::new(format!("Vulkan command allocation failed: {error:?}"))
+    })?;
 
     command_buffer
         .begin(smithay::reexports::ash::vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
-        .map_err(|error| VulkanScanoutError::new(format!("Vulkan command begin failed: {error:?}")))?;
+        .map_err(|error| {
+            VulkanScanoutError::new(format!("Vulkan command begin failed: {error:?}"))
+        })?;
 
     VulkanClearPass::record_color(
         command_buffer.handle(),
@@ -276,9 +276,9 @@ fn render_and_present(
     )
     .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
 
-    command_buffer
-        .end()
-        .map_err(|error| VulkanScanoutError::new(format!("Vulkan command end failed: {error:?}")))?;
+    command_buffer.end().map_err(|error| {
+        VulkanScanoutError::new(format!("Vulkan command end failed: {error:?}"))
+    })?;
 
     {
         let coordinator = presentation.frame_coordinator_mut();
@@ -290,9 +290,9 @@ fn render_and_present(
             .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
     }
 
-    command_buffer
-        .submit_and_wait()
-        .map_err(|error| VulkanScanoutError::new(format!("Vulkan queue submission failed: {error:?}")))?;
+    command_buffer.submit_and_wait().map_err(|error| {
+        VulkanScanoutError::new(format!("Vulkan queue submission failed: {error:?}"))
+    })?;
 
     {
         let coordinator = presentation.frame_coordinator_mut();

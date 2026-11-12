@@ -5,10 +5,7 @@
 
 //! Dispatches requested output frames to the DRM/Vulkan scanout backend.
 
-use crate::{
-    drm::scanout_renderer::VulkanOutputScanoutBackend,
-    server::state::WaylandState,
-};
+use crate::{drm::scanout_renderer::VulkanOutputScanoutBackend, server::state::WaylandState};
 
 pub(super) fn render_pending_outputs(state: &mut WaylandState) {
     let WaylandState {
@@ -53,8 +50,7 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) {
             continue;
         };
 
-        let mut backend =
-            VulkanOutputScanoutBackend::new(device, gbm_devices, output, vulkan);
+        let mut backend = VulkanOutputScanoutBackend::new(device, gbm_devices, output, vulkan);
         if let Err(error) = compositor.render_output(&mut backend, output_id) {
             eprintln!("AureaOS: output {output_id} rendering failed: {error}");
         }
