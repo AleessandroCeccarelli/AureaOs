@@ -6,6 +6,9 @@
 use aurea_compositor::drm::presentation::{
     DrmFramebufferId, DrmPresentationError, DrmPresentationLifecycle,
 };
+use aurea_compositor::drm::presentation_backend::{
+    DrmPresentationBackend, DrmPresentationBackendError,
+};
 
 fn fb(value: u64) -> DrmFramebufferId {
     DrmFramebufferId::new(value)
@@ -167,9 +170,6 @@ fn commit_failure_before_test_pass_is_rejected_without_losing_transaction() {
 }
 
 
-use aurea_compositor::drm::presentation_backend::{
-    DrmPresentationBackend, DrmPresentationBackendError,
-};
 
 #[test]
 fn synchronized_scanout_accepts_planes_without_in_fences() {
