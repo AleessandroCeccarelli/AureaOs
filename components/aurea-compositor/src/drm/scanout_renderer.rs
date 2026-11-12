@@ -22,11 +22,12 @@ use crate::{
         presentation::DrmFramebufferId,
         presentation_backend::DrmPresentationBackend,
         surfaces::ManagedDrmSurface,
+        DrmPrimaryPlaneFormatCapabilities,
     },
     render::RenderScene,
     renderer::{RenderBackend, RenderTarget},
     vulkan::{
-        DrmPrimaryPlaneFormatCapabilities, DrmVulkanCompatibility, VulkanBackend,
+        DrmVulkanCompatibility, VulkanBackend,
         VulkanClearPass, VulkanCommandBuffer, VulkanDrmFramePool, VulkanDrmScanoutFrame,
         VulkanExternalMemoryCapabilities, VulkanFormatCapabilities, VulkanImageState,
         VulkanImageTransition, VulkanImageView, VulkanLogicalDevice,
