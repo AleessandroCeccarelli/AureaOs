@@ -91,20 +91,19 @@ impl Error for VulkanDrmFramebufferError {}
 /// node, obtains the driver's GEM handles and registers the framebuffer.
 /// The GBM wrapper owns framebuffer retirement. Keep this object alive until
 /// KMS has released the framebuffer; GPU completion alone is not sufficient.
-pub struct VulkanDrmFramebuffer<'drm, 'image, 'vk> {
-    image: &'image VulkanDrmImage<'vk>,
+pub struct VulkanDrmFramebuffer<'drm> {
     framebuffer: GbmFramebuffer,
     node: DrmNode,
     _device: &'drm DrmDevice,
 }
 
-impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
+impl<'drm> VulkanDrmFramebuffer<'drm> {
     /// Imports the image into the GBM device for the exact DRM node and
     /// registers a modifier-aware framebuffer. Legacy fallback is disabled.
     pub fn register(
         device: &'drm DrmDevice,
         gbm_devices: &GbmDeviceManager,
-        image: &'image VulkanDrmImage<'vk>,
+        image: &VulkanDrmImage<'_>,
     ) -> Result<Self, VulkanDrmFramebufferError> {
         if image.width() == 0
             || image.height() == 0
@@ -175,7 +174,6 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
             })?;
 
         Ok(Self {
-            image,
             framebuffer,
             node,
             _device: device,
@@ -190,11 +188,6 @@ impl<'drm, 'image, 'vk> VulkanDrmFramebuffer<'drm, 'image, 'vk> {
     /// Returns the DRM node that owns this framebuffer.
     pub fn node(&self) -> DrmNode {
         self.node
-    }
-
-    /// Returns the backing Vulkan image.
-    pub fn image(&self) -> &'image VulkanDrmImage<'vk> {
-        self.image
     }
 
     /// Explicitly retires the framebuffer.
