@@ -165,3 +165,44 @@ fn commit_failure_before_test_pass_is_rejected_without_losing_transaction() {
     assert_eq!(lifecycle.commit_failed(), Ok(fb(3)));
     assert!(!lifecycle.has_pending_transaction());
 }
+
+
+use aurea_compositor::drm::presentation_backend::{
+    DrmPresentationBackend, DrmPresentationBackendError,
+};
+
+#[test]
+fn synchronized_scanout_accepts_planes_without_in_fences() {
+    assert_eq!(
+        DrmPresentationBackend::validate_plane_synchronization(&[false], false),
+        Ok(())
+    );
+    assert_eq!(
+        DrmPresentationBackend::validate_plane_synchronization(&[true, false], false),
+        Ok(())
+    );
+}
+
+#[test]
+fn asynchronous_scanout_requires_an_in_fence_for_every_active_plane() {
+    assert_eq!(
+        DrmPresentationBackend::validate_plane_synchronization(&[true, true], true),
+        Ok(())
+    );
+    assert_eq!(
+        DrmPresentationBackend::validate_plane_synchronization(&[true, false], true),
+        Err(DrmPresentationBackendError::MissingInFence)
+    );
+}
+
+#[test]
+fn scanout_rejects_an_empty_active_plane_set() {
+    assert_eq!(
+        DrmPresentationBackend::validate_plane_synchronization(&[], false),
+        Err(DrmPresentationBackendError::MissingActivePlane)
+    );
+    assert_eq!(
+        DrmPresentationBackend::validate_plane_synchronization(&[], true),
+        Err(DrmPresentationBackendError::MissingActivePlane)
+    );
+}
