@@ -11,7 +11,7 @@ use smithay::{
     backend::{
         allocator::dmabuf::{Dmabuf, DmabufFlags, MAX_PLANES},
         drm::{
-            DrmNode, DrmDeviceFd,
+            DrmDeviceFd, DrmNode,
             gbm::{GbmFramebuffer, framebuffer_from_dmabuf},
         },
     },
