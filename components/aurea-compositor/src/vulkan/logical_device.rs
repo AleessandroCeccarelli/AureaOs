@@ -5,6 +5,8 @@
 
 //! Vulkan logical-device and command-pool resource management.
 
+use std::sync::Arc;
+
 use smithay::{
     backend::vulkan::PhysicalDevice,
     reexports::ash::{self, vk},
@@ -17,6 +19,8 @@ use super::{
 
 /// A logical Vulkan device, graphics queue and command pool.
 pub struct VulkanLogicalDevice {
+    // Keep the Vulkan instance alive until this logical device is destroyed.
+    _context: Option<Arc<VulkanContext>>,
     device: ash::Device,
     graphics_queue: vk::Queue,
     graphics_queue_family: u32,
@@ -36,6 +40,7 @@ impl VulkanLogicalDevice {
         physical_device: &PhysicalDevice,
         queue_family_index: u32,
         extension_plan: VulkanDeviceExtensionPlan,
+        context_owner: Option<Arc<VulkanContext>>,
     ) -> Result<Self, VulkanInitError> {
         let supports_sync_fd = if extension_plan.supports_sync_fd() {
             let semaphore_info = vk::PhysicalDeviceExternalSemaphoreInfo::default()
@@ -107,6 +112,7 @@ impl VulkanLogicalDevice {
         let supports_foreign_queue_family = extension_plan.supports_foreign_queue_family();
 
         Ok(Self {
+            _context: context_owner,
             device,
             graphics_queue,
             graphics_queue_family: queue_family_index,
@@ -226,6 +232,6 @@ impl VulkanContext {
             .graphics_queue_family(physical_device)
             .ok_or_else(|| VulkanInitError::new("Selected device has no graphics queue"))?;
         let extension_plan = VulkanDeviceExtensionPlan::from_device(physical_device);
-        VulkanLogicalDevice::new(physical_device, queue_family_index, extension_plan)
+        VulkanLogicalDevice::new(physical_device, queue_family_index, extension_plan, None)
     }
 }
