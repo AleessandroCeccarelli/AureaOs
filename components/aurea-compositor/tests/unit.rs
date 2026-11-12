@@ -13,6 +13,14 @@ use aurea_compositor::output::{
 #[path = "unit/drm_presentation.rs"]
 mod drm_presentation;
 
+#[cfg(all(feature = "drm", feature = "vulkan"))]
+#[path = "unit/drm_frame_coordinator.rs"]
+mod drm_frame_coordinator;
+
+#[cfg(feature = "drm")]
+#[path = "unit/vulkan_frame_resource_registry.rs"]
+mod vulkan_frame_resource_registry;
+
 #[path = "unit/frame_scheduler.rs"]
 mod frame_scheduler;
 

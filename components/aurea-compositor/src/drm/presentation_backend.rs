@@ -200,7 +200,7 @@ impl DrmPresentationBackend {
         }
 
         self.frames.presentation_test_passed()?;
-        self.frames.validate_commit_ready(true)?;
+        self.frames.validate_commit_ready(require_in_fence)?;
 
         let submission = if requires_modeset {
             surface.commit(planes.iter().cloned(), true)
@@ -213,7 +213,7 @@ impl DrmPresentationBackend {
             return Err(DrmPresentationBackendError::KmsOperation(error.to_string()));
         }
 
-        self.frames.presentation_commit_accepted(true)?;
+        self.frames.presentation_commit_accepted(require_in_fence)?;
         Ok(())
     }
 
