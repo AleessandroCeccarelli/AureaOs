@@ -203,7 +203,8 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
             let cleanup_result = match acquire_result {
                 Ok(()) => frame_pool
                     .retire(framebuffer, presentation.frame_coordinator_mut())
-                    .map(|_| ()),
+                    .map(|_| ())
+                    .map_err(|retire_error| retire_error.to_string()),
                 Err(acquire_error) => match frame_pool
                     .retire(framebuffer, presentation.frame_coordinator_mut())
                 {
