@@ -35,25 +35,49 @@ pub enum VulkanDrmFramePoolError {
 impl fmt::Display for VulkanDrmFramePoolError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Image(error) => write!(formatter, "Vulkan scanout image allocation failed: {error}"),
-            Self::Framebuffer(error) => write!(formatter, "KMS framebuffer registration failed: {error}"),
-            Self::Lifecycle(error) => write!(formatter, "Scanout lifecycle rejected the operation: {error}"),
-            Self::DuplicateFramebuffer(id) => write!(formatter, "Framebuffer {} is already pooled", id.value()),
-            Self::UnknownFramebuffer(id) => write!(formatter, "Framebuffer {} is not pooled", id.value()),
-            Self::FramebufferStillInUse(id) => write!(formatter, "Framebuffer {} is still owned by GPU or KMS", id.value()),
+            Self::Image(error) => {
+                write!(formatter, "Vulkan scanout image allocation failed: {error}")
+            }
+            Self::Framebuffer(error) => {
+                write!(formatter, "KMS framebuffer registration failed: {error}")
+            }
+            Self::Lifecycle(error) => write!(
+                formatter,
+                "Scanout lifecycle rejected the operation: {error}"
+            ),
+            Self::DuplicateFramebuffer(id) => {
+                write!(formatter, "Framebuffer {} is already pooled", id.value())
+            }
+            Self::UnknownFramebuffer(id) => {
+                write!(formatter, "Framebuffer {} is not pooled", id.value())
+            }
+            Self::FramebufferStillInUse(id) => write!(
+                formatter,
+                "Framebuffer {} is still owned by GPU or KMS",
+                id.value()
+            ),
         }
     }
 }
 
 impl Error for VulkanDrmFramePoolError {}
+
 impl From<VulkanDrmImageError> for VulkanDrmFramePoolError {
-    fn from(error: VulkanDrmImageError) -> Self { Self::Image(error) }
+    fn from(error: VulkanDrmImageError) -> Self {
+        Self::Image(error)
+    }
 }
+
 impl From<VulkanDrmFramebufferError> for VulkanDrmFramePoolError {
-    fn from(error: VulkanDrmFramebufferError) -> Self { Self::Framebuffer(error) }
+    fn from(error: VulkanDrmFramebufferError) -> Self {
+        Self::Framebuffer(error)
+    }
 }
+
 impl From<DrmOutputFrameError> for VulkanDrmFramePoolError {
-    fn from(error: DrmOutputFrameError) -> Self { Self::Lifecycle(error) }
+    fn from(error: DrmOutputFrameError) -> Self {
+        Self::Lifecycle(error)
+    }
 }
 
 /// One allocation whose Vulkan image and GBM framebuffer share a lifetime.
@@ -87,7 +111,9 @@ impl<'drm, 'device> VulkanDrmScanoutFrame<'drm, 'device> {
         self.framebuffer.handle()
     }
 
-    pub fn image(&self) -> &VulkanDrmImage<'device> { &self.image }
+    pub fn image(&self) -> &VulkanDrmImage<'device> {
+        &self.image
+    }
 }
 
 /// Retains each image/framebuffer pair until GPU and KMS ownership are released.
@@ -97,7 +123,9 @@ pub struct VulkanDrmFramePool<'drm, 'device> {
 }
 
 impl<'drm, 'device> VulkanDrmFramePool<'drm, 'device> {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
 
     pub fn insert(
         &mut self,
@@ -130,9 +158,16 @@ impl<'drm, 'device> VulkanDrmFramePool<'drm, 'device> {
             return Err(VulkanDrmFramePoolError::FramebufferStillInUse(id));
         }
         coordinator.unregister_framebuffer(id)?;
-        self.frames.remove(&id).ok_or(VulkanDrmFramePoolError::UnknownFramebuffer(id))
+        self.frames
+            .remove(&id)
+            .ok_or(VulkanDrmFramePoolError::UnknownFramebuffer(id))
     }
 
-    pub fn len(&self) -> usize { self.frames.len() }
-    pub fn is_empty(&self) -> bool { self.frames.is_empty() }
+    pub fn len(&self) -> usize {
+        self.frames.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.frames.is_empty()
+    }
 }
