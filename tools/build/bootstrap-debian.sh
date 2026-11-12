@@ -382,7 +382,7 @@ if ! sudo grep -q \
   exit 1
 fi
 
-for required_package in systemd systemd-sysv; do
+for required_package in systemd systemd-sysv linux-image-amd64; do
   if ! package_status="$(
     run_in_rootfs dpkg-query -W \
       -f='${db:Status-Status}' "$required_package" 2>/dev/null
