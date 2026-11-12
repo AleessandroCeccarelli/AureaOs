@@ -31,7 +31,7 @@ use crate::{
     },
 };
 
-const FIRST_FRAME_CLEAR_COLOR: [f32; 4] = [0.035, 0.045, 0.065, 1.0];
+const FIRST_FRAME_CLEAR_COLOR: [f32; 4] = [0.08, 0.18, 0.32, 1.0];
 
 /// Error returned by the initial Vulkan scanout path.
 #[derive(Debug)]
