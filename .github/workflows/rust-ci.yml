@@ -79,10 +79,16 @@ jobs:
             glslang-tools \
             mesa-vulkan-drivers \
             vulkan-tools \
-            pkg-config
+            pkg-config \
+            shellcheck
 
       - name: Install stable Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Validate bootstrap script
+        run: |
+          bash -n tools/build/bootstrap-debian.sh
+          shellcheck tools/build/bootstrap-debian.sh
 
       - name: Check workspace
         run: cargo check --workspace --locked

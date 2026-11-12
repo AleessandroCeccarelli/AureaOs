@@ -62,6 +62,23 @@ impl AureaCompositor {
         );
     }
 
+    /// Focuses a mapped surface only when no client currently owns keyboard focus.
+    ///
+    /// Mapping a new client surface is not, by itself, permission to steal
+    /// focus from an already active application. A future activation-token
+    /// policy can explicitly authorize focus changes initiated by user input.
+    pub(crate) fn focus_surface_if_unset(&mut self, surface: WlSurface) {
+        let focus_is_set = self
+            .seat
+            .get_keyboard()
+            .and_then(|keyboard| keyboard.current_focus())
+            .is_some();
+
+        if !focus_is_set {
+            self.focus_surface(Some(surface));
+        }
+    }
+
     /// Changes the focused Wayland surface for the compositor seat.
     pub fn focus_surface(&mut self, surface: Option<WlSurface>) {
         if let Some(keyboard) = self.seat.get_keyboard() {
