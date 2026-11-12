@@ -88,7 +88,8 @@ jobs:
       - name: Validate bootstrap script
         run: |
           bash -n tools/build/bootstrap-debian.sh
-          shellcheck tools/build/bootstrap-debian.sh
+          bash -n tools/security/audit-rootfs-permissions.sh
+          shellcheck tools/build/bootstrap-debian.sh tools/security/audit-rootfs-permissions.sh
 
       - name: Check workspace
         run: cargo check --workspace --locked
