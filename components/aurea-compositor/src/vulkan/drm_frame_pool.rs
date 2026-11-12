@@ -17,8 +17,9 @@ use crate::drm::{
 };
 
 use super::{
-    DrmVulkanFormat, VulkanDrmFramebuffer, VulkanDrmFramebufferError, VulkanDrmImage,
-    VulkanDrmImageAllocator, VulkanDrmImageError, VulkanLogicalDevice,
+    DrmVulkanFormat, VulkanCommandBuffer, VulkanDrmFramebuffer, VulkanDrmFramebufferError,
+    VulkanDrmImage, VulkanDrmImageAllocator, VulkanDrmImageError, VulkanImageState,
+    VulkanImageTransition, VulkanImageTransitionError, VulkanLogicalDevice,
 };
 
 /// Errors produced while creating or retiring an owned scanout frame.
@@ -30,6 +31,8 @@ pub enum VulkanDrmFramePoolError {
     DuplicateFramebuffer(DrmFramebufferId),
     UnknownFramebuffer(DrmFramebufferId),
     FramebufferStillInUse(DrmFramebufferId),
+    CommandBuffer(vk::Result),
+    ImageTransition(VulkanImageTransitionError),
 }
 
 impl fmt::Display for VulkanDrmFramePoolError {
@@ -56,6 +59,12 @@ impl fmt::Display for VulkanDrmFramePoolError {
                 "Framebuffer {} is still owned by GPU or KMS",
                 id.value()
             ),
+            Self::CommandBuffer(error) => {
+                write!(formatter, "Vulkan acquire command failed: {error:?}")
+            }
+            Self::ImageTransition(error) => {
+                write!(formatter, "Vulkan foreign-ownership acquire failed: {error}")
+            }
         }
     }
 }
@@ -111,6 +120,33 @@ impl VulkanDrmScanoutFrame {
         self.framebuffer.handle()
     }
 
+    fn acquire_from_foreign(&self) -> Result<(), VulkanDrmFramePoolError> {
+        let device = self.image.device();
+        let mut command_buffer =
+            VulkanCommandBuffer::new(device).map_err(VulkanDrmFramePoolError::CommandBuffer)?;
+
+        command_buffer
+            .begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
+            .map_err(VulkanDrmFramePoolError::CommandBuffer)?;
+
+        VulkanImageTransition::record_acquire_from_foreign(
+            device,
+            command_buffer.handle(),
+            self.image.image(),
+            VulkanImageState::General,
+        )
+        .map_err(VulkanDrmFramePoolError::ImageTransition)?;
+
+        command_buffer
+            .end()
+            .map_err(VulkanDrmFramePoolError::CommandBuffer)?;
+        command_buffer
+            .submit_and_wait()
+            .map_err(VulkanDrmFramePoolError::CommandBuffer)?;
+
+        Ok(())
+    }
+
     pub fn image(&self) -> &VulkanDrmImage {
         &self.image
     }
@@ -143,6 +179,27 @@ impl VulkanDrmFramePool {
 
     pub fn get(&self, id: DrmFramebufferId) -> Option<&VulkanDrmScanoutFrame> {
         self.frames.get(&id)
+    }
+
+    /// Acquires a frame back from foreign ownership after KMS release or a skipped presentation.
+    ///
+    /// The acquire barrier is submitted and waited synchronously before the
+    /// lifecycle record is allowed to become reusable.
+    pub fn acquire_after_foreign_release(
+        &self,
+        id: DrmFramebufferId,
+        coordinator: &mut DrmOutputFrameCoordinator,
+    ) -> Result<(), VulkanDrmFramePoolError> {
+        let frame = self
+            .frames
+            .get(&id)
+            .ok_or(VulkanDrmFramePoolError::UnknownFramebuffer(id))?;
+
+        coordinator.mark_foreign_acquire_submitted(id)?;
+        frame.acquire_from_foreign()?;
+        coordinator.mark_foreign_acquired(id)?;
+
+        Ok(())
     }
 
     /// Retires a frame only after the lifecycle coordinator marks it reusable.

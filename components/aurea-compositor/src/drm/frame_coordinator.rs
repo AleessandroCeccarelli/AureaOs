@@ -264,6 +264,36 @@ impl DrmOutputFrameCoordinator {
         Ok(released)
     }
 
+    /// Records that the Vulkan release barrier transferred a framebuffer to foreign ownership.
+    pub fn mark_foreign_release_submitted(
+        &mut self,
+        framebuffer: DrmFramebufferId,
+    ) -> Result<(), DrmOutputFrameError> {
+        let resource = self.resource_for(framebuffer)?;
+        self.resources.mark_foreign_release_submitted(resource)?;
+        Ok(())
+    }
+
+    /// Records submission of the Vulkan acquire barrier after presentation is resolved.
+    pub fn mark_foreign_acquire_submitted(
+        &mut self,
+        framebuffer: DrmFramebufferId,
+    ) -> Result<(), DrmOutputFrameError> {
+        let resource = self.resource_for(framebuffer)?;
+        self.resources.mark_foreign_acquire_submitted(resource)?;
+        Ok(())
+    }
+
+    /// Records completion of the Vulkan acquire barrier from foreign ownership.
+    pub fn mark_foreign_acquired(
+        &mut self,
+        framebuffer: DrmFramebufferId,
+    ) -> Result<(), DrmOutputFrameError> {
+        let resource = self.resource_for(framebuffer)?;
+        self.resources.mark_foreign_acquired(resource)?;
+        Ok(())
+    }
+
     /// Returns the framebuffer currently scanned out by this output.
     pub fn current(&self) -> Option<DrmFramebufferId> {
         self.presentation.current()

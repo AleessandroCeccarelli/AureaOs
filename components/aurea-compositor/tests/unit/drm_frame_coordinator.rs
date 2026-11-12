@@ -240,6 +240,35 @@ fn failed_presentation_cannot_be_retried_with_the_same_framebuffer() {
 }
 
 #[test]
+fn foreign_owned_frame_requires_completed_acquire_before_reuse() {
+    let mut coordinator = DrmOutputFrameCoordinator::new();
+    let first = fb(90);
+    let second = fb(91);
+    coordinator.register_framebuffer(first).unwrap();
+    coordinator.register_framebuffer(second).unwrap();
+
+    submit_for_render(&mut coordinator, first);
+    coordinator.mark_gpu_complete(first).unwrap();
+    coordinator.mark_foreign_release_submitted(first).unwrap();
+    commit_frame(&mut coordinator, first, false);
+    assert_eq!(coordinator.page_flip_complete(first), Ok(None));
+
+    submit_for_render(&mut coordinator, second);
+    coordinator.mark_gpu_complete(second).unwrap();
+    coordinator.mark_foreign_release_submitted(second).unwrap();
+    commit_frame(&mut coordinator, second, false);
+
+    assert_eq!(coordinator.page_flip_complete(second), Ok(Some(first)));
+    assert!(!coordinator.is_available(first).unwrap());
+
+    coordinator.mark_foreign_acquire_submitted(first).unwrap();
+    assert!(!coordinator.is_available(first).unwrap());
+
+    coordinator.mark_foreign_acquired(first).unwrap();
+    assert!(coordinator.is_available(first).unwrap());
+}
+
+#[test]
 fn separate_outputs_keep_independent_frame_lifecycles() {
     let mut left_output = DrmOutputFrameCoordinator::new();
     let mut right_output = DrmOutputFrameCoordinator::new();
