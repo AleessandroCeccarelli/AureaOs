@@ -384,10 +384,18 @@ fi
 
 if ! run_in_rootfs dpkg-query -W \
   -f='${Status}\n' systemd linux-image-amd64 |
-  grep -q '^install ok installed$'; then
+  grep -q '^install ok installed ${CODENAME} (${ARCH}) creata, configurata e verificata."
+echo "Percorso: ${TARGET}"
+echo "Nota: non è ancora un'immagine avviabile o installabile."
+
+; then
   echo "Errore: verifica dei pacchetti fondamentali non riuscita." >&2
   exit 1
 fi
+
+# Audit real ownership and mode bits after package installation. Run as root
+# because the rootfs /root directory is intentionally not readable by users.
+sudo bash "$REPO_ROOT/tools/security/audit-rootfs-permissions.sh" "$TARGET"
 
 echo "Rootfs Debian ${CODENAME} (${ARCH}) creata, configurata e verificata."
 echo "Percorso: ${TARGET}"
