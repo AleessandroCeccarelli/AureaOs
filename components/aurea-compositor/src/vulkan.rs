@@ -18,11 +18,11 @@ mod draw_pass;
 #[cfg(feature = "drm")]
 mod drm_compatibility;
 #[cfg(feature = "drm")]
+mod drm_frame_pool;
+#[cfg(feature = "drm")]
 mod drm_framebuffer;
 #[cfg(feature = "drm")]
 mod drm_image;
-#[cfg(feature = "drm")]
-mod drm_frame_pool;
 mod dynamic_rendering;
 mod external_memory;
 mod format_capabilities;
@@ -84,14 +84,12 @@ pub use drm_compatibility::{
     DrmVulkanCompatibility, DrmVulkanCompatibilityStatus, DrmVulkanFormat,
 };
 #[cfg(feature = "drm")]
+pub use drm_frame_pool::{VulkanDrmFramePool, VulkanDrmFramePoolError, VulkanDrmScanoutFrame};
+#[cfg(feature = "drm")]
 pub use drm_framebuffer::{VulkanDrmFramebuffer, VulkanDrmFramebufferError};
 #[cfg(feature = "drm")]
 pub use drm_image::{
     VulkanDrmImage, VulkanDrmImageAllocator, VulkanDrmImageError, VulkanDrmPlaneLayout,
-};
-#[cfg(feature = "drm")]
-pub use drm_frame_pool::{
-    VulkanDrmFramePool, VulkanDrmFramePoolError, VulkanDrmScanoutFrame,
 };
 pub use dynamic_rendering::{VulkanColorLoad, VulkanDynamicRenderingScope};
 pub use external_memory::VulkanExternalMemoryCapabilities;
