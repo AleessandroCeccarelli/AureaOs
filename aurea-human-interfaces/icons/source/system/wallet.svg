@@ -1,77 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<!-- AureaOS Wallet icon, faithfully redrawn from the user-approved reference. Pure SVG paths and gradients; transparent canvas. -->
+<!-- AureaOS Wallet: vector redraw guided by the exact user-approved shield image. Transparent canvas. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 580 665" role="img" aria-labelledby="title desc">
 <title id="title">AureaOS Wallet</title>
-<desc id="desc">The approved glossy blue shield with layered cyan and silver bevels and a luminous central keyhole. Transparent background.</desc>
+<desc id="desc">Glossy deep-blue shield with layered silver and cyan bevels and a dark luminous keyhole at the center. Transparent background.</desc>
 <defs>
- <linearGradient id="outerSilver" x1="70" y1="10" x2="510" y2="640" gradientUnits="userSpaceOnUse">
-  <stop stop-color="#ffffff"/><stop offset=".13" stop-color="#bcecff"/><stop offset=".27" stop-color="#f5ffff"/><stop offset=".48" stop-color="#8bb9d7"/><stop offset=".7" stop-color="#f3ffff"/><stop offset=".87" stop-color="#91c4e3"/><stop offset="1" stop-color="#faffff"/>
+ <linearGradient id="silver" x1="35" y1="18" x2="550" y2="650" gradientUnits="userSpaceOnUse">
+  <stop stop-color="#faffff"/><stop offset=".12" stop-color="#a8e4ff"/><stop offset=".25" stop-color="#f5ffff"/><stop offset=".46" stop-color="#83b6d9"/><stop offset=".65" stop-color="#e9fbff"/><stop offset=".82" stop-color="#80b8dc"/><stop offset="1" stop-color="#faffff"/>
  </linearGradient>
- <linearGradient id="cyan" x1="60" y1="35" x2="525" y2="610" gradientUnits="userSpaceOnUse">
-  <stop stop-color="#e8ffff"/><stop offset=".18" stop-color="#19dfff"/><stop offset=".4" stop-color="#a5faff"/><stop offset=".65" stop-color="#008ee7"/><stop offset=".86" stop-color="#d8ffff"/><stop offset="1" stop-color="#37cfff"/>
+ <linearGradient id="cyan" x1="30" y1="30" x2="550" y2="620" gradientUnits="userSpaceOnUse">
+  <stop stop-color="#eaffff"/><stop offset=".2" stop-color="#13d9ff"/><stop offset=".42" stop-color="#9af8ff"/><stop offset=".68" stop-color="#078fe0"/><stop offset=".86" stop-color="#dfffff"/><stop offset="1" stop-color="#29cfff"/>
  </linearGradient>
- <linearGradient id="face" x1="90" y1="125" x2="490" y2="570" gradientUnits="userSpaceOnUse">
-  <stop stop-color="#6ce4ff"/><stop offset=".2" stop-color="#168ed4"/><stop offset=".48" stop-color="#0758a8"/><stop offset=".75" stop-color="#06448e"/><stop offset="1" stop-color="#087cc4"/>
+ <linearGradient id="enamel" x1="65" y1="110" x2="510" y2="570" gradientUnits="userSpaceOnUse">
+  <stop stop-color="#62dcff"/><stop offset=".2" stop-color="#168bd1"/><stop offset=".48" stop-color="#0755a6"/><stop offset=".76" stop-color="#06438d"/><stop offset="1" stop-color="#087ac2"/>
  </linearGradient>
- <linearGradient id="leftFacet" x1="80" y1="190" x2="290" y2="565" gradientUnits="userSpaceOnUse">
-  <stop stop-color="#b5f7ff" stop-opacity=".62"/><stop offset=".5" stop-color="#51c9f4" stop-opacity=".18"/><stop offset="1" stop-color="#00356f" stop-opacity=".12"/>
+ <linearGradient id="left" x1="75" y1="180" x2="290" y2="560" gradientUnits="userSpaceOnUse">
+  <stop stop-color="#b4f7ff" stop-opacity=".5"/><stop offset=".48" stop-color="#5bcdf5" stop-opacity=".18"/><stop offset="1" stop-color="#00346e" stop-opacity=".12"/>
  </linearGradient>
- <linearGradient id="rightFacet" x1="290" y1="150" x2="510" y2="570" gradientUnits="userSpaceOnUse">
-  <stop stop-color="#003c85" stop-opacity=".32"/><stop offset=".55" stop-color="#001d5d" stop-opacity=".1"/><stop offset="1" stop-color="#001846" stop-opacity=".45"/>
+ <linearGradient id="right" x1="290" y1="140" x2="515" y2="580" gradientUnits="userSpaceOnUse">
+  <stop stop-color="#002d70" stop-opacity=".26"/><stop offset=".52" stop-color="#001e5b" stop-opacity=".08"/><stop offset="1" stop-color="#001943" stop-opacity=".38"/>
  </linearGradient>
- <linearGradient id="keyEdge" x1="190" y1="225" x2="385" y2="530" gradientUnits="userSpaceOnUse">
-  <stop stop-color="#ffffff"/><stop offset=".18" stop-color="#a8ffff"/><stop offset=".48" stop-color="#00dfff"/><stop offset=".8" stop-color="#48eaff"/><stop offset="1" stop-color="#eaffff"/>
+ <linearGradient id="keyline" x1="195" y1="230" x2="385" y2="535" gradientUnits="userSpaceOnUse">
+  <stop stop-color="#ffffff"/><stop offset=".2" stop-color="#aaffff"/><stop offset=".48" stop-color="#00dfff"/><stop offset=".78" stop-color="#57efff"/><stop offset="1" stop-color="#f4ffff"/>
  </linearGradient>
- <radialGradient id="keyFill" cx=".36" cy=".24" r=".9">
-  <stop stop-color="#071c45"/><stop offset=".65" stop-color="#03183d"/><stop offset="1" stop-color="#052c63"/>
+ <radialGradient id="keydark" cx=".38" cy=".25" r=".86">
+  <stop stop-color="#071c45"/><stop offset=".72" stop-color="#03183c"/><stop offset="1" stop-color="#052b60"/>
  </radialGradient>
- <radialGradient id="keyGlow">
-  <stop stop-color="#ffffff"/><stop offset=".12" stop-color="#cfffff"/><stop offset=".38" stop-color="#00dfff" stop-opacity=".8"/><stop offset="1" stop-color="#00cfff" stop-opacity="0"/>
+ <radialGradient id="pinlight">
+  <stop stop-color="#fff"/><stop offset=".16" stop-color="#dfffff"/><stop offset=".43" stop-color="#19e3ff" stop-opacity=".85"/><stop offset="1" stop-color="#00cfff" stop-opacity="0"/>
  </radialGradient>
- <filter id="shadow" x="-25%" y="-20%" width="150%" height="150%">
-  <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="b"/><feOffset dy="7" result="o"/>
-  <feColorMatrix in="o" type="matrix" values="0 0 0 0 .02 0 0 0 0 .13 0 0 0 0 .27 0 0 0 .36 0" result="s"/>
+ <filter id="shadow" x="-25%" y="-20%" width="150%" height="155%">
+  <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="b"/><feOffset dy="8" result="o"/>
+  <feColorMatrix in="o" type="matrix" values="0 0 0 0 .02 0 0 0 0 .12 0 0 0 0 .26 0 0 0 .42 0" result="s"/>
   <feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge>
  </filter>
  <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
-  <feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  <feGaussianBlur stdDeviation="10" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
  </filter>
- <filter id="wideGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="20"/></filter>
- <clipPath id="innerClip"><path d="M290 70 C350 113 423 143 510 155 L502 365 C495 485 414 565 290 613 C166 565 85 485 78 365 L70 155 C157 143 230 113 290 70Z"/></clipPath>
- <path id="keyhole" d="M290 230 C242 230 204 268 204 316 C204 350 223 379 252 394 L221 517 Q219 528 232 528 L348 528 Q361 528 359 517 L328 394 C357 379 376 350 376 316 C376 268 338 230 290 230Z"/>
+ <filter id="wide" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="23"/></filter>
+ <clipPath id="faceClip"><path d="M290 70 C354 117 425 145 505 164 L498 357 C492 467 416 544 290 592 C164 544 88 467 82 357 L75 164 C155 145 226 117 290 70Z"/></clipPath>
+ <path id="keyhole" d="M290 231 C242 231 204 269 204 317 C204 352 223 380 252 395 L221 516 Q218 529 232 529 L348 529 Q362 529 359 516 L328 395 C357 380 376 352 376 317 C376 269 338 231 290 231Z"/>
 </defs>
 
 <g filter="url(#shadow)">
- <!-- Outer silver shield and raised rim -->
- <path d="M290 8 C365 67 446 101 558 128 L550 369 C543 505 447 601 290 655 C133 601 37 505 30 369 L22 128 C134 101 215 67 290 8Z"
-       fill="url(#outerSilver)" stroke="#f8ffff" stroke-width="5" stroke-linejoin="round"/>
- <!-- Cyan illuminated raised bevel -->
- <path d="M290 27 C360 83 441 116 540 140 L532 365 C526 490 436 581 290 630 C144 581 54 490 48 365 L40 140 C139 116 220 83 290 27Z"
-       fill="#07539b" stroke="url(#cyan)" stroke-width="8" stroke-linejoin="round"/>
- <!-- Dark recessed separation line -->
- <path d="M290 48 C358 101 432 130 520 151 L512 360 C506 477 424 558 290 606 C156 558 74 477 68 360 L60 151 C148 130 222 101 290 48Z"
-       fill="#032c70" stroke="#06245f" stroke-width="7" stroke-linejoin="round"/>
- <!-- Blue enamel face -->
- <path d="M290 66 C354 117 425 145 505 164 L498 357 C492 467 416 544 290 592 C164 544 88 467 82 357 L75 164 C155 145 226 117 290 66Z"
-       fill="url(#face)" stroke="url(#outerSilver)" stroke-width="4" stroke-linejoin="round"/>
- <g clip-path="url(#innerClip)">
-  <path d="M75 164 C155 145 226 117 290 66 L290 592 C164 544 88 467 82 357Z" fill="url(#leftFacet)"/>
-  <path d="M290 66 C354 117 425 145 505 164 L498 357 C492 467 416 544 290 592Z" fill="url(#rightFacet)"/>
-  <path d="M290 66 L290 594" stroke="#c6faff" stroke-opacity=".2" stroke-width="2"/>
+ <!-- Broad silver shield rim -->
+ <path d="M290 8 C365 67 446 101 558 128 L550 369 C543 505 447 601 290 655 C133 601 37 505 30 369 L22 128 C134 101 215 67 290 8Z" fill="url(#silver)" stroke="#faffff" stroke-width="5" stroke-linejoin="round"/>
+ <!-- Cyan raised bevel -->
+ <path d="M290 27 C360 83 441 116 540 140 L532 365 C526 490 436 581 290 630 C144 581 54 490 48 365 L40 140 C139 116 220 83 290 27Z" fill="#07539b" stroke="url(#cyan)" stroke-width="8" stroke-linejoin="round"/>
+ <!-- Dark inset groove -->
+ <path d="M290 48 C358 101 432 130 520 151 L512 360 C506 477 424 558 290 606 C156 558 74 477 68 360 L60 151 C148 130 222 101 290 48Z" fill="#032c70" stroke="#08265d" stroke-width="7" stroke-linejoin="round"/>
+ <!-- Blue enamel shield -->
+ <path d="M290 70 C354 117 425 145 505 164 L498 357 C492 467 416 544 290 592 C164 544 88 467 82 357 L75 164 C155 145 226 117 290 70Z" fill="url(#enamel)" stroke="url(#silver)" stroke-width="4" stroke-linejoin="round"/>
+ <g clip-path="url(#faceClip)">
+  <path d="M75 164 C155 145 226 117 290 70 L290 592 C164 544 88 467 82 357Z" fill="url(#left)"/>
+  <path d="M290 70 C354 117 425 145 505 164 L498 357 C492 467 416 544 290 592Z" fill="url(#right)"/>
+  <path d="M290 70 L290 592" stroke="#d9ffff" stroke-opacity=".14" stroke-width="2"/>
  </g>
- <!-- Inner fine cyan and silver contour -->
- <path d="M76 164 C155 145 226 117 290 66 C354 117 425 145 504 164 L498 358 C491 468 416 544 290 592 C164 544 89 468 82 358Z"
-       fill="none" stroke="#72eaff" stroke-opacity=".78" stroke-width="4" stroke-linejoin="round"/>
- <path d="M88 176 C163 158 232 130 290 84 C348 130 417 158 492 176" fill="none" stroke="#eaffff" stroke-opacity=".78" stroke-width="5" stroke-linecap="round"/>
- <path d="M85 357 C91 465 166 535 290 582 C414 535 489 465 495 357" fill="none" stroke="#b9f5ff" stroke-opacity=".34" stroke-width="4"/>
+ <!-- Inner luminous contour and polished highlights -->
+ <path d="M76 164 C155 145 226 117 290 70 C354 117 425 145 504 164 L498 358 C491 468 416 544 290 592 C164 544 89 468 82 358Z" fill="none" stroke="#51ddff" stroke-opacity=".76" stroke-width="4" stroke-linejoin="round"/>
+ <path d="M82 162 C158 145 226 117 290 75 C354 117 422 145 498 162" fill="none" stroke="#f0ffff" stroke-opacity=".8" stroke-width="5" stroke-linecap="round"/>
+ <path d="M82 358 C90 466 166 536 290 584 C414 536 490 466 498 358" fill="none" stroke="#baf5ff" stroke-opacity=".36" stroke-width="4"/>
 </g>
 
-<!-- Central keyhole: circular head, tapered lower opening, luminous outline -->
-<use href="#keyhole" fill="#00dfff" opacity=".8" filter="url(#wideGlow)"/>
-<use href="#keyhole" fill="url(#keyFill)" stroke="#00dfff" stroke-width="13" stroke-linejoin="round" filter="url(#glow)"/>
-<use href="#keyhole" fill="none" stroke="url(#keyEdge)" stroke-width="4" stroke-linejoin="round"/>
-<path d="M239 278 C252 250 276 238 307 240" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity=".96"/>
-<circle cx="290" cy="316" r="19" fill="url(#keyGlow)" filter="url(#glow)"/>
-<circle cx="290" cy="316" r="4.5" fill="#ffffff"/>
+<!-- The central dark keyhole with a bright cyan-white edge -->
+<use href="#keyhole" fill="#00dfff" opacity=".85" filter="url(#wide)"/>
+<use href="#keyhole" fill="url(#keydark)" stroke="#00dfff" stroke-width="13" stroke-linejoin="round" filter="url(#glow)"/>
+<use href="#keyhole" fill="none" stroke="url(#keyline)" stroke-width="4" stroke-linejoin="round"/>
+<path d="M238 278 C252 249 278 238 307 241" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity=".96"/>
+<circle cx="290" cy="317" r="20" fill="url(#pinlight)" filter="url(#glow)"/>
+<circle cx="290" cy="317" r="4.5" fill="#ffffff"/>
 </svg>
