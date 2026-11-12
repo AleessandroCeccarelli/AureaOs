@@ -11,7 +11,7 @@ use smithay::{
     backend::{
         allocator::dmabuf::{Dmabuf, DmabufFlags, MAX_PLANES},
         drm::{
-            DrmNode,
+            DrmNode, DrmDeviceFd,
             gbm::{GbmFramebuffer, framebuffer_from_dmabuf},
         },
     },
@@ -91,19 +91,19 @@ impl Error for VulkanDrmFramebufferError {}
 /// node, obtains the driver's GEM handles and registers the framebuffer.
 /// The GBM wrapper owns framebuffer retirement. Keep this object alive until
 /// KMS has released the framebuffer; GPU completion alone is not sufficient.
-pub struct VulkanDrmFramebuffer<'drm> {
+pub struct VulkanDrmFramebuffer {
     framebuffer: GbmFramebuffer,
     node: DrmNode,
-    _device: &'drm DrmDevice,
+    _device_fd: DrmDeviceFd,
 }
 
-impl<'drm> VulkanDrmFramebuffer<'drm> {
+impl VulkanDrmFramebuffer {
     /// Imports the image into the GBM device for the exact DRM node and
     /// registers a modifier-aware framebuffer. Legacy fallback is disabled.
     pub fn register(
-        device: &'drm DrmDevice,
+        device: &DrmDevice,
         gbm_devices: &GbmDeviceManager,
-        image: &VulkanDrmImage<'_>,
+        image: &VulkanDrmImage,
     ) -> Result<Self, VulkanDrmFramebufferError> {
         if image.width() == 0
             || image.height() == 0
@@ -176,7 +176,7 @@ impl<'drm> VulkanDrmFramebuffer<'drm> {
         Ok(Self {
             framebuffer,
             node,
-            _device: device,
+            _device_fd: device.fd().clone(),
         })
     }
 
