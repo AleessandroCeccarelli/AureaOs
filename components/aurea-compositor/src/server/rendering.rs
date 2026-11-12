@@ -17,16 +17,14 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) {
         ..
     } = state;
 
-    let pending_outputs = drm_surfaces
-        .iter()
-        .flat_map(|(node, surfaces)| {
-            surfaces.iter().filter_map(move |(output_id, _)| {
-                compositor
-                    .has_pending_output_frame(*output_id)
-                    .then_some((*node, *output_id))
-            })
-        })
-        .collect::<Vec<_>>();
+    let mut pending_outputs = Vec::new();
+    for (node, surfaces) in drm_surfaces.iter() {
+        for (output_id, _) in surfaces.iter() {
+            if compositor.has_pending_output_frame(*output_id) {
+                pending_outputs.push((*node, *output_id));
+            }
+        }
+    }
 
     for (node, output_id) in pending_outputs {
         let Some(device) = drm_devices.get(node) else {
