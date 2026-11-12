@@ -90,13 +90,13 @@ pub struct VulkanDrmScanoutFrame {
 impl VulkanDrmScanoutFrame {
     pub fn allocate(
         logical_device: Arc<VulkanLogicalDevice>,
-        drm_device: &'drm DrmDevice,
+        drm_device: &DrmDevice,
         gbm_devices: &GbmDeviceManager,
         width: u32,
         height: u32,
         format: DrmVulkanFormat,
         usage: vk::ImageUsageFlags,
-     ) -> Result<Self, VulkanDrmFramePoolError> {
+) -> Result<Self, VulkanDrmFramePoolError> {
         let allocator = VulkanDrmImageAllocator::new(logical_device)?;
         let image = allocator.allocate_exportable(width, height, format, usage)?;
         let framebuffer = VulkanDrmFramebuffer::register(drm_device, gbm_devices, &image)?;
