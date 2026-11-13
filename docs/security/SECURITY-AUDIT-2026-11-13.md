@@ -9,7 +9,7 @@
 
 ## Executive summary
 
-The current baseline contains several good defensive measures: Rust ownership for device handles, libseat-mediated DRM opening, Wayland socket-name validation, live-client and bounded-surface limits, explicit KMS surface cleanup, a restrictive bootstrap umask, package-name validation, rejection of pre-existing and repository-local rootfs targets, and package configuration inside systemd-nspawn.
+The current baseline contains several good defensive measures: Rust ownership for device handles, libseat-mediated DRM opening, Wayland socket-name validation, live-client and bounded Wayland-object limits, explicit KMS surface cleanup, a restrictive bootstrap umask, package-name validation, rejection of pre-existing and repository-local rootfs targets, and package configuration inside systemd-nspawn.
 
 The repository is still an early development system. The remaining gaps below must be addressed before describing the bootstrap or physical compositor path as hardened.
 
@@ -21,9 +21,9 @@ The repository is still an early development system. The remaining gaps below mu
 
 **Original exposure:** the server limited simultaneous Wayland clients to 64, but did not bound the number of `wl_surface` resources created by one client or by the compositor. A connected local client could create a large number of surfaces and consume compositor memory.
 
-**Source remediation (2026-11-13):** added a dedicated `WaylandResourceLimits` module with a maximum of 256 committed surfaces per client and 4096 globally. Since Smithay 0.7 does not expose a surface-creation callback, a surface is counted on its first commit; a Smithay destruction hook releases the quota, including on client disconnect. A client exceeding either limit is disconnected rather than merely sent an advisory close event. Boundary tests cover both limits.
+**Source remediation (2026-11-13):** added `server/resource_limits.rs`, which enumerates all Wayland objects for every connected client after each display dispatch. A client is disconnected above 2048 objects; a global budget of 16384 objects is enforced by disconnecting the largest object owners until the total is back within budget. This counts uncommitted surfaces and other protocol objects, not only managed windows. Boundary tests cover per-client and global thresholds.
 
-**Residual scope:** surfaces created but never committed are not counted because the current Smithay handler API has no creation callback; those objects can still be used for a local memory-exhaustion attempt. This also does not bound every other Wayland protocol object. Before enabling untrusted clients or more protocol globals, add a request/resource quota at the Wayland dispatch boundary for uncommitted surfaces and other object classes (regions, callbacks, popups, data offers and buffers). Validate with hostile-client flood tests on Fedora.
+**Residual scope:** the check runs after a dispatch batch, so a client can temporarily allocate objects during one batch before the next quota scan. The thresholds must be validated against normal AureaOS desktop workloads on Fedora; add a hostile-client flood test and consider request-batch limits if transient peaks prove excessive.
 
 
 
