@@ -31,6 +31,7 @@ pub struct VulkanDrmPlaneLayout {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VulkanDrmImageError {
     MissingInteropExtensions,
+    MissingDrmFormatModifierExtension,
     UnsupportedFourcc,
     InvalidDimensions,
     InvalidPlaneCount,
@@ -49,6 +50,7 @@ impl fmt::Display for VulkanDrmImageError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::MissingInteropExtensions => f.write_str("Vulkan DMA-BUF interoperability extensions are unavailable"),
+            Self::MissingDrmFormatModifierExtension => f.write_str("Vulkan DRM format modifier tiling is unavailable"),
             Self::UnsupportedFourcc => f.write_str("DRM FourCC has no Vulkan format mapping"),
             Self::InvalidDimensions => f.write_str("DRM image dimensions must be non-zero"),
             Self::InvalidPlaneCount => f.write_str("DRM modifier memory-plane count is invalid"),
@@ -76,6 +78,9 @@ impl VulkanDrmImageAllocator {
     pub fn new(device: Arc<VulkanLogicalDevice>) -> Result<Self, VulkanDrmImageError> {
         if !device.extension_plan().supports_dmabuf_interop() {
             return Err(VulkanDrmImageError::MissingInteropExtensions);
+        }
+        if !device.extension_plan().supports_drm_format_modifier() {
+            return Err(VulkanDrmImageError::MissingDrmFormatModifierExtension);
         }
         Ok(Self { device })
     }
