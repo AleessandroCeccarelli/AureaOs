@@ -59,6 +59,16 @@ else
   fi
 fi
 
+DRI_PATH="${AUREAOS_DRI_PATH:-/dev/dri}"
+shopt -s nullglob
+drm_nodes=("$DRI_PATH"/card*)
+shopt -u nullglob
+if (("${#drm_nodes[@]}" == 0)); then
+  fail "Nessun dispositivo DRM/KMS trovato in $DRI_PATH"
+else
+  printf 'DRM/KMS: %d dispositivo/i rilevato/i\\n' "${#drm_nodes[@]}"
+fi
+
 if ! command -v "$VULKANINFO_BIN" >/dev/null 2>&1; then
   fail "vulkaninfo non disponibile: installare vulkan-tools e i driver Vulkan della GPU"
 else
