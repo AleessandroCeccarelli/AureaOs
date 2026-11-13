@@ -304,10 +304,9 @@ impl DrmSurfaceManager {
     /// All surfaces are attempted even if one clear operation fails. Resources
     /// are then dropped so callers can continue the remaining device teardown.
     pub fn clear(&mut self) -> Result<(), String> {
-        let errors = clear_each(
-            self.surfaces.values(),
-            |managed| managed.surface.clear().map_err(|error| error.to_string()),
-        );
+        let errors = clear_each(self.surfaces.values(), |managed| {
+            managed.surface.clear().map_err(|error| error.to_string())
+        });
 
         self.surfaces.clear();
         self.crtc_owners.clear();
