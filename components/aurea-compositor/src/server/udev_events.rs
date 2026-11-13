@@ -155,9 +155,20 @@ fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io::Result<()>
     initialize_vulkan_backend(state, node);
 
     let result = (|| {
+        if !state.gbm_devices.contains(node) {
+            return Err(io::Error::other(format!(
+                "DRM device {node} has no usable GBM allocator"
+            )));
+        }
+        if !state.vulkan_backends.contains_key(&node) {
+            return Err(io::Error::other(format!(
+                "DRM device {node} has no compatible Vulkan backend"
+            )));
+        }
+
         register_device_notifier(state, node)?;
-        refresh_device_outputs(state, node)?;
-        initialize_drm_surfaces(state, node)
+        initialize_drm_surfaces(state, node)?;
+        refresh_device_outputs(state, node)
     })();
 
     if let Err(error) = result {
@@ -193,13 +204,31 @@ fn initialize_vulkan_backend(state: &mut WaylandState, node: DrmNode) {
 }
 
 fn initialize_drm_surfaces(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
+    if !state.gbm_devices.contains(node) || !state.vulkan_backends.contains_key(&node) {
+        return Err(io::Error::other(format!(
+            "DRM device {node} is not graphics-ready (GBM/Vulkan unavailable)"
+        )));
+    }
+
+    // Never drop an existing manager until every KMS surface was disabled.
+    if let Some(existing) = state.drm_surfaces.get_mut(&node) {
+        existing.clear().map_err(|error| {
+            io::Error::other(format!(
+                "cannot replace DRM surfaces for {node}; previous surfaces remain owned: {error}"
+            ))
+        })?;
+    }
     state.drm_surfaces.remove(&node);
+
     let manager = {
         let Some(device) = state.drm_devices.get_mut(node) else {
-            return Ok(());
+            return Err(io::Error::other(format!(
+                "DRM device {node} disappeared during surface initialization"
+            )));
         };
         crate::drm::surfaces::DrmSurfaceManager::initialize(device).map_err(io::Error::other)?
     };
+
     state.drm_surfaces.insert(node, manager);
     state.compositor.request_all_output_frames();
     Ok(())
@@ -327,8 +356,8 @@ fn changed_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
 
     if state.session_active {
         if state.drm_devices.contains(node) {
-            refresh_device_outputs(state, node)?;
             initialize_drm_surfaces(state, node)?;
+            refresh_device_outputs(state, node)?;
             forget_changed_device(&mut state.udev_changed_devices, node);
         } else {
             open_and_integrate(state, node)?;
