@@ -12,7 +12,7 @@ use smithay::{
     reexports::wayland_server::{
         Client,
         backend::{ClientData, ClientId, DisconnectReason},
-        protocol::wl_surface::WlSurface,
+        protocol::wl_surface::WlSurface,\n        Resource,
     },
     wayland::compositor::{
         BufferAssignment, CompositorClientState, CompositorHandler, CompositorState,
@@ -61,6 +61,26 @@ impl CompositorHandler for AureaCompositor {
             .get_data::<AureaClientState>()
             .expect("AureaClientState must be attached to every client")
             .compositor_state
+    }
+
+    fn new_surface(&mut self, surface: &WlSurface) {
+        let client = surface.client();
+        let client_id = client.id();
+
+        if !self
+            .resource_limits
+            .register_surface(surface.id(), client_id.clone())
+        {
+            // Disconnect clients that exceed either the per-client or global
+            // surface budget. Sending a close event would be advisory only.
+            self.display_handle()
+                .backend_handle()
+                .kill_client(client_id, DisconnectReason::ConnectionClosed);
+        }
+    }
+
+    fn destroyed(&mut self, surface: &WlSurface) {
+        self.resource_limits.unregister_surface(&surface.id());
     }
 
     fn commit(&mut self, surface: &WlSurface) {
