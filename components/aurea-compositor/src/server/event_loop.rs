@@ -86,23 +86,50 @@ impl WaylandServer {
     }
 
     /// Runs the server until shutdown is requested.
+    ///
+    /// KMS outputs are explicitly disabled before their GBM/Vulkan resources
+    /// are released, both on normal shutdown and when the event loop fails.
     pub fn run(&mut self, shutdown: &AtomicBool) -> io::Result<()> {
         #[cfg(feature = "drm")]
         self.state.compositor.request_all_output_frames();
 
-        while !shutdown.load(Ordering::Acquire) {
-            self.event_loop
-                .dispatch(Duration::from_millis(100), &mut self.state)
-                .map_err(io::Error::other)?;
+        let run_result = (|| {
+            while !shutdown.load(Ordering::Acquire) {
+                self.event_loop
+                    .dispatch(Duration::from_millis(100), &mut self.state)
+                    .map_err(io::Error::other)?;
 
-            #[cfg(feature = "drm")]
-            super::rendering::render_pending_outputs(&mut self.state);
+                #[cfg(feature = "drm")]
+                super::rendering::render_pending_outputs(&mut self.state);
 
-            if let Some(error) = self.state.error.take() {
-                return Err(error);
+                if let Some(error) = self.state.error.take() {
+                    return Err(error);
+                }
             }
-        }
 
-        Ok(())
+            Ok(())
+        })();
+
+        #[cfg(feature = "drm")]
+        let cleanup_result = {
+            let surface_error = super::session_events::clear_drm_surfaces(&mut self.state);
+            super::gbm_lifecycle::clear_gbm_devices(&mut self.state);
+            self.state.vulkan_backends.clear();
+
+            surface_error.map_or(Ok(()), |error| Err(io::Error::other(error)))
+        };
+
+        #[cfg(not(feature = "drm"))]
+        let cleanup_result: io::Result<()> = Ok(());
+
+        match (run_result, cleanup_result) {
+            (Err(primary), Err(cleanup)) => {
+                eprintln!("AureaOS: graphics cleanup also failed during shutdown: {cleanup}");
+                Err(primary)
+            }
+            (Err(primary), Ok(())) => Err(primary),
+            (Ok(()), Err(cleanup)) => Err(cleanup),
+            (Ok(()), Ok(())) => Ok(()),
+        }
     }
 }
