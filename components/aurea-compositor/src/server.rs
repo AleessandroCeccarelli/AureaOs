@@ -17,6 +17,7 @@ mod gbm_lifecycle;
 mod input;
 
 mod output;
+mod resource_limits;
 mod seat;
 mod session;
 mod session_events;
