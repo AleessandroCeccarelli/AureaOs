@@ -41,12 +41,12 @@ EOF
 
 make_valid_rootfs() {
   local rootfs="$1"
-  local shadow_gid= messagebus_gid=999
+  local shadow_gid= messagebus_gid=999 relative
 
   shadow_gid="$(getent group shadow | cut -d: -f3)"
   mkdir -p "$rootfs"/{etc,usr/bin,usr/sbin,usr/lib/dbus-1.0,var/tmp,root,tmp,dev/shm}
   touch "$rootfs/etc/passwd" "$rootfs/etc/group" "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
-  printf 'root:x:0:\\nshadow:x:%s:\\nmessagebus:x:%s:\\n' "$shadow_gid" "$messagebus_gid" > "$rootfs/etc/group"
+  printf 'root:x:0:\nshadow:x:%s:\nmessagebus:x:%s:\n' "$shadow_gid" "$messagebus_gid" > "$rootfs/etc/group"
 
   local -a root_suid_files=(
     usr/bin/chfn
@@ -72,7 +72,9 @@ make_valid_rootfs() {
 
   chown -R root:root "$rootfs"
   chown "root:$shadow_gid" "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
-  chown "root:$shadow_gid" "$rootfs"/${shadow_sgid_files[@]}
+  for relative in "${shadow_sgid_files[@]}"; do
+    chown "root:$shadow_gid" "$rootfs/$relative"
+  done
   chown "root:$messagebus_gid" "$rootfs/usr/lib/dbus-1.0/dbus-daemon-launch-helper"
 
   chmod 0755 "$rootfs" "$rootfs/etc" "$rootfs/usr" "$rootfs/var"
@@ -80,8 +82,12 @@ make_valid_rootfs() {
   chmod 1777 "$rootfs/tmp" "$rootfs/var/tmp" "$rootfs/dev/shm"
   chmod 0644 "$rootfs/etc/passwd" "$rootfs/etc/group"
   chmod 0640 "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
-  chmod 4755 "$rootfs"/${root_suid_files[@]}
-  chmod 2755 "$rootfs"/${shadow_sgid_files[@]}
+  for relative in "${root_suid_files[@]}"; do
+    chmod 4755 "$rootfs/$relative"
+  done
+  for relative in "${shadow_sgid_files[@]}"; do
+    chmod 2755 "$rootfs/$relative"
+  done
   chmod 4754 "$rootfs/usr/lib/dbus-1.0/dbus-daemon-launch-helper"
 }
 
