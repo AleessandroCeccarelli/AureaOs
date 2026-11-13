@@ -1,6 +1,6 @@
 # AureaOS Vulkan renderer foundation
 
-Status: the Vulkan device, resource, rendering-pass, offscreen-readback and DRM/KMS lifecycle foundations are present on `main`. A compositor-owned, clear-only diagnostic scanout path is connected to the Wayland server event loop. It attempts to clear a DRM-compatible Vulkan image, export it through DMA-BUF/GBM, register a KMS framebuffer and submit it to the output's primary plane. It has not been validated on a physical display. The current implementation requires `VK_EXT_image_drm_format_modifier`; devices without that extension are rejected by the DMA-BUF device-extension plan. A linear-tiling DMA-BUF path has not yet been implemented.
+Status: the Vulkan device, resource, rendering-pass, offscreen-readback and DRM/KMS lifecycle foundations are present on `main`. A compositor-owned, clear-only diagnostic scanout path is connected to the Wayland server event loop. It attempts to clear a DRM-compatible Vulkan image, export it through DMA-BUF/GBM, register a KMS framebuffer and submit it to the output's primary plane. It has not been validated on a physical display. The current implementation requires `VK_EXT_image_drm_format_modifier`; devices without that extension are rejected by the DMA-BUF device-extension plan. A linear-tiling DMA-BUF path has not yet been implemented. The scanout ownership-transfer path also requires `VK_EXT_queue_family_foreign`; the extension is treated as optional during generic device creation but scanout refuses to proceed without it.
 
 ## Ownership and device baseline
 
@@ -50,7 +50,7 @@ The repository currently contains:
 - Unit tests for the Vulkan resource, scheduler and DRM presentation lifecycle.
 - No end-to-end test or implementation yet for importing and compositing an actual Wayland client window.
 
-The GitHub Actions workflow checks workspace compilation, DRM/Vulkan compilation, Rust tests, shader compilation and an offscreen Vulkan triangle readback through Mesa lavapipe. These checks do not exercise a physical display or prove that an XDG client window is composited and visible. The most recent workflow failure was in bootstrap-script ShellCheck validation; a correction is committed and its replacement workflow run is being checked.
+The GitHub Actions run `43399396471` completed successfully: workspace compilation, DRM/Vulkan compilation, workspace and compositor tests, shader compilation, offscreen Vulkan triangle readback through Mesa lavapipe, Rust formatting and the Rust dependency security audit all passed. These checks do not exercise a physical display or prove that an XDG client window is composited and visible.
 
 ## Remaining work
 
