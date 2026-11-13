@@ -21,7 +21,7 @@ The repository is still an early development system. The remaining gaps below mu
 
 `tools/security/audit-rootfs-permissions.sh` checks selected ownership/modes for critical paths, scans world-writable regular files and directories across the rootfs (on the rootfs filesystem), checks SUID/SGID entries against an explicit allowlist and exact modes, and scans file capabilities with `getcap`. It does not yet enforce a comprehensive ownership/mode policy for all of `/var`, `/home`, `/run`, service state, or every installed path, and its symlink policy is incomplete.
 
-**Remediation in progress (2026-11-13):** the audit scans world-writable regular files/directories across the rootfs, permits only sticky `1777` shared temporary directories (`/tmp`, `/var/tmp`, `/dev/shm`), rejects SUID/SGID paths outside an explicit initial Debian utility allowlist, enforces the expected `4755` mode for each allowed entry, and fails closed if `getcap` is unavailable, reports capabilities, or exits unsuccessfully during the scan. The bootstrap checks for `getcap` before starting. The allowlist and exact modes have not yet been validated against a completed rootfs generated from the current package profile. **Still required:** fixture-based positive/negative tests, validation against the final installed package profile, and broader service-state ownership/mode and symlink checks.
+**Remediation in progress (2026-11-13):** the audit scans world-writable regular files/directories across the rootfs, permits only sticky `1777` shared temporary directories (`/tmp`, `/var/tmp`, `/dev/shm`), rejects SUID/SGID paths outside an explicit initial Debian utility allowlist, enforces the expected `4755` mode for each allowed entry, and fails closed if `getcap` is unavailable, reports capabilities, or exits unsuccessfully during the scan. The bootstrap checks for `getcap` before starting. The allowlist and exact modes have not yet been validated against a completed rootfs generated from the current package profile. **Additional test coverage added:** `tools/security/tests/test-audit-rootfs-permissions.sh` builds a disposable minimal rootfs fixture and checks valid permissions, accepted and rejected SUID modes, world-writable rejection, and fail-closed behavior when `getcap` exits unsuccessfully. **Still required:** execute this fixture suite on a root-capable host/CI runner, validate the allowlist against the final installed package profile, and add broader service-state ownership/mode and symlink checks.
 
 ### AUR-SEC-002 — systemd-nspawn capability policy is not a demonstrated minimum
 
@@ -91,14 +91,14 @@ These are source-level observations, not proof against all runtime or kernel-lev
 - Startup retains ownership of successfully created KMS surfaces even if logical output registration fails, so they remain available to explicit shutdown cleanup.
 - Udev integration rollback now retains the complete graphics dependency chain if a KMS clear fails, rather than unconditionally removing the surface manager and its dependencies.
 - Rootfs capability scanning now treats `getcap` execution errors as audit failures.
-- Rootfs world-writable checks, SUID/SGID allowlist enforcement, and capability scanning are present in source; no disposable fixture suite or completed-rootfs validation has yet been run.
+- Rootfs world-writable checks, SUID/SGID allowlist enforcement, and capability scanning are present in source. A disposable positive/negative fixture test script has been added but has not yet been executed; no completed-rootfs validation has been run.
 - No post-remediation Fedora build/test run has been performed yet.
 - No physical KMS/display test was performed during this audit.
 - The GitHub commit inspected is the repository baseline identified above.
 
 ## Release gates
 
-1. Validate the rootfs allowlist against a disposable completed Debian rootfs and add fixture-based positive/negative tests.
+1. Execute the new rootfs fixture test suite, then validate the allowlist against a disposable completed Debian rootfs.
 2. Close the bootstrap target-path race with root-owned staging and no-follow/descriptor-relative privileged operations; add replacement tests.
 3. Test the nspawn sandbox with an explicit, measured capability and namespace policy.
 4. Complete KMS quarantine semantics for terminal destruction/device removal and add multi-output fault injection; hotplug rollback retention is only an intermediate mitigation.
