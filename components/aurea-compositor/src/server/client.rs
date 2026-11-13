@@ -12,7 +12,8 @@ use smithay::{
     reexports::wayland_server::{
         Client,
         backend::{ClientData, ClientId, DisconnectReason},
-        protocol::wl_surface::WlSurface,\n        Resource,
+        protocol::wl_surface::WlSurface,
+        Resource,
     },
     wayland::compositor::{
         BufferAssignment, CompositorClientState, CompositorHandler, CompositorState,
