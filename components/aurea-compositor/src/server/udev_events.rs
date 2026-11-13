@@ -571,7 +571,9 @@ pub(super) fn activate_discovered_devices(state: &mut WaylandState) {
                 }
                 Ok(()) => {}
                 Err(error) => {
-                    eprintln!("AureaOS: deferred DRM device integration failed for {node}: {error}");
+                    eprintln!(
+                        "AureaOS: deferred DRM device integration failed for {node}: {error}"
+                    );
                 }
             }
         }
