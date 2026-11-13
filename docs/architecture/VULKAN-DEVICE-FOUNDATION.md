@@ -1,6 +1,6 @@
 # AureaOS Vulkan renderer foundation
 
-Status: the Vulkan device, resource, rendering-pass, offscreen-readback and DRM/KMS lifecycle foundations are present on `main`. GitHub Actions now passes formatting, workspace compilation, workspace tests, DRM/Vulkan compositor tests, GLSL compilation and a real offscreen triangle render/readback on Mesa lavapipe. No physical-display validation is claimed: the interactive Vulkan-to-KMS path is not connected yet.
+Status: the Vulkan device, resource, rendering-pass, offscreen-readback and DRM/KMS lifecycle foundations are present on `main`. A compositor-owned diagnostic scanout path is now connected to the Wayland server startup: it clears a DRM-compatible Vulkan image to a blue diagnostic color, exports it through DMA-BUF/GBM, registers a KMS framebuffer and submits it to the output's primary plane. This code path has not yet been validated on a physical display. GitHub Actions validates compilation and offscreen rendering only; it does not validate physical DRM/KMS scanout.
 
 ## Ownership and device baseline
 
@@ -32,7 +32,7 @@ This is still not a complete scene renderer: texture descriptors, sampled Waylan
 
 The Vulkan frame scheduler uses a bounded ring of independent frame slots. Each slot owns a transient command pool and completion fence. The default is two frames in flight, configurable from one to three. Acquiring a slot waits only for that slot's previous GPU submission. Submitting queues work with its fence without waiting for GPU completion.
 
-GPU completion and display release are separate lifetime events. The DRM frame coordinator and presentation backend track framebuffer ownership and KMS completion per output, including the synchronization requirements for handing Vulkan images to KMS. The remaining integration work is to connect these existing resource and presentation stages to the active renderer path and ensure buffers are not recycled before both sides release them.
+GPU completion and display release are separate lifetime events. The DRM frame coordinator and presentation backend track framebuffer ownership and KMS completion per output, including the synchronization requirements for handing Vulkan images to KMS. The initial diagnostic path now drives these stages through the active output renderer and the Wayland event loop. Framebuffers are retained until KMS reports the page flip and Vulkan reacquires foreign ownership before retirement.
 
 ## Current implementation and validation
 
@@ -46,6 +46,7 @@ The repository currently contains:
 - Offscreen rendering and host-visible pixel readback.
 - GLSL sources and an opt-in GPU smoke test for the offscreen triangle.
 - DRM DMA-BUF layout handling, framebuffer registration and per-output KMS presentation lifecycle components.
+- A connected first-frame Vulkan-to-DRM scanout path that clears the output to a diagnostic blue color.
 - Unit tests for the Vulkan resource, scheduler and DRM presentation lifecycle.
 
 The latest checked GitHub Actions run for `main` passed all four build/test commands:
@@ -59,13 +60,11 @@ The formatting check now passes. The workflow also compiles both GLSL shaders an
 
 ## Remaining work
 
-1. Implement the first interactive Vulkan output path: render into a DRM-compatible image, register its DMA-BUF as a KMS framebuffer and present it on the matching CRTC.
-2. Connect output frame requests and the Wayland event loop to the renderer and KMS completion events.
-3. Put a compositor-owned diagnostic frame on the physical monitor as the first end-to-end scan-out milestone.
-4. Validate GPU-to-KMS synchronization, page-flip completion and framebuffer retirement on the target laptop.
-5. Import Wayland client surface buffers into Vulkan sampled-image resources and descriptors.
-6. Build scene composition, damage tracking and the full interactive frame scheduler.
-7. Implement the actual visual shell as a Wayland client; the current `aurea-shell` crate coordinates application lifecycle and events but does not yet draw the desktop interface.
+1. Run the diagnostic blue frame on the target Fedora laptop and validate physical DRM/KMS scanout.
+2. Verify GPU-to-KMS synchronization, page-flip completion, framebuffer retirement and session pause/resume on physical hardware.
+3. Import Wayland client surface buffers into Vulkan sampled-image resources and descriptors.
+4. Build scene composition, damage tracking and the full interactive frame scheduler.
+5. Implement the actual visual shell as a Wayland client; the current `aurea-shell` crate coordinates application lifecycle and events but does not yet draw the desktop interface.
 
 ## Offscreen execution and readback
 
