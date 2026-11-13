@@ -223,10 +223,14 @@ pub(super) fn build(
 
                 match crate::drm::surfaces::DrmSurfaceManager::initialize(device) {
                     Ok(manager) => manager,
-                    Err(error) => {
+                    Err(failure) => {
+                        let (partial_manager, cause) = failure.into_parts();
                         eprintln!(
-                            "AureaOS: KMS surfaces unavailable for DRM device {node}: {error}"
+                            "AureaOS: KMS surfaces unavailable for DRM device {node}: {cause}"
                         );
+                        // Preserve any surfaces already created before a later
+                        // connector failed. Teardown must retain their KMS owners.
+                        state.drm_surfaces.insert(node, partial_manager);
                         continue;
                     }
                 }
