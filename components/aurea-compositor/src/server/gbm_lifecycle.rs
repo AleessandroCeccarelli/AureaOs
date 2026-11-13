@@ -59,3 +59,21 @@ pub(super) fn remove_gbm_device(state: &mut WaylandState, node: DrmNode) {
 pub(super) fn clear_gbm_devices(state: &mut WaylandState) {
     state.gbm_devices.clear();
 }
+
+/// Returns whether the minimum graphics dependencies for output publication exist.
+pub(super) fn graphics_dependencies_ready(gbm_available: bool, vulkan_available: bool) -> bool {
+    gbm_available && vulkan_available
+}
+
+#[cfg(test)]
+mod readiness_tests {
+    use super::graphics_dependencies_ready;
+
+    #[test]
+    fn output_requires_both_gbm_and_vulkan() {
+        assert!(!graphics_dependencies_ready(false, false));
+        assert!(!graphics_dependencies_ready(false, true));
+        assert!(!graphics_dependencies_ready(true, false));
+        assert!(graphics_dependencies_ready(true, true));
+    }
+}
