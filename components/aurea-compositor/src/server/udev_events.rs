@@ -173,6 +173,18 @@ fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io::Result<()>
 
     if let Err(error) = result {
         remove_device_outputs(state, node);
+
+        // A failed KMS clear means the kernel may still reference buffers
+        // owned by this surface manager. Do not drop the manager or any of
+        // its GBM/Vulkan/DRM dependencies on this rollback path.
+        if let Some(surfaces) = state.drm_surfaces.get_mut(&node) {
+            if let Err(clear_error) = surfaces.clear() {
+                return Err(io::Error::other(format!(
+                    "{error}; rollback could not disable KMS surfaces for {node}: {clear_error}; graphics dependencies remain retained"
+                )));
+            }
+        }
+
         state.drm_surfaces.remove(&node);
         remove_device_notifier(state, node);
         super::gbm_lifecycle::remove_gbm_device(state, node);
