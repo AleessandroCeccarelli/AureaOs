@@ -215,6 +215,19 @@ fn initialize_vulkan_backend(state: &mut WaylandState, node: DrmNode) {
     }
 }
 
+/// Restores native scanout surfaces before publishing their logical outputs.
+///
+/// Keeping this order in one helper prevents hotplug/session recovery from
+/// advertising outputs before a working KMS path exists.
+fn restore_before_publish<C, E>(
+    state: &mut C,
+    restore_surfaces: impl FnOnce(&mut C) -> Result<(), E>,
+    publish_outputs: impl FnOnce(&mut C) -> Result<(), E>,
+) -> Result<(), E> {
+    restore_surfaces(state)?;
+    publish_outputs(state)
+}
+
 fn initialize_drm_surfaces(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
     if !super::gbm_lifecycle::graphics_dependencies_ready(
         state.gbm_devices.contains(node),
@@ -371,8 +384,11 @@ fn changed_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
 
     if state.session_active {
         if state.drm_devices.contains(node) {
-            let restore_result = initialize_drm_surfaces(state, node)
-                .and_then(|()| refresh_device_outputs(state, node));
+            let restore_result = restore_before_publish(
+                state,
+                |state| initialize_drm_surfaces(state, node),
+                |state| refresh_device_outputs(state, node),
+            );
 
             if let Err(error) = restore_result {
                 // Do not leave stale Wayland globals advertising outputs whose
@@ -551,7 +567,11 @@ pub(super) fn activate_discovered_devices(state: &mut WaylandState) {
         // Recreate and validate native KMS surfaces before publishing the
         // refreshed logical outputs. Publishing first can expose outputs that
         // have no working scanout path after session activation.
-        initialize_drm_surfaces(state, node).and_then(|()| refresh_device_outputs(state, node))
+        restore_before_publish(
+            state,
+            |state| initialize_drm_surfaces(state, node),
+            |state| refresh_device_outputs(state, node),
+        )
     });
 
     state.udev_changed_devices = pending;
