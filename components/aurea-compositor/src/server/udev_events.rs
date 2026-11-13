@@ -393,6 +393,19 @@ fn changed_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
 
 fn remove_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
     remove_device_outputs(state, node);
+
+    // A Udev removal event does not prove that every KMS disable operation
+    // completed. Keep the surface manager and all resources it depends on
+    // alive when clear() fails; dropping them here would discard userspace
+    // ownership while the kernel may still reference a scanout framebuffer.
+    if let Some(surfaces) = state.drm_surfaces.get_mut(&node) {
+        surfaces.clear().map_err(|error| {
+            io::Error::other(format!(
+                "DRM device {node} was removed but KMS surfaces could not be cleared; graphics dependencies remain retained: {error}"
+            ))
+        })?;
+    }
+
     state.drm_surfaces.remove(&node);
     remove_device_notifier(state, node);
 
