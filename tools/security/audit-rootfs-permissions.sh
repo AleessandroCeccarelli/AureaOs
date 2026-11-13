@@ -92,7 +92,7 @@ fi
 echo
 echo "Verifica elementi world-writable nell'intera rootfs..."
 # Only the standard shared temporary directories may be world-writable, and
-# only with the sticky bit. Any world-writable regular file is rejected.
+# only with the sticky bit. All other world-writable non-symlink objects fail.
 if find "$ROOTFS" -xdev ! -type l -perm -0002 -print0 >"$SCAN_FILE"; then
   while IFS= read -r -d '' path; do
     relative="${path#"$ROOTFS"/}"
