@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 set -Eeuo pipefail
 
-SCRIPT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)/tools/installer/check-hardware-requirements.sh"
+SCRIPT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd -P)/tools/installer/check-hardware-requirements.sh"
 TMP="$(mktemp -d)"
 trap 'rm -rf -- "$TMP"' EXIT
 
