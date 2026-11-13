@@ -204,7 +204,10 @@ fn initialize_vulkan_backend(state: &mut WaylandState, node: DrmNode) {
 }
 
 fn initialize_drm_surfaces(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
-    if !state.gbm_devices.contains(node) || !state.vulkan_backends.contains_key(&node) {
+    if !super::gbm_lifecycle::graphics_dependencies_ready(
+        state.gbm_devices.contains(node),
+        state.vulkan_backends.contains_key(&node),
+    ) {
         return Err(io::Error::other(format!(
             "DRM device {node} is not graphics-ready (GBM/Vulkan unavailable)"
         )));
