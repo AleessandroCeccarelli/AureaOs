@@ -11,7 +11,7 @@ use smithay::{
     backend::input::Keycode,
     input::{Seat, SeatHandler, SeatState},
     output::Output,
-    reexports::wayland_server::{DisplayHandle, protocol::wl_surface::WlSurface},
+    reexports::wayland_server::{\n        DisplayHandle,\n        backend::{ClientId, ObjectId},\n        protocol::wl_surface::WlSurface,\n    },
     wayland::{compositor::CompositorState, shell::xdg::XdgShellState},
 };
 
@@ -86,6 +86,21 @@ impl AureaCompositor {
     /// Returns the display handle used to enforce server-side resource limits.
     pub(crate) fn display_handle(&self) -> &DisplayHandle {
         &self.display_handle
+    }
+
+    /// Returns whether a surface has already consumed a resource quota.
+    pub(crate) fn has_tracked_surface(&self, surface: &ObjectId) -> bool {
+        self.resource_limits.contains_surface(surface)
+    }
+
+    /// Registers a committed surface against its owning Wayland client.
+    pub(crate) fn register_surface(&mut self, surface: ObjectId, client: ClientId) -> bool {
+        self.resource_limits.register_surface(surface, client)
+    }
+
+    /// Releases a surface's quota when Smithay reports its destruction.
+    pub(crate) fn unregister_surface(&mut self, surface: &ObjectId) {
+        self.resource_limits.unregister_surface(surface);
     }
 
     /// Returns the Smithay compositor protocol state.
