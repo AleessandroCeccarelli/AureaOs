@@ -153,35 +153,67 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
 
         let compatibility =
             DrmVulkanCompatibility::evaluate(&plane, &vulkan_formats, &external_memory);
-        let selected_format = compatibility
-            .formats()
-            .iter()
-            .find(|format| format.code == Fourcc::Xrgb8888)
-            .or_else(|| {
-                compatibility
-                    .formats()
-                    .iter()
-                    .find(|format| format.code == Fourcc::Argb8888)
-            })
-            .or_else(|| compatibility.formats().first())
-            .copied()
-            .ok_or_else(|| {
-                VulkanScanoutError::new(format!(
-                    "No Vulkan color-attachment format is shared with the primary DRM plane: {:?}",
-                    compatibility.status()
-                ))
-            })?;
+        // Prefer common scanout formats, but do not let one failed allocation
+        // prevent trying the other format/modifier combinations negotiated
+        // between Vulkan and the actual KMS primary plane.
+        let mut candidates = Vec::new();
+        for preferred in [Fourcc::Xrgb8888, Fourcc::Argb8888] {
+            if let Some(format) = compatibility
+                .formats()
+                .iter()
+                .find(|format| format.code == preferred)
+                .copied()
+            {
+                candidates.push(format);
+            }
+        }
+        for format in compatibility.formats().iter().copied() {
+            if !candidates
+                .iter()
+                .any(|candidate: &crate::vulkan::DrmVulkanFormat| candidate.code == format.code && candidate.modifier == format.modifier)
+            {
+                candidates.push(format);
+            }
+        }
 
-        let frame = VulkanDrmScanoutFrame::allocate(
-            self.vulkan.shared_device(),
-            self.drm_device,
-            self.gbm_devices,
-            target.width(),
-            target.height(),
-            selected_format,
-            smithay::reexports::ash::vk::ImageUsageFlags::COLOR_ATTACHMENT,
-        )
-        .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
+        if candidates.is_empty() {
+            return Err(VulkanScanoutError::new(format!(
+                "No Vulkan color-attachment format is shared with the primary DRM plane: {:?}",
+                compatibility.status()
+            )));
+        }
+
+        let mut allocation_errors = Vec::new();
+        let mut allocated_frame = None;
+        for candidate in candidates {
+            match VulkanDrmScanoutFrame::allocate(
+                self.vulkan.shared_device(),
+                self.drm_device,
+                self.gbm_devices,
+                target.width(),
+                target.height(),
+                candidate,
+                smithay::reexports::ash::vk::ImageUsageFlags::COLOR_ATTACHMENT,
+            ) {
+                Ok(frame) => {
+                    allocated_frame = Some(frame);
+                    break;
+                }
+                Err(error) => allocation_errors.push(format!(
+                    "{:?}/{}: {}",
+                    candidate.code,
+                    candidate.modifier,
+                    error
+                )),
+            }
+        }
+
+        let frame = allocated_frame.ok_or_else(|| {
+            VulkanScanoutError::new(format!(
+                "All negotiated Vulkan/KMS scanout allocations failed: {}",
+                allocation_errors.join("; ")
+            ))
+        })?;
 
         let framebuffer = frame.framebuffer_id();
         frame_pool
