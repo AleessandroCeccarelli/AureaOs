@@ -329,6 +329,7 @@ impl Drop for DrmSurfaceManager {
 }
 
 /// Runs a cleanup operation for every item and collects all failures.
+#[cfg(test)]
 fn clear_each<T, E>(
     items: impl IntoIterator<Item = T>,
     mut clear: impl FnMut(T) -> Result<(), E>,
