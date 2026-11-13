@@ -334,6 +334,9 @@ sudo debootstrap \
   "$ROOTFS_WORK" \
   "$MIRROR"
 
+# Keep the staging root private even if debootstrap changed its top-level mode.
+sudo chmod 0700 -- "$ROOTFS_WORK"
+
 # Complete debootstrap's second stage inside the isolated container.
 run_in_rootfs /debootstrap/debootstrap --second-stage
 
@@ -455,7 +458,9 @@ done
 
 # Audit real ownership and mode bits after package installation. Run as root
 # because the rootfs /root directory is intentionally not readable by users.
-sudo bash "$REPO_ROOT/tools/security/audit-rootfs-permissions.sh" "$ROOTFS_WORK"
+# Reassert the private staging-root mode before auditing and publishing.
+sudo chmod 0700 -- "$ROOTFS_WORK"
+sudo bash "$REPO_ROOT/tools/security/audit-rootfs-permissions.sh" --staging "$ROOTFS_WORK"
 
 # Publish only after all checks pass. The Python helper opens both parent
 # directories, pins the staging inode, and requires renameat2(RENAME_NOREPLACE).
