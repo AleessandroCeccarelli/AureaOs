@@ -29,6 +29,8 @@ readonly PACKAGE_DIR="$REPO_ROOT/debian/packages"
 
 TARGET="${HOME}/Documenti/AureaOS-Build/rootfs"
 ROOTFS_WORK=""
+ROOTFS_STAGE_PARENT_NAME=""
+ROOTFS_STAGE_PARENT_ID=""
 BOOT_MODE="none"
 WITH_RAR=0
 
@@ -322,23 +324,26 @@ if [[ "$PINNED_PARENT" != "$TARGET_PARENT" ]]; then
   exit 1
 fi
 PARENT_ID="$(stat -c '%d:%i' -- .)"
-PARENT_DEVICE="$(stat -c '%d' -- .)"
-if [[ ! -d /var/tmp || -L /var/tmp ]]; then
-  echo "Errore: /var/tmp deve essere una directory reale." >&2
+
+# Build inside a private root-owned directory on the destination filesystem.
+# Keeping the working directory pinned also prevents parent-path replacement
+# from redirecting privileged build operations.
+ROOTFS_STAGE_PARENT="$(sudo mktemp -d --tmpdir=. .aureaos-build.XXXXXXXXXX)"
+ROOTFS_STAGE_PARENT_NAME="$(basename -- "$ROOTFS_STAGE_PARENT")"
+sudo chmod 0711 -- "$ROOTFS_STAGE_PARENT"
+STAGE_PARENT_OWNER_MODE="$(sudo stat -c '%u:%a' -- "$ROOTFS_STAGE_PARENT")"
+if [[ "$STAGE_PARENT_OWNER_MODE" != "0:711" ]]; then
+  echo "Errore: staging parent non protetto (atteso root:0711)." >&2
   exit 1
 fi
-VAR_TMP_OWNER_MODE="$(stat -c '%u:%a' -- /var/tmp)"
-if [[ "$VAR_TMP_OWNER_MODE" != "0:1777" ]]; then
-  echo "Errore: /var/tmp deve appartenere a root ed avere mode 1777." >&2
+ROOTFS_STAGE_PARENT_ID="$(sudo stat -c '%d:%i' -- "$ROOTFS_STAGE_PARENT")"
+cd -- "$ROOTFS_STAGE_PARENT"
+if [[ "$(sudo stat -c '%d:%i' -- .)" != "$ROOTFS_STAGE_PARENT_ID" ]]; then
+  echo "Errore: staging parent sostituito durante l'apertura." >&2
   exit 1
 fi
-ROOTFS_WORK="$(sudo mktemp -d --tmpdir=/var/tmp aureaos-rootfs.XXXXXXXXXX)"
-STAGING_DEVICE="$(sudo stat -c '%d' -- "$ROOTFS_WORK")"
-if [[ "$STAGING_DEVICE" != "$PARENT_DEVICE" ]]; then
-  echo "Errore: /var/tmp e la destinazione devono trovarsi sullo stesso filesystem." >&2
-  echo "Staging lasciato intatto per ispezione: $ROOTFS_WORK" >&2
-  exit 1
-fi
+
+ROOTFS_WORK="$(sudo mktemp -d --tmpdir=. aureaos-rootfs.XXXXXXXXXX)"
 
 # Create the base Debian filesystem in protected staging, never at the
 # user-controlled final pathname.
@@ -504,23 +509,37 @@ if [[ -e "./$TARGET_NAME" || -L "./$TARGET_NAME" ]]; then
   exit 1
 fi
 
-sudo python3 "$REPO_ROOT/tools/build/publish_rootfs.py" "$ROOTFS_WORK" "$TARGET_NAME"
-if [[ -e "$ROOTFS_WORK" || -L "$ROOTFS_WORK" ]]; then
-  echo "Errore: pubblicazione non completata; la rootfs resta in staging: $ROOTFS_WORK" >&2
-  exit 1
-fi
-if [[ ! -d "./$TARGET_NAME" || -L "./$TARGET_NAME" ]]; then
-  echo "Errore: la rootfs pubblicata non è una directory reale." >&2
-  exit 1
-fi
-PUBLISHED_PARENT="$(pwd -P)"
-if [[ "$PUBLISHED_PARENT" != "$TARGET_PARENT" ]]; then
-  echo "Errore: il percorso del parent è cambiato durante la pubblicazione." >&2
-  echo "La rootfs è stata pubblicata nella directory originale: $PUBLISHED_PARENT/$TARGET_NAME" >&2
-  echo "Verifica questo percorso prima di ripetere il bootstrap." >&2
-  exit 1
-fi
+HELPER_PUBLISHED_LOCATION="$(
+  sudo python3 "$REPO_ROOT/tools/build/publish_rootfs.py" \
+    "$ROOTFS_WORK" "$TARGET_NAME" "$TARGET_PARENT" "$PARENT_ID"
+)"
 ROOTFS_WORK=""
+
+# Return to the pinned destination parent. If its pathname was renamed during
+# the build, pwd still identifies the original directory inode.
+cd ..
+PUBLISHED_PARENT="$(pwd -P)"
+PUBLISHED_PARENT_ID="$(stat -c '%d:%i' -- .)"
+
+# The staging parent is now empty. Remove it only if its original inode is
+# still present under the original name; never follow a substituted symlink.
+if [[ -d "$ROOTFS_STAGE_PARENT_NAME" && ! -L "$ROOTFS_STAGE_PARENT_NAME" ]]; then
+  CURRENT_STAGE_PARENT_ID="$(sudo stat -c '%d:%i' -- "$ROOTFS_STAGE_PARENT_NAME")"
+  if [[ "$CURRENT_STAGE_PARENT_ID" == "$ROOTFS_STAGE_PARENT_ID" ]]; then
+    sudo rmdir -- "$ROOTFS_STAGE_PARENT_NAME" || \
+      echo "Avviso: staging parent vuoto non rimosso: $PUBLISHED_PARENT/$ROOTFS_STAGE_PARENT_NAME" >&2
+  fi
+fi
+
+PUBLISHED_LOCATION="$PUBLISHED_PARENT/$TARGET_NAME"
+if [[ "$PUBLISHED_PARENT_ID" != "$PARENT_ID" || "$PUBLISHED_PARENT" != "$TARGET_PARENT" ]]; then
+  echo "Avviso: il percorso del parent è cambiato durante il bootstrap." >&2
+  echo "La rootfs è stata pubblicata nella directory originale: $PUBLISHED_LOCATION" >&2
+  echo "Percorso registrato dal publisher: $HELPER_PUBLISHED_LOCATION" >&2
+  exit 1
+fi
+
+echo "Rootfs pubblicata: $PUBLISHED_LOCATION"
 
 echo "Rootfs Debian ${CODENAME} (${ARCH}) creata, configurata e verificata."
 echo "Percorso: ${TARGET}"
