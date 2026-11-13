@@ -87,7 +87,10 @@ impl VulkanFormatCapabilities {
                     plane_count: property.drm_format_modifier_plane_count,
                     tiling_features: property.drm_format_modifier_tiling_features,
                 };
-                if !modifiers.iter().any(|existing| existing.modifier == candidate.modifier) {
+                if !modifiers
+                    .iter()
+                    .any(|existing| existing.modifier == candidate.modifier)
+                {
                     modifiers.push(candidate);
                 }
             }
