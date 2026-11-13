@@ -301,15 +301,26 @@ impl DrmSurfaceManager {
 
     /// Disables every KMS surface before releasing its buffers and ownership.
     ///
-    /// All surfaces are attempted even if one clear operation fails. Resources
-    /// are then dropped so callers can continue the remaining device teardown.
+    /// Every surface is attempted. Successfully disabled surfaces are removed;
+    /// failed surfaces and their CRTC ownership remain retained so callers can
+    /// retry teardown and must not release dependent GBM/Vulkan resources.
     pub fn clear(&mut self) -> Result<(), String> {
-        let errors = clear_each(self.surfaces.values(), |managed| {
-            managed.surface.clear().map_err(|error| error.to_string())
-        });
+        let mut errors = Vec::new();
+        let mut cleared = Vec::new();
 
-        self.surfaces.clear();
-        self.crtc_owners.clear();
+        for (output_id, managed) in &self.surfaces {
+            match managed.surface.clear() {
+                Ok(()) => cleared.push(*output_id),
+                Err(error) => errors.push(format!("output {output_id}: {error}")),
+            }
+        }
+
+        for output_id in cleared {
+            self.surfaces.remove(&output_id);
+        }
+
+        self.crtc_owners
+            .retain(|_, output_id| self.surfaces.contains_key(output_id));
 
         if errors.is_empty() {
             Ok(())
