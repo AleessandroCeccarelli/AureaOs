@@ -395,36 +395,11 @@ if ! sudo grep -q \
 fi
 
 # Build dpkg-query's literal format token without asking the shell to expand it.
-printf -v DPkg_QUERY_STATUS_FORMAT '%b' '\\044{db:Status-Status}'
+printf -v DPkg_QUERY_STATUS_FORMAT '%b' '\044{db:Status-Status}'
 
 for required_package in systemd systemd-sysv linux-image-amd64; do
   if ! package_status="$(
-    run_in_rootfs dpkg-query -W \\
-      -f="$DPkg_QUERY_STATUS_FORMAT" "$required_package" 2>/dev/null
-  )"; then
-    echo "Errore: impossibile verificare il pacchetto $required_package." >&2
-    exit 1
-  fi
-
-  if [[ "$package_status" != "installed" ]]; then
-    echo "Errore: pacchetto fondamentale non installato: $required_package (stato: $package_status)." >&2
-    exit 1
-  fi
-done
-
-# Audit real ownership and mode bits after package installation. Run as root
-# because the rootfs /root directory is intentionally not readable by users.
-sudo bash "$REPO_ROOT/tools/security/audit-rootfs-permissions.sh" "$TARGET"
-
-echo "Rootfs Debian ${CODENAME} (${ARCH}) creata, configurata e verificata."
-echo "Percorso: ${TARGET}"
-echo "Nota: non è ancora un'immagine avviabile o installabile."
-\\x24{db:Status-Status}'
-
-for required_package in systemd systemd-sysv linux-image-amd64; do
-  if ! package_status="$(
-    run_in_rootfs dpkg-query -W \
-      -f="$DPkg_QUERY_STATUS_FORMAT" "$required_package" 2>/dev/null
+    run_in_rootfs dpkg-query -W -f="$DPkg_QUERY_STATUS_FORMAT" "$required_package" 2>/dev/null
   )"; then
     echo "Errore: impossibile verificare il pacchetto $required_package." >&2
     exit 1
