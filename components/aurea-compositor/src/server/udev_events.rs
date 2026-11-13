@@ -545,12 +545,18 @@ pub(super) fn activate_discovered_devices(state: &mut WaylandState) {
     let pending = std::mem::take(&mut state.udev_changed_devices);
 
     let (pending, failures) = retry_pending_changes(pending, &managed, |node| {
-        refresh_device_outputs(state, node).and_then(|()| initialize_drm_surfaces(state, node))
+        // Recreate and validate native KMS surfaces before publishing the
+        // refreshed logical outputs. Publishing first can expose outputs that
+        // have no working scanout path after session activation.
+        initialize_drm_surfaces(state, node).and_then(|()| refresh_device_outputs(state, node))
     });
 
     state.udev_changed_devices = pending;
 
     for (node, error) in failures {
+        // A failed KMS restore or output reconciliation must not leave stale
+        // Wayland globals visible to clients.
+        remove_device_outputs(state, node);
         eprintln!("AureaOS: deferred DRM output refresh failed for {node}: {error}");
     }
 }
