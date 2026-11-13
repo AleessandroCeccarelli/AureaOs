@@ -542,7 +542,7 @@ if [[ -d "$ROOTFS_STAGE_PARENT_NAME" && ! -L "$ROOTFS_STAGE_PARENT_NAME" ]]; the
   fi
 fi
 
-PUBLISHED_LOCATION="$PUBLISHED_PARENT/$TARGET_NAME"
+PUBLISHED_LOCATION="${PUBLISHED_PARENT%/}/$TARGET_NAME"
 if [[ "$PUBLISHED_PARENT_ID" != "$PARENT_ID" || "$PUBLISHED_PARENT" != "$TARGET_PARENT" ]]; then
   echo "Avviso: il percorso del parent è cambiato durante il bootstrap." >&2
   echo "La rootfs è stata pubblicata nella directory originale: $PUBLISHED_LOCATION" >&2
