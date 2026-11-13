@@ -394,7 +394,14 @@ if ! sudo grep -q \
   exit 1
 fi
 
-readonly DPkg_QUERY_STATUS_FORMAT=
+# Build dpkg-query's literal format token without asking the shell to expand it.
+printf -v DPkg_QUERY_STATUS_FORMAT '%b' '\\044{db:Status-Status}'
+
+for required_package in systemd systemd-sysv linux-image-amd64; do
+  if ! package_status="$(
+    run_in_rootfs dpkg-query -W \\
+      -f="$DPkg_QUERY_STATUS_FORMAT" "$required_package" 2>/dev/null
+  )"; then
     echo "Errore: impossibile verificare il pacchetto $required_package." >&2
     exit 1
   fi
