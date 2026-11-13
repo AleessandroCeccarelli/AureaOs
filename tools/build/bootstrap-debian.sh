@@ -114,7 +114,17 @@ cleanup() {
   if ((status != 0)); then
     echo "Bootstrap interrotto con errore (codice $status)." >&2
     echo "La rootfs di staging potrebbe essere incompleta:" >&2
-    echo "$ROOTFS_WORK" >&2
+    if [[ -n "$ROOTFS_WORK" ]]; then
+      echo "$(pwd -P)/${ROOTFS_WORK#./}" >&2
+    elif [[ -n "$ROOTFS_STAGE_PARENT_NAME" ]]; then
+      if [[ -n "$ROOTFS_STAGE_PARENT_ID" && "$(stat -c '%d:%i' -- . 2>/dev/null)" == "$ROOTFS_STAGE_PARENT_ID" ]]; then
+        echo "$(pwd -P)" >&2
+      else
+        echo "$(pwd -P)/$ROOTFS_STAGE_PARENT_NAME" >&2
+      fi
+    else
+      echo "Staging non ancora creato." >&2
+    fi
     echo "Non verrà cancellata automaticamente." >&2
   fi
 
