@@ -44,7 +44,7 @@ make_valid_rootfs() {
   local shadow_gid= messagebus_gid=999 relative
 
   shadow_gid="$(getent group shadow | cut -d: -f3)"
-  mkdir -p "$rootfs"/{etc,usr/bin,usr/sbin,usr/lib/dbus-1.0,var/tmp,root,tmp,dev/shm}
+  mkdir -p "$rootfs"/{etc,usr/bin,usr/sbin,usr/lib/dbus-1.0,usr/lib/polkit-1,var/tmp,root,tmp,dev/shm}
   touch "$rootfs/etc/passwd" "$rootfs/etc/group" "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
   printf 'root:x:0:\nshadow:x:%s:\nmessagebus:x:%s:\n' "$shadow_gid" "$messagebus_gid" > "$rootfs/etc/group"
 
@@ -58,6 +58,7 @@ make_valid_rootfs() {
     usr/bin/su
     usr/bin/umount
     usr/bin/sudo
+    usr/lib/polkit-1/polkit-agent-helper-1
   )
   local -a shadow_sgid_files=(
     usr/bin/chage
