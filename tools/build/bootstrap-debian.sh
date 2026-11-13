@@ -171,6 +171,17 @@ if [[ "$TARGET_NAME" == "." || "$TARGET_NAME" == ".." || -z "$TARGET_NAME" ]]; t
   exit 2
 fi
 
+# Resolve existing symlink components and reject repository-local paths before
+# creating the parent directory. This keeps even a failed invocation from
+# leaving accidental directories inside the checkout.
+TARGET_PARENT="$(realpath -m -- "$TARGET_PARENT")"
+case "$TARGET_PARENT/" in
+  "$REPO_ROOT/"*)
+    echo "Errore: la rootfs deve stare fuori dal repository Git." >&2
+    exit 1
+    ;;
+esac
+
 mkdir -p -- "$TARGET_PARENT"
 TARGET_PARENT="$(cd -- "$TARGET_PARENT" && pwd -P)"
 TARGET="${TARGET_PARENT}/${TARGET_NAME}"
