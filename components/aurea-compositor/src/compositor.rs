@@ -21,11 +21,14 @@ use crate::{
     window_manager::WindowManager,
 };
 
+use resource_limits::WaylandResourceLimits;
+
 mod frame_scheduling;
 mod keyboard;
 mod output_publication;
 mod output_reconciliation;
 mod rendering;
+mod resource_limits;
 mod workspace;
 
 pub use frame_scheduling::CompositorFrameError;
@@ -34,6 +37,7 @@ pub use rendering::CompositorRenderError;
 
 /// Core state owned by the AureaOS compositor.
 pub struct AureaCompositor {
+    display_handle: DisplayHandle,
     compositor_state: CompositorState,
     xdg_shell_state: XdgShellState,
     seat_state: SeatState<Self>,
@@ -43,6 +47,7 @@ pub struct AureaCompositor {
     output_manager: OutputManager,
     frame_scheduler: FrameScheduler,
     wayland_outputs: BTreeMap<OutputId, Output>,
+    resource_limits: WaylandResourceLimits,
 }
 
 impl SeatHandler for AureaCompositor {
@@ -64,6 +69,7 @@ impl AureaCompositor {
         let seat = seat_state.new_wl_seat(display, "seat0");
 
         Self {
+            display_handle: display.clone(),
             compositor_state,
             xdg_shell_state,
             seat_state,
@@ -73,7 +79,13 @@ impl AureaCompositor {
             output_manager: OutputManager::new(),
             frame_scheduler: FrameScheduler::new(),
             wayland_outputs: BTreeMap::new(),
+            resource_limits: WaylandResourceLimits::default(),
         }
+    }
+
+    /// Returns the display handle used to enforce server-side resource limits.
+    pub(crate) fn display_handle(&self) -> &DisplayHandle {
+        &self.display_handle
     }
 
     /// Returns the Smithay compositor protocol state.
