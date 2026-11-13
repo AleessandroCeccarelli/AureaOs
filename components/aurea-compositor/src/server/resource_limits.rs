@@ -5,10 +5,7 @@
 
 //! Bounds the number of protocol objects owned by each Wayland client.
 
-use smithay::reexports::wayland_server::{
-    DisplayHandle,
-    backend::DisconnectReason,
-};
+use smithay::reexports::wayland_server::{DisplayHandle, backend::DisconnectReason};
 
 const MAX_OBJECTS_PER_CLIENT: usize = 2048;
 const MAX_OBJECTS_GLOBAL: usize = 16_384;
@@ -40,9 +37,7 @@ pub(super) fn enforce_wayland_object_limits(display: &DisplayHandle) {
     }
 }
 
-fn select_clients_to_disconnect<Client>(
-    mut counts: Vec<(Client, usize)>,
-) -> Vec<Client> {
+fn select_clients_to_disconnect<Client>(mut counts: Vec<(Client, usize)>) -> Vec<Client> {
     let mut total = counts
         .iter()
         .fold(0usize, |sum, (_, count)| sum.saturating_add(*count));
@@ -61,9 +56,7 @@ fn select_clients_to_disconnect<Client>(
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        MAX_OBJECTS_GLOBAL, MAX_OBJECTS_PER_CLIENT, select_clients_to_disconnect,
-    };
+    use super::{MAX_OBJECTS_GLOBAL, MAX_OBJECTS_PER_CLIENT, select_clients_to_disconnect};
 
     #[test]
     fn object_budget_accepts_clients_below_both_limits() {
