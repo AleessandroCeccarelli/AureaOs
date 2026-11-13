@@ -28,6 +28,7 @@ readonly REPO_ROOT
 readonly PACKAGE_DIR="$REPO_ROOT/debian/packages"
 
 TARGET="${HOME}/Documenti/AureaOS-Build/rootfs"
+ROOTFS_WORK=""
 BOOT_MODE="none"
 WITH_RAR=0
 
@@ -42,7 +43,7 @@ run_in_rootfs() {
   sudo systemd-nspawn \
     --quiet \
     --register=no \
-    --directory="$TARGET" \
+    --directory="$ROOTFS_WORK" \
     --as-pid2 \
     --drop-capability=CAP_SYS_ADMIN \
     --drop-capability=CAP_SYS_MODULE \
@@ -81,9 +82,9 @@ cleanup() {
   trap - EXIT
   set +e
 
-  if [[ -n "$TARGET" && -d "$TARGET" ]] && ((POLICY_INSTALLED)); then
+  if [[ -n "$ROOTFS_WORK" && -d "$ROOTFS_WORK" ]] && ((POLICY_INSTALLED)); then
     echo "Pulizia: rimozione di policy-rc.d..." >&2
-    sudo rm -f -- "$TARGET/usr/sbin/policy-rc.d"
+    sudo rm -f -- "$ROOTFS_WORK/usr/sbin/policy-rc.d"
   fi
 
   [[ -z "$SOURCES_TMP" ]] || rm -f -- "$SOURCES_TMP"
@@ -91,8 +92,8 @@ cleanup() {
 
   if ((status != 0)); then
     echo "Bootstrap interrotto con errore (codice $status)." >&2
-    echo "La destinazione potrebbe contenere una rootfs incompleta:" >&2
-    echo "$TARGET" >&2
+    echo "La rootfs di staging potrebbe essere incompleta:" >&2
+    echo "$ROOTFS_WORK" >&2
     echo "Non verrà cancellata automaticamente." >&2
   fi
 
@@ -288,14 +289,37 @@ echo
 
 sudo -v
 
-# Create the base Debian filesystem.
+# Pin the destination parent and build in a root-owned staging directory.
+cd -- "$TARGET_PARENT"
+PARENT_ID="$(stat -c '%d:%i' -- .)"
+PARENT_DEVICE="$(stat -c '%d' -- .)"
+if [[ ! -d /var/tmp || -L /var/tmp ]]; then
+  echo "Errore: /var/tmp deve essere una directory reale." >&2
+  exit 1
+fi
+VAR_TMP_OWNER_MODE="$(stat -c '%u:%a' -- /var/tmp)"
+if [[ "$VAR_TMP_OWNER_MODE" != "0:1777" ]]; then
+  echo "Errore: /var/tmp deve appartenere a root ed avere mode 1777." >&2
+  exit 1
+fi
+ROOTFS_WORK="$(sudo mktemp -d --tmpdir=/var/tmp aureaos-rootfs.XXXXXXXXXX)"
+STAGING_DEVICE="$(sudo stat -c '%d' -- "$ROOTFS_WORK")"
+if [[ "$STAGING_DEVICE" != "$PARENT_DEVICE" ]]; then
+  echo "Errore: /var/tmp e la destinazione devono trovarsi sullo stesso filesystem." >&2
+  echo "Staging lasciato intatto per ispezione: $ROOTFS_WORK" >&2
+  exit 1
+fi
+
+# Create the base Debian filesystem in protected staging, never at the
+# user-controlled final pathname.
+sudo debootstrap
 sudo debootstrap \
   --foreign \
   --arch="$ARCH" \
   --variant="$VARIANT" \
   --components="$COMPONENTS" \
   "$CODENAME" \
-  "$TARGET" \
+  "$ROOTFS_WORK" \
   "$MIRROR"
 
 # Complete debootstrap's second stage inside the isolated container.
@@ -320,18 +344,18 @@ Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 APT_SOURCES
 
 sudo install -D -m 0644 \
-  "$SOURCES_TMP" "$TARGET/etc/apt/sources.list.d/debian.sources"
+  "$SOURCES_TMP" "$ROOTFS_WORK/etc/apt/sources.list.d/debian.sources"
 
 # Keep a backup of the legacy sources file if one exists.
-if sudo test -f "$TARGET/etc/apt/sources.list"; then
-  if sudo test -e "$TARGET/etc/apt/sources.list.bootstrap-backup"; then
+if sudo test -f "$ROOTFS_WORK/etc/apt/sources.list"; then
+  if sudo test -e "$ROOTFS_WORK/etc/apt/sources.list.bootstrap-backup"; then
     echo "Errore: esiste già sources.list.bootstrap-backup." >&2
     exit 1
   fi
 
   sudo mv \
-    "$TARGET/etc/apt/sources.list" \
-    "$TARGET/etc/apt/sources.list.bootstrap-backup"
+    "$ROOTFS_WORK/etc/apt/sources.list" \
+    "$ROOTFS_WORK/etc/apt/sources.list.bootstrap-backup"
 fi
 
 # Run package maintainer scripts in an isolated container. The container
@@ -340,8 +364,8 @@ fi
 echo
 echo "===== Preparazione ambiente Debian isolato ====="
 for mountpoint in dev proc sys run; do
-  if sudo mountpoint -q "$TARGET/$mountpoint"; then
-    echo "Errore: $TARGET/$mountpoint è già un mountpoint." >&2
+  if sudo mountpoint -q "$ROOTFS_WORK/$mountpoint"; then
+    echo "Errore: $ROOTFS_WORK/$mountpoint è già un mountpoint." >&2
     exit 1
   fi
 done
@@ -357,13 +381,13 @@ cat > "$POLICY_TMP" <<'POLICY_RC'
 exit 101
 POLICY_RC
 
-if sudo test -e "$TARGET/usr/sbin/policy-rc.d"; then
+if sudo test -e "$ROOTFS_WORK/usr/sbin/policy-rc.d"; then
   echo "Errore: policy-rc.d esiste già nella rootfs." >&2
   exit 1
 fi
 
 sudo install -D -m 0755 \
-  "$POLICY_TMP" "$TARGET/usr/sbin/policy-rc.d"
+  "$POLICY_TMP" "$ROOTFS_WORK/usr/sbin/policy-rc.d"
 POLICY_INSTALLED=1
 
 echo
@@ -419,8 +443,34 @@ done
 
 # Audit real ownership and mode bits after package installation. Run as root
 # because the rootfs /root directory is intentionally not readable by users.
-sudo bash "$REPO_ROOT/tools/security/audit-rootfs-permissions.sh" "$TARGET"
+sudo bash "$REPO_ROOT/tools/security/audit-rootfs-permissions.sh" "$ROOTFS_WORK"
+
+# Publish only after all checks pass. The current working directory pins the
+# destination parent inode; -T prevents directory nesting and -n refuses
+# replacement if a destination appears after the initial validation.
+if [[ "$(stat -c '%d:%i' -- "$TARGET_PARENT")" != "$PARENT_ID" ]]; then
+  echo "Errore: la directory destinazione è stata sostituita durante il bootstrap." >&2
+  echo "Rootfs verificata conservata in staging: $ROOTFS_WORK" >&2
+  exit 1
+fi
+if [[ -e "./$TARGET_NAME" || -L "./$TARGET_NAME" ]]; then
+  echo "Errore: la destinazione è comparsa durante il bootstrap: $TARGET" >&2
+  echo "Rootfs verificata conservata in staging: $ROOTFS_WORK" >&2
+  exit 1
+fi
+
+sudo mv --no-clobber --no-target-directory -- "$ROOTFS_WORK" "./$TARGET_NAME"
+if [[ -e "$ROOTFS_WORK" || -L "$ROOTFS_WORK" ]]; then
+  echo "Errore: pubblicazione non eseguita; la destinazione potrebbe essere occupata." >&2
+  echo "Rootfs verificata conservata in staging: $ROOTFS_WORK" >&2
+  exit 1
+fi
+if [[ ! -d "./$TARGET_NAME" || -L "./$TARGET_NAME" ]]; then
+  echo "Errore: la rootfs pubblicata non è una directory reale." >&2
+  exit 1
+fi
+ROOTFS_WORK=""
 
 echo "Rootfs Debian ${CODENAME} (${ARCH}) creata, configurata e verificata."
 echo "Percorso: ${TARGET}"
-echo "Nota: non è ancora un'immagine avviabile o installabile."
+echo "Nota: non è ancora un file avviabile o installabile."
