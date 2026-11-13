@@ -291,6 +291,11 @@ sudo -v
 
 # Pin the destination parent and build in a root-owned staging directory.
 cd -- "$TARGET_PARENT"
+PINNED_PARENT="$(pwd -P)"
+if [[ "$PINNED_PARENT" != "$TARGET_PARENT" ]]; then
+  echo "Errore: la directory destinazione è cambiata durante la sua apertura." >&2
+  exit 1
+fi
 PARENT_ID="$(stat -c '%d:%i' -- .)"
 PARENT_DEVICE="$(stat -c '%d' -- .)"
 if [[ ! -d /var/tmp || -L /var/tmp ]]; then
