@@ -33,7 +33,7 @@ write_getcap() {
   local output="${2:-}"
   cat > "$FAKE_BIN/getcap" <<EOF
 #!/usr/bin/env bash
-printf '%s\\n' '$output'
+printf '%s\n' '$output'
 exit $exit_code
 EOF
   chmod 0755 "$FAKE_BIN/getcap"
