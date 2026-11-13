@@ -34,7 +34,6 @@ pub use rendering::CompositorRenderError;
 
 /// Core state owned by the AureaOS compositor.
 pub struct AureaCompositor {
-    display_handle: DisplayHandle,
     compositor_state: CompositorState,
     xdg_shell_state: XdgShellState,
     seat_state: SeatState<Self>,
@@ -65,7 +64,6 @@ impl AureaCompositor {
         let seat = seat_state.new_wl_seat(display, "seat0");
 
         Self {
-            display_handle: display.clone(),
             compositor_state,
             xdg_shell_state,
             seat_state,
