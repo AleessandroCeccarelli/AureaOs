@@ -481,6 +481,13 @@ if [[ ! -d "./$TARGET_NAME" || -L "./$TARGET_NAME" ]]; then
   echo "Errore: la rootfs pubblicata non è una directory reale." >&2
   exit 1
 fi
+PUBLISHED_PARENT="$(pwd -P)"
+if [[ "$PUBLISHED_PARENT" != "$TARGET_PARENT" ]]; then
+  echo "Errore: il percorso del parent è cambiato durante la pubblicazione." >&2
+  echo "La rootfs è stata pubblicata nella directory originale: $PUBLISHED_PARENT/$TARGET_NAME" >&2
+  echo "Verifica questo percorso prima di ripetere il bootstrap." >&2
+  exit 1
+fi
 ROOTFS_WORK=""
 
 echo "Rootfs Debian ${CODENAME} (${ARCH}) creata, configurata e verificata."
