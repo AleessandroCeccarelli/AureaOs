@@ -134,5 +134,6 @@ These are source-level observations, not proof against all runtime or kernel-lev
 5. Make render readiness and degraded-output behavior explicit across startup and Udev hotplug.
 6. Run physical KMS validation only on a recoverable test setup, with a known-good VT/session recovery procedure.
 7. On the Fedora machine, re-run formatting, locked workspace checks, and all safe tests after the source changes; do not run the test workflows on GitHub.
+8. Resolve or explicitly accept the transitive `cgmath 0.18.0` advisories by reviewing a maintained Smithay replacement; do not silence RustSec findings without a code-level rationale.
 
 **Conclusion:** AureaOS has a promising defensive foundation, but the bootstrap and physical graphics lifecycle still have material hardening work outstanding. No claim of complete security should be made at this stage.
