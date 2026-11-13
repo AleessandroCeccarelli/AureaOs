@@ -69,10 +69,9 @@ impl CompositorHandler for AureaCompositor {
         // creation callback. Count every surface at its first commit and
         // release quota from the destruction hook (also called on disconnect).
         let surface_id = surface.id();
-        if !self.resource_limits.contains_surface(&surface_id) {
+        if !self.has_tracked_surface(&surface_id) {
             let client_id = surface.client().id();
             if !self
-                .resource_limits
                 .register_surface(surface_id, client_id.clone())
             {
                 self.display_handle()
@@ -82,7 +81,7 @@ impl CompositorHandler for AureaCompositor {
             }
 
             add_destruction_hook(surface, |state: &mut AureaCompositor, surface| {
-                state.resource_limits.unregister_surface(&surface.id());
+                state.unregister_surface(&surface.id());
             });
         }
         let mapped = with_states(surface, |states| {
