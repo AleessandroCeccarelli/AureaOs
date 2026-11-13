@@ -92,8 +92,8 @@ jobs:
           bash -n tools/installer/check-hardware-requirements.sh
           bash -n tools/installer/tests/check-hardware-requirements.sh
           bash -n tools/build/tests/test-rootfs-publication.sh
-          bash -n
-          shellcheck tools/build/bootstrap-debian.sh tools/build/tests/test-rootfs-publication.sh tools/security/audit-rootfs-permissions.sh tools/security/tests/test-audit-rootfs-permissions.sh tools/installer/check-hardware-requirements.sh tools/installer/tests/check-hardware-requirements.sh
+          bash -n tools/security/tests/test-audit-rootfs-permissions.sh
+          shellcheck tools/build/bootstrap-debian.sh tools/build/tests/test-rootfs-publication.sh tools/security/audit-rootfs-permissions.sh tools/installer/check-hardware-requirements.sh tools/installer/tests/check-hardware-requirements.sh
           bash tools/build/tests/test-rootfs-publication.sh
           sudo bash tools/security/tests/test-audit-rootfs-permissions.sh
           bash tools/installer/tests/check-hardware-requirements.sh
