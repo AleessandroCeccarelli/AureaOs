@@ -11,11 +11,6 @@ if ((EUID != 0)); then
   exit 2
 fi
 
-if ! getent group shadow >/dev/null 2>&1; then
-  echo "The host must provide the shadow group for the Debian rootfs fixture." >&2
-  exit 2
-fi
-
 WORK="$(mktemp -d)"
 trap 'rm -rf -- "$WORK"' EXIT
 FAKE_BIN="$WORK/bin"
@@ -41,9 +36,7 @@ EOF
 
 make_valid_rootfs() {
   local rootfs="$1"
-  local shadow_gid= messagebus_gid=100 mail_gid=8 journal_gid=101 relative
-
-  shadow_gid="$(getent group shadow | cut -d: -f3)"
+  local shadow_gid=60000 messagebus_gid=100 mail_gid=8 journal_gid=101 relative
   mkdir -p "$rootfs"/{etc,usr/bin,usr/sbin,usr/lib/dbus-1.0,usr/lib/polkit-1,var/tmp,var/mail,var/log/journal,root,tmp,dev/shm}
   touch "$rootfs/etc/passwd" "$rootfs/etc/group" "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
   printf 'root:x:0:\nshadow:x:%s:\nmessagebus:x:%s:\nmail:x:%s:\nsystemd-journal:x:%s:\n' \
