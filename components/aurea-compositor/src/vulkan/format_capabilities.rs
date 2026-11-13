@@ -55,18 +55,43 @@ impl VulkanFormatCapabilities {
             });
         };
 
-        let properties = device
-            .get_format_modifier_properties(vulkan_format)
-            .map_err(|error| error.to_string())?;
+        let mut modifiers = Vec::new();
 
-        let modifiers = properties
-            .into_iter()
-            .map(|property| VulkanFormatModifierInfo {
-                modifier: Modifier::from(property.drm_format_modifier),
-                plane_count: property.drm_format_modifier_plane_count,
-                tiling_features: property.drm_format_modifier_tiling_features,
-            })
-            .collect();
+        // Linear tiling is part of core Vulkan format properties and does not
+        // depend on VK_EXT_image_drm_format_modifier.
+        let format_properties = unsafe {
+            device
+                .instance()
+                .handle()
+                .get_physical_device_format_properties(device.handle(), vulkan_format)
+        };
+        if format_properties
+            .linear_tiling_features
+            .contains(vk::FormatFeatureFlags::COLOR_ATTACHMENT)
+        {
+            modifiers.push(VulkanFormatModifierInfo {
+                modifier: Modifier::Linear,
+                plane_count: 1,
+                tiling_features: format_properties.linear_tiling_features,
+            });
+        }
+
+        if device.has_device_extension(c"VK_EXT_image_drm_format_modifier") {
+            let properties = device
+                .get_format_modifier_properties(vulkan_format)
+                .map_err(|error| error.to_string())?;
+
+            for property in properties {
+                let candidate = VulkanFormatModifierInfo {
+                    modifier: Modifier::from(property.drm_format_modifier),
+                    plane_count: property.drm_format_modifier_plane_count,
+                    tiling_features: property.drm_format_modifier_tiling_features,
+                };
+                if !modifiers.iter().any(|existing| existing.modifier == candidate.modifier) {
+                    modifiers.push(candidate);
+                }
+            }
+        }
 
         Ok(Self { format, modifiers })
     }
