@@ -244,11 +244,15 @@ impl DrmSurfaceManager {
             let output_id = descriptor.id();
             let connector_handle = match descriptor.connector_handle() {
                 Some(handle) => handle,
-                None => fail!(DrmSurfaceManagerError::MissingNativeConfiguration(output_id)),
+                None => fail!(DrmSurfaceManagerError::MissingNativeConfiguration(
+                    output_id
+                )),
             };
             let mode = match descriptor.native_mode() {
                 Some(mode) => mode,
-                None => fail!(DrmSurfaceManagerError::MissingNativeConfiguration(output_id)),
+                None => fail!(DrmSurfaceManagerError::MissingNativeConfiguration(
+                    output_id
+                )),
             };
 
             let connector_info = match device.fd().get_connector(connector_handle, true) {
@@ -399,7 +403,7 @@ fn clear_and_retain<K, V, E>(
     mut clear: impl FnMut(&V) -> Result<(), E>,
 ) -> Vec<String>
 where
-    K: Copy,
+    K: Copy + Eq + std::hash::Hash,
     E: fmt::Display,
 {
     let mut cleared = Vec::new();
