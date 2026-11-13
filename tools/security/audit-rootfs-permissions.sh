@@ -82,14 +82,14 @@ echo "Verifica SUID/SGID contro allowlist..."
 # be reviewed and added deliberately; package additions cannot silently expand
 # the privileged executable surface.
 declare -A SUID_SGID_ALLOWLIST=(
-  ["usr/bin/chfn"]=1
-  ["usr/bin/chsh"]=1
-  ["usr/bin/gpasswd"]=1
-  ["usr/bin/mount"]=1
-  ["usr/bin/newgrp"]=1
-  ["usr/bin/passwd"]=1
-  ["usr/bin/su"]=1
-  ["usr/bin/umount"]=1
+  ["usr/bin/chfn"]=4755
+  ["usr/bin/chsh"]=4755
+  ["usr/bin/gpasswd"]=4755
+  ["usr/bin/mount"]=4755
+  ["usr/bin/newgrp"]=4755
+  ["usr/bin/passwd"]=4755
+  ["usr/bin/su"]=4755
+  ["usr/bin/umount"]=4755
 )
 
 while IFS= read -r -d '' path; do
