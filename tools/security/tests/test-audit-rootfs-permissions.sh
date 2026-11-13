@@ -21,6 +21,13 @@ trap 'rm -rf -- "$WORK"' EXIT
 FAKE_BIN="$WORK/bin"
 mkdir -p "$FAKE_BIN"
 
+write_find_failure() {
+  cat > "$FAKE_BIN/find" <<'EOF'
+#!/usr/bin/env bash
+exit 1
+EOF
+  chmod 0755 "$FAKE_BIN/find"
+}
 write_getcap() {
   local exit_code="$1"
   local output="${2:-}"
@@ -96,5 +103,9 @@ expect_fail "reject reported file capabilities" env PATH="$FAKE_BIN:$PATH" bash 
 
 write_getcap 2
 expect_fail "fail closed when getcap exits unsuccessfully" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+
+write_getcap 0
+write_find_failure
+expect_fail "fail closed when rootfs traversal fails" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
 
 echo "All rootfs permission audit fixture tests passed."
