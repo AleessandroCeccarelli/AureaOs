@@ -229,7 +229,7 @@ esac
 
 mkdir -p -- "$TARGET_PARENT"
 TARGET_PARENT="$(cd -- "$TARGET_PARENT" && pwd -P)"
-TARGET="${TARGET_PARENT}/${TARGET_NAME}"
+TARGET="${TARGET_PARENT%/}/$TARGET_NAME"
 
 case "$TARGET/" in
   "$REPO_ROOT/"*)
