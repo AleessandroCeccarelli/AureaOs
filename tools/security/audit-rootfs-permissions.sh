@@ -133,6 +133,7 @@ declare -A SUID_SGID_ALLOWLIST=(
   ["usr/bin/expiry"]="2755:0:shadow"
   ["usr/sbin/unix_chkpwd"]="2755:0:shadow"
   ["usr/lib/dbus-1.0/dbus-daemon-launch-helper"]="4754:0:messagebus"
+  ["usr/lib/polkit-1/polkit-agent-helper-1"]="4755:0:0"
 )
 
 if find "$ROOTFS" -xdev ! -type l -perm /6000 -print0 >"$SCAN_FILE"; then
