@@ -58,7 +58,6 @@ where
     Ok(())
 }
 
-
 /// Clears every managed KMS surface while the libseat session still owns DRM.
 #[cfg(feature = "drm")]
 pub(super) fn clear_drm_surfaces(state: &mut WaylandState) -> Option<String> {
