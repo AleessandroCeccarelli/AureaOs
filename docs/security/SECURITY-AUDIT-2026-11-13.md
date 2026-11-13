@@ -3,7 +3,7 @@
 # Security and Lifecycle Audit — 2026-11-13
 
 **Baseline revision:** `0ee00fbfa778cc75b0bd780dc2c847faa454c68a`  
-**Latest source/test remediation revisions:** audit `01aa9a8c2646402cefa1aef44e30238fb0d9e6b0`; fixture tests `b871c872edc3aa181e7c4302b167c6f5238dc937`  
+**Latest source/test remediation revisions:** audit `01aa9a8c2646402cefa1aef44e30238fb0d9e6b0`; fixture tests `a49df445e8b18a75613870c0013ee4e28e004a3a`  
 **Scope:** current Rust workspace, compositor DRM/KMS and Vulkan lifecycle, Debian bootstrap, rootfs permission audit.  
 **Status:** partial source audit with initial remediation commits; not a security certification and not a declaration that AureaOS is production-hardened.
 
@@ -95,10 +95,10 @@ These are source-level observations, not proof against all runtime or kernel-lev
 - Startup retains ownership of successfully created KMS surfaces even if logical output registration fails, so they remain available to explicit shutdown cleanup.
 - Udev integration rollback now retains the complete graphics dependency chain if a KMS clear fails, rather than unconditionally removing the surface manager and its dependencies.
 - Rootfs capability scanning now treats `getcap` execution errors as audit failures. Both world-writable and SUID/SGID filesystem traversals now capture `find` output and fail closed if traversal exits unsuccessfully, instead of relying on process substitution whose producer status is otherwise lost.
-- Rootfs world-writable checks, SUID/SGID allowlist enforcement, and capability scanning are present in source. A disposable positive/negative fixture test script has been added but has not yet been executed; no completed-rootfs validation has been run.
+- Rootfs world-writable checks, SUID/SGID allowlist enforcement, and capability scanning are present in source. A disposable positive/negative fixture test script has been added and passed in GitHub Actions run `43485619945`; no completed-rootfs validation has been run.
 - No post-remediation Fedora build/test run has been performed yet.
 - No physical KMS/display test was performed during this audit.
-- Source review includes the baseline and the remediation commits recorded in this report; the latest DRM source change is `58e3e78da7e01ffc2749f49b93d4c8b2f4be2340`; the latest rootfs audit change is `01aa9a8c2646402cefa1aef44e30238fb0d9e6b0`; the latest rootfs fixture-test change is `b871c872edc3aa181e7c4302b167c6f5238dc937`.
+- Source review includes the baseline and the remediation commits recorded in this report; the latest DRM source change is `58e3e78da7e01ffc2749f49b93d4c8b2f4be2340`; the latest rootfs audit change is `01aa9a8c2646402cefa1aef44e30238fb0d9e6b0`; the latest rootfs fixture-test change is `a49df445e8b18a75613870c0013ee4e28e004a3a`.
 
 ## Release gates
 
