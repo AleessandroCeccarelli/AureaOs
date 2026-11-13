@@ -312,7 +312,6 @@ fi
 
 # Create the base Debian filesystem in protected staging, never at the
 # user-controlled final pathname.
-sudo debootstrap
 sudo debootstrap \
   --foreign \
   --arch="$ARCH" \
