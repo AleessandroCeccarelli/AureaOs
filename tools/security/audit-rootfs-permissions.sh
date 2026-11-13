@@ -23,10 +23,28 @@ fail() {
   failures=$((failures + 1))
 }
 
+rootfs_group_id() {
+  local group_name="$1"
+
+  awk -F: -v name="$group_name" '
+    $1 == name {
+      count++
+      gid = $3
+    }
+    END {
+      if (count != 1) {
+        exit 1
+      }
+      print gid
+    }
+  ' "$ROOTFS/etc/group"
+}
+
 check_entry() {
   local relative_path="$1"
   local expected="$2"
   local path="$ROOTFS/$relative_path"
+  local expected_mode expected_uid expected_group expected_gid
   local actual
 
   if [[ ! -e "$path" || -L "$path" ]]; then
@@ -34,7 +52,16 @@ check_entry() {
     return
   fi
 
-  actual="$(stat -c '%a:%U:%G' -- "$path")"
+  IFS=: read -r expected_mode expected_uid expected_group <<< "$expected"
+  if [[ "$expected_group" =~ ^[0-9]+$ ]]; then
+    expected_gid="$expected_group"
+  elif ! expected_gid="$(rootfs_group_id "$expected_group")"; then
+    fail "$relative_path: gruppo '$expected_group' assente o duplicato in rootfs/etc/group"
+    return
+  fi
+
+  actual="$(stat -c '%a:%u:%g' -- "$path")"
+  expected="$expected_mode:$expected_uid:$expected_gid"
   if [[ "$actual" != "$expected" ]]; then
     fail "$relative_path: atteso $expected, trovato $actual"
   else
@@ -44,22 +71,22 @@ check_entry() {
 
 echo "===== AureaOS rootfs permission audit ====="
 
-check_entry "." "755:root:root"
-check_entry "etc" "755:root:root"
-check_entry "usr" "755:root:root"
-check_entry "var" "755:root:root"
-check_entry "root" "700:root:root"
-check_entry "tmp" "1777:root:root"
-check_entry "etc/passwd" "644:root:root"
-check_entry "etc/group" "644:root:root"
-check_entry "etc/shadow" "640:root:shadow"
-check_entry "etc/gshadow" "640:root:shadow"
+check_entry "." "755:0:0"
+check_entry "etc" "755:0:0"
+check_entry "usr" "755:0:0"
+check_entry "var" "755:0:0"
+check_entry "root" "700:0:0"
+check_entry "tmp" "1777:0:0"
+check_entry "etc/passwd" "644:0:0"
+check_entry "etc/group" "644:0:0"
+check_entry "etc/shadow" "640:0:shadow"
+check_entry "etc/gshadow" "640:0:shadow"
 
 if [[ -e "$ROOTFS/etc/sudoers" ]]; then
-  check_entry "etc/sudoers" "440:root:root"
+  check_entry "etc/sudoers" "440:0:0"
 fi
 if [[ -e "$ROOTFS/etc/sudoers.d" ]]; then
-  check_entry "etc/sudoers.d" "750:root:root"
+  check_entry "etc/sudoers.d" "750:0:0"
 fi
 
 echo
@@ -87,26 +114,44 @@ echo "Verifica SUID/SGID contro allowlist..."
 # be reviewed and added deliberately; package additions cannot silently expand
 # the privileged executable surface.
 declare -A SUID_SGID_ALLOWLIST=(
-  ["usr/bin/chfn"]=4755
-  ["usr/bin/chsh"]=4755
-  ["usr/bin/gpasswd"]=4755
-  ["usr/bin/mount"]=4755
-  ["usr/bin/newgrp"]=4755
-  ["usr/bin/passwd"]=4755
-  ["usr/bin/su"]=4755
-  ["usr/bin/umount"]=4755
+  ["usr/bin/chfn"]="4755:0:0"
+  ["usr/bin/chsh"]="4755:0:0"
+  ["usr/bin/gpasswd"]="4755:0:0"
+  ["usr/bin/mount"]="4755:0:0"
+  ["usr/bin/newgrp"]="4755:0:0"
+  ["usr/bin/passwd"]="4755:0:0"
+  ["usr/bin/su"]="4755:0:0"
+  ["usr/bin/umount"]="4755:0:0"
+  ["usr/bin/sudo"]="4755:0:0"
+  ["usr/bin/chage"]="2755:0:shadow"
+  ["usr/bin/expiry"]="2755:0:shadow"
+  ["usr/sbin/unix_chkpwd"]="2755:0:shadow"
+  ["usr/lib/dbus-1.0/dbus-daemon-launch-helper"]="4754:0:messagebus"
 )
 
 if find "$ROOTFS" -xdev ! -type l -perm /6000 -print0 >"$SCAN_FILE"; then
   while IFS= read -r -d '' path; do
     relative="${path#"$ROOTFS"/}"
-    mode="$(stat -c '%a' -- "$path")"
-    if [[ -z "${SUID_SGID_ALLOWLIST[$relative]+allowed}" ]]; then
-      fail "SUID/SGID non autorizzato: /$relative ($mode)"
-    elif [[ "$mode" != "${SUID_SGID_ALLOWLIST[$relative]}" ]]; then
-      fail "mode SUID/SGID inatteso per /$relative: atteso ${SUID_SGID_ALLOWLIST[$relative]}, trovato $mode"
+    actual="$(stat -c '%a:%u:%g' -- "$path")"
+    expected="${SUID_SGID_ALLOWLIST[$relative]:-}"
+    if [[ -z "$expected" ]]; then
+      fail "SUID/SGID non autorizzato: /$relative ($actual)"
+    elif [[ ! -f "$path" || -L "$path" ]]; then
+      fail "entry SUID/SGID allowlist non è un file regolare: /$relative"
     else
-      printf 'PASS  SUID/SGID allowlist /%s (%s)\n' "$relative" "$mode"
+      IFS=: read -r expected_mode expected_uid expected_group <<< "$expected"
+      if [[ "$expected_group" =~ ^[0-9]+$ ]]; then
+        expected_gid="$expected_group"
+      elif ! expected_gid="$(rootfs_group_id "$expected_group")"; then
+        fail "gruppo '$expected_group' assente o duplicato per /$relative"
+        continue
+      fi
+      expected="$expected_mode:$expected_uid:$expected_gid"
+      if [[ "$actual" != "$expected" ]]; then
+        fail "owner/mode SUID/SGID inatteso per /$relative: atteso $expected, trovato $actual"
+      else
+        printf 'PASS  SUID/SGID allowlist /%s (%s)\n' "$relative" "$actual"
+      fi
     fi
   done < "$SCAN_FILE"
 else
