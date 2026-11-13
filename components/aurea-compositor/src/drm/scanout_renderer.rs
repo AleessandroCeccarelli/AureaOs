@@ -170,7 +170,9 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
         for format in compatibility.formats().iter().copied() {
             if !candidates
                 .iter()
-                .any(|candidate: &crate::vulkan::DrmVulkanFormat| candidate.code == format.code && candidate.modifier == format.modifier)
+                .any(|candidate: &crate::vulkan::DrmVulkanFormat| {
+                    candidate.code == format.code && candidate.modifier == format.modifier
+                })
             {
                 candidates.push(format);
             }
@@ -201,9 +203,7 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
                 }
                 Err(error) => allocation_errors.push(format!(
                     "{:?}/{:?}: {}",
-                    candidate.code,
-                    candidate.modifier,
-                    error
+                    candidate.code, candidate.modifier, error
                 )),
             }
         }
