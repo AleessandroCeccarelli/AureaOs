@@ -2,14 +2,20 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 set -Eeuo pipefail
 
-if (($# != 1)); then
-  echo "Uso: $0 /percorso/rootfs" >&2
+ROOTFS_MODE="755"
+if (($# == 2)) && [[ "$1" == "--staging" ]]; then
+  ROOTFS_MODE="700"
+  ROOTFS_INPUT="$2"
+elif (($# == 1)); then
+  ROOTFS_INPUT="$1"
+else
+  echo "Uso: $0 [--staging] /percorso/rootfs" >&2
   exit 2
 fi
 
-ROOTFS="${1%/}"
+ROOTFS="${ROOTFS_INPUT%/}"
 if [[ -z "$ROOTFS" || ! -d "$ROOTFS" || -L "$ROOTFS" ]]; then
-  echo "Errore: rootfs non valida: $1" >&2
+  echo "Errore: rootfs non valida: $ROOTFS_INPUT" >&2
   exit 2
 fi
 ROOTFS="$(realpath -e -- "$ROOTFS")"
@@ -71,7 +77,7 @@ check_entry() {
 
 echo "===== AureaOS rootfs permission audit ====="
 
-check_entry "." "755:0:0"
+check_entry "." "$ROOTFS_MODE:0:0"
 check_entry "etc" "755:0:0"
 check_entry "usr" "755:0:0"
 check_entry "var" "755:0:0"
