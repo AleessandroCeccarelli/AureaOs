@@ -200,7 +200,7 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
                     break;
                 }
                 Err(error) => allocation_errors.push(format!(
-                    "{:?}/{}: {}",
+                    "{:?}/{:?}: {}",
                     candidate.code,
                     candidate.modifier,
                     error
