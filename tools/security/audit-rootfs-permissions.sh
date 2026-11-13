@@ -109,13 +109,17 @@ echo "Verifica file capabilities..."
 if ! command -v getcap >/dev/null 2>&1; then
   fail "getcap non disponibile: installare libcap (strumento getcap) sull'host di build"
 else
-  capabilities="$(getcap -r "$ROOTFS" 2>/dev/null || true)"
-  if [[ -n "$capabilities" ]]; then
-    while IFS= read -r capability; do
-      fail "file capability non approvata: $capability"
-    done <<< "$capabilities"
+  if capabilities="$(getcap -r "$ROOTFS" 2>&1)"; then
+    if [[ -n "$capabilities" ]]; then
+      while IFS= read -r capability; do
+        [[ -z "$capability" ]] && continue
+        fail "file capability non approvata: $capability"
+      done <<< "$capabilities"
+    else
+      echo "PASS  nessuna file capability presente"
+    fi
   else
-    echo "PASS  nessuna file capability presente"
+    fail "impossibile completare la scansione file capabilities: $capabilities"
   fi
 fi
 
