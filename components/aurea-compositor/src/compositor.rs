@@ -11,7 +11,11 @@ use smithay::{
     backend::input::Keycode,
     input::{Seat, SeatHandler, SeatState},
     output::Output,
-    reexports::wayland_server::{\n        DisplayHandle,\n        backend::{ClientId, ObjectId},\n        protocol::wl_surface::WlSurface,\n    },
+    reexports::wayland_server::{
+        DisplayHandle,
+        backend::{ClientId, ObjectId},
+        protocol::wl_surface::WlSurface,
+    },
     wayland::{compositor::CompositorState, shell::xdg::XdgShellState},
 };
 
