@@ -159,6 +159,12 @@ if ! command -v systemd-nspawn >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! command -v getcap >/dev/null 2>&1; then
+  echo "Errore: getcap non è installato; serve per verificare le file capabilities della rootfs." >&2
+  echo "Su Fedora: sudo dnf install libcap" >&2
+  exit 1
+fi
+
 if [[ ! -d "$PACKAGE_DIR" ]]; then
   echo "Errore: manifesti non trovati: $PACKAGE_DIR" >&2
   exit 1
