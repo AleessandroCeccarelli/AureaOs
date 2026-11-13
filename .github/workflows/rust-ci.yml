@@ -6,10 +6,8 @@
 name: Rust CI
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  # Deliberately manual-only: development validation is performed on the
+  # project's Fedora hardware, not on GitHub-hosted runners.
   workflow_dispatch:
 
 permissions:
