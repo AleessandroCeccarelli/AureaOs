@@ -356,7 +356,12 @@ fn changed_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
 
     if state.session_active {
         if state.drm_devices.contains(node) {
-            initialize_drm_surfaces(state, node)?;
+            if let Err(error) = initialize_drm_surfaces(state, node) {
+                // Do not leave stale Wayland globals advertising outputs whose
+                // KMS surfaces could not be recreated.
+                remove_device_outputs(state, node);
+                return Err(error);
+            }
             refresh_device_outputs(state, node)?;
             forget_changed_device(&mut state.udev_changed_devices, node);
         } else {
@@ -485,6 +490,9 @@ pub(super) fn activate_discovered_devices(state: &mut WaylandState) {
         initialize_vulkan_backend(state, node);
         if let Err(error) = initialize_drm_surfaces(state, node) {
             eprintln!("AureaOS: unable to restore KMS surfaces for {node}: {error}");
+            // The old output globals are no longer backed by active KMS
+            // surfaces; withdraw them until the device becomes ready again.
+            remove_device_outputs(state, node);
         }
     }
 
