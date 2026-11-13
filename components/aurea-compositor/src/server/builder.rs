@@ -194,14 +194,9 @@ pub(super) fn build(
         }
     }
 
-    // Discover connected connectors on the currently initialized DRM devices.
-    #[cfg(feature = "drm")]
-    for (_, device) in state.drm_devices.iter() {
-        crate::drm::outputs::initialize_drm_outputs(device, state.compositor.output_manager())
-            .map_err(io::Error::other)?;
-    }
-
-    // Create native KMS surfaces after logical outputs have been registered.
+    // Register outputs only after every required rendering dependency and
+    // the native KMS surfaces have been initialized. This prevents publishing
+    // logical outputs that cannot be scanned out.
     #[cfg(feature = "drm")]
     {
         let nodes = state
@@ -209,15 +204,50 @@ pub(super) fn build(
             .iter()
             .map(|(node, _)| *node)
             .collect::<Vec<_>>();
+
         for node in nodes {
-            if let Some(device) = state.drm_devices.get_mut(node) {
+            if !state.gbm_devices.contains(node) || !state.vulkan_backends.contains_key(&node) {
+                eprintln!(
+                    "AureaOS: skipping outputs for {node}: GBM or Vulkan backend is unavailable"
+                );
+                continue;
+            }
+
+            let manager = {
+                let Some(device) = state.drm_devices.get_mut(node) else {
+                    continue;
+                };
+
                 match crate::drm::surfaces::DrmSurfaceManager::initialize(device) {
-                    Ok(manager) => {
-                        state.drm_surfaces.insert(node, manager);
+                    Ok(manager) => manager,
+                    Err(error) => {
+                        eprintln!(
+                            "AureaOS: KMS surfaces unavailable for DRM device {node}: {error}"
+                        );
+                        continue;
                     }
-                    Err(error) => eprintln!(
-                        "AureaOS: KMS surfaces unavailable for DRM device {node}: {error}"
-                    ),
+                }
+            };
+
+            let output_result = {
+                let Some(device) = state.drm_devices.get(node) else {
+                    continue;
+                };
+                crate::drm::outputs::initialize_drm_outputs(
+                    device,
+                    state.compositor.output_manager(),
+                )
+            };
+
+            match output_result {
+                Ok(_) => {
+                    state.drm_surfaces.insert(node, manager);
+                }
+                Err(error) => {
+                    eprintln!(
+                        "AureaOS: logical outputs unavailable for DRM device {node}: {error}"
+                    );
+                    // The manager drops here and attempts to disable its KMS surfaces.
                 }
             }
         }
