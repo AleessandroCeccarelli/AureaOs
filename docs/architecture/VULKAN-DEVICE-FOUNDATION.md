@@ -26,6 +26,17 @@ SPIR-V modules are validated for basic container invariants before Vulkan module
 
 The compositor includes GLSL 450 vertex and fragment shader sources under `components/aurea-compositor/shaders/`. The vertex shader generates a triangle from `gl_VertexIndex` and interpolates RGB colors; no vertex buffer or descriptor set is required. The fragment shader writes the interpolated color. The reproducible Fedora compilation helper is `tools/shaders/compile-vulkan-shaders.sh`; generated SPIR-V files are kept outside source control.
 
+## Hardware eligibility and multi-GPU policy
+
+The installation hardware floor is documented in [HARDWARE-REQUIREMENTS.md](HARDWARE-REQUIREMENTS.md). It is AMD64/x86-64-v3, 8 GiB RAM and at least one hardware Vulkan 1.3 GPU. The CPU check is vendor-neutral: Intel and AMD are accepted by capability, not by model-name allowlists.
+
+The DRM startup path enumerates each discovered DRM device independently and attempts to create a Vulkan backend for the physical device whose reported primary or render node matches that DRM node. This supports independent per-GPU output paths when the installed driver exposes a trustworthy Vulkan DRM identity. It does not yet implement cross-GPU rendering or DMA-BUF transfer between a render-only discrete GPU and a display-connected integrated GPU. No GPU-to-output association is guessed.
+
+`VK_EXT_image_drm_format_modifier` is optional in the device extension plan. The renderer also queries core Vulkan linear-tiling capabilities when that extension is absent. A candidate must still pass the actual allocation and GBM/KMS import path. `VK_EXT_queue_family_foreign` remains required by the current direct scanout ownership-transfer path; without it, the current scanout implementation is unavailable even if offscreen Vulkan works.
+
+The renderer prefers XRGB8888 and then ARGB8888, but now attempts the remaining negotiated format/modifier candidates if an allocation fails. A non-empty format/modifier intersection is not itself proof of importability; allocation and framebuffer registration remain runtime checks.
+
+
 This is not yet a window renderer. `VulkanOutputScanoutBackend::render_frame` currently ignores its `RenderScene` argument and clears the output image only. Texture descriptors, importing sampled Wayland surface buffers, drawing window elements, color management and damage tracking remain unimplemented. The XDG toplevel lifecycle and scene collection exist, but they do not yet result in visible application windows. The current `aurea-shell` crate coordinates application lifecycle and events; it does not yet draw a desktop interface or provide a Wayland client window.
 
 ## Frames in flight and display ownership
