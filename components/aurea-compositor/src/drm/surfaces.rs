@@ -305,19 +305,9 @@ impl DrmSurfaceManager {
     /// failed surfaces and their CRTC ownership remain retained so callers can
     /// retry teardown and must not release dependent GBM/Vulkan resources.
     pub fn clear(&mut self) -> Result<(), String> {
-        let mut errors = Vec::new();
-        let mut cleared = Vec::new();
-
-        for (output_id, managed) in &self.surfaces {
-            match managed.surface.clear() {
-                Ok(()) => cleared.push(*output_id),
-                Err(error) => errors.push(format!("output {output_id}: {error}")),
-            }
-        }
-
-        for output_id in cleared {
-            self.surfaces.remove(&output_id);
-        }
+        let errors = clear_and_retain(&mut self.surfaces, |managed| {
+            managed.surface.clear().map_err(|error| error.to_string())
+        });
 
         self.crtc_owners
             .retain(|_, output_id| self.surfaces.contains_key(output_id));
@@ -352,9 +342,36 @@ where
         .collect()
 }
 
+/// Clears map values and retains entries whose cleanup failed.
+fn clear_and_retain<K, V, E>(
+    entries: &mut HashMap<K, V>,
+    mut clear: impl FnMut(&V) -> Result<(), E>,
+) -> Vec<String>
+where
+    K: Copy,
+    E: fmt::Display,
+{
+    let mut cleared = Vec::new();
+    let mut errors = Vec::new();
+
+    for (key, value) in entries.iter() {
+        match clear(value) {
+            Ok(()) => cleared.push(*key),
+            Err(error) => errors.push(error.to_string()),
+        }
+    }
+
+    for key in cleared {
+        entries.remove(&key);
+    }
+
+    errors
+}
+
 #[cfg(test)]
 mod lifecycle_tests {
-    use super::clear_each;
+    use super::{clear_and_retain, clear_each};
+    use std::collections::HashMap;
     use std::cell::RefCell;
 
     #[test]
@@ -383,6 +400,22 @@ mod lifecycle_tests {
 
         assert_eq!(*calls.borrow(), vec![1, 2, 3]);
         assert_eq!(errors, vec!["surface 1 failed", "surface 3 failed"]);
+    }
+
+    #[test]
+    fn failed_cleanup_entry_is_retained_and_can_be_retried() {
+        let mut entries = HashMap::from([(1_u8, false), (2_u8, true)]);
+        let errors = clear_and_retain(&mut entries, |should_fail| {
+            if *should_fail { Err("KMS disable failed") } else { Ok(()) }
+        });
+
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries.get(&2), Some(&true));
+        assert_eq!(errors, vec!["KMS disable failed"]);
+
+        let retry_errors = clear_and_retain(&mut entries, |_| Ok::<(), &'static str>(()));
+        assert!(retry_errors.is_empty());
+        assert!(entries.is_empty());
     }
 
     #[test]
