@@ -3,16 +3,16 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Bounds client-created Wayland surface resources.
+//! Bounds Wayland surfaces after their first client commit.
 
 use std::collections::HashMap;
 
 use smithay::reexports::wayland_server::backend::{ClientId, ObjectId};
 
-/// Maximum number of live wl_surface objects owned by one client.
+/// Maximum number of committed wl_surface objects owned by one client.
 const MAX_SURFACES_PER_CLIENT: usize = 256;
 
-/// Maximum number of live wl_surface objects across the compositor.
+/// Maximum number of committed wl_surface objects across the compositor.
 const MAX_SURFACES_GLOBAL: usize = 4096;
 
 /// Tracks accepted surfaces so disconnected or destroyed clients release quota.
