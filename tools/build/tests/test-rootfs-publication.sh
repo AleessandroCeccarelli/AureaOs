@@ -30,4 +30,11 @@ mv --no-clobber --no-target-directory -- "$WORK/source-pinned" ./rootfs
 [[ -d "$WORK/parent-moved/rootfs" ]]
 [[ ! -e "$WORK/parent/rootfs" ]]
 
+# A substituted parent symlink must not pass the physical-path identity check.
+mkdir "$WORK/expected-parent" "$WORK/replacement-parent"
+ln -s "$WORK/replacement-parent" "$WORK/requested-parent"
+cd -- "$WORK/requested-parent"
+PINNED_PARENT="$(pwd -P)"
+[[ "$PINNED_PARENT" != "$WORK/expected-parent" ]]
+
 echo "All rootfs publication fixture tests passed."
