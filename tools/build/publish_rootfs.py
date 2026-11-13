@@ -125,6 +125,10 @@ def publish_rootfs(
             os.fsencode(destination_name),
         )
 
+        # The directory was private while staged. Change only the pinned
+        # inode after publication so the final rootfs has the normal 0755 root.
+        os.fchmod(source_fd, 0o755)
+
         published_stat = os.stat(
             destination_name,
             dir_fd=destination_parent_fd,
@@ -132,10 +136,12 @@ def publish_rootfs(
         )
         if (
             not stat.S_ISDIR(published_stat.st_mode)
+            or published_stat.st_uid != 0
+            or stat.S_IMODE(published_stat.st_mode) != 0o755
             or published_stat.st_dev != source_stat.st_dev
             or published_stat.st_ino != source_stat.st_ino
         ):
-            raise RuntimeError("published directory identity does not match the protected staging inode")
+            raise RuntimeError("published directory identity or final mode does not match the protected staging inode")
 
         try:
             os.stat(source_name, dir_fd=source_parent_fd, follow_symlinks=False)
