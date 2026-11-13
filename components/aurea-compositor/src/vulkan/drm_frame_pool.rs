@@ -33,6 +33,7 @@ pub enum VulkanDrmFramePoolError {
     FramebufferStillInUse(DrmFramebufferId),
     CommandBuffer(vk::Result),
     ImageTransition(VulkanImageTransitionError),
+    ForeignQueueFamilyUnavailable,
 }
 
 impl fmt::Display for VulkanDrmFramePoolError {
