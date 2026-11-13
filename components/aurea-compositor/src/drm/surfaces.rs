@@ -299,9 +299,78 @@ impl DrmSurfaceManager {
         output.presentation_mut().on_vblank(node, crtc)
     }
 
-    /// Drops all surfaces before their owning DRM device is torn down.
-    pub fn clear(&mut self) {
+    /// Disables every KMS surface before releasing its buffers and ownership.
+    ///
+    /// All surfaces are attempted even if one clear operation fails. Resources
+    /// are then dropped so callers can continue the remaining device teardown.
+    pub fn clear(&mut self) -> Result<(), String> {
+        let errors = clear_each(
+            self.surfaces.values(),
+            |managed| managed.surface.clear().map_err(|error| error.to_string()),
+        );
+
         self.surfaces.clear();
         self.crtc_owners.clear();
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors.join("; "))
+        }
     }
+}
+
+/// Runs a cleanup operation for every item and collects all failures.
+fn clear_each<T, E>(
+    items: impl IntoIterator<Item = T>,
+    mut clear: impl FnMut(T) -> Result<(), E>,
+) -> Vec<String>
+where
+    E: fmt::Display,
+{
+    items
+        .into_iter()
+        .filter_map(|item| clear(item).err().map(|error| error.to_string()))
+        .collect()
+}
+
+#[cfg(test)]
+mod lifecycle_tests {
+    use super::clear_each;
+    use std::cell::RefCell;
+
+    #[test]
+    fn clear_attempts_every_surface_in_iteration_order() {
+        let calls = RefCell::new(Vec::new());
+        let errors = clear_each([1, 2, 3], |item| {
+            calls.borrow_mut().push(item);
+            Ok::<(), &'static str>(())
+        });
+
+        assert!(errors.is_empty());
+        assert_eq!(*calls.borrow(), vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn clear_continues_after_failures_and_collects_them() {
+        let calls = RefCell::new(Vec::new());
+        let errors = clear_each([1, 2, 3], |item| {
+            calls.borrow_mut().push(item);
+            if item != 2 {
+                Err(format!("surface {item} failed"))
+            } else {
+                Ok(())
+            }
+        });
+
+        assert_eq!(*calls.borrow(), vec![1, 2, 3]);
+        assert_eq!(errors, vec!["surface 1 failed", "surface 3 failed"]);
+    }
+
+    #[test]
+    fn clearing_an_empty_collection_is_successful() {
+        let errors = clear_each(Vec::<u8>::new(), |_| Ok::<(), &'static str>(()));
+        assert!(errors.is_empty());
+    }
+}
 }
