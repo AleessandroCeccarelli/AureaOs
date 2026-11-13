@@ -123,6 +123,10 @@ ROOTFS="$WORK/rootfs"
 make_valid_rootfs "$ROOTFS"
 write_getcap 0
 expect_pass "valid minimal rootfs" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+expect_fail "reject non-private staging root mode" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" --staging "$ROOTFS"
+chmod 0700 "$ROOTFS"
+expect_pass "accept private staging root mode" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" --staging "$ROOTFS"
+chmod 0755 "$ROOTFS"
 
 mkdir -p "$ROOTFS/usr/bin"
 touch "$ROOTFS/usr/bin/passwd"
