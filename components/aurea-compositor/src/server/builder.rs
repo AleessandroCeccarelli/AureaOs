@@ -206,7 +206,10 @@ pub(super) fn build(
             .collect::<Vec<_>>();
 
         for node in nodes {
-            if !state.gbm_devices.contains(node) || !state.vulkan_backends.contains_key(&node) {
+            if !super::gbm_lifecycle::graphics_dependencies_ready(
+                state.gbm_devices.contains(node),
+                state.vulkan_backends.contains_key(&node),
+            ) {
                 eprintln!(
                     "AureaOS: skipping outputs for {node}: GBM or Vulkan backend is unavailable"
                 );
