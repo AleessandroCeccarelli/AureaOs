@@ -11,7 +11,6 @@ import stat
 import sys
 
 
-SOURCE_PARENT = "/var/tmp"
 STAGING_PREFIX = "aureaos-rootfs."
 RENAME_NOREPLACE = 1
 
@@ -61,20 +60,32 @@ def _rename_noreplace(
 def publish_rootfs(
     source_path: str,
     destination_name: str,
-    destination_parent: str = ".",
-    source_parent_path: str = SOURCE_PARENT,
-) -> None:
+    destination_parent: str,
+    expected_destination_id: str,
+    source_parent_path: str = ".",
+) -> str:
     source_parent = os.path.dirname(source_path)
     source_name = os.path.basename(source_path)
 
+    if source_parent != source_parent_path or not source_name.startswith(STAGING_PREFIX):
+        raise ValueError("source must be a rootfs staging directory in the pinned staging parent")
+    if source_parent_path != "." and os.path.realpath(source_parent_path) != source_parent_path:
+        raise ValueError("staging parent path must be canonical")
     if (
-        source_parent != source_parent_path
-        or os.path.realpath(source_parent_path) != source_parent_path
-        or not source_name.startswith(STAGING_PREFIX)
+        not destination_name
+        or destination_name in (".", "..")
+        or os.sep in destination_name
     ):
-        raise ValueError("source must be a direct child of /var/tmp with the AureaOS staging prefix")
-    if not destination_name or destination_name in (".", "..") or os.sep in destination_name:
         raise ValueError("destination must be a single valid basename")
+    if os.path.realpath(destination_parent) != destination_parent:
+        raise ValueError("destination parent path is no longer canonical")
+
+    try:
+        expected_device, expected_inode = (
+            int(value) for value in expected_destination_id.split(":", maxsplit=1)
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError("expected destination identity must be DEV:INO") from error
 
     source_parent_fd = _open_directory(source_parent_path)
     destination_parent_fd = _open_directory(destination_parent)
@@ -82,10 +93,15 @@ def publish_rootfs(
 
     try:
         source_parent_stat = os.fstat(source_parent_fd)
-        if source_parent_stat.st_uid != 0 or stat.S_IMODE(source_parent_stat.st_mode) != 0o1777:
-            raise PermissionError("/var/tmp must be a real root-owned directory with mode 1777")
+        if source_parent_stat.st_uid != 0 or stat.S_IMODE(source_parent_stat.st_mode) != 0o711:
+            raise PermissionError("staging parent must be root-owned with mode 0711")
 
         destination_parent_stat = os.fstat(destination_parent_fd)
+        if (destination_parent_stat.st_dev, destination_parent_stat.st_ino) != (
+            expected_device,
+            expected_inode,
+        ):
+            raise PermissionError("destination parent identity changed after validation")
         if source_parent_stat.st_dev != destination_parent_stat.st_dev:
             raise OSError(errno.EXDEV, "staging and destination must be on the same filesystem")
 
@@ -96,7 +112,7 @@ def publish_rootfs(
         )
         source_stat = os.fstat(source_fd)
         if source_stat.st_uid != 0 or stat.S_IMODE(source_stat.st_mode) != 0o700:
-            raise PermissionError("staging rootfs must be a root-owned directory with mode 0700")
+            raise PermissionError("staging rootfs must be root-owned with mode 0700")
         if source_stat.st_dev != destination_parent_stat.st_dev:
             raise OSError(errno.EXDEV, "staging and destination must be on the same filesystem")
 
@@ -125,8 +141,8 @@ def publish_rootfs(
             os.fsencode(destination_name),
         )
 
-        # The directory was private while staged. Change only the pinned
-        # inode after publication so the final rootfs has the normal 0755 root.
+        # The directory was private while staged. Change only the pinned inode
+        # after publication so the final rootfs has the normal 0755 root.
         os.fchmod(source_fd, 0o755)
 
         published_stat = os.stat(
@@ -141,13 +157,17 @@ def publish_rootfs(
             or published_stat.st_dev != source_stat.st_dev
             or published_stat.st_ino != source_stat.st_ino
         ):
-            raise RuntimeError("published directory identity or final mode does not match the protected staging inode")
+            raise RuntimeError("published directory identity or final mode is invalid")
 
         try:
             os.stat(source_name, dir_fd=source_parent_fd, follow_symlinks=False)
         except FileNotFoundError:
-            return
-        raise RuntimeError("staging entry still exists after publication")
+            pass
+        else:
+            raise RuntimeError("staging entry still exists after publication")
+
+        published_parent = os.readlink(f"/proc/self/fd/{destination_parent_fd}")
+        return os.path.join(published_parent, destination_name)
     finally:
         if source_fd >= 0:
             os.close(source_fd)
@@ -156,16 +176,21 @@ def publish_rootfs(
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 3:
-        print(f"Usage: {argv[0]} STAGING_PATH DESTINATION_BASENAME", file=sys.stderr)
+    if len(argv) != 5:
+        print(
+            f"Usage: {argv[0]} STAGING_PATH DESTINATION_BASENAME "
+            "DESTINATION_PARENT EXPECTED_PARENT_DEV:INO",
+            file=sys.stderr,
+        )
         return 2
 
     try:
-        publish_rootfs(argv[1], argv[2])
+        published_location = publish_rootfs(argv[1], argv[2], argv[3], argv[4])
     except (OSError, RuntimeError, ValueError) as error:
         print(f"Rootfs publication failed: {error}", file=sys.stderr)
         return 1
 
+    print(published_location)
     return 0
 
 
