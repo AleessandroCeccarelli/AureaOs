@@ -3,7 +3,7 @@
 # Security and Lifecycle Audit — 2026-11-13
 
 **Baseline revision:** `0ee00fbfa778cc75b0bd780dc2c847faa454c68a`  
-**Latest source/test remediation revision at this audit update:** `dbb73df853dac0711f7901b1058db71446dac638` (manual-only workflow now includes the rootfs staging/publication fixtures).
+**Latest source/test remediation revision at this audit update:** `380ce1a1dbd0e6af5fa0b2fd9878dc2350814c1d` (DRM partial-initialization ownership and formatting correction; rootfs fixture tests are wired into the manual-only workflow).
 **Scope:** current Rust workspace, compositor DRM/KMS and Vulkan lifecycle, Debian bootstrap, rootfs permission audit.  
 **Status:** partial source audit with initial remediation commits; not a security certification and not a declaration that AureaOS is production-hardened.
 
@@ -55,6 +55,15 @@ The script checks that the destination does not exist and later performs privile
 
 **Remaining limitations:** the root-only fixtures exercise staging creation and atomic publication primitives, not a full concurrent end-to-end bootstrap under adversarial scheduling. The final directory can be renamed by its owner after the post-publication identity check, and a completed Debian rootfs build has not yet been run with the new staging flow. Keep this finding open until a disposable end-to-end bootstrap and targeted race testing confirm the behavior on the supported Fedora environment.
 
+## AUR-SEC-005 — Unsound and unmaintained transitive math dependency
+
+**Severity:** Informational dependency risk; no patched upstream release is available.
+
+`Cargo.lock` resolves `cgmath 0.18.0` as a transitive dependency of `smithay 0.7.0`. The historical `cargo audit` run reported both [RUSTSEC-2026-0196](https://rustsec.org/advisories/RUSTSEC-2026-0196.html) (unmaintained crate) and [RUSTSEC-2026-0197](https://rustsec.org/advisories/RUSTSEC-2026-0197.html) (safe `Matrix2/3/4::swap_columns` calls with identical indices can cause undefined behavior). RustSec lists no patched `cgmath` release. The `cargo audit` job completed successfully, but these informational advisories were emitted and must not be mistaken for a clean dependency report.
+
+**Remediation:** do not suppress the advisories or force an unreviewed replacement into the lockfile. Evaluate a maintained Smithay release or a reviewed Smithay revision that removes `cgmath`, then audit the API and rendering changes before upgrading. Until then, retain this as an explicit transitive dependency risk; Fedora build/test validation does not by itself resolve the upstream soundness advisory.
+
+
 ### AUR-DRM-001 — KMS clear failures are followed by dependent-resource release
 
 **Severity:** High (display-resource lifecycle risk; hardware failure scenario not reproduced)
@@ -103,17 +112,17 @@ These are source-level observations, not proof against all runtime or kernel-lev
 
 ## Verification record
 
-- Fedora workspace formatting, workspace checks, DRM-feature checks, and workspace tests were reported passing by the developer before this audit.
-- Vulkan shader compilation and `spirv-val --target-env vulkan1.3` were reported passing.
-- The ignored Vulkan offscreen triangle test was explicitly run and passed.
-- Initial KMS cleanup-retention and retry unit coverage was added in the remediation commits; it is hardware-independent and does not exercise the Smithay/kernel KMS operation.
-- Startup and Udev hotplug paths were changed to gate output registration/publication on GBM, Vulkan, and KMS surface readiness; a pure readiness-gate unit test covers all four dependency combinations.
-- Startup retains ownership of successfully created KMS surfaces even if logical output registration fails, so they remain available to explicit shutdown cleanup.
-- Udev integration rollback now retains the complete graphics dependency chain if a KMS clear fails, rather than unconditionally removing the surface manager and its dependencies.
-- Rootfs capability scanning now treats `getcap` execution errors as audit failures. Both world-writable and SUID/SGID filesystem traversals now capture `find` output and fail closed if traversal exits unsuccessfully, instead of relying on process substitution whose producer status is otherwise lost.
-- Rootfs world-writable checks, SUID/SGID allowlist enforcement, and capability scanning are present in source. The permission-audit fixture has a historical passing run (`43485619945`); the expanded staging/publication Python fixtures have been added to the manual-only workflow but have not been run in this cycle.
-- No post-remediation Fedora build/test run has been performed yet. The rootfs staging-parent and atomic-publication fixtures, plus the permission-audit fixture, are ready for execution on the Fedora machine. Both GitHub Actions workflows are manual-only and are not being run. The nspawn private-user/idmapped-mount option and the corrected DRM session-activation ordering are awaiting Fedora validation.
+- Historical push-triggered workflow run `43487772104` (commit `40d5cf2`) did not validate the workspace: Rust formatting failed on two formatting-only differences in `drm/surfaces.rs` (now corrected in `380ce1a`), and bootstrap validation failed in the obsolete `mv --no-clobber` shell fixture (that fixture was removed and replaced with descriptor-based Python tests). All cargo build/test steps in that run were skipped.
+- The dependency-audit job in that historical run completed successfully but emitted `cgmath 0.18.0` advisories `RUSTSEC-2026-0196` and `RUSTSEC-2026-0197`; see AUR-SEC-005. No fixed upstream version was available.
+- Vulkan shader compilation and `spirv-val --target-env vulkan1.3` were reported passing in an earlier Fedora validation.
+- The ignored Vulkan offscreen triangle test was explicitly run and passed in an earlier Fedora validation.
+- Initial KMS cleanup-retention and retry unit coverage is hardware-independent and does not exercise the Smithay/kernel KMS operation. Partial initialization now also returns and retains the partially populated manager.
+- Startup and Udev hotplug paths gate output registration/publication on GBM, Vulkan, and KMS surface readiness; a pure readiness-gate unit test covers all four dependency combinations.
+- Rootfs capability scanning treats `getcap` execution errors as audit failures; world-writable and SUID/SGID traversals fail closed when `find` exits unsuccessfully.
+- The rootfs permission fixture passed in the historical GitHub Actions run `43485619945`. The new staging-parent and atomic-publication Python fixtures are wired into the manual-only workflow but have not been run in this cycle.
+- No post-remediation Fedora build/test run has been performed yet. The staging-parent, atomic-publication, and permission-audit fixtures are ready for execution on the Fedora machine. Both GitHub Actions workflows are manual-only and are not being run. The nspawn private-user/idmapped-mount option and corrected DRM session-activation ordering are awaiting Fedora validation.
 - No physical KMS/display test was performed during this audit.
+- Source review includes the baseline and remediation commits recorded in this report; the current `main` source revision at this update is `380ce1a1dbd0e6af5fa0b2fd9878dc2350814c1d`.
 - Source review includes the baseline and remediation commits recorded in this report; the current `main` revision at this update is `dbb73df853dac0711f7901b1058db71446dac638`.
 
 ## Release gates
