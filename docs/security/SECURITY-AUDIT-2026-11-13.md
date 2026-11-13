@@ -3,7 +3,7 @@
 # Security and Lifecycle Audit — 2026-11-13
 
 **Baseline revision:** `0ee00fbfa778cc75b0bd780dc2c847faa454c68a`  
-**Remediation revision:** `c37d852a23ca3997cc5231f168afb577ccd77f38`  
+**Latest remediation revision:** `1d7f8bd94dd477c4b2a2aeae9fcafc2065310a65`  
 **Scope:** current Rust workspace, compositor DRM/KMS and Vulkan lifecycle, Debian bootstrap, rootfs permission audit.  
 **Status:** partial source audit with initial remediation commits; not a security certification and not a declaration that AureaOS is production-hardened.
 
@@ -45,7 +45,7 @@ The script checks that the destination does not exist and later performs privile
 
 The original baseline cleared its surface and CRTC ownership maps even if one or more KMS clear operations failed, and then released GBM/Vulkan resources during session pause. That behavior could discard userspace ownership while the kernel might still be scanning out a framebuffer.
 
-**Initial remediation (2026-11-13):** `DrmSurfaceManager::clear` now removes only surfaces whose KMS clear succeeded and retains failed surfaces plus their CRTC ownership for retry. Session-pause and orderly shutdown paths now retain GBM/Vulkan dependencies whenever any surface clear fails. A hardware-independent unit test covers retention and successful retry. **Still required:** define behavior for terminal object destruction and confirmed device removal, add integration fault-injection for multiple physical outputs, and prove the kernel release conditions. This is a meaningful mitigation, not a complete quarantine guarantee.
+**Initial remediation (2026-11-13):** `DrmSurfaceManager::clear` now removes only surfaces whose KMS clear succeeded and retains failed surfaces plus their CRTC ownership for retry. Session-pause and orderly shutdown paths now retain GBM/Vulkan dependencies whenever any surface clear fails. A hardware-independent unit test covers retention and successful retry. The Udev hotplug integration rollback path now also attempts an explicit KMS clear before removing the surface manager; if that clear fails, it returns an error while retaining the surface manager, notifier, DRM device, GBM allocator, and Vulkan backend rather than dropping dependent resources. **Still required:** define behavior for terminal object destruction and confirmed device removal, add integration fault-injection for multiple physical outputs, and prove the kernel release conditions. This is a meaningful mitigation, not a complete quarantine guarantee.
 
 ### AUR-DRM-002 — Graphics backend initialization is best-effort and can leave an output without a render path
 
@@ -89,6 +89,7 @@ These are source-level observations, not proof against all runtime or kernel-lev
 - Initial KMS cleanup-retention and retry unit coverage was added in the remediation commits; it is hardware-independent and does not exercise the Smithay/kernel KMS operation.
 - Startup and Udev hotplug paths were changed to gate output registration/publication on GBM, Vulkan, and KMS surface readiness; a pure readiness-gate unit test covers all four dependency combinations.
 - Startup retains ownership of successfully created KMS surfaces even if logical output registration fails, so they remain available to explicit shutdown cleanup.
+- Udev integration rollback now retains the complete graphics dependency chain if a KMS clear fails, rather than unconditionally removing the surface manager and its dependencies.
 - Rootfs capability scanning now treats `getcap` execution errors as audit failures.
 - No post-remediation Fedora build/test run has been performed yet.
 - No physical KMS/display test was performed during this audit.
@@ -99,7 +100,7 @@ These are source-level observations, not proof against all runtime or kernel-lev
 1. Validate the rootfs allowlist against a disposable completed Debian rootfs and add fixture-based positive/negative tests.
 2. Close the bootstrap target-path race with root-owned staging and no-follow/descriptor-relative privileged operations; add replacement tests.
 3. Test the nspawn sandbox with an explicit, measured capability and namespace policy.
-4. Complete KMS quarantine semantics for terminal destruction/device removal and add multi-output fault injection.
+4. Complete KMS quarantine semantics for terminal destruction/device removal and add multi-output fault injection; hotplug rollback retention is only an intermediate mitigation.
 5. Make render readiness and degraded-output behavior explicit across startup and Udev hotplug.
 6. Run physical KMS validation only on a recoverable test setup, with a known-good VT/session recovery procedure.
 7. Re-run formatting, locked workspace checks, and all safe tests after each source change.
