@@ -338,15 +338,15 @@ PARENT_ID="$(stat -c '%d:%i' -- .)"
 # Build inside a private root-owned directory on the destination filesystem.
 # Keeping the working directory pinned also prevents parent-path replacement
 # from redirecting privileged build operations.
-ROOTFS_STAGE_PARENT="$(sudo mktemp -d --tmpdir=. .aureaos-build.XXXXXXXXXX)"
-ROOTFS_STAGE_PARENT_NAME="$(basename -- "$ROOTFS_STAGE_PARENT")"
-sudo chmod 0711 -- "$ROOTFS_STAGE_PARENT"
-STAGE_PARENT_OWNER_MODE="$(sudo stat -c '%u:%a' -- "$ROOTFS_STAGE_PARENT")"
-if [[ "$STAGE_PARENT_OWNER_MODE" != "0:711" ]]; then
-  echo "Errore: staging parent non protetto (atteso root:0711)." >&2
+STAGE_METADATA="$(
+  sudo python3 "$REPO_ROOT/tools/build/create_staging_parent.py" "$TARGET_PARENT" "$PARENT_ID"
+)"
+read -r ROOTFS_STAGE_PARENT_NAME ROOTFS_STAGE_PARENT_ID <<< "$STAGE_METADATA"
+if [[ -z "$ROOTFS_STAGE_PARENT_NAME" || -z "$ROOTFS_STAGE_PARENT_ID" ]]; then
+  echo "Errore: il creator non ha restituito l'identità dello staging parent." >&2
   exit 1
 fi
-ROOTFS_STAGE_PARENT_ID="$(sudo stat -c '%d:%i' -- "$ROOTFS_STAGE_PARENT")"
+ROOTFS_STAGE_PARENT="$TARGET_PARENT/$ROOTFS_STAGE_PARENT_NAME"
 cd -- "$ROOTFS_STAGE_PARENT"
 if [[ "$(sudo stat -c '%d:%i' -- .)" != "$ROOTFS_STAGE_PARENT_ID" ]]; then
   echo "Errore: staging parent sostituito durante l'apertura." >&2
