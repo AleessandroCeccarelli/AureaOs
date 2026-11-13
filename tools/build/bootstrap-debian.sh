@@ -44,6 +44,8 @@ run_in_rootfs() {
     --quiet \
     --register=no \
     --directory="$ROOTFS_WORK" \
+    --private-users=pick \
+    --private-users-ownership=map \
     --as-pid2 \
     --drop-capability=CAP_SYS_ADMIN \
     --drop-capability=CAP_SYS_MODULE \
