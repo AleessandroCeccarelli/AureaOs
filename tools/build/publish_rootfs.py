@@ -68,7 +68,7 @@ def publish_rootfs(
     if not destination_name or destination_name in (".", "..") or os.sep in destination_name:
         raise ValueError("destination must be a single valid basename")
 
-    source_parent_fd = _open_directory(SOURCE_PARENT)
+    source_parent_fd = _open_directory(source_parent_path)
     destination_parent_fd = _open_directory(destination_parent)
     source_fd = -1
 
