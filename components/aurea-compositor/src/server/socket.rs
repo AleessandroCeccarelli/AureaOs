@@ -95,7 +95,14 @@ mod tests {
 
     #[test]
     fn rejects_empty_or_path_like_socket_names() {
-        for name in ["", ".", "..", "../wayland-0", "nested/socket", "/tmp/socket"] {
+        for name in [
+            "",
+            ".",
+            "..",
+            "../wayland-0",
+            "nested/socket",
+            "/tmp/socket",
+        ] {
             assert_eq!(
                 validate_socket_name(name).unwrap_err().kind(),
                 ErrorKind::InvalidInput,
