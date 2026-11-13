@@ -23,8 +23,10 @@ mkdir -p "$FAKE_BIN"
 
 write_getcap() {
   local exit_code="$1"
+  local output="${2:-}"
   cat > "$FAKE_BIN/getcap" <<EOF
 #!/usr/bin/env bash
+printf '%s\\n' '$output'
 exit $exit_code
 EOF
   chmod 0755 "$FAKE_BIN/getcap"
@@ -32,13 +34,13 @@ EOF
 
 make_valid_rootfs() {
   local rootfs="$1"
-  mkdir -p "$rootfs"/{etc,usr,var,root,tmp}
+  mkdir -p "$rootfs"/{etc,usr,var/tmp,root,tmp,dev/shm}
   touch "$rootfs/etc/passwd" "$rootfs/etc/group" "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
   chown -R root:root "$rootfs"
   chown root:shadow "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
   chmod 0755 "$rootfs" "$rootfs/etc" "$rootfs/usr" "$rootfs/var"
   chmod 0700 "$rootfs/root"
-  chmod 1777 "$rootfs/tmp"
+  chmod 1777 "$rootfs/tmp" "$rootfs/var/tmp" "$rootfs/dev/shm"
   chmod 0644 "$rootfs/etc/passwd" "$rootfs/etc/group"
   chmod 0640 "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
 }
@@ -88,6 +90,9 @@ touch "$ROOTFS/usr/local/bin/unapproved-suid"
 chmod 4755 "$ROOTFS/usr/local/bin/unapproved-suid"
 expect_fail "reject unapproved SUID executable" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
 rm -f "$ROOTFS/usr/local/bin/unapproved-suid"
+
+write_getcap 0 "$ROOTFS/usr/bin/example cap_net_raw=ep"
+expect_fail "reject reported file capabilities" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
 
 write_getcap 2
 expect_fail "fail closed when getcap exits unsuccessfully" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
