@@ -71,6 +71,8 @@ run_in_rootfs_with_network_mode() {
     --drop-capability=CAP_SYS_RAWIO \
     --drop-capability=CAP_SYS_BOOT \
     --drop-capability=CAP_SYS_PTRACE \
+    --drop-capability=CAP_NET_ADMIN \
+    --drop-capability=CAP_NET_RAW \
     -- "$@"
 }
 
