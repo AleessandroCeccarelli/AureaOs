@@ -89,23 +89,26 @@ pub(super) fn register_session_events(
         .insert_source(notifier, |event, _, state| {
             let is_pause = matches!(event, SessionEvent::PauseSession);
 
-            if is_pause {
+            let cleanup_error = if is_pause {
                 // Disable KMS planes while DRM access is still valid. Continue
                 // releasing dependent resources even if one output fails.
-                let cleanup_error = clear_drm_surfaces(state);
+                let error = clear_drm_surfaces(state);
                 super::gbm_lifecycle::clear_gbm_devices(state);
                 state.vulkan_backends.clear();
+                error
+            } else {
+                None
+            };
 
-                if let Some(error) = cleanup_error {
-                    state.error = Some(io::Error::other(error));
-                    return;
-                }
-            }
-
-            let result =
+            let session_result =
                 apply_session_event(event, &mut state.session_active, &mut state.drm_devices);
 
-            if let Err(error) = result {
+            if let Some(error) = cleanup_error {
+                state.error = Some(io::Error::other(error));
+                return;
+            }
+
+            if let Err(error) = session_result {
                 state.error = Some(io::Error::other(error));
                 return;
             }
