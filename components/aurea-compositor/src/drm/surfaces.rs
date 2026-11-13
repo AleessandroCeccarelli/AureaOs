@@ -422,8 +422,8 @@ where
 #[cfg(test)]
 mod lifecycle_tests {
     use super::{clear_and_retain, clear_each};
-    use std::collections::HashMap;
     use std::cell::RefCell;
+    use std::collections::HashMap;
 
     #[test]
     fn clear_attempts_every_surface_in_iteration_order() {
@@ -457,7 +457,11 @@ mod lifecycle_tests {
     fn failed_cleanup_entry_is_retained_and_can_be_retried() {
         let mut entries = HashMap::from([(1_u8, false), (2_u8, true)]);
         let errors = clear_and_retain(&mut entries, |should_fail| {
-            if *should_fail { Err("KMS disable failed") } else { Ok(()) }
+            if *should_fail {
+                Err("KMS disable failed")
+            } else {
+                Ok(())
+            }
         });
 
         assert_eq!(entries.len(), 1);
