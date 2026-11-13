@@ -102,7 +102,7 @@ fn deferred_refresh_keeps_failures_and_unmanaged_devices_but_removes_successes()
 }
 
 #[test]
-fn KMS_surfaces_are_restored_before_outputs_are_published() {
+fn kms_surfaces_are_restored_before_outputs_are_published() {
     let mut steps = Vec::new();
 
     restore_before_publish(
@@ -122,7 +122,7 @@ fn KMS_surfaces_are_restored_before_outputs_are_published() {
 }
 
 #[test]
-fn output_publication_is_skipped_when_KMS_restore_fails() {
+fn output_publication_is_skipped_when_kms_restore_fails() {
     let mut steps = Vec::new();
 
     let result = restore_before_publish(
