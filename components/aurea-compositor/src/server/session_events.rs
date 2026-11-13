@@ -58,6 +58,25 @@ where
     Ok(())
 }
 
+
+/// Clears every managed KMS surface while the libseat session still owns DRM.
+#[cfg(feature = "drm")]
+pub(super) fn clear_drm_surfaces(state: &mut WaylandState) -> Option<String> {
+    let mut errors = Vec::new();
+
+    for (node, surfaces) in state.drm_surfaces.iter_mut() {
+        if let Err(error) = surfaces.clear() {
+            errors.push(format!("DRM device {node}: {error}"));
+        }
+    }
+
+    if errors.is_empty() {
+        None
+    } else {
+        Some(errors.join("; "))
+    }
+}
+
 /// Registers libseat activation and pause events with the event loop.
 #[cfg(feature = "drm")]
 pub(super) fn register_session_events(
@@ -71,10 +90,16 @@ pub(super) fn register_session_events(
             let is_pause = matches!(event, SessionEvent::PauseSession);
 
             if is_pause {
-                // Release graphics resources while DRM access is still valid.
-                state.drm_surfaces.clear();
+                // Disable KMS planes while DRM access is still valid. Continue
+                // releasing dependent resources even if one output fails.
+                let cleanup_error = clear_drm_surfaces(state);
                 super::gbm_lifecycle::clear_gbm_devices(state);
                 state.vulkan_backends.clear();
+
+                if let Some(error) = cleanup_error {
+                    state.error = Some(io::Error::other(error));
+                    return;
+                }
             }
 
             let result =
