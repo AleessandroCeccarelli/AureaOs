@@ -79,10 +79,168 @@ impl VulkanDrmImageAllocator {
         if !device.extension_plan().supports_dmabuf_interop() {
             return Err(VulkanDrmImageError::MissingInteropExtensions);
         }
-        if !device.extension_plan().supports_drm_format_modifier() {
-            return Err(VulkanDrmImageError::MissingDrmFormatModifierExtension);
-        }
         Ok(Self { device })
+    }
+
+    /// Creates a single-plane linear image and exports its bound memory as a DMA-BUF.
+    ///
+    /// This path does not use VK_EXT_image_drm_format_modifier. It is deliberately
+    /// restricted to DRM linear buffers with one memory plane; Vulkan's queried
+    /// subresource layout supplies the real offset and row pitch.
+    pub fn allocate_linear_exportable(
+        &self,
+        width: u32,
+        height: u32,
+        format: DrmVulkanFormat,
+        usage: vk::ImageUsageFlags,
+    ) -> Result<VulkanDrmImage, VulkanDrmImageError> {
+        if width == 0 || height == 0 {
+            return Err(VulkanDrmImageError::InvalidDimensions);
+        }
+        if format.modifier != smithay::backend::allocator::Modifier::Linear
+            || format.memory_plane_count != 1
+        {
+            return Err(VulkanDrmImageError::InvalidPlaneCount);
+        }
+
+        let vk_format = get_vk_format(format.code).ok_or(VulkanDrmImageError::UnsupportedFourcc)?;
+        let mut external_query = vk::PhysicalDeviceExternalImageFormatInfo::default()
+            .handle_type(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
+        let image_query = vk::PhysicalDeviceImageFormatInfo2::default()
+            .format(vk_format)
+            .ty(vk::ImageType::TYPE_2D)
+            .tiling(vk::ImageTiling::LINEAR)
+            .usage(usage)
+            .push_next(&mut external_query);
+        let mut external_properties = vk::ExternalImageFormatProperties::default();
+        let mut image_properties =
+            vk::ImageFormatProperties2::default().push_next(&mut external_properties);
+        unsafe {
+            self.device
+                .instance()
+                .get_physical_device_image_format_properties2(
+                    self.device.physical_device(),
+                    &image_query,
+                    &mut image_properties,
+                )
+        }
+        .map_err(VulkanDrmImageError::ModifierImageQuery)?;
+
+        let limits = image_properties.image_format_properties;
+        let external_memory = external_properties.external_memory_properties;
+        let dma_buf_handle = vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT;
+        if !external_memory
+            .external_memory_features
+            .contains(vk::ExternalMemoryFeatureFlags::EXPORTABLE)
+            || !external_memory.compatible_handle_types.contains(dma_buf_handle)
+        {
+            return Err(VulkanDrmImageError::DmabufExportUnsupported);
+        }
+        if width > limits.max_extent.width || height > limits.max_extent.height {
+            return Err(VulkanDrmImageError::ImageDimensionsUnsupported);
+        }
+
+        let external_image = vk::ExternalMemoryImageCreateInfo::default()
+            .handle_types(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
+        let image_info = vk::ImageCreateInfo::default()
+            .image_type(vk::ImageType::TYPE_2D)
+            .format(vk_format)
+            .extent(vk::Extent3D { width, height, depth: 1 })
+            .mip_levels(1)
+            .array_layers(1)
+            .samples(vk::SampleCountFlags::TYPE_1)
+            .tiling(vk::ImageTiling::LINEAR)
+            .usage(usage)
+            .sharing_mode(vk::SharingMode::EXCLUSIVE)
+            .initial_layout(vk::ImageLayout::UNDEFINED)
+            .push_next(&mut external_image.clone());
+        let raw = self.device.handle();
+        let image = unsafe { raw.create_image(&image_info, None) }
+            .map_err(VulkanDrmImageError::ImageCreation)?;
+        let requirements = unsafe { raw.get_image_memory_requirements(image) };
+        let Some(memory_type_index) = select_memory_type_index(
+            self.device.memory_properties(),
+            requirements.memory_type_bits,
+            vk::MemoryPropertyFlags::DEVICE_LOCAL,
+            vk::MemoryPropertyFlags::DEVICE_LOCAL,
+        ) else {
+            unsafe { raw.destroy_image(image, None) };
+            return Err(VulkanDrmImageError::MemoryTypeUnavailable);
+        };
+
+        let mut export_info = vk::ExportMemoryAllocateInfo::default()
+            .handle_types(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
+        let mut dedicated_info = vk::MemoryDedicatedAllocateInfo::default().image(image);
+        let allocation_info = vk::MemoryAllocateInfo::default()
+            .allocation_size(requirements.size)
+            .memory_type_index(memory_type_index)
+            .push_next(&mut export_info)
+            .push_next(&mut dedicated_info);
+        let memory = match unsafe { raw.allocate_memory(&allocation_info, None) } {
+            Ok(memory) => memory,
+            Err(error) => {
+                unsafe { raw.destroy_image(image, None) };
+                return Err(VulkanDrmImageError::MemoryAllocation(error));
+            }
+        };
+        if let Err(error) = unsafe { raw.bind_image_memory(image, memory, 0) } {
+            unsafe {
+                raw.free_memory(memory, None);
+                raw.destroy_image(image, None);
+            }
+            return Err(VulkanDrmImageError::MemoryBinding(error));
+        }
+
+        let fd_info = vk::MemoryGetFdInfoKHR::default()
+            .memory(memory)
+            .handle_type(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
+        let fd_loader = khr::external_memory_fd::Device::new(self.device.instance(), raw);
+        let raw_fd = match unsafe { fd_loader.get_memory_fd(&fd_info) } {
+            Ok(fd) => fd,
+            Err(error) => {
+                unsafe {
+                    raw.destroy_image(image, None);
+                    raw.free_memory(memory, None);
+                }
+                return Err(VulkanDrmImageError::DmabufExport(error));
+            }
+        };
+        let dmabuf = unsafe { OwnedFd::from_raw_fd(raw_fd) };
+        let layout = unsafe {
+            raw.get_image_subresource_layout(
+                image,
+                vk::ImageSubresource::default().aspect_mask(vk::ImageAspectFlags::COLOR),
+            )
+        };
+        let plane_end = layout.offset.checked_add(layout.size);
+        if layout.size == 0
+            || layout.row_pitch == 0
+            || plane_end.is_none_or(|end| end > requirements.size)
+        {
+            unsafe {
+                raw.destroy_image(image, None);
+                raw.free_memory(memory, None);
+            }
+            return Err(VulkanDrmImageError::InvalidPlaneLayout);
+        }
+
+        Ok(VulkanDrmImage {
+            device: Arc::clone(&self.device),
+            image,
+            memory,
+            allocation_size: requirements.size,
+            dmabuf,
+            width,
+            height,
+            format: vk_format,
+            drm_format: format,
+            usage,
+            planes: vec![VulkanDrmPlaneLayout {
+                offset: layout.offset,
+                stride: layout.row_pitch,
+                size: layout.size,
+            }],
+        })
     }
 
     /// Creates an image with the exact negotiated modifier and exports its
@@ -95,6 +253,9 @@ impl VulkanDrmImageAllocator {
         format: DrmVulkanFormat,
         usage: vk::ImageUsageFlags,
     ) -> Result<VulkanDrmImage, VulkanDrmImageError> {
+        if !self.device.extension_plan().supports_drm_format_modifier() {
+            return Err(VulkanDrmImageError::MissingDrmFormatModifierExtension);
+        }
         if width == 0 || height == 0 {
             return Err(VulkanDrmImageError::InvalidDimensions);
         }
