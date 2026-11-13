@@ -140,6 +140,21 @@ pub struct DrmSurfaceManager {
     crtc_owners: HashMap<crtc::Handle, OutputId>,
 }
 
+/// Preserves already-created KMS surfaces when a later output fails initialization.
+///
+/// The caller must retain partial_manager until its surfaces have been
+/// successfully disabled or the DRM device is confirmed removed.
+pub struct DrmSurfaceInitFailure {
+    pub partial_manager: DrmSurfaceManager,
+    pub cause: DrmSurfaceManagerError,
+}
+
+impl DrmSurfaceInitFailure {
+    pub fn into_parts(self) -> (DrmSurfaceManager, DrmSurfaceManagerError) {
+        (self.partial_manager, self.cause)
+    }
+}
+
 impl DrmSurfaceManager {
     pub fn new() -> Self {
         Self::default()
@@ -186,41 +201,63 @@ impl DrmSurfaceManager {
     /// Each connector is checked against its encoder's possible CRTC mask.
     /// The selected CRTC is also checked against the manager's existing
     /// assignments before Smithay is asked to create the surface.
-    pub fn initialize(device: &mut DrmDevice) -> Result<Self, DrmSurfaceManagerError> {
-        let descriptors = discover_connected_outputs(device)
-            .map_err(|error| DrmSurfaceManagerError::Discovery(error.to_string()))?;
+    pub fn initialize(device: &mut DrmDevice) -> Result<Self, DrmSurfaceInitFailure> {
+        let descriptors = match discover_connected_outputs(device) {
+            Ok(descriptors) => descriptors,
+            Err(error) => {
+                return Err(DrmSurfaceInitFailure {
+                    partial_manager: Self::new(),
+                    cause: DrmSurfaceManagerError::Discovery(error.to_string()),
+                });
+            }
+        };
         Self::from_descriptors(device, &descriptors)
     }
 
     pub fn from_descriptors(
         device: &mut DrmDevice,
         descriptors: &[DrmOutputDescriptor],
-    ) -> Result<Self, DrmSurfaceManagerError> {
+    ) -> Result<Self, DrmSurfaceInitFailure> {
         let mut manager = Self::new();
-        let resources = device
-            .fd()
-            .resource_handles()
-            .map_err(|error| DrmSurfaceManagerError::Discovery(error.to_string()))?;
+
+        macro_rules! fail {
+            ($cause:expr) => {{
+                return Err(DrmSurfaceInitFailure {
+                    partial_manager: manager,
+                    cause: $cause,
+                });
+            }};
+        }
+
+        let resources = match device.fd().resource_handles() {
+            Ok(resources) => resources,
+            Err(error) => fail!(DrmSurfaceManagerError::Discovery(error.to_string())),
+        };
+        let node = match device.node() {
+            Ok(node) => node,
+            Err(error) => fail!(DrmSurfaceManagerError::Discovery(error.to_string())),
+        };
         let available_crtcs = device.device().crtcs().to_vec();
         let mut reserved = HashSet::new();
 
         for descriptor in descriptors {
             let output_id = descriptor.id();
-            let connector_handle = descriptor.connector_handle().ok_or(
-                DrmSurfaceManagerError::MissingNativeConfiguration(output_id),
-            )?;
-            let mode = descriptor.native_mode().ok_or(
-                DrmSurfaceManagerError::MissingNativeConfiguration(output_id),
-            )?;
+            let connector_handle = match descriptor.connector_handle() {
+                Some(handle) => handle,
+                None => fail!(DrmSurfaceManagerError::MissingNativeConfiguration(output_id)),
+            };
+            let mode = match descriptor.native_mode() {
+                Some(mode) => mode,
+                None => fail!(DrmSurfaceManagerError::MissingNativeConfiguration(output_id)),
+            };
 
-            let connector_info =
-                device
-                    .fd()
-                    .get_connector(connector_handle, true)
-                    .map_err(|error| DrmSurfaceManagerError::ConnectorQuery {
-                        output_id,
-                        message: error.to_string(),
-                    })?;
+            let connector_info = match device.fd().get_connector(connector_handle, true) {
+                Ok(info) => info,
+                Err(error) => fail!(DrmSurfaceManagerError::ConnectorQuery {
+                    output_id,
+                    message: error.to_string(),
+                }),
+            };
 
             if connector_info.state() != connector::State::Connected {
                 continue;
@@ -228,13 +265,14 @@ impl DrmSurfaceManager {
 
             let mut selected_crtc = None;
             for encoder_handle in connector_info.encoders() {
-                let encoder = device.fd().get_encoder(*encoder_handle).map_err(|error| {
-                    DrmSurfaceManagerError::EncoderQuery {
+                let encoder = match device.fd().get_encoder(*encoder_handle) {
+                    Ok(encoder) => encoder,
+                    Err(error) => fail!(DrmSurfaceManagerError::EncoderQuery {
                         output_id,
                         encoder_id: u32::from(*encoder_handle),
                         message: error.to_string(),
-                    }
-                })?;
+                    }),
+                };
                 let compatible = resources.filter_crtcs(encoder.possible_crtcs());
                 selected_crtc = available_crtcs
                     .iter()
@@ -245,25 +283,26 @@ impl DrmSurfaceManager {
                 }
             }
 
-            let crtc = selected_crtc.ok_or(DrmSurfaceManagerError::NoCompatibleCrtc(output_id))?;
+            let crtc = match selected_crtc {
+                Some(crtc) => crtc,
+                None => fail!(DrmSurfaceManagerError::NoCompatibleCrtc(output_id)),
+            };
             if !reserved.insert(crtc) {
-                return Err(DrmSurfaceManagerError::DuplicateCrtc(crtc));
+                fail!(DrmSurfaceManagerError::DuplicateCrtc(crtc));
             }
 
-            let surface = device
+            let surface = match device
                 .device_mut()
                 .create_surface(crtc, mode, &[connector_handle])
-                .map_err(|error| DrmSurfaceManagerError::SurfaceCreation {
+            {
+                Ok(surface) => surface,
+                Err(error) => fail!(DrmSurfaceManagerError::SurfaceCreation {
                     output_id,
                     message: error.to_string(),
-                })?;
+                }),
+            };
 
-            let presentation = DrmPresentationBackend::new(
-                device
-                    .node()
-                    .map_err(|error| DrmSurfaceManagerError::Discovery(error.to_string()))?,
-                &surface,
-            );
+            let presentation = DrmPresentationBackend::new(node, &surface);
             manager.crtc_owners.insert(crtc, output_id);
             manager.surfaces.insert(
                 output_id,
