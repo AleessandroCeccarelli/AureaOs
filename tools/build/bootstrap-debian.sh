@@ -395,18 +395,18 @@ run_in_rootfs env DEBIAN_FRONTEND=noninteractive \
   apt-get install --yes --no-install-recommends -- "${packages[@]}"
 
 # Remove the temporary service-start policy before final validation.
-sudo rm -f -- "$TARGET/usr/sbin/policy-rc.d"
+sudo rm -f -- "$ROOTFS_WORK/usr/sbin/policy-rc.d"
 POLICY_INSTALLED=0
 
 echo
 echo "===== Verifica finale ====="
 
-if ! sudo test -f "$TARGET/etc/os-release"; then
+if ! sudo test -f "$ROOTFS_WORK/etc/os-release"; then
   echo "Errore: manca etc/os-release nella rootfs." >&2
   exit 1
 fi
 
-if ! sudo grep -q '^VERSION_CODENAME=trixie$' "$TARGET/etc/os-release"; then
+if ! sudo grep -q '^VERSION_CODENAME=trixie$' "$ROOTFS_WORK/etc/os-release"; then
   echo "Errore: codename della rootfs diverso da trixie." >&2
   exit 1
 fi
@@ -418,7 +418,7 @@ fi
 
 if ! sudo grep -q \
   '^Components: main contrib non-free non-free-firmware$' \
-  "$TARGET/etc/apt/sources.list.d/debian.sources"; then
+  "$ROOTFS_WORK/etc/apt/sources.list.d/debian.sources"; then
   echo "Errore: componenti APT attesi non configurati." >&2
   exit 1
 fi
