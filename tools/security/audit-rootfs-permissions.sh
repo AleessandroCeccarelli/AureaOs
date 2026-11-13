@@ -66,7 +66,7 @@ echo
 echo "Verifica elementi world-writable nell'intera rootfs..."
 # Only the standard shared temporary directories may be world-writable, and
 # only with the sticky bit. Any world-writable regular file is rejected.
-if find "$ROOTFS" -xdev \( -type f -o -type d \) -perm -0002 -print0 >"$SCAN_FILE"; then
+if find "$ROOTFS" -xdev ! -type l -perm -0002 -print0 >"$SCAN_FILE"; then
   while IFS= read -r -d '' path; do
     relative="${path#"$ROOTFS"/}"
     mode="$(stat -c '%a' -- "$path")"
@@ -97,7 +97,7 @@ declare -A SUID_SGID_ALLOWLIST=(
   ["usr/bin/umount"]=4755
 )
 
-if find "$ROOTFS" -xdev -type f -perm /6000 -print0 >"$SCAN_FILE"; then
+if find "$ROOTFS" -xdev ! -type l -perm /6000 -print0 >"$SCAN_FILE"; then
   while IFS= read -r -d '' path; do
     relative="${path#"$ROOTFS"/}"
     mode="$(stat -c '%a' -- "$path")"
