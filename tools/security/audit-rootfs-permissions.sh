@@ -119,6 +119,11 @@ echo "Verifica SUID/SGID contro allowlist..."
 # Debian base utilities whose privilege bits are expected. Any new path must
 # be reviewed and added deliberately; package additions cannot silently expand
 # the privileged executable surface.
+declare -A SGID_DIRECTORY_ALLOWLIST=(
+  ["var/mail"]="2775:0:mail"
+  ["var/log/journal"]="2755:0:systemd-journal"
+)
+
 declare -A SUID_SGID_ALLOWLIST=(
   ["usr/bin/chfn"]="4755:0:0"
   ["usr/bin/chsh"]="4755:0:0"
@@ -140,25 +145,36 @@ if find "$ROOTFS" -xdev ! -type l -perm /6000 -print0 >"$SCAN_FILE"; then
   while IFS= read -r -d '' path; do
     relative="${path#"$ROOTFS"/}"
     actual="$(stat -c '%a:%u:%g' -- "$path")"
-    expected="${SUID_SGID_ALLOWLIST[$relative]:-}"
-    if [[ -z "$expected" ]]; then
-      fail "SUID/SGID non autorizzato: /$relative ($actual)"
-    elif [[ ! -f "$path" || -L "$path" ]]; then
-      fail "entry SUID/SGID allowlist non è un file regolare: /$relative"
-    else
-      IFS=: read -r expected_mode expected_uid expected_group <<< "$expected"
-      if [[ "$expected_group" =~ ^[0-9]+$ ]]; then
-        expected_gid="$expected_group"
-      elif ! expected_gid="$(rootfs_group_id "$expected_group")"; then
-        fail "gruppo '$expected_group' assente o duplicato per /$relative"
+    if [[ -d "$path" && ! -L "$path" ]]; then
+      expected="${SGID_DIRECTORY_ALLOWLIST[$relative]:-}"
+      if [[ -z "$expected" ]]; then
+        fail "directory SGID non autorizzata: /$relative ($actual)"
         continue
       fi
-      expected="$expected_mode:$expected_uid:$expected_gid"
-      if [[ "$actual" != "$expected" ]]; then
-        fail "owner/mode SUID/SGID inatteso per /$relative: atteso $expected, trovato $actual"
-      else
-        printf 'PASS  SUID/SGID allowlist /%s (%s)\n' "$relative" "$actual"
+    else
+      expected="${SUID_SGID_ALLOWLIST[$relative]:-}"
+      if [[ -z "$expected" ]]; then
+        fail "SUID/SGID non autorizzato: /$relative ($actual)"
+        continue
       fi
+      if [[ ! -f "$path" || -L "$path" ]]; then
+        fail "entry SUID/SGID allowlist non è un file regolare: /$relative"
+        continue
+      fi
+    fi
+
+    IFS=: read -r expected_mode expected_uid expected_group <<< "$expected"
+    if [[ "$expected_group" =~ ^[0-9]+$ ]]; then
+      expected_gid="$expected_group"
+    elif ! expected_gid="$(rootfs_group_id "$expected_group")"; then
+      fail "gruppo '$expected_group' assente o duplicato per /$relative"
+      continue
+    fi
+    expected="$expected_mode:$expected_uid:$expected_gid"
+    if [[ "$actual" != "$expected" ]]; then
+      fail "owner/mode SUID/SGID inatteso per /$relative: atteso $expected, trovato $actual"
+    else
+      printf 'PASS  SUID/SGID allowlist /%s (%s)\n' "$relative" "$actual"
     fi
   done < "$SCAN_FILE"
 else
