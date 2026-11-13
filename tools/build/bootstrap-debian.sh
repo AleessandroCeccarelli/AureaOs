@@ -346,7 +346,7 @@ if [[ -z "$ROOTFS_STAGE_PARENT_NAME" || -z "$ROOTFS_STAGE_PARENT_ID" ]]; then
   echo "Errore: il creator non ha restituito l'identità dello staging parent." >&2
   exit 1
 fi
-ROOTFS_STAGE_PARENT="$TARGET_PARENT/$ROOTFS_STAGE_PARENT_NAME"
+ROOTFS_STAGE_PARENT="${TARGET_PARENT%/}/$ROOTFS_STAGE_PARENT_NAME"
 cd -- "$ROOTFS_STAGE_PARENT"
 if [[ "$(sudo stat -c '%d:%i' -- .)" != "$ROOTFS_STAGE_PARENT_ID" ]]; then
   echo "Errore: staging parent sostituito durante l'apertura." >&2
