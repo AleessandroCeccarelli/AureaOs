@@ -248,13 +248,22 @@ fn initialize_drm_surfaces(state: &mut WaylandState, node: DrmNode) -> io::Resul
     }
     state.drm_surfaces.remove(&node);
 
-    let manager = {
+    let initialization = {
         let Some(device) = state.drm_devices.get_mut(node) else {
             return Err(io::Error::other(format!(
                 "DRM device {node} disappeared during surface initialization"
             )));
         };
-        crate::drm::surfaces::DrmSurfaceManager::initialize(device).map_err(io::Error::other)?
+        crate::drm::surfaces::DrmSurfaceManager::initialize(device)
+    };
+
+    let manager = match initialization {
+        Ok(manager) => manager,
+        Err(failure) => {
+            let (partial_manager, cause) = failure.into_parts();
+            state.drm_surfaces.insert(node, partial_manager);
+            return Err(io::Error::other(cause.to_string()));
+        }
     };
 
     state.drm_surfaces.insert(node, manager);
