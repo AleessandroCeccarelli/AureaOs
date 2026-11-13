@@ -41,15 +41,48 @@ EOF
 
 make_valid_rootfs() {
   local rootfs="$1"
-  mkdir -p "$rootfs"/{etc,usr,var/tmp,root,tmp,dev/shm}
+  local shadow_gid= messagebus_gid=999
+
+  shadow_gid="$(getent group shadow | cut -d: -f3)"
+  mkdir -p "$rootfs"/{etc,usr/bin,usr/sbin,usr/lib/dbus-1.0,var/tmp,root,tmp,dev/shm}
   touch "$rootfs/etc/passwd" "$rootfs/etc/group" "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
+  printf 'root:x:0:\\nshadow:x:%s:\\nmessagebus:x:%s:\\n' "$shadow_gid" "$messagebus_gid" > "$rootfs/etc/group"
+
+  local -a root_suid_files=(
+    usr/bin/chfn
+    usr/bin/chsh
+    usr/bin/gpasswd
+    usr/bin/mount
+    usr/bin/newgrp
+    usr/bin/passwd
+    usr/bin/su
+    usr/bin/umount
+    usr/bin/sudo
+  )
+  local -a shadow_sgid_files=(
+    usr/bin/chage
+    usr/bin/expiry
+    usr/sbin/unix_chkpwd
+  )
+
+  for relative in "${root_suid_files[@]}" "${shadow_sgid_files[@]}" \
+    usr/lib/dbus-1.0/dbus-daemon-launch-helper; do
+    touch "$rootfs/$relative"
+  done
+
   chown -R root:root "$rootfs"
-  chown root:shadow "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
+  chown "root:$shadow_gid" "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
+  chown "root:$shadow_gid" "$rootfs"/${shadow_sgid_files[@]}
+  chown "root:$messagebus_gid" "$rootfs/usr/lib/dbus-1.0/dbus-daemon-launch-helper"
+
   chmod 0755 "$rootfs" "$rootfs/etc" "$rootfs/usr" "$rootfs/var"
   chmod 0700 "$rootfs/root"
   chmod 1777 "$rootfs/tmp" "$rootfs/var/tmp" "$rootfs/dev/shm"
   chmod 0644 "$rootfs/etc/passwd" "$rootfs/etc/group"
   chmod 0640 "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
+  chmod 4755 "$rootfs"/${root_suid_files[@]}
+  chmod 2755 "$rootfs"/${shadow_sgid_files[@]}
+  chmod 4754 "$rootfs/usr/lib/dbus-1.0/dbus-daemon-launch-helper"
 }
 
 expect_pass() {
