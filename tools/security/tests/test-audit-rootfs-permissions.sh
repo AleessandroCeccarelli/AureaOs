@@ -70,6 +70,14 @@ make_valid_rootfs "$ROOTFS"
 write_getcap 0
 expect_pass "valid minimal rootfs" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
 
+mkdir -p "$ROOTFS/usr/bin"
+touch "$ROOTFS/usr/bin/passwd"
+chmod 4755 "$ROOTFS/usr/bin/passwd"
+expect_pass "accept allowlisted SUID mode" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+chmod 4555 "$ROOTFS/usr/bin/passwd"
+expect_fail "reject unexpected allowlisted SUID mode" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+rm -f "$ROOTFS/usr/bin/passwd"
+
 touch "$ROOTFS/unapproved-world-writable"
 chmod 0666 "$ROOTFS/unapproved-world-writable"
 expect_fail "reject world-writable file" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
