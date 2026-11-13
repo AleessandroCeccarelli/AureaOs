@@ -129,6 +129,8 @@ chmod 4555 "$ROOTFS/usr/bin/passwd"
 expect_fail "reject unexpected allowlisted SUID mode" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
 chmod 4755 "$ROOTFS/usr/bin/passwd"
 chown 1000:1000 "$ROOTFS/usr/bin/sudo"
+# chown clears SUID on Linux; restore it so the audit sees the untrusted owner.
+chmod 4755 "$ROOTFS/usr/bin/sudo"
 expect_fail "reject untrusted SUID owner and group" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
 chown root:root "$ROOTFS/usr/bin/sudo"
 rm -f "$ROOTFS/usr/bin/passwd"
