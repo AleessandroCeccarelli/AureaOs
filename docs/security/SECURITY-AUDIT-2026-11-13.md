@@ -15,6 +15,18 @@ The repository is still an early development system. The remaining gaps below mu
 
 ## Findings
 
+### AUR-SEC-004 — Wayland surface resource exhaustion
+
+**Severity:** Medium (local denial of service)
+
+**Original exposure:** the server limited simultaneous Wayland clients to 64, but did not bound the number of `wl_surface` resources created by one client or by the compositor. A connected local client could create a large number of surfaces and consume compositor memory.
+
+**Source remediation (2026-11-13):** added a dedicated `WaylandResourceLimits` module with a maximum of 256 live surfaces per client and 4096 globally. Accepted surfaces are tracked by Wayland object identity and owning client; destruction releases the corresponding quota. A client exceeding either limit is disconnected rather than merely sent an advisory close event. Boundary tests cover both limits.
+
+**Residual scope:** this bounds `wl_surface` objects, not every possible Wayland protocol object. As additional protocol globals are enabled (regions, callbacks, popups, data offers and buffer resources), add per-client quotas or bounded ownership for those object classes. Validate with a hostile-client flood test on Fedora.
+
+
+
 ### AUR-SEC-001 — Rootfs permission audit is incomplete
 
 **Severity:** High (hardening gap; no direct exploit demonstrated)
