@@ -87,9 +87,11 @@ jobs:
         run: |
           bash -n tools/build/bootstrap-debian.sh
           bash -n tools/security/audit-rootfs-permissions.sh
+          bash -n tools/security/tests/test-audit-rootfs-permissions.sh
           bash -n tools/installer/check-hardware-requirements.sh
           bash -n tools/installer/tests/check-hardware-requirements.sh
-          bash -n tools/security/tests/test-audit-rootfs-permissions.sh
+          python3 -m py_compile tools/build/create_staging_parent.py tools/build/publish_rootfs.py
+          sudo python3 -m unittest discover -s tools/build/tests -p 'test_*.py' -v
           sudo bash tools/security/tests/test-audit-rootfs-permissions.sh
           bash tools/installer/tests/check-hardware-requirements.sh
 
