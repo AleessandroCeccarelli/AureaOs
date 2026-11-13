@@ -111,12 +111,15 @@ impl WaylandServer {
         })();
 
         #[cfg(feature = "drm")]
-        let cleanup_result = {
-            let surface_error = super::session_events::clear_drm_surfaces(&mut self.state);
-            super::gbm_lifecycle::clear_gbm_devices(&mut self.state);
-            self.state.vulkan_backends.clear();
-
-            surface_error.map_or(Ok(()), |error| Err(io::Error::other(error)))
+        let cleanup_result = match super::session_events::clear_drm_surfaces(&mut self.state) {
+            None => {
+                super::gbm_lifecycle::clear_gbm_devices(&mut self.state);
+                self.state.vulkan_backends.clear();
+                Ok(())
+            }
+            Some(error) => Err(io::Error::other(format!(
+                "{error}; dependent GBM/Vulkan resources were retained"
+            ))),
         };
 
         #[cfg(not(feature = "drm"))]
