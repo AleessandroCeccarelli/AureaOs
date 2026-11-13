@@ -413,20 +413,15 @@ fn changed_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
 fn remove_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
     remove_device_outputs(state, node);
 
-    // A Udev removal event does not prove that every KMS disable operation
-    // completed. Keep the surface manager and all resources it depends on
-    // alive when clear() fails; dropping them here would discard userspace
-    // ownership while the kernel may still reference a scanout framebuffer.
-    if let Some(surfaces) = state.drm_surfaces.get_mut(&node) {
-        surfaces.clear().map_err(|error| {
-            io::Error::other(format!(
-                "DRM device {node} was removed but KMS surfaces could not be cleared; graphics dependencies remain retained: {error}"
-            ))
-        })?;
-    }
-
-    state.drm_surfaces.remove(&node);
+    // This path runs only after Udev has confirmed device removal. The
+    // kernel has detached the DRM device and torn down its KMS state, so do
+    // not issue further KMS ioctls against the unplugged device. Release
+    // userspace scanout references first, then their GBM/Vulkan/DRM owners.
     remove_device_notifier(state, node);
+    if let Some(surfaces) = state.drm_surfaces.get_mut(&node) {
+        surfaces.release_after_device_removal();
+    }
+    state.drm_surfaces.remove(&node);
 
     // Release GBM resources before removing the DRM device they depend on.
     super::gbm_lifecycle::remove_gbm_device(state, node);
