@@ -21,9 +21,9 @@ The repository is still an early development system. The remaining gaps below mu
 
 **Original exposure:** the server limited simultaneous Wayland clients to 64, but did not bound the number of `wl_surface` resources created by one client or by the compositor. A connected local client could create a large number of surfaces and consume compositor memory.
 
-**Source remediation (2026-11-13):** added a dedicated `WaylandResourceLimits` module with a maximum of 256 live surfaces per client and 4096 globally. Accepted surfaces are tracked by Wayland object identity and owning client; destruction releases the corresponding quota. A client exceeding either limit is disconnected rather than merely sent an advisory close event. Boundary tests cover both limits.
+**Source remediation (2026-11-13):** added a dedicated `WaylandResourceLimits` module with a maximum of 256 committed surfaces per client and 4096 globally. Since Smithay 0.7 does not expose a surface-creation callback, a surface is counted on its first commit; a Smithay destruction hook releases the quota, including on client disconnect. A client exceeding either limit is disconnected rather than merely sent an advisory close event. Boundary tests cover both limits.
 
-**Residual scope:** this bounds `wl_surface` objects, not every possible Wayland protocol object. As additional protocol globals are enabled (regions, callbacks, popups, data offers and buffer resources), add per-client quotas or bounded ownership for those object classes. Validate with a hostile-client flood test on Fedora.
+**Residual scope:** surfaces created but never committed are not counted because the current Smithay handler API has no creation callback; those objects can still be used for a local memory-exhaustion attempt. This also does not bound every other Wayland protocol object. Before enabling untrusted clients or more protocol globals, add a request/resource quota at the Wayland dispatch boundary for uncommitted surfaces and other object classes (regions, callbacks, popups, data offers and buffers). Validate with hostile-client flood tests on Fedora.
 
 
 
