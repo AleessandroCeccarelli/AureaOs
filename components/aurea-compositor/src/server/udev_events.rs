@@ -5,7 +5,7 @@
 
 //! Udev discovery and DRM hotplug lifecycle coordination.
 
-use std::{io, path::PathBuf};
+use std::{collections::HashSet, io, path::PathBuf};
 
 use smithay::{
     backend::{
@@ -533,13 +533,20 @@ pub(super) fn activate_discovered_devices(state: &mut WaylandState) {
         .map(|(node, _)| *node)
         .collect::<Vec<_>>();
 
+    let mut restored_nodes = HashSet::new();
+
     for node in existing_nodes {
         initialize_vulkan_backend(state, node);
-        if let Err(error) = initialize_drm_surfaces(state, node) {
-            eprintln!("AureaOS: unable to restore KMS surfaces for {node}: {error}");
-            // The old output globals are no longer backed by active KMS
-            // surfaces; withdraw them until the device becomes ready again.
-            remove_device_outputs(state, node);
+        match initialize_drm_surfaces(state, node) {
+            Ok(()) => {
+                restored_nodes.insert(node);
+            }
+            Err(error) => {
+                eprintln!("AureaOS: unable to restore KMS surfaces for {node}: {error}");
+                // The old output globals are no longer backed by active KMS
+                // surfaces; withdraw them until the device becomes ready again.
+                remove_device_outputs(state, node);
+            }
         }
     }
 
@@ -552,8 +559,16 @@ pub(super) fn activate_discovered_devices(state: &mut WaylandState) {
 
     for node in discovered {
         if !state.drm_devices.contains(node) {
-            if let Err(error) = open_and_integrate(state, node) {
-                eprintln!("AureaOS: deferred DRM device integration failed for {node}: {error}");
+            match open_and_integrate(state, node) {
+                Ok(()) if state.drm_devices.contains(node) => {
+                    // open_and_integrate already restores KMS and publishes
+                    // outputs, so no deferred connector refresh is needed.
+                    forget_changed_device(&mut state.udev_changed_devices, node);
+                }
+                Ok(()) => {}
+                Err(error) => {
+                    eprintln!("AureaOS: deferred DRM device integration failed for {node}: {error}");
+                }
             }
         }
     }
@@ -564,14 +579,19 @@ pub(super) fn activate_discovered_devices(state: &mut WaylandState) {
     let pending = std::mem::take(&mut state.udev_changed_devices);
 
     let (pending, failures) = retry_pending_changes(pending, &managed, |node| {
-        // Recreate and validate native KMS surfaces before publishing the
-        // refreshed logical outputs. Publishing first can expose outputs that
-        // have no working scanout path after session activation.
-        restore_before_publish(
-            state,
-            |state| initialize_drm_surfaces(state, node),
-            |state| refresh_device_outputs(state, node),
-        )
+        if restored_nodes.contains(&node) {
+            // Existing devices were already restored above; only reconcile
+            // their logical outputs now.
+            refresh_device_outputs(state, node)
+        } else {
+            // A device whose initial restore failed must establish KMS before
+            // its refreshed logical outputs can be published.
+            restore_before_publish(
+                state,
+                |state| initialize_drm_surfaces(state, node),
+                |state| refresh_device_outputs(state, node),
+            )
+        }
     });
 
     state.udev_changed_devices = pending;
