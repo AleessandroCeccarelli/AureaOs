@@ -250,7 +250,9 @@ pub(super) fn build(
                     eprintln!(
                         "AureaOS: logical outputs unavailable for DRM device {node}: {error}"
                     );
-                    // The manager drops here and attempts to disable its KMS surfaces.
+                    // Keep ownership of the native surfaces even when logical
+                    // output registration fails; shutdown must still clear them.
+                    state.drm_surfaces.insert(node, manager);
                 }
             }
         }
