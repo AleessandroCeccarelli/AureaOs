@@ -27,7 +27,7 @@ The repository is still an early development system. The remaining gaps below mu
 
 **Severity:** High (hardening gap; no container escape demonstrated)
 
-`tools/build/bootstrap-debian.sh` drops selected capabilities (`CAP_SYS_ADMIN`, `CAP_SYS_MODULE`, `CAP_SYS_RAWIO`, `CAP_SYS_BOOT`, `CAP_SYS_PTRACE`) but does not establish or test a minimal explicit capability allowlist. More importantly, the direct `systemd-nspawn` invocation does not enable `--private-users=`; on direct invocation user namespacing defaults to disabled. The Debian Trixie `systemd-nspawn(1)` manual explicitly warns that the sandbox can easily be circumvented from inside the container without user namespaces and says untrusted code must run in a user namespace. The current command therefore must not be treated as a strong isolation boundary for untrusted package maintainer scripts.
+`tools/build/bootstrap-debian.sh` drops selected capabilities (`CAP_SYS_ADMIN`, `CAP_SYS_MODULE`, `CAP_SYS_RAWIO`, `CAP_SYS_BOOT`, `CAP_SYS_PTRACE`) but does not establish or test a minimal explicit capability allowlist. The direct `systemd-nspawn` invocation previously had user namespacing disabled by default, which is unsafe for untrusted maintainer scripts. **Source change (2026-11-13):** the command now explicitly requests `--private-users=pick --private-users-ownership=map`, selecting a private UID/GID range while using an id-mapped mount instead of recursively changing on-disk ownership. This is intended to preserve rootfs numeric ownership and fail closed if id-mapped mounts are unavailable. This behavior has not yet been exercised on the Fedora host and is not considered verified.
 
 The command also does not request `--private-network` or a veth; the Trixie manual states that without private networking the container has full access to the host network. This is relevant because APT requires outbound access, but it means the network namespace is not isolated. The script does avoid recursive host `/dev` and `/sys` binds, which is a useful control but does not compensate for the missing user namespace.
 
@@ -98,14 +98,14 @@ These are source-level observations, not proof against all runtime or kernel-lev
 - Udev integration rollback now retains the complete graphics dependency chain if a KMS clear fails, rather than unconditionally removing the surface manager and its dependencies.
 - Rootfs capability scanning now treats `getcap` execution errors as audit failures. Both world-writable and SUID/SGID filesystem traversals now capture `find` output and fail closed if traversal exits unsuccessfully, instead of relying on process substitution whose producer status is otherwise lost.
 - Rootfs world-writable checks, SUID/SGID allowlist enforcement, and capability scanning are present in source. A disposable positive/negative fixture test script passed in the historical GitHub Actions run `43485619945`; no new GitHub-hosted test runs are being used, and no completed-rootfs validation has been run.
-- No post-remediation Fedora build/test run has been performed yet. The rootfs publication fixture and rootfs permission fixture are retained for local execution on the Fedora machine. Both GitHub Actions workflows are now manual-only and are not being run.
+- No post-remediation Fedora build/test run has been performed yet. The rootfs publication fixture and rootfs permission fixture are retained for local execution on the Fedora machine. Both GitHub Actions workflows are manual-only and are not being run. The nspawn private-user/idmapped-mount option and the corrected DRM session-activation ordering are also awaiting Fedora validation.
 - No physical KMS/display test was performed during this audit.
 - Source review includes the baseline and the remediation commits recorded in this report; the latest DRM source change is `58e3e78da7e01ffc2749f49b93d4c8b2f4be2340`; the latest rootfs audit change is `01aa9a8c2646402cefa1aef44e30238fb0d9e6b0`; the latest rootfs fixture-test change is `a49df445e8b18a75613870c0013ee4e28e004a3a`.
 
 ## Release gates
 
 1. Execute the new rootfs fixture test suite, then validate the allowlist against a disposable completed Debian rootfs on Fedora.
-2. Validate the new protected-staging and no-clobber publication flow with a disposable end-to-end Debian bootstrap on Fedora, then add concurrent race testing.
+2. Validate the new protected-staging and no-clobber publication flow with a disposable end-to-end Debian bootstrap on Fedora, including id-mapped private-user behavior, then add concurrent race testing.
 3. Test the nspawn sandbox with an explicit, measured capability and namespace policy.
 4. Complete KMS quarantine semantics for terminal destruction/device removal and add multi-output fault injection; hotplug rollback retention is only an intermediate mitigation.
 5. Make render readiness and degraded-output behavior explicit across startup and Udev hotplug.
