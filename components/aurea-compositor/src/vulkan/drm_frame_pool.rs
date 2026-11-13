@@ -63,9 +63,8 @@ impl fmt::Display for VulkanDrmFramePoolError {
             Self::CommandBuffer(error) => {
                 write!(formatter, "Vulkan acquire command failed: {error:?}")
             }
-            Self::ForeignQueueFamilyUnavailable => formatter.write_str(
-                "Vulkan foreign queue-family ownership is unavailable for DRM scanout",
-            ),
+            Self::ForeignQueueFamilyUnavailable => formatter
+                .write_str("Vulkan foreign queue-family ownership is unavailable for DRM scanout"),
             Self::ImageTransition(error) => {
                 write!(
                     formatter,
