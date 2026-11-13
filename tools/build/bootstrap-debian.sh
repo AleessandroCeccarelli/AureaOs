@@ -162,6 +162,12 @@ if ! command -v systemd-nspawn >/dev/null 2>&1; then
   exit 1
 fi
 
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "Errore: python3 è necessario per la pubblicazione atomica della rootfs." >&2
+  echo "Su Fedora: sudo dnf install python3" >&2
+  exit 1
+fi
+
 if ! command -v getcap >/dev/null 2>&1; then
   echo "Errore: getcap non è installato; serve per verificare le file capabilities della rootfs." >&2
   echo "Su Fedora: sudo dnf install libcap" >&2
@@ -451,9 +457,10 @@ done
 # because the rootfs /root directory is intentionally not readable by users.
 sudo bash "$REPO_ROOT/tools/security/audit-rootfs-permissions.sh" "$ROOTFS_WORK"
 
-# Publish only after all checks pass. The current working directory pins the
-# destination parent inode; -T prevents directory nesting and -n refuses
-# replacement if a destination appears after the initial validation.
+# Publish only after all checks pass. The Python helper opens both parent
+# directories, pins the staging inode, and requires renameat2(RENAME_NOREPLACE).
+# It fails closed if the kernel/filesystem cannot provide an atomic no-replace
+# rename; it never falls back to a check-then-rename sequence.
 if [[ "$(stat -c '%d:%i' -- "$TARGET_PARENT")" != "$PARENT_ID" ]]; then
   echo "Errore: la directory destinazione è stata sostituita durante il bootstrap." >&2
   echo "Rootfs verificata conservata in staging: $ROOTFS_WORK" >&2
@@ -465,10 +472,9 @@ if [[ -e "./$TARGET_NAME" || -L "./$TARGET_NAME" ]]; then
   exit 1
 fi
 
-sudo mv --no-clobber --no-target-directory -- "$ROOTFS_WORK" "./$TARGET_NAME"
+sudo python3 "$REPO_ROOT/tools/build/publish_rootfs.py" "$ROOTFS_WORK" "$TARGET_NAME"
 if [[ -e "$ROOTFS_WORK" || -L "$ROOTFS_WORK" ]]; then
-  echo "Errore: pubblicazione non eseguita; la destinazione potrebbe essere occupata." >&2
-  echo "Rootfs verificata conservata in staging: $ROOTFS_WORK" >&2
+  echo "Errore: pubblicazione non completata; la rootfs resta in staging: $ROOTFS_WORK" >&2
   exit 1
 fi
 if [[ ! -d "./$TARGET_NAME" || -L "./$TARGET_NAME" ]]; then
