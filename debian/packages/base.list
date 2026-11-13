@@ -16,6 +16,8 @@ procps
 psmisc
 iproute2
 iputils-ping
+# Enable unprivileged ICMP datagram sockets without CAP_NET_RAW on ping.
+linux-sysctl-defaults
 pciutils
 usbutils
 lsof
