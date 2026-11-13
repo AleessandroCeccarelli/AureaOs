@@ -1,6 +1,6 @@
 # AureaOS Vulkan renderer foundation
 
-Status: the Vulkan device, resource, rendering-pass, offscreen-readback and DRM/KMS lifecycle foundations are present on `main`. A compositor-owned diagnostic scanout path is now connected to the Wayland server startup: it clears a DRM-compatible Vulkan image to a blue diagnostic color, exports it through DMA-BUF/GBM, registers a KMS framebuffer and submits it to the output's primary plane. This code path has not yet been validated on a physical display. GitHub Actions validates compilation and offscreen rendering only; it does not validate physical DRM/KMS scanout.
+Status: the Vulkan device, resource, rendering-pass, offscreen-readback and DRM/KMS lifecycle foundations are present on `main`. A compositor-owned, clear-only diagnostic scanout path is connected to the Wayland server event loop. It attempts to clear a DRM-compatible Vulkan image, export it through DMA-BUF/GBM, register a KMS framebuffer and submit it to the output's primary plane. It has not been validated on a physical display. The current implementation requires `VK_EXT_image_drm_format_modifier`; devices without that extension are rejected by the DMA-BUF device-extension plan. A linear-tiling DMA-BUF path has not yet been implemented.
 
 ## Ownership and device baseline
 
@@ -26,7 +26,7 @@ SPIR-V modules are validated for basic container invariants before Vulkan module
 
 The compositor includes GLSL 450 vertex and fragment shader sources under `components/aurea-compositor/shaders/`. The vertex shader generates a triangle from `gl_VertexIndex` and interpolates RGB colors; no vertex buffer or descriptor set is required. The fragment shader writes the interpolated color. The reproducible Fedora compilation helper is `tools/shaders/compile-vulkan-shaders.sh`; generated SPIR-V files are kept outside source control.
 
-This is still not a complete scene renderer: texture descriptors, sampled Wayland surface buffers, color management, damage tracking and full scene composition remain to be integrated.
+This is not yet a window renderer. `VulkanOutputScanoutBackend::render_frame` currently ignores its `RenderScene` argument and clears the output image only. Texture descriptors, importing sampled Wayland surface buffers, drawing window elements, color management and damage tracking remain unimplemented. The XDG toplevel lifecycle and scene collection exist, but they do not yet result in visible application windows. The current `aurea-shell` crate coordinates application lifecycle and events; it does not yet draw a desktop interface or provide a Wayland client window.
 
 ## Frames in flight and display ownership
 
@@ -46,17 +46,11 @@ The repository currently contains:
 - Offscreen rendering and host-visible pixel readback.
 - GLSL sources and an opt-in GPU smoke test for the offscreen triangle.
 - DRM DMA-BUF layout handling, framebuffer registration and per-output KMS presentation lifecycle components.
-- A connected first-frame Vulkan-to-DRM scanout path that clears the output to a diagnostic blue color.
+- A connected clear-only Vulkan-to-DRM scanout attempt that clears the output to a diagnostic blue color when the GPU and DRM plane satisfy the current modifier-based requirements.
 - Unit tests for the Vulkan resource, scheduler and DRM presentation lifecycle.
+- No end-to-end test or implementation yet for importing and compositing an actual Wayland client window.
 
-The latest checked GitHub Actions run for `main` passed all four build/test commands:
-
-- `cargo check --workspace --locked`
-- `cargo check -p aurea-compositor --features drm --locked`
-- `cargo test --workspace --locked`
-- `cargo test -p aurea-compositor --features drm --locked`
-
-The formatting check now passes. The workflow also compiles both GLSL shaders and runs the previously opt-in triangle smoke test on Mesa lavapipe. The test completed successfully: it created a Vulkan 1.3 device, rendered the triangle, read back the RGBA8 pixels and verified both the clear corner and triangle interior. The CI runner is a hosted Ubuntu VM; this validates offscreen GPU rendering through software Vulkan, not physical DRM/KMS scanout on the target laptop.
+The GitHub Actions workflow checks workspace compilation, DRM/Vulkan compilation, Rust tests, shader compilation and an offscreen Vulkan triangle readback through Mesa lavapipe. These checks do not exercise a physical display or prove that an XDG client window is composited and visible. The most recent workflow failure was in bootstrap-script ShellCheck validation; a correction is committed and its replacement workflow run is being checked.
 
 ## Remaining work
 
