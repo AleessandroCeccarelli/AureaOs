@@ -3,7 +3,7 @@
 # Security and Lifecycle Audit — 2026-11-13
 
 **Baseline revision:** `0ee00fbfa778cc75b0bd780dc2c847faa454c68a`  
-**Latest source remediation revision:** `58e3e78da7e01ffc2749f49b93d4c8b2f4be2340`  
+**Latest source/test remediation revision:** `cc57a237f02f0e3de07f9b6e320f14046bdd66fe`  
 **Scope:** current Rust workspace, compositor DRM/KMS and Vulkan lifecycle, Debian bootstrap, rootfs permission audit.  
 **Status:** partial source audit with initial remediation commits; not a security certification and not a declaration that AureaOS is production-hardened.
 
@@ -21,7 +21,7 @@ The repository is still an early development system. The remaining gaps below mu
 
 `tools/security/audit-rootfs-permissions.sh` checks selected ownership/modes for critical paths, scans world-writable regular files and directories across the rootfs (on the rootfs filesystem), checks SUID/SGID entries against an explicit allowlist and exact modes, and scans file capabilities with `getcap`. It does not yet enforce a comprehensive ownership/mode policy for all of `/var`, `/home`, `/run`, service state, or every installed path, and its symlink policy is incomplete.
 
-**Remediation in progress (2026-11-13):** the audit scans world-writable regular files/directories across the rootfs, permits only sticky `1777` shared temporary directories (`/tmp`, `/var/tmp`, `/dev/shm`), rejects SUID/SGID paths outside an explicit initial Debian utility allowlist, enforces the expected `4755` mode for each allowed entry, and fails closed if `getcap` is unavailable, reports capabilities, or exits unsuccessfully during the scan. The bootstrap checks for `getcap` before starting. The allowlist and exact modes have not yet been validated against a completed rootfs generated from the current package profile. **Additional test coverage added:** `tools/security/tests/test-audit-rootfs-permissions.sh` builds a disposable minimal rootfs fixture and checks valid permissions, accepted and rejected SUID modes, world-writable rejection, and fail-closed behavior when `getcap` exits unsuccessfully. **Still required:** execute this fixture suite on a root-capable host/CI runner, validate the allowlist against the final installed package profile, and add broader service-state ownership/mode and symlink checks.
+**Remediation in progress (2026-11-13):** the audit scans world-writable regular files/directories across the rootfs, permits only sticky `1777` shared temporary directories (`/tmp`, `/var/tmp`, `/dev/shm`), rejects SUID/SGID paths outside an explicit initial Debian utility allowlist, enforces the expected `4755` mode for each allowed entry, and fails closed if `getcap` is unavailable, reports capabilities, or exits unsuccessfully during the scan. The bootstrap checks for `getcap` before starting. The allowlist and exact modes have not yet been validated against a completed rootfs generated from the current package profile. **Additional test coverage added:** `tools/security/tests/test-audit-rootfs-permissions.sh` builds a disposable minimal rootfs fixture and checks valid permissions (including sticky `/tmp`, `/var/tmp`, and `/dev/shm`), accepted and rejected SUID modes, world-writable rejection, reported file-capability rejection, and fail-closed behavior when `getcap` exits unsuccessfully. **Still required:** execute this fixture suite on a root-capable host/CI runner, validate the allowlist against the final installed package profile, and add broader service-state ownership/mode and symlink checks.
 
 ### AUR-SEC-002 — systemd-nspawn capability policy is not a demonstrated minimum
 
@@ -98,7 +98,7 @@ These are source-level observations, not proof against all runtime or kernel-lev
 - Rootfs world-writable checks, SUID/SGID allowlist enforcement, and capability scanning are present in source. A disposable positive/negative fixture test script has been added but has not yet been executed; no completed-rootfs validation has been run.
 - No post-remediation Fedora build/test run has been performed yet.
 - No physical KMS/display test was performed during this audit.
-- Source review includes the baseline and the remediation commits recorded in this report; the latest source change is `58e3e78da7e01ffc2749f49b93d4c8b2f4be2340`.
+- Source review includes the baseline and the remediation commits recorded in this report; the latest DRM source change is `58e3e78da7e01ffc2749f49b93d4c8b2f4be2340`; the latest rootfs fixture-test change is `cc57a237f02f0e3de07f9b6e320f14046bdd66fe`.
 
 ## Release gates
 
