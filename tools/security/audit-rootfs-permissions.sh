@@ -66,19 +66,17 @@ echo
 echo "Verifica elementi world-writable nell'intera rootfs..."
 # Only the standard shared temporary directories may be world-writable, and
 # only with the sticky bit. Any world-writable regular file is rejected.
-if find "$ROOTFS" -xdev \( -type f -o -type d \) -perm -0002 -print0 >"$SCAN_FILE"; then
-  if find "$ROOTFS" -xdev -type f -perm /6000 -print0 >"$SCAN_FILE"; then
+if find "$ROOTFS" -xdev \\( -type f -o -type d \\) -perm -0002 -print0 >"$SCAN_FILE"; then
   while IFS= read -r -d '' path; do
-  relative="${path#"$ROOTFS"/}"
-  mode="$(stat -c '%a' -- "$path")"
-  if [[ "$relative" == "tmp" || "$relative" == "var/tmp" || "$relative" == "dev/shm" ]]; then
-    if [[ -d "$path" && "$mode" == 1777 ]]; then
-      printf 'PASS  shared temporary directory %s (%s)\n' "$relative" "$mode"
+    relative="${path#"$ROOTFS"/}"
+    mode="$(stat -c '%a' -- "$path")"
+    if [[ "$relative" == "tmp" || "$relative" == "var/tmp" || "$relative" == "dev/shm" ]] &&
+       [[ -d "$path" && "$mode" == 1777 ]]; then
+      printf 'PASS  shared temporary directory %s (%s)\\n' "$relative" "$mode"
       continue
     fi
-  fi
-  fail "elemento world-writable non consentito: /$relative (mode $mode)"
-done < "$SCAN_FILE"
+    fail "elemento world-writable non consentito: /$relative (mode $mode)"
+  done < "$SCAN_FILE"
 else
   fail "scansione world-writable incompleta: find ha restituito un errore"
 fi
@@ -99,17 +97,18 @@ declare -A SUID_SGID_ALLOWLIST=(
   ["usr/bin/umount"]=4755
 )
 
-while IFS= read -r -d '' path; do
-  relative="${path#"$ROOTFS"/}"
-  mode="$(stat -c '%a' -- "$path")"
-  if [[ -z "${SUID_SGID_ALLOWLIST[$relative]+allowed}" ]]; then
-    fail "SUID/SGID non autorizzato: /$relative ($mode)"
-  elif [[ "$mode" != "${SUID_SGID_ALLOWLIST[$relative]}" ]]; then
-    fail "mode SUID/SGID inatteso per /$relative: atteso ${SUID_SGID_ALLOWLIST[$relative]}, trovato $mode"
-  else
-    printf 'PASS  SUID/SGID allowlist /%s (%s)\n' "$relative" "$mode"
-  fi
-done < "$SCAN_FILE"
+if find "$ROOTFS" -xdev -type f -perm /6000 -print0 >"$SCAN_FILE"; then
+  while IFS= read -r -d '' path; do
+    relative="${path#"$ROOTFS"/}"
+    mode="$(stat -c '%a' -- "$path")"
+    if [[ -z "${SUID_SGID_ALLOWLIST[$relative]+allowed}" ]]; then
+      fail "SUID/SGID non autorizzato: /$relative ($mode)"
+    elif [[ "$mode" != "${SUID_SGID_ALLOWLIST[$relative]}" ]]; then
+      fail "mode SUID/SGID inatteso per /$relative: atteso ${SUID_SGID_ALLOWLIST[$relative]}, trovato $mode"
+    else
+      printf 'PASS  SUID/SGID allowlist /%s (%s)\\n' "$relative" "$mode"
+    fi
+  done < "$SCAN_FILE"
 else
   fail "scansione SUID/SGID incompleta: find ha restituito un errore"
 fi
