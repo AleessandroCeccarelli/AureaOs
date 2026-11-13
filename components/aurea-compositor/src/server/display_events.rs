@@ -9,7 +9,7 @@ use std::{io, os::fd::OwnedFd};
 
 use smithay::reexports::calloop::{Interest, LoopHandle, Mode, PostAction, generic::Generic};
 
-use super::state::WaylandState;
+use super::{resource_limits::enforce_wayland_object_limits, state::WaylandState};
 
 /// Removes clients whose disconnection has been reported.
 fn remove_disconnected_clients(state: &mut WaylandState) {
@@ -46,6 +46,8 @@ pub(super) fn register_display_events(
                     return Ok(PostAction::Continue);
                 }
 
+                let display_handle = state.display.handle();
+                enforce_wayland_object_limits(&display_handle);
                 remove_disconnected_clients(state);
 
                 if let Err(error) = state.display.flush_clients() {
