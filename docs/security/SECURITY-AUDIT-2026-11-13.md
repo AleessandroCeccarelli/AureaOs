@@ -3,7 +3,7 @@
 # Security and Lifecycle Audit — 2026-11-13
 
 **Baseline revision:** `0ee00fbfa778cc75b0bd780dc2c847faa454c68a`  
-**Latest source/test remediation revisions:** audit `01aa9a8c2646402cefa1aef44e30238fb0d9e6b0`; fixture tests `a49df445e8b18a75613870c0013ee4e28e004a3a`  
+**Latest source/test remediation revision at this audit update:** `dbb73df853dac0711f7901b1058db71446dac638` (manual-only workflow now includes the rootfs staging/publication fixtures).
 **Scope:** current Rust workspace, compositor DRM/KMS and Vulkan lifecycle, Debian bootstrap, rootfs permission audit.  
 **Status:** partial source audit with initial remediation commits; not a security certification and not a declaration that AureaOS is production-hardened.
 
@@ -87,7 +87,7 @@ The source explicitly implements a clear-only scanout path; scene composition is
 
 ## Verified defensive measures
 
-- Udev DRM device removal now attempts explicit KMS surface clearing before releasing the surface manager or dependent GBM/Vulkan/DRM resources; on clear failure the dependency chain remains retained in `WaylandState`. This is not yet a managed quarantine/retry solution.
+- Confirmed Udev DRM device removal uses `DrmSurfaceManager::release_after_device_removal()` and performs no KMS disable ioctl after the kernel has reported removal; notifier, GBM, Vulkan, and DRM owners are then released in dependency order. Generic KMS clear failures during pause/reconfiguration still need an explicit quarantine/retry owner.
 
 - DRM device paths must be absolute and devices are opened through the active libseat session.
 - The opened DRM device identity is checked against the Udev identity before integration.
@@ -95,7 +95,7 @@ The source explicitly implements a clear-only scanout path; scene composition is
 - The Wayland server limits simultaneous live clients.
 - Vulkan device extension selection is based on advertised device support, and DRM-associated selection requires the DMA-BUF interop extension plan.
 - KMS surfaces have explicit clear logic and a best-effort Drop fallback.
-- Bootstrap uses `set -Eeuo pipefail`, `umask 077`, validates package manifest tokens, rejects an existing target, and rejects targets inside the repository. These path checks do not prevent a concurrent replacement of a user-writable target parent.
+- Bootstrap uses `set -Eeuo pipefail`, `umask 077`, validates package manifest tokens, rejects an existing target and repository-local targets, builds inside a root-owned staging parent pinned by directory descriptors, and publishes with `renameat2(RENAME_NOREPLACE)`; runtime validation on Fedora is still pending.
 - Package configuration is run through systemd-nspawn rather than directly on the host.
 - Temporary `policy-rc.d` cleanup is registered on script exit.
 
@@ -111,15 +111,15 @@ These are source-level observations, not proof against all runtime or kernel-lev
 - Startup retains ownership of successfully created KMS surfaces even if logical output registration fails, so they remain available to explicit shutdown cleanup.
 - Udev integration rollback now retains the complete graphics dependency chain if a KMS clear fails, rather than unconditionally removing the surface manager and its dependencies.
 - Rootfs capability scanning now treats `getcap` execution errors as audit failures. Both world-writable and SUID/SGID filesystem traversals now capture `find` output and fail closed if traversal exits unsuccessfully, instead of relying on process substitution whose producer status is otherwise lost.
-- Rootfs world-writable checks, SUID/SGID allowlist enforcement, and capability scanning are present in source. A disposable positive/negative fixture test script passed in the historical GitHub Actions run `43485619945`; no new GitHub-hosted test runs are being used, and no completed-rootfs validation has been run.
-- No post-remediation Fedora build/test run has been performed yet. The rootfs publication fixture and rootfs permission fixture are retained for local execution on the Fedora machine. Both GitHub Actions workflows are manual-only and are not being run. The nspawn private-user/idmapped-mount option and the corrected DRM session-activation ordering are also awaiting Fedora validation.
+- Rootfs world-writable checks, SUID/SGID allowlist enforcement, and capability scanning are present in source. The permission-audit fixture has a historical passing run (`43485619945`); the expanded staging/publication Python fixtures have been added to the manual-only workflow but have not been run in this cycle.
+- No post-remediation Fedora build/test run has been performed yet. The rootfs staging-parent and atomic-publication fixtures, plus the permission-audit fixture, are ready for execution on the Fedora machine. Both GitHub Actions workflows are manual-only and are not being run. The nspawn private-user/idmapped-mount option and the corrected DRM session-activation ordering are awaiting Fedora validation.
 - No physical KMS/display test was performed during this audit.
-- Source review includes the baseline and the remediation commits recorded in this report; the latest DRM source change is `58e3e78da7e01ffc2749f49b93d4c8b2f4be2340`; the latest rootfs audit change is `01aa9a8c2646402cefa1aef44e30238fb0d9e6b0`; the latest rootfs fixture-test change is `a49df445e8b18a75613870c0013ee4e28e004a3a`.
+- Source review includes the baseline and remediation commits recorded in this report; the current `main` revision at this update is `dbb73df853dac0711f7901b1058db71446dac638`.
 
 ## Release gates
 
-1. Execute the new rootfs fixture test suite, then validate the allowlist against a disposable completed Debian rootfs on Fedora.
-2. Validate the new protected-staging and no-clobber publication flow with a disposable end-to-end Debian bootstrap on Fedora, including id-mapped private-user behavior, then add concurrent race testing.
+1. Execute the rootfs staging-parent, atomic-publication, and permission-audit fixtures as root, then validate the allowlist against a disposable completed Debian rootfs on Fedora.
+2. Validate the protected staging and atomic `renameat2(RENAME_NOREPLACE)` publication flow with a disposable end-to-end Debian bootstrap on Fedora, including id-mapped private-user behavior, then add concurrent race testing.
 3. Test the nspawn sandbox with an explicit, measured capability and namespace policy.
 4. Complete KMS quarantine semantics for terminal destruction/device removal and add multi-output fault injection; hotplug rollback retention is only an intermediate mitigation.
 5. Make render readiness and degraded-output behavior explicit across startup and Udev hotplug.
