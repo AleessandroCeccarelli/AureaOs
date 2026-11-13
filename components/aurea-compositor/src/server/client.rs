@@ -13,11 +13,10 @@ use smithay::{
         Client,
         backend::{ClientData, ClientId, DisconnectReason},
         protocol::wl_surface::WlSurface,
-        Resource,
     },
     wayland::compositor::{
         BufferAssignment, CompositorClientState, CompositorHandler, CompositorState,
-        SurfaceAttributes, add_destruction_hook, with_states,
+        SurfaceAttributes, with_states,
     },
 };
 
@@ -65,25 +64,6 @@ impl CompositorHandler for AureaCompositor {
     }
 
     fn commit(&mut self, surface: &WlSurface) {
-        // Smithay 0.7 exposes commit and destruction hooks, but no surface-
-        // creation callback. Count every surface at its first commit and
-        // release quota from the destruction hook (also called on disconnect).
-        let surface_id = surface.id();
-        if !self.has_tracked_surface(&surface_id) {
-            let client_id = surface.client().id();
-            if !self
-                .register_surface(surface_id, client_id.clone())
-            {
-                self.display_handle()
-                    .backend_handle()
-                    .kill_client(client_id, DisconnectReason::ConnectionClosed);
-                return;
-            }
-
-            add_destruction_hook(surface, |state: &mut AureaCompositor, surface| {
-                state.unregister_surface(&surface.id());
-            });
-        }
         let mapped = with_states(surface, |states| {
             let mut cached_state = states.cached_state.get::<SurfaceAttributes>();
             let current = cached_state.current();
