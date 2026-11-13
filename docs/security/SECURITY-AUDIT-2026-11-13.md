@@ -2,7 +2,8 @@
 
 # Security and Lifecycle Audit — 2026-11-13
 
-**Audited revision:** `0ee00fbfa778cc75b0bd780dc2c847faa454c68a`  
+**Baseline revision:** `0ee00fbfa778cc75b0bd780dc2c847faa454c68a`  
+**Remediation revision:** `ae96a0813fcdafd16c5ca450cb154fce85505331`  
 **Scope:** current Rust workspace, compositor DRM/KMS and Vulkan lifecycle, Debian bootstrap, rootfs permission audit.  
 **Status:** partial source audit with initial remediation commits; not a security certification and not a declaration that AureaOS is production-hardened.
 
@@ -20,7 +21,7 @@ The repository is still an early development system. The remaining gaps below mu
 
 `tools/security/audit-rootfs-permissions.sh` checks selected ownership/modes, checks world-writable files and directories only under `/etc` and `/usr`, and prints an SUID/SGID inventory. It does not fail on an unapproved SUID/SGID entry, does not inspect file capabilities, and does not enforce the documented policy for all of `/var`, `/home`, `/run`, or other installed paths.
 
-**Remediation in progress (2026-11-13):** the rootfs audit now scans world-writable regular files/directories across the rootfs, permits only sticky `1777` shared temporary directories (`/tmp`, `/var/tmp`, `/dev/shm`), rejects SUID/SGID paths outside an explicit initial Debian utility allowlist, enforces the expected `4755` mode for each allowed entry, and fails closed if `getcap` is unavailable or reports capabilities. The bootstrap now checks for `getcap` before starting. **Still required:** validate the allowlist and exact modes against the final installed package profile, test the audit against disposable good/bad rootfs fixtures, and extend checks to service-state ownership/modes and symlink policy.
+**Remediation in progress (2026-11-13):** the rootfs audit now scans world-writable regular files/directories across the rootfs, permits only sticky `1777` shared temporary directories (`/tmp`, `/var/tmp`, `/dev/shm`), rejects SUID/SGID paths outside an explicit initial Debian utility allowlist, enforces the expected `4755` mode for each allowed entry, and fails closed if `getcap` is unavailable, reports capabilities, or exits unsuccessfully during the scan. The bootstrap now checks for `getcap` before starting. **Still required:** validate the allowlist and exact modes against the final installed package profile, test the audit against disposable good/bad rootfs fixtures, and extend checks to service-state ownership/modes and symlink policy.
 
 ### AUR-SEC-002 — systemd-nspawn capability policy is not a demonstrated minimum
 
@@ -51,6 +52,8 @@ This preserves best-effort teardown and prevents one failed output from blocking
 ### AUR-DRM-002 — Graphics backend initialization is best-effort and can leave an output without a render path
 
 **Severity:** Medium (availability/consistency issue; not a privilege escalation)
+
+**Initial remediation (2026-11-13):** initial server construction now creates KMS surfaces only for devices with both GBM and Vulkan ready, and registers logical outputs only after KMS surface creation succeeds. Udev device integration uses the same dependency gate; connector refresh initializes KMS surfaces before publishing the reconciled output set. If KMS recovery fails after pause or connector change, stale Wayland output globals are withdrawn. Existing surfaces are not replaced unless their KMS clear succeeds.
 
 GBM initialization failures are logged and do not stop later Vulkan and KMS surface initialization. The render dispatcher subsequently cancels pending output frames when the GBM device is unavailable. This can leave a discovered/published output without a functioning scanout path.
 
@@ -86,6 +89,8 @@ These are source-level observations, not proof against all runtime or kernel-lev
 - Vulkan shader compilation and `spirv-val --target-env vulkan1.3` were reported passing.
 - The ignored Vulkan offscreen triangle test was explicitly run and passed.
 - Initial KMS cleanup-retention and retry unit coverage was added in the remediation commits; it is hardware-independent and does not exercise the Smithay/kernel KMS operation.
+- Startup and Udev hotplug paths were changed to gate output registration/publication on GBM, Vulkan, and KMS surface readiness.
+- Rootfs capability scanning now treats `getcap` execution errors as audit failures.
 - No post-remediation Fedora build/test run has been performed yet.
 - No physical KMS/display test was performed during this audit.
 - The GitHub commit inspected is the repository baseline identified above.
