@@ -299,6 +299,17 @@ impl DrmSurfaceManager {
         output.presentation_mut().on_vblank(node, crtc)
     }
 
+    /// Releases userspace references after Udev confirms physical device removal.
+    ///
+    /// This must only be used from a confirmed `UdevEvent::Removed` path. The
+    /// kernel has already detached the DRM device and torn down its KMS state,
+    /// so issuing further disable ioctls is both unnecessary and likely to fail.
+    /// Dependent GBM/Vulkan/DRM owners must still be released after this manager.
+    pub fn release_after_device_removal(&mut self) {
+        self.surfaces.clear();
+        self.crtc_owners.clear();
+    }
+
     /// Disables every KMS surface before releasing its buffers and ownership.
     ///
     /// Every surface is attempted. Successfully disabled surfaces are removed;
