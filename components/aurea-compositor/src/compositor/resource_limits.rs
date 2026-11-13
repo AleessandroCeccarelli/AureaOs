@@ -23,6 +23,10 @@ pub(super) struct WaylandResourceLimits {
 }
 
 impl WaylandResourceLimits {
+    pub(super) fn contains_surface(&self, surface: &ObjectId) -> bool {
+        self.surface_owners.contains_key(surface)
+    }
+
     pub(super) fn register_surface(&mut self, surface: ObjectId, client: ClientId) -> bool {
         if self.surface_owners.contains_key(&surface) {
             return false;
