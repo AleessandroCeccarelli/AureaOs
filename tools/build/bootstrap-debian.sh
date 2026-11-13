@@ -343,7 +343,8 @@ if [[ "$(sudo stat -c '%d:%i' -- .)" != "$ROOTFS_STAGE_PARENT_ID" ]]; then
   exit 1
 fi
 
-ROOTFS_WORK="$(sudo mktemp -d --tmpdir=. aureaos-rootfs.XXXXXXXXXX)"
+ROOTFS_WORK_PATH="$(sudo mktemp -d --tmpdir=. aureaos-rootfs.XXXXXXXXXX)"
+ROOTFS_WORK="./$(basename -- "$ROOTFS_WORK_PATH")"
 
 # Create the base Debian filesystem in protected staging, never at the
 # user-controlled final pathname.
