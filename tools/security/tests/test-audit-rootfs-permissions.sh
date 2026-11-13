@@ -92,6 +92,11 @@ chmod 0666 "$ROOTFS/unapproved-world-writable"
 expect_fail "reject world-writable file" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
 rm -f "$ROOTFS/unapproved-world-writable"
 
+mkfifo "$ROOTFS/world-writable-fifo"
+chmod 0666 "$ROOTFS/world-writable-fifo"
+expect_fail "reject world-writable FIFO" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+rm -f "$ROOTFS/world-writable-fifo"
+
 mkdir -p "$ROOTFS/usr/local/bin"
 touch "$ROOTFS/usr/local/bin/unapproved-suid"
 chmod 4755 "$ROOTFS/usr/local/bin/unapproved-suid"
