@@ -89,12 +89,17 @@ pub(super) fn register_session_events(
             let is_pause = matches!(event, SessionEvent::PauseSession);
 
             let cleanup_error = if is_pause {
-                // Disable KMS planes while DRM access is still valid. Continue
-                // releasing dependent resources even if one output fails.
-                let error = clear_drm_surfaces(state);
-                super::gbm_lifecycle::clear_gbm_devices(state);
-                state.vulkan_backends.clear();
-                error
+                // Disable KMS planes while DRM access is still valid.
+                // GBM/Vulkan resources are dependencies of active scanout and
+                // must remain alive if any surface could not be disabled.
+                match clear_drm_surfaces(state) {
+                    None => {
+                        super::gbm_lifecycle::clear_gbm_devices(state);
+                        state.vulkan_backends.clear();
+                        None
+                    }
+                    error => error,
+                }
             } else {
                 None
             };
