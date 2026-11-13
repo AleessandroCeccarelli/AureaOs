@@ -103,6 +103,11 @@ chmod 4755 "$ROOTFS/usr/local/bin/unapproved-suid"
 expect_fail "reject unapproved SUID executable" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
 rm -f "$ROOTFS/usr/local/bin/unapproved-suid"
 
+mkdir "$ROOTFS/unapproved-sgid-directory"
+chmod 2755 "$ROOTFS/unapproved-sgid-directory"
+expect_fail "reject unapproved SGID directory" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+rmdir "$ROOTFS/unapproved-sgid-directory"
+
 write_getcap 0 "$ROOTFS/usr/bin/example cap_net_raw=ep"
 expect_fail "reject reported file capabilities" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
 
