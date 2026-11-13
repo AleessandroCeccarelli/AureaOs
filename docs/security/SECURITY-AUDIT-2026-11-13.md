@@ -3,7 +3,7 @@
 # Security and Lifecycle Audit — 2026-11-13
 
 **Baseline revision:** `0ee00fbfa778cc75b0bd780dc2c847faa454c68a`  
-**Remediation revision:** `ae96a0813fcdafd16c5ca450cb154fce85505331`  
+**Remediation revision:** `2413dfd30bf2a50d44d366bc5c0cf760ab0abfde`  
 **Scope:** current Rust workspace, compositor DRM/KMS and Vulkan lifecycle, Debian bootstrap, rootfs permission audit.  
 **Status:** partial source audit with initial remediation commits; not a security certification and not a declaration that AureaOS is production-hardened.
 
@@ -43,9 +43,7 @@ The script checks that the destination does not exist and later performs privile
 
 **Severity:** High (display-resource lifecycle risk; hardware failure scenario not reproduced)
 
-`DrmSurfaceManager::clear` attempts to clear all surfaces, then clears its surface and CRTC ownership maps even if one or more KMS clear operations failed. The session-pause handler then releases GBM and Vulkan resources regardless of the returned cleanup error, before reporting the error to the event loop.
-
-This preserves best-effort teardown and prevents one failed output from blocking cleanup of the others. However, a failed KMS disable means the code has not proved that the kernel stopped scanning out every framebuffer before userspace releases its related resources.
+The original baseline cleared its surface and CRTC ownership maps even if one or more KMS clear operations failed, and then released GBM/Vulkan resources during session pause. That behavior could discard userspace ownership while the kernel might still be scanning out a framebuffer.
 
 **Initial remediation (2026-11-13):** `DrmSurfaceManager::clear` now removes only surfaces whose KMS clear succeeded and retains failed surfaces plus their CRTC ownership for retry. Session-pause and orderly shutdown paths now retain GBM/Vulkan dependencies whenever any surface clear fails. A hardware-independent unit test covers retention and successful retry. **Still required:** define behavior for terminal object destruction and confirmed device removal, add integration fault-injection for multiple physical outputs, and prove the kernel release conditions. This is a meaningful mitigation, not a complete quarantine guarantee.
 
@@ -55,9 +53,9 @@ This preserves best-effort teardown and prevents one failed output from blocking
 
 **Initial remediation (2026-11-13):** initial server construction now creates KMS surfaces only for devices with both GBM and Vulkan ready, and registers logical outputs only after KMS surface creation succeeds. Udev device integration uses the same dependency gate; connector refresh initializes KMS surfaces before publishing the reconciled output set. If KMS recovery fails after pause or connector change, stale Wayland output globals are withdrawn. Existing surfaces are not replaced unless their KMS clear succeeds.
 
-GBM initialization failures are logged and do not stop later Vulkan and KMS surface initialization. The render dispatcher subsequently cancels pending output frames when the GBM device is unavailable. This can leave a discovered/published output without a functioning scanout path.
+The baseline initialized GBM and Vulkan independently and could register logical outputs before confirming that the complete render path existed. Pending frames were later cancelled when a dependency was missing.
 
-**Status:** not remediated. Initial startup and Udev hotplug currently register logical outputs before all rendering prerequisites are proven. The correct change must coordinate startup and hotplug as one transaction; this remains open rather than applying a partial fix that could leave stale output globals or active KMS surfaces.
+**Still required:** add integration tests for multi-GPU hotplug and recovery, verify that failed output reconciliation cannot leave stale globals, and ensure retries republish outputs only after all prerequisites are restored.
 
 ### AUR-VK-001 — Offscreen Vulkan validation is not physical KMS validation
 
@@ -89,7 +87,7 @@ These are source-level observations, not proof against all runtime or kernel-lev
 - Vulkan shader compilation and `spirv-val --target-env vulkan1.3` were reported passing.
 - The ignored Vulkan offscreen triangle test was explicitly run and passed.
 - Initial KMS cleanup-retention and retry unit coverage was added in the remediation commits; it is hardware-independent and does not exercise the Smithay/kernel KMS operation.
-- Startup and Udev hotplug paths were changed to gate output registration/publication on GBM, Vulkan, and KMS surface readiness.
+- Startup and Udev hotplug paths were changed to gate output registration/publication on GBM, Vulkan, and KMS surface readiness; a pure readiness-gate unit test covers all four dependency combinations.
 - Rootfs capability scanning now treats `getcap` execution errors as audit failures.
 - No post-remediation Fedora build/test run has been performed yet.
 - No physical KMS/display test was performed during this audit.
