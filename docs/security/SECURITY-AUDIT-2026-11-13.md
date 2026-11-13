@@ -3,7 +3,7 @@
 # Security and Lifecycle Audit — 2026-11-13
 
 **Baseline revision:** `0ee00fbfa778cc75b0bd780dc2c847faa454c68a`  
-**Latest source remediation revision:** `cf90d2c99f5d9edbd0b8eabcc1e3734374141754`  
+**Latest source remediation revision:** `58e3e78da7e01ffc2749f49b93d4c8b2f4be2340`  
 **Scope:** current Rust workspace, compositor DRM/KMS and Vulkan lifecycle, Debian bootstrap, rootfs permission audit.  
 **Status:** partial source audit with initial remediation commits; not a security certification and not a declaration that AureaOS is production-hardened.
 
@@ -71,6 +71,8 @@ The source explicitly implements a clear-only scanout path; scene composition is
 
 ## Verified defensive measures
 
+- Udev DRM device removal now attempts explicit KMS surface clearing before releasing the surface manager or dependent GBM/Vulkan/DRM resources; on clear failure the dependency chain remains retained in `WaylandState`. This is not yet a managed quarantine/retry solution.
+
 - DRM device paths must be absolute and devices are opened through the active libseat session.
 - The opened DRM device identity is checked against the Udev identity before integration.
 - Wayland socket names are restricted to a basename with a bounded ASCII character set.
@@ -96,7 +98,7 @@ These are source-level observations, not proof against all runtime or kernel-lev
 - Rootfs world-writable checks, SUID/SGID allowlist enforcement, and capability scanning are present in source. A disposable positive/negative fixture test script has been added but has not yet been executed; no completed-rootfs validation has been run.
 - No post-remediation Fedora build/test run has been performed yet.
 - No physical KMS/display test was performed during this audit.
-- The GitHub commit inspected is the repository baseline identified above.
+- Source review includes the baseline and the remediation commits recorded in this report; the latest source change is `58e3e78da7e01ffc2749f49b93d4c8b2f4be2340`.
 
 ## Release gates
 
