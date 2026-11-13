@@ -123,7 +123,10 @@ impl VulkanDeviceExtensionPlan {
         for (supported, extension) in [
             (supports_drm_format_modifier, DRM_MODIFIER_EXTENSION),
             (supports_sync_fd, SYNC_FD_EXTENSION),
-            (supports_foreign_queue_family, FOREIGN_QUEUE_FAMILY_EXTENSION),
+            (
+                supports_foreign_queue_family,
+                FOREIGN_QUEUE_FAMILY_EXTENSION,
+            ),
         ] {
             if supported {
                 enabled.push(extension);
