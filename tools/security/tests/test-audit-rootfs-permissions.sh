@@ -41,12 +41,13 @@ EOF
 
 make_valid_rootfs() {
   local rootfs="$1"
-  local shadow_gid= messagebus_gid=999 relative
+  local shadow_gid= messagebus_gid=100 mail_gid=8 journal_gid=101 relative
 
   shadow_gid="$(getent group shadow | cut -d: -f3)"
-  mkdir -p "$rootfs"/{etc,usr/bin,usr/sbin,usr/lib/dbus-1.0,usr/lib/polkit-1,var/tmp,root,tmp,dev/shm}
+  mkdir -p "$rootfs"/{etc,usr/bin,usr/sbin,usr/lib/dbus-1.0,usr/lib/polkit-1,var/tmp,var/mail,var/log/journal,root,tmp,dev/shm}
   touch "$rootfs/etc/passwd" "$rootfs/etc/group" "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
-  printf 'root:x:0:\nshadow:x:%s:\nmessagebus:x:%s:\n' "$shadow_gid" "$messagebus_gid" > "$rootfs/etc/group"
+  printf 'root:x:0:\nshadow:x:%s:\nmessagebus:x:%s:\nmail:x:%s:\nsystemd-journal:x:%s:\n' \
+    "$shadow_gid" "$messagebus_gid" "$mail_gid" "$journal_gid" > "$rootfs/etc/group"
 
   local -a root_suid_files=(
     usr/bin/chfn
@@ -77,10 +78,14 @@ make_valid_rootfs() {
     chown "root:$shadow_gid" "$rootfs/$relative"
   done
   chown "root:$messagebus_gid" "$rootfs/usr/lib/dbus-1.0/dbus-daemon-launch-helper"
+  chown "root:$mail_gid" "$rootfs/var/mail"
+  chown "root:$journal_gid" "$rootfs/var/log/journal"
 
   chmod 0755 "$rootfs" "$rootfs/etc" "$rootfs/usr" "$rootfs/var"
   chmod 0700 "$rootfs/root"
   chmod 1777 "$rootfs/tmp" "$rootfs/var/tmp" "$rootfs/dev/shm"
+  chmod 2775 "$rootfs/var/mail"
+  chmod 2755 "$rootfs/var/log/journal"
   chmod 0644 "$rootfs/etc/passwd" "$rootfs/etc/group"
   chmod 0640 "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
   for relative in "${root_suid_files[@]}"; do
@@ -151,6 +156,10 @@ mkdir "$ROOTFS/unapproved-sgid-directory"
 chmod 2755 "$ROOTFS/unapproved-sgid-directory"
 expect_fail "reject unapproved SGID directory" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
 rmdir "$ROOTFS/unapproved-sgid-directory"
+
+chmod 2777 "$ROOTFS/var/mail"
+expect_fail "reject unexpected SGID mail-spool mode" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+chmod 2775 "$ROOTFS/var/mail"
 
 write_getcap 0 "$ROOTFS/usr/bin/example cap_net_raw=ep"
 expect_fail "reject reported file capabilities" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
