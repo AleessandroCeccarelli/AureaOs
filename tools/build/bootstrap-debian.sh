@@ -40,12 +40,29 @@ POLICY_INSTALLED=0
 # private API filesystems and a restricted capability set instead of exposing
 # the host /dev and /sys trees through recursive bind mounts.
 run_in_rootfs() {
+  run_in_rootfs_with_network_mode shared "$@"
+}
+
+run_in_rootfs_private_network() {
+  run_in_rootfs_with_network_mode private "$@"
+}
+
+run_in_rootfs_with_network_mode() {
+  local network_mode="$1"
+  shift
+  local -a network_options=()
+
+  if [[ "$network_mode" == "private" ]]; then
+    network_options+=(--private-network)
+  fi
+
   sudo systemd-nspawn \
     --quiet \
     --register=no \
     --directory="$ROOTFS_WORK" \
     --private-users=pick \
     --private-users-ownership=map \
+    "${network_options[@]}" \
     --as-pid2 \
     --drop-capability=CAP_SYS_ADMIN \
     --drop-capability=CAP_SYS_MODULE \
@@ -338,7 +355,7 @@ sudo debootstrap \
 sudo chmod 0700 -- "$ROOTFS_WORK"
 
 # Complete debootstrap's second stage inside the isolated container.
-run_in_rootfs /debootstrap/debootstrap --second-stage
+run_in_rootfs_private_network /debootstrap/debootstrap --second-stage
 
 # Prepare temporary configuration files.
 SOURCES_TMP="$(mktemp)"
@@ -406,9 +423,19 @@ sudo install -D -m 0755 \
 POLICY_INSTALLED=1
 
 echo
-echo "===== Installazione manifesto AureaOS ====="
-run_in_rootfs env DEBIAN_FRONTEND=noninteractive \
-  apt-get install --yes --no-install-recommends -- "${packages[@]}"
+echo "===== Download pacchetti AureaOS ====="
+# Download package archives while networking is available. No package
+# maintainer scripts are executed by this download-only phase.
+run_in_rootfs apt-get --download-only install --yes --no-install-recommends -- "${packages[@]}"
+
+echo
+echo "===== Installazione offline manifesto AureaOS ====="
+# Run all package maintainer scripts without network access. Missing cached
+# archives cause a hard failure instead of an implicit network fallback.
+run_in_rootfs_private_network env DEBIAN_FRONTEND=noninteractive \
+  apt-get install --yes --no-download --no-install-recommends -- "${packages[@]}"
+
+run_in_rootfs_private_network apt-get clean
 
 # Remove the temporary service-start policy before final validation.
 sudo rm -f -- "$ROOTFS_WORK/usr/sbin/policy-rc.d"
