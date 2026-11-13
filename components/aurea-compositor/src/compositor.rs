@@ -11,11 +11,7 @@ use smithay::{
     backend::input::Keycode,
     input::{Seat, SeatHandler, SeatState},
     output::Output,
-    reexports::wayland_server::{
-        DisplayHandle,
-        backend::{ClientId, ObjectId},
-        protocol::wl_surface::WlSurface,
-    },
+    reexports::wayland_server::{DisplayHandle, protocol::wl_surface::WlSurface},
     wayland::{compositor::CompositorState, shell::xdg::XdgShellState},
 };
 
@@ -25,14 +21,11 @@ use crate::{
     window_manager::WindowManager,
 };
 
-use resource_limits::WaylandResourceLimits;
-
 mod frame_scheduling;
 mod keyboard;
 mod output_publication;
 mod output_reconciliation;
 mod rendering;
-mod resource_limits;
 mod workspace;
 
 pub use frame_scheduling::CompositorFrameError;
@@ -51,7 +44,6 @@ pub struct AureaCompositor {
     output_manager: OutputManager,
     frame_scheduler: FrameScheduler,
     wayland_outputs: BTreeMap<OutputId, Output>,
-    resource_limits: WaylandResourceLimits,
 }
 
 impl SeatHandler for AureaCompositor {
@@ -83,28 +75,7 @@ impl AureaCompositor {
             output_manager: OutputManager::new(),
             frame_scheduler: FrameScheduler::new(),
             wayland_outputs: BTreeMap::new(),
-            resource_limits: WaylandResourceLimits::default(),
         }
-    }
-
-    /// Returns the display handle used to enforce server-side resource limits.
-    pub(crate) fn display_handle(&self) -> &DisplayHandle {
-        &self.display_handle
-    }
-
-    /// Returns whether a surface has already consumed a resource quota.
-    pub(crate) fn has_tracked_surface(&self, surface: &ObjectId) -> bool {
-        self.resource_limits.contains_surface(surface)
-    }
-
-    /// Registers a committed surface against its owning Wayland client.
-    pub(crate) fn register_surface(&mut self, surface: ObjectId, client: ClientId) -> bool {
-        self.resource_limits.register_surface(surface, client)
-    }
-
-    /// Releases a surface's quota when Smithay reports its destruction.
-    pub(crate) fn unregister_surface(&mut self, surface: &ObjectId) {
-        self.resource_limits.unregister_surface(surface);
     }
 
     /// Returns the Smithay compositor protocol state.
