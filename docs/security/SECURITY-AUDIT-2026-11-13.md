@@ -94,7 +94,7 @@ These are source-level observations, not proof against all runtime or kernel-lev
 - Startup and Udev hotplug paths were changed to gate output registration/publication on GBM, Vulkan, and KMS surface readiness; a pure readiness-gate unit test covers all four dependency combinations.
 - Startup retains ownership of successfully created KMS surfaces even if logical output registration fails, so they remain available to explicit shutdown cleanup.
 - Udev integration rollback now retains the complete graphics dependency chain if a KMS clear fails, rather than unconditionally removing the surface manager and its dependencies.
-- Rootfs capability scanning now treats `getcap` execution errors as audit failures.
+- Rootfs capability scanning now treats `getcap` execution errors as audit failures. Both world-writable and SUID/SGID filesystem traversals now capture `find` output and fail closed if traversal exits unsuccessfully, instead of relying on process substitution whose producer status is otherwise lost.
 - Rootfs world-writable checks, SUID/SGID allowlist enforcement, and capability scanning are present in source. A disposable positive/negative fixture test script has been added but has not yet been executed; no completed-rootfs validation has been run.
 - No post-remediation Fedora build/test run has been performed yet.
 - No physical KMS/display test was performed during this audit.
