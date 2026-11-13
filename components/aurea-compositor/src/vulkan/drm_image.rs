@@ -132,7 +132,9 @@ impl VulkanDrmImageAllocator {
         if !external_memory
             .external_memory_features
             .contains(vk::ExternalMemoryFeatureFlags::EXPORTABLE)
-            || !external_memory.compatible_handle_types.contains(dma_buf_handle)
+            || !external_memory
+                .compatible_handle_types
+                .contains(dma_buf_handle)
         {
             return Err(VulkanDrmImageError::DmabufExportUnsupported);
         }
@@ -145,7 +147,11 @@ impl VulkanDrmImageAllocator {
         let image_info = vk::ImageCreateInfo::default()
             .image_type(vk::ImageType::TYPE_2D)
             .format(vk_format)
-            .extent(vk::Extent3D { width, height, depth: 1 })
+            .extent(vk::Extent3D {
+                width,
+                height,
+                depth: 1,
+            })
             .mip_levels(1)
             .array_layers(1)
             .samples(vk::SampleCountFlags::TYPE_1)
