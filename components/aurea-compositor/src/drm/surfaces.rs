@@ -320,6 +320,14 @@ impl DrmSurfaceManager {
     }
 }
 
+impl Drop for DrmSurfaceManager {
+    fn drop(&mut self) {
+        // Best-effort fallback for hot-unplug and partial startup teardown.
+        // Explicit pause/shutdown paths call clear() while they can report errors.
+        let _ = self.clear();
+    }
+}
+
 /// Runs a cleanup operation for every item and collects all failures.
 fn clear_each<T, E>(
     items: impl IntoIterator<Item = T>,
@@ -372,5 +380,4 @@ mod lifecycle_tests {
         let errors = clear_each(Vec::<u8>::new(), |_| Ok::<(), &'static str>(()));
         assert!(errors.is_empty());
     }
-}
 }
