@@ -100,3 +100,43 @@ fn deferred_refresh_keeps_failures_and_unmanaged_devices_but_removes_successes()
     assert_eq!(remaining, vec![11, 13]);
     assert_eq!(failures, vec![(11, "transient refresh error")]);
 }
+
+#[test]
+fn KMS_surfaces_are_restored_before_outputs_are_published() {
+    let mut steps = Vec::new();
+
+    restore_before_publish(
+        &mut steps,
+        |steps| {
+            steps.push("kms");
+            Ok::<(), &'static str>(())
+        },
+        |steps| {
+            steps.push("outputs");
+            Ok(())
+        },
+    )
+    .unwrap();
+
+    assert_eq!(steps, vec!["kms", "outputs"]);
+}
+
+#[test]
+fn output_publication_is_skipped_when_KMS_restore_fails() {
+    let mut steps = Vec::new();
+
+    let result = restore_before_publish(
+        &mut steps,
+        |steps| {
+            steps.push("kms");
+            Err::<(), _>("KMS restore failed")
+        },
+        |steps| {
+            steps.push("outputs");
+            Ok(())
+        },
+    );
+
+    assert_eq!(result, Err("KMS restore failed"));
+    assert_eq!(steps, vec!["kms"]);
+}
