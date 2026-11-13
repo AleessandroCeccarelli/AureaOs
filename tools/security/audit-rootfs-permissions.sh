@@ -94,10 +94,13 @@ declare -A SUID_SGID_ALLOWLIST=(
 
 while IFS= read -r -d '' path; do
   relative="${path#"$ROOTFS"/}"
+  mode="$(stat -c '%a' -- "$path")"
   if [[ -z "${SUID_SGID_ALLOWLIST[$relative]+allowed}" ]]; then
-    fail "SUID/SGID non autorizzato: /$relative ($(stat -c '%a %U:%G' -- "$path"))"
+    fail "SUID/SGID non autorizzato: /$relative ($mode)"
+  elif [[ "$mode" != "${SUID_SGID_ALLOWLIST[$relative]}" ]]; then
+    fail "mode SUID/SGID inatteso per /$relative: atteso ${SUID_SGID_ALLOWLIST[$relative]}, trovato $mode"
   else
-    printf 'PASS  SUID/SGID allowlist /%s (%s)\n' "$relative" "$(stat -c '%a' -- "$path")"
+    printf 'PASS  SUID/SGID allowlist /%s (%s)\n' "$relative" "$mode"
   fi
 done < <(find "$ROOTFS" -xdev -type f -perm /6000 -print0)
 
