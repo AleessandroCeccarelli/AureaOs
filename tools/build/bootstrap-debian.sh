@@ -1,6 +1,5 @@
-# SPDX-License-Identifier: GPL-3.0-or-later
-
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 set -Eeuo pipefail
 
 # Keep bootstrap-generated temporary data private by default.
@@ -18,12 +17,14 @@ readonly COMPONENTS_SPACE="main contrib non-free non-free-firmware"
 readonly MIRROR="https://deb.debian.org/debian"
 readonly SECURITY_MIRROR="https://security.debian.org/debian-security"
 
-readonly SCRIPT_DIR="$(
+SCRIPT_DIR="$(
   cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P
 )"
-readonly REPO_ROOT="$(
+readonly SCRIPT_DIR
+REPO_ROOT="$(
   cd -- "$SCRIPT_DIR/../.." && pwd -P
 )"
+readonly REPO_ROOT
 readonly PACKAGE_DIR="$REPO_ROOT/debian/packages"
 
 TARGET="${HOME}/Documenti/AureaOS-Build/rootfs"
