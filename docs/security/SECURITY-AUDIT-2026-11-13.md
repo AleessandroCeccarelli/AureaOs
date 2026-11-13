@@ -4,7 +4,7 @@
 
 **Audited revision:** `0ee00fbfa778cc75b0bd780dc2c847faa454c68a`  
 **Scope:** current Rust workspace, compositor DRM/KMS and Vulkan lifecycle, Debian bootstrap, rootfs permission audit.  
-**Status:** partial source audit; not a security certification and not a declaration that AureaOS is production-hardened.
+**Status:** partial source audit with initial remediation commits; not a security certification and not a declaration that AureaOS is production-hardened.
 
 ## Executive summary
 
@@ -20,7 +20,7 @@ The repository is still an early development system. The remaining gaps below mu
 
 `tools/security/audit-rootfs-permissions.sh` checks selected ownership/modes, checks world-writable files and directories only under `/etc` and `/usr`, and prints an SUID/SGID inventory. It does not fail on an unapproved SUID/SGID entry, does not inspect file capabilities, and does not enforce the documented policy for all of `/var`, `/home`, `/run`, or other installed paths.
 
-**Required work:** define a reviewed SUID/SGID allowlist; audit file capabilities; check world-writable paths across the complete rootfs with documented exceptions; validate symlink targets and ownership/modes for service state; make unexpected privileged metadata a hard failure.
+**Remediation in progress (2026-11-13):** the rootfs audit now scans world-writable regular files/directories across the rootfs, permits only sticky `1777` shared temporary directories (`/tmp`, `/var/tmp`, `/dev/shm`), rejects SUID/SGID paths outside an explicit initial Debian utility allowlist, and fails closed if `getcap` is unavailable or reports capabilities. The bootstrap now checks for `getcap` before starting. **Still required:** validate the allowlist and exact modes against the final installed package profile, test the audit against disposable good/bad rootfs fixtures, and extend checks to service-state ownership/modes and symlink policy.
 
 ### AUR-SEC-002 — systemd-nspawn capability policy is not a demonstrated minimum
 
@@ -36,7 +36,7 @@ The repository is still an early development system. The remaining gaps below mu
 
 The script checks that the destination does not exist and later performs privileged operations beneath that path. The destination's parent is normally user-writable. The source does not currently demonstrate an atomic reservation of the destination or protection against replacement of the target path between validation and subsequent privileged operations.
 
-**Required work:** redesign target creation and cleanup around a safely reserved directory and descriptor-relative/no-follow operations where practical; verify the target identity before every privileged operation; add adversarial symlink/replacement tests. Do not attempt a superficial string/path check as a substitute for race resistance.
+**Status:** not remediated. A reliable fix requires changing how privileged tools address the target (descriptor-relative/no-follow operations or a root-owned private staging parent); adding more `realpath` or string checks would not close the race. Keep this finding open until an implementation and adversarial replacement tests are available.
 
 ### AUR-DRM-001 — KMS clear failures are followed by dependent-resource release
 
@@ -46,7 +46,7 @@ The script checks that the destination does not exist and later performs privile
 
 This preserves best-effort teardown and prevents one failed output from blocking cleanup of the others. However, a failed KMS disable means the code has not proved that the kernel stopped scanning out every framebuffer before userspace releases its related resources.
 
-**Required work:** define a per-output failure state and an explicit recovery policy. Preserve or quarantine resources whose scanout-disable operation failed until a successful disable, device removal, or another documented kernel-guaranteed release point. Add fault-injection tests for one and multiple failed outputs. Do not treat a successful Rust build as proof of safe physical scanout teardown.
+**Initial remediation (2026-11-13):** `DrmSurfaceManager::clear` now removes only surfaces whose KMS clear succeeded and retains failed surfaces plus their CRTC ownership for retry. Session-pause and orderly shutdown paths now retain GBM/Vulkan dependencies whenever any surface clear fails. A hardware-independent unit test covers retention and successful retry. **Still required:** define behavior for terminal object destruction and confirmed device removal, add integration fault-injection for multiple physical outputs, and prove the kernel release conditions. This is a meaningful mitigation, not a complete quarantine guarantee.
 
 ### AUR-DRM-002 — Graphics backend initialization is best-effort and can leave an output without a render path
 
@@ -54,7 +54,7 @@ This preserves best-effort teardown and prevents one failed output from blocking
 
 GBM initialization failures are logged and do not stop later Vulkan and KMS surface initialization. The render dispatcher subsequently cancels pending output frames when the GBM device is unavailable. This can leave a discovered/published output without a functioning scanout path.
 
-**Required work:** make readiness explicit per DRM node. Only advertise a usable rendering output when the required DRM, GBM, Vulkan, and KMS resources are ready, or expose a clearly represented degraded state with a retry path. Keep device-local failures isolated from unrelated GPUs.
+**Status:** not remediated. Initial startup and Udev hotplug currently register logical outputs before all rendering prerequisites are proven. The correct change must coordinate startup and hotplug as one transaction; this remains open rather than applying a partial fix that could leave stale output globals or active KMS surfaces.
 
 ### AUR-VK-001 — Offscreen Vulkan validation is not physical KMS validation
 
@@ -85,16 +85,18 @@ These are source-level observations, not proof against all runtime or kernel-lev
 - Fedora workspace formatting, workspace checks, DRM-feature checks, and workspace tests were reported passing by the developer before this audit.
 - Vulkan shader compilation and `spirv-val --target-env vulkan1.3` were reported passing.
 - The ignored Vulkan offscreen triangle test was explicitly run and passed.
+- Initial KMS cleanup-retention and retry unit coverage was added in the remediation commits; it is hardware-independent and does not exercise the Smithay/kernel KMS operation.
+- No post-remediation Fedora build/test run has been performed yet.
 - No physical KMS/display test was performed during this audit.
 - The GitHub commit inspected is the repository baseline identified above.
 
 ## Release gates
 
-1. Complete the rootfs metadata audit and capability allowlist.
-2. Add bootstrap negative tests for existing targets, repository-local targets, symlink targets, malformed manifests, and target-path replacement attempts.
+1. Validate the rootfs allowlist against a disposable completed Debian rootfs and add fixture-based positive/negative tests.
+2. Close the bootstrap target-path race with root-owned staging and no-follow/descriptor-relative privileged operations; add replacement tests.
 3. Test the nspawn sandbox with an explicit, measured capability and namespace policy.
-4. Add DRM/KMS fault-injection tests for pause, activation, unplug, failed clear, and shutdown.
-5. Make render readiness and degraded-output behavior explicit.
+4. Complete KMS quarantine semantics for terminal destruction/device removal and add multi-output fault injection.
+5. Make render readiness and degraded-output behavior explicit across startup and Udev hotplug.
 6. Run physical KMS validation only on a recoverable test setup, with a known-good VT/session recovery procedure.
 7. Re-run formatting, locked workspace checks, and all safe tests after each source change.
 
