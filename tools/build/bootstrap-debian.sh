@@ -396,8 +396,8 @@ fi
 
 for required_package in systemd systemd-sysv linux-image-amd64; do
   if ! package_status="$(
+    # shellcheck disable=SC2016 # dpkg-query format tokens must remain literal.
     run_in_rootfs dpkg-query -W \
-      # shellcheck disable=SC2016 # dpkg-query format tokens must remain literal. \
       -f='${db:Status-Status}' "$required_package" 2>/dev/null
   )"; then
     echo "Errore: impossibile verificare il pacchetto $required_package." >&2
