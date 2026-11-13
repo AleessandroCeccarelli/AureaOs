@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import os
+import stat
 import sys
 import tempfile
 import unittest
@@ -53,6 +54,7 @@ class RootfsPublicationTests(unittest.TestCase):
         published = self.destination_parent / self.destination_name
         after = published.stat()
         self.assertEqual((before.st_dev, before.st_ino), (after.st_dev, after.st_ino))
+        self.assertEqual(stat.S_IMODE(after.st_mode), 0o755)
         self.assertEqual((published / "sentinel").read_text(encoding="utf-8"), "verified-rootfs")
         self.assertFalse(self.source.exists())
 
