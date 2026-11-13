@@ -42,8 +42,8 @@ These capabilities represent an important step in the graphics architecture, but
 
 AureaOS is not yet a usable graphical desktop. Several essential capabilities remain under development:
 
-- A complete Vulkan rendering backend and frame presentation to physical displays.
-- Full DRM/KMS mode setting and display configuration.
+- Full Vulkan scene rendering and physical-display validation. The compositor already contains a connected diagnostic blue-frame Vulkan-to-DRM/KMS path, which still requires validation on physical hardware.
+- Complete DRM/KMS display configuration, robust output recovery, and full session validation.
 - Complete keyboard, pointer, touch, and gesture input handling.
 - Full window management and desktop interaction.
 - A finished graphical shell and integrated system applications.
@@ -120,7 +120,7 @@ Its current technical direction includes:
 
 The selected technologies do not imply that their complete integration is already implemented.
 
-In particular, Vulkan rendering, physical frame presentation, complete display configuration, and the final bootable system image remain under development.
+In particular, full Vulkan scene composition, physical scanout validation, complete display configuration, and the final bootable system image remain under development.
 
 Aurea Time will own system backup and restore. Btrfs native snapshots are not the planned backup and restore workflow.
 
