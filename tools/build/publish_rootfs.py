@@ -92,6 +92,17 @@ def publish_rootfs(
         if source_stat.st_dev != destination_parent_stat.st_dev:
             raise OSError(errno.EXDEV, "staging and destination must be on the same filesystem")
 
+        source_entry_stat = os.stat(
+            source_name,
+            dir_fd=source_parent_fd,
+            follow_symlinks=False,
+        )
+        if (source_entry_stat.st_dev, source_entry_stat.st_ino) != (
+            source_stat.st_dev,
+            source_stat.st_ino,
+        ):
+            raise RuntimeError("staging pathname no longer identifies the opened rootfs inode")
+
         try:
             os.stat(destination_name, dir_fd=destination_parent_fd, follow_symlinks=False)
         except FileNotFoundError:
