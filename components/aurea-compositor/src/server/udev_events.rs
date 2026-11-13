@@ -371,13 +371,16 @@ fn changed_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
 
     if state.session_active {
         if state.drm_devices.contains(node) {
-            if let Err(error) = initialize_drm_surfaces(state, node) {
+            let restore_result = initialize_drm_surfaces(state, node)
+                .and_then(|()| refresh_device_outputs(state, node));
+
+            if let Err(error) = restore_result {
                 // Do not leave stale Wayland globals advertising outputs whose
-                // KMS surfaces could not be recreated.
+                // KMS surfaces or logical output state could not be restored.
                 remove_device_outputs(state, node);
                 return Err(error);
             }
-            refresh_device_outputs(state, node)?;
+
             forget_changed_device(&mut state.udev_changed_devices, node);
         } else {
             open_and_integrate(state, node)?;
