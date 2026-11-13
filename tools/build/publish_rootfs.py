@@ -63,7 +63,15 @@ def publish_rootfs(
     destination_name: str,
     destination_parent: str = ".",
     source_parent_path: str = SOURCE_PARENT,
-) -> None:\n    source_parent = os.path.dirname(source_path)\n    source_name = os.path.basename(source_path)\n\n    if (\n        source_parent != source_parent_path\n        or os.path.realpath(source_parent_path) != source_parent_path\n        or not source_name.startswith(STAGING_PREFIX)\n    ):
+) -> None:
+    source_parent = os.path.dirname(source_path)
+    source_name = os.path.basename(source_path)
+
+    if (
+        source_parent != source_parent_path
+        or os.path.realpath(source_parent_path) != source_parent_path
+        or not source_name.startswith(STAGING_PREFIX)
+    ):
         raise ValueError("source must be a direct child of /var/tmp with the AureaOS staging prefix")
     if not destination_name or destination_name in (".", "..") or os.sep in destination_name:
         raise ValueError("destination must be a single valid basename")
