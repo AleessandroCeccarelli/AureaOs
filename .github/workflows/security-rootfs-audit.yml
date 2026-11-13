@@ -1,0 +1,38 @@
+name: Security rootfs audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/security/**'
+      - '.github/workflows/security-rootfs-audit.yml'
+  pull_request:
+    paths:
+      - 'tools/security/**'
+      - '.github/workflows/security-rootfs-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  rootfs-permission-audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install audit dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libcap2-bin
+          if ! getent group shadow >/dev/null; then
+            sudo groupadd --system shadow
+          fi
+
+      - name: Check shell syntax
+        run: |
+          bash -n tools/security/audit-rootfs-permissions.sh
+          bash -n tools/security/tests/test-audit-rootfs-permissions.sh
+
+      - name: Run rootfs permission audit fixtures
+        run: sudo bash tools/security/tests/test-audit-rootfs-permissions.sh
