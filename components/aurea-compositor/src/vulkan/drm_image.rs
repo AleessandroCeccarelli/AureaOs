@@ -140,7 +140,7 @@ impl VulkanDrmImageAllocator {
             return Err(VulkanDrmImageError::ImageDimensionsUnsupported);
         }
 
-        let external_image = vk::ExternalMemoryImageCreateInfo::default()
+        let mut external_image = vk::ExternalMemoryImageCreateInfo::default()
             .handle_types(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
         let image_info = vk::ImageCreateInfo::default()
             .image_type(vk::ImageType::TYPE_2D)
@@ -153,7 +153,7 @@ impl VulkanDrmImageAllocator {
             .usage(usage)
             .sharing_mode(vk::SharingMode::EXCLUSIVE)
             .initial_layout(vk::ImageLayout::UNDEFINED)
-            .push_next(&mut external_image.clone());
+            .push_next(&mut external_image);
         let raw = self.device.handle();
         let image = unsafe { raw.create_image(&image_info, None) }
             .map_err(VulkanDrmImageError::ImageCreation)?;
