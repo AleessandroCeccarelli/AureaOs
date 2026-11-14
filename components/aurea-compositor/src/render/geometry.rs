@@ -5,7 +5,7 @@
 
 //! Output-relative geometry for Wayland surface buffers.
 
-use smithay::{utils::{Size, Transform}};
+use smithay::utils::Transform;
 
 /// Physical destination rectangle for one surface on one output.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -90,10 +90,18 @@ pub fn surface_geometry(
 
     let buffer_width = i32::try_from(buffer_size.0).ok()?;
     let buffer_height = i32::try_from(buffer_size.1).ok()?;
-    let transformed = buffer_transform.transform_size(Size::from((buffer_width, buffer_height)));
+    let swaps_dimensions = matches!(
+        buffer_transform,
+        Transform::_90 | Transform::_270 | Transform::Flipped90 | Transform::Flipped270
+    );
+    let (transformed_width, transformed_height) = if swaps_dimensions {
+        (buffer_height, buffer_width)
+    } else {
+        (buffer_width, buffer_height)
+    };
 
-    let width = scaled_buffer_dimension(transformed.w, buffer_scale, output_scale)?;
-    let height = scaled_buffer_dimension(transformed.h, buffer_scale, output_scale)?;
+    let width = scaled_buffer_dimension(transformed_width, buffer_scale, output_scale)?;
+    let height = scaled_buffer_dimension(transformed_height, buffer_scale, output_scale)?;
     if width == 0 || height == 0 {
         return None;
     }
