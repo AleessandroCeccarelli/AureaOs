@@ -604,7 +604,7 @@ if ! sudo cmp -s "$LOCALE_GEN_CONFIG" "$ROOTFS_WORK/etc/locale.gen"; then
   echo "Errore: configurazione locale.gen diversa da quella versionata." >&2
   exit 1
 fi
-if ! run_in_rootfs locale -a | grep -Eiq '^en_US[.]utf8  echo "Errore: locale en_US.UTF-8 non generata." >&2
+if ! run_in_rootfs locale -a | grep -Eiq '^en_US[.]utf8([.]|$)'; then
   exit 1
 fi
 if [[ ! -L "$ROOTFS_WORK/etc/vconsole.conf" ||
