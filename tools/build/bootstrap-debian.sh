@@ -561,6 +561,7 @@ done
 # Reassert the private staging-root mode before auditing and publishing.
 sudo chmod 0700 -- "$ROOTFS_WORK"
 sudo bash "$REPO_ROOT/tools/security/audit-rootfs-permissions.sh" --staging "$ROOTFS_WORK"
+sudo python3 "$REPO_ROOT/tools/security/audit-rootfs-symlinks.py" "$ROOTFS_WORK"
 
 # Publish only after all checks pass. The Python helper opens both parent
 # directories, pins the staging inode, and requires renameat2(RENAME_NOREPLACE).
