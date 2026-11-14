@@ -20,6 +20,7 @@ pub const MAX_SHM_SNAPSHOT_BYTES: usize = 256 * 1024 * 1024;
 pub enum ShmPixelFormat {
     Argb8888,
     Xrgb8888,
+    Rgba8888,
 }
 
 /// An owned, tightly packed copy of a client SHM buffer.
@@ -111,9 +112,38 @@ impl ShmBufferSnapshot {
         self.format
     }
 
-    /// Returns tightly packed bytes in the original Wayland SHM pixel format.
+    /// Returns tightly packed bytes in the current pixel format.
     pub fn pixels(&self) -> &[u8] {
         &self.pixels
+    }
+
+    /// Converts this owned snapshot in place to tightly packed RGBA8888.
+    ///
+    /// Wayland ARGB8888 and XRGB8888 are native-endian 32-bit values. On
+    /// little-endian systems their byte order is BGRA and BGRX respectively.
+    /// Conversion happens in the existing allocation to avoid doubling the
+    /// memory used by a client-controlled SHM buffer.
+    pub fn into_rgba8(mut self) -> Self {
+        match self.format {
+            ShmPixelFormat::Rgba8888 => return self,
+            ShmPixelFormat::Argb8888 | ShmPixelFormat::Xrgb8888 => {}
+        }
+
+        let has_alpha = self.format == ShmPixelFormat::Argb8888;
+        for pixel in self.pixels.chunks_exact_mut(4) {
+            let value = u32::from_ne_bytes([pixel[0], pixel[1], pixel[2], pixel[3]]);
+            pixel[0] = ((value >> 16) & 0xff) as u8;
+            pixel[1] = ((value >> 8) & 0xff) as u8;
+            pixel[2] = (value & 0xff) as u8;
+            pixel[3] = if has_alpha {
+                ((value >> 24) & 0xff) as u8
+            } else {
+                0xff
+            };
+        }
+
+        self.format = ShmPixelFormat::Rgba8888;
+        self
     }
 }
 
@@ -262,5 +292,53 @@ mod tests {
             ValidatedLayout::new(0, 1, 1, -1, 4).unwrap_err(),
             ShmBufferError::InvalidStride
         );
+    }
+
+    #[test]
+    fn converts_argb8888_native_endian_pixels_to_rgba8_in_place() {
+        let argb = 0x7f12_34a5_u32;
+        let snapshot = ShmBufferSnapshot {
+            width: 1,
+            height: 1,
+            format: ShmPixelFormat::Argb8888,
+            pixels: argb.to_ne_bytes().to_vec(),
+        };
+
+        let converted = snapshot.into_rgba8();
+
+        assert_eq!(converted.format(), ShmPixelFormat::Rgba8888);
+        assert_eq!(converted.pixels(), &[0x12, 0x34, 0xa5, 0x7f]);
+        assert_eq!(converted.pixels().len(), 4);
+    }
+
+    #[test]
+    fn converts_xrgb8888_to_opaque_rgba8() {
+        let xrgb = 0x0012_34a5_u32;
+        let snapshot = ShmBufferSnapshot {
+            width: 1,
+            height: 1,
+            format: ShmPixelFormat::Xrgb8888,
+            pixels: xrgb.to_ne_bytes().to_vec(),
+        };
+
+        let converted = snapshot.into_rgba8();
+
+        assert_eq!(converted.format(), ShmPixelFormat::Rgba8888);
+        assert_eq!(converted.pixels(), &[0x12, 0x34, 0xa5, 0xff]);
+    }
+
+    #[test]
+    fn rgba8_conversion_is_idempotent() {
+        let snapshot = ShmBufferSnapshot {
+            width: 1,
+            height: 1,
+            format: ShmPixelFormat::Rgba8888,
+            pixels: vec![0x12, 0x34, 0xa5, 0x7f],
+        };
+
+        let converted = snapshot.into_rgba8();
+
+        assert_eq!(converted.pixels(), &[0x12, 0x34, 0xa5, 0x7f]);
+        assert_eq!(converted.format(), ShmPixelFormat::Rgba8888);
     }
 }
