@@ -495,6 +495,16 @@ fi
 sudo install -D -o 0 -g 0 -m 0644 \
   "$KEYBOARD_CONFIG" "$ROOTFS_WORK/etc/default/keyboard"
 
+# Generate and select the English UTF-8 system locale independently of XKB.
+LOCALE_CONFIG="$REPO_ROOT/debian/config/locale"
+if [[ ! -f "$LOCALE_CONFIG" || -L "$LOCALE_CONFIG" ]]; then
+  echo "Errore: configurazione locale assente o non regolare: $LOCALE_CONFIG" >&2
+  exit 1
+fi
+run_in_rootfs_private_network locale-gen en_US.UTF-8
+sudo install -D -o 0 -g 0 -m 0644 \
+  "$LOCALE_CONFIG" "$ROOTFS_WORK/etc/locale.conf"
+
 echo
 echo "===== Verifica finale ====="
 
@@ -533,6 +543,92 @@ if [[ "$keyboard_status" != "installed" ]]; then
 fi
 if ! sudo cmp -s "$KEYBOARD_CONFIG" "$ROOTFS_WORK/etc/default/keyboard"; then
   echo "Errore: configurazione tastiera diversa da quella versionata." >&2
+  exit 1
+fi
+if ! sudo cmp -s "$LOCALE_CONFIG" "$ROOTFS_WORK/etc/locale.conf"; then
+  echo "Errore: configurazione locale diversa da quella versionata." >&2
+  exit 1
+fi
+if ! run_in_rootfs locale -a | grep -Eiq '^en_US\.utf8if [[ ! -L "$ROOTFS_WORK/etc/vconsole.conf" ||
+      "$(sudo readlink -- "$ROOTFS_WORK/etc/vconsole.conf")" != "default/keyboard" ||
+      ! -f "$ROOTFS_WORK/etc/default/keyboard" ]]; then
+  echo "Errore: collegamento /etc/vconsole.conf non risolto correttamente." >&2
+  exit 1
+fi
+
+for required_package in systemd systemd-sysv linux-image-amd64; do
+  if ! package_status="$(
+    run_in_rootfs dpkg-query -W -f="$DPkg_QUERY_STATUS_FORMAT" "$required_package" 2>/dev/null
+  )"; then
+    echo "Errore: impossibile verificare il pacchetto $required_package." >&2
+    exit 1
+  fi
+
+  if [[ "$package_status" != "installed" ]]; then
+    echo "Errore: pacchetto fondamentale non installato: $required_package (stato: $package_status)." >&2
+    exit 1
+  fi
+done
+
+# Audit real ownership and mode bits after package installation. Run as root
+# because the rootfs /root directory is intentionally not readable by users.
+# Reassert the private staging-root mode before auditing and publishing.
+sudo chmod 0700 -- "$ROOTFS_WORK"
+sudo bash "$REPO_ROOT/tools/security/audit-rootfs-permissions.sh" --staging "$ROOTFS_WORK"
+sudo python3 "$REPO_ROOT/tools/security/audit-rootfs-symlinks.py" "$ROOTFS_WORK"
+
+# Publish only after all checks pass. The Python helper opens both parent
+# directories, pins the staging inode, and requires renameat2(RENAME_NOREPLACE).
+# It fails closed if the kernel/filesystem cannot provide an atomic no-replace
+# rename; it never falls back to a check-then-rename sequence.
+if [[ "$(stat -c '%d:%i' -- "$TARGET_PARENT")" != "$PARENT_ID" ]]; then
+  echo "Errore: la directory destinazione è stata sostituita durante il bootstrap." >&2
+  echo "Rootfs verificata conservata in staging: $ROOTFS_WORK" >&2
+  exit 1
+fi
+if [[ -e "./$TARGET_NAME" || -L "./$TARGET_NAME" ]]; then
+  echo "Errore: la destinazione è comparsa durante il bootstrap: $TARGET" >&2
+  echo "Rootfs verificata conservata in staging: $ROOTFS_WORK" >&2
+  exit 1
+fi
+
+HELPER_PUBLISHED_LOCATION="$(
+  sudo python3 "$REPO_ROOT/tools/build/publish_rootfs.py" \
+    "$ROOTFS_WORK" "$TARGET_NAME" "$TARGET_PARENT" "$PARENT_ID"
+)"
+ROOTFS_WORK=""
+
+# Return to the pinned destination parent. If its pathname was renamed during
+# the build, pwd still identifies the original directory inode.
+cd ..
+PUBLISHED_PARENT="$(pwd -P)"
+PUBLISHED_PARENT_ID="$(stat -c '%d:%i' -- .)"
+
+# The staging parent is now empty. Remove it only if its original inode is
+# still present under the original name; never follow a substituted symlink.
+if [[ -d "$ROOTFS_STAGE_PARENT_NAME" && ! -L "$ROOTFS_STAGE_PARENT_NAME" ]]; then
+  CURRENT_STAGE_PARENT_ID="$(sudo stat -c '%d:%i' -- "$ROOTFS_STAGE_PARENT_NAME")"
+  if [[ "$CURRENT_STAGE_PARENT_ID" == "$ROOTFS_STAGE_PARENT_ID" ]]; then
+    sudo rmdir -- "$ROOTFS_STAGE_PARENT_NAME" || \
+      echo "Avviso: staging parent vuoto non rimosso: $PUBLISHED_PARENT/$ROOTFS_STAGE_PARENT_NAME" >&2
+  fi
+fi
+
+PUBLISHED_LOCATION="${PUBLISHED_PARENT%/}/$TARGET_NAME"
+if [[ "$PUBLISHED_PARENT_ID" != "$PARENT_ID" || "$PUBLISHED_PARENT" != "$TARGET_PARENT" ]]; then
+  echo "Avviso: il percorso del parent è cambiato durante il bootstrap." >&2
+  echo "La rootfs è stata pubblicata nella directory originale: $PUBLISHED_LOCATION" >&2
+  echo "Percorso registrato dal publisher: $HELPER_PUBLISHED_LOCATION" >&2
+  exit 1
+fi
+
+echo "Rootfs pubblicata: $PUBLISHED_LOCATION"
+
+echo "Rootfs Debian ${CODENAME} (${ARCH}) creata, configurata e verificata."
+echo "Percorso: ${TARGET}"
+echo "Nota: non è ancora un file avviabile o installabile."
+; then
+  echo "Errore: locale en_US.UTF-8 non generata." >&2
   exit 1
 fi
 if [[ ! -L "$ROOTFS_WORK/etc/vconsole.conf" ||
