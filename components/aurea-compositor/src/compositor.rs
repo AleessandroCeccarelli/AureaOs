@@ -108,3 +108,7 @@ impl AureaCompositor {
         &mut self.output_manager
     }
 }
+
+#[cfg(test)]
+#[path = "../tests/unit/shm_protocol.rs"]
+mod shm_protocol_tests;
