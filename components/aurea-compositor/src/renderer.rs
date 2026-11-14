@@ -33,13 +33,19 @@ pub struct RenderTarget {
     height: u32,
     refresh_millihz: u32,
     scale: u32,
+    logical_origin: (i32, i32),
 }
 
 impl RenderTarget {
-    /// Creates a render target from an enabled display output.
+    /// Creates a render target from an enabled output and its logical position.
     ///
-    /// Disabled outputs cannot be used as render targets.
-    pub fn from_output(output: &DisplayOutput) -> Option<Self> {
+    /// The origin is supplied by the output layout. Keeping it on the target
+    /// lets each backend translate global surface coordinates into coordinates
+    /// local to this output, including multi-monitor arrangements.
+    pub fn from_output(
+        output: &DisplayOutput,
+        logical_origin: (i32, i32),
+    ) -> Option<Self> {
         if !output.is_enabled() {
             return None;
         }
@@ -52,6 +58,7 @@ impl RenderTarget {
             height: mode.height(),
             refresh_millihz: mode.refresh_millihz(),
             scale: output.scale(),
+            logical_origin,
         })
     }
 
@@ -79,6 +86,11 @@ impl RenderTarget {
     pub fn scale(self) -> u32 {
         self.scale
     }
+
+    /// Output origin in the compositor's global logical coordinate space.
+    pub fn logical_origin(self) -> (i32, i32) {
+        self.logical_origin
+    }
 }
 
 /// A backend capable of rendering an AureaOS scene to a target.
@@ -89,10 +101,39 @@ pub trait RenderBackend {
     /// Renders and presents a scene on the specified output.
     ///
     /// The backend is responsible for translating the scene into its
-    /// graphics API and presenting the resulting frame on the target.
+    /// graphics API and presenting the resulting frame.
     fn render_frame(
         &mut self,
         target: &RenderTarget,
         scene: &RenderScene<'_>,
     ) -> Result<(), Self::Error>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::output::OutputMode;
+
+    fn output(enabled: bool) -> DisplayOutput {
+        let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
+        let mut output = DisplayOutput::new(7, "DP-1", vec![mode], mode, 2).unwrap();
+        output.set_enabled(enabled);
+        output
+    }
+
+    #[test]
+    fn render_target_preserves_output_layout_origin_and_scale() {
+        let target = RenderTarget::from_output(&output(true), (-1920, 120)).unwrap();
+
+        assert_eq!(target.output_id(), 7);
+        assert_eq!(target.width(), 1920);
+        assert_eq!(target.height(), 1080);
+        assert_eq!(target.scale(), 2);
+        assert_eq!(target.logical_origin(), (-1920, 120));
+    }
+
+    #[test]
+    fn disabled_output_cannot_become_a_render_target() {
+        assert!(RenderTarget::from_output(&output(false), (0, 0)).is_none());
+    }
 }
