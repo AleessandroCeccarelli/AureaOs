@@ -83,8 +83,8 @@ impl VulkanDrawPass {
     /// Records a draw with one sampled texture descriptor set.
     ///
     /// The pipeline must have been created with the matching descriptor-set
-    /// layout at `set_index`. The texture binding keeps its image and sampler
-    /// alive for the duration of this recording call.
+    /// layout at `set_index`. The caller must keep the texture binding alive until the submitted
+    /// command buffer has completed.
     pub fn record_textured(
         command_buffer: vk::CommandBuffer,
         view: &VulkanImageView<'_, '_>,
