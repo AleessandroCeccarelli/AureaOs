@@ -108,6 +108,20 @@ impl<'resources, 'image, 'device> VulkanTextureBinding<'resources, 'image, 'devi
     pub fn handle(&self) -> vk::DescriptorSet {
         self.set
     }
+
+    /// Binds this sampled texture at the requested graphics descriptor-set index.
+    pub fn bind(&self, command_buffer: vk::CommandBuffer, pipeline_layout: vk::PipelineLayout, set_index: u32) {
+        unsafe {
+            self.device.handle().cmd_bind_descriptor_sets(
+                command_buffer,
+                vk::PipelineBindPoint::GRAPHICS,
+                pipeline_layout,
+                set_index,
+                &[self.set],
+                &[],
+            );
+        }
+    }
 }
 
 impl Drop for VulkanTextureBinding<'_, '_, '_> {
