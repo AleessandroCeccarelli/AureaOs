@@ -258,3 +258,67 @@ impl VulkanDrawPass {
         Ok(())
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn viewport() -> vk::Viewport {
+        vk::Viewport {
+            x: -12.0,
+            y: 4.0,
+            width: 32.0,
+            height: 24.0,
+            min_depth: 0.0,
+            max_depth: 1.0,
+        }
+    }
+
+    fn scissor() -> vk::Rect2D {
+        vk::Rect2D {
+            offset: vk::Offset2D { x: 0, y: 4 },
+            extent: vk::Extent2D {
+                width: 20,
+                height: 24,
+            },
+        }
+    }
+
+    #[test]
+    fn accepts_negative_viewport_origin_with_output_clipped_scissor() {
+        assert_eq!(
+            VulkanDrawPass::validate_region(1920, 1080, viewport(), scissor()),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn rejects_scissor_outside_attachment_bounds() {
+        let invalid = vk::Rect2D {
+            offset: vk::Offset2D { x: 1900, y: 0 },
+            extent: vk::Extent2D {
+                width: 40,
+                height: 10,
+            },
+        };
+
+        assert_eq!(
+            VulkanDrawPass::validate_region(1920, 1080, viewport(), invalid),
+            Err(VulkanDrawPassError::InvalidScissor)
+        );
+    }
+
+    #[test]
+    fn rejects_non_finite_viewport_coordinates() {
+        let invalid = vk::Viewport {
+            x: f32::NAN,
+            ..viewport()
+        };
+
+        assert_eq!(
+            VulkanDrawPass::validate_region(1920, 1080, invalid, scissor()),
+            Err(VulkanDrawPassError::InvalidViewport)
+        );
+    }
+}
