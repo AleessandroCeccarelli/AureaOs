@@ -77,19 +77,26 @@ fn surface_location(
     states: &SurfaceData,
     parent: TraversalLocation,
 ) -> Point<i32, Logical> {
-    if parent.is_root {
-        parent.origin
+    let offset = if parent.is_root {
+        Point::from((0, 0))
     } else {
         let mut subsurface = states.cached_state.get::<SubsurfaceCachedState>();
-        accumulate_location(parent.origin, subsurface.current().location)
-    }
+        subsurface.current().location
+    };
+
+    resolve_surface_location(parent.origin, parent.is_root, offset)
 }
 
-fn accumulate_location(
-    parent: Point<i32, Logical>,
+fn resolve_surface_location(
+    origin: Point<i32, Logical>,
+    is_root: bool,
     offset: Point<i32, Logical>,
 ) -> Point<i32, Logical> {
-    parent + offset
+    if is_root {
+        origin
+    } else {
+        origin + offset
+    }
 }
 
 #[cfg(test)]
@@ -104,7 +111,7 @@ mod tests {
             is_root: true,
         };
 
-        assert_eq!(surface_location_for_test(parent), Point::from((120, 80)));
+        assert_eq!(resolve_surface_location(parent.origin, parent.is_root, Point::from((9, 9))), Point::from((120, 80)));
     }
 
     #[test]
@@ -112,7 +119,7 @@ mod tests {
         let parent = Point::<i32, Logical>::from((120, 80));
         let offset = Point::<i32, Logical>::from((24, -12));
 
-        assert_eq!(accumulate_location(parent, offset), Point::from((144, 68)));
+        assert_eq!(resolve_surface_location(parent, false, offset), Point::from((144, 68)));
     }
 
     #[test]
@@ -121,18 +128,11 @@ mod tests {
         let child = Point::<i32, Logical>::from((20, 10));
         let grandchild = Point::<i32, Logical>::from((-5, 8));
 
-        let child_origin = accumulate_location(root, child);
+        let child_origin = resolve_surface_location(root, false, child);
         assert_eq!(
-            accumulate_location(child_origin, grandchild),
+            resolve_surface_location(child_origin, false, grandchild),
             Point::from((115, 68))
         );
     }
 
-    fn surface_location_for_test(parent: TraversalLocation) -> Point<i32, Logical> {
-        if parent.is_root {
-            parent.origin
-        } else {
-            parent.origin
-        }
-    }
 }
