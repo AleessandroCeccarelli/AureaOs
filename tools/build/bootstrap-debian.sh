@@ -484,6 +484,17 @@ if sudo test -d "$ROOTFS_WORK/etc/sudoers.d"; then
   sudo chmod 0750 -- "$ROOTFS_WORK/etc/sudoers.d"
 fi
 
+# Install the reviewed console keyboard layout after package maintainer scripts.
+# Keep the system locale independent: the keyboard is Italian, while the
+# product/system language remains English.
+KEYBOARD_CONFIG="$REPO_ROOT/debian/config/keyboard"
+if [[ ! -f "$KEYBOARD_CONFIG" || -L "$KEYBOARD_CONFIG" ]]; then
+  echo "Errore: configurazione tastiera assente o non regolare: $KEYBOARD_CONFIG" >&2
+  exit 1
+fi
+sudo install -D -o 0 -g 0 -m 0644 \
+  "$KEYBOARD_CONFIG" "$ROOTFS_WORK/etc/default/keyboard"
+
 echo
 echo "===== Verifica finale ====="
 
@@ -511,6 +522,25 @@ fi
 
 # Build dpkg-query's literal format token without asking the shell to expand it.
 printf -v DPkg_QUERY_STATUS_FORMAT '%b' '\044{db:Status-Status}'
+
+# Validate the selected keyboard package and exact non-interactive layout.
+keyboard_status="$(
+  run_in_rootfs dpkg-query -W -f="$DPkg_QUERY_STATUS_FORMAT" keyboard-configuration
+)"
+if [[ "$keyboard_status" != "installed" ]]; then
+  echo "Errore: keyboard-configuration non installato (stato: $keyboard_status)." >&2
+  exit 1
+fi
+if ! sudo cmp -s "$KEYBOARD_CONFIG" "$ROOTFS_WORK/etc/default/keyboard"; then
+  echo "Errore: configurazione tastiera diversa da quella versionata." >&2
+  exit 1
+fi
+if [[ ! -L "$ROOTFS_WORK/etc/vconsole.conf" ||
+      "$(sudo readlink -- "$ROOTFS_WORK/etc/vconsole.conf")" != "default/keyboard" ||
+      ! -f "$ROOTFS_WORK/etc/default/keyboard" ]]; then
+  echo "Errore: collegamento /etc/vconsole.conf non risolto correttamente." >&2
+  exit 1
+fi
 
 for required_package in systemd systemd-sysv linux-image-amd64; do
   if ! package_status="$(
