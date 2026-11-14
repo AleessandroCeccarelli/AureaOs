@@ -41,7 +41,7 @@ def has_run_lock_rule(root: str) -> bool:
 def runtime_exception(root: str, relative: str, target: str) -> bool:
     if RUNTIME_PROC_LINKS.get(relative) == target:
         return os.path.isdir(os.path.join(root, "proc"))
-    if relative == "var/lock" and target == "/run/lock":
+    if relative == "var/lock" and target in {"/run/lock", "../run/lock"}:
         return (
             os.path.isdir(os.path.join(root, "run"))
             and has_run_lock_rule(root)
