@@ -47,7 +47,7 @@ mod rendering_features;
 mod shader_module;
 mod sampler;
 #[cfg(feature = "drm")]
-mod surface_compositor;
+pub(crate) mod surface_compositor;
 mod shm_texture;
 mod texture_binding;
 mod texture_layout;
