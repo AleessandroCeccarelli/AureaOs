@@ -60,11 +60,11 @@ pub fn update_surface_snapshot(surface: &WlSurface) -> Result<(), ShmBufferError
         };
 
         match update {
-            None => {
+            Some(None) => {
                 state.replace(None);
                 current.buffer = None;
             }
-            Some(buffer) => match ShmBufferSnapshot::copy_from_wl_buffer(&buffer) {
+            Some(Some(buffer)) => match ShmBufferSnapshot::copy_from_wl_buffer(&buffer) {
                 Ok(snapshot) => {
                     state.replace(Some(snapshot));
                     current.buffer = None;
@@ -78,6 +78,7 @@ pub fn update_surface_snapshot(surface: &WlSurface) -> Result<(), ShmBufferError
                     return Err(error);
                 }
             },
+            None => {}
         }
 
         Ok(())
