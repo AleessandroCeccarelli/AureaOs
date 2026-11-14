@@ -81,8 +81,15 @@ fn surface_location(
         parent.origin
     } else {
         let mut subsurface = states.cached_state.get::<SubsurfaceCachedState>();
-        parent.origin + subsurface.current().location
+        accumulate_location(parent.origin, subsurface.current().location)
     }
+}
+
+fn accumulate_location(
+    parent: Point<i32, Logical>,
+    offset: Point<i32, Logical>,
+) -> Point<i32, Logical> {
+    parent + offset
 }
 
 #[cfg(test)]
@@ -97,7 +104,7 @@ mod tests {
             is_root: true,
         };
 
-        assert_eq!(parent.origin, Point::from((120, 80)));
+        assert_eq!(surface_location_for_test(parent), Point::from((120, 80)));
     }
 
     #[test]
@@ -105,6 +112,27 @@ mod tests {
         let parent = Point::<i32, Logical>::from((120, 80));
         let offset = Point::<i32, Logical>::from((24, -12));
 
-        assert_eq!(parent + offset, Point::from((144, 68)));
+        assert_eq!(accumulate_location(parent, offset), Point::from((144, 68)));
+    }
+
+    #[test]
+    fn nested_subsurface_offsets_accumulate_in_parent_space() {
+        let root = Point::<i32, Logical>::from((100, 50));
+        let child = Point::<i32, Logical>::from((20, 10));
+        let grandchild = Point::<i32, Logical>::from((-5, 8));
+
+        let child_origin = accumulate_location(root, child);
+        assert_eq!(
+            accumulate_location(child_origin, grandchild),
+            Point::from((115, 68))
+        );
+    }
+
+    fn surface_location_for_test(parent: TraversalLocation) -> Point<i32, Logical> {
+        if parent.is_root {
+            parent.origin
+        } else {
+            parent.origin
+        }
     }
 }
