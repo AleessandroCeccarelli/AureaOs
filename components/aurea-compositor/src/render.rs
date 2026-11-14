@@ -8,6 +8,11 @@
 pub mod shm_buffer;
 pub mod shm_surface;
 
+use shm_buffer::ShmBufferSnapshot;
+use shm_surface::surface_snapshot;
+
+use std::sync::Arc;
+
 use smithay::{
     backend::renderer::{
         ImportAll, Renderer,
@@ -84,6 +89,21 @@ impl<'a> RenderScene<'a> {
         }
 
         elements
+    }
+
+    /// Returns owned SHM snapshots for mapped toplevel surfaces.
+    ///
+    /// Subsurface snapshots are stored independently on their Wayland surfaces;
+    /// traversal and composition of the complete surface tree are handled by a
+    /// later scene-import stage.
+    pub fn shm_snapshots(&self) -> Vec<(Point<i32, Logical>, Arc<ShmBufferSnapshot>)> {
+        self.toplevels
+            .iter()
+            .filter_map(|toplevel| {
+                surface_snapshot(toplevel.surface.wl_surface())
+                    .map(|snapshot| (toplevel.location, snapshot))
+            })
+            .collect()
     }
 
     /// Returns the number of surfaces collected for this scene.
