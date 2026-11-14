@@ -40,6 +40,16 @@ class BootstrapKeyboardTests(unittest.TestCase):
         ]
         self.assertEqual(assignments, ["LANG=en_US.UTF-8"])
 
+    def test_bootstrap_keeps_sudo_credentials_alive_and_cleans_up_noninteractively(self) -> None:
+        source = BOOTSTRAP.read_text(encoding="utf-8")
+        self.assertIn("def start_sudo_keepalive()", source)
+        self.assertIn("while sleep 60", source)
+        self.assertIn("sudo -n -v || exit 1", source)
+        self.assertIn("start_sudo_keepalive\\n", source)
+        self.assertIn("def stop_sudo_keepalive()", source)
+        self.assertIn('sudo -n rm -f -- "$ROOTFS_WORK/usr/sbin/policy-rc.d"', source)
+        self.assertIn("stop_sudo_keepalive", source)
+
     def test_bootstrap_installs_and_verifies_the_versioned_configuration(self) -> None:
         source = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn('KEYBOARD_CONFIG="$REPO_ROOT/debian/config/keyboard"', source)
