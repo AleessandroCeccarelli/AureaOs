@@ -182,8 +182,7 @@ impl DrmSurfaceManager {
 
         Some((|| {
             let coordinator = presentation.frame_coordinator_mut();
-            frame_pool.acquire_after_foreign_release(framebuffer, coordinator)?;
-            frame_pool.retire(framebuffer, coordinator)?;
+            frame_pool.reacquire_and_recycle(framebuffer, coordinator)?;
             Ok(())
         })())
     }
