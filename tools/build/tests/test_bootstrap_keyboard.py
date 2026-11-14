@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[3]
 MANIFEST = ROOT / "debian/packages/base.list"
 KEYBOARD = ROOT / "debian/config/keyboard"
 LOCALE = ROOT / "debian/config/locale"
+LOCALE_GEN = ROOT / "debian/config/locale.gen"
 BOOTSTRAP = ROOT / "tools/build/bootstrap-debian.sh"
 
 
@@ -40,6 +41,14 @@ class BootstrapKeyboardTests(unittest.TestCase):
         ]
         self.assertEqual(assignments, ["LANG=en_US.UTF-8"])
 
+    def test_generated_locale_is_enabled_in_versioned_locale_gen(self) -> None:
+        entries = [
+            line.strip()
+            for line in LOCALE_GEN.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+        self.assertEqual(entries, ["en_US.UTF-8 UTF-8"])
+
     def test_bootstrap_keeps_sudo_credentials_alive_and_cleans_up_noninteractively(self) -> None:
         source = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("start_sudo_keepalive() {", source)
@@ -62,8 +71,11 @@ class BootstrapKeyboardTests(unittest.TestCase):
         self.assertIn('sudo readlink -- "$ROOTFS_WORK/etc/vconsole.conf"', source)
         self.assertIn('audit-rootfs-symlinks.py', source)
         self.assertIn('LOCALE_CONFIG="$REPO_ROOT/debian/config/locale"', source)
-        self.assertIn('locale-gen en_US.UTF-8', source)
+        self.assertIn('LOCALE_GEN_CONFIG="$REPO_ROOT/debian/config/locale.gen"', source)
+        self.assertIn('"$LOCALE_GEN_CONFIG" "$ROOTFS_WORK/etc/locale.gen"', source)
+        self.assertIn("run_in_rootfs_private_network locale-gen", source)
         self.assertIn('"$LOCALE_CONFIG" "$ROOTFS_WORK/etc/locale.conf"', source)
+        self.assertIn('cmp -s "$LOCALE_GEN_CONFIG" "$ROOTFS_WORK/etc/locale.gen"', source)
         self.assertIn("locale -a", source)
 
 
