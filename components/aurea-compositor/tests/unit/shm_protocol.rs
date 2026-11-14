@@ -3,7 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-use aurea_compositor::AureaCompositor;
+use crate::AureaCompositor;
 use smithay::reexports::wayland_server::Display;
 
 #[test]
