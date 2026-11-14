@@ -110,7 +110,9 @@ fn update_surface_state(states: &SurfaceData) -> Result<(), ShmBufferError> {
             Ok(snapshot) => {
                 state.replace(Some(snapshot));
                 current.buffer = None;
-                buffer.release();
+                // Buffer release is deliberately deferred until the compositor
+                // has cross-surface buffer-use tracking. A wl_buffer may be
+                // attached to more than one surface at the same time.
             }
             Err(ShmBufferError::NotSharedMemory | ShmBufferError::UnsupportedFormat) => {
                 state.replace(None);
