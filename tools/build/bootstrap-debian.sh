@@ -329,6 +329,7 @@ load_manifest() {
 
 for manifest in \
   base.list \
+  version-control.list \
   networking.list \
   bluetooth.list \
   security.list \
