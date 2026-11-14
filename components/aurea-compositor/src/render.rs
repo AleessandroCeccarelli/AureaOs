@@ -9,10 +9,7 @@ pub mod shm_buffer;
 pub mod shm_surface;
 pub mod surface_tree;
 
-use std::sync::Arc;
-
-use shm_buffer::ShmBufferSnapshot;
-use shm_surface::surface_snapshot_with_revision;
+use surface_tree::{SurfaceTreeSnapshot, collect_surface_tree_snapshots};
 
 use smithay::{
     backend::renderer::{
@@ -92,17 +89,15 @@ impl<'a> RenderScene<'a> {
         elements
     }
 
-    /// Returns owned SHM snapshots for mapped toplevel surfaces.
+    /// Returns owned SHM snapshots for every mapped surface in tree render order.
     ///
-    /// Subsurface snapshots are stored independently on their Wayland surfaces;
-    /// traversal and composition of the complete surface tree are handled by a
-    /// later scene-import stage.
-    pub fn shm_snapshots(&self) -> Vec<(Point<i32, Logical>, u64, Arc<ShmBufferSnapshot>)> {
+    /// Each snapshot carries its accumulated logical position relative to the
+    /// output. Subsurface stacking follows Smithay's surface-tree traversal.
+    pub fn shm_snapshots(&self) -> Vec<SurfaceTreeSnapshot> {
         self.toplevels
             .iter()
-            .filter_map(|toplevel| {
-                surface_snapshot_with_revision(toplevel.surface.wl_surface())
-                    .map(|(revision, snapshot)| (toplevel.location, revision, snapshot))
+            .flat_map(|toplevel| {
+                collect_surface_tree_snapshots(toplevel.surface.wl_surface(), toplevel.location)
             })
             .collect()
     }
