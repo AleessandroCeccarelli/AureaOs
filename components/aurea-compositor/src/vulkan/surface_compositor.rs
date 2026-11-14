@@ -12,8 +12,10 @@ use smithay::{
     utils::Transform,
 };
 
+use std::sync::Arc;
+
 use crate::{
-    render::{RenderScene, geometry::surface_geometry},
+    render::{RenderScene, geometry::surface_geometry, shm_buffer::ShmBufferSnapshot},
     renderer::RenderTarget,
 };
 
@@ -54,8 +56,8 @@ impl fmt::Display for VulkanSurfaceCompositionError {
 
 impl Error for VulkanSurfaceCompositionError {}
 
-struct VisibleSurface<'a> {
-    snapshot: &'a crate::render::surface_tree::SurfaceTreeSnapshot,
+struct VisibleSurface {
+    snapshot: Arc<ShmBufferSnapshot>,
     geometry: crate::render::geometry::SurfaceGeometry,
     scissor: crate::render::geometry::SurfaceScissor,
 }
@@ -107,7 +109,7 @@ pub(crate) fn render_and_release(
         .map(|surface| {
             VulkanShmTexture::from_snapshot(
                 device,
-                surface.snapshot.snapshot.as_ref().clone(),
+                surface.snapshot.as_ref().clone(),
             )
             .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
         })
@@ -204,10 +206,10 @@ pub(crate) fn render_and_release(
     Ok(())
 }
 
-fn visible_surfaces<'a>(
-    scene: &'a RenderScene<'_>,
+fn visible_surfaces(
+    scene: &RenderScene<'_>,
     target: &RenderTarget,
-) -> Result<Vec<VisibleSurface<'a>>, VulkanSurfaceCompositionError> {
+) -> Result<Vec<VisibleSurface>, VulkanSurfaceCompositionError> {
     let mut visible = Vec::new();
 
     for snapshot in scene.shm_snapshots() {
@@ -230,7 +232,7 @@ fn visible_surfaces<'a>(
         }
 
         visible.push(VisibleSurface {
-            snapshot: &snapshot,
+            snapshot: Arc::clone(&snapshot.snapshot),
             geometry,
             scissor,
         });
