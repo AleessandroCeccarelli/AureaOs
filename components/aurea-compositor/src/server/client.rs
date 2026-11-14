@@ -20,7 +20,7 @@ use smithay::{
     },
 };
 
-use crate::AureaCompositor;
+use crate::{AureaCompositor, render::shm_surface::update_surface_snapshot};
 
 /// State attached to each connected Wayland client.
 pub(super) struct AureaClientState {
@@ -74,6 +74,10 @@ impl CompositorHandler for AureaCompositor {
                 None => None,
             }
         });
+
+        if let Err(error) = update_surface_snapshot(surface) {
+            eprintln!("AureaOS: failed to snapshot Wayland surface buffer: {error}");
+        }
 
         if let Some(mapped) = self.window_manager().update_surface_buffer(surface, mapped) {
             if mapped {
