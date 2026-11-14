@@ -12,7 +12,11 @@ use smithay::{
     input::{Seat, SeatHandler, SeatState},
     output::Output,
     reexports::wayland_server::{DisplayHandle, protocol::wl_surface::WlSurface},
-    wayland::{compositor::CompositorState, shell::xdg::XdgShellState},
+    wayland::{
+        compositor::CompositorState,
+        shm::ShmState,
+        shell::xdg::XdgShellState,
+    },
 };
 
 use crate::{
@@ -35,6 +39,7 @@ pub use rendering::CompositorRenderError;
 /// Core state owned by the AureaOS compositor.
 pub struct AureaCompositor {
     compositor_state: CompositorState,
+    shm_state: ShmState,
     xdg_shell_state: XdgShellState,
     seat_state: SeatState<Self>,
     seat: Seat<Self>,
@@ -59,12 +64,14 @@ impl AureaCompositor {
     /// Creates the compositor protocol states and managers.
     pub fn new(display: &DisplayHandle) -> Self {
         let compositor_state = CompositorState::new::<Self>(display);
+        let shm_state = ShmState::new::<Self>(display, Vec::new());
         let xdg_shell_state = XdgShellState::new::<Self>(display);
         let mut seat_state = SeatState::new();
         let seat = seat_state.new_wl_seat(display, "seat0");
 
         Self {
             compositor_state,
+            shm_state,
             xdg_shell_state,
             seat_state,
             seat,
