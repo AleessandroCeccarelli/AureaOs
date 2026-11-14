@@ -98,7 +98,19 @@ fi
 echo
 echo "Verifica elementi world-writable nell'intera rootfs..."
 # Only the standard shared temporary directories may be world-writable, and
-# only with the sticky bit. All other world-writable non-symlink objects fail.
+# only with the sticky bit. The exact standard character devices below are a
+# narrow exception: they must remain character devices with mode 0666 and
+# root ownership. No other /dev object or special file is implicitly trusted.
+declare -A WORLD_WRITABLE_DEVICE_ALLOWLIST=(
+  ["dev/null"]=1
+  ["dev/zero"]=1
+  ["dev/full"]=1
+  ["dev/random"]=1
+  ["dev/urandom"]=1
+  ["dev/tty"]=1
+  ["dev/console"]=1
+  ["dev/ptmx"]=1
+)
 if find "$ROOTFS" -xdev ! -type l -perm -0002 -print0 >"$SCAN_FILE"; then
   while IFS= read -r -d '' path; do
     relative="${path#"$ROOTFS"/}"
@@ -106,6 +118,12 @@ if find "$ROOTFS" -xdev ! -type l -perm -0002 -print0 >"$SCAN_FILE"; then
     if [[ "$relative" == "tmp" || "$relative" == "var/tmp" || "$relative" == "dev/shm" ]] &&
        [[ -d "$path" && "$mode" == 1777 ]]; then
       printf 'PASS  shared temporary directory %s (%s)\n' "$relative" "$mode"
+      continue
+    fi
+    if [[ -n "${WORLD_WRITABLE_DEVICE_ALLOWLIST[$relative]:-}" ]] &&
+       [[ -c "$path" && "$mode" == 666 ]] &&
+       [[ "$(stat -c '%u' -- "$path")" == 0 ]]; then
+      printf 'PASS  standard character device /%s (%s, root-owned)\n' "$relative" "$mode"
       continue
     fi
     fail "elemento world-writable non consentito: /$relative (mode $mode)"
