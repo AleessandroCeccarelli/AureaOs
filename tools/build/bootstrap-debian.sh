@@ -526,8 +526,13 @@ if ! sudo grep -q '^VERSION_CODENAME=trixie$' "$ROOTFS_WORK/etc/os-release"; the
   exit 1
 fi
 
-if ! run_in_rootfs dpkg --print-architecture | grep -qx "$ARCH"; then
-  echo "Errore: architettura della rootfs non corretta." >&2
+# systemd-nspawn may translate the command's line ending to CRLF when
+# stdout is attached to a terminal. Normalize only carriage returns, then
+# compare the complete value so unexpected output still fails closed.
+ROOTFS_ARCH="$(run_in_rootfs dpkg --print-architecture | tr -d '\r')"
+if [[ "$ROOTFS_ARCH" != "$ARCH" ]]; then
+  printf 'Errore: architettura della rootfs non corretta (attesa: %s, rilevata: %q).\n' \
+    "$ARCH" "$ROOTFS_ARCH" >&2
   exit 1
 fi
 
