@@ -316,9 +316,17 @@ mod tests {
     }
 
     #[test]
+    fn accepts_snapshot_at_the_memory_limit() {
+        let layout = ValidatedLayout::new(0, 8192, 8192, 32768, usize::MAX)
+            .expect("a snapshot exactly at the configured limit should be accepted");
+
+        assert_eq!(layout.packed_len, MAX_SHM_SNAPSHOT_BYTES);
+    }
+
+    #[test]
     fn rejects_snapshots_above_the_memory_limit() {
         assert_eq!(
-            ValidatedLayout::new(0, 8192, 8192, 32768, usize::MAX).unwrap_err(),
+            ValidatedLayout::new(0, 8193, 8192, 32772, usize::MAX).unwrap_err(),
             ShmBufferError::SnapshotTooLarge
         );
     }
