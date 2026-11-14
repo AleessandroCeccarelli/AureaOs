@@ -197,8 +197,8 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
             )
             .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
 
-        let framebuffer = if let Some(framebuffer) = reusable {
-            framebuffer
+        let (framebuffer, previous_image_state) = if let Some(framebuffer) = reusable {
+            (framebuffer, VulkanImageState::General)
         } else {
             let mut allocation_errors = Vec::new();
             let mut allocated_frame = None;
@@ -230,9 +230,10 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
                 ))
             })?;
 
-            frame_pool
+            let framebuffer = frame_pool
                 .insert(frame, presentation.frame_coordinator_mut())
-                .map_err(|error| VulkanScanoutError::new(error.to_string()))?
+                .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
+            (framebuffer, VulkanImageState::Undefined)
         };
 
         if let Err(error) = render_and_present(
@@ -243,6 +244,7 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
             self.vulkan.device(),
             target.width(),
             target.height(),
+            previous_image_state,
         ) {
             let acquire_result = frame_pool
                 .acquire_after_foreign_release(framebuffer, presentation.frame_coordinator_mut());
@@ -284,6 +286,7 @@ fn render_and_present(
     device: &VulkanLogicalDevice,
     width: u32,
     height: u32,
+    previous_image_state: VulkanImageState,
 ) -> Result<(), VulkanScanoutError> {
     let width_i32 = i32::try_from(width)
         .map_err(|_| VulkanScanoutError::new("DRM output width exceeds supported coordinates"))?;
@@ -312,7 +315,7 @@ fn render_and_present(
     VulkanClearPass::record_color(
         command_buffer.handle(),
         &view,
-        VulkanImageState::Undefined,
+        previous_image_state,
         VulkanImageState::General,
         FIRST_FRAME_CLEAR_COLOR,
     )
