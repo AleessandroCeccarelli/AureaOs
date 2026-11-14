@@ -20,7 +20,7 @@ use smithay::{
     },
 };
 
-use crate::{AureaCompositor, render::shm_surface::update_surface_snapshot};
+use crate::{AureaCompositor, render::shm_surface::update_surface_tree_snapshots};
 
 /// State attached to each connected Wayland client.
 pub(super) struct AureaClientState {
