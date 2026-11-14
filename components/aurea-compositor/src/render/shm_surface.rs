@@ -128,11 +128,18 @@ fn update_surface_state(states: &SurfaceData) -> Result<(), ShmBufferError> {
 
 /// Returns the latest owned SHM snapshot associated with a surface.
 pub fn surface_snapshot(surface: &WlSurface) -> Option<Arc<ShmBufferSnapshot>> {
+    surface_snapshot_with_revision(surface).map(|(_, snapshot)| snapshot)
+}
+
+/// Returns the latest snapshot together with its per-surface update revision.
+pub fn surface_snapshot_with_revision(
+    surface: &WlSurface,
+) -> Option<(u64, Arc<ShmBufferSnapshot>)> {
     with_states(surface, |states| {
         states
             .data_map
             .get::<SurfaceShmBufferState>()
-            .and_then(SurfaceShmBufferState::snapshot)
+            .and_then(SurfaceShmBufferState::snapshot_with_revision)
     })
 }
 
