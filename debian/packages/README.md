@@ -15,7 +15,7 @@ These files are the version-controlled package selection for the initial AureaOS
 
 ## Package groups
 
-- `base.list`: essential command-line utilities and service infrastructure
+- `base.list`: essential command-line utilities, service infrastructure, and Debian console keyboard configuration
 - `networking.list`: wired and Wi-Fi networking
 - `bluetooth.list`: Bluetooth service and command-line tools
 - `security.list`: firewall and authorization infrastructure; policies still need implementation
@@ -34,6 +34,12 @@ The BIOS and UEFI bootloader lists are alternatives, not a single list to instal
 The bootstrap and target APT configuration enable all four official Debian archive components: `main`, `contrib`, `non-free` and `non-free-firmware`. The generated deb822 source file covers `trixie`, `trixie-updates` and `trixie-security`. This makes packages from those components available to APT; it does not mean every package in every component is installed.
 
 The project is not limited to free-software-only packages. The original AureaOS code remains licensed under GPL-3.0-or-later, while packages installed from Debian retain their own upstream packaging and license metadata.
+
+## Locale and keyboard defaults
+
+The initial system locale is English UTF-8 (`en_US.UTF-8`). The physical console keyboard layout is Italian (`XKBLAYOUT="it"`, generic PC/105-key model). These settings are deliberately independent: changing the keyboard layout does not change the system language.
+
+The versioned configuration sources are `debian/config/locale` and `debian/config/keyboard`. The bootstrap installs them non-interactively and validates the generated locale and Debian's `/etc/vconsole.conf` compatibility link.
 
 ## Important limitations
 
