@@ -75,7 +75,7 @@ impl CompositorHandler for AureaCompositor {
             }
         });
 
-        if let Err(error) = update_surface_snapshot(surface) {
+        if let Err(error) = update_surface_tree_snapshots(surface) {
             eprintln!("AureaOS: failed to snapshot Wayland surface buffer: {error}");
         }
 
