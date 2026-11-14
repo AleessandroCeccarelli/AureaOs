@@ -18,8 +18,8 @@ use crate::AureaCompositor;
 
 impl BufferHandler for AureaCompositor {
     fn buffer_destroyed(&mut self, _buffer: &WlBuffer) {
-        // The compositor does not retain imported SHM buffers yet.
-        // Vulkan texture-cache invalidation will be added with buffer importing.
+        // Surface-owned snapshots contain copied pixels, not a reference to
+        // the destroyed client buffer. Surface destruction drops that state.
     }
 }
 
