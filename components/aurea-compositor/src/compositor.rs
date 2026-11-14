@@ -83,6 +83,11 @@ impl AureaCompositor {
         }
     }
 
+    /// Returns the Smithay shared-memory protocol state.
+    pub(crate) fn wayland_shm_state(&self) -> &ShmState {
+        &self.shm_state
+    }
+
     /// Returns the Smithay compositor protocol state.
     pub fn compositor_state(&mut self) -> &mut CompositorState {
         &mut self.compositor_state
