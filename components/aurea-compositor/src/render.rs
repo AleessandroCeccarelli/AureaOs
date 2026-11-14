@@ -7,6 +7,7 @@
 
 pub mod shm_buffer;
 pub mod shm_surface;
+pub mod surface_tree;
 
 use std::sync::Arc;
 
