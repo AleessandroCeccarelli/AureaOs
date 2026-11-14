@@ -15,7 +15,7 @@ use smithay::{
 /// Maximum amount of client-controlled pixel data copied for one surface.
 pub const MAX_SHM_SNAPSHOT_BYTES: usize = 256 * 1024 * 1024;
 
-/// Pixel formats currently accepted by the initial Vulkan upload path.
+/// Pixel formats represented by an owned Wayland SHM snapshot.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ShmPixelFormat {
     Argb8888,
