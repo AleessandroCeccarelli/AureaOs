@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# AureaOS console keyboard layout. System language/locale is configured separately.
+XKBMODEL="pc105"
+XKBLAYOUT="it"
+XKBVARIANT=""
+XKBOPTIONS=""
+BACKSPACE="guess"
