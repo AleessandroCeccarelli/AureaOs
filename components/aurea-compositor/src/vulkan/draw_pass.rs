@@ -22,6 +22,8 @@ pub enum VulkanDrawPassError {
     MissingColorAttachmentUsage,
     IncompatiblePipeline,
     NonFiniteClearColor,
+    InvalidViewport,
+    InvalidScissor,
 }
 
 impl fmt::Display for VulkanDrawPassError {
@@ -32,6 +34,8 @@ impl fmt::Display for VulkanDrawPassError {
             Self::MissingColorAttachmentUsage => formatter.write_str("The Vulkan image lacks color-attachment usage"),
             Self::IncompatiblePipeline => formatter.write_str("The graphics pipeline is incompatible with the attachment"),
             Self::NonFiniteClearColor => formatter.write_str("Draw-pass clear color components must all be finite"),
+            Self::InvalidViewport => formatter.write_str("The Vulkan surface viewport is invalid"),
+            Self::InvalidScissor => formatter.write_str("The Vulkan surface scissor is outside the attachment"),
         }
     }
 }
@@ -75,16 +79,24 @@ impl VulkanDrawPass {
         instance_count: u32,
     ) -> Result<(), VulkanDrawPassError> {
         Self::record_inner(
-            command_buffer, view, pipeline, previous_state, final_state, load,
-            vertex_count, instance_count, None,
+            command_buffer,
+            view,
+            pipeline,
+            previous_state,
+            final_state,
+            load,
+            vertex_count,
+            instance_count,
+            None,
+            None,
         )
     }
 
     /// Records a draw with one sampled texture descriptor set.
     ///
     /// The pipeline must have been created with the matching descriptor-set
-    /// layout at `set_index`. The caller must keep the texture binding alive until the submitted
-    /// command buffer has completed.
+    /// layout at `set_index`. The caller must keep the texture binding alive
+    /// until the submitted command buffer has completed.
     pub fn record_textured(
         command_buffer: vk::CommandBuffer,
         view: &VulkanImageView<'_, '_>,
@@ -98,11 +110,53 @@ impl VulkanDrawPass {
         instance_count: u32,
     ) -> Result<(), VulkanDrawPassError> {
         Self::record_inner(
-            command_buffer, view, pipeline, previous_state, final_state, load,
-            vertex_count, instance_count, Some((texture, set_index)),
+            command_buffer,
+            view,
+            pipeline,
+            previous_state,
+            final_state,
+            load,
+            vertex_count,
+            instance_count,
+            Some((texture, set_index)),
+            None,
         )
     }
 
+    /// Records a textured surface using a destination viewport and clipped scissor.
+    ///
+    /// The viewport describes the complete surface destination and may extend
+    /// beyond the output. The scissor must be the intersection with the output
+    /// bounds, preserving correct texture coordinates for partially visible
+    /// surfaces.
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_textured_region(
+        command_buffer: vk::CommandBuffer,
+        view: &VulkanImageView<'_, '_>,
+        pipeline: &VulkanGraphicsPipeline<'_>,
+        texture: &VulkanTextureBinding<'_, '_, '_>,
+        set_index: u32,
+        previous_state: VulkanImageState,
+        final_state: VulkanImageState,
+        load: VulkanColorLoad,
+        viewport: vk::Viewport,
+        scissor: vk::Rect2D,
+    ) -> Result<(), VulkanDrawPassError> {
+        Self::record_inner(
+            command_buffer,
+            view,
+            pipeline,
+            previous_state,
+            final_state,
+            load,
+            3,
+            1,
+            Some((texture, set_index)),
+            Some((viewport, scissor)),
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
     fn record_inner(
         command_buffer: vk::CommandBuffer,
         view: &VulkanImageView<'_, '_>,
@@ -113,6 +167,7 @@ impl VulkanDrawPass {
         vertex_count: u32,
         instance_count: u32,
         texture: Option<(&VulkanTextureBinding<'_, '_, '_>, u32)>,
+        region: Option<(vk::Viewport, vk::Rect2D)>,
     ) -> Result<(), VulkanDrawPassError> {
         Self::validate(vertex_count, instance_count, final_state, load)?;
         if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
@@ -120,6 +175,9 @@ impl VulkanDrawPass {
         }
         if !pipeline.is_compatible_with(view.device(), view.format()) {
             return Err(VulkanDrawPassError::IncompatiblePipeline);
+        }
+        if let Some((viewport, scissor)) = region {
+            Self::validate_region(view.width(), view.height(), viewport, scissor)?;
         }
 
         VulkanImageTransition::record_color(
@@ -135,7 +193,11 @@ impl VulkanDrawPass {
         if let Some((binding, set_index)) = texture {
             binding.bind(command_buffer, pipeline.layout(), set_index);
         }
-        pipeline.set_viewport_and_scissor(command_buffer, view.width(), view.height());
+        if let Some((viewport, scissor)) = region {
+            pipeline.set_viewport_and_scissor_region(command_buffer, viewport, scissor);
+        } else {
+            pipeline.set_viewport_and_scissor(command_buffer, view.width(), view.height());
+        }
         pipeline.draw(command_buffer, vertex_count, instance_count);
         scope.end();
 
@@ -146,6 +208,52 @@ impl VulkanDrawPass {
             VulkanImageState::ColorAttachment,
             final_state,
         );
+
+        Ok(())
+    }
+
+    fn validate_region(
+        target_width: u32,
+        target_height: u32,
+        viewport: vk::Viewport,
+        scissor: vk::Rect2D,
+    ) -> Result<(), VulkanDrawPassError> {
+        let viewport_values = [
+            viewport.x,
+            viewport.y,
+            viewport.width,
+            viewport.height,
+            viewport.min_depth,
+            viewport.max_depth,
+        ];
+        if !viewport_values.iter().all(|value| value.is_finite())
+            || viewport.width <= 0.0
+            || viewport.height <= 0.0
+            || viewport.min_depth < 0.0
+            || viewport.max_depth > 1.0
+            || viewport.min_depth > viewport.max_depth
+        {
+            return Err(VulkanDrawPassError::InvalidViewport);
+        }
+
+        let x = u32::try_from(scissor.offset.x)
+            .map_err(|_| VulkanDrawPassError::InvalidScissor)?;
+        let y = u32::try_from(scissor.offset.y)
+            .map_err(|_| VulkanDrawPassError::InvalidScissor)?;
+        let right = x
+            .checked_add(scissor.extent.width)
+            .ok_or(VulkanDrawPassError::InvalidScissor)?;
+        let bottom = y
+            .checked_add(scissor.extent.height)
+            .ok_or(VulkanDrawPassError::InvalidScissor)?;
+
+        if scissor.extent.width == 0
+            || scissor.extent.height == 0
+            || right > target_width
+            || bottom > target_height
+        {
+            return Err(VulkanDrawPassError::InvalidScissor);
+        }
 
         Ok(())
     }
