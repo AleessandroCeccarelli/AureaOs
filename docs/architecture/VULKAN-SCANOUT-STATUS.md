@@ -25,7 +25,7 @@ Gli shader per la composizione vengono compilati da `build.rs` con `glslangValid
 
 ## Limiti ancora aperti
 
-- La composizione iniziale supporta i buffer Wayland SHM ARGB8888 e XRGB8888 già normalizzati dal percorso di snapshot.
+- La composizione iniziale supporta i buffer Wayland SHM ARGB8888 e XRGB8888 già normalizzati dal percorso di snapshot. Gli snapshot vengono aggiornati anche quando un client riutilizza lo stesso wl_buffer e invia nuovo damage; per ora viene ricopiato l'intero buffer.
 - I buffer Wayland DMA-BUF non sono ancora importati come superfici; non vanno confusi con il DMA-BUF usato come destinazione di scanout.
 - Le trasformazioni buffer diverse da `Transform::Normal` vengono rifiutate esplicitamente: non vengono presentate texture ruotate o specchiate in modo scorretto.
 - Le texture SHM vengono caricate in modo sincrono e ricreate a ogni frame. Il caching per revisione e la gestione incrementale del damage sono ottimizzazioni successive.
