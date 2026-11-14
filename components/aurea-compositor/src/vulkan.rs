@@ -45,7 +45,10 @@ mod queue_submitter;
 mod readback_buffer;
 mod rendering_features;
 mod shader_module;
+mod sampler;
 mod shm_texture;
+mod texture_binding;
+mod texture_layout;
 mod upload_buffer;
 
 use std::{error::Error, fmt};
@@ -121,7 +124,10 @@ pub use queue::VulkanQueueFamilyInfo;
 pub use readback_buffer::{VulkanReadbackBuffer, VulkanReadbackError};
 pub use rendering_features::VulkanRenderingFeaturePlan;
 pub use shader_module::{VulkanShaderError, VulkanShaderModule};
+pub use sampler::{VulkanSampler, VulkanSamplerError};
 pub use shm_texture::{VulkanShmTexture, VulkanShmTextureError};
+pub use texture_binding::{VulkanTextureBinding, VulkanTextureBindingError};
+pub use texture_layout::{VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError};
 pub use upload_buffer::{VulkanUploadBuffer, VulkanUploadError};
 
 pub(super) use queue_submitter::VulkanQueueSubmitter;
