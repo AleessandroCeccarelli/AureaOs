@@ -231,25 +231,40 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         width: u32,
         height: u32,
     ) {
-        let viewport = [vk::Viewport {
-            x: 0.0,
-            y: 0.0,
-            width: width as f32,
-            height: height as f32,
-            min_depth: 0.0,
-            max_depth: 1.0,
-        }];
-        let scissor = [vk::Rect2D {
-            offset: vk::Offset2D { x: 0, y: 0 },
-            extent: vk::Extent2D { width, height },
-        }];
+        self.set_viewport_and_scissor_region(
+            command_buffer,
+            vk::Viewport {
+                x: 0.0,
+                y: 0.0,
+                width: width as f32,
+                height: height as f32,
+                min_depth: 0.0,
+                max_depth: 1.0,
+            },
+            vk::Rect2D {
+                offset: vk::Offset2D { x: 0, y: 0 },
+                extent: vk::Extent2D { width, height },
+            },
+        );
+    }
+
+    /// Sets a surface-sized viewport and an independently clipped scissor.
+    ///
+    /// The viewport may extend beyond the render target; the scissor must be
+    /// clipped to the attachment bounds by the caller.
+    pub fn set_viewport_and_scissor_region(
+        &self,
+        command_buffer: vk::CommandBuffer,
+        viewport: vk::Viewport,
+        scissor: vk::Rect2D,
+    ) {
         unsafe {
             self.device
                 .handle()
-                .cmd_set_viewport(command_buffer, 0, &viewport);
+                .cmd_set_viewport(command_buffer, 0, &[viewport]);
             self.device
                 .handle()
-                .cmd_set_scissor(command_buffer, 0, &scissor);
+                .cmd_set_scissor(command_buffer, 0, &[scissor]);
         }
     }
 }
