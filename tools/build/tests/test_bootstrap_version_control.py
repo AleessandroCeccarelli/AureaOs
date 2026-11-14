@@ -14,19 +14,19 @@ BOOTSTRAP = ROOT / "tools/build/bootstrap-debian.sh"
 
 
 class BootstrapVersionControlTests(unittest.TestCase):
-    def test_git_is_in_the_version_control_manifest(self) -> None:
+    def test_git_and_glab_are_in_the_version_control_manifest(self) -> None:
         packages = {
             token
             for line in MANIFEST.read_text(encoding="utf-8").splitlines()
             for token in line.split("#", 1)[0].split()
         }
-        self.assertEqual(packages, {"git"})
+        self.assertEqual(packages, {"git", "glab"})
 
     def test_bootstrap_loads_the_version_control_manifest(self) -> None:
         source = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn("version-control.list", source)
 
-    def test_git_is_installed_through_the_common_apt_package_flow(self) -> None:
+    def test_version_control_tools_use_the_common_apt_package_flow(self) -> None:
         source = BOOTSTRAP.read_text(encoding="utf-8")
         self.assertIn(
             'run_in_rootfs apt-get --download-only install --yes --no-install-recommends -- "${packages[@]}"',
