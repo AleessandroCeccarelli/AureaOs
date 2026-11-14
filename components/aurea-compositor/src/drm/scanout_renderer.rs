@@ -24,7 +24,7 @@ use crate::{
     render::RenderScene,
     renderer::{RenderBackend, RenderTarget},
     vulkan::{
-        DrmVulkanCompatibility, VulkanBackend, VulkanClearPass, VulkanCommandBuffer,
+        DrmVulkanCompatibility, VulkanBackend,
         VulkanDrmFramePool, VulkanDrmScanoutFrame, VulkanExternalMemoryCapabilities,
         VulkanFormatCapabilities, VulkanImageState, VulkanImageView, VulkanLogicalDevice,
         surface_compositor,
