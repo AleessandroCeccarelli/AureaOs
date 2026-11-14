@@ -46,16 +46,36 @@ run_in_rootfs() {
 }
 
 run_in_rootfs_private_network() {
-  run_in_rootfs_with_network_mode private "$@"
+  run_in_rootfs_with_network_mode private no "$@"
+}
+
+run_debootstrap_second_stage() {
+  run_in_rootfs_with_network_mode private yes "$@"
 }
 
 run_in_rootfs_with_network_mode() {
   local network_mode="$1"
-  shift
+  local allow_mount_capability="${2:-no}"
+  shift 2
   local -a network_options=()
+  local -a capability_options=(
+    --drop-capability=CAP_SYS_MODULE
+    --drop-capability=CAP_SYS_RAWIO
+    --drop-capability=CAP_SYS_BOOT
+    --drop-capability=CAP_SYS_PTRACE
+    --drop-capability=CAP_NET_ADMIN
+    --drop-capability=CAP_NET_RAW
+  )
 
   if [[ "$network_mode" == "private" ]]; then
     network_options+=(--private-network)
+  fi
+
+  # debootstrap's second stage runs check_sane_mount against its chroot root
+  # and needs CAP_SYS_ADMIN for its /dev/null bind-mount fallback. Keep that
+  # capability only for this isolated, private-user/private-network phase.
+  if [[ "$allow_mount_capability" != "yes" ]]; then
+    capability_options+=(--drop-capability=CAP_SYS_ADMIN)
   fi
 
   sudo systemd-nspawn \
@@ -66,13 +86,7 @@ run_in_rootfs_with_network_mode() {
     --private-users-ownership=map \
     "${network_options[@]}" \
     --as-pid2 \
-    --drop-capability=CAP_SYS_ADMIN \
-    --drop-capability=CAP_SYS_MODULE \
-    --drop-capability=CAP_SYS_RAWIO \
-    --drop-capability=CAP_SYS_BOOT \
-    --drop-capability=CAP_SYS_PTRACE \
-    --drop-capability=CAP_NET_ADMIN \
-    --drop-capability=CAP_NET_RAW \
+    "${capability_options[@]}" \
     -- "$@"
 }
 
@@ -373,7 +387,7 @@ sudo debootstrap \
 sudo chmod 0700 -- "$ROOTFS_WORK"
 
 # Complete debootstrap's second stage inside the isolated container.
-run_in_rootfs_private_network /debootstrap/debootstrap --second-stage
+run_debootstrap_second_stage /debootstrap/debootstrap --second-stage
 
 # Prepare temporary configuration files.
 SOURCES_TMP="$(mktemp)"
