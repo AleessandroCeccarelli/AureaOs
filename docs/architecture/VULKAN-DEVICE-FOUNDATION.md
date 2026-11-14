@@ -1,6 +1,6 @@
 # AureaOS Vulkan renderer foundation
 
-Status: the Vulkan device, resource, rendering-pass, offscreen-readback and DRM/KMS lifecycle foundations are present on `main`. A compositor-owned, clear-only diagnostic scanout path is connected to the Wayland server event loop. It attempts to clear a DRM-compatible Vulkan image, export it through DMA-BUF/GBM, register a KMS framebuffer and submit it to the output's primary plane. It has not been validated on a physical display. `VK_EXT_image_drm_format_modifier` is optional: when absent, the implementation can query the core linear-tiling path. The direct scanout ownership-transfer path still requires `VK_EXT_queue_family_foreign`; the extension is optional during generic device creation but scanout refuses to proceed without it.
+Status: the Vulkan device, resource, rendering-pass, offscreen-readback and DRM/KMS lifecycle foundations are present on `main`. The active scanout path now collects Wayland SHM snapshots, uploads supported buffers as sampled Vulkan textures, composites visible surfaces into a DRM-compatible Vulkan image and submits it through DMA-BUF/GBM to the output's primary KMS plane. This initial SHM path has not been validated on a physical display. `VK_EXT_image_drm_format_modifier` is optional: when absent, the implementation can query the core linear-tiling path. The direct scanout ownership-transfer path still requires `VK_EXT_queue_family_foreign`; the extension is optional during generic device creation but scanout refuses to proceed without it.
 
 ## Ownership and device baseline
 
@@ -22,9 +22,9 @@ Image layout transitions are explicit Synchronization 2 barriers. The helper cov
 
 ## Shaders and graphics pipeline
 
-SPIR-V modules are validated for basic container invariants before Vulkan module creation and are owned through RAII. The graphics-pipeline builder creates a dynamic-rendering-compatible triangle-list pipeline with empty vertex input, dynamic viewport/scissor and no descriptor sets or push constants yet. Shader modules must belong to the same Vulkan logical device as the pipeline.
+SPIR-V modules are validated for basic container invariants before Vulkan module creation and are owned through RAII. The graphics-pipeline builder creates a dynamic-rendering-compatible triangle-list pipeline with empty vertex input, dynamic viewport/scissor, sampled-image descriptor layouts and premultiplied-alpha blending. Textured surface draws can use an output-clipped scissor independently from the complete surface viewport. Shader modules must belong to the same Vulkan logical device as the pipeline.
 
-The compositor includes GLSL 450 vertex and fragment shader sources under `components/aurea-compositor/shaders/`. The vertex shader generates a triangle from `gl_VertexIndex` and interpolates RGB colors; no vertex buffer or descriptor set is required. The fragment shader writes the interpolated color. The reproducible Fedora compilation helper is `tools/shaders/compile-vulkan-shaders.sh`; generated SPIR-V files are kept outside source control.
+The compositor includes GLSL 450 surface-texture vertex and fragment shader sources under `components/aurea-compositor/shaders/`. The vertex shader generates a full-screen triangle from `gl_VertexIndex` and interpolates texture coordinates; the fragment shader samples a combined image sampler. With the `drm` feature enabled, `build.rs` compiles these shaders to SPIR-V using `glslangValidator` and embeds the generated binaries from Cargo's output directory. Fedora builds require `sudo dnf install glslang`.
 
 ## Hardware eligibility and multi-GPU policy
 
@@ -37,7 +37,7 @@ The DRM startup path enumerates each discovered DRM device independently and att
 The renderer prefers XRGB8888 and then ARGB8888, but now attempts the remaining negotiated format/modifier candidates if an allocation fails. A non-empty format/modifier intersection is not itself proof of importability; allocation and framebuffer registration remain runtime checks.
 
 
-This is not yet a window renderer. `VulkanOutputScanoutBackend::render_frame` currently ignores its `RenderScene` argument and clears the output image only. Texture descriptors, importing sampled Wayland surface buffers, drawing window elements, color management and damage tracking remain unimplemented. The XDG toplevel lifecycle and scene collection exist, but they do not yet result in visible application windows. The current `aurea-shell` crate coordinates application lifecycle and events; it does not yet draw a desktop interface or provide a Wayland client window.
+The initial window-rendering path now consumes `RenderScene` and composites visible Wayland SHM surfaces (ARGB8888/XRGB8888) using Vulkan sampled textures, output-relative geometry, clipping and alpha blending. SHM snapshots are refreshed when clients damage a reused `wl_buffer`. This is not yet a complete window renderer: Wayland DMA-BUF client buffers, non-normal buffer transforms, wp_viewporter source/destination mapping, incremental texture caching, color management and precise damage tracking remain unimplemented. The current `aurea-shell` crate coordinates application lifecycle and events; it does not yet draw a desktop interface or provide a Wayland client window.
 
 ## Frames in flight and display ownership
 
@@ -57,9 +57,9 @@ The repository currently contains:
 - Offscreen rendering and host-visible pixel readback.
 - GLSL sources and an opt-in GPU smoke test for the offscreen triangle.
 - DRM DMA-BUF layout handling, framebuffer registration and per-output KMS presentation lifecycle components.
-- A connected clear-only Vulkan-to-DRM scanout attempt that clears the output to a diagnostic blue color when the GPU and DRM plane satisfy the current modifier-based requirements.
-- Unit tests for the Vulkan resource, scheduler and DRM presentation lifecycle.
-- No end-to-end test or implementation yet for importing and compositing an actual Wayland client window.
+- A connected initial Vulkan-to-DRM SHM composition path with bounded per-frame surface count and aggregate snapshot bytes.
+- Unit tests for Vulkan draw-region validation, output-relative geometry, SHM snapshot handling, resource scheduling and DRM presentation lifecycle.
+- No end-to-end test yet for compositing a real Wayland client window on a physical display.
 
 The GitHub Actions run `43399396471` completed successfully: workspace compilation, DRM/Vulkan compilation, workspace and compositor tests, shader compilation, offscreen Vulkan triangle readback through Mesa lavapipe, Rust formatting and the Rust dependency security audit all passed. These checks do not exercise a physical display or prove that an XDG client window is composited and visible.
 
@@ -67,8 +67,8 @@ The GitHub Actions run `43399396471` completed successfully: workspace compilati
 
 1. Run the diagnostic blue frame on the target Fedora laptop and validate physical DRM/KMS scanout.
 2. Verify GPU-to-KMS synchronization, page-flip completion, framebuffer retirement and session pause/resume on physical hardware.
-3. Import Wayland client surface buffers into Vulkan sampled-image resources and descriptors.
-4. Build scene composition, damage tracking and the full interactive frame scheduler.
+3. Import Wayland DMA-BUF client surface buffers into Vulkan sampled-image resources with explicit format, modifier and synchronization validation.
+4. Implement non-normal buffer transforms, wp_viewporter mapping, incremental texture caching and precise damage tracking.
 5. Implement the actual visual shell as a Wayland client; the current `aurea-shell` crate coordinates application lifecycle and events but does not yet draw the desktop interface.
 
 ## Offscreen execution and readback
