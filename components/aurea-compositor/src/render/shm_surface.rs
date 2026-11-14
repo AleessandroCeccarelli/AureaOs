@@ -88,40 +88,33 @@ pub fn update_surface_tree_snapshots(root: &WlSurface) -> Result<(), ShmBufferEr
 fn update_surface_state(states: &SurfaceData) -> Result<(), ShmBufferError> {
     let mut cached_state = states.cached_state.get::<SurfaceAttributes>();
     let current = cached_state.current();
-    let update = match current.buffer.as_ref() {
-        Some(BufferAssignment::NewBuffer(buffer)) => Some(Some(buffer.clone())),
-        Some(BufferAssignment::Removed) => Some(None),
-        None => None,
-    };
-
     let state = states
         .data_map
         .get_or_insert_threadsafe(SurfaceShmBufferState::default);
-    let Some(update) = update else {
-        return Ok(());
-    };
 
-    match update {
-        Some(None) => {
+    match current.buffer.as_ref() {
+        Some(BufferAssignment::NewBuffer(buffer)) => {
+            match ShmBufferSnapshot::copy_from_wl_buffer(buffer) {
+                Ok(snapshot) => {
+                    state.replace(Some(snapshot));
+                    current.buffer = None;
+                    // Buffer release is deliberately deferred until the compositor
+                    // has cross-surface buffer-use tracking. A wl_buffer may be
+                    // attached to more than one surface at the same time.
+                }
+                Err(ShmBufferError::NotSharedMemory | ShmBufferError::UnsupportedFormat) => {
+                    state.replace(None);
+                }
+                Err(error) => {
+                    state.replace(None);
+                    return Err(error);
+                }
+            }
+        }
+        Some(BufferAssignment::Removed) => {
             state.replace(None);
             current.buffer = None;
         }
-        Some(Some(buffer)) => match ShmBufferSnapshot::copy_from_wl_buffer(&buffer) {
-            Ok(snapshot) => {
-                state.replace(Some(snapshot));
-                current.buffer = None;
-                // Buffer release is deliberately deferred until the compositor
-                // has cross-surface buffer-use tracking. A wl_buffer may be
-                // attached to more than one surface at the same time.
-            }
-            Err(ShmBufferError::NotSharedMemory | ShmBufferError::UnsupportedFormat) => {
-                state.replace(None);
-            }
-            Err(error) => {
-                state.replace(None);
-                return Err(error);
-            }
-        },
         None => {}
     }
 
