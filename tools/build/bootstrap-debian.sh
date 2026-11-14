@@ -492,6 +492,10 @@ if [[ ! -f "$KEYBOARD_CONFIG" || -L "$KEYBOARD_CONFIG" ]]; then
   echo "Errore: configurazione tastiera assente o non regolare: $KEYBOARD_CONFIG" >&2
   exit 1
 fi
+if sudo test -L "$ROOTFS_WORK/etc/default/keyboard"; then
+  echo "Errore: /etc/default/keyboard è un symlink inatteso." >&2
+  exit 1
+fi
 sudo install -D -o 0 -g 0 -m 0644 \
   "$KEYBOARD_CONFIG" "$ROOTFS_WORK/etc/default/keyboard"
 
@@ -499,6 +503,10 @@ sudo install -D -o 0 -g 0 -m 0644 \
 LOCALE_CONFIG="$REPO_ROOT/debian/config/locale"
 if [[ ! -f "$LOCALE_CONFIG" || -L "$LOCALE_CONFIG" ]]; then
   echo "Errore: configurazione locale assente o non regolare: $LOCALE_CONFIG" >&2
+  exit 1
+fi
+if sudo test -L "$ROOTFS_WORK/etc/locale.conf"; then
+  echo "Errore: /etc/locale.conf è un symlink inatteso." >&2
   exit 1
 fi
 run_in_rootfs_private_network locale-gen en_US.UTF-8
