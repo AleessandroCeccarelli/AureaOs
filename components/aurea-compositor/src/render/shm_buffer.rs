@@ -1,0 +1,265 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// AureaOS
+// Copyright (C) 2026 Alessandro Ceccarelli
+
+//! Validated snapshots of Wayland shared-memory buffers.
+
+use std::{fmt, ptr};
+
+use smithay::{
+    reexports::wayland_server::protocol::{wl_buffer::WlBuffer, wl_shm::Format},
+    wayland::shm::{BufferData, with_buffer_contents},
+};
+
+/// Maximum amount of client-controlled pixel data copied for one surface.
+pub const MAX_SHM_SNAPSHOT_BYTES: usize = 256 * 1024 * 1024;
+
+/// Pixel formats currently accepted by the initial Vulkan upload path.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ShmPixelFormat {
+    Argb8888,
+    Xrgb8888,
+}
+
+/// An owned, tightly packed copy of a client SHM buffer.
+///
+/// The copy is made while Smithay holds the SHM pool access callback. No
+/// borrowed reference to client-writable memory escapes that callback.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ShmBufferSnapshot {
+    width: u32,
+    height: u32,
+    format: ShmPixelFormat,
+    pixels: Vec<u8>,
+}
+
+impl ShmBufferSnapshot {
+    /// Copies a supported Wayland SHM buffer into compositor-owned memory.
+    pub fn copy_from_wl_buffer(buffer: &WlBuffer) -> Result<Self, ShmBufferError> {
+        let snapshot = with_buffer_contents(buffer, |pool, pool_len, metadata| {
+            Self::copy_from_pool(pool, pool_len, metadata)
+        })
+        .map_err(|error| match error {
+            smithay::wayland::shm::BufferAccessError::NotManaged => {
+                ShmBufferError::NotSharedMemory
+            }
+            other => ShmBufferError::BufferAccess(format!("{other:?}")),
+        })?;
+
+        snapshot
+    }
+
+    fn copy_from_pool(
+        pool: *const u8,
+        pool_len: usize,
+        metadata: BufferData,
+    ) -> Result<Self, ShmBufferError> {
+        let format = match metadata.format {
+            Format::Argb8888 => ShmPixelFormat::Argb8888,
+            Format::Xrgb8888 => ShmPixelFormat::Xrgb8888,
+            _ => return Err(ShmBufferError::UnsupportedFormat),
+        };
+
+        let layout = ValidatedLayout::new(
+            metadata.offset,
+            metadata.width,
+            metadata.height,
+            metadata.stride,
+            pool_len,
+        )?;
+
+        if pool.is_null() {
+            return Err(ShmBufferError::InvalidPool);
+        }
+
+        let mut pixels = vec![0; layout.packed_len];
+        for row in 0..layout.height {
+            let source_offset = layout.offset + row * layout.stride;
+            let destination_offset = row * layout.row_bytes;
+
+            // SAFETY: the source range was checked against pool_len above.
+            // Smithay guarantees the pointer remains valid for this callback.
+            // A raw copy is used deliberately: client-writable SHM is never
+            // exposed as a Rust slice or reference.
+            unsafe {
+                ptr::copy_nonoverlapping(
+                    pool.add(source_offset),
+                    pixels.as_mut_ptr().add(destination_offset),
+                    layout.row_bytes,
+                );
+            }
+        }
+
+        Ok(Self {
+            width: layout.width as u32,
+            height: layout.height as u32,
+            format,
+            pixels,
+        })
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+
+    pub fn format(&self) -> ShmPixelFormat {
+        self.format
+    }
+
+    /// Returns tightly packed bytes in the original Wayland SHM pixel format.
+    pub fn pixels(&self) -> &[u8] {
+        &self.pixels
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ShmBufferError {
+    NotSharedMemory,
+    BufferAccess(String),
+    UnsupportedFormat,
+    InvalidDimensions,
+    InvalidStride,
+    InvalidPool,
+    OutOfBounds,
+    SnapshotTooLarge,
+}
+
+impl fmt::Display for ShmBufferError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "Wayland SHM buffer error: {self:?}")
+    }
+}
+
+impl std::error::Error for ShmBufferError {}
+
+struct ValidatedLayout {
+    offset: usize,
+    width: usize,
+    height: usize,
+    stride: usize,
+    row_bytes: usize,
+    packed_len: usize,
+}
+
+impl ValidatedLayout {
+    fn new(
+        offset: i32,
+        width: i32,
+        height: i32,
+        stride: i32,
+        pool_len: usize,
+    ) -> Result<Self, ShmBufferError> {
+        if offset < 0 || width <= 0 || height <= 0 {
+            return Err(ShmBufferError::InvalidDimensions);
+        }
+
+        let offset = usize::try_from(offset).map_err(|_| ShmBufferError::InvalidDimensions)?;
+        let width = usize::try_from(width).map_err(|_| ShmBufferError::InvalidDimensions)?;
+        let height = usize::try_from(height).map_err(|_| ShmBufferError::InvalidDimensions)?;
+        let stride = usize::try_from(stride).map_err(|_| ShmBufferError::InvalidStride)?;
+        let row_bytes = width
+            .checked_mul(4)
+            .ok_or(ShmBufferError::SnapshotTooLarge)?;
+
+        if stride < row_bytes {
+            return Err(ShmBufferError::InvalidStride);
+        }
+
+        let packed_len = row_bytes
+            .checked_mul(height)
+            .ok_or(ShmBufferError::SnapshotTooLarge)?;
+        if packed_len > MAX_SHM_SNAPSHOT_BYTES {
+            return Err(ShmBufferError::SnapshotTooLarge);
+        }
+
+        let last_row_offset = (height - 1)
+            .checked_mul(stride)
+            .and_then(|value| offset.checked_add(value))
+            .ok_or(ShmBufferError::OutOfBounds)?;
+        let required_end = last_row_offset
+            .checked_add(row_bytes)
+            .ok_or(ShmBufferError::OutOfBounds)?;
+
+        if required_end > pool_len {
+            return Err(ShmBufferError::OutOfBounds);
+        }
+
+        Ok(Self {
+            offset,
+            width,
+            height,
+            stride,
+            row_bytes,
+            packed_len,
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn accepts_tightly_packed_buffer() {
+        let layout = ValidatedLayout::new(0, 4, 2, 16, 32).unwrap();
+        assert_eq!(layout.row_bytes, 16);
+        assert_eq!(layout.packed_len, 32);
+    }
+
+    #[test]
+    fn accepts_padding_between_rows() {
+        let layout = ValidatedLayout::new(8, 2, 2, 12, 32).unwrap();
+        assert_eq!(layout.offset, 8);
+        assert_eq!(layout.row_bytes, 8);
+        assert_eq!(layout.packed_len, 16);
+    }
+
+    #[test]
+    fn rejects_non_positive_dimensions_and_negative_offset() {
+        assert_eq!(
+            ValidatedLayout::new(0, 0, 1, 4, 4).unwrap_err(),
+            ShmBufferError::InvalidDimensions
+        );
+        assert_eq!(
+            ValidatedLayout::new(-1, 1, 1, 4, 4).unwrap_err(),
+            ShmBufferError::InvalidDimensions
+        );
+    }
+
+    #[test]
+    fn rejects_stride_shorter_than_a_pixel_row() {
+        assert_eq!(
+            ValidatedLayout::new(0, 2, 1, 7, 8).unwrap_err(),
+            ShmBufferError::InvalidStride
+        );
+    }
+
+    #[test]
+    fn rejects_pool_ranges_that_end_before_the_last_pixel() {
+        assert_eq!(
+            ValidatedLayout::new(4, 2, 2, 8, 19).unwrap_err(),
+            ShmBufferError::OutOfBounds
+        );
+    }
+
+    #[test]
+    fn rejects_snapshots_above_the_memory_limit() {
+        assert_eq!(
+            ValidatedLayout::new(0, 8192, 8192, 32768, usize::MAX).unwrap_err(),
+            ShmBufferError::SnapshotTooLarge
+        );
+    }
+
+    #[test]
+    fn rejects_stride_conversion_overflow_and_negative_stride() {
+        assert_eq!(
+            ValidatedLayout::new(0, 1, 1, -1, 4).unwrap_err(),
+            ShmBufferError::InvalidStride
+        );
+    }
+}
