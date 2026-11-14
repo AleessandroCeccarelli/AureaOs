@@ -220,7 +220,7 @@ pub(super) fn surface_render_snapshot(surface: &WlSurface) -> Option<SurfaceRend
             revision,
             snapshot,
             buffer_scale,
-            buffer_transform,
+            buffer_transform: buffer_transform.into(),
         })
     })
 }
