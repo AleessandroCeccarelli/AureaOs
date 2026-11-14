@@ -92,6 +92,14 @@ impl SurfaceShmBufferState {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         state.processed_buffer = None;
     }
+
+    fn processed_buffer(&self) -> Option<WlBuffer> {
+        let state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state.processed_buffer.clone()
+    }
 }
 
 /// Copies new SHM buffers throughout a committed surface tree.
@@ -129,39 +137,60 @@ fn update_surface_state(states: &SurfaceData) -> Result<(), ShmBufferError> {
         .data_map
         .get_or_insert_threadsafe(SurfaceShmBufferState::default);
 
-    match current.buffer.as_ref() {
+    let result = match current.buffer.as_ref() {
         Some(BufferAssignment::NewBuffer(buffer)) => {
-            if state.has_processed(buffer) {
-                return Ok(());
+            // SurfaceAttributes retains the most recently attached buffer in
+            // its merged current state. Re-copy it only for a new attachment
+            // or when the client reports new damage to the same wl_buffer.
+            if state.has_processed(buffer) && current.damage.is_empty() {
+                Ok(())
+            } else {
+                copy_surface_buffer(state, buffer)
             }
-
-            let snapshot = ShmBufferSnapshot::copy_from_wl_buffer(buffer);
-            state.mark_processed(buffer.clone());
-
-            match snapshot {
-                Ok(snapshot) => state.replace(Some(snapshot)),
-                Err(ShmBufferError::NotSharedMemory | ShmBufferError::UnsupportedFormat) => {
-                    state.replace(None);
-                }
-                Err(error) => {
-                    state.replace(None);
-                    return Err(error);
-                }
-            }
-
-            // Keep current.buffer intact. Smithay's SurfaceAttributes merge
-            // logic owns the attached-buffer lifetime and releases the previous
-            // WlBuffer when a different buffer (or Removed) replaces it.
         }
         Some(BufferAssignment::Removed) => {
             state.replace(None);
             state.clear_processed();
             current.buffer = None;
+            Ok(())
         }
-        None => {}
-    }
+        None if !current.damage.is_empty() => {
+            match state.processed_buffer() {
+                Some(buffer) => copy_surface_buffer(state, &buffer),
+                None => Ok(()),
+            }
+        }
+        None => Ok(()),
+    };
 
-    Ok(())
+    // Smithay aggregates damage across commits until the compositor consumes
+    // it. Clear only after this callback has attempted to refresh our owned
+    // snapshot, otherwise the same damage would be copied on every later commit.
+    current.damage.clear();
+    result
+}
+
+fn copy_surface_buffer(
+    state: &SurfaceShmBufferState,
+    buffer: &WlBuffer,
+) -> Result<(), ShmBufferError> {
+    let snapshot = ShmBufferSnapshot::copy_from_wl_buffer(buffer);
+    state.mark_processed(buffer.clone());
+
+    match snapshot {
+        Ok(snapshot) => {
+            state.replace(Some(snapshot));
+            Ok(())
+        }
+        Err(ShmBufferError::NotSharedMemory | ShmBufferError::UnsupportedFormat) => {
+            state.replace(None);
+            Ok(())
+        }
+        Err(error) => {
+            state.replace(None);
+            Err(error)
+        }
+    }
 }
 
 /// Returns the latest owned SHM snapshot associated with a surface.
