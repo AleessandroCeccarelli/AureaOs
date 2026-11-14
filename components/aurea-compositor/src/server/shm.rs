@@ -25,7 +25,7 @@ impl BufferHandler for AureaCompositor {
 
 impl ShmHandler for AureaCompositor {
     fn shm_state(&self) -> &ShmState {
-        &self.shm_state
+        self.wayland_shm_state()
     }
 }
 
