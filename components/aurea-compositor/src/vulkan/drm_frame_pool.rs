@@ -176,6 +176,35 @@ impl VulkanDrmFramePool {
         Self::default()
     }
 
+    /// Maximum number of scanout images retained for reuse by one output.
+    ///
+    /// Two images are sufficient for ordinary page-flip rotation. The third
+    /// slot allows one additional allocation during a mode/format transition.
+    pub const MAX_RETAINED_FRAMES: usize = 3;
+
+    /// Finds a released image matching the current output size and negotiated formats.
+    pub fn find_reusable(
+        &self,
+        width: u32,
+        height: u32,
+        formats: &[DrmVulkanFormat],
+        coordinator: &DrmOutputFrameCoordinator,
+    ) -> Result<Option<DrmFramebufferId>, VulkanDrmFramePoolError> {
+        for (id, frame) in &self.frames {
+            let image = frame.image();
+            if image.width() != width || image.height() != height {
+                continue;
+            }
+            if !formats.iter().any(|format| image.drm_format() == *format) {
+                continue;
+            }
+            if coordinator.is_available(*id)? {
+                return Ok(Some(*id));
+            }
+        }
+        Ok(None)
+    }
+
     pub fn insert(
         &mut self,
         frame: VulkanDrmScanoutFrame,
@@ -213,6 +242,24 @@ impl VulkanDrmFramePool {
         coordinator.mark_foreign_acquired(id)?;
 
         Ok(())
+    }
+
+    /// Reacquires a released image and retains it for the next frame when the pool is small.
+    ///
+    /// Images beyond the bounded pool size are retired only after Vulkan has
+    /// completed the foreign-ownership acquire and the lifecycle confirms reuse.
+    pub fn reacquire_and_recycle(
+        &mut self,
+        id: DrmFramebufferId,
+        coordinator: &mut DrmOutputFrameCoordinator,
+    ) -> Result<bool, VulkanDrmFramePoolError> {
+        self.acquire_after_foreign_release(id, coordinator)?;
+        if self.frames.len() > Self::MAX_RETAINED_FRAMES {
+            self.retire(id, coordinator)?;
+            Ok(false)
+        } else {
+            Ok(true)
+        }
     }
 
     /// Retires a frame only after the lifecycle coordinator marks it reusable.
