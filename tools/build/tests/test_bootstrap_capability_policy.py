@@ -50,7 +50,10 @@ class BootstrapCapabilityPolicyTests(unittest.TestCase):
             self.source,
         )
 
-    def test_nspawn_refreshes_sudo_credentials_before_privileged_execution(self) -> None:\n        self.assertIn("  sudo -v\\n\\n  sudo systemd-nspawn", self.source)\n\n    def test_other_dangerous_capabilities_remain_dropped(self) -> None:
+    def test_nspawn_refreshes_sudo_credentials_before_privileged_execution(self) -> None:
+        self.assertIn("  sudo -v\\n\\n  sudo systemd-nspawn", self.source)
+
+    def test_other_dangerous_capabilities_remain_dropped(self) -> None:
         for capability in (
             "CAP_SYS_MODULE",
             "CAP_SYS_RAWIO",
