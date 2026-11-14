@@ -364,6 +364,22 @@ mod tests {
     }
 
     #[test]
+    fn rgba8_constructor_rejects_inconsistent_pixel_data() {
+        assert_eq!(
+            ShmBufferSnapshot::from_rgba8(2, 1, vec![0; 4]).unwrap_err(),
+            ShmBufferError::InvalidPixelData
+        );
+    }
+
+    #[test]
+    fn rgba8_constructor_rejects_zero_dimensions() {
+        assert_eq!(
+            ShmBufferSnapshot::from_rgba8(0, 1, Vec::new()).unwrap_err(),
+            ShmBufferError::InvalidDimensions
+        );
+    }
+
+    #[test]
     fn rgba8_conversion_is_idempotent() {
         let snapshot = ShmBufferSnapshot {
             width: 1,
