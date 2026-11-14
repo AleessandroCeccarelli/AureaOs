@@ -71,6 +71,7 @@ pub(crate) fn render_and_release(
     target: &RenderTarget,
     scene: &RenderScene<'_>,
     previous_image_state: VulkanImageState,
+    before_submit: impl FnOnce() -> Result<(), String>,
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let visible = visible_surfaces(scene, target)?;
 
@@ -199,6 +200,7 @@ pub(crate) fn render_and_release(
     command_buffer
         .end()
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
+    before_submit().map_err(VulkanSurfaceCompositionError::Command)?;
     command_buffer
         .submit_and_wait()
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
