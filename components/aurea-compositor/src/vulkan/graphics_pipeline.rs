@@ -87,8 +87,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
             .iter()
             .map(|layout| layout.handle())
             .collect::<Vec<_>>();
-        let layout_info =
-            vk::PipelineLayoutCreateInfo::default().set_layouts(&descriptor_handles);
+        let layout_info = vk::PipelineLayoutCreateInfo::default().set_layouts(&descriptor_handles);
         let layout = unsafe { device.handle().create_pipeline_layout(&layout_info, None) }
             .map_err(VulkanGraphicsPipelineError::Creation)?;
 

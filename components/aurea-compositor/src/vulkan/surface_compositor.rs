@@ -7,10 +7,7 @@
 
 use std::{error::Error, fmt};
 
-use smithay::{
-    reexports::ash::vk,
-    utils::Transform,
-};
+use smithay::{reexports::ash::vk, utils::Transform};
 
 use std::sync::Arc;
 
@@ -20,10 +17,10 @@ use crate::{
 };
 
 use super::{
-    VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDrawPass,
-    VulkanGraphicsPipeline, VulkanGraphicsShaders, VulkanImageState, VulkanImageTransition,
-    VulkanImageView, VulkanLogicalDevice, VulkanSampler, VulkanShaderModule,
-    VulkanShmTexture, VulkanTextureBinding, VulkanTextureDescriptorSetLayout,
+    VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDrawPass, VulkanGraphicsPipeline,
+    VulkanGraphicsShaders, VulkanImageState, VulkanImageTransition, VulkanImageView,
+    VulkanLogicalDevice, VulkanSampler, VulkanShaderModule, VulkanShmTexture, VulkanTextureBinding,
+    VulkanTextureDescriptorSetLayout,
 };
 
 const BACKGROUND_COLOR: [f32; 4] = [0.08, 0.18, 0.32, 1.0];
@@ -81,12 +78,7 @@ pub(crate) fn render_and_release(
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let visible = visible_surfaces(scene, target)?;
     if visible.is_empty() {
-        return clear_and_release(
-            device,
-            view,
-            previous_image_state,
-            before_submit,
-        );
+        return clear_and_release(device, view, previous_image_state, before_submit);
     }
 
     let descriptor_layout = VulkanTextureDescriptorSetLayout::new(device)
@@ -122,11 +114,8 @@ pub(crate) fn render_and_release(
     let textures = visible
         .iter()
         .map(|surface| {
-            VulkanShmTexture::from_snapshot(
-                device,
-                surface.snapshot.as_ref().clone(),
-            )
-            .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
+            VulkanShmTexture::from_snapshot(device, surface.snapshot.as_ref().clone())
+                .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
         })
         .collect::<Result<Vec<_>, _>>()?;
 
@@ -175,12 +164,10 @@ pub(crate) fn render_and_release(
         };
         let scissor = vk::Rect2D {
             offset: vk::Offset2D {
-                x: i32::try_from(scissor.x).map_err(|_| {
-                    VulkanSurfaceCompositionError::InvalidSurfaceGeometry
-                })?,
-                y: i32::try_from(scissor.y).map_err(|_| {
-                    VulkanSurfaceCompositionError::InvalidSurfaceGeometry
-                })?,
+                x: i32::try_from(scissor.x)
+                    .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                y: i32::try_from(scissor.y)
+                    .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
             },
             extent: vk::Extent2D {
                 width: scissor.width,

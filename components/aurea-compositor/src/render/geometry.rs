@@ -53,9 +53,13 @@ impl SurfaceGeometry {
 
         let left = self.x.max(0);
         let top = self.y.max(0);
-        let right = self.x.checked_add(i64::from(self.width))?
+        let right = self
+            .x
+            .checked_add(i64::from(self.width))?
             .min(i64::from(output_width));
-        let bottom = self.y.checked_add(i64::from(self.height))?
+        let bottom = self
+            .y
+            .checked_add(i64::from(self.height))?
             .min(i64::from(output_height));
 
         if right <= left || bottom <= top {
@@ -124,7 +128,8 @@ fn scaled_buffer_dimension(dimension: i32, buffer_scale: i32, output_scale: u32)
         return None;
     }
 
-    let numerator = u128::try_from(dimension).ok()?
+    let numerator = u128::try_from(dimension)
+        .ok()?
         .checked_mul(u128::from(output_scale))?;
     let denominator = u128::try_from(buffer_scale).ok()?;
     let rounded = numerator.checked_add(denominator / 2)? / denominator;
@@ -137,65 +142,38 @@ mod tests {
 
     #[test]
     fn translates_global_position_and_applies_both_scales() {
-        let geometry = surface_geometry(
-            (110, 70),
-            (80, 40),
-            2,
-            Transform::Normal,
-            (100, 50),
-            2,
-        )
-        .unwrap();
+        let geometry =
+            surface_geometry((110, 70), (80, 40), 2, Transform::Normal, (100, 50), 2).unwrap();
 
-        assert_eq!(geometry, SurfaceGeometry {
-            x: 20,
-            y: 40,
-            width: 80,
-            height: 40,
-        });
+        assert_eq!(
+            geometry,
+            SurfaceGeometry {
+                x: 20,
+                y: 40,
+                width: 80,
+                height: 40,
+            }
+        );
     }
 
     #[test]
     fn quarter_turn_transform_swaps_destination_dimensions() {
-        let geometry = surface_geometry(
-            (0, 0),
-            (80, 40),
-            1,
-            Transform::_90,
-            (0, 0),
-            1,
-        )
-        .unwrap();
+        let geometry = surface_geometry((0, 0), (80, 40), 1, Transform::_90, (0, 0), 1).unwrap();
 
         assert_eq!((geometry.width(), geometry.height()), (40, 80));
     }
 
     #[test]
     fn rounds_scaled_buffer_dimensions_to_nearest_physical_pixel() {
-        let geometry = surface_geometry(
-            (0, 0),
-            (5, 3),
-            2,
-            Transform::Normal,
-            (0, 0),
-            1,
-        )
-        .unwrap();
+        let geometry = surface_geometry((0, 0), (5, 3), 2, Transform::Normal, (0, 0), 1).unwrap();
 
         assert_eq!((geometry.width(), geometry.height()), (3, 2));
     }
 
     #[test]
     fn clips_negative_surface_origin_without_changing_destination() {
-        let geometry = surface_geometry(
-            (-10, 5),
-            (20, 10),
-            1,
-            Transform::Normal,
-            (0, 0),
-            1,
-        )
-        .unwrap();
+        let geometry =
+            surface_geometry((-10, 5), (20, 10), 1, Transform::Normal, (0, 0), 1).unwrap();
 
         assert_eq!(
             geometry.scissor(100, 100),
@@ -211,29 +189,16 @@ mod tests {
 
     #[test]
     fn skips_surfaces_outside_output_bounds() {
-        let geometry = surface_geometry(
-            (120, 10),
-            (20, 20),
-            1,
-            Transform::Normal,
-            (0, 0),
-            1,
-        )
-        .unwrap();
+        let geometry =
+            surface_geometry((120, 10), (20, 20), 1, Transform::Normal, (0, 0), 1).unwrap();
 
         assert_eq!(geometry.scissor(100, 100), None);
     }
 
     #[test]
     fn rejects_invalid_scale_and_zero_sized_buffers() {
-        assert!(surface_geometry(
-            (0, 0), (10, 10), 0, Transform::Normal, (0, 0), 1
-        ).is_none());
-        assert!(surface_geometry(
-            (0, 0), (10, 10), 1, Transform::Normal, (0, 0), 0
-        ).is_none());
-        assert!(surface_geometry(
-            (0, 0), (0, 10), 1, Transform::Normal, (0, 0), 1
-        ).is_none());
+        assert!(surface_geometry((0, 0), (10, 10), 0, Transform::Normal, (0, 0), 1).is_none());
+        assert!(surface_geometry((0, 0), (10, 10), 1, Transform::Normal, (0, 0), 0).is_none());
+        assert!(surface_geometry((0, 0), (0, 10), 1, Transform::Normal, (0, 0), 1).is_none());
     }
 }

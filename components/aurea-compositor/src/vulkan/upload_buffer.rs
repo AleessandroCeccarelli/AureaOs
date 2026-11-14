@@ -33,16 +33,32 @@ impl fmt::Display for VulkanUploadError {
         match self {
             Self::InvalidDimensions => formatter.write_str("Upload dimensions must be non-zero"),
             Self::SizeOverflow => formatter.write_str("Upload byte size overflowed"),
-            Self::BufferCreation(error) => write!(formatter, "Upload buffer creation failed: {error:?}"),
-            Self::MemoryTypeUnavailable => formatter.write_str("No host-visible Vulkan memory type is available"),
-            Self::MemoryAllocation(error) => write!(formatter, "Upload memory allocation failed: {error:?}"),
-            Self::MemoryBinding(error) => write!(formatter, "Upload memory binding failed: {error:?}"),
+            Self::BufferCreation(error) => {
+                write!(formatter, "Upload buffer creation failed: {error:?}")
+            }
+            Self::MemoryTypeUnavailable => {
+                formatter.write_str("No host-visible Vulkan memory type is available")
+            }
+            Self::MemoryAllocation(error) => {
+                write!(formatter, "Upload memory allocation failed: {error:?}")
+            }
+            Self::MemoryBinding(error) => {
+                write!(formatter, "Upload memory binding failed: {error:?}")
+            }
             Self::Mapping(error) => write!(formatter, "Upload memory mapping failed: {error:?}"),
             Self::Flush(error) => write!(formatter, "Upload memory flush failed: {error:?}"),
-            Self::InvalidByteLength => formatter.write_str("RGBA8 upload data has an unexpected byte length"),
-            Self::UnsupportedImageFormat => formatter.write_str("Upload currently supports R8G8B8A8_UNORM images only"),
-            Self::MissingTransferDestinationUsage => formatter.write_str("Upload image lacks TRANSFER_DST usage"),
-            Self::InvalidImageDimensions => formatter.write_str("Upload buffer and destination image dimensions differ"),
+            Self::InvalidByteLength => {
+                formatter.write_str("RGBA8 upload data has an unexpected byte length")
+            }
+            Self::UnsupportedImageFormat => {
+                formatter.write_str("Upload currently supports R8G8B8A8_UNORM images only")
+            }
+            Self::MissingTransferDestinationUsage => {
+                formatter.write_str("Upload image lacks TRANSFER_DST usage")
+            }
+            Self::InvalidImageDimensions => {
+                formatter.write_str("Upload buffer and destination image dimensions differ")
+            }
         }
     }
 }
@@ -68,8 +84,8 @@ impl<'device> VulkanUploadBuffer<'device> {
         height: u32,
     ) -> Result<Self, VulkanUploadError> {
         let byte_len = Self::required_byte_len(width, height)?;
-        let size = vk::DeviceSize::try_from(byte_len)
-            .map_err(|_| VulkanUploadError::SizeOverflow)?;
+        let size =
+            vk::DeviceSize::try_from(byte_len).map_err(|_| VulkanUploadError::SizeOverflow)?;
 
         let create_info = vk::BufferCreateInfo::default()
             .size(size)
@@ -165,9 +181,8 @@ impl<'device> VulkanUploadBuffer<'device> {
                 .memory(self.memory)
                 .offset(0)
                 .size(vk::WHOLE_SIZE)];
-            if let Err(error) = unsafe {
-                self.device.handle().flush_mapped_memory_ranges(&ranges)
-            } {
+            if let Err(error) = unsafe { self.device.handle().flush_mapped_memory_ranges(&ranges) }
+            {
                 unsafe { self.device.handle().unmap_memory(self.memory) };
                 return Err(VulkanUploadError::Flush(error));
             }
@@ -189,7 +204,10 @@ impl<'device> VulkanUploadBuffer<'device> {
         if destination.format() != vk::Format::R8G8B8A8_UNORM {
             return Err(VulkanUploadError::UnsupportedImageFormat);
         }
-        if !destination.usage().contains(vk::ImageUsageFlags::TRANSFER_DST) {
+        if !destination
+            .usage()
+            .contains(vk::ImageUsageFlags::TRANSFER_DST)
+        {
             return Err(VulkanUploadError::MissingTransferDestinationUsage);
         }
         if destination.width() != self.width || destination.height() != self.height {
@@ -208,7 +226,9 @@ impl<'device> VulkanUploadBuffer<'device> {
             .size(vk::WHOLE_SIZE)];
         let dependency = vk::DependencyInfo::default().buffer_memory_barriers(&buffer_barrier);
         unsafe {
-            self.device.handle().cmd_pipeline_barrier2(command_buffer, &dependency);
+            self.device
+                .handle()
+                .cmd_pipeline_barrier2(command_buffer, &dependency);
         }
 
         let regions = [vk::BufferImageCopy::default()

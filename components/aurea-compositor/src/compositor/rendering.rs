@@ -48,7 +48,10 @@ impl<E: Error + 'static> std::fmt::Display for CompositorRenderError<E> {
                 write!(formatter, "Output {output_id} is disabled")
             }
             Self::OutputPositionUnavailable(output_id) => {
-                write!(formatter, "Output {output_id} has no logical layout position")
+                write!(
+                    formatter,
+                    "Output {output_id} has no logical layout position"
+                )
             }
             Self::FrameNotRequested(output_id) => {
                 write!(formatter, "No frame was requested for output {output_id}")
@@ -97,9 +100,7 @@ impl AureaCompositor {
             .output_manager
             .layout()
             .get(output_id)
-            .ok_or(CompositorRenderError::OutputPositionUnavailable(
-                output_id,
-            ))?;
+            .ok_or(CompositorRenderError::OutputPositionUnavailable(output_id))?;
         let target = RenderTarget::from_output(output, (position.x(), position.y()))
             .ok_or(CompositorRenderError::OutputDisabled(output_id))?;
 

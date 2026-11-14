@@ -30,11 +30,16 @@ pub enum VulkanShmTextureError {
 impl fmt::Display for VulkanShmTextureError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::UnsupportedPixelFormat => formatter.write_str("Wayland SHM snapshot must be normalized to RGBA8 before Vulkan upload"),
+            Self::UnsupportedPixelFormat => formatter
+                .write_str("Wayland SHM snapshot must be normalized to RGBA8 before Vulkan upload"),
             Self::Image(error) => write!(formatter, "SHM texture image allocation failed: {error}"),
-            Self::ImageView(error) => write!(formatter, "SHM texture image-view creation failed: {error}"),
+            Self::ImageView(error) => {
+                write!(formatter, "SHM texture image-view creation failed: {error}")
+            }
             Self::Upload(error) => write!(formatter, "SHM texture upload failed: {error}"),
-            Self::Command(error) => write!(formatter, "SHM texture Vulkan command failed: {error:?}"),
+            Self::Command(error) => {
+                write!(formatter, "SHM texture Vulkan command failed: {error:?}")
+            }
         }
     }
 }

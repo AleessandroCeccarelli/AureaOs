@@ -42,9 +42,7 @@ impl ShmBufferSnapshot {
             Self::copy_from_pool(pool, pool_len, metadata)
         })
         .map_err(|error| match error {
-            smithay::wayland::shm::BufferAccessError::NotManaged => {
-                ShmBufferError::NotSharedMemory
-            }
+            smithay::wayland::shm::BufferAccessError::NotManaged => ShmBufferError::NotSharedMemory,
             other => ShmBufferError::BufferAccess(format!("{other:?}")),
         })?;
 

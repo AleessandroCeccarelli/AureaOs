@@ -12,11 +12,7 @@ use smithay::{
     input::{Seat, SeatHandler, SeatState},
     output::Output,
     reexports::wayland_server::{DisplayHandle, protocol::wl_surface::WlSurface},
-    wayland::{
-        compositor::CompositorState,
-        shm::ShmState,
-        shell::xdg::XdgShellState,
-    },
+    wayland::{compositor::CompositorState, shell::xdg::XdgShellState, shm::ShmState},
 };
 
 use crate::{

@@ -21,9 +21,9 @@ mod resource_limits;
 mod seat;
 mod session;
 mod session_events;
+mod shm;
 mod socket;
 mod state;
-mod shm;
 
 #[cfg(feature = "drm")]
 mod udev_events;

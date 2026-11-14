@@ -20,7 +20,10 @@ pub enum VulkanTextureLayoutError {
 impl fmt::Display for VulkanTextureLayoutError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Creation(error) => write!(formatter, "Texture descriptor layout creation failed: {error:?}"),
+            Self::Creation(error) => write!(
+                formatter,
+                "Texture descriptor layout creation failed: {error:?}"
+            ),
         }
     }
 }
@@ -59,7 +62,9 @@ impl<'device> VulkanTextureDescriptorSetLayout<'device> {
 impl Drop for VulkanTextureDescriptorSetLayout<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.handle().destroy_descriptor_set_layout(self.handle, None);
+            self.device
+                .handle()
+                .destroy_descriptor_set_layout(self.handle, None);
         }
     }
 }

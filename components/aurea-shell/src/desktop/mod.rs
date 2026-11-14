@@ -11,7 +11,7 @@ mod workspace;
 
 pub use dock::{DockMode, DockState};
 pub use launcher::LauncherState;
-pub use workspace::{WorkspaceId, WorkspaceManager, WORKSPACE_COUNT};
+pub use workspace::{WORKSPACE_COUNT, WorkspaceId, WorkspaceManager};
 
 /// Desktop appearance preference.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

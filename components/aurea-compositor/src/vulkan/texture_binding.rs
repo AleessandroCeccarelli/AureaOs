@@ -25,10 +25,17 @@ pub enum VulkanTextureBindingError {
 impl fmt::Display for VulkanTextureBindingError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::DeviceMismatch => formatter.write_str("Texture binding resources use different Vulkan devices"),
+            Self::DeviceMismatch => {
+                formatter.write_str("Texture binding resources use different Vulkan devices")
+            }
             Self::MissingSampledUsage => formatter.write_str("Texture image lacks sampled usage"),
-            Self::PoolCreation(error) => write!(formatter, "Texture descriptor pool creation failed: {error:?}"),
-            Self::SetAllocation(error) => write!(formatter, "Texture descriptor allocation failed: {error:?}"),
+            Self::PoolCreation(error) => write!(
+                formatter,
+                "Texture descriptor pool creation failed: {error:?}"
+            ),
+            Self::SetAllocation(error) => {
+                write!(formatter, "Texture descriptor allocation failed: {error:?}")
+            }
         }
     }
 }
@@ -110,7 +117,12 @@ impl<'resources, 'image, 'device> VulkanTextureBinding<'resources, 'image, 'devi
     }
 
     /// Binds this sampled texture at the requested graphics descriptor-set index.
-    pub fn bind(&self, command_buffer: vk::CommandBuffer, pipeline_layout: vk::PipelineLayout, set_index: u32) {
+    pub fn bind(
+        &self,
+        command_buffer: vk::CommandBuffer,
+        pipeline_layout: vk::PipelineLayout,
+        set_index: u32,
+    ) {
         unsafe {
             self.device.handle().cmd_bind_descriptor_sets(
                 command_buffer,
@@ -127,7 +139,9 @@ impl<'resources, 'image, 'device> VulkanTextureBinding<'resources, 'image, 'devi
 impl Drop for VulkanTextureBinding<'_, '_, '_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.handle().destroy_descriptor_pool(self.pool, None);
+            self.device
+                .handle()
+                .destroy_descriptor_pool(self.pool, None);
         }
     }
 }

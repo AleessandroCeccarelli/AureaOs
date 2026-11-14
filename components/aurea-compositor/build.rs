@@ -12,11 +12,15 @@ use std::{
 };
 
 fn main() {
-    let manifest_dir = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("manifest directory"));
+    let manifest_dir =
+        PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("manifest directory"));
     let shader_dir = manifest_dir.join("shaders");
 
     for shader in ["surface_texture.vert", "surface_texture.frag"] {
-        println!("cargo:rerun-if-changed={}", shader_dir.join(shader).display());
+        println!(
+            "cargo:rerun-if-changed={}",
+            shader_dir.join(shader).display()
+        );
     }
     println!("cargo:rerun-if-env-changed=CARGO_FEATURE_DRM");
 

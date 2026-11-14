@@ -8,17 +8,14 @@
 use std::sync::Arc;
 
 use smithay::{
+    reexports::wayland_server::protocol::wl_surface::WlSurface,
     utils::{Logical, Point, Transform},
     wayland::compositor::{
         SubsurfaceCachedState, SurfaceData, TraversalAction, with_surface_tree_downward,
     },
-    reexports::wayland_server::protocol::wl_surface::WlSurface,
 };
 
-use super::{
-    shm_buffer::ShmBufferSnapshot,
-    shm_surface::surface_render_snapshot,
-};
+use super::{shm_buffer::ShmBufferSnapshot, shm_surface::surface_render_snapshot};
 
 /// One owned surface image and its accumulated global logical position.
 pub struct SurfaceTreeSnapshot {
@@ -77,10 +74,7 @@ pub fn collect_surface_tree_snapshots(
     snapshots
 }
 
-fn surface_location(
-    states: &SurfaceData,
-    parent: TraversalLocation,
-) -> Point<i32, Logical> {
+fn surface_location(states: &SurfaceData, parent: TraversalLocation) -> Point<i32, Logical> {
     let offset = if parent.is_root {
         Point::from((0, 0))
     } else {
@@ -96,11 +90,7 @@ fn resolve_surface_location(
     is_root: bool,
     offset: Point<i32, Logical>,
 ) -> Point<i32, Logical> {
-    if is_root {
-        origin
-    } else {
-        origin + offset
-    }
+    if is_root { origin } else { origin + offset }
 }
 
 #[cfg(test)]
@@ -115,7 +105,10 @@ mod tests {
             is_root: true,
         };
 
-        assert_eq!(resolve_surface_location(parent.origin, parent.is_root, Point::from((9, 9))), Point::from((120, 80)));
+        assert_eq!(
+            resolve_surface_location(parent.origin, parent.is_root, Point::from((9, 9))),
+            Point::from((120, 80))
+        );
     }
 
     #[test]
@@ -123,7 +116,10 @@ mod tests {
         let parent = Point::<i32, Logical>::from((120, 80));
         let offset = Point::<i32, Logical>::from((24, -12));
 
-        assert_eq!(resolve_surface_location(parent, false, offset), Point::from((144, 68)));
+        assert_eq!(
+            resolve_surface_location(parent, false, offset),
+            Point::from((144, 68))
+        );
     }
 
     #[test]
@@ -138,5 +134,4 @@ mod tests {
             Point::from((115, 68))
         );
     }
-
 }

@@ -29,13 +29,25 @@ pub enum VulkanDrawPassError {
 impl fmt::Display for VulkanDrawPassError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::EmptyDraw => formatter.write_str("A Vulkan draw requires at least one vertex and instance"),
-            Self::UndefinedFinalState => formatter.write_str("A draw pass cannot leave its image undefined"),
-            Self::MissingColorAttachmentUsage => formatter.write_str("The Vulkan image lacks color-attachment usage"),
-            Self::IncompatiblePipeline => formatter.write_str("The graphics pipeline is incompatible with the attachment"),
-            Self::NonFiniteClearColor => formatter.write_str("Draw-pass clear color components must all be finite"),
+            Self::EmptyDraw => {
+                formatter.write_str("A Vulkan draw requires at least one vertex and instance")
+            }
+            Self::UndefinedFinalState => {
+                formatter.write_str("A draw pass cannot leave its image undefined")
+            }
+            Self::MissingColorAttachmentUsage => {
+                formatter.write_str("The Vulkan image lacks color-attachment usage")
+            }
+            Self::IncompatiblePipeline => {
+                formatter.write_str("The graphics pipeline is incompatible with the attachment")
+            }
+            Self::NonFiniteClearColor => {
+                formatter.write_str("Draw-pass clear color components must all be finite")
+            }
             Self::InvalidViewport => formatter.write_str("The Vulkan surface viewport is invalid"),
-            Self::InvalidScissor => formatter.write_str("The Vulkan surface scissor is outside the attachment"),
+            Self::InvalidScissor => {
+                formatter.write_str("The Vulkan surface scissor is outside the attachment")
+            }
         }
     }
 }
@@ -236,10 +248,8 @@ impl VulkanDrawPass {
             return Err(VulkanDrawPassError::InvalidViewport);
         }
 
-        let x = u32::try_from(scissor.offset.x)
-            .map_err(|_| VulkanDrawPassError::InvalidScissor)?;
-        let y = u32::try_from(scissor.offset.y)
-            .map_err(|_| VulkanDrawPassError::InvalidScissor)?;
+        let x = u32::try_from(scissor.offset.x).map_err(|_| VulkanDrawPassError::InvalidScissor)?;
+        let y = u32::try_from(scissor.offset.y).map_err(|_| VulkanDrawPassError::InvalidScissor)?;
         let right = x
             .checked_add(scissor.extent.width)
             .ok_or(VulkanDrawPassError::InvalidScissor)?;
@@ -258,7 +268,6 @@ impl VulkanDrawPass {
         Ok(())
     }
 }
-
 
 #[cfg(test)]
 mod tests {

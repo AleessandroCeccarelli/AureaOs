@@ -7,8 +7,8 @@
 
 use std::sync::mpsc::Receiver;
 
-use crate::dispatcher::{self, RuntimeCommand};
 use crate::desktop::DesktopState;
+use crate::dispatcher::{self, RuntimeCommand};
 use crate::error::ShellError;
 use crate::event::ShellEvent;
 use crate::session::{DesktopSession, SessionState};

@@ -42,10 +42,7 @@ impl RenderTarget {
     /// The origin is supplied by the output layout. Keeping it on the target
     /// lets each backend translate global surface coordinates into coordinates
     /// local to this output, including multi-monitor arrangements.
-    pub fn from_output(
-        output: &DisplayOutput,
-        logical_origin: (i32, i32),
-    ) -> Option<Self> {
+    pub fn from_output(output: &DisplayOutput, logical_origin: (i32, i32)) -> Option<Self> {
         if !output.is_enabled() {
             return None;
         }

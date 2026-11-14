@@ -8,14 +8,11 @@
 use std::sync::{Arc, Mutex};
 
 use smithay::{
+    reexports::wayland_server::protocol::{wl_buffer::WlBuffer, wl_surface::WlSurface},
     utils::Transform,
-    reexports::wayland_server::protocol::{
-        wl_buffer::WlBuffer,
-        wl_surface::WlSurface,
-    },
     wayland::compositor::{
-        BufferAssignment, SurfaceAttributes, SurfaceData, TraversalAction,
-        with_surface_tree_downward, with_states,
+        BufferAssignment, SurfaceAttributes, SurfaceData, TraversalAction, with_states,
+        with_surface_tree_downward,
     },
 };
 
@@ -154,12 +151,10 @@ fn update_surface_state(states: &SurfaceData) -> Result<(), ShmBufferError> {
             current.buffer = None;
             Ok(())
         }
-        None if !current.damage.is_empty() => {
-            match state.processed_buffer() {
-                Some(buffer) => copy_surface_buffer(state, &buffer),
-                None => Ok(()),
-            }
-        }
+        None if !current.damage.is_empty() => match state.processed_buffer() {
+            Some(buffer) => copy_surface_buffer(state, &buffer),
+            None => Ok(()),
+        },
         None => Ok(()),
     };
 
