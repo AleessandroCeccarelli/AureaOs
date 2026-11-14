@@ -8,10 +8,10 @@
 pub mod shm_buffer;
 pub mod shm_surface;
 
+use std::sync::Arc;
+
 use shm_buffer::ShmBufferSnapshot;
 use shm_surface::surface_snapshot_with_revision;
-
-use std::sync::Arc;
 
 use smithay::{
     backend::renderer::{
