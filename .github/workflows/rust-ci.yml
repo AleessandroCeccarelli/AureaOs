@@ -93,6 +93,7 @@ jobs:
           python3 -m py_compile tools/build/create_staging_parent.py tools/build/publish_rootfs.py tools/security/audit-rootfs-symlinks.py
           sudo python3 -m unittest discover -s tools/build/tests -p 'test_*.py' -v
           sudo bash tools/security/tests/test-audit-rootfs-permissions.sh
+          sudo python3 tools/security/tests/test-audit-rootfs-symlinks.py
           bash tools/installer/tests/check-hardware-requirements.sh
 
       - name: Check workspace
