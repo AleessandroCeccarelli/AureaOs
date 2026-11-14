@@ -8,6 +8,7 @@
 use std::sync::mpsc::Receiver;
 
 use crate::dispatcher::{self, RuntimeCommand};
+use crate::desktop::DesktopState;
 use crate::error::ShellError;
 use crate::event::ShellEvent;
 use crate::session::{DesktopSession, SessionState};
@@ -17,6 +18,7 @@ use crate::state::{ShellLifecycle, ShellState};
 pub struct ShellRuntime {
     lifecycle: ShellLifecycle,
     session: DesktopSession,
+    desktop: DesktopState,
 }
 
 impl ShellRuntime {
@@ -25,6 +27,7 @@ impl ShellRuntime {
         Self {
             lifecycle: ShellLifecycle::new(),
             session: DesktopSession::new(),
+            desktop: DesktopState::default(),
         }
     }
 
@@ -82,6 +85,16 @@ impl ShellRuntime {
         }
 
         self.lifecycle.stop()
+    }
+
+    /// Returns the current desktop presentation state.
+    pub fn desktop_state(&self) -> &DesktopState {
+        &self.desktop
+    }
+
+    /// Returns mutable desktop presentation state.
+    pub fn desktop_state_mut(&mut self) -> &mut DesktopState {
+        &mut self.desktop
     }
 
     /// Returns the current runtime state.
