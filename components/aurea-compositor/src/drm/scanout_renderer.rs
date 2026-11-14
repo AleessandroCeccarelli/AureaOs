@@ -3,7 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! First Vulkan-to-DRM scanout path using an owned DMA-BUF image.
+//! Vulkan SHM composition and DMA-BUF-backed DRM scanout.
 
 use std::{error::Error, fmt};
 
