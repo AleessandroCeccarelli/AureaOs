@@ -31,6 +31,7 @@ TARGET="${HOME}/Documenti/AureaOS-Build/rootfs"
 ROOTFS_WORK=""
 ROOTFS_STAGE_PARENT_NAME=""
 ROOTFS_STAGE_PARENT_ID=""
+SUDO_KEEPALIVE_PID=""
 BOOT_MODE="none"
 WITH_RAR=0
 
@@ -78,10 +79,9 @@ run_in_rootfs_with_network_mode() {
     capability_options+=(--drop-capability=CAP_SYS_ADMIN)
   fi
 
-  # Long package operations can outlive sudo timestamp_timeout. Refresh the
-  # credential immediately before each privileged container invocation so
-  # a timeout cannot be misreported as a rootfs validation failure.
-  sudo -v
+  # The bootstrap starts a keepalive after the initial interactive sudo -v.
+  # Do not unexpectedly prompt from inside a long-running container operation.
+  sudo -n -v
 
   sudo systemd-nspawn \
     --quiet \
@@ -93,6 +93,27 @@ run_in_rootfs_with_network_mode() {
     --as-pid2 \
     "${capability_options[@]}" \
     -- "$@"
+}
+
+start_sudo_keepalive() {
+  # Refresh the sudo timestamp well before the usual timeout. The background
+  # process shares this script's sudo timestamp but never reads from the TTY.
+  # A failed refresh terminates the helper; subsequent sudo -n calls then fail
+  # closed instead of hanging while trying to prompt during unattended work.
+  (
+    while sleep 60; do
+      sudo -n -v || exit 1
+    done
+  ) </dev/null >/dev/null 2>&1 &
+  SUDO_KEEPALIVE_PID=$!
+}
+
+stop_sudo_keepalive() {
+  if [[ -n "$SUDO_KEEPALIVE_PID" ]]; then
+    kill "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
+    wait "$SUDO_KEEPALIVE_PID" 2>/dev/null || true
+    SUDO_KEEPALIVE_PID=""
+  fi
 }
 
 usage() {
@@ -126,8 +147,13 @@ cleanup() {
 
   if [[ -n "$ROOTFS_WORK" && -d "$ROOTFS_WORK" ]] && ((POLICY_INSTALLED)); then
     echo "Pulizia: rimozione di policy-rc.d..." >&2
-    sudo rm -f -- "$ROOTFS_WORK/usr/sbin/policy-rc.d"
+    if ! sudo -n rm -f -- "$ROOTFS_WORK/usr/sbin/policy-rc.d"; then
+      echo "Avviso: impossibile rimuovere policy-rc.d senza prompt sudo." >&2
+      echo "La staging è conservata per consentire la pulizia manuale." >&2
+    fi
   fi
+
+  stop_sudo_keepalive
 
   [[ -z "$SOURCES_TMP" ]] || rm -f -- "$SOURCES_TMP"
   [[ -z "$POLICY_TMP" ]] || rm -f -- "$POLICY_TMP"
@@ -346,6 +372,7 @@ echo "Nessun pacchetto verrà installato sul sistema host."
 echo
 
 sudo -v
+start_sudo_keepalive
 
 # Pin the destination parent and build in a root-owned staging directory.
 cd -- "$TARGET_PARENT"
