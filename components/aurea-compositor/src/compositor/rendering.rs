@@ -25,6 +25,9 @@ pub enum CompositorRenderError<E> {
     /// The requested output is disabled.
     OutputDisabled(OutputId),
 
+    /// The registered output has no logical position in the output layout.
+    OutputPositionUnavailable(OutputId),
+
     /// No frame request is waiting for this output.
     FrameNotRequested(OutputId),
 
@@ -43,6 +46,9 @@ impl<E: Error + 'static> std::fmt::Display for CompositorRenderError<E> {
             }
             Self::OutputDisabled(output_id) => {
                 write!(formatter, "Output {output_id} is disabled")
+            }
+            Self::OutputPositionUnavailable(output_id) => {
+                write!(formatter, "Output {output_id} has no logical layout position")
             }
             Self::FrameNotRequested(output_id) => {
                 write!(formatter, "No frame was requested for output {output_id}")
@@ -87,7 +93,14 @@ impl AureaCompositor {
             return Err(CompositorRenderError::OutputDisabled(output_id));
         }
 
-        let target = RenderTarget::from_output(output)
+        let position = self
+            .output_manager
+            .layout()
+            .get(output_id)
+            .ok_or(CompositorRenderError::OutputPositionUnavailable(
+                output_id,
+            ))?;
+        let target = RenderTarget::from_output(output, (position.x(), position.y()))
             .ok_or(CompositorRenderError::OutputDisabled(output_id))?;
 
         let token = self
