@@ -21,4 +21,12 @@ glslangValidator -V --target-env vulkan1.3 \
     -S frag "${SOURCE_DIR}/triangle.frag" \
     -o "${OUTPUT_DIR}/triangle.frag.spv"
 
+glslangValidator -V --target-env vulkan1.3 \
+    -S vert "${SOURCE_DIR}/surface_texture.vert" \
+    -o "${OUTPUT_DIR}/surface_texture.vert.spv"
+
+glslangValidator -V --target-env vulkan1.3 \
+    -S frag "${SOURCE_DIR}/surface_texture.frag" \
+    -o "${OUTPUT_DIR}/surface_texture.frag.spv"
+
 printf 'Compiled Vulkan shaders into %s\n' "${OUTPUT_DIR}"
