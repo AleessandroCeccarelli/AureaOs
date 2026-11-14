@@ -63,7 +63,11 @@ fn compile_shader(source: &Path, destination: &Path, stage: &str) {
         panic!(
             "Vulkan shader compilation failed for {}:\n{}",
             source.display(),
-            String::from_utf8_lossy(&result.stderr)
+            format!(
+                "{}{}",
+                String::from_utf8_lossy(&result.stdout),
+                String::from_utf8_lossy(&result.stderr)
+            )
         );
     }
 }
