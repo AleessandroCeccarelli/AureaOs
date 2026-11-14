@@ -4,11 +4,11 @@
 
 Questo documento fotografa il percorso di presentazione fisica presente nel repository. Non equivale a una certificazione hardware né dichiara completato il desktop grafico.
 
-## Stato implementato
+## Stato implementato nel codice
 
 Il percorso DRM attivo non usa il metodo generico `VulkanBackend::render_frame`, che resta intenzionalmente non disponibile finché non esiste un target di presentazione generico. Il server DRM instrada invece i frame richiesti verso `VulkanOutputScanoutBackend` in `drm/scanout_renderer.rs`.
 
-La catena attuale è:
+La catena di presentazione è:
 
 1. Il server apre la sessione libseat e il dispositivo DRM primario.
 2. Udev individua i dispositivi; il compositor inizializza i dispositivi GBM e i backend Vulkan compatibili.
@@ -16,26 +16,31 @@ La catena attuale è:
 4. Il ciclo Calloop individua gli output con un frame pendente.
 5. Il backend negozia formato e modifier compatibili tra Vulkan e il piano primario KMS.
 6. Viene allocata un'immagine Vulkan esportabile come DMA-BUF, registrata come framebuffer KMS.
-7. Vulkan registra il clear pass, trasferisce la proprietà dell'immagine alla famiglia queue esterna e attende il completamento GPU.
-8. KMS riceve il framebuffer tramite il backend di presentazione. Il VBlank completa la transizione di presentazione e permette di ritirare il framebuffer precedente.
+7. Il compositor raccoglie gli snapshot SHM delle superfici XDG mappate, calcola posizione e dimensione fisica rispetto all'origine e alla scala dell'output, e scarta le superfici completamente fuori dall'area visibile.
+8. I buffer SHM supportati vengono caricati come texture RGBA8; una pipeline Vulkan con blending compone le superfici nell'ordine della scena sopra il colore di sfondo.
+9. Vulkan registra il rilascio dell'immagine alla famiglia queue esterna, attende il completamento GPU e KMS riceve il framebuffer tramite il backend di presentazione.
+10. Il VBlank completa la transizione di presentazione e permette di riutilizzare o ritirare il framebuffer precedente.
 
-Il primo contenuto presentato è un colore uniforme blu scuro (`FIRST_FRAME_CLEAR_COLOR`). Questo è un primo percorso Vulkan → DMA-BUF/GBM → KMS, non ancora il rendering delle finestre o dell'interfaccia AureaOS.
+Gli shader per la composizione vengono compilati da `build.rs` con `glslangValidator` durante le build con feature `drm`. Su Fedora il pacchetto richiesto è `glslang`.
 
 ## Limiti ancora aperti
 
-- `RenderScene` viene costruita dal compositor, ma il backend di scanout attuale non la usa.
-- Le superfici XDG mappate non sono ancora importate/composite nell'immagine Vulkan di scanout.
-- Il frame viene allocato per il percorso iniziale e ritirato dopo il rilascio KMS; il riuso efficiente delle immagini e la gestione delle dimensioni/formati al cambio modalità sono lavoro successivo.
-- Il percorso fisico deve ancora essere verificato su hardware reale, inclusi formati/modifier, DMA-BUF export, ownership delle queue, atomic KMS, VBlank, hotplug e teardown.
-- Il successo di una build o dei test unitari non dimostra che il monitor mostri correttamente il frame.
+- La composizione iniziale supporta i buffer Wayland SHM ARGB8888 e XRGB8888 già normalizzati dal percorso di snapshot.
+- I buffer Wayland DMA-BUF non sono ancora importati come superfici; non vanno confusi con il DMA-BUF usato come destinazione di scanout.
+- Le trasformazioni buffer diverse da `Transform::Normal` vengono rifiutate esplicitamente: non vengono presentate texture ruotate o specchiate in modo scorretto.
+- Le texture SHM vengono caricate in modo sincrono e ricreate a ogni frame. Il caching per revisione e la gestione incrementale del damage sono ottimizzazioni successive.
+- La pipeline e le risorse descriptor vengono ricreate per frame con superfici visibili; il percorso è di bring-up, non ancora ottimizzato per uso quotidiano.
+- Il limite aggregato del frame è 256 MiB di snapshot SHM visibili e 128 superfici; i singoli snapshot hanno inoltre il proprio limite.
+- Il percorso fisico deve ancora essere verificato su hardware reale, inclusi formati/modifier, DMA-BUF export, ownership delle queue, blending, atomic KMS, VBlank, hotplug e teardown.
+- Il successo di una build o dei test unitari non dimostra che il monitor mostri correttamente le finestre.
 
 ## Prossimi passi, in ordine
 
-1. Validare su Fedora il frame uniforme su un output reale, senza avviare test KMS distruttivi sulla sessione grafica in uso.
-2. Rendere esplicito il contratto di frame e di ownership tra rendering Vulkan e presentazione KMS; mantenere la risorsa viva fino al rilascio confermato.
-3. Introdurre un percorso di import delle superfici Wayland compatibile con i buffer supportati, con controlli rigorosi su formato, modifier, stride, offset e sincronizzazione.
-4. Comporre gli elementi della scena nel target Vulkan e presentare il risultato attraverso lo stesso percorso KMS già esistente.
-5. Aggiungere riuso controllato dei frame e ricreazione delle risorse quando cambiano modalità o dimensioni dell'output.
+1. Eseguire pull, formattazione, `cargo check -p aurea-compositor --features drm` e test unitari su Fedora.
+2. Verificare la composizione SHM con client Wayland reali e controllare ordine delle superfici, alpha, clipping, scala e multi-monitor.
+3. Aggiungere import e sincronizzazione dei buffer DMA-BUF Wayland con controlli rigorosi su formato, modifier, stride, offset e ownership.
+4. Implementare le trasformazioni buffer non standard e la gestione corretta di viewport/damage.
+5. Introdurre cache texture basata su revisione e upload incrementale, senza rilasciare risorse ancora usate dalla GPU.
 6. Verificare errori, hot-unplug, sospensione/ripresa e teardown con più output prima di considerare il percorso affidabile.
 
 ## Regole di implementazione
@@ -49,6 +54,6 @@ Il primo contenuto presentato è un colore uniforme blu scuro (`FIRST_FRAME_CLEA
 
 ## Verifica locale prevista
 
-Dopo il pull su Fedora, verificare prima compilazione e test unitari. La prova fisica va eseguita solo da una sessione di test controllata, preferibilmente con un secondo VT o un ambiente dedicato e una procedura di ripristino. Registrare dispositivo DRM, GPU selezionata, output, formato/modifier scelto, risultato del modeset/present e comportamento allo shutdown.
+Dopo il pull su Fedora, verificare prima compilazione e test unitari. La prova fisica va eseguita solo da una sessione di test controllata, preferibilmente con un secondo VT o un ambiente dedicato e una procedura di ripristino. Registrare dispositivo DRM, GPU selezionata, output, formato/modifier scelto, numero di superfici composte, risultato del modeset/present e comportamento allo shutdown.
 
-Fino al completamento di queste verifiche, il percorso va considerato **implementazione iniziale in sviluppo**, non una pipeline desktop pronta per l'uso quotidiano.
+Fino al completamento di queste verifiche, il percorso va considerato **implementazione SHM iniziale in sviluppo**, non una pipeline desktop pronta per l'uso quotidiano.
