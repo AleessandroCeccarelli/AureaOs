@@ -23,6 +23,7 @@ mod session;
 mod session_events;
 mod socket;
 mod state;
+mod shm;
 
 #[cfg(feature = "drm")]
 mod udev_events;
