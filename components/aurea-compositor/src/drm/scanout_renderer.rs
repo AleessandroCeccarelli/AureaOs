@@ -26,12 +26,10 @@ use crate::{
     vulkan::{
         DrmVulkanCompatibility, VulkanBackend, VulkanClearPass, VulkanCommandBuffer,
         VulkanDrmFramePool, VulkanDrmScanoutFrame, VulkanExternalMemoryCapabilities,
-        VulkanFormatCapabilities, VulkanImageState, VulkanImageTransition, VulkanImageView,
-        VulkanLogicalDevice,
+        VulkanFormatCapabilities, VulkanImageState, VulkanImageView, VulkanLogicalDevice,
+        surface_compositor,
     },
 };
-
-const FIRST_FRAME_CLEAR_COLOR: [f32; 4] = [0.08, 0.18, 0.32, 1.0];
 
 /// Error returned by the initial Vulkan scanout path.
 #[derive(Debug)]
@@ -55,11 +53,7 @@ impl fmt::Display for VulkanScanoutError {
 
 impl Error for VulkanScanoutError {}
 
-/// Presents a clear-only Vulkan frame through the output's native DRM surface.
-///
-/// The scene is intentionally not composited yet. This path proves the complete
-/// Vulkan image, DMA-BUF, GBM framebuffer and KMS presentation lifecycle before
-/// Wayland surface rendering is connected.
+/// Composites Wayland SHM surfaces into a Vulkan image and presents it through DRM/KMS.
 pub(crate) struct VulkanOutputScanoutBackend<'a> {
     drm_device: &'a DrmDevice,
     gbm_devices: &'a GbmDeviceManager,
@@ -89,7 +83,7 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
     fn render_frame(
         &mut self,
         target: &RenderTarget,
-        _scene: &RenderScene<'_>,
+        scene: &RenderScene<'_>,
     ) -> Result<(), Self::Error> {
         if target.output_id() != self.output.output_id() {
             return Err(VulkanScanoutError::new(
@@ -242,8 +236,8 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
             presentation,
             framebuffer,
             self.vulkan.device(),
-            target.width(),
-            target.height(),
+            target,
+            scene,
             previous_image_state,
         ) {
             let acquire_result = frame_pool
@@ -284,13 +278,13 @@ fn render_and_present(
     presentation: &mut DrmPresentationBackend,
     framebuffer: DrmFramebufferId,
     device: &VulkanLogicalDevice,
-    width: u32,
-    height: u32,
+    target: &RenderTarget,
+    scene: &RenderScene<'_>,
     previous_image_state: VulkanImageState,
 ) -> Result<(), VulkanScanoutError> {
-    let width_i32 = i32::try_from(width)
+    let width_i32 = i32::try_from(target.width())
         .map_err(|_| VulkanScanoutError::new("DRM output width exceeds supported coordinates"))?;
-    let height_i32 = i32::try_from(height)
+    let height_i32 = i32::try_from(target.height())
         .map_err(|_| VulkanScanoutError::new("DRM output height exceeds supported coordinates"))?;
 
     let (image, framebuffer_handle) = {
@@ -302,50 +296,24 @@ fn render_and_present(
 
     let view = VulkanImageView::color_drm(image)
         .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
-    let mut command_buffer = VulkanCommandBuffer::new(device).map_err(|error| {
-        VulkanScanoutError::new(format!("Vulkan command allocation failed: {error:?}"))
-    })?;
 
-    command_buffer
-        .begin(smithay::reexports::ash::vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
-        .map_err(|error| {
-            VulkanScanoutError::new(format!("Vulkan command begin failed: {error:?}"))
-        })?;
-
-    VulkanClearPass::record_color(
-        command_buffer.handle(),
-        &view,
-        previous_image_state,
-        VulkanImageState::General,
-        FIRST_FRAME_CLEAR_COLOR,
-    )
-    .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
-
-    VulkanImageTransition::record_release_to_foreign(
+    surface_compositor::render_and_release(
         device,
-        command_buffer.handle(),
-        image.image(),
-        VulkanImageState::General,
+        &view,
+        target,
+        scene,
+        previous_image_state,
+        || {
+            let coordinator = presentation.frame_coordinator_mut();
+            coordinator
+                .begin_render(framebuffer)
+                .map_err(|error| error.to_string())?;
+            coordinator
+                .mark_submitted(framebuffer)
+                .map_err(|error| error.to_string())
+        },
     )
     .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
-
-    command_buffer.end().map_err(|error| {
-        VulkanScanoutError::new(format!("Vulkan command end failed: {error:?}"))
-    })?;
-
-    {
-        let coordinator = presentation.frame_coordinator_mut();
-        coordinator
-            .begin_render(framebuffer)
-            .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
-        coordinator
-            .mark_submitted(framebuffer)
-            .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
-    }
-
-    command_buffer.submit_and_wait().map_err(|error| {
-        VulkanScanoutError::new(format!("Vulkan queue submission failed: {error:?}"))
-    })?;
 
     {
         let coordinator = presentation.frame_coordinator_mut();
