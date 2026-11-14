@@ -78,7 +78,7 @@ run_in_rootfs_with_network_mode() {
     capability_options+=(--drop-capability=CAP_SYS_ADMIN)
   fi
 
-  sudo systemd-nspawn \
+  # Long package operations can outlive sudo timestamp_timeout. Refresh the\n  # credential immediately before each privileged container invocation so\n  # a timeout cannot be misreported as a rootfs validation failure.\n  sudo -v\n\n  sudo systemd-nspawn \
     --quiet \
     --register=no \
     --directory="$ROOTFS_WORK" \
