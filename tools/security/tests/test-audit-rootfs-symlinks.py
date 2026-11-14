@@ -57,6 +57,14 @@ class RootfsSymlinkAuditTests(unittest.TestCase):
         result = self.run_audit()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_accepts_debian_relative_var_lock_link(self) -> None:
+        (self.root / "var/lock").symlink_to("../run/lock")
+        config = self.root / "usr/lib/tmpfiles.d/debian.conf"
+        config.write_text("d /run/lock 1777 root root - -\\n", encoding="utf-8")
+
+        result = self.run_audit()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_rejects_var_lock_without_creation_rule(self) -> None:
         (self.root / "var/lock").symlink_to("/run/lock")
         result = self.run_audit()
