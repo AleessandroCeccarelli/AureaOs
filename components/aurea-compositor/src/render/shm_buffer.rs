@@ -137,6 +137,7 @@ impl fmt::Display for ShmBufferError {
 
 impl std::error::Error for ShmBufferError {}
 
+#[derive(Debug)]
 struct ValidatedLayout {
     offset: usize,
     width: usize,
