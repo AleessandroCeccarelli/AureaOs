@@ -20,24 +20,40 @@ use super::shm_buffer::{ShmBufferError, ShmBufferSnapshot};
 /// Snapshot retained independently from client-writable SHM memory.
 #[derive(Default)]
 pub struct SurfaceShmBufferState {
-    snapshot: Mutex<Option<Arc<ShmBufferSnapshot>>>,
+    state: Mutex<SurfaceSnapshotState>,
+}
+
+#[derive(Default)]
+struct SurfaceSnapshotState {
+    revision: u64,
+    snapshot: Option<Arc<ShmBufferSnapshot>>,
 }
 
 impl SurfaceShmBufferState {
     /// Returns a shared snapshot without copying its pixel allocation.
     pub fn snapshot(&self) -> Option<Arc<ShmBufferSnapshot>> {
-        self.snapshot
+        self.snapshot_with_revision().map(|(_, snapshot)| snapshot)
+    }
+
+    /// Returns the update revision and shared pixel snapshot.
+    pub fn snapshot_with_revision(&self) -> Option<(u64, Arc<ShmBufferSnapshot>)> {
+        let state = self
+            .state
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .clone()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state
+            .snapshot
+            .as_ref()
+            .map(|snapshot| (state.revision, Arc::clone(snapshot)))
     }
 
     fn replace(&self, snapshot: Option<ShmBufferSnapshot>) {
-        *self
-            .snapshot
+        let mut state = self
+            .state
             .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner) =
-            snapshot.map(Arc::new);
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state.revision = state.revision.wrapping_add(1);
+        state.snapshot = snapshot.map(Arc::new);
     }
 }
 
@@ -131,9 +147,28 @@ mod tests {
     }
 
     #[test]
-    fn replacing_with_none_keeps_state_empty() {
+    fn replacing_with_snapshot_advances_revision_without_copying_pixels() {
         let state = SurfaceShmBufferState::default();
+        let pixels = vec![0x10, 0x20, 0x30, 0xff];
+        let snapshot = ShmBufferSnapshot::from_rgba8(1, 1, pixels).unwrap();
+
+        state.replace(Some(snapshot));
+        let (revision, first) = state.snapshot_with_revision().unwrap();
+        let second = state.snapshot().unwrap();
+
+        assert_eq!(revision, 1);
+        assert!(Arc::ptr_eq(&first, &second));
+    }
+
+    #[test]
+    fn removing_snapshot_advances_revision_and_invalidates_pixels() {
+        let state = SurfaceShmBufferState::default();
+        state.replace(Some(
+            ShmBufferSnapshot::from_rgba8(1, 1, vec![0, 0, 0, 0]).unwrap(),
+        ));
         state.replace(None);
+
         assert!(state.snapshot().is_none());
+        assert_eq!(state.state.lock().unwrap().revision, 2);
     }
 }
