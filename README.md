@@ -141,6 +141,7 @@ The main documentation files are:
 - [Initial architecture](docs/architecture/INITIAL-ARCHITECTURE.md) — system layers and open decisions.
 - [Debian base](docs/architecture/DEBIAN-BASE.md) — current bootstrap implementation and limitations.
 - [Debian package manifests](debian/packages/README.md) — package groups and profile status.
+- [External Services Register](docs/architecture/EXTERNAL-SERVICES.md) — hosting platforms, package sources, and planned external integrations.
 - [Planned applications](docs/product/PLANNED-APPLICATIONS.md) — candidate first-party applications.
 - [Planned system tools](docs/product/PLANNED-SYSTEM-TOOLS.md) — printer, scanner, and resource-monitor requirements.
 - [AureaOS Human Interfaces](docs/human-interfaces/README.md) — design resources and planned shared UI library.
