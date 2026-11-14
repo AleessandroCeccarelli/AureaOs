@@ -77,6 +77,10 @@ class BootstrapKeyboardTests(unittest.TestCase):
         self.assertIn('"$LOCALE_CONFIG" "$ROOTFS_WORK/etc/locale.conf"', source)
         self.assertIn('cmp -s "$LOCALE_GEN_CONFIG" "$ROOTFS_WORK/etc/locale.gen"', source)
         self.assertIn("locale -a", source)
+        self.assertIn('locale_output="$(run_in_rootfs locale -a 2>&1)"', source)
+        self.assertIn("tr -d '\\r'", source)
+        self.assertIn("Errore: impossibile elencare i locale della rootfs:", source)
+        self.assertIn("Errore: locale en_US.UTF-8 non disponibile nella rootfs.", source)
 
 
 if __name__ == "__main__":
