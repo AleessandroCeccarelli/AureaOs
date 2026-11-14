@@ -549,7 +549,11 @@ if ! sudo cmp -s "$LOCALE_CONFIG" "$ROOTFS_WORK/etc/locale.conf"; then
   echo "Errore: configurazione locale diversa da quella versionata." >&2
   exit 1
 fi
-if ! run_in_rootfs locale -a | grep -Eiq '^en_US[.]utf8
+if ! run_in_rootfs locale -a | grep -Eiq '^en_US[.]utf8$'; then
+  echo "Errore: locale en_US.UTF-8 non generata." >&2
+  exit 1
+fi
+if [[ ! -L "$ROOTFS_WORK/etc/vconsole.conf" ||
       "$(sudo readlink -- "$ROOTFS_WORK/etc/vconsole.conf")" != "default/keyboard" ||
       ! -f "$ROOTFS_WORK/etc/default/keyboard" ]]; then
   echo "Errore: collegamento /etc/vconsole.conf non risolto correttamente." >&2
