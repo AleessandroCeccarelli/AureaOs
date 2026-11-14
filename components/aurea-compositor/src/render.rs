@@ -9,7 +9,7 @@ pub mod shm_buffer;
 pub mod shm_surface;
 
 use shm_buffer::ShmBufferSnapshot;
-use shm_surface::surface_snapshot;
+use shm_surface::surface_snapshot_with_revision;
 
 use std::sync::Arc;
 
@@ -96,12 +96,12 @@ impl<'a> RenderScene<'a> {
     /// Subsurface snapshots are stored independently on their Wayland surfaces;
     /// traversal and composition of the complete surface tree are handled by a
     /// later scene-import stage.
-    pub fn shm_snapshots(&self) -> Vec<(Point<i32, Logical>, Arc<ShmBufferSnapshot>)> {
+    pub fn shm_snapshots(&self) -> Vec<(Point<i32, Logical>, u64, Arc<ShmBufferSnapshot>)> {
         self.toplevels
             .iter()
             .filter_map(|toplevel| {
-                surface_snapshot(toplevel.surface.wl_surface())
-                    .map(|snapshot| (toplevel.location, snapshot))
+                surface_snapshot_with_revision(toplevel.surface.wl_surface())
+                    .map(|(revision, snapshot)| (toplevel.location, revision, snapshot))
             })
             .collect()
     }
