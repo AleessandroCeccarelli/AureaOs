@@ -604,7 +604,20 @@ if ! sudo cmp -s "$LOCALE_GEN_CONFIG" "$ROOTFS_WORK/etc/locale.gen"; then
   echo "Errore: configurazione locale.gen diversa da quella versionata." >&2
   exit 1
 fi
-if ! run_in_rootfs locale -a | grep -Eiq '^en_US[.]utf8([.]|$)'; then
+# systemd-nspawn may emit CRLF on stdout even when the command itself
+# succeeds. Capture the output, report execution failures separately, and
+# normalize carriage returns before validating the generated UTF-8 locale.
+if ! locale_output="$(run_in_rootfs locale -a 2>&1)"; then
+  printf 'Errore: impossibile elencare i locale della rootfs:\n%s\n' \
+    "$locale_output" >&2
+  exit 1
+fi
+
+if ! printf '%s\n' "$locale_output" |
+  tr -d '\r' |
+  grep -Eiq '^en_US[.]utf8([.]|$)'; then
+  echo "Errore: locale en_US.UTF-8 non disponibile nella rootfs." >&2
+  printf 'Locale rilevati:\n%s\n' "$locale_output" >&2
   exit 1
 fi
 if [[ ! -L "$ROOTFS_WORK/etc/vconsole.conf" ||
