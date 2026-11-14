@@ -37,7 +37,7 @@ EOF
 make_valid_rootfs() {
   local rootfs="$1"
   local shadow_gid=60000 messagebus_gid=100 mail_gid=8 journal_gid=101 relative
-  mkdir -p "$rootfs"/{etc,usr/bin,usr/sbin,usr/lib/dbus-1.0,usr/lib/polkit-1,var/tmp,var/mail,var/log/journal,root,tmp,dev/shm}
+  mkdir -p "$rootfs"/{etc/sudoers.d,usr/bin,usr/sbin,usr/lib/dbus-1.0,usr/lib/polkit-1,var/tmp,var/mail,var/log/journal,root,tmp,dev/shm}
   touch "$rootfs/etc/passwd" "$rootfs/etc/group" "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
   printf 'root:x:0:\nshadow:x:%s:\nmessagebus:x:%s:\nmail:x:%s:\nsystemd-journal:x:%s:\n' \
     "$shadow_gid" "$messagebus_gid" "$mail_gid" "$journal_gid" > "$rootfs/etc/group"
@@ -81,6 +81,7 @@ make_valid_rootfs() {
   chmod 2755 "$rootfs/var/log/journal"
   chmod 0644 "$rootfs/etc/passwd" "$rootfs/etc/group"
   chmod 0640 "$rootfs/etc/shadow" "$rootfs/etc/gshadow"
+  chmod 0750 "$rootfs/etc/sudoers.d"
   for relative in "${root_suid_files[@]}"; do
     chmod 4755 "$rootfs/$relative"
   done
@@ -116,6 +117,22 @@ ROOTFS="$WORK/rootfs"
 make_valid_rootfs "$ROOTFS"
 write_getcap 0
 expect_pass "valid minimal rootfs" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+
+chmod 0755 "$ROOTFS/etc/sudoers.d"
+expect_fail "reject permissive sudoers.d directory" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+chmod 0750 "$ROOTFS/etc/sudoers.d"
+expect_pass "accept private sudoers.d directory" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+
+mknod "$ROOTFS/dev/null" c 1 3
+chmod 0666 "$ROOTFS/dev/null"
+expect_pass "accept allowlisted root-owned /dev/null character device" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+mknod "$ROOTFS/dev/unapproved-device" c 1 5
+chmod 0666 "$ROOTFS/dev/unapproved-device"
+expect_fail "reject unapproved world-writable character device" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+rm -f "$ROOTFS/dev/unapproved-device"
+chmod 0600 "$ROOTFS/dev/null"
+expect_fail "reject unexpected mode on allowlisted character device" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" "$ROOTFS"
+rm -f "$ROOTFS/dev/null"
 expect_fail "reject non-private staging root mode" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" --staging "$ROOTFS"
 chmod 0700 "$ROOTFS"
 expect_pass "accept private staging root mode" env PATH="$FAKE_BIN:$PATH" bash "$AUDIT" --staging "$ROOTFS"
