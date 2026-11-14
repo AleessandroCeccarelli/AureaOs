@@ -92,8 +92,9 @@ impl<'a> RenderScene<'a> {
 
     /// Returns owned SHM snapshots for every mapped surface in tree render order.
     ///
-    /// Each snapshot carries its accumulated logical position relative to the
-    /// output. Subsurface stacking follows Smithay's surface-tree traversal.
+    /// Each snapshot carries its accumulated global logical position. The
+    /// output backend subtracts its own layout origin before physical scaling.
+    /// Subsurface stacking follows Smithay's surface-tree traversal.
     pub fn shm_snapshots(&self) -> Vec<SurfaceTreeSnapshot> {
         self.toplevels
             .iter()
