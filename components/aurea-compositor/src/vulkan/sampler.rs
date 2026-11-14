@@ -59,6 +59,10 @@ impl<'device> VulkanSampler<'device> {
     pub fn handle(&self) -> vk::Sampler {
         self.handle
     }
+
+    pub(super) fn device_handle(&self) -> vk::Device {
+        self.device.handle().handle()
+    }
 }
 
 impl Drop for VulkanSampler<'_> {
