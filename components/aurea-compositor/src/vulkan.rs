@@ -45,6 +45,7 @@ mod queue_submitter;
 mod readback_buffer;
 mod rendering_features;
 mod shader_module;
+mod upload_buffer;
 
 use std::{error::Error, fmt};
 
@@ -119,5 +120,6 @@ pub use queue::VulkanQueueFamilyInfo;
 pub use readback_buffer::{VulkanReadbackBuffer, VulkanReadbackError};
 pub use rendering_features::VulkanRenderingFeaturePlan;
 pub use shader_module::{VulkanShaderError, VulkanShaderModule};
+pub use upload_buffer::{VulkanUploadBuffer, VulkanUploadError};
 
 pub(super) use queue_submitter::VulkanQueueSubmitter;
