@@ -100,6 +100,41 @@ impl ShmBufferSnapshot {
         })
     }
 
+    /// Creates an owned RGBA8 snapshot for compositor-generated pixel data.
+    pub(crate) fn from_rgba8(
+        width: u32,
+        height: u32,
+        pixels: Vec<u8>,
+    ) -> Result<Self, ShmBufferError> {
+        if width == 0 || height == 0 {
+            return Err(ShmBufferError::InvalidDimensions);
+        }
+
+        let expected_len = usize::try_from(width)
+            .ok()
+            .and_then(|width| {
+                usize::try_from(height)
+                    .ok()
+                    .and_then(|height| width.checked_mul(height))
+            })
+            .and_then(|pixels| pixels.checked_mul(4))
+            .ok_or(ShmBufferError::SnapshotTooLarge)?;
+
+        if expected_len > MAX_SHM_SNAPSHOT_BYTES {
+            return Err(ShmBufferError::SnapshotTooLarge);
+        }
+        if pixels.len() != expected_len {
+            return Err(ShmBufferError::InvalidPixelData);
+        }
+
+        Ok(Self {
+            width,
+            height,
+            format: ShmPixelFormat::Rgba8888,
+            pixels,
+        })
+    }
+
     pub fn width(&self) -> u32 {
         self.width
     }
@@ -157,6 +192,7 @@ pub enum ShmBufferError {
     InvalidPool,
     OutOfBounds,
     SnapshotTooLarge,
+    InvalidPixelData,
 }
 
 impl fmt::Display for ShmBufferError {
