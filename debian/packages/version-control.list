@@ -1,3 +1,4 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Version control client for cloning and maintaining AureaOS sources.
+# Version control and hosting-service clients.
 git
+glab
