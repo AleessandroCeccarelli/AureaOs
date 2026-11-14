@@ -61,13 +61,34 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         shaders: VulkanGraphicsShaders<'_, 'device>,
         color_format: vk::Format,
     ) -> Result<Self, VulkanGraphicsPipelineError> {
+        Self::new_with_descriptor_layouts(device, shaders, color_format, &[])
+    }
+
+    /// Creates a graphics pipeline with the supplied descriptor-set layouts.
+    ///
+    /// Descriptor layouts must belong to the same Vulkan device. Their
+    /// descriptor sets can then be bound before issuing a draw.
+    pub fn new_with_descriptor_layouts(
+        device: &'device VulkanLogicalDevice,
+        shaders: VulkanGraphicsShaders<'_, 'device>,
+        color_format: vk::Format,
+        descriptor_layouts: &[&super::VulkanTextureDescriptorSetLayout<'device>],
+    ) -> Result<Self, VulkanGraphicsPipelineError> {
         if shaders.vertex.device_handle() != device.handle().handle()
             || shaders.fragment.device_handle() != device.handle().handle()
+            || descriptor_layouts
+                .iter()
+                .any(|layout| layout.device_handle() != device.handle().handle())
         {
             return Err(VulkanGraphicsPipelineError::DeviceMismatch);
         }
 
-        let layout_info = vk::PipelineLayoutCreateInfo::default();
+        let descriptor_handles = descriptor_layouts
+            .iter()
+            .map(|layout| layout.handle())
+            .collect::<Vec<_>>();
+        let layout_info =
+            vk::PipelineLayoutCreateInfo::default().set_layouts(&descriptor_handles);
         let layout = unsafe { device.handle().create_pipeline_layout(&layout_info, None) }
             .map_err(VulkanGraphicsPipelineError::Creation)?;
 
