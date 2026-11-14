@@ -20,7 +20,7 @@ use super::{
     shm_surface::surface_render_snapshot,
 };
 
-/// One owned surface image and its position in the toplevel's logical space.
+/// One owned surface image and its accumulated global logical position.
 pub struct SurfaceTreeSnapshot {
     pub location: Point<i32, Logical>,
     pub revision: u64,
