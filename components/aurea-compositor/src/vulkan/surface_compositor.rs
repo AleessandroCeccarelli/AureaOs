@@ -27,6 +27,8 @@ use super::{
 };
 
 const BACKGROUND_COLOR: [f32; 4] = [0.08, 0.18, 0.32, 1.0];
+const MAX_COMPOSITED_SURFACES: usize = 128;
+const MAX_COMPOSITED_SHM_BYTES: usize = 256 * 1024 * 1024;
 
 /// Errors raised while preparing or recording a SHM-composited frame.
 #[derive(Debug)]
@@ -38,6 +40,8 @@ pub(crate) enum VulkanSurfaceCompositionError {
     Command(String),
     UnsupportedTransform,
     InvalidSurfaceGeometry,
+    TooManySurfaces,
+    FrameMemoryLimitExceeded,
 }
 
 impl fmt::Display for VulkanSurfaceCompositionError {
@@ -50,6 +54,8 @@ impl fmt::Display for VulkanSurfaceCompositionError {
             Self::Command(error) => write!(formatter, "Surface composition command failed: {error}"),
             Self::UnsupportedTransform => formatter.write_str("Non-normal Wayland buffer transforms are not supported by the initial SHM compositor"),
             Self::InvalidSurfaceGeometry => formatter.write_str("A visible Wayland surface has invalid physical geometry"),
+            Self::TooManySurfaces => formatter.write_str("The frame exceeds the configured visible-surface limit"),
+            Self::FrameMemoryLimitExceeded => formatter.write_str("The frame exceeds the configured aggregate SHM texture memory limit"),
         }
     }
 }
@@ -213,6 +219,7 @@ fn visible_surfaces(
     target: &RenderTarget,
 ) -> Result<Vec<VisibleSurface>, VulkanSurfaceCompositionError> {
     let mut visible = Vec::new();
+    let mut total_bytes = 0usize;
 
     for snapshot in scene.shm_snapshots() {
         let geometry = surface_geometry(
@@ -231,6 +238,16 @@ fn visible_surfaces(
 
         if snapshot.buffer_transform != Transform::Normal {
             return Err(VulkanSurfaceCompositionError::UnsupportedTransform);
+        }
+
+        if visible.len() >= MAX_COMPOSITED_SURFACES {
+            return Err(VulkanSurfaceCompositionError::TooManySurfaces);
+        }
+        total_bytes = total_bytes
+            .checked_add(snapshot.snapshot.pixels().len())
+            .ok_or(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded)?;
+        if total_bytes > MAX_COMPOSITED_SHM_BYTES {
+            return Err(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded);
         }
 
         visible.push(VisibleSurface {
