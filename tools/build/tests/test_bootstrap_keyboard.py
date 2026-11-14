@@ -33,10 +33,12 @@ class BootstrapKeyboardTests(unittest.TestCase):
         self.assertIn('BACKSPACE="guess"', config)
 
     def test_system_locale_is_English_utf8(self) -> None:
-        self.assertEqual(
-            LOCALE.read_text(encoding="utf-8").strip(),
-            "LANG=en_US.UTF-8",
-        )
+        assignments = [
+            line.strip()
+            for line in LOCALE.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+        self.assertEqual(assignments, ["LANG=en_US.UTF-8"])
 
     def test_bootstrap_installs_and_verifies_the_versioned_configuration(self) -> None:
         source = BOOTSTRAP.read_text(encoding="utf-8")
