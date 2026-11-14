@@ -5,6 +5,8 @@
 
 //! Collects mapped surfaces into a renderable scene.
 
+pub mod shm_buffer;
+
 use smithay::{
     backend::renderer::{
         ImportAll, Renderer,
