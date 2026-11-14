@@ -8,7 +8,7 @@
 use std::sync::Arc;
 
 use smithay::{
-    utils::{Logical, Point},
+    utils::{Logical, Point, Transform},
     wayland::compositor::{
         SubsurfaceCachedState, SurfaceData, TraversalAction, with_surface_tree_downward,
     },
@@ -17,7 +17,7 @@ use smithay::{
 
 use super::{
     shm_buffer::ShmBufferSnapshot,
-    shm_surface::surface_snapshot_with_revision,
+    shm_surface::surface_render_snapshot,
 };
 
 /// One owned surface image and its position in the toplevel's logical space.
@@ -25,6 +25,8 @@ pub struct SurfaceTreeSnapshot {
     pub location: Point<i32, Logical>,
     pub revision: u64,
     pub snapshot: Arc<ShmBufferSnapshot>,
+    pub buffer_scale: i32,
+    pub buffer_transform: Transform,
 }
 
 #[derive(Clone, Copy)]
@@ -59,11 +61,13 @@ pub fn collect_surface_tree_snapshots(
         },
         |surface, states, parent| {
             let location = surface_location(states, *parent);
-            if let Some((revision, snapshot)) = surface_snapshot_with_revision(surface) {
+            if let Some(render_snapshot) = surface_render_snapshot(surface) {
                 snapshots.push(SurfaceTreeSnapshot {
                     location,
-                    revision,
-                    snapshot,
+                    revision: render_snapshot.revision,
+                    snapshot: render_snapshot.snapshot,
+                    buffer_scale: render_snapshot.buffer_scale,
+                    buffer_transform: render_snapshot.buffer_transform,
                 });
             }
         },
