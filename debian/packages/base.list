@@ -8,6 +8,7 @@ apt
 ca-certificates
 locales
 tzdata
+keyboard-configuration
 bash-completion
 less
 nano
