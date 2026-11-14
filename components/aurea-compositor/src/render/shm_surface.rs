@@ -8,7 +8,10 @@
 use std::sync::{Arc, Mutex};
 
 use smithay::{
-    reexports::wayland_server::protocol::wl_surface::WlSurface,
+    reexports::wayland_server::protocol::{
+        wl_buffer::WlBuffer,
+        wl_surface::WlSurface,
+    },
     wayland::compositor::{
         BufferAssignment, SurfaceAttributes, SurfaceData, TraversalAction,
         with_surface_tree_downward, with_states,
@@ -27,6 +30,7 @@ pub struct SurfaceShmBufferState {
 struct SurfaceSnapshotState {
     revision: u64,
     snapshot: Option<Arc<ShmBufferSnapshot>>,
+    processed_buffer: Option<WlBuffer>,
 }
 
 impl SurfaceShmBufferState {
@@ -54,6 +58,30 @@ impl SurfaceShmBufferState {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         state.revision = state.revision.wrapping_add(1);
         state.snapshot = snapshot.map(Arc::new);
+    }
+
+    fn has_processed(&self, buffer: &WlBuffer) -> bool {
+        let state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state.processed_buffer.as_ref() == Some(buffer)
+    }
+
+    fn mark_processed(&self, buffer: WlBuffer) {
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state.processed_buffer = Some(buffer);
+    }
+
+    fn clear_processed(&self) {
+        let mut state = self
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state.processed_buffer = None;
     }
 }
 
@@ -94,14 +122,15 @@ fn update_surface_state(states: &SurfaceData) -> Result<(), ShmBufferError> {
 
     match current.buffer.as_ref() {
         Some(BufferAssignment::NewBuffer(buffer)) => {
-            match ShmBufferSnapshot::copy_from_wl_buffer(buffer) {
-                Ok(snapshot) => {
-                    state.replace(Some(snapshot));
-                    current.buffer = None;
-                    // Buffer release is deliberately deferred until the compositor
-                    // has cross-surface buffer-use tracking. A wl_buffer may be
-                    // attached to more than one surface at the same time.
-                }
+            if state.has_processed(buffer) {
+                return Ok(());
+            }
+
+            let snapshot = ShmBufferSnapshot::copy_from_wl_buffer(buffer);
+            state.mark_processed(buffer.clone());
+
+            match snapshot {
+                Ok(snapshot) => state.replace(Some(snapshot)),
                 Err(ShmBufferError::NotSharedMemory | ShmBufferError::UnsupportedFormat) => {
                     state.replace(None);
                 }
@@ -110,9 +139,14 @@ fn update_surface_state(states: &SurfaceData) -> Result<(), ShmBufferError> {
                     return Err(error);
                 }
             }
+
+            // Keep current.buffer intact. Smithay's SurfaceAttributes merge
+            // logic owns the attached-buffer lifetime and releases the previous
+            // WlBuffer when a different buffer (or Removed) replaces it.
         }
         Some(BufferAssignment::Removed) => {
             state.replace(None);
+            state.clear_processed();
             current.buffer = None;
         }
         None => {}
