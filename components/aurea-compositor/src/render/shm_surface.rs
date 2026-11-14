@@ -8,6 +8,7 @@
 use std::sync::{Arc, Mutex};
 
 use smithay::{
+    utils::Transform,
     reexports::wayland_server::protocol::{
         wl_buffer::WlBuffer,
         wl_surface::WlSurface,
@@ -19,6 +20,14 @@ use smithay::{
 };
 
 use super::shm_buffer::{ShmBufferError, ShmBufferSnapshot};
+
+/// Snapshot metadata required to place a Wayland buffer on an output.
+pub(super) struct SurfaceRenderSnapshot {
+    pub revision: u64,
+    pub snapshot: Arc<ShmBufferSnapshot>,
+    pub buffer_scale: i32,
+    pub buffer_transform: Transform,
+}
 
 /// Snapshot retained independently from client-writable SHM memory.
 #[derive(Default)]
@@ -158,6 +167,33 @@ fn update_surface_state(states: &SurfaceData) -> Result<(), ShmBufferError> {
 /// Returns the latest owned SHM snapshot associated with a surface.
 pub fn surface_snapshot(surface: &WlSurface) -> Option<Arc<ShmBufferSnapshot>> {
     surface_snapshot_with_revision(surface).map(|(_, snapshot)| snapshot)
+}
+
+/// Returns pixel data and the committed buffer mapping attributes for rendering.
+pub(super) fn surface_render_snapshot(surface: &WlSurface) -> Option<SurfaceRenderSnapshot> {
+    with_states(surface, |states| {
+        let (buffer_scale, buffer_transform) = {
+            let mut attributes = states.cached_state.get::<SurfaceAttributes>();
+            let current = attributes.current();
+            (current.buffer_scale, current.buffer_transform)
+        };
+
+        if buffer_scale <= 0 {
+            return None;
+        }
+
+        let (revision, snapshot) = states
+            .data_map
+            .get::<SurfaceShmBufferState>()?
+            .snapshot_with_revision()?;
+
+        Some(SurfaceRenderSnapshot {
+            revision,
+            snapshot,
+            buffer_scale,
+            buffer_transform,
+        })
+    })
 }
 
 /// Returns the latest snapshot together with its per-surface update revision.
