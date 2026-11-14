@@ -42,7 +42,7 @@ POLICY_INSTALLED=0
 # private API filesystems and a restricted capability set instead of exposing
 # the host /dev and /sys trees through recursive bind mounts.
 run_in_rootfs() {
-  run_in_rootfs_with_network_mode shared "$@"
+  run_in_rootfs_with_network_mode shared no "$@"
 }
 
 run_in_rootfs_private_network() {
