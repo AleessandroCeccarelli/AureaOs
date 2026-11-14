@@ -185,40 +185,55 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
             )));
         }
 
-        let mut allocation_errors = Vec::new();
-        let mut allocated_frame = None;
-        for candidate in candidates {
-            match VulkanDrmScanoutFrame::allocate(
-                self.vulkan.shared_device(),
-                self.drm_device,
-                self.gbm_devices,
+        // Reuse an image only after both KMS and Vulkan ownership have
+        // returned to this process. This avoids allocating and exporting a
+        // fresh DMA-BUF for every page flip.
+        let reusable = frame_pool
+            .find_reusable(
                 target.width(),
                 target.height(),
-                candidate,
-                smithay::reexports::ash::vk::ImageUsageFlags::COLOR_ATTACHMENT,
-            ) {
-                Ok(frame) => {
-                    allocated_frame = Some(frame);
-                    break;
-                }
-                Err(error) => allocation_errors.push(format!(
-                    "{:?}/{:?}: {}",
-                    candidate.code, candidate.modifier, error
-                )),
-            }
-        }
-
-        let frame = allocated_frame.ok_or_else(|| {
-            VulkanScanoutError::new(format!(
-                "All negotiated Vulkan/KMS scanout allocations failed: {}",
-                allocation_errors.join("; ")
-            ))
-        })?;
-
-        let framebuffer = frame.framebuffer_id();
-        frame_pool
-            .insert(frame, presentation.frame_coordinator_mut())
+                &candidates,
+                presentation.frame_coordinator_mut(),
+            )
             .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
+
+        let framebuffer = if let Some(framebuffer) = reusable {
+            framebuffer
+        } else {
+            let mut allocation_errors = Vec::new();
+            let mut allocated_frame = None;
+            for candidate in candidates {
+                match VulkanDrmScanoutFrame::allocate(
+                    self.vulkan.shared_device(),
+                    self.drm_device,
+                    self.gbm_devices,
+                    target.width(),
+                    target.height(),
+                    candidate,
+                    smithay::reexports::ash::vk::ImageUsageFlags::COLOR_ATTACHMENT,
+                ) {
+                    Ok(frame) => {
+                        allocated_frame = Some(frame);
+                        break;
+                    }
+                    Err(error) => allocation_errors.push(format!(
+                        "{:?}/{:?}: {}",
+                        candidate.code, candidate.modifier, error
+                    )),
+                }
+            }
+
+            let frame = allocated_frame.ok_or_else(|| {
+                VulkanScanoutError::new(format!(
+                    "All negotiated Vulkan/KMS scanout allocations failed: {}",
+                    allocation_errors.join("; ")
+                ))
+            })?;
+
+            frame_pool
+                .insert(frame, presentation.frame_coordinator_mut())
+                .map_err(|error| VulkanScanoutError::new(error.to_string()))?
+        };
 
         if let Err(error) = render_and_present(
             surface,
