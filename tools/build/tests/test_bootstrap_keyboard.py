@@ -42,11 +42,11 @@ class BootstrapKeyboardTests(unittest.TestCase):
 
     def test_bootstrap_keeps_sudo_credentials_alive_and_cleans_up_noninteractively(self) -> None:
         source = BOOTSTRAP.read_text(encoding="utf-8")
-        self.assertIn("def start_sudo_keepalive()", source)
+        self.assertIn("start_sudo_keepalive() {", source)
         self.assertIn("while sleep 60", source)
         self.assertIn("sudo -n -v || exit 1", source)
         self.assertIn("start_sudo_keepalive\\n", source)
-        self.assertIn("def stop_sudo_keepalive()", source)
+        self.assertIn("stop_sudo_keepalive() {", source)
         self.assertIn('sudo -n rm -f -- "$ROOTFS_WORK/usr/sbin/policy-rc.d"', source)
         self.assertIn("stop_sudo_keepalive", source)
 
