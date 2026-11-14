@@ -7,6 +7,7 @@
 
 pub mod app;
 pub mod config;
+pub mod desktop;
 pub mod dispatcher;
 pub mod error;
 pub mod event;
