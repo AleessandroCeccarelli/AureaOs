@@ -5,6 +5,7 @@
 
 //! Collects mapped surfaces into a renderable scene.
 
+pub mod geometry;
 pub mod shm_buffer;
 pub mod shm_surface;
 pub mod surface_tree;
