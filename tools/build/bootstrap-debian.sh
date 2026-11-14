@@ -478,6 +478,12 @@ run_in_rootfs_private_network apt-get clean
 sudo rm -f -- "$ROOTFS_WORK/usr/sbin/policy-rc.d"
 POLICY_INSTALLED=0
 
+# Debian packages may leave sudoers.d more permissive than AureaOS policy.
+# Reassert the dedicated configuration-directory mode before the final audit.
+if sudo test -d "$ROOTFS_WORK/etc/sudoers.d"; then
+  sudo chmod 0750 -- "$ROOTFS_WORK/etc/sudoers.d"
+fi
+
 echo
 echo "===== Verifica finale ====="
 
