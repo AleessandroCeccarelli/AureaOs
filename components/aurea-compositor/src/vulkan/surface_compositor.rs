@@ -18,9 +18,8 @@ use crate::{
 
 use super::{
     VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanDrawPass,
-    VulkanGraphicsPipeline, VulkanGraphicsShaders, VulkanImageState, VulkanImageTransition,
-    VulkanImageView, VulkanLogicalDevice, VulkanSampler, VulkanShaderModule, VulkanShmTexture,
-    VulkanTextureBinding, VulkanTextureDescriptorSetLayout,
+    VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanLogicalDevice,
+    VulkanShmTexture, VulkanSurfacePipelineCache, VulkanTextureBinding,
 };
 
 const BACKGROUND_COLOR: [f32; 4] = [0.08, 0.18, 0.32, 1.0];
@@ -30,7 +29,6 @@ const MAX_COMPOSITED_SHM_BYTES: usize = 256 * 1024 * 1024;
 /// Errors raised while preparing or recording a SHM-composited frame.
 #[derive(Debug)]
 pub(crate) enum VulkanSurfaceCompositionError {
-    Shader(String),
     Pipeline(String),
     Texture(String),
     Descriptor(String),
@@ -44,7 +42,6 @@ pub(crate) enum VulkanSurfaceCompositionError {
 impl fmt::Display for VulkanSurfaceCompositionError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Shader(error) => write!(formatter, "Surface shader initialization failed: {error}"),
             Self::Pipeline(error) => write!(formatter, "Surface pipeline initialization failed: {error}"),
             Self::Texture(error) => write!(formatter, "Wayland SHM texture upload failed: {error}"),
             Self::Descriptor(error) => write!(formatter, "Surface texture descriptor creation failed: {error}"),
@@ -73,6 +70,7 @@ pub(crate) fn render_and_release(
     view: &VulkanImageView<'_, '_>,
     target: &RenderTarget,
     scene: &RenderScene<'_>,
+    surface_cache: &mut VulkanSurfacePipelineCache,
     previous_image_state: VulkanImageState,
     display_color: Option<(
         &VulkanDisplayColorPass<'_>,
@@ -107,31 +105,18 @@ pub(crate) fn render_and_release(
         None => (view, previous_image_state),
     };
 
-    let descriptor_layout = VulkanTextureDescriptorSetLayout::new(device)
-        .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
-    let sampler = VulkanSampler::linear_clamp(device)
-        .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
-    let vertex = VulkanShaderModule::from_bytes(
-        device,
-        include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
-    )
-    .map_err(|error| VulkanSurfaceCompositionError::Shader(error.to_string()))?;
-    let fragment = VulkanShaderModule::from_bytes(
-        device,
-        include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_SPV")),
-    )
-    .map_err(|error| VulkanSurfaceCompositionError::Shader(error.to_string()))?;
-    let descriptor_layouts = [&descriptor_layout];
-    let pipeline = VulkanGraphicsPipeline::new_with_descriptor_layouts(
-        device,
-        VulkanGraphicsShaders {
-            vertex: &vertex,
-            fragment: &fragment,
-        },
-        composition_view.format(),
-        &descriptor_layouts,
-    )
-    .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
+    surface_cache
+        .ensure_pipeline(composition_view.format())
+        .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
+    let descriptor_layout = surface_cache.descriptor_layout();
+    let sampler = surface_cache.sampler();
+    let pipeline = surface_cache
+        .pipeline(composition_view.format())
+        .ok_or_else(|| {
+            VulkanSurfaceCompositionError::Pipeline(
+                "The requested surface pipeline was not cached".to_owned(),
+            )
+        })?;
 
     // All per-frame resources remain alive until submit_and_wait completes.
     let textures = visible
