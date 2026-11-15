@@ -20,7 +20,7 @@ use super::{
 /// A logical Vulkan device, graphics queue and command pool.
 pub struct VulkanLogicalDevice {
     // Keep the Vulkan instance alive until this logical device is destroyed.
-    _context: Option<Arc<VulkanContext>>,
+    _context: Arc<VulkanContext>,
     device: ash::Device,
     graphics_queue: vk::Queue,
     graphics_queue_family: u32,
@@ -41,7 +41,7 @@ impl VulkanLogicalDevice {
         physical_device: &PhysicalDevice,
         queue_family_index: u32,
         extension_plan: VulkanDeviceExtensionPlan,
-        context_owner: Option<Arc<VulkanContext>>,
+        context_owner: Arc<VulkanContext>,
     ) -> Result<Self, VulkanInitError> {
         let supports_sync_fd = if extension_plan.supports_sync_fd() {
             let semaphore_info = vk::PhysicalDeviceExternalSemaphoreInfo::default()
@@ -257,11 +257,8 @@ impl Drop for VulkanLogicalDevice {
         // using device-owned objects. Keep the device and its parent instance
         // alive rather than destroying the command pool under uncertain work.
         if unsafe { self.device.device_wait_idle() }.is_err() {
-            if let Some(context) = self._context.take() {
-                // The leaked Arc also keeps the VkInstance alive for the
-                // intentionally retained VkDevice.
-                std::mem::forget(context);
-            }
+            // Keep the VkInstance alive for the intentionally retained VkDevice.
+            std::mem::forget(Arc::clone(&self._context));
             return;
         }
 
@@ -289,7 +286,7 @@ impl VulkanContext {
             physical_device,
             queue_family_index,
             extension_plan,
-            Some(Arc::clone(self)),
+            Arc::clone(self),
         )
     }
 }

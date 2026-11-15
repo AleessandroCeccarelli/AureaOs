@@ -134,7 +134,7 @@ impl VulkanBackend {
             physical_device,
             queue_family_index,
             extension_plan,
-            Some(Arc::clone(&context)),
+            Arc::clone(&context),
         )?);
 
         #[cfg(feature = "drm")]
