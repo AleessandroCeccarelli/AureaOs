@@ -45,11 +45,11 @@ pub struct VulkanImageView<'image, 'device> {
 
 impl<'image, 'device> VulkanImageView<'image, 'device> {
     /// Creates a 2D color view over a Vulkan image.
-    pub fn color(
-        image: &'image VulkanImage<'device>,
-    ) -> Result<VulkanImageView<'image, 'device>, VulkanImageViewError>
+    pub fn color<'view>(
+        image: &'view VulkanImage<'device>,
+    ) -> Result<VulkanImageView<'view, 'device>, VulkanImageViewError>
     where
-        'device: 'image,
+        'device: 'view,
     {
         let subresource_range = vk::ImageSubresourceRange::default()
             .aspect_mask(vk::ImageAspectFlags::COLOR)
