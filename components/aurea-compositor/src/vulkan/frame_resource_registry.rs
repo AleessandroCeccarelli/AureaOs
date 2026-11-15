@@ -138,6 +138,15 @@ impl VulkanFrameResourceRegistry {
         Ok(())
     }
 
+    /// Cancels a render whose Vulkan queue submission was rejected.
+    pub fn cancel_render(
+        &mut self,
+        id: VulkanFrameResourceId,
+    ) -> Result<(), VulkanFrameResourceRegistryError> {
+        self.resource_mut(id)?.cancel_render()?;
+        Ok(())
+    }
+
     /// Records successful GPU queue submission.
     pub fn mark_submitted(
         &mut self,

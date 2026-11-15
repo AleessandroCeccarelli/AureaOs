@@ -263,6 +263,12 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
             self.warmth_percent,
             self.vulkan.shared_device(),
         ) {
+            // This succeeds only if the queue rejected the command before acceptance.
+            // Accepted or uncertain submissions cannot be cancelled.
+            let _ = presentation
+                .frame_coordinator_mut()
+                .cancel_render(framebuffer);
+
             let acquire_result = frame_pool
                 .acquire_after_foreign_release(framebuffer, presentation.frame_coordinator_mut());
 
@@ -364,13 +370,16 @@ fn render_and_present(
         previous_image_state,
         effective_display,
         || {
-            let coordinator = presentation.frame_coordinator_mut();
-            coordinator
+            presentation
+                .frame_coordinator_mut()
                 .begin_render(framebuffer)
-                .map_err(|error| error.to_string())?;
-            coordinator
-                .mark_submitted(framebuffer)
                 .map_err(|error| error.to_string())
+        },
+        || {
+            presentation
+                .frame_coordinator_mut()
+                .mark_submitted(framebuffer)
+                .expect("frame must remain Rendering until queue acceptance");
         },
     )
     .map_err(|error| VulkanScanoutError::new(error.to_string()))?;

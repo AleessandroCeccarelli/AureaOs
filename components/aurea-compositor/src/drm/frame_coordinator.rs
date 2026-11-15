@@ -139,6 +139,16 @@ impl DrmOutputFrameCoordinator {
         Ok(())
     }
 
+    /// Cancels a render after a definitively rejected Vulkan submission.
+    pub fn cancel_render(
+        &mut self,
+        framebuffer: DrmFramebufferId,
+    ) -> Result<(), DrmOutputFrameError> {
+        let resource = self.resource_for(framebuffer)?;
+        self.resources.cancel_render(resource)?;
+        Ok(())
+    }
+
     /// Records successful GPU queue submission for a rendered framebuffer.
     pub fn mark_submitted(
         &mut self,

@@ -137,6 +137,15 @@ impl VulkanFrameResource {
         Ok(())
     }
 
+    /// Cancels rendering only when the Vulkan queue rejected the submission.
+    pub fn cancel_render(&mut self) -> Result<(), VulkanFrameResourceError> {
+        if self.state != FrameResourceState::Rendering {
+            return Err(VulkanFrameResourceError::NotRendering);
+        }
+        self.state = FrameResourceState::Available;
+        Ok(())
+    }
+
     /// Records that rendering commands have been successfully submitted.
     pub fn mark_submitted(&mut self) -> Result<(), VulkanFrameResourceError> {
         if self.state != FrameResourceState::Rendering {

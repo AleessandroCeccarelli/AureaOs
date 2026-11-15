@@ -13,8 +13,8 @@ use smithay::{
 };
 
 use super::{
-    VulkanContext, VulkanDeviceExtensionPlan, VulkanInitError, VulkanQueueSubmitter,
-    VulkanRenderingFeaturePlan,
+    queue_submitter::VulkanQueueSubmitError, VulkanContext, VulkanDeviceExtensionPlan,
+    VulkanInitError, VulkanQueueSubmitter, VulkanRenderingFeaturePlan,
 };
 
 /// A logical Vulkan device, graphics queue and command pool.
@@ -238,6 +238,16 @@ impl VulkanLogicalDevice {
     ) -> Result<(), vk::Result> {
         VulkanQueueSubmitter::new(&self.device, self.graphics_queue, &self.queue_submit_lock)
             .submit_and_wait(command_buffer)
+    }
+
+    /// Submits work and invokes its lifecycle hook only after queue acceptance.
+    pub(super) fn submit_and_wait_with(
+        &self,
+        command_buffer: vk::CommandBuffer,
+        on_submitted: impl FnOnce(),
+    ) -> Result<(), VulkanQueueSubmitError> {
+        VulkanQueueSubmitter::new(&self.device, self.graphics_queue, &self.queue_submit_lock)
+            .submit_and_wait_with(command_buffer, on_submitted)
     }
 }
 

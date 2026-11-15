@@ -7,7 +7,7 @@
 
 use smithay::reexports::ash::vk;
 
-use super::VulkanLogicalDevice;
+use super::{queue_submitter::VulkanQueueSubmitError, VulkanLogicalDevice};
 
 /// Internal lifecycle state of a Vulkan command buffer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -116,25 +116,38 @@ impl<'device> VulkanCommandBuffer<'device> {
     /// A command buffer using ONE_TIME_SUBMIT becomes invalid after
     /// successful execution and must be reset before reuse.
     pub fn submit_and_wait(&mut self) -> Result<(), vk::Result> {
+        self.submit_and_wait_with(|| {})
+            .map_err(VulkanQueueSubmitError::result)
+    }
+
+    /// Calls the lifecycle hook only after the queue accepts this command buffer.
+    pub(crate) fn submit_and_wait_with(
+        &mut self,
+        on_submitted: impl FnOnce(),
+    ) -> Result<(), VulkanQueueSubmitError> {
         if self.state != CommandBufferState::Executable {
-            return Err(vk::Result::ERROR_VALIDATION_FAILED_EXT);
+            return Err(VulkanQueueSubmitError::Rejected(
+                vk::Result::ERROR_VALIDATION_FAILED_EXT,
+            ));
         }
 
         self.state = CommandBufferState::Pending;
-
-        match self.device.submit_and_wait(self.handle) {
+        match self.device.submit_and_wait_with(self.handle, on_submitted) {
             Ok(()) => {
                 self.state = if self.one_time_submit {
                     CommandBufferState::Invalid
                 } else {
                     CommandBufferState::Executable
                 };
-
                 Ok(())
             }
-            Err(error) => {
-                // Completion is uncertain. Keep the buffer protected
-                // until a successful device-idle operation is confirmed.
+            Err(error @ VulkanQueueSubmitError::Rejected(_)) => {
+                // Vulkan did not accept the command; it is safe to reuse.
+                self.state = CommandBufferState::Executable;
+                Err(error)
+            }
+            Err(error @ VulkanQueueSubmitError::CompletionUncertain { .. }) => {
+                // Accepted work is still potentially in flight.
                 Err(error)
             }
         }

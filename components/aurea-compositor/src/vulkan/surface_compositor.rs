@@ -86,6 +86,7 @@ pub(crate) fn render_and_release(
         VulkanImageState,
     )>,
     before_submit: impl FnOnce() -> Result<(), String>,
+    on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let active_surface_ids = scene.surface_ids();
     let snapshots = scene.shm_snapshots();
@@ -120,9 +121,10 @@ pub(crate) fn render_and_release(
                     intermediate_view,
                     intermediate_state,
                     before_submit,
+                    on_submitted,
                 )
             }
-            None => clear_and_release(device, view, previous_image_state, before_submit),
+            None => clear_and_release(device, view, previous_image_state, before_submit, on_submitted),
         };
     }
     let (composition_view, composition_previous_state) = match display_color {
@@ -275,7 +277,7 @@ pub(crate) fn render_and_release(
         .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
     before_submit().map_err(VulkanSurfaceCompositionError::Command)?;
     command_buffer
-        .submit_and_wait()
+        .submit_and_wait_with(on_submitted)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
 
     Ok(())
@@ -290,6 +292,7 @@ fn clear_display_and_release(
     intermediate_view: &VulkanImageView<'_, '_>,
     previous_intermediate_state: VulkanImageState,
     before_submit: impl FnOnce() -> Result<(), String>,
+    on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let binding = pass
         .bind_source(intermediate_view)
@@ -333,7 +336,7 @@ fn clear_display_and_release(
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
     before_submit().map_err(VulkanSurfaceCompositionError::Command)?;
     command_buffer
-        .submit_and_wait()
+        .submit_and_wait_with(on_submitted)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
 
     Ok(())
@@ -344,6 +347,7 @@ fn clear_and_release(
     view: &VulkanImageView<'_, '_>,
     previous_image_state: VulkanImageState,
     before_submit: impl FnOnce() -> Result<(), String>,
+    on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let mut command_buffer = VulkanCommandBuffer::new(device)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
@@ -372,7 +376,7 @@ fn clear_and_release(
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
     before_submit().map_err(VulkanSurfaceCompositionError::Command)?;
     command_buffer
-        .submit_and_wait()
+        .submit_and_wait_with(on_submitted)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
 
     Ok(())
