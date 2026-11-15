@@ -2,32 +2,23 @@
 
 # Tokens
 
-This directory is the source of truth for the approved AureaOS visual token set.
+This directory is the single source of truth for AureaOS visual tokens.
 
-The design system uses a blue-gray foundation with a soft blue primary accent and a restrained warm accent used only for identity highlights. This keeps the desktop familiar, readable, and calm while preserving a clear AureaOS personality.
+## Canonical entry point
 
-## Source of truth
+- `index.css` defines the default light theme and the dark theme override selected with `:root[data-theme='dark']`.
+- `light.css` and `dark.css` are compatibility entry points only. They import `index.css` and must not duplicate token values.
 
-- `aurea-human-interfaces/design-system/tokens/index.css`
+Set the system appearance through the root `data-theme` attribute. The runtime appearance service is authoritative.
 
-The `light.css` and `dark.css` files are theme-specific overrides for the shared token set and must stay in sync with the source of truth.
+## Token families
 
-## Token model
+Tokens cover semantic surfaces, text, borders, accent and status colors, focus, dock and panel surfaces, notifications, glass materials, shadows, radii, spacing and typography roles.
 
-Examples of semantic tokens:
+## Rules
 
-- `--aurea-surface-desktop`
-- `--aurea-surface-window`
-- `--aurea-surface-panel`
-- `--aurea-text-primary`
-- `--aurea-accent-primary`
-- `--aurea-accent-warm`
-- `--aurea-dock-bg`
-- `--aurea-notification-bg`
-
-## Notes
-
-- The palette is intentionally blue-gray based, not ivory / graphite / gold dominant.
-- The warm accent is a secondary identity highlight and should not dominate the shell.
-- The default system font remains DA DEFINIRE; Aurea Sans is a future candidate only when approved.
-- A final font decision must be made from the repository font database, not from an ad hoc external stack.
+- Components consume semantic tokens, not private color palettes.
+- Light and dark themes preserve the same hierarchy and interaction model.
+- Transparency and shadows support hierarchy; they never take priority over contrast.
+- A missing token is proposed here before a component introduces a local substitute.
+- Keep this directory authoritative; do not create a second theme token source.
