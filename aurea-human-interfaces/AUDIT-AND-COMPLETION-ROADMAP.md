@@ -108,9 +108,10 @@ The hierarchy is documented in [Human Interfaces](README.md) and [Design System]
 - [ ] Integrate launcher, dock, menus, dialogs, notifications and system panels with their actual services.
 - [ ] Reconcile prototypes with the canonical desktop experience specification.
 - [ ] Validate first-login workflows on supported hardware.
-- [ ] Complete Night Light runtime integration: system-wide Vulkan output processing, capability negotiation/fallback, schedule service and persistence.
+- [ ] Compile and validate the initial system-wide Vulkan Night Light output path on physical DRM/Vulkan hardware; source integration now composes the complete scene (including background) into an optional intermediate image and applies a cached per-format final color pass, with direct-scanout fallback when unsupported.
 - [x] Establish the shared lock-free shell-to-compositor display policy channel through the desktop API and Wayland server state.
-- [ ] Consume the display policy in the final Vulkan output stage and expose capability status to the shell.
+- [x] Connect the display policy to the final Vulkan output stage in source; capability status is not yet exposed to the shell.
+- [ ] Complete schedule activation service and persistence.
 - [ ] Add Night Light controls to Settings → Appearance and the right-side Quick Settings panel, sharing one authoritative preference state.
 
 ## Explicitly deferred
@@ -121,7 +122,7 @@ The hierarchy is documented in [Human Interfaces](README.md) and [Design System]
 
 ## Runtime ownership
 
-- **Compositor:** windows, focus, input, cursor presentation, workspaces and placement; output color policy is received through the shared desktop API, while final Vulkan processing remains pending.
+- **Compositor:** windows, focus, input, cursor presentation, workspaces and placement; output color policy is received through the shared desktop API and connected to the initial final Vulkan processing stage in source, pending compilation and hardware validation.
 - **Shell:** dock, launcher, overview, Quick Settings and notification presentation.
 - **System services:** network, audio, power, display, appearance and notification state.
 - **Fides and Quaero:** file-management and search workflows.
