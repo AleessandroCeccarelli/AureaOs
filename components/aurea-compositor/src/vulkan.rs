@@ -56,6 +56,7 @@ mod shm_texture;
 #[cfg(feature = "drm")]
 pub(crate) mod surface_compositor;
 mod surface_pipeline_cache;
+mod surface_texture_cache;
 mod texture_binding;
 mod texture_layout;
 mod upload_buffer;

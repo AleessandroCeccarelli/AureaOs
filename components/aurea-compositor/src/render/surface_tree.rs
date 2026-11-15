@@ -8,7 +8,11 @@
 use std::sync::Arc;
 
 use smithay::{
-    reexports::wayland_server::protocol::wl_surface::WlSurface,
+    reexports::wayland_server::{
+        backend::ObjectId,
+        protocol::wl_surface::WlSurface,
+        Resource,
+    },
     utils::{Logical, Point, Transform},
     wayland::compositor::{
         SubsurfaceCachedState, SurfaceData, TraversalAction, with_surface_tree_downward,
@@ -19,6 +23,8 @@ use super::{shm_buffer::ShmBufferSnapshot, shm_surface::surface_render_snapshot}
 
 /// One owned surface image and its accumulated global logical position.
 pub struct SurfaceTreeSnapshot {
+    /// Full Wayland object identity; unlike protocol_id, this is not reused.
+    pub surface_id: ObjectId,
     pub location: Point<i32, Logical>,
     pub revision: u64,
     pub snapshot: Arc<ShmBufferSnapshot>,
@@ -60,6 +66,7 @@ pub fn collect_surface_tree_snapshots(
             let location = surface_location(states, *parent);
             if let Some(render_snapshot) = surface_render_snapshot(surface) {
                 snapshots.push(SurfaceTreeSnapshot {
+                    surface_id: surface.id(),
                     location,
                     revision: render_snapshot.revision,
                     snapshot: render_snapshot.snapshot,

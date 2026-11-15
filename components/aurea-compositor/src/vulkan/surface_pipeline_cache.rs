@@ -7,12 +7,18 @@
 
 use std::{collections::HashMap, error::Error, fmt, sync::Arc};
 
-use smithay::reexports::ash::vk;
+use smithay::{
+    reexports::ash::vk,
+    reexports::wayland_server::backend::ObjectId,
+};
+
+use crate::render::shm_buffer::ShmBufferSnapshot;
 
 use super::{
     VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
     VulkanLogicalDevice, VulkanSampler, VulkanSamplerError, VulkanShaderError, VulkanShaderModule,
-    VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
+    VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError, VulkanShmTexture,
+    surface_texture_cache::{VulkanSurfaceTextureCache, VulkanSurfaceTextureCacheError},
 };
 
 /// Errors returned while preparing cached surface-composition resources.
@@ -45,6 +51,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     pipelines: HashMap<vk::Format, VulkanGraphicsPipeline<'static>>,
     descriptor_layout: VulkanTextureDescriptorSetLayout<'static>,
     sampler: VulkanSampler<'static>,
+    texture_cache: VulkanSurfaceTextureCache,
 }
 
 impl VulkanSurfacePipelineCache {
@@ -55,12 +62,14 @@ impl VulkanSurfacePipelineCache {
             .map_err(VulkanSurfacePipelineCacheError::DescriptorLayout)?;
         let sampler = VulkanSampler::linear_clamp_shared(Arc::clone(&device))
             .map_err(VulkanSurfacePipelineCacheError::Sampler)?;
+        let texture_cache = VulkanSurfaceTextureCache::new(Arc::clone(&device));
 
         Ok(Self {
             device,
             pipelines: HashMap::new(),
             descriptor_layout,
             sampler,
+            texture_cache,
         })
     }
 
@@ -98,6 +107,18 @@ impl VulkanSurfacePipelineCache {
 
         self.pipelines.insert(format, pipeline);
         Ok(())
+    }
+
+    pub(crate) fn prepare_surface_textures(
+        &mut self,
+        active_surface_ids: &[ObjectId],
+        visible_surfaces: &[(ObjectId, u64, Arc<ShmBufferSnapshot>)],
+    ) -> Result<(), VulkanSurfaceTextureCacheError> {
+        self.texture_cache.prepare(active_surface_ids, visible_surfaces)
+    }
+
+    pub(crate) fn surface_texture(&self, surface_id: &ObjectId) -> Option<&VulkanShmTexture> {
+        self.texture_cache.texture(surface_id)
     }
 
     pub(crate) fn pipeline(&self, format: vk::Format) -> Option<&VulkanGraphicsPipeline<'static>> {

@@ -12,14 +12,19 @@ use smithay::{reexports::ash::vk, utils::Transform};
 use std::sync::Arc;
 
 use crate::{
-    render::{RenderScene, geometry::surface_geometry, shm_buffer::ShmBufferSnapshot},
+    render::{
+        RenderScene,
+        geometry::surface_geometry,
+        shm_buffer::ShmBufferSnapshot,
+        surface_tree::SurfaceTreeSnapshot,
+    },
     renderer::RenderTarget,
 };
 
 use super::{
     VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanDrawPass,
     VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanLogicalDevice,
-    VulkanShmTexture, VulkanSurfacePipelineCache, VulkanTextureBinding,
+    VulkanSurfacePipelineCache, VulkanTextureBinding,
 };
 
 const BACKGROUND_COLOR: [f32; 4] = [0.08, 0.18, 0.32, 1.0];
@@ -57,6 +62,8 @@ impl fmt::Display for VulkanSurfaceCompositionError {
 impl Error for VulkanSurfaceCompositionError {}
 
 struct VisibleSurface {
+    surface_id: smithay::reexports::wayland_server::backend::ObjectId,
+    revision: u64,
     snapshot: Arc<ShmBufferSnapshot>,
     geometry: crate::render::geometry::SurfaceGeometry,
     scissor: crate::render::geometry::SurfaceScissor,
@@ -80,7 +87,20 @@ pub(crate) fn render_and_release(
     )>,
     before_submit: impl FnOnce() -> Result<(), String>,
 ) -> Result<(), VulkanSurfaceCompositionError> {
-    let visible = visible_surfaces(scene, target)?;
+    let snapshots = scene.shm_snapshots();
+    let active_surface_ids = snapshots.iter()
+        .map(|snapshot| snapshot.surface_id.clone())
+        .collect::<Vec<_>>();
+    let visible = visible_surfaces(snapshots, target)?;
+    let texture_requests = visible.iter().map(|surface| (
+        surface.surface_id.clone(),
+        surface.revision,
+        Arc::clone(&surface.snapshot),
+    )).collect::<Vec<_>>();
+
+    surface_cache.prepare_surface_textures(&active_surface_ids, &texture_requests)
+        .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+
     if visible.is_empty() {
         return match display_color {
             Some((pass, warmth, intermediate_view, intermediate_state)) => {
@@ -118,22 +138,16 @@ pub(crate) fn render_and_release(
             )
         })?;
 
-    // All per-frame resources remain alive until submit_and_wait completes.
-    let textures = visible
-        .iter()
-        .map(|surface| {
-            VulkanShmTexture::from_snapshot(device, surface.snapshot.as_ref().clone())
-                .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    let views = textures
-        .iter()
-        .map(|texture| {
-            texture
-                .create_view()
-                .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
-        })
-        .collect::<Result<Vec<_>, _>>()?;
+    // Cached images survive across frames. Views and descriptor sets remain
+    // frame-scoped until submit_and_wait confirms GPU completion.
+    let views = visible.iter().map(|surface| {
+        surface_cache.surface_texture(&surface.surface_id).ok_or_else(|| {
+            VulkanSurfaceCompositionError::Texture(
+                "A visible surface texture was not prepared in the cache".to_owned(),
+            )
+        })?.create_view()
+            .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
+    }).collect::<Result<Vec<_>, _>>()?;
     let bindings = views
         .iter()
         .map(|texture_view| {
@@ -339,13 +353,13 @@ fn clear_and_release(
 }
 
 fn visible_surfaces(
-    scene: &RenderScene<'_>,
+    snapshots: Vec<SurfaceTreeSnapshot>,
     target: &RenderTarget,
 ) -> Result<Vec<VisibleSurface>, VulkanSurfaceCompositionError> {
     let mut visible = Vec::new();
     let mut total_bytes = 0usize;
 
-    for snapshot in scene.shm_snapshots() {
+    for snapshot in snapshots {
         let geometry = surface_geometry(
             (snapshot.location.x, snapshot.location.y),
             (snapshot.snapshot.width(), snapshot.snapshot.height()),
@@ -375,6 +389,8 @@ fn visible_surfaces(
         }
 
         visible.push(VisibleSurface {
+            surface_id: snapshot.surface_id,
+            revision: snapshot.revision,
             snapshot: Arc::clone(&snapshot.snapshot),
             geometry,
             scissor,
