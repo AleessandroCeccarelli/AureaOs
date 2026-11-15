@@ -14,6 +14,8 @@ mod context;
 mod device_extensions;
 mod device_owner;
 #[cfg(feature = "drm")]
+mod display_color_manager;
+#[cfg(feature = "drm")]
 mod display_color_pass;
 #[cfg(feature = "drm")]
 mod dmabuf_layout;
@@ -89,6 +91,8 @@ pub use context::VulkanContext;
 pub use device_extensions::VulkanDeviceExtensionPlan;
 #[cfg(feature = "drm")]
 pub use display_color_pass::{VulkanDisplayColorPass, VulkanDisplayColorPassError};
+#[cfg(feature = "drm")]
+pub(crate) use display_color_manager::VulkanDisplayColorManager;
 #[cfg(feature = "drm")]
 pub use dmabuf_layout::{DmabufImportLayout, DmabufLayoutError, DmabufPlaneLayout};
 pub use draw_pass::{VulkanDrawPass, VulkanDrawPassError};
