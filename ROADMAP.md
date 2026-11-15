@@ -39,7 +39,7 @@ Developing first-party replacements for these application categories may be cons
 - AureaOS visual design resources, including design tokens, themes, icons, illustrations, and wallpapers.
 - A four-crate Rust workspace under `components/`: `aurea-desktop`, `aurea-shell`, `aurea-desktop-api`, and `aurea-compositor`.
 - An initial `aurea-desktop` composition root that wires the desktop components together; this is not a finished desktop session or graphical interface.
-- Shared desktop contracts in `aurea-desktop-api`.
+- Shared desktop contracts in `aurea-desktop-api`, including a technology-independent display color adjustment value for future output policy integration.
 - Shell session lifecycle coordination and shutdown handling through an event bus.
 - A Smithay-based Wayland server with initial XDG shell integration.
 - Initial Wayland seat and XKB keyboard support, with libinput event routing under the DRM feature.
@@ -57,6 +57,7 @@ Developing first-party replacements for these application categories may be cons
 - Output registration, removal, configuration, and logical layout management.
 - Output reconciliation when discovered display configurations change.
 - Publication and removal of registered outputs as Wayland output globals.
+- Initial Night Light preference and local schedule model in the shell, with validation and unit tests; scheduler, persistence, compositor transport and visible controls remain pending.
 
 These components establish an initial desktop and graphics-device foundation. They do not yet constitute a usable graphical desktop or a complete graphics pipeline.
 
@@ -90,6 +91,12 @@ Vulkan is the selected and exclusive graphics rendering API for AureaOS. A compl
 - Integrate display policy with compositor presentation information and the DRM/KMS backend.
 - Provide Automatic — AureaOS and manual display configuration through Settings → Display & Video.
 - Implement safe fallbacks for unsupported or unavailable display capabilities.
+- Implement Night Light as a system-wide output color-temperature adjustment, with manual intensity, sunset-to-sunrise and custom local schedules.
+- Apply Night Light after complete desktop composition through a dedicated Vulkan output stage; negotiate the required image usage capabilities and retain an explicit safe fallback when a KMS/Vulkan format cannot support the stage.
+- Connect the shell preference model to the compositor through the shared desktop API and a thread-safe runtime update path.
+- Account for color-space/transfer-function handling, output formats, HDR behavior and accessibility preferences before enabling the filter by default.
+
+Night Light controls belong in Settings → Appearance and in the right-side Quick Settings panel. Sunset-to-sunrise scheduling requires a permission-aware location/timezone service; a custom local schedule must remain available without geolocation. The software adjustment is a display color-temperature approximation, not a claim of hardware spectral blue-light filtering.
 
 The architecture and responsibilities are documented in [Display Intelligence](docs/architecture/DISPLAY-INTELLIGENCE.md).
 
@@ -156,11 +163,11 @@ The following order describes the current engineering priorities. Some workstrea
 3. Complete physical DRM/KMS mode setting and display configuration.
 4. Implement input handling and advance the compositor's window and surface lifecycle.
 5. Validate output discovery, hotplug, session changes, and display handling on physical hardware.
-6. Develop Aurea Display Intelligence on top of a reliable display pipeline.
+6. Develop Aurea Display Intelligence on top of a reliable display pipeline, including the Night Light output stage and its safe capability fallback.
 7. Complete and validate the minimal Debian 13 `amd64` foundation.
 8. Define image, boot, installation, security, storage, and update boundaries.
 9. Build and test a bootable development image.
-10. Develop the shared GUI foundation and AureaOS desktop experience.
+10. Develop the shared GUI foundation and AureaOS desktop experience, including Settings and Quick Settings integration.
 11. Develop and integrate the Roma 1.0 first-party applications.
 12. Integrate Flathub and Flatpak through Aurea Store.
 13. Validate the complete product and define the Roma 1.0 release criteria.
@@ -175,7 +182,7 @@ The Roma 1.0 product direction includes Aurea Desktop, AureaOS Human Interfaces,
 
 Their scope and implementation remain subject to development and validation. Inclusion in the Roma 1.0 direction is not a claim that the components are already implemented or complete.
 
-Aurea Display Intelligence remains a planned system subsystem. Its architecture and responsibilities are documented in [Display Intelligence](docs/architecture/DISPLAY-INTELLIGENCE.md). Initial DRM device and output lifecycle foundations exist in the compositor, but display mode setting, VRR control, adaptive refresh policy, and the user-facing settings interface remain incomplete.
+Aurea Display Intelligence remains a planned system subsystem. Its architecture and responsibilities are documented in [Display Intelligence](docs/architecture/DISPLAY-INTELLIGENCE.md). Initial DRM device and output lifecycle foundations exist in the compositor, but display mode setting, VRR control, adaptive refresh policy, Night Light output processing, and the user-facing settings interface remain incomplete.
 
 Sonus, Visio, and Explora remain candidates. Explora, if pursued, would be a possible future AureaOS first-party browser, not a Roma 1.0 requirement. See [Planned First-Party Applications](docs/product/PLANNED-APPLICATIONS.md) for their concept notes.
 
