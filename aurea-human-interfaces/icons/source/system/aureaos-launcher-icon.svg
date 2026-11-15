@@ -1,33 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<!-- Matching white glass launcher tile for the approved AureaOS ribbon A. -->
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
-<title id="title">AureaOS launcher icon</title><desc id="desc">The glossy blue and cyan flowing AureaOS A on a softly translucent white rounded-square tile.</desc>
-<defs>
-<linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset=".5" stop-color="#F8FBFF"/><stop offset="1" stop-color="#EAF5FF"/></linearGradient>
-<radialGradient id="tileGlow" cx=".32" cy=".18" r=".9"><stop stop-color="#FFFFFF" stop-opacity=".98"/><stop offset=".55" stop-color="#E6F5FF" stop-opacity=".56"/><stop offset="1" stop-color="#9EDBFA" stop-opacity=".16"/></radialGradient>
-<linearGradient id="glassArc" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF" stop-opacity=".05"/><stop offset=".55" stop-color="#D6F1FF" stop-opacity=".25"/><stop offset="1" stop-color="#78C9F2" stop-opacity=".2"/></linearGradient>
-<filter id="tileShadow" x="-.2" y="-.2" width="1.4" height="1.5"><feGaussianBlur in="SourceAlpha" stdDeviation="24"/><feOffset dy="18"/><feComponentTransfer><feFuncA type="linear" slope=".22"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
-<rect x="64" y="55" width="896" height="900" rx="190" fill="#9CCBE4" opacity=".34" filter="url(#tileShadow)"/>
-<rect x="68" y="48" width="888" height="900" rx="190" fill="url(#tile)"/><rect x="68" y="48" width="888" height="900" rx="190" fill="url(#tileGlow)"/>
-<path d="M 75 610 C 235 458 356 420 506 444 C 683 473 811 382 950 210 L 956 565 C 819 741 687 787 488 741 C 320 702 198 778 68 876 Z" fill="url(#glassArc)"/>
-<path d="M 103 190 C 260 76 433 82 586 112 C 737 142 842 107 920 72" fill="none" stroke="#FFFFFF" stroke-width="20" stroke-linecap="round" opacity=".42"/>
-<rect x="70" y="50" width="884" height="896" rx="188" fill="none" stroke="#FFFFFF" stroke-width="8" opacity=".96"/>
-<defs>
-<linearGradient id="arch" x1="0" y1="0" x2="1" y2=".15"><stop stop-color="#12A9F4"/><stop offset=".24" stop-color="#0875E7"/><stop offset=".52" stop-color="#0754C9"/><stop offset=".78" stop-color="#0872D9"/><stop offset="1" stop-color="#35D6FA"/></linearGradient>
-<linearGradient id="cross" x1="0" y1="0" x2=".9" y2=".15"><stop stop-color="#B9F8FF"/><stop offset=".16" stop-color="#52E2FA"/><stop offset=".48" stop-color="#21C8F4"/><stop offset=".76" stop-color="#18A9EC"/><stop offset="1" stop-color="#7DEBFF"/></linearGradient>
-<linearGradient id="archHi" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#9AF5FF" stop-opacity=".1"/><stop offset=".22" stop-color="#C9FBFF" stop-opacity=".85"/><stop offset=".48" stop-color="#FFFFFF" stop-opacity=".2"/><stop offset=".78" stop-color="#B5F8FF" stop-opacity=".48"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".1"/></linearGradient>
-<linearGradient id="crossHi" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#FFFFFF" stop-opacity=".9"/><stop offset=".25" stop-color="#E7FFFF" stop-opacity=".55"/><stop offset=".7" stop-color="#D3FCFF" stop-opacity=".08"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".02"/></linearGradient>
-<filter id="depth" x="-.35" y="-.35" width="1.8" height="1.9"><feGaussianBlur in="SourceAlpha" stdDeviation="17"/><feOffset dy="19"/><feComponentTransfer><feFuncA type="linear" slope=".38"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-<filter id="glow" x="-.5" y="-.5" width="2" height="2"><feGaussianBlur stdDeviation="13"/></filter></defs><g fill="none" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 285 770 C 345 640, 432 408, 493 275 C 512 232, 540 215, 562 255 C 632 390, 723 636, 786 770" stroke="#064CB5" stroke-opacity=".28" stroke-width="145" filter="url(#depth)"/>
-<path d="M 285 770 C 345 640, 432 408, 493 275 C 512 232, 540 215, 562 255 C 632 390, 723 636, 786 770" stroke="url(#arch)" stroke-width="119"/>
-<path d="M 285 770 C 345 640, 432 408, 493 275 C 512 232, 540 215, 562 255 C 632 390, 723 636, 786 770" stroke="url(#archHi)" stroke-width="12" stroke-dasharray="180 1100" stroke-dashoffset="-85"/>
-<path d="M 285 770 C 345 640, 432 408, 493 275 C 512 232, 540 215, 562 255 C 632 390, 723 636, 786 770" stroke="#C9FAFF" stroke-opacity=".36" stroke-width="3"/>
-</g><g fill="none" stroke-linecap="round" stroke-linejoin="round">
-<path d="M 258 760 C 334 742, 386 656, 459 606 C 527 559, 600 557, 667 594 C 719 623, 755 699, 786 770" stroke="#0755B8" stroke-opacity=".34" stroke-width="125" filter="url(#glow)"/>
-<path d="M 258 760 C 334 742, 386 656, 459 606 C 527 559, 600 557, 667 594 C 719 623, 755 699, 786 770" stroke="#0755B8" stroke-opacity=".32" stroke-width="119"/>
-<path d="M 258 760 C 334 742, 386 656, 459 606 C 527 559, 600 557, 667 594 C 719 623, 755 699, 786 770" stroke="url(#cross)" stroke-width="96"/>
-<path d="M 270 746 C 345 724, 397 645, 466 600 C 532 557, 600 562, 662 595" stroke="url(#crossHi)" stroke-width="13"/>
-<path d="M 272 774 C 345 757, 393 687, 453 646" stroke="#E9FFFF" stroke-opacity=".4" stroke-width="3"/>
-</g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="670" height="675" viewBox="0 0 670 675" role="img" aria-labelledby="title desc">
+<title id="title">AureaOS launcher icon</title><desc id="desc">The glossy blue and cyan ribbon A on a luminous white rounded glass tile.</desc><defs>
+<linearGradient id="archFill" x1=".18" y1=".02" x2=".82" y2=".98"><stop stop-color="#12BFF5"/><stop offset=".18" stop-color="#0879E7"/><stop offset=".42" stop-color="#0755D0"/><stop offset=".72" stop-color="#0754C8"/><stop offset="1" stop-color="#0878DD"/></linearGradient>
+<linearGradient id="crossFill" x1=".08" y1=".08" x2=".92" y2=".82"><stop stop-color="#A8F8FF"/><stop offset=".22" stop-color="#43DDF8"/><stop offset=".5" stop-color="#19BFF1"/><stop offset=".78" stop-color="#35D5F6"/><stop offset="1" stop-color="#9AF1FF"/></linearGradient>
+<linearGradient id="shine" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#C9F9FF" stop-opacity=".12"/><stop offset=".23" stop-color="#E7FFFF" stop-opacity=".78"/><stop offset=".48" stop-color="#FFF" stop-opacity=".2"/><stop offset=".76" stop-color="#C7F8FF" stop-opacity=".46"/><stop offset="1" stop-color="#FFF" stop-opacity=".08"/></linearGradient>
+<linearGradient id="crossShine" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#FFF" stop-opacity=".86"/><stop offset=".35" stop-color="#F0FFFF" stop-opacity=".4"/><stop offset="1" stop-color="#D7FFFF" stop-opacity=".05"/></linearGradient>
+<linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF"/><stop offset=".55" stop-color="#F5FAFF"/><stop offset="1" stop-color="#E6F4FF"/></linearGradient>
+<radialGradient id="tileGlow" cx=".3" cy=".2" r=".9"><stop stop-color="#FFF" stop-opacity=".96"/><stop offset=".56" stop-color="#EAF6FF" stop-opacity=".55"/><stop offset="1" stop-color="#8DCDF5" stop-opacity=".22"/></radialGradient>
+<filter id="shadow" x="-.35" y="-.35" width="1.7" height="1.8"><feGaussianBlur in="SourceAlpha" stdDeviation="8"/><feOffset dy="8"/><feComponentTransfer><feFuncA type="linear" slope=".34"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs><defs><filter id="tileShadow" x="-.2" y="-.2" width="1.4" height="1.5"><feGaussianBlur in="SourceAlpha" stdDeviation="14"/><feOffset dy="12"/><feComponentTransfer><feFuncA type="linear" slope=".24"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<rect x="45" y="57" width="580" height="580" rx="145" fill="#A7CBE2" opacity=".4" filter="url(#tileShadow)"/>
+<rect x="55" y="66" width="556" height="557" rx="145" fill="url(#tile)"/><rect x="55" y="66" width="556" height="557" rx="145" fill="url(#tileGlow)"/>
+<clipPath id="tileClip"><rect x="55" y="66" width="556" height="557" rx="145"/></clipPath><g clip-path="url(#tileClip)">
+<path d="M58 365 C173 283 259 275 351 292 C460 314 537 256 610 174 L611 360 C530 459 434 480 324 452 C221 425 142 468 56 535 Z" fill="#DDF3FF" opacity=".16"/>
+<path d="M77 186 C172 109 268 107 365 127 C457 146 529 128 589 94" fill="none" stroke="#FFF" stroke-width="16" stroke-linecap="round" opacity=".45"/><g filter="url(#shadow)" stroke-linecap="round" stroke-linejoin="round">
+<path d="M133 498 C157 451 211 338 260 247 C282 205 302 163 330 151 C350 142 368 156 381 183 C424 270 476 399 527 487 C535 502 525 522 504 525 L455 525 C439 525 427 516 420 501 C386 425 349 327 320 260 C313 244 306 237 297 244 C286 252 277 277 267 299 C231 380 197 463 181 505 C174 522 159 526 143 521 C128 517 125 509 133 498 Z" fill="url(#archFill)"/>
+<path d="M330 151 C350 142 368 156 381 183 C424 270 476 399 527 487" fill="none" stroke="url(#shine)" stroke-width="5" opacity=".72"/>
+<path d="M151 505 C181 488 225 448 270 411 C312 378 344 354 375 353 C415 351 450 378 477 420 C500 456 518 485 527 500 C538 519 524 533 505 533 C486 533 476 519 467 501 C444 457 420 420 390 405 C359 389 330 394 301 413 C258 441 218 486 179 515 C158 531 138 526 134 510 C131 500 139 497 151 505 Z" fill="url(#crossFill)"/>
+<path d="M148 505 C194 472 237 428 281 395 C319 367 347 350 376 351 C414 351 445 377 470 414" fill="none" stroke="url(#crossShine)" stroke-width="8" opacity=".9"/>
+</g></g>
+<rect x="56" y="67" width="554" height="555" rx="144" fill="none" stroke="#FFF" stroke-width="6" opacity=".96"/></svg>
