@@ -121,7 +121,7 @@ impl VulkanDrmScanoutFrame {
         if !logical_device.supports_foreign_queue_family() {
             return Err(VulkanDrmFramePoolError::ForeignQueueFamilyUnavailable);
         }
-        let allocator = VulkanDrmImageAllocator::new(logical_device)?;
+        let allocator = VulkanDrmImageAllocator::new(Arc::clone(&logical_device))?;
         let image = if format.modifier == smithay::backend::allocator::Modifier::Linear {
             allocator.allocate_linear_exportable(width, height, format, usage)?
         } else {
