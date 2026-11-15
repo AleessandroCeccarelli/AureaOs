@@ -68,7 +68,7 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
         let handle = unsafe { device.handle().create_image_view(&create_info, None) }
             .map_err(VulkanImageViewError::Creation)?;
 
-        Ok(Self {
+        Ok(VulkanImageView {
             device,
             _image: PhantomData,
             image: image.handle(),
