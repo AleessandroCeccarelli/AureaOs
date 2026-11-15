@@ -113,9 +113,10 @@ impl<'device> VulkanDisplayColorPass<'device> {
         device: &'device VulkanLogicalDevice,
         source: &'resources VulkanImageView<'image, 'device>,
     ) -> Result<VulkanTextureBinding<'resources, 'image, 'device>, VulkanDisplayColorPassError> {
-        if source.device().handle().handle() != device.handle().handle()
-            || !source.usage().contains(vk::ImageUsageFlags::SAMPLED)
-        {
+        if source.device().handle().handle() != device.handle().handle() {
+            return Err(VulkanDisplayColorPassError::IncompatibleImages);
+        }
+        if !source.usage().contains(vk::ImageUsageFlags::SAMPLED) {
             return Err(VulkanDisplayColorPassError::MissingSampledUsage);
         }
 
