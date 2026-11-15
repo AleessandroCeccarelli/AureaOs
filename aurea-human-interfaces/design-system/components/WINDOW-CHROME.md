@@ -2,7 +2,7 @@
 
 # Window Chrome Specification
 
-**Status:** Design specification  
+**Status:** Design specification
 **Primary usability reference:** Familiar Windows desktop conventions
 
 ## Shared structure
@@ -15,6 +15,10 @@ First-party windows provide:
 - A stable relationship between title bar and application menus.
 
 Do not move, rename or redesign standard controls independently in each application. Users must recognize them immediately.
+
+## Visual treatment
+
+Use the shared window surface, border, radius and shadow tokens. The title bar should be visually integrated with the application window, with restrained tonal separation from content. Avoid heavy gradients, thick borders and excessive glass effects. Blur is reserved for floating system surfaces, not ordinary application content.
 
 ## Control behavior
 
