@@ -10,6 +10,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use aurea_desktop_api::display::DisplayColorController;
+
 #[cfg(feature = "drm")]
 use std::{collections::HashMap, path::PathBuf};
 
@@ -40,6 +42,9 @@ pub(super) struct WaylandState {
     pub(super) clients: Vec<Client>,
     pub(super) disconnected_clients: Arc<Mutex<Vec<ClientId>>>,
     pub(super) error: Option<io::Error>,
+
+    /// Shared shell-owned output color policy, sampled by the render path.
+    pub(super) display_color: DisplayColorController,
 
     #[cfg(feature = "drm")]
     pub(super) drm_session: Option<DrmSession>,
