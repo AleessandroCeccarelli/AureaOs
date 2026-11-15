@@ -62,6 +62,26 @@ impl DrmVulkanCompatibility {
         vulkan_formats: &[VulkanFormatCapabilities],
         external_memory: &VulkanExternalMemoryCapabilities,
     ) -> Self {
+        Self::evaluate_with_required_features(
+            plane,
+            vulkan_formats,
+            external_memory,
+            vk::FormatFeatureFlags::COLOR_ATTACHMENT,
+        )
+    }
+
+    /// Evaluates compatibility for a caller-defined set of Vulkan format features.
+    ///
+    /// Night Light's future output pass will require both color-attachment
+    /// rendering and sampled-image support on the exact scanout format/modifier.
+    /// This query is a conservative capability filter only; allocation with
+    /// the requested image-usage flags must still be attempted and may fail.
+    pub fn evaluate_with_required_features(
+        plane: &DrmPrimaryPlaneFormatCapabilities,
+        vulkan_formats: &[VulkanFormatCapabilities],
+        external_memory: &VulkanExternalMemoryCapabilities,
+        required_features: vk::FormatFeatureFlags,
+    ) -> Self {
         if !external_memory.supports_dmabuf_export {
             return Self {
                 status: DrmVulkanCompatibilityStatus::DmaBufExportUnavailable,
@@ -79,9 +99,7 @@ impl DrmVulkanCompatibility {
                 .find(|modifier| {
                     modifier.modifier == drm_format.modifier
                         && modifier.plane_count > 0
-                        && modifier
-                            .tiling_features
-                            .contains(vk::FormatFeatureFlags::COLOR_ATTACHMENT)
+                        && modifier.tiling_features.contains(required_features)
                 });
 
             let Some(modifier) = modifier else {
