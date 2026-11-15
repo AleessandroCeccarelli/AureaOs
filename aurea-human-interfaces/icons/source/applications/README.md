@@ -39,8 +39,8 @@ The symbol geometry, proportions and colors must remain consistent between the t
 
 ## Aurea Wallet
 
-- `aurea-wallet-icon.svg` — complete white rounded-square tile with a layered blue security shield and luminous cyan key.
-- `aurea-wallet-symbol.svg` — matching shield-and-key artwork on a transparent canvas.
+- `aurea-wallet-icon.svg` — complete white rounded-square tile with the canonical deep-blue shield with layered silver/cyan bevels and a dark luminous keyhole.
+- `aurea-wallet-symbol.svg` — matching shield-and-keyhole artwork on a transparent canvas.
 - Both masters use a 1024 × 1024 viewBox and are self-contained SVGs without external image dependencies.
-- The shield silhouette, key geometry, lighting direction and palette are shared between the two variants.
+- The approved shield silhouette, keyhole geometry, metallic bevels, lighting direction and palette are shared between the two variants. The transparent symbol preserves the established system artwork in `source/system/wallet.svg`.
 - SPDX: GPL-3.0-or-later.
