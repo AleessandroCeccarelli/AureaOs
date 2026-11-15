@@ -11,6 +11,7 @@ use std::{
     time::Duration,
 };
 
+use aurea_desktop_api::display::DisplayColorController;
 use smithay::reexports::calloop::EventLoop;
 
 #[cfg(feature = "drm")]
@@ -32,11 +33,19 @@ impl WaylandServer {
     ///
     /// This constructor does not require a native DRM session.
     pub fn new(socket_name: &str) -> io::Result<Self> {
+        Self::new_with_display_color(socket_name, DisplayColorController::new())
+    }
+
+    /// Creates a server with a shared display color policy channel.
+    pub fn new_with_display_color(
+        socket_name: &str,
+        display_color: DisplayColorController,
+    ) -> io::Result<Self> {
         #[cfg(feature = "drm")]
-        let parts = super::builder::build(socket_name, None, None);
+        let parts = super::builder::build(socket_name, None, None, display_color);
 
         #[cfg(not(feature = "drm"))]
-        let parts = super::builder::build(socket_name);
+        let parts = super::builder::build(socket_name, display_color);
 
         let (event_loop, state) = parts?;
 
@@ -47,16 +56,25 @@ impl WaylandServer {
     #[cfg(feature = "drm")]
     pub fn new_with_drm(socket_name: &str) -> io::Result<Self> {
         let drm_session = session::create_session()?;
-        Self::build(socket_name, Some(drm_session), None)
+        Self::build(
+            socket_name,
+            Some(drm_session),
+            None,
+            DisplayColorController::new(),
+        )
     }
 
     /// Creates a server with a libseat session and the primary GPU for a seat.
     #[cfg(feature = "drm")]
-    pub fn new_with_primary_drm(socket_name: &str, seat: &str) -> io::Result<Self> {
+    pub fn new_with_primary_drm(
+        socket_name: &str,
+        seat: &str,
+        display_color: DisplayColorController,
+    ) -> io::Result<Self> {
         let mut drm_session = session::create_session()?;
         let drm_device = session::open_primary_device(&mut drm_session, seat)?;
 
-        Self::build(socket_name, Some(drm_session), Some(drm_device))
+        Self::build(socket_name, Some(drm_session), Some(drm_device), display_color)
     }
 
     /// Creates a server with a native libseat session and an opened DRM device.
@@ -65,7 +83,12 @@ impl WaylandServer {
         let mut drm_session = session::create_session()?;
         let drm_device = session::open_device(&mut drm_session, device_path)?;
 
-        Self::build(socket_name, Some(drm_session), Some(drm_device))
+        Self::build(
+            socket_name,
+            Some(drm_session),
+            Some(drm_device),
+            DisplayColorController::new(),
+        )
     }
 
     /// Returns whether the native session is currently active.
@@ -79,8 +102,10 @@ impl WaylandServer {
         socket_name: &str,
         drm_session: Option<DrmSession>,
         drm_device: Option<DrmDevice>,
+        display_color: DisplayColorController,
     ) -> io::Result<Self> {
-        let (event_loop, state) = super::builder::build(socket_name, drm_session, drm_device)?;
+        let (event_loop, state) =
+            super::builder::build(socket_name, drm_session, drm_device, display_color)?;
 
         Ok(Self { event_loop, state })
     }
