@@ -49,7 +49,7 @@
     <filter id="aurea-shadow" x="-30%" y="-30%" width="160%" height="170%">
       <feGaussianBlur in="SourceAlpha" stdDeviation="20"/>
       <feOffset dy="22"/>
-      <feComponentTransfer><feFuncA type=" linear" slope=".28"/></feComponentTransfer>
+      <feComponentTransfer><feFuncA type="linear" slope=".28"/></feComponentTransfer>
       <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <filter id="aurea-glow" x="-40%" y="-40%" width="180%" height="180%">
