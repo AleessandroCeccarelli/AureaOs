@@ -113,7 +113,7 @@ impl VulkanDrawPass {
         command_buffer: vk::CommandBuffer,
         view: &VulkanImageView<'_, '_>,
         pipeline: &VulkanGraphicsPipeline<'_>,
-        texture: &VulkanTextureBinding<'_, '_, '_>,
+        texture: &VulkanTextureBinding<'_, '_, '_, '_>,
         set_index: u32,
         previous_state: VulkanImageState,
         final_state: VulkanImageState,
