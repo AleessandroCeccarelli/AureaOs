@@ -142,7 +142,7 @@ pub(crate) fn render_and_release(
     }).collect::<Result<Vec<_>, _>>()?;
 
     let display_binding = if let Some((pass, _, intermediate_view, _)) = display_color {
-        Some(pass.bind_source(device, intermediate_view)
+        Some(pass.bind_source(intermediate_view)
             .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?)
     } else {
         None
