@@ -98,6 +98,18 @@ impl VulkanSurfaceTextureCache {
             return Err(VulkanSurfaceTextureCacheError::CacheBudgetExceeded);
         }
 
+        // Remove every stale revision before allocating replacements. Otherwise
+        // old images for later surfaces in this same frame could be protected by
+        // the required set and temporarily exhaust the budget.
+        for (surface_id, revision, snapshot) in visible_surfaces {
+            let stale = self.entries.get(surface_id).is_some_and(|entry| {
+                entry.revision != *revision || !Arc::ptr_eq(&entry.snapshot, snapshot)
+            });
+            if stale {
+                self.remove_surface(surface_id);
+            }
+        }
+
         for (surface_id, revision, snapshot) in visible_surfaces {
             if let Some(entry) = self.entries.get_mut(surface_id)
                 && entry.revision == *revision
@@ -107,7 +119,6 @@ impl VulkanSurfaceTextureCache {
                 continue;
             }
 
-            self.remove_surface(surface_id);
             let byte_len = snapshot.pixels().len();
 
             while self.entries.len() >= MAX_CACHED_SURFACE_TEXTURES
