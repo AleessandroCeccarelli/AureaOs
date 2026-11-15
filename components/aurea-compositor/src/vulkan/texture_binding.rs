@@ -126,6 +126,12 @@ impl<'resources, 'image, 'device> VulkanTextureBinding<'resources, 'image, 'devi
             && self._view.device().handle().handle() == view.device().handle().handle()
     }
 
+    /// Returns whether this descriptor set was allocated with the exact layout.
+    pub(super) fn uses_layout(&self, layout: &VulkanTextureDescriptorSetLayout<'_>) -> bool {
+        self._layout.handle() == layout.handle()
+            && self._layout.device_handle() == layout.device_handle()
+    }
+
     /// Binds this sampled texture at the requested graphics descriptor-set index.
     pub fn bind(
         &self,
