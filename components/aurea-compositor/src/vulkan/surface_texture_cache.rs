@@ -203,12 +203,19 @@ impl VulkanSurfaceTextureCache {
     fn reap_completed_uploads(&mut self) -> Result<(), VulkanSurfaceTextureCacheError> {
         let mut index = 0;
         while index < self.pending_uploads.len() {
-            let complete = self.pending_uploads[index]
-                .upload
-                .is_complete()
-                .map_err(|error| VulkanSurfaceTextureCacheError::Texture(
-                    VulkanShmTextureError::Command(error),
-                ))?;
+            let complete = match self.pending_uploads[index].upload.is_complete() {
+                Ok(complete) => complete,
+                Err(error) => {
+                    let batch = self.pending_uploads.remove(index);
+                    self.pending_bytes = self.pending_bytes.saturating_sub(batch.byte_len);
+                    for surface_id in batch.surface_ids {
+                        self.remove_surface(&surface_id);
+                    }
+                    return Err(VulkanSurfaceTextureCacheError::Texture(
+                        VulkanShmTextureError::Command(error),
+                    ));
+                }
+            };
             if !complete {
                 index += 1;
                 continue;
