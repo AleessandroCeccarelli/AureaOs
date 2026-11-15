@@ -5,7 +5,7 @@
 
 //! Owns Vulkan scanout images and their imported KMS framebuffer wrappers.
 
-use std::{collections::HashMap, error::Error, fmt, sync::Arc};
+use std::{cell::Cell, collections::HashMap, error::Error, fmt, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
@@ -106,6 +106,7 @@ pub struct VulkanDrmScanoutFrame {
     framebuffer: VulkanDrmFramebuffer,
     image: VulkanDrmImage,
     intermediate: Option<VulkanSharedImage>,
+    intermediate_state: Cell<VulkanImageState>,
 }
 
 impl VulkanDrmScanoutFrame {
@@ -137,6 +138,7 @@ impl VulkanDrmScanoutFrame {
         Ok(Self {
             framebuffer,
             image,
+            intermediate_state: Cell::new(VulkanImageState::Undefined),
             intermediate,
         })
     }
@@ -184,6 +186,19 @@ impl VulkanDrmScanoutFrame {
     /// both color attachment writes and linearly sampled reads.
     pub fn intermediate_image(&self) -> Option<&VulkanSharedImage> {
         self.intermediate.as_ref()
+    }
+
+    /// Returns the tracked layout/access state of the reusable intermediate.
+    pub fn intermediate_state(&self) -> Option<VulkanImageState> {
+        self.intermediate.as_ref()?;
+        Some(self.intermediate_state.get())
+    }
+
+    /// Updates the state only after the command buffer has completed.
+    pub(crate) fn set_intermediate_state(&self, state: VulkanImageState) {
+        if self.intermediate.is_some() {
+            self.intermediate_state.set(state);
+        }
     }
 
     fn allocate_intermediate(
