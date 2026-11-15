@@ -24,6 +24,7 @@ pub enum VulkanDisplayColorPassError {
     MissingSampledUsage,
     MissingColorAttachmentUsage,
     IncompatibleImages,
+    UnsupportedFormatFeatures,
     Pipeline(String),
     Descriptor(String),
 }
@@ -36,6 +37,7 @@ impl fmt::Display for VulkanDisplayColorPassError {
             Self::MissingSampledUsage => formatter.write_str("Display color source lacks sampled-image usage"),
             Self::MissingColorAttachmentUsage => formatter.write_str("Display color target lacks color-attachment usage"),
             Self::IncompatibleImages => formatter.write_str("Display color resources must share a device and compatible dimensions and format"),
+            Self::UnsupportedFormatFeatures => formatter.write_str("The output format does not support optimal-tiled color attachment and linearly sampled image usage required by the display color pass"),
             Self::Pipeline(error) => write!(formatter, "Display color pipeline initialization failed: {error}"),
             Self::Descriptor(error) => write!(formatter, "Display color descriptor initialization failed: {error}"),
         }
@@ -63,6 +65,25 @@ impl<'device> VulkanDisplayColorPass<'device> {
         device: &'device VulkanLogicalDevice,
         target_format: vk::Format,
     ) -> Result<Self, VulkanDisplayColorPassError> {
+        // The composition intermediate is an optimal-tiled image, even when
+        // the final scanout image uses a DRM modifier. Check its exact format
+        // requirements before creating any pipeline resources.
+        let format_properties = unsafe {
+            device.instance().get_physical_device_format_properties(
+                device.physical_device(),
+                target_format,
+            )
+        };
+        let required_features = vk::FormatFeatureFlags::COLOR_ATTACHMENT
+            | vk::FormatFeatureFlags::SAMPLED_IMAGE
+            | vk::FormatFeatureFlags::SAMPLED_IMAGE_FILTER_LINEAR;
+        if !format_properties
+            .optimal_tiling_features
+            .contains(required_features)
+        {
+            return Err(VulkanDisplayColorPassError::UnsupportedFormatFeatures);
+        }
+
         let descriptor_layout = VulkanTextureDescriptorSetLayout::new(device)
             .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
         let sampler = VulkanSampler::linear_clamp(device)
