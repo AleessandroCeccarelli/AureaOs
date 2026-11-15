@@ -20,3 +20,11 @@ The symbol geometry, proportions and colors must remain consistent between the t
 - Both masters use a 1024 × 1024 viewBox and are authored as self-contained SVGs without external image dependencies.
 - Artwork direction: Fluent-inspired dimensional finish, Windows 11-style material softness, with an AureaOS blue/cyan identity.
 - SPDX: GPL-3.0-or-later.
+
+## Aurea Store
+
+- `aurea-store-icon.svg` — complete white rounded-square tile with layered blue/cyan surfaces and a glossy dimensional shopping bag.
+- `aurea-store-symbol.svg` — the same shopping-bag artwork on a transparent canvas.
+- Both masters use a 1024 × 1024 viewBox and are self-contained SVGs without external image dependencies.
+- The bag carries a restrained Aurea “A” mark; both variants share the same symbol geometry and palette.
+- SPDX: GPL-3.0-or-later.
