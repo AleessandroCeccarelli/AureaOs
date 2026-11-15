@@ -83,6 +83,9 @@ pub(crate) fn render_and_release(
     before_submit: impl FnOnce() -> Result<(), String>,
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let visible = visible_surfaces(scene, target)?;
+    if visible.is_empty() && display_color.is_none() {
+        return clear_and_release(device, view, previous_image_state, before_submit);
+    }
     let (composition_view, composition_previous_state) = match display_color {
         Some((_, _, intermediate_view, intermediate_state)) => (intermediate_view, intermediate_state),
         None => (view, previous_image_state),
@@ -199,6 +202,46 @@ pub(crate) fn render_and_release(
         ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
 
+    VulkanImageTransition::record_release_to_foreign(
+        device,
+        command_buffer.handle(),
+        view.image_handle(),
+        VulkanImageState::General,
+    )
+    .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+
+    command_buffer
+        .end()
+        .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
+    before_submit().map_err(VulkanSurfaceCompositionError::Command)?;
+    command_buffer
+        .submit_and_wait()
+        .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
+
+    Ok(())
+}
+
+
+fn clear_and_release(
+    device: &VulkanLogicalDevice,
+    view: &VulkanImageView<'_, '_>,
+    previous_image_state: VulkanImageState,
+    before_submit: impl FnOnce() -> Result<(), String>,
+) -> Result<(), VulkanSurfaceCompositionError> {
+    let mut command_buffer = VulkanCommandBuffer::new(device)
+        .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
+    command_buffer
+        .begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
+        .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
+
+    VulkanClearPass::record_color(
+        command_buffer.handle(),
+        view,
+        previous_image_state,
+        VulkanImageState::General,
+        BACKGROUND_COLOR,
+    )
+    .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     VulkanImageTransition::record_release_to_foreign(
         device,
         command_buffer.handle(),
