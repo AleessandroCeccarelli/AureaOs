@@ -157,9 +157,7 @@ pub(crate) fn render_and_release(
                         "A visible surface texture was not prepared in the cache".to_owned(),
                     )
                 })?;
-            texture
-                .create_view()
-                .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
+            Ok(texture.view())
         })
         .collect::<Result<Vec<_>, _>>()?;
     let bindings = views

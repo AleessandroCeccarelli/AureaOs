@@ -5,7 +5,7 @@
 
 //! Vulkan image-view ownership for renderer attachments.
 
-use std::{error::Error, fmt, marker::PhantomData};
+use std::{error::Error, fmt, marker::PhantomData, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
@@ -31,9 +31,24 @@ impl fmt::Display for VulkanImageViewError {
 
 impl Error for VulkanImageViewError {}
 
-/// Owns a color image view and borrows the image it references.
+/// Keeps the logical device alive for the lifetime of an image view.
+enum VulkanImageViewDevice<'device> {
+    Borrowed(&'device VulkanLogicalDevice),
+    Shared(Arc<VulkanSharedImage>),
+}
+
+impl VulkanImageViewDevice<'_> {
+    fn device(&self) -> &VulkanLogicalDevice {
+        match self {
+            Self::Borrowed(device) => device,
+            Self::Shared(image) => image.device(),
+        }
+    }
+}
+
+/// Owns a color image view and retains either its borrowed or shared image owner.
 pub struct VulkanImageView<'image, 'device> {
-    device: &'device VulkanLogicalDevice,
+    device: VulkanImageViewDevice<'device>,
     _image: PhantomData<&'image ()>,
     image: vk::Image,
     handle: vk::ImageView,
@@ -69,7 +84,7 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
             .map_err(VulkanImageViewError::Creation)?;
 
         Ok(VulkanImageView {
-            device,
+            device: VulkanImageViewDevice::Borrowed(device),
             _image: PhantomData,
             image: image.handle(),
             handle,
@@ -102,7 +117,7 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
             .map_err(VulkanImageViewError::Creation)?;
 
         Ok(VulkanImageView {
-            device,
+            device: VulkanImageViewDevice::Borrowed(device),
             _image: PhantomData,
             image: image.handle(),
             handle,
@@ -136,7 +151,7 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
             .map_err(VulkanImageViewError::Creation)?;
 
         Ok(VulkanImageView {
-            device,
+            device: VulkanImageViewDevice::Borrowed(device),
             _image: PhantomData,
             image: image.image(),
             handle,
@@ -165,15 +180,58 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
     pub fn usage(&self) -> vk::ImageUsageFlags {
         self.usage
     }
-    pub(super) fn device(&self) -> &'device VulkanLogicalDevice {
-        self.device
+    pub(super) fn device(&self) -> &VulkanLogicalDevice {
+        self.device.device()
+    }
+}
+
+impl VulkanImageView<'static, 'static> {
+    /// Creates an image view that owns a shared reference to its source image.
+    ///
+    /// This form can be cached independently of the call stack without
+    /// allowing the image to be destroyed while the view still exists.
+    pub fn color_shared_owned(
+        image: Arc<VulkanSharedImage>,
+    ) -> Result<VulkanImageView<'static, 'static>, VulkanImageViewError> {
+        let subresource_range = vk::ImageSubresourceRange::default()
+            .aspect_mask(vk::ImageAspectFlags::COLOR)
+            .base_mip_level(0)
+            .level_count(1)
+            .base_array_layer(0)
+            .layer_count(1);
+
+        let create_info = vk::ImageViewCreateInfo::default()
+            .image(image.handle())
+            .view_type(vk::ImageViewType::TYPE_2D)
+            .format(image.format())
+            .subresource_range(subresource_range);
+
+        let image_handle = image.handle();
+        let image_format = image.format();
+        let image_width = image.width();
+        let image_height = image.height();
+        let image_usage = image.usage();
+        let device = image.device();
+        let handle = unsafe { device.handle().create_image_view(&create_info, None) }
+            .map_err(VulkanImageViewError::Creation)?;
+
+        Ok(VulkanImageView {
+            device: VulkanImageViewDevice::Shared(image),
+            _image: PhantomData,
+            image: image_handle,
+            handle,
+            format: image_format,
+            width: image_width,
+            height: image_height,
+            usage: image_usage,
+        })
     }
 }
 
 impl Drop for VulkanImageView<'_, '_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.handle().destroy_image_view(self.handle, None);
+            self.device.device().handle().destroy_image_view(self.handle, None);
         }
     }
 }

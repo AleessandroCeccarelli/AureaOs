@@ -53,7 +53,8 @@ impl Error for VulkanShmTextureError {}
 /// The image retains shared ownership of its logical device. Upload is
 /// synchronous, so temporary staging resources are released before returning.
 pub struct VulkanShmTexture {
-    image: VulkanSharedImage,
+    image: Arc<VulkanSharedImage>,
+    view: VulkanImageView<'static, 'static>,
 }
 
 impl VulkanShmTexture {
@@ -67,17 +68,17 @@ impl VulkanShmTexture {
             return Err(VulkanShmTextureError::UnsupportedPixelFormat);
         }
 
-        let image = VulkanSharedImage::allocate(
+        let image = Arc::new(VulkanSharedImage::allocate(
             device,
             snapshot.width(),
             snapshot.height(),
             vk::Format::R8G8B8A8_UNORM,
             vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
         )
-        .map_err(VulkanShmTextureError::Image)?;
+        .map_err(VulkanShmTextureError::Image)?);
         let device = image.device();
-        let view =
-            VulkanImageView::color_shared(&image).map_err(VulkanShmTextureError::ImageView)?;
+        let view = VulkanImageView::color_shared_owned(Arc::clone(&image))
+            .map_err(VulkanShmTextureError::ImageView)?;
         let staging = VulkanUploadBuffer::new(device, snapshot.width(), snapshot.height())
             .map_err(VulkanShmTextureError::Upload)?;
         staging
@@ -113,14 +114,13 @@ impl VulkanShmTexture {
             .submit_and_wait()
             .map_err(VulkanShmTextureError::Command)?;
 
-        drop(view);
         drop(staging);
-        Ok(Self { image })
+        Ok(Self { image, view })
     }
 
-    /// Creates an image view suitable for a sampled-image descriptor.
-    pub fn create_view(&self) -> Result<VulkanImageView<'_, '_>, VulkanImageViewError> {
-        VulkanImageView::color_shared(&self.image)
+    /// Returns the cached image view suitable for a sampled-image descriptor.
+    pub fn view(&self) -> &VulkanImageView<'static, 'static> {
+        &self.view
     }
 
     pub fn width(&self) -> u32 {
