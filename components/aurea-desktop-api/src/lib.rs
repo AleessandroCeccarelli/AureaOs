@@ -16,6 +16,8 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
+use display::DisplayColorController;
+
 /// Shared shutdown signal used to coordinate desktop components.
 #[derive(Clone, Default)]
 pub struct ShutdownSignal {
@@ -56,8 +58,12 @@ pub trait CompositorService: 'static {
 /// Creates a compositor service.
 ///
 /// The factory can be transferred to the compositor worker thread.
-/// The service itself is created inside that thread.
+/// The service itself is created inside that thread. The display controller
+/// is shared with the shell and remains valid for the service lifetime.
 pub trait CompositorFactory: Send + Sync + 'static {
-    /// Initializes a compositor service.
-    fn create(&self) -> io::Result<Box<dyn CompositorService>>;
+    /// Initializes a compositor service with its shared display policy channel.
+    fn create(
+        &self,
+        display_color: DisplayColorController,
+    ) -> io::Result<Box<dyn CompositorService>>;
 }
