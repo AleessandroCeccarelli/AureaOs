@@ -4,7 +4,10 @@
 
 use std::sync::mpsc;
 
+use aurea_desktop_api::display::{DisplayColorAdjustment, DisplayColorController};
+
 use super::ShellRuntime;
+use crate::desktop::{NightLightMode, NightLightState};
 use crate::error::ShellError;
 use crate::event::ShellEvent;
 use crate::event_bus::EventBus;
@@ -176,4 +179,54 @@ fn runtime_start_error_is_lifecycle_transition_error() {
             "Shell can only start from the Created state"
         ))
     ));
+}
+
+
+#[test]
+fn runtime_publishes_manual_night_light_to_shared_display_channel() {
+    let display_color = DisplayColorController::new();
+    let compositor_view = display_color.clone();
+    let mut runtime = ShellRuntime::with_display_color(display_color);
+
+    let mut night_light = NightLightState::default();
+    night_light.set_enabled(true);
+    night_light.set_strength_percent(74);
+    runtime.set_night_light(night_light, false);
+
+    assert_eq!(compositor_view.adjustment().warmth_percent(), 74);
+    assert_eq!(runtime.display_color_adjustment().warmth_percent(), 74);
+}
+
+#[test]
+fn runtime_publishes_neutral_output_when_night_light_is_disabled() {
+    let display_color = DisplayColorController::new();
+    let compositor_view = display_color.clone();
+    let mut runtime = ShellRuntime::with_display_color(display_color);
+
+    let mut night_light = NightLightState::default();
+    night_light.set_enabled(true);
+    night_light.set_strength_percent(80);
+    runtime.set_night_light(night_light, true);
+    assert_eq!(compositor_view.adjustment().warmth_percent(), 80);
+
+    night_light.set_enabled(false);
+    runtime.set_night_light(night_light, true);
+
+    assert_eq!(compositor_view.adjustment(), DisplayColorAdjustment::default());
+}
+
+#[test]
+fn runtime_respects_scheduled_night_light_activation() {
+    let display_color = DisplayColorController::new();
+    let compositor_view = display_color.clone();
+    let mut runtime = ShellRuntime::with_display_color(display_color);
+
+    let mut night_light = NightLightState::default();
+    night_light.set_enabled(true);
+    night_light.set_mode(NightLightMode::CustomSchedule);
+    runtime.set_night_light(night_light, false);
+    assert!(compositor_view.adjustment().is_neutral());
+
+    runtime.update_night_light(true);
+    assert_eq!(compositor_view.adjustment().warmth_percent(), 50);
 }
