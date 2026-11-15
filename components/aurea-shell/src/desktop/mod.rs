@@ -7,10 +7,14 @@
 
 mod dock;
 mod launcher;
+mod night_light;
 mod workspace;
 
 pub use dock::{DockMode, DockState};
 pub use launcher::LauncherState;
+pub use night_light::{
+    NightLightMode, NightLightSchedule, NightLightScheduleError, NightLightState,
+};
 pub use workspace::{WORKSPACE_COUNT, WorkspaceId, WorkspaceManager};
 
 /// Desktop appearance preference.
@@ -28,6 +32,7 @@ pub struct DesktopState {
     pub launcher: LauncherState,
     pub workspaces: WorkspaceManager,
     pub theme: DesktopTheme,
+    pub night_light: NightLightState,
 }
 
 impl DesktopState {
@@ -52,13 +57,14 @@ impl DesktopState {
 
 #[cfg(test)]
 mod tests {
-    use super::{DesktopState, DesktopTheme};
+    use super::{DesktopState, DesktopTheme, NightLightMode};
 
     #[test]
     fn default_desktop_starts_with_light_theme_and_closed_launcher() {
         let state = DesktopState::default();
         assert_eq!(state.theme, DesktopTheme::Light);
         assert!(!state.launcher.is_open());
+        assert!(!state.night_light.is_enabled());
     }
 
     #[test]
@@ -76,5 +82,14 @@ mod tests {
         assert_eq!(state.theme, DesktopTheme::Dark);
         state.toggle_theme();
         assert_eq!(state.theme, DesktopTheme::Light);
+    }
+
+    #[test]
+    fn night_light_preferences_are_part_of_desktop_state() {
+        let mut state = DesktopState::default();
+        state.night_light.set_enabled(true);
+        state.night_light.set_mode(NightLightMode::CustomSchedule);
+        assert!(state.night_light.is_enabled());
+        assert_eq!(state.night_light.mode(), NightLightMode::CustomSchedule);
     }
 }
