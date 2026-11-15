@@ -9,9 +9,7 @@ use std::sync::Arc;
 
 use smithay::{
     reexports::wayland_server::{
-        backend::ObjectId,
-        protocol::wl_surface::WlSurface,
-        Resource,
+        backend::ObjectId, protocol::wl_surface::WlSurface, Resource,
     },
     utils::{Logical, Point, Transform},
     wayland::compositor::{

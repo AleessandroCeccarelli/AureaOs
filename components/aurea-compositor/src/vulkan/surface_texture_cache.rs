@@ -62,7 +62,12 @@ pub(crate) struct VulkanSurfaceTextureCache {
 
 impl VulkanSurfaceTextureCache {
     pub(crate) fn new(device: Arc<VulkanLogicalDevice>) -> Self {
-        Self { device, entries: HashMap::new(), cached_bytes: 0, frame: 0 }
+        Self {
+            device,
+            entries: HashMap::new(),
+            cached_bytes: 0,
+            frame: 0,
+        }
     }
 
     /// Removes inactive surfaces and prepares the textures needed by this output.
@@ -76,12 +81,16 @@ impl VulkanSurfaceTextureCache {
         self.entries.retain(|id, _| active.contains(id));
         self.recalculate_cached_bytes();
 
-        let required: HashSet<_> = visible_surfaces.iter()
-            .map(|(id, _, _)| id.clone()).collect();
-        let requested_bytes = visible_surfaces.iter().try_fold(
-            0usize,
-            |total, (_, _, snapshot)| total.checked_add(snapshot.pixels().len()),
-        ).ok_or(VulkanSurfaceTextureCacheError::CacheBudgetExceeded)?;
+        let required: HashSet<_> = visible_surfaces
+            .iter()
+            .map(|(id, _, _)| id.clone())
+            .collect();
+        let requested_bytes = visible_surfaces
+            .iter()
+            .try_fold(0usize, |total, (_, _, snapshot)| {
+                total.checked_add(snapshot.pixels().len())
+            })
+            .ok_or(VulkanSurfaceTextureCacheError::CacheBudgetExceeded)?;
 
         if visible_surfaces.len() > MAX_CACHED_SURFACE_TEXTURES
             || requested_bytes > MAX_CACHED_SURFACE_TEXTURE_BYTES
@@ -102,10 +111,14 @@ impl VulkanSurfaceTextureCache {
             let byte_len = snapshot.pixels().len();
 
             while self.entries.len() >= MAX_CACHED_SURFACE_TEXTURES
-                || self.cached_bytes.checked_add(byte_len)
+                || self
+                    .cached_bytes
+                    .checked_add(byte_len)
                     .map_or(true, |total| total > MAX_CACHED_SURFACE_TEXTURE_BYTES)
             {
-                let candidate = self.entries.iter()
+                let candidate = self
+                    .entries
+                    .iter()
                     .filter(|(id, _)| !required.contains(*id))
                     .min_by_key(|(_, entry)| entry.last_used)
                     .map(|(id, _)| id.clone());
@@ -119,16 +132,20 @@ impl VulkanSurfaceTextureCache {
             let texture = VulkanShmTexture::from_snapshot(
                 Arc::clone(&self.device),
                 snapshot.as_ref().clone(),
-            ).map_err(VulkanSurfaceTextureCacheError::Texture)?;
+            )
+            .map_err(VulkanSurfaceTextureCacheError::Texture)?;
 
             self.cached_bytes += byte_len;
-            self.entries.insert(surface_id.clone(), CachedSurfaceTexture {
-                revision: *revision,
-                snapshot: Arc::clone(snapshot),
-                texture,
-                byte_len,
-                last_used: self.frame,
-            });
+            self.entries.insert(
+                surface_id.clone(),
+                CachedSurfaceTexture {
+                    revision: *revision,
+                    snapshot: Arc::clone(snapshot),
+                    texture,
+                    byte_len,
+                    last_used: self.frame,
+                },
+            );
         }
 
         Ok(())

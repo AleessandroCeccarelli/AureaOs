@@ -32,10 +32,16 @@ impl fmt::Display for VulkanShmTextureError {
         match self {
             Self::UnsupportedPixelFormat => formatter
                 .write_str("Wayland SHM snapshot must be normalized to RGBA8 before Vulkan upload"),
-            Self::Image(error) => write!(formatter, "SHM texture image allocation failed: {error}"),
-            Self::ImageView(error) => write!(formatter, "SHM texture image-view creation failed: {error}"),
+            Self::Image(error) => {
+                write!(formatter, "SHM texture image allocation failed: {error}")
+            }
+            Self::ImageView(error) => {
+                write!(formatter, "SHM texture image-view creation failed: {error}")
+            }
             Self::Upload(error) => write!(formatter, "SHM texture upload failed: {error}"),
-            Self::Command(error) => write!(formatter, "SHM texture Vulkan command failed: {error:?}"),
+            Self::Command(error) => {
+                write!(formatter, "SHM texture Vulkan command failed: {error:?}")
+            }
         }
     }
 }
@@ -70,31 +76,42 @@ impl VulkanShmTexture {
         )
         .map_err(VulkanShmTextureError::Image)?;
         let device = image.device();
-        let view = VulkanImageView::color_shared(&image)
-            .map_err(VulkanShmTextureError::ImageView)?;
+        let view =
+            VulkanImageView::color_shared(&image).map_err(VulkanShmTextureError::ImageView)?;
         let staging = VulkanUploadBuffer::new(device, snapshot.width(), snapshot.height())
             .map_err(VulkanShmTextureError::Upload)?;
-        staging.write_rgba8(snapshot.pixels())
+        staging
+            .write_rgba8(snapshot.pixels())
             .map_err(VulkanShmTextureError::Upload)?;
 
-        let mut commands = VulkanCommandBuffer::new(device)
-            .map_err(VulkanShmTextureError::Command)?;
-        commands.begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
+        let mut commands =
+            VulkanCommandBuffer::new(device).map_err(VulkanShmTextureError::Command)?;
+        commands
+            .begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
             .map_err(VulkanShmTextureError::Command)?;
 
         VulkanImageTransition::record_color(
-            device, commands.handle(), image.handle(),
-            VulkanImageState::Undefined, VulkanImageState::TransferDestination,
+            device,
+            commands.handle(),
+            image.handle(),
+            VulkanImageState::Undefined,
+            VulkanImageState::TransferDestination,
         );
-        staging.record_upload_rgba8(commands.handle(), &view)
+        staging
+            .record_upload_rgba8(commands.handle(), &view)
             .map_err(VulkanShmTextureError::Upload)?;
         VulkanImageTransition::record_color(
-            device, commands.handle(), image.handle(),
-            VulkanImageState::TransferDestination, VulkanImageState::ShaderRead,
+            device,
+            commands.handle(),
+            image.handle(),
+            VulkanImageState::TransferDestination,
+            VulkanImageState::ShaderRead,
         );
 
         commands.end().map_err(VulkanShmTextureError::Command)?;
-        commands.submit_and_wait().map_err(VulkanShmTextureError::Command)?;
+        commands
+            .submit_and_wait()
+            .map_err(VulkanShmTextureError::Command)?;
 
         drop(view);
         drop(staging);
@@ -106,6 +123,11 @@ impl VulkanShmTexture {
         VulkanImageView::color_shared(&self.image)
     }
 
-    pub fn width(&self) -> u32 { self.image.width() }
-    pub fn height(&self) -> u32 { self.image.height() }
+    pub fn width(&self) -> u32 {
+        self.image.width()
+    }
+
+    pub fn height(&self) -> u32 {
+        self.image.height()
+    }
 }

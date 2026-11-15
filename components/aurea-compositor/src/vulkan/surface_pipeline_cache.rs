@@ -7,10 +7,7 @@
 
 use std::{collections::HashMap, error::Error, fmt, sync::Arc};
 
-use smithay::{
-    reexports::ash::vk,
-    reexports::wayland_server::backend::ObjectId,
-};
+use smithay::{reexports::ash::vk, reexports::wayland_server::backend::ObjectId};
 
 use crate::render::shm_buffer::ShmBufferSnapshot;
 
@@ -114,7 +111,8 @@ impl VulkanSurfacePipelineCache {
         active_surface_ids: &[ObjectId],
         visible_surfaces: &[(ObjectId, u64, Arc<ShmBufferSnapshot>)],
     ) -> Result<(), VulkanSurfaceTextureCacheError> {
-        self.texture_cache.prepare(active_surface_ids, visible_surfaces)
+        self.texture_cache
+            .prepare(active_surface_ids, visible_surfaces)
     }
 
     pub(crate) fn surface_texture(&self, surface_id: &ObjectId) -> Option<&VulkanShmTexture> {

@@ -88,17 +88,24 @@ pub(crate) fn render_and_release(
     before_submit: impl FnOnce() -> Result<(), String>,
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let snapshots = scene.shm_snapshots();
-    let active_surface_ids = snapshots.iter()
+    let active_surface_ids = snapshots
+        .iter()
         .map(|snapshot| snapshot.surface_id.clone())
         .collect::<Vec<_>>();
     let visible = visible_surfaces(snapshots, target)?;
-    let texture_requests = visible.iter().map(|surface| (
-        surface.surface_id.clone(),
-        surface.revision,
-        Arc::clone(&surface.snapshot),
-    )).collect::<Vec<_>>();
+    let texture_requests = visible
+        .iter()
+        .map(|surface| {
+            (
+                surface.surface_id.clone(),
+                surface.revision,
+                Arc::clone(&surface.snapshot),
+            )
+        })
+        .collect::<Vec<_>>();
 
-    surface_cache.prepare_surface_textures(&active_surface_ids, &texture_requests)
+    surface_cache
+        .prepare_surface_textures(&active_surface_ids, &texture_requests)
         .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
 
     if visible.is_empty() {
@@ -140,14 +147,21 @@ pub(crate) fn render_and_release(
 
     // Cached images survive across frames. Views and descriptor sets remain
     // frame-scoped until submit_and_wait confirms GPU completion.
-    let views = visible.iter().map(|surface| {
-        surface_cache.surface_texture(&surface.surface_id).ok_or_else(|| {
-            VulkanSurfaceCompositionError::Texture(
-                "A visible surface texture was not prepared in the cache".to_owned(),
-            )
-        })?.create_view()
-            .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
-    }).collect::<Result<Vec<_>, _>>()?;
+    let views = visible
+        .iter()
+        .map(|surface| {
+            let texture = surface_cache
+                .surface_texture(&surface.surface_id)
+                .ok_or_else(|| {
+                    VulkanSurfaceCompositionError::Texture(
+                        "A visible surface texture was not prepared in the cache".to_owned(),
+                    )
+                })?;
+            texture
+                .create_view()
+                .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
     let bindings = views
         .iter()
         .map(|texture_view| {
