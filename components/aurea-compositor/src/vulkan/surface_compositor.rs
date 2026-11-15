@@ -20,7 +20,7 @@ use super::{
     VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDrawPass, VulkanGraphicsPipeline,
     VulkanGraphicsShaders, VulkanImageState, VulkanImageTransition, VulkanImageView,
     VulkanLogicalDevice, VulkanSampler, VulkanShaderModule, VulkanShmTexture, VulkanTextureBinding,
-    VulkanTextureDescriptorSetLayout,
+    VulkanTextureDescriptorSetLayout, VulkanDisplayColorPass,
 };
 
 const BACKGROUND_COLOR: [f32; 4] = [0.08, 0.18, 0.32, 1.0];
@@ -74,67 +74,66 @@ pub(crate) fn render_and_release(
     target: &RenderTarget,
     scene: &RenderScene<'_>,
     previous_image_state: VulkanImageState,
+    display_color: Option<(
+        &VulkanDisplayColorPass<'_>,
+        u8,
+        &VulkanImageView<'_, '_>,
+        VulkanImageState,
+    )>,
     before_submit: impl FnOnce() -> Result<(), String>,
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let visible = visible_surfaces(scene, target)?;
-    if visible.is_empty() {
-        return clear_and_release(device, view, previous_image_state, before_submit);
-    }
+    let (composition_view, composition_previous_state) = match display_color {
+        Some((_, _, intermediate_view, intermediate_state)) => (intermediate_view, intermediate_state),
+        None => (view, previous_image_state),
+    };
 
-    let descriptor_layout = VulkanTextureDescriptorSetLayout::new(device)
-        .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
-    let sampler = VulkanSampler::linear_clamp(device)
-        .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
+    let surface_resources = if visible.is_empty() {
+        None
+    } else {
+        let descriptor_layout = VulkanTextureDescriptorSetLayout::new(device)
+            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
+        let sampler = VulkanSampler::linear_clamp(device)
+            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
+        let vertex = VulkanShaderModule::from_bytes(
+            device,
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
+        )
+        .map_err(|error| VulkanSurfaceCompositionError::Shader(error.to_string()))?;
+        let fragment = VulkanShaderModule::from_bytes(
+            device,
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_SPV")),
+        )
+        .map_err(|error| VulkanSurfaceCompositionError::Shader(error.to_string()))?;
+        let descriptor_layouts = [&descriptor_layout];
+        let pipeline = VulkanGraphicsPipeline::new_with_descriptor_layouts(
+            device,
+            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            composition_view.format(),
+            &descriptor_layouts,
+        )
+        .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
 
-    let vertex = VulkanShaderModule::from_bytes(
-        device,
-        include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
-    )
-    .map_err(|error| VulkanSurfaceCompositionError::Shader(error.to_string()))?;
-    let fragment = VulkanShaderModule::from_bytes(
-        device,
-        include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_SPV")),
-    )
-    .map_err(|error| VulkanSurfaceCompositionError::Shader(error.to_string()))?;
-
-    let descriptor_layouts = [&descriptor_layout];
-    let pipeline = VulkanGraphicsPipeline::new_with_descriptor_layouts(
-        device,
-        VulkanGraphicsShaders {
-            vertex: &vertex,
-            fragment: &fragment,
-        },
-        view.format(),
-        &descriptor_layouts,
-    )
-    .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
-
-    // The vectors are built in dependency order. All texture images, views,
-    // samplers, descriptor pools and layouts stay alive until submit_and_wait.
-    let textures = visible
-        .iter()
-        .map(|surface| {
+        let textures = visible.iter().map(|surface| {
             VulkanShmTexture::from_snapshot(device, surface.snapshot.as_ref().clone())
                 .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-
-    let views = textures
-        .iter()
-        .map(|texture| {
-            texture
-                .create_view()
-                .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-
-    let bindings = views
-        .iter()
-        .map(|texture_view| {
+        }).collect::<Result<Vec<_>, _>>()?;
+        let views = textures.iter().map(|texture| {
+            texture.create_view().map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
+        }).collect::<Result<Vec<_>, _>>()?;
+        let bindings = views.iter().map(|texture_view| {
             VulkanTextureBinding::new(device, &descriptor_layout, texture_view, &sampler)
                 .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
-        })
-        .collect::<Result<Vec<_>, _>>()?;
+        }).collect::<Result<Vec<_>, _>>()?;
+        Some((descriptor_layout, sampler, vertex, fragment, pipeline, textures, views, bindings))
+    };
+
+    let display_binding = if let Some((pass, _, intermediate_view, _)) = display_color {
+        Some(pass.bind_source(device, intermediate_view)
+            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?)
+    } else {
+        None
+    };
 
     let mut command_buffer = VulkanCommandBuffer::new(device)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
@@ -144,13 +143,14 @@ pub(crate) fn render_and_release(
 
     VulkanClearPass::record_color(
         command_buffer.handle(),
-        view,
-        previous_image_state,
+        composition_view,
+        composition_previous_state,
         VulkanImageState::General,
         BACKGROUND_COLOR,
     )
     .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
 
+    if let Some((_, _, _, _, pipeline, _, _, bindings)) = surface_resources.as_ref() {
     for (surface, binding) in visible.iter().zip(bindings.iter()) {
         let geometry = surface.geometry;
         let scissor = surface.scissor;
@@ -177,8 +177,8 @@ pub(crate) fn render_and_release(
 
         VulkanDrawPass::record_textured_region(
             command_buffer.handle(),
-            view,
-            &pipeline,
+            composition_view,
+            pipeline,
             binding,
             0,
             VulkanImageState::General,
@@ -188,6 +188,22 @@ pub(crate) fn render_and_release(
             scissor,
         )
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+    }
+    }
+
+    if let Some((pass, warmth, _, intermediate_state)) = display_color {
+        pass.record(
+            device,
+            command_buffer.handle(),
+            composition_view,
+            view,
+            display_binding.as_ref().expect("display binding created with pass"),
+            VulkanImageState::General,
+            previous_image_state,
+            VulkanImageState::General,
+            warmth,
+        ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+        let _ = intermediate_state;
     }
 
     VulkanImageTransition::record_release_to_foreign(
