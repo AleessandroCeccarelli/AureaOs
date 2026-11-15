@@ -24,6 +24,18 @@ The shell uses canonical tokens for color, spacing, radii, borders, shadows and 
 
 Glass is reserved for floating shell surfaces. Application content remains readable and stable. If blur is unavailable, use an opaque elevated surface. Under reduced transparency, remove blur and translucent highlights without losing hierarchy.
 
+## Quick Settings — Night Light
+
+The right side of the floating dock opens Quick Settings. Include a Night Light control with:
+
+- A clear on/off state and accessible label.
+- A direct toggle that does not require opening Settings.
+- A compact indication of the selected warmth level.
+- A route to the complete schedule and intensity controls in Settings → Appearance.
+- A visible unavailable/unsupported state if the compositor cannot apply the output-wide adjustment.
+
+Quick Settings and Settings must display the same system preference state. They must not maintain separate copies of the Night Light setting.
+
 ## Interaction
 
 Super opens the launcher. Alt+Tab switches open windows. The dock distinguishes pinned applications, running applications and minimized windows. The launcher provides search, pinned apps and a discoverable full application list.
