@@ -11,8 +11,8 @@ use smithay::reexports::ash::vk;
 
 use super::{
     VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
-    VulkanLogicalDevice, VulkanSampler, VulkanSamplerError, VulkanShaderError,
-    VulkanShaderModule, VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
+    VulkanLogicalDevice, VulkanSampler, VulkanSamplerError, VulkanShaderError, VulkanShaderModule,
+    VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
 };
 
 /// Errors returned while preparing cached surface-composition resources.
@@ -51,9 +51,8 @@ impl VulkanSurfacePipelineCache {
     pub(crate) fn new(
         device: Arc<VulkanLogicalDevice>,
     ) -> Result<Self, VulkanSurfacePipelineCacheError> {
-        let descriptor_layout =
-            VulkanTextureDescriptorSetLayout::new_shared(Arc::clone(&device))
-                .map_err(VulkanSurfacePipelineCacheError::DescriptorLayout)?;
+        let descriptor_layout = VulkanTextureDescriptorSetLayout::new_shared(Arc::clone(&device))
+            .map_err(VulkanSurfacePipelineCacheError::DescriptorLayout)?;
         let sampler = VulkanSampler::linear_clamp_shared(Arc::clone(&device))
             .map_err(VulkanSurfacePipelineCacheError::Sampler)?;
 
@@ -101,10 +100,7 @@ impl VulkanSurfacePipelineCache {
         Ok(())
     }
 
-    pub(crate) fn pipeline(
-        &self,
-        format: vk::Format,
-    ) -> Option<&VulkanGraphicsPipeline<'static>> {
+    pub(crate) fn pipeline(&self, format: vk::Format) -> Option<&VulkanGraphicsPipeline<'static>> {
         self.pipelines.get(&format)
     }
 
