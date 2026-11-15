@@ -79,17 +79,18 @@ impl<'device> VulkanUploadBatch<'device> {
         })
     }
 
-    /// Writes one tightly packed image into its assigned byte range.
-    pub(super) fn write_at(
+    /// Writes every image segment through one mapping and one cache flush.
+    pub(super) fn write_segments(
         &self,
-        offset: usize,
-        pixels: &[u8],
+        segments: &[(usize, &[u8])],
     ) -> Result<(), VulkanUploadError> {
-        let end = offset
-            .checked_add(pixels.len())
-            .ok_or(VulkanUploadError::SizeOverflow)?;
-        if offset % 4 != 0 || end > self.byte_len {
-            return Err(VulkanUploadError::InvalidOffset);
+        for (offset, pixels) in segments {
+            let end = offset
+                .checked_add(pixels.len())
+                .ok_or(VulkanUploadError::SizeOverflow)?;
+            if offset % 4 != 0 || end > self.byte_len {
+                return Err(VulkanUploadError::InvalidOffset);
+            }
         }
 
         let mapped = unsafe {
@@ -102,12 +103,14 @@ impl<'device> VulkanUploadBatch<'device> {
         }
         .map_err(VulkanUploadError::Mapping)?;
 
-        unsafe {
-            std::ptr::copy_nonoverlapping(
-                pixels.as_ptr(),
-                mapped.cast::<u8>().add(offset),
-                pixels.len(),
-            );
+        for (offset, pixels) in segments {
+            unsafe {
+                std::ptr::copy_nonoverlapping(
+                    pixels.as_ptr(),
+                    mapped.cast::<u8>().add(*offset),
+                    pixels.len(),
+                );
+            }
         }
 
         if !self.coherent {

@@ -125,11 +125,13 @@ impl VulkanShmTexture {
         let staging = VulkanUploadBatch::new(device.as_ref(), total_bytes)
             .map_err(VulkanShmTextureError::Upload)?;
 
-        for (_, _, offset, _, _, pixels) in &resources {
-            staging
-                .write_at(*offset, pixels)
-                .map_err(VulkanShmTextureError::Upload)?;
-        }
+        let segments = resources
+            .iter()
+            .map(|(_, _, offset, _, _, pixels)| (*offset, pixels.as_slice()))
+            .collect::<Vec<_>>();
+        staging
+            .write_segments(&segments)
+            .map_err(VulkanShmTextureError::Upload)?;
 
         let mut commands = VulkanCommandBuffer::new(device.as_ref())
             .map_err(VulkanShmTextureError::Command)?;
