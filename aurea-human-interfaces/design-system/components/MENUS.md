@@ -2,7 +2,7 @@
 
 # Menu Specification
 
-**Status:** Design specification  
+**Status:** Design specification
 **Related rules:** `../../APP-DESIGN-GUIDELINES.md`
 
 ## Application menu bar
@@ -35,6 +35,10 @@ Application-specific commands belong in the closest relevant category. Contextua
 
 An item may contain an icon, command label, optional shortcut, submenu indicator and checked/state indicator. Align labels and shortcuts consistently. Group related commands and avoid unnecessary separators.
 
+## Surface and appearance
+
+Floating menus use a shared elevated surface with a subtle border, rounded corners and soft shadow. A restrained translucent material may be used for menus detached from dense content, but menu text and icons remain crisp and high-contrast. Use the shared glass tokens only where the backdrop and compositor support them; otherwise use an opaque elevated surface. Avoid bright gradients inside menu rows.
+
 ## Behavior
 
 Support pointer hover, keyboard focus, pressed, checked and disabled states. Arrow keys navigate; Enter activates; Escape closes the current menu level. Focus returns to the invoking control. Menus stay within screen bounds and open in predictable directions.
@@ -43,4 +47,4 @@ Context menus appear near the pointer when possible and expose actions relevant 
 
 ## Themes and accessibility
 
-Use shared menu surface, border, shadow, typography and focus tokens. Expose menu roles, item names, checked state and shortcuts to assistive technology. Maintain readable contrast in both themes.
+Use shared menu surface, border, shadow, typography and focus tokens. Expose menu roles, item names, checked state and shortcuts to assistive technology. Maintain readable contrast in both themes and support reduced transparency.
