@@ -128,6 +128,55 @@ impl<'device> VulkanDisplayColorPass<'device> {
         })
     }
 
+    /// Creates a reusable pass that retains the Vulkan device independently.
+    pub fn new_shared(
+        device: std::sync::Arc<VulkanLogicalDevice>,
+        target_format: vk::Format,
+    ) -> Result<VulkanDisplayColorPass<'static>, VulkanDisplayColorPassError> {
+        let device_ref = device.as_ref();
+        let format_properties = unsafe {
+            device_ref.instance().get_physical_device_format_properties(
+                device_ref.physical_device(),
+                target_format,
+            )
+        };
+        let required_features = vk::FormatFeatureFlags::COLOR_ATTACHMENT
+            | vk::FormatFeatureFlags::SAMPLED_IMAGE
+            | vk::FormatFeatureFlags::SAMPLED_IMAGE_FILTER_LINEAR;
+        if !format_properties.optimal_tiling_features.contains(required_features) {
+            return Err(VulkanDisplayColorPassError::UnsupportedFormatFeatures);
+        }
+
+        let descriptor_layout = VulkanTextureDescriptorSetLayout::new_shared(
+            std::sync::Arc::clone(&device),
+        ).map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
+        let sampler = VulkanSampler::linear_clamp_shared(
+            std::sync::Arc::clone(&device),
+        ).map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
+        let vertex = VulkanShaderModule::from_bytes(
+            device_ref,
+            include_bytes!(env!("AUREA_DISPLAY_COLOR_VERT_SPV")),
+        ).map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
+        let fragment = VulkanShaderModule::from_bytes(
+            device_ref,
+            include_bytes!(env!("AUREA_DISPLAY_COLOR_FRAG_SPV")),
+        ).map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
+        let descriptor_handles = [descriptor_layout.handle()];
+        let push_ranges = [vk::PushConstantRange::default()
+            .stage_flags(vk::ShaderStageFlags::FRAGMENT)
+            .offset(0)
+            .size(std::mem::size_of::<f32>() as u32)];
+        let pipeline = VulkanGraphicsPipeline::new_shared_with_descriptor_layout_handles(
+            device,
+            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            target_format,
+            &descriptor_handles,
+            &push_ranges,
+        ).map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
+
+        Ok(Self { pipeline, descriptor_layout, sampler })
+    }
+
     /// Creates a per-frame sampled-image binding.
     ///
     /// Keep the returned binding alive until the command buffer has completed;
@@ -160,7 +209,7 @@ impl<'device> VulkanDisplayColorPass<'device> {
         command_buffer: vk::CommandBuffer,
         source: &VulkanImageView<'_, '_>,
         target: &VulkanImageView<'_, '_>,
-        binding: &VulkanTextureBinding<'_, '_, 'device>,
+        binding: &VulkanTextureBinding<'_, '_, '_>,
         previous_source_state: VulkanImageState,
         previous_target_state: VulkanImageState,
         final_state: VulkanImageState,
