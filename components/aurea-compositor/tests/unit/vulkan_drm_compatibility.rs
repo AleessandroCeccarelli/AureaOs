@@ -184,3 +184,66 @@ fn ignores_vulkan_formats_not_advertised_by_the_drm_plane() {
         DrmVulkanCompatibilityStatus::NoCommonRenderableFormat
     );
 }
+
+
+#[test]
+fn post_process_candidate_requires_color_attachment_and_sampling_support() {
+    let code = Fourcc::Argb8888;
+    let modifier = Modifier::Linear;
+    let plane = drm_plane(vec![Format { code, modifier }]);
+    let export = export_capabilities(true);
+    let required = vk::FormatFeatureFlags::COLOR_ATTACHMENT
+        | vk::FormatFeatureFlags::SAMPLED_IMAGE;
+
+    let sampled = [vulkan_format(
+        code,
+        modifier,
+        1,
+        vk::FormatFeatureFlags::COLOR_ATTACHMENT
+            | vk::FormatFeatureFlags::SAMPLED_IMAGE,
+    )];
+    let result = DrmVulkanCompatibility::evaluate_with_required_features(
+        &plane,
+        &sampled,
+        &export,
+        required,
+    );
+    assert!(result.is_compatible());
+    assert_eq!(result.formats().len(), 1);
+
+    let render_only = [vulkan_format(
+        code,
+        modifier,
+        1,
+        vk::FormatFeatureFlags::COLOR_ATTACHMENT,
+    )];
+    let result = DrmVulkanCompatibility::evaluate_with_required_features(
+        &plane,
+        &render_only,
+        &export,
+        required,
+    );
+    assert_eq!(
+        result.status(),
+        DrmVulkanCompatibilityStatus::NoCommonRenderableFormat
+    );
+    assert!(result.formats().is_empty());
+}
+
+#[test]
+fn existing_scanout_negotiation_remains_color_attachment_only() {
+    let code = Fourcc::Argb8888;
+    let modifier = Modifier::Linear;
+    let plane = drm_plane(vec![Format { code, modifier }]);
+    let vulkan = [vulkan_format(
+        code,
+        modifier,
+        1,
+        vk::FormatFeatureFlags::COLOR_ATTACHMENT,
+    )];
+
+    assert!(
+        DrmVulkanCompatibility::evaluate(&plane, &vulkan, &export_capabilities(true))
+            .is_compatible()
+    );
+}
