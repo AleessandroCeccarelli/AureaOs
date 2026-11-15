@@ -3,59 +3,40 @@
 # AureaOS Application Design Guidelines
 
 **Status:** Design specification  
-**Scope:** First-party AureaOS applications and third-party applications integrating with the AureaOS desktop  
-**Canonical visual foundation:** `design-system/tokens/index.css`
+**Scope:** First-party AureaOS applications and compatible third-party applications  
+**Canonical visual foundation:** `design-system/tokens/index.css`  
+**Keyboard conventions:** `design-system/KEYBOARD-AND-COMMAND-CONVENTIONS.md`
 
 ## 1. Purpose
 
-This document defines how applications should look and behave in AureaOS. Its purpose is to make the desktop feel like one carefully designed operating environment rather than a collection of unrelated applications.
+AureaOS applications must feel like parts of one operating system and remain immediately understandable to people familiar with Windows desktop software.
 
-The guidelines apply to:
+Windows is the primary usability reference for ordinary desktop conventions: menu organization, file operations, context menus, window controls, keyboard shortcuts and common terminology. KDE Plasma informs the floating dock and desktop flexibility. macOS informs visual consistency, careful finishing and notification quality.
 
-- First-party applications developed for AureaOS.
-- System utilities, settings panels, dialogs and other application surfaces.
-- Third-party applications that choose to integrate with the AureaOS visual environment.
+These references guide usability, not copying. AureaOS owns its artwork, branding, colors and implementation. It must not move familiar controls or rename standard commands merely to appear different.
 
-AureaOS should combine the strongest usability ideas found across modern desktop systems while maintaining its own identity. Familiarity is welcome; copying another operating system's appearance or branding is not.
+## 2. Core rules
 
-Consistency does not mean that every application must have identical content or layout. It means that shared elements, terminology, visual rules and interaction patterns behave predictably everywhere.
+- Preserve established desktop mental models wherever practical.
+- Keep the same command in the same menu and use the same wording across applications.
+- Use familiar keyboard shortcuts by default.
+- Use shared components and semantic tokens.
+- Keep window controls and title-bar behavior consistent.
+- Prioritize readability over transparency, blur or decoration.
+- Support keyboard, pointer, accessibility and both system themes.
+- Do not imitate system-level UI inside ordinary applications.
 
-## 2. Core principles
+## 3. Window structure
 
-Every application should be:
+First-party windows use a shared structure with application identity, predictable title area, standard minimize/maximize-restore/close controls and consistent hit targets.
 
-- **Recognizably AureaOS:** use the shared visual language rather than imitating another desktop.
-- **Consistent:** reuse common components, tokens, menu names and interaction states.
-- **Readable:** prioritize text clarity, contrast and sensible information density.
-- **Predictable:** controls with the same purpose should look and behave the same way.
-- **Quiet and purposeful:** avoid decorative effects that compete with the content.
-- **Accessible:** support keyboard navigation, visible focus, scalable text and reduced motion.
-- **Efficient:** keep frequent actions easy to discover and reach.
-- **Adaptable:** work across supported screen sizes, display scales and light/dark themes.
+Window controls must not be independently relocated, renamed or redesigned by each application. Maximize/restore uses one predictable control and state. Closing must respect unsaved work.
 
-Application-specific identity belongs in the content, workflows and carefully controlled accent details—not in reinventing shared desktop conventions.
+The native window framework and compositor own window behavior; application content must not imitate system decorations.
 
-## 3. Shared application window
+## 4. Standard application menus
 
-First-party applications must use the shared AureaOS window framework wherever available. The framework defines the window header, title placement, menu presentation, window controls, spacing, surfaces and interaction states.
-
-### 3.1 Window header
-
-The standard application window header must provide a consistent structure:
-
-- Application identity, using its approved icon and/or name.
-- A predictable title area.
-- Standard minimize, maximize/restore and close controls.
-- Consistent control order, dimensions, hit targets and hover/pressed states.
-- A consistent relationship between the header and the application menu.
-
-Window controls must remain in the same position and use the same behavior across first-party applications. Applications must not move, rename or visually reinvent these controls.
-
-The header should remain visually calm. Avoid unnecessary gradients, thick borders, oversized controls or unrelated decorative elements.
-
-### 3.2 Application menu
-
-First-party desktop applications must use the same standard menu names and order:
+First-party desktop applications use these shared menu categories in this order:
 
 1. **File**
 2. **Edit**
@@ -64,245 +45,72 @@ First-party desktop applications must use the same standard menu names and order
 5. **Window**
 6. **Help**
 
-The labels are canonical identifiers; their visible text must be localized consistently. For example, the Italian interface uses **File**, **Modifica**, **Visualizza**, **Vai**, **Finestra** and **Aiuto**.
+Italian labels are **File**, **Modifica**, **Visualizza**, **Vai**, **Finestra** and **Aiuto**.
 
-The menu structure must not change from one AureaOS application to another. Applications may provide different commands inside each menu according to their purpose, but must not invent alternative names for these shared categories.
+Applications may omit a category only when it has no meaningful commands. They must not rename categories, reorder them or invent synonyms. Do not add empty menus just to fill the row.
 
-Examples:
+Commands belong in the same category across applications whenever their meaning is shared. For example, copy, cut, paste, select all and undo remain under Edit. View contains layout, display and visibility choices. Window contains window-level actions. Help contains documentation, support and version information.
 
-- Fides may place new folder, open, copy, move and properties commands in the appropriate standard menus.
-- Quaero may expose search navigation and result-view commands.
-- Aurea Wallet may expose wallet-specific actions under the relevant standard categories.
+Fides may add file-specific commands under File; Quaero may add search-specific commands under Navigate or View; Aurea Wallet may add wallet-specific commands under the relevant standard category. Contextual commands may also appear in right-click menus.
 
-A command that is not relevant to an application must not be fabricated merely to fill a menu. Keep the shared menu structure understandable and avoid empty or misleading entries. Application-specific commands may be grouped inside the appropriate standard menu; genuinely contextual actions may also appear in contextual menus.
+## 5. Context menus
 
-Menu items must support keyboard navigation, visible focus, clear disabled states, accelerators where appropriate and consistent dismissal behavior.
+Right-click opens a context menu for the selected object or current surface. Menus appear near the pointer when possible, stay within screen bounds and use the same typography, icons, separators, shadows and interaction states throughout AureaOS.
 
-### 3.3 Context menus
+Use familiar command wording. Do not create application-specific visual menu languages. Destructive actions must be clearly distinguished and must not be placed beside routine actions without separation.
 
-Context menus must use the same typography, surfaces, corner treatment, spacing, icons, separators, focus and hover states as other AureaOS menus.
+## 6. Shared visual language
 
-The available commands may depend on the selected object or context. Their wording must remain consistent with the corresponding commands in the main application menus.
+Use semantic tokens from `design-system/tokens/index.css` for surfaces, text, borders, accent, focus, status, shadows, radii and spacing.
 
-Do not create a different visual menu language for each application.
+Light, Dark and Automatic appearance follow the system setting. First-party applications update together when the system appearance changes. Both themes must preserve the same hierarchy and interaction model.
 
-## 4. Shared visual language
+Use transparency and blur selectively for floating surfaces, menus and panels. Application content areas prioritize stable contrast. Effects must degrade gracefully when reduced or unavailable.
 
-Applications must use the AureaOS design system as their source of truth for visual values.
+Typography and icons use approved AureaOS resources. Application icons may have distinct identities but must follow the shared icon guidance. Do not reuse another operating system's icon artwork.
 
-### 4.1 Color and semantic tokens
+## 7. Interaction and motion
 
-Use semantic tokens for:
+Buttons, fields, lists, menus and tabs must define default, hover, focus, pressed, selected, disabled and applicable loading/error states. Do not rely on color alone.
 
-- Window and page surfaces.
-- Elevated surfaces and panels.
-- Primary, secondary and muted text.
-- Borders and separators.
-- Primary and secondary accents.
-- Focus, selection, hover and pressed states.
-- Success, warning, critical and informational states.
-- Shadows and translucent surfaces.
+Animations are brief and purposeful. All first-party applications respect reduced motion. Essential operations remain available by keyboard and pointer, with visible focus and logical focus order.
 
-Do not independently hard-code a new palette inside each first-party application. Do not use the Aurea warm/gold accent as a replacement for the primary blue or for semantic status colors.
+Use the shared shortcut policy. Applications must not intercept global shell shortcuts.
 
-The canonical token source is:
+## 8. Launcher and desktop integration
 
-`design-system/tokens/index.css`
+The launcher is owned by the desktop shell. It opens from the Aurea A dock mark or Super key and provides immediate search, pinned applications and a discoverable full application list.
 
-The color-system documentation is:
+Applications integrate through standard desktop metadata, approved icons and stable application identity. They must not create competing global launchers or docks.
 
-`../docs/human-interfaces/COLOR-SYSTEM.md`
+## 9. Dialogs and notifications
 
-If a required semantic token does not exist, propose it for the shared design system instead of silently introducing a local substitute.
+Use shared dialog and notification components where available. Dialogs have clear titles, concise explanations and explicit actions. Default and cancel actions must be predictable. Destructive actions are clearly distinguished.
 
-### 4.2 Light, dark and automatic appearance
+Notifications follow system policy and are presented by the shell. Applications must not create fake system alerts, security prompts or system panels.
 
-All first-party applications must support the system appearance setting:
+## 10. Third-party compatibility
 
-- **Light**
-- **Dark**
-- **Automatic / Follow system**
+AureaOS must preserve compatibility with Flatpak and other supported third-party applications. Integration levels are:
 
-The system appearance service is authoritative. When the user changes the system theme, open first-party applications must update their surfaces, text, borders, icons, controls, menus, dialogs and notifications coherently.
+- **Native:** application uses AureaOS components and APIs.
+- **Theme-aware:** application retains its toolkit while following supported system theme, icons and accessibility settings.
+- **Compatible:** upstream appearance remains, while window behavior, launching, keyboard use and scaling work correctly.
 
-Applications must not maintain independent theme choices that silently contradict the system setting. An application-specific override may only be offered if the platform later defines a consistent, explicit override policy; the default must always follow the system.
+Never break application functionality, sandboxing or permissions to force visual uniformity.
 
-Light and dark themes must use the same semantic token roles. Do not simply invert colors. Each theme must be designed and checked for its own contrast, hierarchy and readability.
+## 11. Accessibility and conformance
 
-### 4.3 Surfaces, transparency and blur
+First-party applications must provide keyboard navigation, visible focus, accessible names and roles, scalable text, adequate contrast, reduced-motion support, localized strings and predictable command meanings.
 
-Use clean, well-defined surfaces with restrained borders and shadows. Translucency and blur are appropriate for floating system surfaces, menus, panels and selected overlays when they improve hierarchy.
+Before approval, verify:
+- [ ] Standard menu names and ordering.
+- [ ] Familiar command placement and wording.
+- [ ] Standard window controls.
+- [ ] Shared tokens and both themes.
+- [ ] Keyboard shortcuts and no global shortcut conflicts.
+- [ ] Context menus and dialogs follow shared behavior.
+- [ ] Reduced motion and accessibility behavior.
+- [ ] No duplicate launcher, dock or fake system surfaces.
 
-Application content areas should prioritize legibility and stable contrast. Do not apply glass effects to every surface. Text and controls must remain readable over any background.
-
-Visual effects must degrade gracefully when transparency or blur is reduced or unavailable.
-
-### 4.4 Shape, spacing and density
-
-Use shared design tokens for corner radii, spacing, control sizes and elevation. Related controls should align consistently and have predictable hit targets.
-
-Avoid mixing unrelated corner styles, arbitrary spacing scales or inconsistent control heights within one application.
-
-Applications may use denser layouts when their purpose requires it, but must preserve the shared spacing logic, typography hierarchy and interaction states.
-
-### 4.5 Typography
-
-Use the shared AureaOS typography roles and approved font configuration when available. Do not bundle or impose an unrelated interface font in first-party applications.
-
-Typography must establish a clear hierarchy between window titles, section headings, body text, labels, metadata and monospaced content. Text must remain legible at supported display scales.
-
-The final system font choice remains subject to the separate font approval process; applications must not treat an unapproved candidate as the definitive AureaOS font.
-
-### 4.6 Icons and symbols
-
-Use the AureaOS icon and symbol libraries for shared actions and system concepts. Icons representing the same action must have the same meaning and visual treatment across applications.
-
-Application icons may have their own recognizable identity, but must follow the AureaOS icon and brand guidance. Do not copy Windows, ChromeOS, macOS or third-party application icon artwork.
-
-Icons must not be the only way to communicate an important action: use labels, accessible names or tooltips where needed.
-
-## 5. Interaction and motion
-
-Shared interactions must behave consistently across first-party applications.
-
-### 5.1 Control states
-
-Buttons, fields, tabs, lists, menus and other controls must provide consistent states:
-
-- Default.
-- Hover.
-- Focus.
-- Pressed.
-- Selected or active.
-- Disabled.
-- Loading, where applicable.
-- Error or validation state, where applicable.
-
-Do not rely on color alone to communicate a state.
-
-### 5.2 Animation
-
-Animations should be subtle, brief and purposeful. Use motion to explain a change of state, establish spatial relationships or help users understand where a panel or window came from.
-
-Avoid exaggerated bounce, unnecessary overshoot, long transitions and motion that delays the user's task.
-
-All first-party applications must respect the system reduced-motion preference. When reduced motion is enabled, replace nonessential movement with immediate state changes or minimal fades.
-
-### 5.3 Keyboard and pointer
-
-All essential actions must be available through keyboard navigation where practical. Focus order must be logical and visible. Pointer interactions must have equivalent accessible routes wherever possible.
-
-Use established AureaOS keyboard conventions and the shared shortcut policy. Applications must not intercept global shortcuts that belong to the desktop shell.
-
-## 6. Launcher and desktop integration
-
-The application launcher is a desktop-level component, not an application-specific imitation.
-
-The launcher opens when the user:
-
-- Selects the Aurea **A** mark on the dock.
-- Presses the **Super / Windows** key.
-
-Opening uses a subtle, short animation. Pressing Super again toggles the launcher closed; Escape dismisses it. The launcher must be keyboard-ready, with search immediately available, and must respect reduced-motion settings.
-
-Applications should integrate with the launcher through standard application metadata, including a clear display name, approved icon, categories and launch entry. They must not create their own competing global launcher.
-
-Applications should integrate with dock behavior through standard desktop application identity and window association. Running and pinned states must be represented consistently by the shell.
-
-## 7. Dialogs, notifications and system panels
-
-First-party applications should use shared AureaOS components for dialogs, confirmation prompts, file selection, notifications and other common surfaces whenever available.
-
-- Dialogs must have clear titles, concise explanations and explicit actions.
-- Destructive actions must be distinguishable and should not be styled as ordinary primary actions.
-- Default and cancel actions must be predictable.
-- Notifications must respect system notification policy and must not imitate system alerts with unrelated custom designs.
-- Applications must not create fake system panels, fake security prompts or misleading operating-system notifications.
-
-System-owned panels and controls remain under the control of AureaOS shell and services.
-
-## 8. Third-party application integration
-
-AureaOS must remain compatible with third-party applications, including applications distributed through Flatpak. Visual integration must not break application functionality, sandbox boundaries or upstream compatibility.
-
-Third-party applications should be encouraged to adopt AureaOS styling through documented toolkit integration, shared theme support, icon conventions, portals and platform APIs where available.
-
-### 8.1 Integration levels
-
-Use the following practical levels:
-
-**Level 1 — Native AureaOS integration**
-
-The application uses the shared AureaOS design system and window components. Its menus, controls, typography, themes and interaction patterns follow this document.
-
-**Level 2 — Theme-aware integration**
-
-The application uses its existing supported toolkit but follows the system light/dark preference, shared color scheme where supported, icon conventions, accessibility settings and desktop integration.
-
-**Level 3 — Compatible third-party application**
-
-The application retains its upstream interface because it cannot reasonably adopt the AureaOS components. AureaOS should preserve reliable window behavior, launching, keyboard operation, scaling and accessibility integration wherever technically possible.
-
-A third-party application must never be modified in a way that breaks its functionality or security merely to make it look native.
-
-### 8.2 What AureaOS can and cannot require
-
-AureaOS controls the desktop shell, system panels, supported native APIs and its own first-party applications. It cannot guarantee that every independently developed third-party application will use identical menus, title bars, widgets or visual effects.
-
-Where an application does not support the AureaOS design system, the desktop should provide the best compatible integration available without pretending that the application is fully native.
-
-Flatpak sandboxing and application permissions must remain intact. Visual integration must not bypass portals or grant additional privileges.
-
-## 9. Accessibility and internationalization
-
-First-party applications must support:
-
-- Keyboard navigation and visible focus.
-- Accessible names and roles for controls.
-- Scalable text and supported display scaling.
-- Sufficient contrast in both themes.
-- Reduced motion and reduced transparency where supported.
-- Clear error messages and validation feedback.
-- Localization of all user-visible strings.
-- Correct text direction and language-sensitive formatting where applicable.
-
-Shared menu identifiers and command meanings must remain stable across translations. Localization changes visible labels, not the underlying menu structure or meaning.
-
-## 10. Conformance checklist
-
-A first-party application is not ready for design-system conformance review until the following can be verified:
-
-- [ ] Uses the shared AureaOS window structure and standard window controls.
-- [ ] Uses the standard menu categories and their canonical order.
-- [ ] Uses shared semantic color, spacing, typography, shape and elevation tokens.
-- [ ] Follows system Light, Dark and Automatic appearance.
-- [ ] Updates its appearance when the system theme changes.
-- [ ] Uses consistent menus, dialogs, controls and interaction states.
-- [ ] Respects reduced-motion and accessibility settings.
-- [ ] Uses approved AureaOS icons and symbols for shared actions.
-- [ ] Does not duplicate desktop-level launcher, dock or system-panel functions.
-- [ ] Preserves keyboard conventions and does not steal global shortcuts.
-- [ ] Remains readable at supported display scales.
-- [ ] Does not introduce unrelated visual styles without an approved functional reason.
-
-Third-party applications should be assessed against the integration levels above rather than being rejected solely because they cannot implement native AureaOS components.
-
-## 11. Governance and evolution
-
-This document defines shared design expectations; it does not claim that every component or service described here is already implemented.
-
-Changes to shared visual rules should be made in the design system and documented centrally. First-party applications should consume those shared definitions rather than creating local forks.
-
-When a new shared control, menu category, token or interaction pattern is needed:
-
-1. Identify the user need.
-2. Check whether an existing AureaOS pattern already solves it.
-3. Define the behavior and visual treatment in the shared design system.
-4. Review accessibility and both themes.
-5. Update affected applications consistently.
-
-The goal is not to prevent applications from having personality. The goal is to make every application feel as though it belongs to the same coherent operating system.
-
----
-
-**AureaOS design principle:** one system, one visual language, one predictable experience—while preserving the freedom and compatibility of third-party software.
+**Principle:** applications may express their purpose through content and workflow, but shared desktop conventions remain stable across AureaOS.
