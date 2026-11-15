@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+<title id="title">AureaOS Documents folder</title><desc id="desc">Original metallic blue AureaOS folder icon for documents folder, with transparent background.</desc>
+<defs>
+ <linearGradient id="silver" x1="80" y1="100" x2="560" y2="550"><stop stop-color="#faffff"/><stop offset=".25" stop-color="#9bdfff"/><stop offset=".5" stop-color="#f4ffff"/><stop offset=".78" stop-color="#79b5d9"/><stop offset="1" stop-color="#faffff"/></linearGradient>
+ <linearGradient id="cyan" x1="80" y1="100" x2="560" y2="540"><stop stop-color="#eaffff"/><stop offset=".25" stop-color="#13d9ff"/><stop offset=".65" stop-color="#078fe0"/><stop offset="1" stop-color="#dfffff"/></linearGradient>
+ <linearGradient id="enamel" x1="120" y1="170" x2="520" y2="520"><stop stop-color="#62dcff"/><stop offset=".25" stop-color="#168bd1"/><stop offset=".58" stop-color="#0755a6"/><stop offset="1" stop-color="#06438d"/></linearGradient>
+ <filter id="shadow" x="-25%" y="-25%" width="150%" height="165%"><feGaussianBlur in="SourceAlpha" stdDeviation="12" result="b"/><feOffset dy="10" result="o"/><feColorMatrix in="o" type="matrix" values="0 0 0 0 .02 0 0 0 0 .12 0 0 0 0 .26 0 0 0 .4 0" result="s"/><feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g filter="url(#shadow)">
+ <path d="M78 218Q78 178 119 178h127q23 0 43 20l42 42h189q50 0 50 50v210q0 52-52 52H122q-52 0-52-52V226q0-8 8-8z" fill="url(#silver)" stroke="#faffff" stroke-width="5"/>
+ <path d="M91 224q0-33 31-33h120q21 0 38 17l46 45h190q40 0 40 40v203q0 42-40 42H124q-40 0-40-40V229z" fill="#07539b" stroke="url(#cyan)" stroke-width="8"/>
+ <path d="M103 225q0-21 22-21h114q18 0 33 15l36 35H103z" fill="#168bd2" stroke="#bff8ff" stroke-width="3"/>
+ <path d="M99 270q0-19 21-19h400q28 0 28 28v217q0 33-33 33H125q-33 0-33-33V278z" fill="url(#silver)" stroke="#faffff" stroke-width="5"/>
+ <path d="M110 279q0-15 16-15h388q21 0 21 21v207q0 24-23 24H128q-23 0-23-24V284z" fill="#064b91" stroke="url(#cyan)" stroke-width="8"/>
+ <path d="M123 292q0-14 15-14h364q20 0 20 20v188q0 17-17 17H135q-17 0-17-17V297z" fill="url(#enamel)" stroke="url(#silver)" stroke-width="3"/>
+ <path d="M127 291q190 16 386 0" fill="none" stroke="#eaffff" stroke-opacity=".4" stroke-width="5"/>
+ <g fill="none" stroke="#eafaff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"><path d='M245 300h125l55 55v155H245z'/><path d='M370 300v60h55M275 395h115m-115 42h115m-115 42h80'/></g>
+</g></svg>
