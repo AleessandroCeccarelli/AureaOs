@@ -3,200 +3,114 @@
 # AureaOS Human Interfaces — Audit and Completion Roadmap
 
 **Audit baseline:** GitHub `main`, 15 November 2026  
-**Purpose:** Record the current contents of this directory, identify gaps and define a controlled plan for completing the AureaOS desktop design foundation.
+**Purpose:** Track the design foundation, its gaps and the next controlled work.
 
-This is a repository-content audit, not a claim that visual assets, prototypes or runtime features have been tested on hardware.
+This is a repository and specification audit. It is not evidence that prototypes or runtime features have been tested on hardware.
 
-## 1. Current inventory
+## 1. Product direction — authoritative
 
-The directory already contains a substantial foundation:
+AureaOS follows **familiarity first; refinement through integration**.
 
-| Area | Existing content | Assessment |
+- **Windows is the primary usability reference:** desktop mental model, launcher, menus, file manager, context menus, window controls, keyboard shortcuts and common workflows.
+- **KDE Plasma is a secondary reference:** floating bottom dock, adaptable panel behavior and workspace organization.
+- **macOS is a refinement reference:** cross-application consistency, visual finish, coherent surfaces and notification quality.
+
+These are references for conventions and usability, not artwork or interface templates to copy. AureaOS owns its branding and visual assets. It must not make ordinary desktop tasks unfamiliar merely to appear original.
+
+A first-time Windows user should recognize where to launch applications, find files, access context menus, manage windows and use common shortcuts.
+
+## 2. Current inventory
+
+| Area | Current role | Audit note |
 |---|---|---|
-| `assets/` | Folder guides for wallpapers, backgrounds, illustrations and textures | Structure exists; most actual reusable content currently lives under `resources/` |
-| `brand/` | Brand README | Documentation exists; brand usage rules and a clean canonical logo package are still needed |
-| `components/` | Empty examples and specifications folders | Not yet a usable component catalogue |
-| `design-system/` | Overview, token files, component and pattern guides | Good starting point; component and pattern specifications are mostly missing |
-| `fonts/` | Noto Sans, Noto Emoji, Noto Symbols, Noto Math and Source Code Pro sources with notices | Useful development coverage; Aurea Sans is not yet an approved production font |
-| `icons/` | Original AureaOS marks and application/system SVGs; generated and application folders reserved | Initial identity assets exist; catalog, export rules and application icon coverage need work |
-| `previews/` | Reserved preview folders | No meaningful review gallery yet |
-| `prototypes/` | Two interactive HTML desktop concepts and a concept image | Most important visual reference; prototypes are not production UI and simulate system actions |
-| `resources/` | Wallpapers, illustrations, texture CSS and sound documentation | Useful reusable resources; sound specification exists but audio files are not present |
-| `symbols/` | 178 Fluent UI SVG files: 89 Regular and 89 Filled, plus catalog guidance | Curated third-party reference subset, not a complete AureaOS symbol library or runtime API |
-| `themes/` | Light and dark compatibility CSS files | Exists, but must remain synchronized with canonical design tokens |
+| `assets/` | Source artwork and design inputs | Avoid duplicating runtime-ready resources |
+| `brand/` | AureaOS identity | Brand usage rules and canonical logo package remain to be completed |
+| `components/` | Practical examples | Keep examples small; specifications live in design-system |
+| `design-system/` | Tokens, components, patterns and keyboard conventions | Canonical shared design source |
+| `fonts/` | Font sources and notices | Final system font is not yet approved |
+| `icons/` | Original system and application artwork | Inventory, export rules and coverage review remain |
+| `previews/` | Review samples | Gallery still needs useful previews |
+| `prototypes/` | Interactive and static design experiments | Simulated actions are not runtime functionality |
+| `resources/` | Reusable wallpapers, illustrations, textures and sound resources | Sound specifications exist; production audio remains future work |
+| `symbols/` | Curated third-party reference subset | Not a complete AureaOS icon API |
+| `themes/` | Compatibility entry points | Must not become a second token source |
 
-## 2. Important findings
+## 3. Work completed in this direction
 
-### 2.1 The desktop is represented primarily by prototypes
+- [x] Established Windows-first familiarity as the primary usability rule.
+- [x] Defined KDE Plasma's floating dock as a secondary desktop influence.
+- [x] Defined macOS as a reference for visual consistency and notification refinement.
+- [x] Reworked the desktop specification around familiar launcher, taskbar, window, file-manager and shortcut behavior.
+- [x] Reworked application guidelines around stable menu categories and command placement.
+- [x] Added a shared keyboard and command convention document.
+- [x] Clarified that prototypes are visual/interaction references, not proof of runtime behavior.
+- [x] Made `design-system/tokens/index.css` the single token source; light/dark CSS files are compatibility imports.
 
-The two desktop prototypes are:
+## 4. Remaining design gaps
 
-- `prototypes/2026-11-aurea-desktop-vision-01.html`
-- `prototypes/2026-11-aurea-desktop-preview-02.html`
+### Desktop and application behavior
+- [ ] Validate the launcher and dock against the selected prototype.
+- [ ] Specify exact taskbar grouping, previews, pinning and minimized-window behavior.
+- [ ] Complete snap layouts, overview and multi-monitor rules.
+- [ ] Verify every documented shortcut against actual intended runtime behavior before implementation.
+- [ ] Complete Fides navigation, file operations, drives and context-menu behavior.
 
-They are valuable design references. Their controls and hardware/system actions are simulations. They must not be treated as proof that the native shell already implements those behaviors.
-
-The next step is to turn the chosen desktop direction into explicit specifications for dock, launcher, windows, workspaces, notifications and quick settings.
-
-### 2.2 Shared component library is the largest structural gap
-
-The following areas are currently only placeholders or introductory documentation:
-
-- `components/examples/`
-- `components/specifications/`
-- `design-system/components/`
-- `design-system/patterns/`
-- `previews/components/`
-
-There is no complete, versioned catalogue of the shared visual components yet. This is a priority because first-party applications need to reuse the same controls and window patterns.
-
-### 2.3 Theme source needs a strict ownership model
-
-The canonical token source is:
-
-`design-system/tokens/index.css`
-
-The files under `themes/` are documented as compatibility wrappers. The separate `light.css` and `dark.css` files under `design-system/tokens/` are theme-specific token values.
-
-These files must be checked for semantic parity and a clear import contract. Applications must not choose between multiple competing sources of truth.
-
-### 2.4 Typography is not finalized
-
-Noto and Source Code Pro are retained as development/coverage resources. Aurea Sans is a future project and is not approved as a production font yet.
-
-Still needed:
-- Font family and role specification.
-- Type scale and line-height rules.
-- Language and glyph coverage validation.
-- Font licensing and metadata review.
-- Actual Aurea Sans production files only after approval.
-
-Do not label an unapproved font as the final system font.
-
-### 2.5 Icon and symbol governance is incomplete
-
-Original AureaOS system and brand artwork already exists. A curated Fluent UI reference subset is also present.
-
-Still needed:
-- An inventory of original AureaOS icons.
-- Rules for application icons, system icons and status symbols.
-- Verified mappings between stable AureaOS symbol names and exact source assets.
-- Clear distinction between original AureaOS artwork and third-party reference assets.
-- Export sizes, optical alignment and light/dark behavior.
-- A shared symbol API only when the runtime design is ready.
-
-The current symbol catalog correctly warns that its proposed names and mappings are not yet a verified or implemented API.
-
-### 2.6 Resource locations need clearer ownership
-
-There are both `assets/` and `resources/` trees describing wallpapers, illustrations and textures. The current resources README identifies `resources/wallpapers/` as the canonical wallpaper location.
-
-Keep one canonical copy of each asset. The `assets/` tree should either hold distinct design-source material or clearly point to the canonical reusable resources; do not duplicate files simply to make both trees look populated.
-
-### 2.7 Audio is specified but not produced
-
-Sound event names, target durations and audio review checklists exist. The planned `.oga` files are not present in the current tree.
-
-This is an unfinished asset-production task, not a reason to create empty or fake audio files.
-
-## 3. Missing design specifications
-
-The following documents should be completed before implementing a large number of UI components:
-
-1. Desktop experience — dock, launcher, workspaces, notifications and quick settings.
-2. Window management — title bar, resize, maximize, snap, tiling, focus and overview.
-3. Navigation and application menu — canonical menu names, ordering, keyboard behavior and contextual menus.
-4. Component interaction states — hover, focus, pressed, selected, disabled, loading and error.
-5. Typography — hierarchy, sizing, line height, fallback and localization.
-6. Iconography — original icons, symbol mapping, sizes, stroke/fill and state rules.
-7. Accessibility — keyboard, scaling, contrast, reduced motion, reduced transparency and assistive technology.
-8. Responsive behavior — minimum sizes, display scaling, small screens and multi-monitor considerations.
-9. Notifications and system panels — grouping, priority, placement, dismissal and focus behavior.
-10. Third-party integration — supported theme/toolkit integration levels and limits.
-
-The application design guidelines and desktop experience specification are the initial documents for this work.
-
-## 4. Recommended folder responsibilities
-
-Keep the existing top-level structure and give each area one clear responsibility:
-
-- `assets/`: source artwork and design inputs that are not runtime-ready resources.
-- `brand/`: AureaOS identity, logo usage, clear-space and brand rules.
-- `components/`: practical component examples and component specification index.
-- `design-system/`: semantic tokens, reusable components and interaction patterns.
-- `fonts/`: source fonts, licenses, generated/approved fonts and typography documentation.
-- `icons/`: original AureaOS application, system and brand icons, plus generated exports.
-- `previews/`: reviewed visual samples for components, fonts, icons and themes.
-- `prototypes/`: interactive and static design experiments.
-- `resources/`: reusable runtime-ready wallpapers, illustrations, textures and sounds.
-- `symbols/`: curated third-party symbol sources, licensing and verified AureaOS catalog mapping.
-- `themes/`: compatibility entry points only; canonical tokens remain in the design system.
-
-Avoid creating parallel folders or duplicate assets.
-
-## 5. Completion roadmap
-
-### Phase A — Define the desktop contract
-
-- [x] Document application visual and behavior guidelines.
-- [x] Document the desktop experience at shell level.
-- [ ] Specify the dock in detail.
-- [ ] Specify launcher layout, search behavior and dismissal.
-- [ ] Specify window controls, snap layouts and overview.
-- [ ] Specify quick settings and notification behavior.
-- [ ] Map prototype controls to intended native shell responsibilities.
-
-### Phase B — Complete the design system
-
-- [ ] Define semantic token ownership and CSS import contract.
-- [ ] Add typography scale and layout/spacing guidance.
-- [ ] Specify common controls: button, text field, toggle, checkbox, selector and slider.
-- [ ] Specify menus, context menus, tooltips and popovers.
-- [ ] Specify dialogs, sheets, notifications and progress feedback.
-- [ ] Add component state and accessibility requirements to each specification.
-
-### Phase C — Establish visual asset governance
-
-- [ ] Publish brand and logo usage rules.
-- [ ] Inventory original AureaOS icons and application icon requirements.
-- [ ] Verify symbol catalog entries against exact source files.
-- [ ] Define icon export sizes and optical alignment.
-- [ ] Define wallpaper variants, aspect ratios and attribution.
-- [ ] Complete typography approval and font packaging.
-- [ ] Produce and review original system sounds.
-
-### Phase D — Make the library reviewable
-
-- [ ] Add a component index and focused examples.
+### Shared design system
+- [ ] Review all component specifications against familiar desktop conventions.
+- [ ] Complete typography scale, line heights, font fallback and localization guidance.
+- [ ] Complete accessibility and reduced-transparency guidance.
+- [ ] Define responsive and display-scaling rules.
 - [ ] Add light/dark component previews.
-- [ ] Add font specimen previews.
-- [ ] Add icon and symbol catalog previews.
-- [ ] Add theme comparison previews.
-- [ ] Keep screenshots and previews clearly labeled as design references, not runtime evidence.
 
-### Phase E — Connect design to implementation
+### Visual assets
+- [ ] Inventory original AureaOS icons and folder variants.
+- [ ] Verify source and licensing for third-party symbols.
+- [ ] Define icon sizes, optical alignment, stroke/fill and state rules.
+- [ ] Complete wallpaper catalog, aspect ratios and attribution.
+- [ ] Approve the production font only after repository font/license review.
+- [ ] Produce original system sounds and document event mapping.
 
-- [ ] Map each approved component to its intended Rust/native implementation owner.
-- [ ] Keep design specifications separate from runtime code.
-- [ ] Confirm that system controls represent real service capabilities.
-- [ ] Validate the native shell against the approved prototype and specifications.
-- [ ] Record implementation status separately from design approval.
+### Review and implementation
+- [ ] Add focused component examples and useful preview galleries.
+- [ ] Map approved patterns to Rust/native implementation owners.
+- [ ] Keep design approval separate from runtime implementation status.
+- [ ] Validate the native shell against the prototype and specification on actual hardware.
+
+## 5. Directory ownership
+
+- `assets/`: source artwork and design inputs.
+- `brand/`: logo and identity rules.
+- `components/`: practical component examples.
+- `design-system/`: semantic tokens, component contracts, patterns and keyboard rules.
+- `fonts/`: source fonts, licenses and approved font assets.
+- `icons/`: original AureaOS app and system icon artwork.
+- `previews/`: reviewed visual samples.
+- `prototypes/`: experiments and concept validation.
+- `resources/`: runtime-ready wallpapers, illustrations, textures and sounds.
+- `symbols/`: curated third-party source symbols and attribution.
+- `themes/`: compatibility entry points only.
+
+Do not create parallel folders or duplicate canonical assets.
 
 ## 6. Working rules
 
-- One file, one responsibility; keep documents focused and avoid monolithic specifications.
-- Do not create placeholder assets that imply a feature is complete.
-- Do not duplicate canonical wallpaper, icon, font or theme files.
-- Do not silently change approved visual decisions in individual applications.
-- Do not claim prototype interactions are implemented system functionality.
+- One file, one responsibility; keep specifications focused.
+- Familiar behavior takes priority over novelty.
+- Do not relocate or rename common controls without a demonstrated usability benefit.
+- Do not create a second menu, shortcut, theme or component system.
+- Use shared tokens; never fork palettes inside applications.
+- Review both themes and accessibility for every shared component.
+- Do not create placeholder assets that imply completion.
 - Preserve third-party license notices and source attribution.
-- Review both light and dark appearances for every shared component.
-- Keep accessibility and reduced-motion behavior in the initial specification, not as a later patch.
+- Never claim simulated prototype actions are implemented system functionality.
 
-## 7. Audit conclusion
+## 7. Next sequence
 
-AureaOS Human Interfaces already has a meaningful foundation: desktop prototypes, semantic color tokens, theme files, original identity artwork, fonts, wallpapers, illustrations, sounds documentation and a curated symbol reference set.
+1. Finish the behavioral contract for dock, windows, menus, shortcuts and Fides.
+2. Review the current prototypes and align them with that contract rather than designing a competing desktop.
+3. Complete the shared visual component rules and light/dark previews.
+4. Audit iconography and folder artwork.
+5. Complete typography, accessibility and responsive rules.
+6. Move to wallpaper and sound production only after the interaction and visual system are coherent.
 
-The biggest missing pieces are not more decorative assets. They are the detailed desktop behavior specifications, the reusable component catalogue, typography and icon governance, accessibility rules, and a reviewable set of component previews.
-
-The recommended order is to define the desktop contract first, then build the shared component library around it. This avoids designing the same dock, menu, window header or control differently in separate parts of AureaOS.
+**Conclusion:** AureaOS should feel familiar on first use. Its identity comes from the quality of the integration, the consistency of its surfaces and its original assets—not from making users relearn their desktop.
