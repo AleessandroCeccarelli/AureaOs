@@ -5,7 +5,7 @@
 
 //! Per-frame Vulkan command-pool and synchronization ownership.
 
-use std::os::fd::{FromRawFd, OwnedFd};
+use std::{any::Any, os::fd::{FromRawFd, OwnedFd}};
 
 use smithay::reexports::ash::{self, vk};
 
@@ -16,7 +16,7 @@ pub(super) struct VulkanFrameSlot {
     pub(super) command_pool: vk::CommandPool,
     pub(super) completion_fence: vk::Fence,
     command_buffer: Option<vk::CommandBuffer>,
-    pub(super) sync_fd_semaphore: Option<vk::Semaphore>,
+    pub(super) sync_fd_semaphore: Option<vk::Semaphore>,\n    pub(super) retained_resources: Vec<Box<dyn Any>>,
 }
 
 impl VulkanFrameSlot {

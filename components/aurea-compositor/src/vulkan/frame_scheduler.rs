@@ -5,7 +5,7 @@
 
 //! Bounded frames-in-flight scheduling for the AureaOS Vulkan renderer.
 
-use std::{error::Error, fmt, os::fd::OwnedFd};
+use std::{any::Any, error::Error, fmt, os::fd::OwnedFd};
 
 use smithay::reexports::ash::vk;
 
@@ -195,7 +195,7 @@ impl VulkanFrame<'_, '_> {
         }
 
         let sync_fd = scheduler.slots[self.slot_index]
-            .submit_with_sync_fd(scheduler.device, self.command_buffer)
+            .submit_with_sync_fd(\n                scheduler.device,\n                self.command_buffer,\n                std::mem::take(&mut self.retained_resources),\n            )
             .map_err(VulkanFrameSchedulerError::Vulkan)?;
 
         scheduler.next_slot =
