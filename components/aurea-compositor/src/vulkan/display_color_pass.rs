@@ -182,11 +182,11 @@ impl<'device> VulkanDisplayColorPass<'device> {
     /// Keep the returned binding alive until the command buffer has completed;
     /// destroying its descriptor pool before GPU completion would invalidate
     /// a descriptor set referenced by recorded commands.
-    pub fn bind_source<'resources, 'image>(
+    pub fn bind_source<'resources, 'image, 'image_device>(
         &'resources self,
-        device: &'device VulkanLogicalDevice,
-        source: &'resources VulkanImageView<'image, 'device>,
-    ) -> Result<VulkanTextureBinding<'resources, 'image, 'device>, VulkanDisplayColorPassError>
+        device: &'image_device VulkanLogicalDevice,
+        source: &'resources VulkanImageView<'image, 'image_device>,
+    ) -> Result<VulkanTextureBinding<'resources, 'image, 'image_device>, VulkanDisplayColorPassError>
     {
         if source.device().handle().handle() != device.handle().handle() {
             return Err(VulkanDisplayColorPassError::IncompatibleImages);
