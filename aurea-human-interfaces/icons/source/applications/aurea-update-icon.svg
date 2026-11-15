@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Aurea Update: metallic silver/cyan dimensional update arrows on the standard AureaOS tile. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+<title id="title">Aurea Update</title><desc id="desc">Two interlocking dimensional blue and cyan update arrows with metallic silver and cyan bevels on a white rounded-square tile.</desc>
+<defs>
+ <linearGradient id="silver" x1="100" y1="100" x2="900" y2="900" gradientUnits="userSpaceOnUse"><stop stop-color="#FAFFFF"/><stop offset=".13" stop-color="#A8E4FF"/><stop offset=".27" stop-color="#F5FFFF"/><stop offset=".48" stop-color="#83B6D9"/><stop offset=".68" stop-color="#E9FBFF"/><stop offset=".85" stop-color="#80B8DC"/><stop offset="1" stop-color="#FAFFFF"/></linearGradient>
+ <linearGradient id="cyan" x1="130" y1="110" x2="890" y2="890" gradientUnits="userSpaceOnUse"><stop stop-color="#EAFFFF"/><stop offset=".2" stop-color="#13D9FF"/><stop offset=".42" stop-color="#9AF8FF"/><stop offset=".68" stop-color="#078FE0"/><stop offset=".86" stop-color="#DFFFFF"/><stop offset="1" stop-color="#29CFFF"/></linearGradient>
+ <linearGradient id="enamel" x1="220" y1="170" x2="800" y2="850" gradientUnits="userSpaceOnUse"><stop stop-color="#62DCFF"/><stop offset=".2" stop-color="#168BD1"/><stop offset=".48" stop-color="#0755A6"/><stop offset=".76" stop-color="#06438D"/><stop offset="1" stop-color="#087AC2"/></linearGradient>
+ <linearGradient id="leftFacet" x1="220" y1="230" x2="510" y2="790" gradientUnits="userSpaceOnUse"><stop stop-color="#B4F7FF" stop-opacity=".5"/><stop offset=".48" stop-color="#5BCDF5" stop-opacity=".18"/><stop offset="1" stop-color="#00346E" stop-opacity=".12"/></linearGradient>
+ <linearGradient id="rightFacet" x1="510" y1="220" x2="820" y2="790" gradientUnits="userSpaceOnUse"><stop stop-color="#002D70" stop-opacity=".26"/><stop offset=".52" stop-color="#001E5B" stop-opacity=".08"/><stop offset="1" stop-color="#001943" stop-opacity=".38"/></linearGradient>
+ <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#F3F8FF"/></linearGradient>
+ <filter id="shadow" x="-25%" y="-25%" width="150%" height="165%"><feGaussianBlur in="SourceAlpha" stdDeviation="15" result="b"/><feOffset dy="14" result="o"/><feColorMatrix in="o" type="matrix" values="0 0 0 0 .02 0 0 0 0 .12 0 0 0 0 .26 0 0 0 .38 0" result="s"/><feMerge><feMergeNode in="s"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="12" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <clipPath id="tileClip"><rect x="48" y="48" width="928" height="928" rx="218"/></clipPath>
+</defs>
+<g filter="url(#shadow)"><rect x="48" y="48" width="928" height="928" rx="218" fill="url(#tile)"/></g>
+<g clip-path="url(#tileClip)">
+ <circle cx="786" cy="244" r="260" fill="#DDF5FF" opacity=".42"/>
+ <circle cx="250" cy="818" r="300" fill="#E7F5FF" opacity=".72"/>
+ <path d="M-18 622 C146 480 286 446 420 484 C555 522 644 642 788 650 C886 656 966 608 1042 540 L1042 1030 L-18 1030Z" fill="#DDF7FF" opacity=".6"/>
+ <path d="M-34 760 C138 600 290 570 426 616 C568 664 664 778 810 766 C910 758 982 700 1050 634" fill="none" stroke="#FFFFFF" stroke-opacity=".72" stroke-width="20"/>
+</g>
+<g filter="url(#shadow)">
+ <!-- Rear return arrow: dimensional, open circular sweep -->
+ <path d="M704 325 C648 246 559 199 462 204 C337 210 236 299 207 420 C180 535 230 658 327 719"
+       fill="none" stroke="url(#silver)" stroke-width="104" stroke-linecap="round"/>
+ <path d="M704 325 C648 246 559 199 462 204 C337 210 236 299 207 420 C180 535 230 658 327 719"
+       fill="none" stroke="url(#cyan)" stroke-width="78" stroke-linecap="round"/>
+ <path d="M674 222 L760 339 L620 353 Z" fill="url(#silver)" stroke="#F7FFFF" stroke-width="8" stroke-linejoin="round"/>
+ <path d="M681 245 L737 329 L641 337 Z" fill="url(#enamel)" stroke="url(#cyan)" stroke-width="7" stroke-linejoin="round"/>
+ <!-- Forward arrow -->
+ <path d="M320 699 C377 779 466 825 563 820 C688 814 789 725 818 604 C845 489 795 366 698 305"
+       fill="none" stroke="url(#silver)" stroke-width="104" stroke-linecap="round"/>
+ <path d="M320 699 C377 779 466 825 563 820 C688 814 789 725 818 604 C845 489 795 366 698 305"
+       fill="none" stroke="url(#enamel)" stroke-width="78" stroke-linecap="round"/>
+ <path d="M704 802 L618 685 L758 671 Z" fill="url(#silver)" stroke="#F7FFFF" stroke-width="8" stroke-linejoin="round"/>
+ <path d="M696 779 L640 695 L737 687 Z" fill="url(#cyan)" stroke="#D9FFFF" stroke-width="6" stroke-linejoin="round"/>
+ <!-- polished inner highlights -->
+ <path d="M695 286 C625 218 548 190 466 197" fill="none" stroke="#FFFFFF" stroke-width="10" opacity=".78" stroke-linecap="round"/>
+ <path d="M329 735 C397 794 477 826 557 816" fill="none" stroke="#C8F9FF" stroke-width="9" opacity=".62" stroke-linecap="round"/>
+</g>
+<rect x="48" y="48" width="928" height="928" rx="218" fill="none" stroke="#FFFFFF" stroke-width="8"/>
+</svg>
