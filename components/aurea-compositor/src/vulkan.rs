@@ -47,6 +47,7 @@ mod queue_submitter;
 mod readback_buffer;
 mod rendering_features;
 mod sampler;
+mod shared_image;
 mod shader_module;
 mod shm_texture;
 #[cfg(feature = "drm")]
@@ -130,6 +131,7 @@ pub use queue::VulkanQueueFamilyInfo;
 pub use readback_buffer::{VulkanReadbackBuffer, VulkanReadbackError};
 pub use rendering_features::VulkanRenderingFeaturePlan;
 pub use sampler::{VulkanSampler, VulkanSamplerError};
+pub use shared_image::{VulkanSharedImage, VulkanSharedImageError};
 pub use shader_module::{VulkanShaderError, VulkanShaderModule};
 pub use shm_texture::{VulkanShmTexture, VulkanShmTextureError};
 pub use texture_binding::{VulkanTextureBinding, VulkanTextureBindingError};
