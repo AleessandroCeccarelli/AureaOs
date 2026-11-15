@@ -170,9 +170,9 @@ pub struct VulkanFrame<'scheduler, 'device> {
 }
 
 impl VulkanFrame<'_, '_> {
-    /// Retains an owned object until this frame's completion fence signals.
-    /// Use this for every object referenced by the command buffer that is not
-    /// otherwise guaranteed to outlive GPU execution.
+    /// Retains an owned object until this slot is safely reused after its
+    /// completion fence signals. Use this for every object referenced by the
+    /// command buffer that is not otherwise guaranteed to outlive GPU execution.
     pub fn retain_resource<T: 'static>(&mut self, resource: T) {
         self.retained_resources.push(Box::new(resource));
     }
@@ -189,7 +189,11 @@ impl VulkanFrame<'_, '_> {
     pub fn submit(mut self) -> Result<(), VulkanFrameSchedulerError> {
         let scheduler = self.scheduler;
         scheduler.slots[self.slot_index]
-            .submit(scheduler.device, self.command_buffer, std::mem::take(&mut self.retained_resources))
+            .submit(
+                scheduler.device,
+                self.command_buffer,
+                std::mem::take(&mut self.retained_resources),
+            )
             .map_err(VulkanFrameSchedulerError::Vulkan)?;
 
         scheduler.next_slot =

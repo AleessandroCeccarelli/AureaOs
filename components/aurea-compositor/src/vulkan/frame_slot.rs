@@ -11,7 +11,7 @@ use smithay::reexports::ash::{self, vk};
 
 use super::VulkanLogicalDevice;
 
-/// Resources that may be reused only after their previous GPU submission ends.
+/// Owns command and resource lifetimes until the previous GPU submission ends.
 pub(super) struct VulkanFrameSlot {
     pub(super) command_pool: vk::CommandPool,
     pub(super) completion_fence: vk::Fence,
