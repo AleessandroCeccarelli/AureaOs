@@ -88,45 +88,41 @@ pub(crate) fn render_and_release(
         None => (view, previous_image_state),
     };
 
-    let surface_resources = if visible.is_empty() {
-        None
-    } else {
-        let descriptor_layout = VulkanTextureDescriptorSetLayout::new(device)
-            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
-        let sampler = VulkanSampler::linear_clamp(device)
-            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
-        let vertex = VulkanShaderModule::from_bytes(
-            device,
-            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
-        )
-        .map_err(|error| VulkanSurfaceCompositionError::Shader(error.to_string()))?;
-        let fragment = VulkanShaderModule::from_bytes(
-            device,
-            include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_SPV")),
-        )
-        .map_err(|error| VulkanSurfaceCompositionError::Shader(error.to_string()))?;
-        let descriptor_layouts = [&descriptor_layout];
-        let pipeline = VulkanGraphicsPipeline::new_with_descriptor_layouts(
-            device,
-            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
-            composition_view.format(),
-            &descriptor_layouts,
-        )
-        .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
+    let descriptor_layout = VulkanTextureDescriptorSetLayout::new(device)
+        .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
+    let sampler = VulkanSampler::linear_clamp(device)
+        .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
+    let vertex = VulkanShaderModule::from_bytes(
+        device,
+        include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
+    )
+    .map_err(|error| VulkanSurfaceCompositionError::Shader(error.to_string()))?;
+    let fragment = VulkanShaderModule::from_bytes(
+        device,
+        include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_SPV")),
+    )
+    .map_err(|error| VulkanSurfaceCompositionError::Shader(error.to_string()))?;
+    let descriptor_layouts = [&descriptor_layout];
+    let pipeline = VulkanGraphicsPipeline::new_with_descriptor_layouts(
+        device,
+        VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+        composition_view.format(),
+        &descriptor_layouts,
+    )
+    .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
 
-        let textures = visible.iter().map(|surface| {
-            VulkanShmTexture::from_snapshot(device, surface.snapshot.as_ref().clone())
-                .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
-        }).collect::<Result<Vec<_>, _>>()?;
-        let views = textures.iter().map(|texture| {
-            texture.create_view().map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
-        }).collect::<Result<Vec<_>, _>>()?;
-        let bindings = views.iter().map(|texture_view| {
-            VulkanTextureBinding::new(device, &descriptor_layout, texture_view, &sampler)
-                .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
-        }).collect::<Result<Vec<_>, _>>()?;
-        Some((descriptor_layout, sampler, vertex, fragment, pipeline, textures, views, bindings))
-    };
+    // All per-frame resources remain alive until submit_and_wait completes.
+    let textures = visible.iter().map(|surface| {
+        VulkanShmTexture::from_snapshot(device, surface.snapshot.as_ref().clone())
+            .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
+    }).collect::<Result<Vec<_>, _>>()?;
+    let views = textures.iter().map(|texture| {
+        texture.create_view().map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
+    }).collect::<Result<Vec<_>, _>>()?;
+    let bindings = views.iter().map(|texture_view| {
+        VulkanTextureBinding::new(device, &descriptor_layout, texture_view, &sampler)
+            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
+    }).collect::<Result<Vec<_>, _>>()?;
 
     let display_binding = if let Some((pass, _, intermediate_view, _)) = display_color {
         Some(pass.bind_source(device, intermediate_view)
@@ -150,7 +146,6 @@ pub(crate) fn render_and_release(
     )
     .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
 
-    if let Some((_, _, _, _, pipeline, _, _, bindings)) = surface_resources.as_ref() {
     for (surface, binding) in visible.iter().zip(bindings.iter()) {
         let geometry = surface.geometry;
         let scissor = surface.scissor;
@@ -178,7 +173,7 @@ pub(crate) fn render_and_release(
         VulkanDrawPass::record_textured_region(
             command_buffer.handle(),
             composition_view,
-            pipeline,
+            &pipeline,
             binding,
             0,
             VulkanImageState::General,
@@ -189,9 +184,8 @@ pub(crate) fn render_and_release(
         )
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
-    }
 
-    if let Some((pass, warmth, _, intermediate_state)) = display_color {
+    if let Some((pass, warmth, _, _)) = display_color {
         pass.record(
             device,
             command_buffer.handle(),
@@ -203,7 +197,6 @@ pub(crate) fn render_and_release(
             VulkanImageState::General,
             warmth,
         ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
-        let _ = intermediate_state;
     }
 
     VulkanImageTransition::record_release_to_foreign(
