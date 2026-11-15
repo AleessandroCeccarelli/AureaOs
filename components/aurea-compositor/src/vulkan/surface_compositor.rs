@@ -248,7 +248,7 @@ fn clear_display_and_release(
     before_submit: impl FnOnce() -> Result<(), String>,
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let binding = pass
-        .bind_source(device, intermediate_view)
+        .bind_source(intermediate_view)
         .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
     let mut command_buffer = VulkanCommandBuffer::new(device)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
