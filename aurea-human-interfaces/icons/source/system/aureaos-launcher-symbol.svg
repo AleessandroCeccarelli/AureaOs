@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Original AureaOS launcher mark. Vector master; transparent background. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">AureaOS launcher symbol</title>
+  <desc id="desc">A dimensional blue and cyan ribbon forming the standalone AureaOS letter A.</desc>
+
+  <defs>
+    <linearGradient id="aurea-ribbon" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8DEBFF"/>
+      <stop offset="0.28" stop-color="#38C8F4"/>
+      <stop offset="0.58" stop-color="#1679E8"/>
+      <stop offset="1" stop-color="#1649B8"/>
+    </linearGradient>
+    <linearGradient id="aurea-cyan" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1676D9"/>
+      <stop offset="0.52" stop-color="#36C8F4"/>
+      <stop offset="1" stop-color="#A2F2FF"/>
+    </linearGradient>
+    <linearGradient id="aurea-edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".88"/>
+      <stop offset=".42" stop-color="#B9F4FF" stop-opacity=".42"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity=".08"/>
+    </linearGradient>
+    <filter id="aurea-shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="20"/>
+      <feOffset dy="22"/>
+      <feComponentTransfer><feFuncA type=" linear" slope=".28"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="aurea-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#aurea-shadow)" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M254 770 C332 608 427 385 500 258 C527 211 565 205 591 255 C659 385 744 594 806 770"
+          stroke="#0756B9" stroke-opacity=".22" stroke-width="142"/>
+    <path d="M254 770 C332 608 427 385 500 258 C527 211 565 205 591 255 C659 385 744 594 806 770"
+          stroke="url(#aurea-ribbon)" stroke-width="112"/>
+    <path d="M254 770 C332 608 427 385 500 258 C527 211 565 205 591 255 C659 385 744 594 806 770"
+          stroke="url(#aurea-edge)" stroke-width="13" stroke-dasharray="330 900" stroke-dashoffset="-35" opacity=".8"/>
+    <path d="M354 585 C450 548 567 526 692 545"
+          stroke="#0B56C5" stroke-opacity=".24" stroke-width="116"/>
+    <path d="M354 585 C450 548 567 526 692 545"
+          stroke="url(#aurea-cyan)" stroke-width="88"/>
+    <path d="M374 558 C469 527 568 511 664 526"
+          stroke="#E7FCFF" stroke-opacity=".72" stroke-width="9"/>
+  </g>
+</svg>
