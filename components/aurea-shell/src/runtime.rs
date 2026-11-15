@@ -7,7 +7,9 @@
 
 use std::sync::mpsc::Receiver;
 
-use crate::desktop::DesktopState;
+use aurea_desktop_api::display::{DisplayColorAdjustment, DisplayColorController};
+
+use crate::desktop::{DesktopState, NightLightState};
 use crate::dispatcher::{self, RuntimeCommand};
 use crate::error::ShellError;
 use crate::event::ShellEvent;
@@ -19,16 +21,46 @@ pub struct ShellRuntime {
     lifecycle: ShellLifecycle,
     session: DesktopSession,
     desktop: DesktopState,
+    display_color: DisplayColorController,
 }
 
 impl ShellRuntime {
     /// Creates a runtime that has not been started yet.
     pub fn new() -> Self {
+        Self::with_display_color(DisplayColorController::new())
+    }
+
+    /// Creates a runtime connected to the compositor's shared display policy.
+    pub fn with_display_color(display_color: DisplayColorController) -> Self {
         Self {
             lifecycle: ShellLifecycle::new(),
             session: DesktopSession::new(),
             desktop: DesktopState::default(),
+            display_color,
         }
+    }
+
+    /// Publishes the effective Night Light preference to the compositor.
+    ///
+    /// The scheduler supplies whether the selected schedule is currently
+    /// active. Manual mode ignores that value.
+    pub fn update_night_light(&mut self, schedule_active: bool) {
+        let adjustment = self
+            .desktop
+            .night_light
+            .display_adjustment(schedule_active);
+        self.display_color.set_adjustment(adjustment);
+    }
+
+    /// Sets Night Light preferences and publishes the resulting display policy.
+    pub fn set_night_light(&mut self, state: NightLightState, schedule_active: bool) {
+        self.desktop.night_light = state;
+        self.update_night_light(schedule_active);
+    }
+
+    /// Returns the latest effective display adjustment.
+    pub fn display_color_adjustment(&self) -> DisplayColorAdjustment {
+        self.display_color.adjustment()
     }
 
     /// Starts the runtime and activates the desktop session.
@@ -93,6 +125,8 @@ impl ShellRuntime {
     }
 
     /// Returns mutable desktop presentation state.
+    ///
+    /// Call update_night_light after changing Night Light preferences.
     pub fn desktop_state_mut(&mut self) -> &mut DesktopState {
         &mut self.desktop
     }
