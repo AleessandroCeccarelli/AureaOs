@@ -8,6 +8,8 @@
 //! This crate contains technology-independent interfaces.
 //! It must not depend on the shell, compositor or graphics backends.
 
+pub mod display;
+
 use std::io;
 use std::sync::{
     Arc,
