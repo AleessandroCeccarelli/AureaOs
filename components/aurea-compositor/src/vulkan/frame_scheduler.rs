@@ -107,6 +107,7 @@ impl<'device> VulkanFrameScheduler<'device> {
             scheduler: self,
             slot_index,
             command_buffer,
+            retained_resources: Vec::new(),
         })
     }
 
@@ -135,6 +136,11 @@ impl Drop for VulkanFrameScheduler<'_> {
             // them is invalid. If the idle wait fails, intentionally leak the
             // Vulkan handles rather than risk freeing in-flight resources.
             if self.device.handle().device_wait_idle().is_err() {
+                // Submitted work may still reference these objects. Leak their
+                // owners rather than dropping resources while the GPU uses them.
+                for slot in &mut self.slots {
+                    std::mem::forget(std::mem::take(&mut slot.retained_resources));
+                }
                 return;
             }
 
@@ -160,9 +166,17 @@ pub struct VulkanFrame<'scheduler, 'device> {
     scheduler: &'scheduler mut VulkanFrameScheduler<'device>,
     slot_index: usize,
     command_buffer: vk::CommandBuffer,
+    retained_resources: Vec<Box<dyn Any>>,
 }
 
 impl VulkanFrame<'_, '_> {
+    /// Retains an owned object until this frame's completion fence signals.
+    /// Use this for every object referenced by the command buffer that is not
+    /// otherwise guaranteed to outlive GPU execution.
+    pub fn retain_resource<T: 'static>(&mut self, resource: T) {
+        self.retained_resources.push(Box::new(resource));
+    }
+
     /// Raw command buffer to which the renderer records its drawing commands.
     pub fn command_buffer(&self) -> vk::CommandBuffer {
         self.command_buffer
@@ -172,10 +186,10 @@ impl VulkanFrame<'_, '_> {
     ///
     /// The slot's fence is signaled when the GPU has finished using its
     /// resources. The scheduler waits for it only when this slot is reused.
-    pub fn submit(self) -> Result<(), VulkanFrameSchedulerError> {
+    pub fn submit(mut self) -> Result<(), VulkanFrameSchedulerError> {
         let scheduler = self.scheduler;
         scheduler.slots[self.slot_index]
-            .submit(scheduler.device, self.command_buffer)
+            .submit(scheduler.device, self.command_buffer, std::mem::take(&mut self.retained_resources))
             .map_err(VulkanFrameSchedulerError::Vulkan)?;
 
         scheduler.next_slot =
@@ -188,7 +202,7 @@ impl VulkanFrame<'_, '_> {
     ///
     /// Keep the returned descriptor open through the atomic TEST_ONLY and
     /// commit calls. DRM imports its own sync-file reference during each ioctl.
-    pub fn submit_with_sync_fd(self) -> Result<OwnedFd, VulkanFrameSchedulerError> {
+    pub fn submit_with_sync_fd(mut self) -> Result<OwnedFd, VulkanFrameSchedulerError> {
         let scheduler = self.scheduler;
         if !scheduler.device.supports_sync_fd() {
             return Err(VulkanFrameSchedulerError::SyncFdUnavailable);

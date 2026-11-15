@@ -16,7 +16,8 @@ pub(super) struct VulkanFrameSlot {
     pub(super) command_pool: vk::CommandPool,
     pub(super) completion_fence: vk::Fence,
     command_buffer: Option<vk::CommandBuffer>,
-    pub(super) sync_fd_semaphore: Option<vk::Semaphore>,\n    pub(super) retained_resources: Vec<Box<dyn Any>>,
+    pub(super) sync_fd_semaphore: Option<vk::Semaphore>,
+    pub(super) retained_resources: Vec<Box<dyn Any>>,
 }
 
 impl VulkanFrameSlot {
@@ -55,6 +56,7 @@ impl VulkanFrameSlot {
             completion_fence,
             command_buffer: None,
             sync_fd_semaphore,
+            retained_resources: Vec::new(),
         })
     }
 
@@ -77,6 +79,8 @@ impl VulkanFrameSlot {
             device
                 .handle()
                 .wait_for_fences(&[self.completion_fence], true, u64::MAX)?;
+            // The fence proves the previous submission no longer uses these objects.
+            self.retained_resources.clear();
             device
                 .handle()
                 .reset_command_pool(self.command_pool, vk::CommandPoolResetFlags::empty())?;
@@ -121,7 +125,9 @@ impl VulkanFrameSlot {
         &mut self,
         device: &VulkanLogicalDevice,
         command_buffer: vk::CommandBuffer,
+        retained_resources: Vec<Box<dyn Any>>,
     ) -> Result<(), vk::Result> {
+        self.retained_resources = retained_resources;
         self.submit_internal(device, command_buffer, None)
     }
 
@@ -129,7 +135,9 @@ impl VulkanFrameSlot {
         &mut self,
         device: &VulkanLogicalDevice,
         command_buffer: vk::CommandBuffer,
+        retained_resources: Vec<Box<dyn Any>>,
     ) -> Result<OwnedFd, vk::Result> {
+        self.retained_resources = retained_resources;
         let semaphore = self
             .sync_fd_semaphore
             .ok_or(vk::Result::ERROR_FEATURE_NOT_PRESENT)?;
