@@ -56,6 +56,7 @@ impl Error for VulkanRenderError {}
 pub struct VulkanBackend {
     #[cfg(feature = "drm")]
     display_color: Mutex<super::VulkanDisplayColorManager>,
+    surface_pipeline: Mutex<super::VulkanSurfacePipelineCache>,
     context: Arc<VulkanContext>,
     selected_device_info: VulkanDeviceInfo,
     physical_device_index: usize,
@@ -135,9 +136,15 @@ impl VulkanBackend {
             Some(Arc::clone(&context)),
         )?);
 
+        #[cfg(feature = "drm")]
+        let surface_pipeline = super::VulkanSurfacePipelineCache::new(Arc::clone(&device))
+            .map_err(|error| VulkanInitError::new(error.to_string()))?;
+
         Ok(Self {
             #[cfg(feature = "drm")]
             display_color: Mutex::new(super::VulkanDisplayColorManager::new(Arc::clone(&device))),
+            #[cfg(feature = "drm")]
+            surface_pipeline: Mutex::new(surface_pipeline),
             context,
             selected_device_info,
             physical_device_index,
@@ -175,6 +182,12 @@ impl VulkanBackend {
     #[cfg(feature = "drm")]
     pub(crate) fn display_color_manager(&self) -> &Mutex<super::VulkanDisplayColorManager> {
         &self.display_color
+    }
+
+    /// Returns the per-device SHM surface pipeline and resource cache.
+    #[cfg(feature = "drm")]
+    pub(crate) fn surface_pipeline_cache(&self) -> &Mutex<super::VulkanSurfacePipelineCache> {
+        &self.surface_pipeline
     }
 
     /// Records an empty one-time command buffer.
