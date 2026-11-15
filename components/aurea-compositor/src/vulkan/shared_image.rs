@@ -9,7 +9,7 @@ use std::{error::Error, fmt, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
-use super::{memory_type::select_memory_type_index, VulkanLogicalDevice};
+use super::{VulkanLogicalDevice, memory_type::select_memory_type_index};
 
 /// Errors returned while allocating a device-owned intermediate image.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -25,12 +25,23 @@ pub enum VulkanSharedImageError {
 impl fmt::Display for VulkanSharedImageError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidDimensions => formatter.write_str("Vulkan image dimensions must be non-zero"),
+            Self::InvalidDimensions => {
+                formatter.write_str("Vulkan image dimensions must be non-zero")
+            }
             Self::EmptyUsage => formatter.write_str("Vulkan image usage flags must not be empty"),
-            Self::ImageCreation(error) => write!(formatter, "Vulkan image creation failed: {error:?}"),
-            Self::MemoryTypeUnavailable => formatter.write_str("No compatible device-local memory type is available"),
-            Self::MemoryAllocation(error) => write!(formatter, "Vulkan image memory allocation failed: {error:?}"),
-            Self::MemoryBinding(error) => write!(formatter, "Vulkan image memory binding failed: {error:?}"),
+            Self::ImageCreation(error) => {
+                write!(formatter, "Vulkan image creation failed: {error:?}")
+            }
+            Self::MemoryTypeUnavailable => {
+                formatter.write_str("No compatible device-local memory type is available")
+            }
+            Self::MemoryAllocation(error) => write!(
+                formatter,
+                "Vulkan image memory allocation failed: {error:?}"
+            ),
+            Self::MemoryBinding(error) => {
+                write!(formatter, "Vulkan image memory binding failed: {error:?}")
+            }
         }
     }
 }
@@ -69,7 +80,11 @@ impl VulkanSharedImage {
         let request = vk::ImageCreateInfo::default()
             .image_type(vk::ImageType::TYPE_2D)
             .format(format)
-            .extent(vk::Extent3D { width, height, depth: 1 })
+            .extent(vk::Extent3D {
+                width,
+                height,
+                depth: 1,
+            })
             .mip_levels(1)
             .array_layers(1)
             .samples(vk::SampleCountFlags::TYPE_1)
@@ -112,14 +127,32 @@ impl VulkanSharedImage {
             return Err(VulkanSharedImageError::MemoryBinding(error));
         }
 
-        Ok(Self { device, image, memory, width, height, format, usage })
+        Ok(Self {
+            device,
+            image,
+            memory,
+            width,
+            height,
+            format,
+            usage,
+        })
     }
 
-    pub fn handle(&self) -> vk::Image { self.image }
-    pub fn width(&self) -> u32 { self.width }
-    pub fn height(&self) -> u32 { self.height }
-    pub fn format(&self) -> vk::Format { self.format }
-    pub fn usage(&self) -> vk::ImageUsageFlags { self.usage }
+    pub fn handle(&self) -> vk::Image {
+        self.image
+    }
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+    pub fn format(&self) -> vk::Format {
+        self.format
+    }
+    pub fn usage(&self) -> vk::ImageUsageFlags {
+        self.usage
+    }
 
     pub(super) fn device(&self) -> &VulkanLogicalDevice {
         self.device.as_ref()

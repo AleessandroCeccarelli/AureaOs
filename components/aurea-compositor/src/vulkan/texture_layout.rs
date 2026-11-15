@@ -58,7 +58,10 @@ impl<'device> VulkanTextureDescriptorSetLayout<'device> {
             .stage_flags(vk::ShaderStageFlags::FRAGMENT)];
         let info = vk::DescriptorSetLayoutCreateInfo::default().bindings(&bindings);
         let handle = unsafe {
-            device.device().handle().create_descriptor_set_layout(&info, None)
+            device
+                .device()
+                .handle()
+                .create_descriptor_set_layout(&info, None)
         }
         .map_err(VulkanTextureLayoutError::Creation)?;
 

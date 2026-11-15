@@ -24,9 +24,9 @@ use crate::{
     render::RenderScene,
     renderer::{RenderBackend, RenderTarget},
     vulkan::{
-        DrmVulkanCompatibility, VulkanBackend, VulkanDrmFramePool, VulkanDrmScanoutFrame,
-        VulkanExternalMemoryCapabilities, VulkanFormatCapabilities, VulkanImageState,
-        VulkanImageView, VulkanLogicalDevice, VulkanDisplayColorManager, surface_compositor,
+        DrmVulkanCompatibility, VulkanBackend, VulkanDisplayColorManager, VulkanDrmFramePool,
+        VulkanDrmScanoutFrame, VulkanExternalMemoryCapabilities, VulkanFormatCapabilities,
+        VulkanImageState, VulkanImageView, VulkanLogicalDevice, surface_compositor,
     },
 };
 
@@ -299,9 +299,13 @@ fn render_and_present(
         .map_err(|_| VulkanScanoutError::new("DRM output height exceeds supported coordinates"))?;
 
     let display_pass = if warmth_percent > 0 {
-        let format = frame_pool.get(framebuffer).ok_or_else(|| {
-            VulkanScanoutError::new("The allocated scanout frame disappeared from its pool")
-        })?.image().format();
+        let format = frame_pool
+            .get(framebuffer)
+            .ok_or_else(|| {
+                VulkanScanoutError::new("The allocated scanout frame disappeared from its pool")
+            })?
+            .image()
+            .format();
         let pass = display_color_manager.pass_for_format(format).ok();
         if pass.is_some() {
             if let Some(frame) = frame_pool.get_mut(framebuffer) {

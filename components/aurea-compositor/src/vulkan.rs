@@ -50,8 +50,8 @@ mod queue_submitter;
 mod readback_buffer;
 mod rendering_features;
 mod sampler;
-mod shared_image;
 mod shader_module;
+mod shared_image;
 mod shm_texture;
 #[cfg(feature = "drm")]
 pub(crate) mod surface_compositor;
@@ -90,9 +90,9 @@ pub use command_buffer::VulkanCommandBuffer;
 pub use context::VulkanContext;
 pub use device_extensions::VulkanDeviceExtensionPlan;
 #[cfg(feature = "drm")]
-pub use display_color_pass::{VulkanDisplayColorPass, VulkanDisplayColorPassError};
-#[cfg(feature = "drm")]
 pub(crate) use display_color_manager::VulkanDisplayColorManager;
+#[cfg(feature = "drm")]
+pub use display_color_pass::{VulkanDisplayColorPass, VulkanDisplayColorPassError};
 #[cfg(feature = "drm")]
 pub use dmabuf_layout::{DmabufImportLayout, DmabufLayoutError, DmabufPlaneLayout};
 pub use draw_pass::{VulkanDrawPass, VulkanDrawPassError};
@@ -136,8 +136,8 @@ pub use queue::VulkanQueueFamilyInfo;
 pub use readback_buffer::{VulkanReadbackBuffer, VulkanReadbackError};
 pub use rendering_features::VulkanRenderingFeaturePlan;
 pub use sampler::{VulkanSampler, VulkanSamplerError};
-pub use shared_image::{VulkanSharedImage, VulkanSharedImageError};
 pub use shader_module::{VulkanShaderError, VulkanShaderModule};
+pub use shared_image::{VulkanSharedImage, VulkanSharedImageError};
 pub use shm_texture::{VulkanShmTexture, VulkanShmTextureError};
 pub use texture_binding::{VulkanTextureBinding, VulkanTextureBindingError};
 pub use texture_layout::{VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError};

@@ -78,7 +78,10 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         {
             return Err(VulkanGraphicsPipelineError::DeviceMismatch);
         }
-        let handles = descriptor_layouts.iter().map(|layout| layout.handle()).collect::<Vec<_>>();
+        let handles = descriptor_layouts
+            .iter()
+            .map(|layout| layout.handle())
+            .collect::<Vec<_>>();
         Self::create(
             device,
             VulkanDeviceOwner::Borrowed(device),
@@ -105,7 +108,10 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         {
             return Err(VulkanGraphicsPipelineError::DeviceMismatch);
         }
-        let handles = descriptor_layouts.iter().map(|layout| layout.handle()).collect::<Vec<_>>();
+        let handles = descriptor_layouts
+            .iter()
+            .map(|layout| layout.handle())
+            .collect::<Vec<_>>();
         Self::create(
             device,
             VulkanDeviceOwner::Borrowed(device),
@@ -305,10 +311,13 @@ impl<'device> VulkanGraphicsPipeline<'device> {
     /// must have configured all required dynamic state.
     pub fn draw(&self, command_buffer: vk::CommandBuffer, vertex_count: u32, instance_count: u32) {
         unsafe {
-            self.device
-                .device()
-                .handle()
-                .cmd_draw(command_buffer, vertex_count, instance_count, 0, 0);
+            self.device.device().handle().cmd_draw(
+                command_buffer,
+                vertex_count,
+                instance_count,
+                0,
+                0,
+            );
         }
     }
 
@@ -362,7 +371,10 @@ impl<'device> VulkanGraphicsPipeline<'device> {
 impl Drop for VulkanGraphicsPipeline<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.device().handle().destroy_pipeline(self.pipeline, None);
+            self.device
+                .device()
+                .handle()
+                .destroy_pipeline(self.pipeline, None);
             self.device
                 .device()
                 .handle()

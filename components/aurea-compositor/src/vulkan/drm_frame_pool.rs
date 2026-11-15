@@ -19,8 +19,7 @@ use crate::drm::{
 use super::{
     DrmVulkanFormat, VulkanCommandBuffer, VulkanDrmFramebuffer, VulkanDrmFramebufferError,
     VulkanDrmImage, VulkanDrmImageAllocator, VulkanDrmImageError, VulkanImageState,
-    VulkanImageTransition, VulkanImageTransitionError, VulkanLogicalDevice,
-    VulkanSharedImage,
+    VulkanImageTransition, VulkanImageTransitionError, VulkanLogicalDevice, VulkanSharedImage,
 };
 
 /// Errors produced while creating or retiring an owned scanout frame.
@@ -181,10 +180,7 @@ impl VulkanDrmScanoutFrame {
     /// Allocates the optional composition image only when an output effect
     /// actually needs it. Ordinary frames therefore retain no extra full-size
     /// GPU image, and unsupported formats keep the direct scanout path.
-    pub(crate) fn ensure_intermediate(
-        &mut self,
-        device: Arc<VulkanLogicalDevice>,
-    ) -> bool {
+    pub(crate) fn ensure_intermediate(&mut self, device: Arc<VulkanLogicalDevice>) -> bool {
         if self.intermediate.is_some() {
             return true;
         }
@@ -303,10 +299,7 @@ impl VulkanDrmFramePool {
         self.frames.get(&id)
     }
 
-    pub(crate) fn get_mut(
-        &mut self,
-        id: DrmFramebufferId,
-    ) -> Option<&mut VulkanDrmScanoutFrame> {
+    pub(crate) fn get_mut(&mut self, id: DrmFramebufferId) -> Option<&mut VulkanDrmScanoutFrame> {
         self.frames.get_mut(&id)
     }
 

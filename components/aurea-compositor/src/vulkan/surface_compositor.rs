@@ -17,10 +17,10 @@ use crate::{
 };
 
 use super::{
-    VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDrawPass, VulkanGraphicsPipeline,
-    VulkanGraphicsShaders, VulkanImageState, VulkanImageTransition, VulkanImageView,
-    VulkanLogicalDevice, VulkanSampler, VulkanShaderModule, VulkanShmTexture, VulkanTextureBinding,
-    VulkanTextureDescriptorSetLayout, VulkanDisplayColorPass,
+    VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanDrawPass,
+    VulkanGraphicsPipeline, VulkanGraphicsShaders, VulkanImageState, VulkanImageTransition,
+    VulkanImageView, VulkanLogicalDevice, VulkanSampler, VulkanShaderModule, VulkanShmTexture,
+    VulkanTextureBinding, VulkanTextureDescriptorSetLayout,
 };
 
 const BACKGROUND_COLOR: [f32; 4] = [0.08, 0.18, 0.32, 1.0];
@@ -101,7 +101,9 @@ pub(crate) fn render_and_release(
         };
     }
     let (composition_view, composition_previous_state) = match display_color {
-        Some((_, _, intermediate_view, intermediate_state)) => (intermediate_view, intermediate_state),
+        Some((_, _, intermediate_view, intermediate_state)) => {
+            (intermediate_view, intermediate_state)
+        }
         None => (view, previous_image_state),
     };
 
@@ -122,28 +124,44 @@ pub(crate) fn render_and_release(
     let descriptor_layouts = [&descriptor_layout];
     let pipeline = VulkanGraphicsPipeline::new_with_descriptor_layouts(
         device,
-        VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+        VulkanGraphicsShaders {
+            vertex: &vertex,
+            fragment: &fragment,
+        },
         composition_view.format(),
         &descriptor_layouts,
     )
     .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
 
     // All per-frame resources remain alive until submit_and_wait completes.
-    let textures = visible.iter().map(|surface| {
-        VulkanShmTexture::from_snapshot(device, surface.snapshot.as_ref().clone())
-            .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
-    }).collect::<Result<Vec<_>, _>>()?;
-    let views = textures.iter().map(|texture| {
-        texture.create_view().map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
-    }).collect::<Result<Vec<_>, _>>()?;
-    let bindings = views.iter().map(|texture_view| {
-        VulkanTextureBinding::new(device, &descriptor_layout, texture_view, &sampler)
-            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
-    }).collect::<Result<Vec<_>, _>>()?;
+    let textures = visible
+        .iter()
+        .map(|surface| {
+            VulkanShmTexture::from_snapshot(device, surface.snapshot.as_ref().clone())
+                .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let views = textures
+        .iter()
+        .map(|texture| {
+            texture
+                .create_view()
+                .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let bindings = views
+        .iter()
+        .map(|texture_view| {
+            VulkanTextureBinding::new(device, &descriptor_layout, texture_view, &sampler)
+                .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
 
     let display_binding = if let Some((pass, _, intermediate_view, _)) = display_color {
-        Some(pass.bind_source(intermediate_view)
-            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?)
+        Some(
+            pass.bind_source(intermediate_view)
+                .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?,
+        )
     } else {
         None
     };
@@ -208,12 +226,15 @@ pub(crate) fn render_and_release(
             command_buffer.handle(),
             composition_view,
             view,
-            display_binding.as_ref().expect("display binding created with pass"),
+            display_binding
+                .as_ref()
+                .expect("display binding created with pass"),
             VulkanImageState::General,
             previous_image_state,
             VulkanImageState::General,
             warmth,
-        ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+        )
+        .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
 
     VulkanImageTransition::record_release_to_foreign(
@@ -234,8 +255,6 @@ pub(crate) fn render_and_release(
 
     Ok(())
 }
-
-
 
 fn clear_display_and_release(
     device: &VulkanLogicalDevice,

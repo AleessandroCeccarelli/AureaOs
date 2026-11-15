@@ -19,7 +19,10 @@ pub(crate) struct VulkanDisplayColorManager {
 
 impl VulkanDisplayColorManager {
     pub(crate) fn new(device: Arc<VulkanLogicalDevice>) -> Self {
-        Self { device, passes: HashMap::new() }
+        Self {
+            device,
+            passes: HashMap::new(),
+        }
     }
 
     /// Returns the cached pass, creating it only on the first request.
@@ -31,6 +34,8 @@ impl VulkanDisplayColorManager {
             let pass = VulkanDisplayColorPass::new_shared(Arc::clone(&self.device), format)?;
             self.passes.insert(format, pass);
         }
-        self.passes.get(&format).ok_or(VulkanDisplayColorPassError::IncompatibleImages)
+        self.passes
+            .get(&format)
+            .ok_or(VulkanDisplayColorPassError::IncompatibleImages)
     }
 }

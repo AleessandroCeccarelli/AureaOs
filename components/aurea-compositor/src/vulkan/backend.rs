@@ -5,9 +5,9 @@
 
 //! Vulkan rendering-backend initialization and renderer integration.
 
-use std::{error::Error, fmt, sync::Arc};
 #[cfg(feature = "drm")]
 use std::sync::Mutex;
+use std::{error::Error, fmt, sync::Arc};
 
 use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 
