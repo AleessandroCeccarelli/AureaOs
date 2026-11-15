@@ -17,7 +17,7 @@ use super::{
 };
 
 /// Errors raised while recording a full-output color adjustment.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VulkanDisplayColorPassError {
     InvalidIntensity,
     UndefinedImageState,
@@ -70,7 +70,6 @@ impl VulkanDisplayColorPass {
             return Err(VulkanDisplayColorPassError::InvalidIntensity);
         }
         if previous_source_state == VulkanImageState::Undefined
-            || previous_target_state == VulkanImageState::Undefined && final_state == VulkanImageState::Undefined
             || final_state == VulkanImageState::Undefined
         {
             return Err(VulkanDisplayColorPassError::UndefinedImageState);
