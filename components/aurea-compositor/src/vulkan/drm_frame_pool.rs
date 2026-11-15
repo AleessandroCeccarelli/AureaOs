@@ -20,6 +20,7 @@ use super::{
     DrmVulkanFormat, VulkanCommandBuffer, VulkanDrmFramebuffer, VulkanDrmFramebufferError,
     VulkanDrmImage, VulkanDrmImageAllocator, VulkanDrmImageError, VulkanImageState,
     VulkanImageTransition, VulkanImageTransitionError, VulkanLogicalDevice,
+    VulkanSharedImage, VulkanSharedImageError,
 };
 
 /// Errors produced while creating or retiring an owned scanout frame.
@@ -34,6 +35,7 @@ pub enum VulkanDrmFramePoolError {
     CommandBuffer(vk::Result),
     ImageTransition(VulkanImageTransitionError),
     ForeignQueueFamilyUnavailable,
+    IntermediateImage(VulkanSharedImageError),
 }
 
 impl fmt::Display for VulkanDrmFramePoolError {
@@ -65,6 +67,9 @@ impl fmt::Display for VulkanDrmFramePoolError {
             }
             Self::ForeignQueueFamilyUnavailable => formatter
                 .write_str("Vulkan foreign queue-family ownership is unavailable for DRM scanout"),
+            Self::IntermediateImage(error) => {
+                write!(formatter, "Vulkan intermediate image allocation failed: {error}")
+            }
             Self::ImageTransition(error) => {
                 write!(
                     formatter,
@@ -100,6 +105,7 @@ pub struct VulkanDrmScanoutFrame {
     // Drop the imported KMS framebuffer before releasing its Vulkan image.
     framebuffer: VulkanDrmFramebuffer,
     image: VulkanDrmImage,
+    intermediate: Option<VulkanSharedImage>,
 }
 
 impl VulkanDrmScanoutFrame {
@@ -122,7 +128,17 @@ impl VulkanDrmScanoutFrame {
             allocator.allocate_exportable(width, height, format, usage)?
         };
         let framebuffer = VulkanDrmFramebuffer::register(drm_device, gbm_devices, &image)?;
-        Ok(Self { framebuffer, image })
+        let intermediate = Self::allocate_intermediate(
+            Arc::clone(&logical_device),
+            width,
+            height,
+            image.format(),
+        );
+        Ok(Self {
+            framebuffer,
+            image,
+            intermediate,
+        })
     }
 
     pub fn framebuffer_id(&self) -> DrmFramebufferId {
@@ -162,6 +178,40 @@ impl VulkanDrmScanoutFrame {
 
     pub fn image(&self) -> &VulkanDrmImage {
         &self.image
+    }
+
+    /// Returns the optimal-tiled composition image when this format supports
+    /// both color attachment writes and linearly sampled reads.
+    pub fn intermediate_image(&self) -> Option<&VulkanSharedImage> {
+        self.intermediate.as_ref()
+    }
+
+    fn allocate_intermediate(
+        device: Arc<VulkanLogicalDevice>,
+        width: u32,
+        height: u32,
+        format: vk::Format,
+    ) -> Option<VulkanSharedImage> {
+        let properties = unsafe {
+            device
+                .instance()
+                .get_physical_device_format_properties(device.physical_device(), format)
+        };
+        let required = vk::FormatFeatureFlags::COLOR_ATTACHMENT
+            | vk::FormatFeatureFlags::SAMPLED_IMAGE
+            | vk::FormatFeatureFlags::SAMPLED_IMAGE_FILTER_LINEAR;
+        if !properties.optimal_tiling_features.contains(required) {
+            return None;
+        }
+
+        VulkanSharedImage::allocate(
+            device,
+            width,
+            height,
+            format,
+            vk::ImageUsageFlags::COLOR_ATTACHMENT | vk::ImageUsageFlags::SAMPLED,
+        )
+        .ok()
     }
 }
 
