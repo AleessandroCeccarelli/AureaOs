@@ -52,3 +52,11 @@ The symbol geometry, proportions and colors must remain consistent between the t
 - Both masters use a 1024 × 1024 viewBox and are self-contained SVGs without external image dependencies.
 - The arrow geometry, metallic finish, lighting direction and palette are shared between the two variants.
 - SPDX: GPL-3.0-or-later.
+
+## Aurea Time
+
+- `aurea-time-icon.svg` — complete white rounded-square launcher tile with two sculpted metallic blue/cyan arrows chasing each other around layered version plates.
+- `aurea-time-symbol.svg` — matching circular-arrow and version-layer artwork on a transparent canvas.
+- Both masters use a 1024 × 1024 viewBox and are self-contained SVGs without external image dependencies.
+- Arrow geometry, metallic finish, lighting direction and palette are shared between the two variants.
+- SPDX: GPL-3.0-or-later.
