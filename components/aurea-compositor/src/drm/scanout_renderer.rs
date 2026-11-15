@@ -298,31 +298,35 @@ fn render_and_present(
     let height_i32 = i32::try_from(target.height())
         .map_err(|_| VulkanScanoutError::new("DRM output height exceeds supported coordinates"))?;
 
-    let (image, framebuffer_handle) = {
+    let display_pass = if warmth_percent > 0 {
+        let format = frame_pool.get(framebuffer).ok_or_else(|| {
+            VulkanScanoutError::new("The allocated scanout frame disappeared from its pool")
+        })?.image().format();
+        let pass = display_color_manager.pass_for_format(format).ok();
+        if pass.is_some() {
+            if let Some(frame) = frame_pool.get_mut(framebuffer) {
+                frame.ensure_intermediate(std::sync::Arc::clone(&shared_device));
+            }
+        }
+        pass
+    } else {
+        None
+    };
+
+    let (image, framebuffer_handle, intermediate) = {
         let frame = frame_pool.get(framebuffer).ok_or_else(|| {
             VulkanScanoutError::new("The allocated scanout frame disappeared from its pool")
         })?;
-        (frame.image(), frame.framebuffer_handle())
+        (
+            frame.image(),
+            frame.framebuffer_handle(),
+            frame.intermediate_image().zip(frame.intermediate_state()),
+        )
     };
 
     let view = VulkanImageView::color_drm(image)
         .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
 
-    let display_pass = if warmth_percent > 0 {
-        display_color_manager.pass_for_format(image.format()).ok()
-    } else {
-        None
-    };
-
-    let intermediate = if display_pass.is_some() {
-        let frame = frame_pool.get_mut(framebuffer).ok_or_else(|| {
-            VulkanScanoutError::new("The scanout frame disappeared before intermediate allocation")
-        })?;
-        frame.ensure_intermediate(std::sync::Arc::clone(&shared_device));
-        frame.intermediate_image().zip(frame.intermediate_state())
-    } else {
-        None
-    };
     let intermediate_view = intermediate
         .as_ref()
         .and_then(|(image, _)| VulkanImageView::color_shared(image).ok());
