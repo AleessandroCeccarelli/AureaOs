@@ -20,7 +20,7 @@ use super::{
     DrmVulkanFormat, VulkanCommandBuffer, VulkanDrmFramebuffer, VulkanDrmFramebufferError,
     VulkanDrmImage, VulkanDrmImageAllocator, VulkanDrmImageError, VulkanImageState,
     VulkanImageTransition, VulkanImageTransitionError, VulkanLogicalDevice,
-    VulkanSharedImage, VulkanSharedImageError,
+    VulkanSharedImage,
 };
 
 /// Errors produced while creating or retiring an owned scanout frame.
@@ -35,7 +35,6 @@ pub enum VulkanDrmFramePoolError {
     CommandBuffer(vk::Result),
     ImageTransition(VulkanImageTransitionError),
     ForeignQueueFamilyUnavailable,
-    IntermediateImage(VulkanSharedImageError),
 }
 
 impl fmt::Display for VulkanDrmFramePoolError {
@@ -67,9 +66,6 @@ impl fmt::Display for VulkanDrmFramePoolError {
             }
             Self::ForeignQueueFamilyUnavailable => formatter
                 .write_str("Vulkan foreign queue-family ownership is unavailable for DRM scanout"),
-            Self::IntermediateImage(error) => {
-                write!(formatter, "Vulkan intermediate image allocation failed: {error}")
-            }
             Self::ImageTransition(error) => {
                 write!(
                     formatter,
