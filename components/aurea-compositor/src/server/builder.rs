@@ -5,6 +5,8 @@
 
 //! Wayland server construction and backend initialization.
 
+use aurea_desktop_api::display::DisplayColorController;
+
 use std::{
     io,
     os::fd::AsFd,
@@ -41,6 +43,7 @@ pub(super) fn build(
     socket_name: &str,
     #[cfg(feature = "drm")] drm_session: Option<DrmSession>,
     #[cfg(feature = "drm")] drm_device: Option<DrmDevice>,
+    display_color: DisplayColorController,
 ) -> io::Result<(EventLoop<'static, WaylandState>, WaylandState)> {
     let event_loop = EventLoop::<WaylandState>::try_new().map_err(io::Error::other)?;
 
@@ -68,6 +71,7 @@ pub(super) fn build(
         clients: Vec::new(),
         disconnected_clients: Arc::new(Mutex::new(Vec::new())),
         error: None,
+        display_color,
 
         #[cfg(feature = "drm")]
         drm_session,
