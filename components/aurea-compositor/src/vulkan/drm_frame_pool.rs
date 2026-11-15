@@ -125,17 +125,11 @@ impl VulkanDrmScanoutFrame {
             allocator.allocate_exportable(width, height, format, usage)?
         };
         let framebuffer = VulkanDrmFramebuffer::register(drm_device, gbm_devices, &image)?;
-        let intermediate = Self::allocate_intermediate(
-            Arc::clone(&logical_device),
-            width,
-            height,
-            image.format(),
-        );
         Ok(Self {
             framebuffer,
             image,
+            intermediate: None,
             intermediate_state: Cell::new(VulkanImageState::Undefined),
-            intermediate,
         })
     }
 
@@ -182,6 +176,31 @@ impl VulkanDrmScanoutFrame {
     /// both color attachment writes and linearly sampled reads.
     pub fn intermediate_image(&self) -> Option<&VulkanSharedImage> {
         self.intermediate.as_ref()
+    }
+
+    /// Allocates the optional composition image only when an output effect
+    /// actually needs it. Ordinary frames therefore retain no extra full-size
+    /// GPU image, and unsupported formats keep the direct scanout path.
+    pub(crate) fn ensure_intermediate(
+        &mut self,
+        device: Arc<VulkanLogicalDevice>,
+    ) -> bool {
+        if self.intermediate.is_some() {
+            return true;
+        }
+
+        self.intermediate = Self::allocate_intermediate(
+            device,
+            self.image.width(),
+            self.image.height(),
+            self.image.format(),
+        );
+        if self.intermediate.is_some() {
+            self.intermediate_state.set(VulkanImageState::Undefined);
+            true
+        } else {
+            false
+        }
     }
 
     /// Returns the tracked layout/access state of the reusable intermediate.
@@ -282,6 +301,13 @@ impl VulkanDrmFramePool {
 
     pub fn get(&self, id: DrmFramebufferId) -> Option<&VulkanDrmScanoutFrame> {
         self.frames.get(&id)
+    }
+
+    pub(crate) fn get_mut(
+        &mut self,
+        id: DrmFramebufferId,
+    ) -> Option<&mut VulkanDrmScanoutFrame> {
+        self.frames.get_mut(&id)
     }
 
     /// Acquires a frame back from foreign ownership after KMS release or a skipped presentation.
