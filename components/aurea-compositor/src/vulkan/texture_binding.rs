@@ -43,21 +43,23 @@ impl fmt::Display for VulkanTextureBindingError {
 impl Error for VulkanTextureBindingError {}
 
 /// Keeps the image view, sampler and layout alive for the allocated descriptor set.
-pub struct VulkanTextureBinding<'resources, 'image, 'device> {
-    device: &'device VulkanLogicalDevice,
-    _view: &'resources VulkanImageView<'image, 'device>,
-    _sampler: &'resources VulkanSampler<'device>,
-    _layout: &'resources VulkanTextureDescriptorSetLayout<'device>,
+pub struct VulkanTextureBinding<'resources, 'image, 'image_device, 'resource_device> {
+    device: &'image_device VulkanLogicalDevice,
+    _view: &'resources VulkanImageView<'image, 'image_device>,
+    _sampler: &'resources VulkanSampler<'resource_device>,
+    _layout: &'resources VulkanTextureDescriptorSetLayout<'resource_device>,
     pool: vk::DescriptorPool,
     set: vk::DescriptorSet,
 }
 
-impl<'resources, 'image, 'device> VulkanTextureBinding<'resources, 'image, 'device> {
+impl<'resources, 'image, 'image_device, 'resource_device>
+    VulkanTextureBinding<'resources, 'image, 'image_device, 'resource_device>
+{
     pub fn new(
-        device: &'device VulkanLogicalDevice,
-        layout: &'resources VulkanTextureDescriptorSetLayout<'device>,
-        view: &'resources VulkanImageView<'image, 'device>,
-        sampler: &'resources VulkanSampler<'device>,
+        device: &'image_device VulkanLogicalDevice,
+        layout: &'resources VulkanTextureDescriptorSetLayout<'resource_device>,
+        view: &'resources VulkanImageView<'image, 'image_device>,
+        sampler: &'resources VulkanSampler<'resource_device>,
     ) -> Result<Self, VulkanTextureBindingError> {
         if layout.device_handle() != device.handle().handle()
             || view.device().handle().handle() != device.handle().handle()
@@ -152,7 +154,7 @@ impl<'resources, 'image, 'device> VulkanTextureBinding<'resources, 'image, 'devi
     }
 }
 
-impl Drop for VulkanTextureBinding<'_, '_, '_> {
+impl Drop for VulkanTextureBinding<'_, '_, '_, '_> {
     fn drop(&mut self) {
         unsafe {
             self.device
