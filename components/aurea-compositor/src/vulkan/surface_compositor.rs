@@ -87,11 +87,8 @@ pub(crate) fn render_and_release(
     )>,
     before_submit: impl FnOnce() -> Result<(), String>,
 ) -> Result<(), VulkanSurfaceCompositionError> {
+    let active_surface_ids = scene.surface_ids();
     let snapshots = scene.shm_snapshots();
-    let active_surface_ids = snapshots
-        .iter()
-        .map(|snapshot| snapshot.surface_id.clone())
-        .collect::<Vec<_>>();
     let visible = visible_surfaces(snapshots, target)?;
     let texture_requests = visible
         .iter()

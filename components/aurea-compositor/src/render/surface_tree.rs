@@ -41,6 +41,25 @@ struct TraversalLocation {
 /// Child locations are accumulated from each committed subsurface position.
 /// The traversal order matches Smithay's own surface-tree render-element
 /// traversal, preserving the stacking order of subsurfaces.
+/// Collects every live Wayland surface identity in tree traversal order.
+///
+/// Surfaces without an attached SHM buffer are included. This lets resource
+/// caches distinguish a live but currently non-renderable surface from one
+/// that has been destroyed or unmapped.
+pub fn collect_surface_tree_ids(root: &WlSurface) -> Vec<ObjectId> {
+    let mut surface_ids = Vec::new();
+
+    with_surface_tree_downward(
+        root,
+        (),
+        |_, _, _| TraversalAction::DoChildren(()),
+        |surface, _, _| surface_ids.push(surface.id()),
+        |_, _, _| true,
+    );
+
+    surface_ids
+}
+
 pub fn collect_surface_tree_snapshots(
     root: &WlSurface,
     root_location: Point<i32, Logical>,

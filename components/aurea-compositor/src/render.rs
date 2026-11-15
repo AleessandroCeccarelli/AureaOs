@@ -10,7 +10,9 @@ pub mod shm_buffer;
 pub mod shm_surface;
 pub mod surface_tree;
 
-use surface_tree::{SurfaceTreeSnapshot, collect_surface_tree_snapshots};
+use surface_tree::{
+    SurfaceTreeSnapshot, collect_surface_tree_ids, collect_surface_tree_snapshots,
+};
 
 use smithay::{
     backend::renderer::{
@@ -88,6 +90,17 @@ impl<'a> RenderScene<'a> {
         }
 
         elements
+    }
+
+    /// Returns full identities for every surface in every mapped surface tree.
+    ///
+    /// Unlike shm_snapshots, this includes surfaces that currently have no
+    /// attached SHM buffer and therefore cannot produce a render snapshot.
+    pub fn surface_ids(&self) -> Vec<smithay::reexports::wayland_server::backend::ObjectId> {
+        self.toplevels
+            .iter()
+            .flat_map(|toplevel| collect_surface_tree_ids(toplevel.surface.wl_surface()))
+            .collect()
     }
 
     /// Returns owned SHM snapshots for every mapped surface in tree render order.
