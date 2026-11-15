@@ -116,6 +116,16 @@ impl<'resources, 'image, 'device> VulkanTextureBinding<'resources, 'image, 'devi
         self.set
     }
 
+    /// Returns whether this descriptor set samples the exact supplied image view.
+    ///
+    /// Matching only the Vulkan device is insufficient: a descriptor set may
+    /// legally reference another image on the same device. Callers that record
+    /// image barriers for a source view must bind the descriptor for that view.
+    pub(super) fn references_view(&self, view: &VulkanImageView<'_, '_>) -> bool {
+        self._view.handle() == view.handle()
+            && self._view.device().handle().handle() == view.device().handle().handle()
+    }
+
     /// Binds this sampled texture at the requested graphics descriptor-set index.
     pub fn bind(
         &self,
