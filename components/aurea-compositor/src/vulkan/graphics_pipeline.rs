@@ -132,9 +132,9 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         descriptor_layout_handles: &[vk::DescriptorSetLayout],
         push_constant_ranges: &[vk::PushConstantRange],
     ) -> Result<VulkanGraphicsPipeline<'static>, VulkanGraphicsPipelineError> {
-        let device_ref = device.as_ref();
+        let device_ref = Arc::clone(&device);
         Self::create(
-            device_ref,
+            device_ref.as_ref(),
             VulkanDeviceOwner::Shared(device),
             shaders,
             color_format,
@@ -248,7 +248,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
             }
         };
 
-        Ok(Self {
+        Ok(VulkanGraphicsPipeline {
             device: owner,
             layout,
             pipeline,
