@@ -56,6 +56,7 @@ impl Error for VulkanRenderError {}
 pub struct VulkanBackend {
     #[cfg(feature = "drm")]
     display_color: Mutex<super::VulkanDisplayColorManager>,
+    #[cfg(feature = "drm")]
     surface_pipeline: Mutex<super::VulkanSurfacePipelineCache>,
     context: Arc<VulkanContext>,
     selected_device_info: VulkanDeviceInfo,
