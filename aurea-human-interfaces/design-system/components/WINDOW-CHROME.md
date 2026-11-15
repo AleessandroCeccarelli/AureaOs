@@ -2,18 +2,39 @@
 
 # Window Chrome Specification
 
-**Status:** Design specification
+**Status:** Design specification  
+**Primary usability reference:** Familiar Windows desktop conventions
 
 ## Shared structure
-First-party windows use application identity and/or approved icon, predictable title region, standard minimize/maximize-restore/close controls, and consistent spacing, surfaces and borders.
 
-Exact placement follows the approved AureaOS window prototype and native windowing contract. Applications must not relocate or rename standard controls independently.
+First-party windows provide:
+- Clear application identity and window title.
+- Predictable title-bar placement.
+- Standard minimize, maximize/restore and close controls.
+- Consistent control order, size, hit targets and accessible names.
+- A stable relationship between title bar and application menus.
 
-## Behavior
-Controls have consistent hit targets and accessible names. Maximize/restore uses one control and state representation. Closing respects unsaved work. Focused and unfocused windows remain distinguishable without making inactive content unreadable. Resizing and snapping must not overlap title or controls.
+Do not move, rename or redesign standard controls independently in each application. Users must recognize them immediately.
+
+## Control behavior
+
+- **Minimize:** hides the window while keeping the application represented in the dock's running-app area.
+- **Maximize:** fills the available work area without covering reserved system surfaces.
+- **Restore:** returns to the previous window geometry.
+- **Close:** closes the window and protects unsaved work through the application's normal confirmation/save flow.
+
+Maximize and restore use one control with a clear state. Hover, pressed, focused and disabled states are consistent across applications. Close must remain visually distinguishable without using alarming styling during ordinary use.
+
+## Title and menu relationship
+
+The title identifies the current application and, where relevant, the active document or location. The shared application menu follows the canonical categories and order in `APP-DESIGN-GUIDELINES.md`.
+
+Window controls must not overlap title text or menu items at supported display scales.
 
 ## Themes and accessibility
-Use shared semantic tokens. Keep title and controls legible in both themes. Provide keyboard alternatives and visible focus.
+
+Use shared semantic tokens. Keep title and controls legible in light and dark themes. Provide keyboard alternatives, visible focus and accessible names. Respect reduced motion and reduced transparency.
 
 ## Implementation boundary
-This is a visual contract. Window movement, focus, decoration ownership, resizing and presentation belong to compositor and shell, not CSS or application-specific imitation.
+
+This document defines visual and interaction expectations. Window movement, focus, decoration ownership, resizing, snapping and presentation belong to compositor and shell, not CSS or application-specific imitation.
