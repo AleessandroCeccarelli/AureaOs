@@ -138,7 +138,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         color_format: vk::Format,
         descriptor_layout_handles: &[vk::DescriptorSetLayout],
         push_constant_ranges: &[vk::PushConstantRange],
-    ) -> Result<Self, VulkanGraphicsPipelineError> {
+    ) -> Result<VulkanGraphicsPipeline<'owner>, VulkanGraphicsPipelineError> {
         if shaders.vertex.device_handle() != device.handle().handle()
             || shaders.fragment.device_handle() != device.handle().handle()
         {
