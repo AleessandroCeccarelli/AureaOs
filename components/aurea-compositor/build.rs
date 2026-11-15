@@ -16,7 +16,12 @@ fn main() {
         PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("manifest directory"));
     let shader_dir = manifest_dir.join("shaders");
 
-    for shader in ["surface_texture.vert", "surface_texture.frag"] {
+    for shader in [
+        "surface_texture.vert",
+        "surface_texture.frag",
+        "display_color.vert",
+        "display_color.frag",
+    ] {
         println!(
             "cargo:rerun-if-changed={}",
             shader_dir.join(shader).display()
@@ -47,6 +52,26 @@ fn main() {
     println!(
         "cargo:rustc-env=AUREA_SURFACE_TEXTURE_FRAG_SPV={}",
         output_dir.join("surface_texture.frag.spv").display()
+    );
+
+    compile_shader(
+        &shader_dir.join("display_color.vert"),
+        &output_dir.join("display_color.vert.spv"),
+        "vert",
+    );
+    compile_shader(
+        &shader_dir.join("display_color.frag"),
+        &output_dir.join("display_color.frag.spv"),
+        "frag",
+    );
+
+    println!(
+        "cargo:rustc-env=AUREA_DISPLAY_COLOR_VERT_SPV={}",
+        output_dir.join("display_color.vert.spv").display()
+    );
+    println!(
+        "cargo:rustc-env=AUREA_DISPLAY_COLOR_FRAG_SPV={}",
+        output_dir.join("display_color.frag.spv").display()
     );
 }
 
