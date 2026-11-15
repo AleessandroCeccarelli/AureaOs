@@ -110,6 +110,8 @@ impl VulkanSurfaceTextureCache {
             }
         }
 
+        let mut missing = Vec::new();
+        let mut missing_bytes = 0usize;
         for (surface_id, revision, snapshot) in visible_surfaces {
             if let Some(entry) = self.entries.get_mut(surface_id)
                 && entry.revision == *revision
@@ -119,39 +121,46 @@ impl VulkanSurfaceTextureCache {
                 continue;
             }
 
-            let byte_len = snapshot.pixels().len();
+            missing_bytes = missing_bytes
+                .checked_add(snapshot.pixels().len())
+                .ok_or(VulkanSurfaceTextureCacheError::CacheBudgetExceeded)?;
+            missing.push((surface_id.clone(), *revision, Arc::clone(snapshot)));
+        }
 
-            while self.entries.len() >= MAX_CACHED_SURFACE_TEXTURES
-                || self
-                    .cached_bytes
-                    .checked_add(byte_len)
-                    .map_or(true, |total| total > MAX_CACHED_SURFACE_TEXTURE_BYTES)
-            {
-                let candidate = self
-                    .entries
-                    .iter()
-                    .filter(|(id, _)| !required.contains(*id))
-                    .min_by_key(|(_, entry)| entry.last_used)
-                    .map(|(id, _)| id.clone());
+        while self.entries.len().saturating_add(missing.len()) > MAX_CACHED_SURFACE_TEXTURES
+            || self
+                .cached_bytes
+                .checked_add(missing_bytes)
+                .map_or(true, |total| total > MAX_CACHED_SURFACE_TEXTURE_BYTES)
+        {
+            let candidate = self
+                .entries
+                .iter()
+                .filter(|(id, _)| !required.contains(*id))
+                .min_by_key(|(_, entry)| entry.last_used)
+                .map(|(id, _)| id.clone());
 
-                let Some(candidate) = candidate else {
-                    return Err(VulkanSurfaceTextureCacheError::CacheBudgetExceeded);
-                };
-                self.remove_surface(&candidate);
-            }
+            let Some(candidate) = candidate else {
+                return Err(VulkanSurfaceTextureCacheError::CacheBudgetExceeded);
+            };
+            self.remove_surface(&candidate);
+        }
 
-            let texture = VulkanShmTexture::from_snapshot(
-                Arc::clone(&self.device),
-                snapshot.as_ref().clone(),
-            )
+        let snapshots = missing
+            .iter()
+            .map(|(_, _, snapshot)| snapshot.as_ref().clone())
+            .collect();
+        let textures = VulkanShmTexture::from_snapshots(Arc::clone(&self.device), snapshots)
             .map_err(VulkanSurfaceTextureCacheError::Texture)?;
 
+        for ((surface_id, revision, snapshot), texture) in missing.into_iter().zip(textures) {
+            let byte_len = snapshot.pixels().len();
             self.cached_bytes += byte_len;
             self.entries.insert(
-                surface_id.clone(),
+                surface_id,
                 CachedSurfaceTexture {
-                    revision: *revision,
-                    snapshot: Arc::clone(snapshot),
+                    revision,
+                    snapshot,
                     texture,
                     byte_len,
                     last_used: self.frame,

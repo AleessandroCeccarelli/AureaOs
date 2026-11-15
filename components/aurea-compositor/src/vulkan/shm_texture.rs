@@ -58,64 +58,94 @@ pub struct VulkanShmTexture {
 }
 
 impl VulkanShmTexture {
-    /// Converts and uploads an owned SHM snapshot into a sampled RGBA8 image.
+    /// Converts and uploads one owned SHM snapshot into a sampled RGBA8 image.
     pub fn from_snapshot(
         device: Arc<VulkanLogicalDevice>,
         snapshot: ShmBufferSnapshot,
     ) -> Result<Self, VulkanShmTextureError> {
-        let snapshot = snapshot.into_rgba8();
-        if snapshot.format() != ShmPixelFormat::Rgba8888 {
-            return Err(VulkanShmTextureError::UnsupportedPixelFormat);
+        Self::from_snapshots(device, vec![snapshot])?
+            .pop()
+            .ok_or(VulkanShmTextureError::Command(
+                vk::Result::ERROR_UNKNOWN,
+            ))
+    }
+
+    /// Uploads several SHM snapshots with one command-buffer submission.
+    ///
+    /// All staging buffers and destination images remain alive until the
+    /// synchronous submission completes. A failure drops the complete batch.
+    pub(crate) fn from_snapshots(
+        device: Arc<VulkanLogicalDevice>,
+        snapshots: Vec<ShmBufferSnapshot>,
+    ) -> Result<Vec<Self>, VulkanShmTextureError> {
+        if snapshots.is_empty() {
+            return Ok(Vec::new());
         }
 
-        let image = Arc::new(VulkanSharedImage::allocate(
-            device,
-            snapshot.width(),
-            snapshot.height(),
-            vk::Format::R8G8B8A8_UNORM,
-            vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
-        )
-        .map_err(VulkanShmTextureError::Image)?);
-        let device = image.device();
-        let view = VulkanImageView::color_shared_owned(Arc::clone(&image))
-            .map_err(VulkanShmTextureError::ImageView)?;
-        let staging = VulkanUploadBuffer::new(device, snapshot.width(), snapshot.height())
+        let mut resources = Vec::with_capacity(snapshots.len());
+        for snapshot in snapshots {
+            let snapshot = snapshot.into_rgba8();
+            if snapshot.format() != ShmPixelFormat::Rgba8888 {
+                return Err(VulkanShmTextureError::UnsupportedPixelFormat);
+            }
+
+            let image = Arc::new(VulkanSharedImage::allocate(
+                Arc::clone(&device),
+                snapshot.width(),
+                snapshot.height(),
+                vk::Format::R8G8B8A8_UNORM,
+                vk::ImageUsageFlags::TRANSFER_DST | vk::ImageUsageFlags::SAMPLED,
+            )
+            .map_err(VulkanShmTextureError::Image)?);
+            let view = VulkanImageView::color_shared_owned(Arc::clone(&image))
+                .map_err(VulkanShmTextureError::ImageView)?;
+            let staging = VulkanUploadBuffer::new(
+                device.as_ref(),
+                snapshot.width(),
+                snapshot.height(),
+            )
             .map_err(VulkanShmTextureError::Upload)?;
-        staging
-            .write_rgba8(snapshot.pixels())
-            .map_err(VulkanShmTextureError::Upload)?;
+            staging
+                .write_rgba8(snapshot.pixels())
+                .map_err(VulkanShmTextureError::Upload)?;
+            resources.push((image, view, staging));
+        }
 
         let mut commands =
-            VulkanCommandBuffer::new(device).map_err(VulkanShmTextureError::Command)?;
+            VulkanCommandBuffer::new(device.as_ref()).map_err(VulkanShmTextureError::Command)?;
         commands
             .begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
             .map_err(VulkanShmTextureError::Command)?;
 
-        VulkanImageTransition::record_color(
-            device,
-            commands.handle(),
-            image.handle(),
-            VulkanImageState::Undefined,
-            VulkanImageState::TransferDestination,
-        );
-        staging
-            .record_upload_rgba8(commands.handle(), &view)
-            .map_err(VulkanShmTextureError::Upload)?;
-        VulkanImageTransition::record_color(
-            device,
-            commands.handle(),
-            image.handle(),
-            VulkanImageState::TransferDestination,
-            VulkanImageState::ShaderRead,
-        );
+        for (image, view, staging) in &resources {
+            VulkanImageTransition::record_color(
+                device.as_ref(),
+                commands.handle(),
+                image.handle(),
+                VulkanImageState::Undefined,
+                VulkanImageState::TransferDestination,
+            );
+            staging
+                .record_upload_rgba8(commands.handle(), view)
+                .map_err(VulkanShmTextureError::Upload)?;
+            VulkanImageTransition::record_color(
+                device.as_ref(),
+                commands.handle(),
+                image.handle(),
+                VulkanImageState::TransferDestination,
+                VulkanImageState::ShaderRead,
+            );
+        }
 
         commands.end().map_err(VulkanShmTextureError::Command)?;
         commands
             .submit_and_wait()
             .map_err(VulkanShmTextureError::Command)?;
 
-        drop(staging);
-        Ok(Self { image, view })
+        Ok(resources
+            .into_iter()
+            .map(|(image, view, _staging)| Self { image, view })
+            .collect())
     }
 
     /// Returns the cached image view suitable for a sampled-image descriptor.
