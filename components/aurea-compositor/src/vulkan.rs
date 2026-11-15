@@ -143,4 +143,5 @@ pub use texture_binding::{VulkanTextureBinding, VulkanTextureBindingError};
 pub use texture_layout::{VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError};
 pub use upload_buffer::{VulkanUploadBuffer, VulkanUploadError};
 
+pub(super) use device_owner::VulkanDeviceOwner;
 pub(super) use queue_submitter::VulkanQueueSubmitter;
