@@ -103,6 +103,31 @@ impl<'device> VulkanDisplayColorPass<'device> {
         })
     }
 
+    /// Creates a per-frame sampled-image binding.
+    ///
+    /// Keep the returned binding alive until the command buffer has completed;
+    /// destroying its descriptor pool before GPU completion would invalidate
+    /// a descriptor set referenced by recorded commands.
+    pub fn bind_source<'resources, 'image>(
+        &'resources self,
+        device: &'device VulkanLogicalDevice,
+        source: &'resources VulkanImageView<'image, 'device>,
+    ) -> Result<VulkanTextureBinding<'resources, 'image, 'device>, VulkanDisplayColorPassError> {
+        if source.device().handle().handle() != device.handle().handle()
+            || !source.usage().contains(vk::ImageUsageFlags::SAMPLED)
+        {
+            return Err(VulkanDisplayColorPassError::MissingSampledUsage);
+        }
+
+        VulkanTextureBinding::new(
+            device,
+            &self.descriptor_layout,
+            source,
+            &self.sampler,
+        )
+        .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))
+    }
+
     /// Records the adjustment from a sampled scene image into a scanout target.
     ///
     /// The source is left in SHADER_READ_ONLY_OPTIMAL. The destination is left
@@ -113,6 +138,7 @@ impl<'device> VulkanDisplayColorPass<'device> {
         command_buffer: vk::CommandBuffer,
         source: &VulkanImageView<'_, '_>,
         target: &VulkanImageView<'_, '_>,
+        binding: &VulkanTextureBinding<'_, '_, 'device>,
         previous_source_state: VulkanImageState,
         previous_target_state: VulkanImageState,
         final_state: VulkanImageState,
@@ -140,14 +166,6 @@ impl<'device> VulkanDisplayColorPass<'device> {
         {
             return Err(VulkanDisplayColorPassError::IncompatibleImages);
         }
-
-        let binding = VulkanTextureBinding::new(
-            device,
-            &self.descriptor_layout,
-            source,
-            &self.sampler,
-        )
-        .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
 
         VulkanImageTransition::record_color(
             device,
