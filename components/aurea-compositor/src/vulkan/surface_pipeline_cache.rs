@@ -1,0 +1,115 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// AureaOS
+// Copyright (C) 2026 Alessandro Ceccarelli
+
+//! Persistent Vulkan resources for SHM surface composition.
+
+use std::{collections::HashMap, error::Error, fmt, sync::Arc};
+
+use smithay::reexports::ash::vk;
+
+use super::{
+    VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders, VulkanLogicalDevice,
+    VulkanSampler, VulkanSamplerError, VulkanShaderError, VulkanShaderModule,
+    VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
+};
+
+/// Errors returned while preparing cached surface-composition resources.
+#[derive(Debug)]
+pub(crate) enum VulkanSurfacePipelineCacheError {
+    DescriptorLayout(VulkanTextureLayoutError),
+    Sampler(VulkanSamplerError),
+    Shader(VulkanShaderError),
+    Pipeline(VulkanGraphicsPipelineError),
+}
+
+impl fmt::Display for VulkanSurfacePipelineCacheError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::DescriptorLayout(error) => write!(formatter, "Surface descriptor layout: {error}"),
+            Self::Sampler(error) => write!(formatter, "Surface sampler: {error}"),
+            Self::Shader(error) => write!(formatter, "Surface shader: {error}"),
+            Self::Pipeline(error) => write!(formatter, "Surface pipeline: {error}"),
+        }
+    }
+}
+
+impl Error for VulkanSurfacePipelineCacheError {}
+
+/// Retains device-wide surface resources and one graphics pipeline per target format.
+pub(crate) struct VulkanSurfacePipelineCache {
+    device: Arc<VulkanLogicalDevice>,
+    pipelines: HashMap<vk::Format, VulkanGraphicsPipeline<'static>>,
+    descriptor_layout: VulkanTextureDescriptorSetLayout<'static>,
+    sampler: VulkanSampler<'static>,
+}
+
+impl VulkanSurfacePipelineCache {
+    pub(crate) fn new(
+        device: Arc<VulkanLogicalDevice>,
+    ) -> Result<Self, VulkanSurfacePipelineCacheError> {
+        let descriptor_layout = VulkanTextureDescriptorSetLayout::new_shared(Arc::clone(&device))
+            .map_err(VulkanSurfacePipelineCacheError::DescriptorLayout)?;
+        let sampler = VulkanSampler::linear_clamp_shared(Arc::clone(&device))
+            .map_err(VulkanSurfacePipelineCacheError::Sampler)?;
+
+        Ok(Self {
+            device,
+            pipelines: HashMap::new(),
+            descriptor_layout,
+            sampler,
+        })
+    }
+
+    /// Creates a format-specific pipeline only on its first use.
+    pub(crate) fn ensure_pipeline(
+        &mut self,
+        format: vk::Format,
+    ) -> Result<(), VulkanSurfacePipelineCacheError> {
+        if self.pipelines.contains_key(&format) {
+            return Ok(());
+        }
+
+        let vertex = VulkanShaderModule::from_bytes(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let fragment = VulkanShaderModule::from_bytes(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_SPV")),
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let descriptor_layouts = [self.descriptor_layout.handle()];
+        let pipeline = VulkanGraphicsPipeline::new_shared_with_descriptor_layout_handles(
+            Arc::clone(&self.device),
+            VulkanGraphicsShaders {
+                vertex: &vertex,
+                fragment: &fragment,
+            },
+            format,
+            &descriptor_layouts,
+            &[],
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Pipeline)?;
+
+        self.pipelines.insert(format, pipeline);
+        Ok(())
+    }
+
+    pub(crate) fn pipeline(
+        &self,
+        format: vk::Format,
+    ) -> Option<&VulkanGraphicsPipeline<'static>> {
+        self.pipelines.get(&format)
+    }
+
+    pub(crate) fn descriptor_layout(&self) -> &VulkanTextureDescriptorSetLayout<'static> {
+        &self.descriptor_layout
+    }
+
+    pub(crate) fn sampler(&self) -> &VulkanSampler<'static> {
+        &self.sampler
+    }
+}
