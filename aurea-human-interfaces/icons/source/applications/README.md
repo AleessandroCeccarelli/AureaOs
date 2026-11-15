@@ -36,3 +36,11 @@ The symbol geometry, proportions and colors must remain consistent between the t
 - Both masters use a 1024 × 1024 viewBox and are self-contained SVGs without external image dependencies.
 - The folder silhouette, document layers, lighting direction and palette are shared between the two variants.
 - SPDX: GPL-3.0-or-later.
+
+## Aurea Wallet
+
+- `aurea-wallet-icon.svg` — complete white rounded-square tile with a layered blue security shield and luminous cyan key.
+- `aurea-wallet-symbol.svg` — matching shield-and-key artwork on a transparent canvas.
+- Both masters use a 1024 × 1024 viewBox and are self-contained SVGs without external image dependencies.
+- The shield silhouette, key geometry, lighting direction and palette are shared between the two variants.
+- SPDX: GPL-3.0-or-later.
