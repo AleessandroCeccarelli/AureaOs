@@ -24,6 +24,7 @@ pub enum VulkanDisplayColorPassError {
     MissingSampledUsage,
     MissingColorAttachmentUsage,
     IncompatibleImages,
+    BindingSourceMismatch,
     UnsupportedFormatFeatures,
     Pipeline(String),
     Descriptor(String),
@@ -37,6 +38,7 @@ impl fmt::Display for VulkanDisplayColorPassError {
             Self::MissingSampledUsage => formatter.write_str("Display color source lacks sampled-image usage"),
             Self::MissingColorAttachmentUsage => formatter.write_str("Display color target lacks color-attachment usage"),
             Self::IncompatibleImages => formatter.write_str("Display color resources must share a device and compatible dimensions and format"),
+            Self::BindingSourceMismatch => formatter.write_str("Display color descriptor binding does not reference the supplied source image view"),
             Self::UnsupportedFormatFeatures => formatter.write_str("The output format does not support optimal-tiled color attachment and linearly sampled image usage required by the display color pass"),
             Self::Pipeline(error) => write!(formatter, "Display color pipeline initialization failed: {error}"),
             Self::Descriptor(error) => write!(formatter, "Display color descriptor initialization failed: {error}"),
@@ -180,9 +182,12 @@ impl<'device> VulkanDisplayColorPass<'device> {
         if !target.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
             return Err(VulkanDisplayColorPassError::MissingColorAttachmentUsage);
         }
+        if !binding.references_view(source) {
+            return Err(VulkanDisplayColorPassError::BindingSourceMismatch);
+        }
+
         if source.device().handle().handle() != device.handle().handle()
             || target.device().handle().handle() != device.handle().handle()
-            || !binding.references_view(source)
             || source.width() != target.width()
             || source.height() != target.height()
             || source.format() != target.format()
