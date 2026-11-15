@@ -1,14 +1,14 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS Typography
+# AureaOS Typography Resources
 
-Owns font sources, licensing records, typography decisions and the future original Aurea Sans family.
+Owns retained font sources, licensing records and current typography guidance. Font selection and rendering must remain consistent across the desktop and first-party applications.
 
 ## Structure
 
 - `source/google-fonts/` — retained Noto families and upstream notices.
 - `source/adobe/` — retained Source Code Pro and its upstream notice.
-- `generated/` — reserved for original font build outputs, subsets and validated runtime packages.
+- `generated/` — reserved for validated subsets and runtime font packages.
 
 ## Current development support
 
@@ -20,10 +20,17 @@ Owns font sources, licensing records, typography decisions and the future origin
 | Noto Sans Math | Mathematical glyph coverage | SIL Open Font License 1.1 |
 | Source Code Pro | Temporary monospaced/developer fallback | SIL Open Font License 1.1 |
 
-Keep upstream notices beside each family. These are not the final AureaOS typography identity.
+Keep upstream notices beside each family. These are retained development resources, not a final AureaOS typography identity or a confirmed production font stack.
 
-## Destination: Aurea Sans
+## Current scope
 
-Aurea Sans is an intended original project type family, not an existing approved production font. Planned work: typography brief, glyph design, spacing/kerning, language coverage, regular and emphasized styles, shaping and hinting validation, readability and display-scale tests, metadata and license review, reproducible font build and runtime packaging.
+Aurea Sans is a possible future original type family. Its design and production are explicitly deferred; it is not a prerequisite for the current Human Interfaces consolidation and must not block desktop implementation.
 
-Do not rename or relicense third-party fonts as Aurea Sans. Do not select the final system font stack until the original family is approved and fallback coverage is tested.
+For the current phase:
+- Preserve the existing font files and their licenses unchanged.
+- Use the retained families only as development support where needed.
+- Keep font choice and fallback behavior explicit in consuming components.
+- Validate glyph coverage, readability and scaling before runtime packaging.
+- Do not rename or relicense third-party fonts as AureaOS artwork.
+
+Revisit an original AureaOS type family only when typography becomes an active product milestone.
