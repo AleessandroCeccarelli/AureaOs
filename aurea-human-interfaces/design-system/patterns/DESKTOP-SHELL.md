@@ -2,12 +2,12 @@
 
 # Desktop Shell Pattern
 
-**Status:** Design specification  
+**Status:** Design specification
 **Full specification:** [Desktop Experience](../../DESKTOP-EXPERIENCE-SPEC.md)
 
 ## Purpose
 
-The shell provides familiar access to applications, open windows, workspaces and system status. It should feel immediately understandable to a Windows desktop user.
+The shell provides familiar access to applications, open windows, workspaces and system status. It should feel immediately understandable to a Windows desktop user while retaining a distinctive AureaOS finish.
 
 ## Composition
 
@@ -15,8 +15,14 @@ The shell provides familiar access to applications, open windows, workspaces and
 - Aurea A launcher entry at the left.
 - Pinned and running applications with clear active-window indication.
 - Clock, connectivity, audio, power and notification access at the right.
-- Floating launcher, quick settings and notification surfaces.
+- Floating launcher, Quick Settings and notification surfaces.
 - Four workspaces available as an additional organization tool.
+
+## Shared visual language
+
+The shell uses canonical tokens for color, spacing, radii, borders, shadows and typography. Keep the desktop canvas calm and the dock visually light. The dock, launcher and Quick Settings may use translucent glass with backdrop blur, soft edge highlights and layered shadows. Notification cards use the dedicated notification glass material specified in [Feedback and Notifications](FEEDBACK-AND-NOTIFICATIONS.md).
+
+Glass is reserved for floating shell surfaces. Application content remains readable and stable. If blur is unavailable, use an opaque elevated surface. Under reduced transparency, remove blur and translucent highlights without losing hierarchy.
 
 ## Interaction
 
@@ -24,9 +30,9 @@ Super opens the launcher. Alt+Tab switches open windows. The dock distinguishes 
 
 The dock may float, remain visible or auto-hide. These presentation modes must not change the familiar meaning of pinned and running applications.
 
-## Visual consistency
+## Motion and accessibility
 
-Use shared tokens, window controls, menu rules and motion behavior. The dock may take visual cues from KDE Plasma; shell consistency and notification refinement may take cues from macOS. These references must not make ordinary desktop tasks unfamiliar.
+Use brief, purposeful transitions for opening, closing, hover and workspace changes. Respect reduced motion. Preserve keyboard access, visible focus, readable contrast and display scaling in both themes.
 
 ## Status
 
