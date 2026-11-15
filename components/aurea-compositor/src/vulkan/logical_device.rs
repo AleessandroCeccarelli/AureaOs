@@ -275,7 +275,7 @@ impl Drop for VulkanLogicalDevice {
 impl VulkanContext {
     /// Creates a logical device for the selected physical device.
     pub fn create_logical_device(
-        &self,
+        self: &Arc<Self>,
         preference: crate::renderer::RenderPreference,
     ) -> Result<VulkanLogicalDevice, VulkanInitError> {
         let physical_device = self
@@ -285,6 +285,11 @@ impl VulkanContext {
             .graphics_queue_family(physical_device)
             .ok_or_else(|| VulkanInitError::new("Selected device has no graphics queue"))?;
         let extension_plan = VulkanDeviceExtensionPlan::from_device(physical_device);
-        VulkanLogicalDevice::new(physical_device, queue_family_index, extension_plan, None)
+        VulkanLogicalDevice::new(
+            physical_device,
+            queue_family_index,
+            extension_plan,
+            Some(Arc::clone(self)),
+        )
     }
 }

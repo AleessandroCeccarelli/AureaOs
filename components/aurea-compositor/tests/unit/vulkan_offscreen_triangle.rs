@@ -3,7 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, sync::Arc};
 
 use aurea_compositor::{
     renderer::RenderPreference,
@@ -21,7 +21,7 @@ fn renders_triangle_and_reads_back_expected_pixels() {
     let fragment = fs::read(shader_dir.join("triangle.frag.spv"))
         .expect("compile triangle.frag with tools/shaders/compile-vulkan-shaders.sh");
 
-    let context = VulkanContext::new().expect("create Vulkan 1.3 instance");
+    let context = Arc::new(VulkanContext::new().expect("create Vulkan 1.3 instance"));
     let device = context
         .create_logical_device(RenderPreference::Automatic)
         .expect("select a Vulkan 1.3 graphics device");
