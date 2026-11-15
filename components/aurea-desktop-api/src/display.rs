@@ -5,6 +5,11 @@
 
 //! Shared display color policy contracts.
 
+use std::sync::{
+    Arc,
+    atomic::{AtomicU8, Ordering},
+};
+
 /// A technology-independent color adjustment requested for a display output.
 ///
 /// The compositor owns the implementation. A value of zero means that the
@@ -33,9 +38,37 @@ impl DisplayColorAdjustment {
     }
 }
 
+/// Thread-safe, technology-independent channel for live display color policy.
+///
+/// The shell owns updates; the compositor reads snapshots on its render
+/// thread. Atomic storage avoids locks in the frame path and keeps the API
+/// independent from the graphics backend.
+#[derive(Debug, Clone, Default)]
+pub struct DisplayColorController {
+    warmth_percent: Arc<AtomicU8>,
+}
+
+impl DisplayColorController {
+    /// Creates a controller with neutral output color.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Publishes a new output color adjustment.
+    pub fn set_adjustment(&self, adjustment: DisplayColorAdjustment) {
+        self.warmth_percent
+            .store(adjustment.warmth_percent(), Ordering::Release);
+    }
+
+    /// Reads the most recently published adjustment.
+    pub fn adjustment(&self) -> DisplayColorAdjustment {
+        DisplayColorAdjustment::new(self.warmth_percent.load(Ordering::Acquire))
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::DisplayColorAdjustment;
+    use super::{DisplayColorAdjustment, DisplayColorController};
 
     #[test]
     fn default_adjustment_is_neutral() {
@@ -48,5 +81,26 @@ mod tests {
     fn intensity_is_clamped_to_the_supported_range() {
         assert_eq!(DisplayColorAdjustment::new(65).warmth_percent(), 65);
         assert_eq!(DisplayColorAdjustment::new(u8::MAX).warmth_percent(), 100);
+    }
+
+    #[test]
+    fn cloned_controller_shares_updates() {
+        let controller = DisplayColorController::new();
+        let compositor_view = controller.clone();
+
+        controller.set_adjustment(DisplayColorAdjustment::new(68));
+
+        assert_eq!(compositor_view.adjustment().warmth_percent(), 68);
+    }
+
+    #[test]
+    fn controller_starts_neutral_and_can_be_reset() {
+        let controller = DisplayColorController::new();
+        assert!(controller.adjustment().is_neutral());
+
+        controller.set_adjustment(DisplayColorAdjustment::new(90));
+        controller.set_adjustment(DisplayColorAdjustment::default());
+
+        assert!(controller.adjustment().is_neutral());
     }
 }
