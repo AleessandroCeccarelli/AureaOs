@@ -1,0 +1,8 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Fides drives these states from actual drag-and-drop events. */
+.aurea-folder-icon { transform-origin: 50% 78%; transition: transform 180ms ease, filter 180ms ease; }
+.aurea-folder-icon.is-drag-over { transform: translateY(-2px) scale(1.035); }
+.aurea-folder-icon.is-drop-target { filter: drop-shadow(0 5px 9px rgba(25, 90, 160, .28)); }
+@media (prefers-reduced-motion: reduce) {
+  .aurea-folder-icon, .aurea-folder-icon * { transition: none !important; animation: none !important; }
+}

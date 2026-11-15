@@ -4,9 +4,10 @@
 Original AureaOS folder artwork for Fides and the desktop.
 
 - `folder-icons.svg` is the SVG symbol sprite.
-- Each icon is addressable as `#light-folder`, `#dark-folder`, `#light-home`, `#dark-home`, and so on.
+- Reference symbols with `<use href="folder-icons.svg#light-home"/>` or `#dark-home`.
 - 14 semantic icons in each theme: folder, home, user, desktop, documents, downloads, pictures, music, videos, shared, network, system, favorites, trash.
 - The generic `folder` is the unmarked gold standard folder.
+- Open and drag-target states are included as `light-folder-open`, `light-folder-drop`, `dark-folder-open`, and `dark-folder-drop`.
 - Symbols use a shared 512 × 512 viewBox and preserve the approved geometry, colors, and centered emblems.
 
-Use an SVG reference such as `folder-icons.svg#light-downloads` from an SVG `use` element, or extract the symbol into a standalone SVG during packaging. Fides must choose the theme and handle drag/drop state transitions. Runtime animation is intentionally not embedded in the artwork.
+Fides selects the matching theme symbol and drives open/drop states from actual drag events. Respect reduced-motion preferences. The SVG sprite is source artwork; runtime wiring and transition timing remain in Fides.
