@@ -64,6 +64,17 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         Self::new_with_descriptor_layouts(device, shaders, color_format, &[])
     }
 
+    /// Creates a graphics pipeline with descriptor layouts and push-constant ranges.
+    pub fn new_with_descriptor_layouts_and_push_constants(
+        device: &'device VulkanLogicalDevice,
+        shaders: VulkanGraphicsShaders<'_, 'device>,
+        color_format: vk::Format,
+        descriptor_layouts: &[&super::VulkanTextureDescriptorSetLayout<'device>],
+        push_constant_ranges: &[vk::PushConstantRange],
+    ) -> Result<Self, VulkanGraphicsPipelineError> {
+        Self::create(device, shaders, color_format, descriptor_layouts, push_constant_ranges)
+    }
+
     /// Creates a graphics pipeline with the supplied descriptor-set layouts.
     ///
     /// Descriptor layouts must belong to the same Vulkan device. Their
@@ -73,6 +84,16 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         shaders: VulkanGraphicsShaders<'_, 'device>,
         color_format: vk::Format,
         descriptor_layouts: &[&super::VulkanTextureDescriptorSetLayout<'device>],
+    ) -> Result<Self, VulkanGraphicsPipelineError> {
+        Self::create(device, shaders, color_format, descriptor_layouts, &[])
+    }
+
+    fn create(
+        device: &'device VulkanLogicalDevice,
+        shaders: VulkanGraphicsShaders<'_, 'device>,
+        color_format: vk::Format,
+        descriptor_layouts: &[&super::VulkanTextureDescriptorSetLayout<'device>],
+        push_constant_ranges: &[vk::PushConstantRange],
     ) -> Result<Self, VulkanGraphicsPipelineError> {
         if shaders.vertex.device_handle() != device.handle().handle()
             || shaders.fragment.device_handle() != device.handle().handle()
@@ -87,7 +108,9 @@ impl<'device> VulkanGraphicsPipeline<'device> {
             .iter()
             .map(|layout| layout.handle())
             .collect::<Vec<_>>();
-        let layout_info = vk::PipelineLayoutCreateInfo::default().set_layouts(&descriptor_handles);
+        let layout_info = vk::PipelineLayoutCreateInfo::default()
+            .set_layouts(&descriptor_handles)
+            .push_constant_ranges(push_constant_ranges);
         let layout = unsafe { device.handle().create_pipeline_layout(&layout_info, None) }
             .map_err(VulkanGraphicsPipelineError::Creation)?;
 
@@ -207,6 +230,28 @@ impl<'device> VulkanGraphicsPipeline<'device> {
                 command_buffer,
                 vk::PipelineBindPoint::GRAPHICS,
                 self.pipeline,
+            );
+        }
+    }
+
+    /// Writes push-constant data for the graphics stages.
+    ///
+    /// The supplied byte range must be covered by a range declared when
+    /// creating this pipeline.
+    pub fn push_constants(
+        &self,
+        command_buffer: vk::CommandBuffer,
+        stages: vk::ShaderStageFlags,
+        offset: u32,
+        data: &[u8],
+    ) {
+        unsafe {
+            self.device.handle().cmd_push_constants(
+                command_buffer,
+                self.layout,
+                stages,
+                offset,
+                data,
             );
         }
     }
