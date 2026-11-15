@@ -188,7 +188,9 @@ impl<'device> VulkanDisplayColorPass<'device> {
     ) -> Result<VulkanTextureBinding<'resources, 'image, 'image_device>, VulkanDisplayColorPassError>
     {
         let device = source.device();
-        if source.device().handle().handle() != device.handle().handle() {
+        if self.descriptor_layout.device_handle() != device.handle().handle()
+            || self.sampler.device_handle() != device.handle().handle()
+        {
             return Err(VulkanDisplayColorPassError::IncompatibleImages);
         }
         if !source.usage().contains(vk::ImageUsageFlags::SAMPLED) {
