@@ -2,10 +2,13 @@
 
 # Menu Specification
 
-**Status:** Design specification
+**Status:** Design specification  
+**Related rules:** `../../APP-DESIGN-GUIDELINES.md`
 
 ## Application menu bar
-First-party desktop applications use the shared category names and order:
+
+First-party desktop applications use the same familiar category names and order:
+
 1. File
 2. Edit
 3. View
@@ -13,13 +16,31 @@ First-party desktop applications use the shared category names and order:
 5. Window
 6. Help
 
-Italian labels are File, Modifica, Visualizza, Vai, Finestra and Aiuto. Applications may omit a category only when it has no meaningful commands; they must not rename categories or invent synonyms.
+Italian labels: File, Modifica, Visualizza, Vai, Finestra, Aiuto.
+
+A category may be omitted only when it has no meaningful commands. Do not rename, reorder or replace shared categories with application-specific synonyms. Do not show empty menus.
+
+## Command placement
+
+Keep shared commands in stable locations across applications:
+- Undo, redo, cut, copy, paste, select all: Edit.
+- Layout, zoom, visibility and presentation: View.
+- Location/search navigation: Navigate.
+- Window arrangement and switching: Window.
+- Documentation, support and version information: Help.
+
+Application-specific commands belong in the closest relevant category. Contextual actions may also appear in right-click menus. Do not duplicate the same command under conflicting names.
 
 ## Menu item anatomy
-An item may contain an icon, command label, optional shortcut, submenu indicator and state indicator. Keep alignment consistent. Group related commands; avoid unnecessary separators.
+
+An item may contain an icon, command label, optional shortcut, submenu indicator and checked/state indicator. Align labels and shortcuts consistently. Group related commands and avoid unnecessary separators.
 
 ## Behavior
-Support default, hover, keyboard focus, pressed, selected/checked and disabled states. Arrow keys navigate; Enter activates; Escape closes the current level. Focus returns to the invoking control. Context menus use the same visual language and terminology.
+
+Support pointer hover, keyboard focus, pressed, checked and disabled states. Arrow keys navigate; Enter activates; Escape closes the current menu level. Focus returns to the invoking control. Menus stay within screen bounds and open in predictable directions.
+
+Context menus appear near the pointer when possible and expose actions relevant to the clicked object or surface.
 
 ## Themes and accessibility
-Use shared menu surface, border, shadow, typography and focus tokens. Expose menu roles, item names, checked state and shortcuts to assistive technology.
+
+Use shared menu surface, border, shadow, typography and focus tokens. Expose menu roles, item names, checked state and shortcuts to assistive technology. Maintain readable contrast in both themes.
