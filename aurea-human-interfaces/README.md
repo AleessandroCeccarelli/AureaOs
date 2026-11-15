@@ -8,6 +8,12 @@ AureaOS should feel familiar to users coming from Windows or macOS, but it must 
 
 This layer is responsible for the desktop language of the system: visual identity, theme tokens, reusable components, shared assets, and interaction patterns.
 
+## Core specifications
+
+- [Application Design Guidelines](APP-DESIGN-GUIDELINES.md) — shared application appearance, window structure, menus, themes, accessibility and third-party integration.
+- [Desktop Experience Specification](DESKTOP-EXPERIENCE-SPEC.md) — dock, launcher, workspaces, window organization, notifications and quick settings.
+- [Audit and Completion Roadmap](AUDIT-AND-COMPLETION-ROADMAP.md) — current inventory, identified gaps and staged completion plan.
+
 ## Design goals
 
 - Familiar without being derivative
