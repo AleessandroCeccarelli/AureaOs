@@ -72,7 +72,13 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         descriptor_layouts: &[&super::VulkanTextureDescriptorSetLayout<'device>],
         push_constant_ranges: &[vk::PushConstantRange],
     ) -> Result<Self, VulkanGraphicsPipelineError> {
-        Self::create(device, shaders, color_format, descriptor_layouts, push_constant_ranges)
+        Self::create(
+            device,
+            shaders,
+            color_format,
+            descriptor_layouts,
+            push_constant_ranges,
+        )
     }
 
     /// Creates a graphics pipeline with the supplied descriptor-set layouts.

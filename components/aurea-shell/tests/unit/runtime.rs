@@ -181,7 +181,6 @@ fn runtime_start_error_is_lifecycle_transition_error() {
     ));
 }
 
-
 #[test]
 fn runtime_publishes_manual_night_light_to_shared_display_channel() {
     let display_color = DisplayColorController::new();
@@ -212,7 +211,10 @@ fn runtime_publishes_neutral_output_when_night_light_is_disabled() {
     night_light.set_enabled(false);
     runtime.set_night_light(night_light, true);
 
-    assert_eq!(compositor_view.adjustment(), DisplayColorAdjustment::default());
+    assert_eq!(
+        compositor_view.adjustment(),
+        DisplayColorAdjustment::default()
+    );
 }
 
 #[test]

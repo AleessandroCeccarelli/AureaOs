@@ -74,7 +74,12 @@ impl WaylandServer {
         let mut drm_session = session::create_session()?;
         let drm_device = session::open_primary_device(&mut drm_session, seat)?;
 
-        Self::build(socket_name, Some(drm_session), Some(drm_device), display_color)
+        Self::build(
+            socket_name,
+            Some(drm_session),
+            Some(drm_device),
+            display_color,
+        )
     }
 
     /// Creates a server with a native libseat session and an opened DRM device.

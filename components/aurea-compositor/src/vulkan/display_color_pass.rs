@@ -10,10 +10,9 @@ use std::{error::Error, fmt};
 use smithay::reexports::ash::vk;
 
 use super::{
-    VulkanColorLoad, VulkanDynamicRenderingScope, VulkanGraphicsPipeline,
-    VulkanGraphicsShaders, VulkanImageState, VulkanImageTransition, VulkanImageView,
-    VulkanLogicalDevice, VulkanSampler, VulkanShaderModule, VulkanTextureBinding,
-    VulkanTextureDescriptorSetLayout,
+    VulkanColorLoad, VulkanDynamicRenderingScope, VulkanGraphicsPipeline, VulkanGraphicsShaders,
+    VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanLogicalDevice, VulkanSampler,
+    VulkanShaderModule, VulkanTextureBinding, VulkanTextureDescriptorSetLayout,
 };
 
 /// Errors raised while creating or recording a full-output color adjustment.
@@ -71,10 +70,9 @@ impl<'device> VulkanDisplayColorPass<'device> {
         // the final scanout image uses a DRM modifier. Check its exact format
         // requirements before creating any pipeline resources.
         let format_properties = unsafe {
-            device.instance().get_physical_device_format_properties(
-                device.physical_device(),
-                target_format,
-            )
+            device
+                .instance()
+                .get_physical_device_format_properties(device.physical_device(), target_format)
         };
         let required_features = vk::FormatFeatureFlags::COLOR_ATTACHMENT
             | vk::FormatFeatureFlags::SAMPLED_IMAGE
@@ -135,7 +133,8 @@ impl<'device> VulkanDisplayColorPass<'device> {
         &'resources self,
         device: &'device VulkanLogicalDevice,
         source: &'resources VulkanImageView<'image, 'device>,
-    ) -> Result<VulkanTextureBinding<'resources, 'image, 'device>, VulkanDisplayColorPassError> {
+    ) -> Result<VulkanTextureBinding<'resources, 'image, 'device>, VulkanDisplayColorPassError>
+    {
         if source.device().handle().handle() != device.handle().handle() {
             return Err(VulkanDisplayColorPassError::IncompatibleImages);
         }
@@ -143,13 +142,8 @@ impl<'device> VulkanDisplayColorPass<'device> {
             return Err(VulkanDisplayColorPassError::MissingSampledUsage);
         }
 
-        VulkanTextureBinding::new(
-            device,
-            &self.descriptor_layout,
-            source,
-            &self.sampler,
-        )
-        .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))
+        VulkanTextureBinding::new(device, &self.descriptor_layout, source, &self.sampler)
+            .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))
     }
 
     /// Records the adjustment from a sampled scene image into a scanout target.
@@ -179,7 +173,10 @@ impl<'device> VulkanDisplayColorPass<'device> {
         if !source.usage().contains(vk::ImageUsageFlags::SAMPLED) {
             return Err(VulkanDisplayColorPassError::MissingSampledUsage);
         }
-        if !target.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
+        if !target
+            .usage()
+            .contains(vk::ImageUsageFlags::COLOR_ATTACHMENT)
+        {
             return Err(VulkanDisplayColorPassError::MissingColorAttachmentUsage);
         }
         if !binding.references_view(source) {

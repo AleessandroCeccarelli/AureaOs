@@ -13,8 +13,7 @@ use std::sync::{
 use std::thread::{self, JoinHandle, ThreadId};
 
 use aurea_desktop_api::{
-    CompositorFactory, CompositorService, ShutdownSignal,
-    display::DisplayColorController,
+    CompositorFactory, CompositorService, ShutdownSignal, display::DisplayColorController,
 };
 
 use super::{join_compositor_thread, request_shutdown};
@@ -29,7 +28,10 @@ struct InitializationFailureFactory {
 }
 
 impl CompositorFactory for InitializationFailureFactory {
-    fn create(&self, _display_color: DisplayColorController) -> io::Result<Box<dyn CompositorService>> {
+    fn create(
+        &self,
+        _display_color: DisplayColorController,
+    ) -> io::Result<Box<dyn CompositorService>> {
         *self
             .observed_thread
             .lock()
@@ -43,7 +45,10 @@ impl CompositorFactory for InitializationFailureFactory {
 struct InitializationPanicFactory;
 
 impl CompositorFactory for InitializationPanicFactory {
-    fn create(&self, _display_color: DisplayColorController) -> io::Result<Box<dyn CompositorService>> {
+    fn create(
+        &self,
+        _display_color: DisplayColorController,
+    ) -> io::Result<Box<dyn CompositorService>> {
         panic!("Compositor initialization test panic");
     }
 }
@@ -70,7 +75,10 @@ struct RuntimeFailureFactory {
 }
 
 impl CompositorFactory for RuntimeFailureFactory {
-    fn create(&self, _display_color: DisplayColorController) -> io::Result<Box<dyn CompositorService>> {
+    fn create(
+        &self,
+        _display_color: DisplayColorController,
+    ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(RuntimeFailureService {
             observed_shutdown: Arc::clone(&self.observed_shutdown),
         }))
@@ -90,7 +98,10 @@ impl CompositorService for RuntimePanicService {
 struct RuntimePanicFactory;
 
 impl CompositorFactory for RuntimePanicFactory {
-    fn create(&self, _display_color: DisplayColorController) -> io::Result<Box<dyn CompositorService>> {
+    fn create(
+        &self,
+        _display_color: DisplayColorController,
+    ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(RuntimePanicService))
     }
 }
@@ -113,7 +124,10 @@ struct SuccessfulFactory {
 }
 
 impl CompositorFactory for SuccessfulFactory {
-    fn create(&self, _display_color: DisplayColorController) -> io::Result<Box<dyn CompositorService>> {
+    fn create(
+        &self,
+        _display_color: DisplayColorController,
+    ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(SuccessfulService {
             started: Arc::clone(&self.started),
         }))
@@ -147,7 +161,10 @@ struct ShutdownAwareFactory {
 }
 
 impl CompositorFactory for ShutdownAwareFactory {
-    fn create(&self, _display_color: DisplayColorController) -> io::Result<Box<dyn CompositorService>> {
+    fn create(
+        &self,
+        _display_color: DisplayColorController,
+    ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(ShutdownAwareService {
             started: Arc::clone(&self.started),
             stopped: Arc::clone(&self.stopped),

@@ -45,10 +45,7 @@ impl ShellRuntime {
     /// The scheduler supplies whether the selected schedule is currently
     /// active. Manual mode ignores that value.
     pub fn update_night_light(&mut self, schedule_active: bool) {
-        let adjustment = self
-            .desktop
-            .night_light
-            .display_adjustment(schedule_active);
+        let adjustment = self.desktop.night_light.display_adjustment(schedule_active);
         self.display_color.set_adjustment(adjustment);
     }
 

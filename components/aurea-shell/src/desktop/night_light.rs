@@ -35,11 +35,18 @@ impl NightLightSchedule {
         if start_minute == end_minute {
             return Err(NightLightScheduleError::EmptyInterval);
         }
-        Ok(Self { start_minute, end_minute })
+        Ok(Self {
+            start_minute,
+            end_minute,
+        })
     }
 
-    pub const fn start_minute(self) -> u16 { self.start_minute }
-    pub const fn end_minute(self) -> u16 { self.end_minute }
+    pub const fn start_minute(self) -> u16 {
+        self.start_minute
+    }
+    pub const fn end_minute(self) -> u16 {
+        self.end_minute
+    }
 
     /// Start is inclusive and end is exclusive; intervals may cross midnight.
     pub const fn is_active_at(self, minute_of_day: u16) -> bool {
@@ -79,24 +86,45 @@ impl Default for NightLightState {
             enabled: false,
             strength_percent: 50,
             mode: NightLightMode::Manual,
-            schedule: NightLightSchedule { start_minute: 1_200, end_minute: 360 },
+            schedule: NightLightSchedule {
+                start_minute: 1_200,
+                end_minute: 360,
+            },
         }
     }
 }
 
 impl NightLightState {
-    pub const fn is_enabled(self) -> bool { self.enabled }
-    pub fn set_enabled(&mut self, enabled: bool) { self.enabled = enabled; }
-    pub const fn strength_percent(self) -> u8 { self.strength_percent }
-
-    pub fn set_strength_percent(&mut self, strength_percent: u8) {
-        self.strength_percent = if strength_percent > 100 { 100 } else { strength_percent };
+    pub const fn is_enabled(self) -> bool {
+        self.enabled
+    }
+    pub fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+    pub const fn strength_percent(self) -> u8 {
+        self.strength_percent
     }
 
-    pub const fn mode(self) -> NightLightMode { self.mode }
-    pub fn set_mode(&mut self, mode: NightLightMode) { self.mode = mode; }
-    pub const fn schedule(self) -> NightLightSchedule { self.schedule }
-    pub fn set_schedule(&mut self, schedule: NightLightSchedule) { self.schedule = schedule; }
+    pub fn set_strength_percent(&mut self, strength_percent: u8) {
+        self.strength_percent = if strength_percent > 100 {
+            100
+        } else {
+            strength_percent
+        };
+    }
+
+    pub const fn mode(self) -> NightLightMode {
+        self.mode
+    }
+    pub fn set_mode(&mut self, mode: NightLightMode) {
+        self.mode = mode;
+    }
+    pub const fn schedule(self) -> NightLightSchedule {
+        self.schedule
+    }
+    pub fn set_schedule(&mut self, schedule: NightLightSchedule) {
+        self.schedule = schedule;
+    }
 
     /// Builds the compositor-facing adjustment from a scheduler decision.
     ///
@@ -121,8 +149,14 @@ mod tests {
 
     #[test]
     fn schedule_rejects_invalid_and_empty_intervals() {
-        assert_eq!(NightLightSchedule::new(1_440, 60), Err(NightLightScheduleError::TimeOutOfRange));
-        assert_eq!(NightLightSchedule::new(600, 600), Err(NightLightScheduleError::EmptyInterval));
+        assert_eq!(
+            NightLightSchedule::new(1_440, 60),
+            Err(NightLightScheduleError::TimeOutOfRange)
+        );
+        assert_eq!(
+            NightLightSchedule::new(600, 600),
+            Err(NightLightScheduleError::EmptyInterval)
+        );
     }
 
     #[test]

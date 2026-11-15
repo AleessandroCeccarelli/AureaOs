@@ -185,28 +185,22 @@ fn ignores_vulkan_formats_not_advertised_by_the_drm_plane() {
     );
 }
 
-
 #[test]
 fn post_process_candidate_requires_color_attachment_and_sampling_support() {
     let code = Fourcc::Argb8888;
     let modifier = Modifier::Linear;
     let plane = drm_plane(vec![Format { code, modifier }]);
     let export = export_capabilities(true);
-    let required = vk::FormatFeatureFlags::COLOR_ATTACHMENT
-        | vk::FormatFeatureFlags::SAMPLED_IMAGE;
+    let required = vk::FormatFeatureFlags::COLOR_ATTACHMENT | vk::FormatFeatureFlags::SAMPLED_IMAGE;
 
     let sampled = [vulkan_format(
         code,
         modifier,
         1,
-        vk::FormatFeatureFlags::COLOR_ATTACHMENT
-            | vk::FormatFeatureFlags::SAMPLED_IMAGE,
+        vk::FormatFeatureFlags::COLOR_ATTACHMENT | vk::FormatFeatureFlags::SAMPLED_IMAGE,
     )];
     let result = DrmVulkanCompatibility::evaluate_with_required_features(
-        &plane,
-        &sampled,
-        &export,
-        required,
+        &plane, &sampled, &export, required,
     );
     assert!(result.is_compatible());
     assert_eq!(result.formats().len(), 1);

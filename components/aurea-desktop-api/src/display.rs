@@ -23,7 +23,11 @@ impl DisplayColorAdjustment {
     /// Creates an adjustment, clamping its intensity to the supported range.
     pub const fn new(warmth_percent: u8) -> Self {
         Self {
-            warmth_percent: if warmth_percent > 100 { 100 } else { warmth_percent },
+            warmth_percent: if warmth_percent > 100 {
+                100
+            } else {
+                warmth_percent
+            },
         }
     }
 
