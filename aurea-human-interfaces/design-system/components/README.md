@@ -1,34 +1,32 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# UI Components
+# AureaOS Component Specifications
 
-This directory contains the foundational primitives for AureaOS interface components.
+This directory is the canonical home for reusable interface component specifications. Each file describes one component family and its visual states, behavior, accessibility requirements and theme behavior.
 
-The goal is to keep app controls and desktop surfaces consistent across the system.
+## Component index
 
-## Categories
-
-This folder should evolve into a structured component library, for example:
-
-- `actions/` — buttons, links, menus, commands
-- `navigation/` — tabs, rails, sidebars, breadcrumbs, app launchers
-- `containers/` — cards, drawers, panels, windows, forms
-- `inputs/` — text fields, toggles, checkboxes, selectors
-- `feedback/` — notifications, alerts, toasts, progress indicators
-- `windowing/` — title bars, frames, resize logic, shell interactions
+- [Buttons](BUTTONS.md)
+- [Text fields](TEXT-FIELDS.md)
+- [Menus](MENUS.md)
+- [Dialogs](DIALOGS.md)
+- [Toggles and selection controls](SELECTION-CONTROLS.md)
+- [Window chrome](WINDOW-CHROME.md)
 
 ## Rules
 
-- components must use the defined design tokens
-- every component should define its states: default, hover, active, disabled, focus, selected
-- avoid app-specific styling that diverges from the shared system language
-- favor clarity and predictability over novelty
+- Specifications define behavior and appearance; they do not claim a native implementation exists.
+- Use semantic tokens from `../tokens/index.css`; do not introduce private palettes.
+- Specify light and dark themes, keyboard focus, disabled states and reduced motion.
+- Prefer one responsibility per component family and small, composable controls.
+- Shared components must be usable by first-party applications without copying their implementation.
+- New shared components must be added to this index.
 
-## Design intent
+## Component lifecycle
 
-AureaOS should feel familiar to users coming from modern desktop operating systems, while still maintaining its own identity. This means:
-
-- clear affordances
-- polished motion and timing
-- standard keyboard and pointer behaviors
-- coherent patterns across the entire system
+1. Define the user need and expected behavior.
+2. Check whether an existing component already solves it.
+3. Specify states, keyboard interaction, accessibility and theme behavior.
+4. Add a visual example under `components/examples/` when useful.
+5. Add light/dark previews under `previews/components/`.
+6. Mark implementation status separately from design approval.
