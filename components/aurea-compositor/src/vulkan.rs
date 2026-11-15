@@ -142,7 +142,9 @@ pub use shader_module::{VulkanShaderError, VulkanShaderModule};
 pub use shared_image::{VulkanSharedImage, VulkanSharedImageError};
 pub use shm_texture::{VulkanShmTexture, VulkanShmTextureError};
 pub(crate) use surface_pipeline_cache::VulkanSurfacePipelineCache;
-pub use texture_binding::{VulkanTextureBinding, VulkanTextureBindingError};
+pub use texture_binding::{
+    VulkanTextureBinding, VulkanTextureBindingError, VulkanTextureBindingPool,
+};
 pub use texture_layout::{VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError};
 pub use upload_buffer::{VulkanUploadBuffer, VulkanUploadError};
 

@@ -144,6 +144,9 @@ pub(crate) fn render_and_release(
 
     // Cached images survive across frames. Views and descriptor sets remain
     // frame-scoped until submit_and_wait confirms GPU completion.
+    let binding_pool = surface_cache
+        .create_texture_binding_pool(visible.len() as u32)
+        .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
     let views = visible
         .iter()
         .map(|surface| {
@@ -162,8 +165,14 @@ pub(crate) fn render_and_release(
     let bindings = views
         .iter()
         .map(|texture_view| {
-            VulkanTextureBinding::new(device, &descriptor_layout, texture_view, &sampler)
-                .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
+            VulkanTextureBinding::new_in_pool(
+                device,
+                &binding_pool,
+                &descriptor_layout,
+                texture_view,
+                &sampler,
+            )
+            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
         })
         .collect::<Result<Vec<_>, _>>()?;
 

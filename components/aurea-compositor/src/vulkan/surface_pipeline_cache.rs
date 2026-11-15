@@ -14,7 +14,8 @@ use crate::render::shm_buffer::ShmBufferSnapshot;
 use super::{
     VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
     VulkanLogicalDevice, VulkanSampler, VulkanSamplerError, VulkanShaderError, VulkanShaderModule,
-    VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError, VulkanShmTexture,
+    VulkanTextureBindingError, VulkanTextureBindingPool, VulkanTextureDescriptorSetLayout,
+    VulkanTextureLayoutError, VulkanShmTexture,
     surface_texture_cache::{VulkanSurfaceTextureCache, VulkanSurfaceTextureCacheError},
 };
 
@@ -129,5 +130,13 @@ impl VulkanSurfacePipelineCache {
 
     pub(crate) fn sampler(&self) -> &VulkanSampler<'static> {
         &self.sampler
+    }
+
+    /// Creates a frame-scoped descriptor pool for the requested surface count.
+    pub(crate) fn create_texture_binding_pool(
+        &self,
+        max_sets: u32,
+    ) -> Result<VulkanTextureBindingPool, VulkanTextureBindingError> {
+        VulkanTextureBindingPool::new(Arc::clone(&self.device), max_sets)
     }
 }
