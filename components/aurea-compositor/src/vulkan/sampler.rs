@@ -45,7 +45,7 @@ impl<'device> VulkanSampler<'device> {
         Self::create(VulkanDeviceOwner::Shared(device))
     }
 
-    fn create(device: VulkanDeviceOwner<'device>) -> Result<Self, VulkanSamplerError> {
+    fn create<'owner>(device: VulkanDeviceOwner<'owner>) -> Result<VulkanSampler<'owner>, VulkanSamplerError> {
         let info = vk::SamplerCreateInfo::default()
             .mag_filter(vk::Filter::LINEAR)
             .min_filter(vk::Filter::LINEAR)
