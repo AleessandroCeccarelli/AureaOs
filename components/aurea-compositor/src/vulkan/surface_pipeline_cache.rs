@@ -14,8 +14,8 @@ use crate::render::shm_buffer::ShmBufferSnapshot;
 use super::{
     VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
     VulkanLogicalDevice, VulkanSampler, VulkanSamplerError, VulkanShaderError, VulkanShaderModule,
-    VulkanTextureBindingError, VulkanTextureBindingPool, VulkanTextureDescriptorSetLayout,
-    VulkanTextureLayoutError, VulkanShmTexture,
+    VulkanShmTexture, VulkanTextureBindingError, VulkanTextureBindingPool,
+    VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
     surface_texture_cache::{VulkanSurfaceTextureCache, VulkanSurfaceTextureCacheError},
 };
 

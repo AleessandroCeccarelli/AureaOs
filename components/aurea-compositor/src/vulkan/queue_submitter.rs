@@ -14,7 +14,10 @@ use smithay::reexports::ash::{self, vk};
 pub(super) enum VulkanQueueSubmitError {
     Rejected(vk::Result),
     SubmissionUncertain(vk::Result),
-    CompletionUncertain { wait_error: vk::Result, idle_error: vk::Result },
+    CompletionUncertain {
+        wait_error: vk::Result,
+        idle_error: vk::Result,
+    },
 }
 
 impl VulkanQueueSubmitError {
@@ -55,7 +58,11 @@ impl<'device> VulkanQueueSubmitter<'device> {
         queue: vk::Queue,
         queue_submit_lock: &'device Mutex<()>,
     ) -> Self {
-        Self { device, queue, queue_submit_lock }
+        Self {
+            device,
+            queue,
+            queue_submit_lock,
+        }
     }
 
     /// Notifies the caller after acceptance or uncertain acceptance, then waits for completion.
@@ -122,7 +129,6 @@ impl<'device> VulkanQueueSubmitter<'device> {
             .map_err(VulkanQueueSubmitError::result)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

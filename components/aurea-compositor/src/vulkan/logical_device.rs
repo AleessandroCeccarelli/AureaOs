@@ -13,8 +13,8 @@ use smithay::{
 };
 
 use super::{
-    queue_submitter::VulkanQueueSubmitError, VulkanContext, VulkanDeviceExtensionPlan,
-    VulkanInitError, VulkanQueueSubmitter, VulkanRenderingFeaturePlan,
+    VulkanContext, VulkanDeviceExtensionPlan, VulkanInitError, VulkanQueueSubmitter,
+    VulkanRenderingFeaturePlan, queue_submitter::VulkanQueueSubmitError,
 };
 
 /// A logical Vulkan device, graphics queue and command pool.
@@ -228,8 +228,11 @@ impl VulkanLogicalDevice {
         if !signal_semaphores.is_empty() {
             submit_info = submit_info.signal_semaphores(&signal_semaphores);
         }
-        unsafe { self.device.queue_submit(self.graphics_queue, &[submit_info], fence) }
-            .map_err(VulkanQueueSubmitError::from_submit_error)
+        unsafe {
+            self.device
+                .queue_submit(self.graphics_queue, &[submit_info], fence)
+        }
+        .map_err(VulkanQueueSubmitError::from_submit_error)
     }
 
     /// Submits a recorded command buffer and waits for its completion.

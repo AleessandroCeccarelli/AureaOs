@@ -33,9 +33,13 @@ impl fmt::Display for VulkanShmTextureError {
             Self::UnsupportedPixelFormat => formatter
                 .write_str("Wayland SHM snapshot must be normalized to RGBA8 before Vulkan upload"),
             Self::Image(error) => write!(formatter, "SHM texture image allocation failed: {error}"),
-            Self::ImageView(error) => write!(formatter, "SHM texture image-view creation failed: {error}"),
+            Self::ImageView(error) => {
+                write!(formatter, "SHM texture image-view creation failed: {error}")
+            }
             Self::Upload(error) => write!(formatter, "SHM texture upload failed: {error}"),
-            Self::Command(error) => write!(formatter, "SHM texture Vulkan command failed: {error:?}"),
+            Self::Command(error) => {
+                write!(formatter, "SHM texture Vulkan command failed: {error:?}")
+            }
         }
     }
 }
@@ -95,11 +99,12 @@ impl VulkanShmTexture {
             }
 
             let offset = total_bytes;
-            total_bytes = total_bytes
-                .checked_add(byte_len)
-                .ok_or(VulkanShmTextureError::Upload(
-                    VulkanUploadError::SizeOverflow,
-                ))?;
+            total_bytes =
+                total_bytes
+                    .checked_add(byte_len)
+                    .ok_or(VulkanShmTextureError::Upload(
+                        VulkanUploadError::SizeOverflow,
+                    ))?;
 
             let image = Arc::new(
                 VulkanSharedImage::allocate(
@@ -129,7 +134,9 @@ impl VulkanShmTexture {
 
         let pending = VulkanPendingUpload::new(Arc::clone(&device), staging, textures)
             .map_err(VulkanShmTextureError::Command)?;
-        pending.staging().record_host_write_barrier(pending.command_buffer());
+        pending
+            .staging()
+            .record_host_write_barrier(pending.command_buffer());
 
         for (texture, (offset, _)) in pending.resources().iter().zip(segments.iter()) {
             VulkanImageTransition::record_color(
@@ -152,9 +159,7 @@ impl VulkanShmTexture {
             );
         }
 
-        pending
-            .submit()
-            .map_err(VulkanShmTextureError::Command)
+        pending.submit().map_err(VulkanShmTextureError::Command)
     }
 
     /// Returns the cached image view suitable for a sampled-image descriptor.

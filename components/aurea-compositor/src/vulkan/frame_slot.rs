@@ -5,7 +5,10 @@
 
 //! Per-frame Vulkan command-pool and synchronization ownership.
 
-use std::{any::Any, os::fd::{FromRawFd, OwnedFd}};
+use std::{
+    any::Any,
+    os::fd::{FromRawFd, OwnedFd},
+};
 
 use smithay::reexports::ash::{self, vk};
 
@@ -181,12 +184,9 @@ impl VulkanFrameSlot {
                 self.quarantined = true;
             } else {
                 unsafe { device.handle().destroy_fence(self.completion_fence, None) };
-                let signaled =
-                    vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
-                self.completion_fence = unsafe {
-                    device.handle().create_fence(&signaled, None)
-                }
-                .unwrap_or(vk::Fence::null());
+                let signaled = vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
+                self.completion_fence = unsafe { device.handle().create_fence(&signaled, None) }
+                    .unwrap_or(vk::Fence::null());
             }
             return Err(error.result());
         }

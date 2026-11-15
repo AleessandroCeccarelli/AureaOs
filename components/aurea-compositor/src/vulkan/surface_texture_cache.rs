@@ -16,9 +16,7 @@ use smithay::reexports::wayland_server::backend::ObjectId;
 
 use crate::render::shm_buffer::ShmBufferSnapshot;
 
-use super::{
-    VulkanLogicalDevice, VulkanPendingUpload, VulkanShmTexture, VulkanShmTextureError,
-};
+use super::{VulkanLogicalDevice, VulkanPendingUpload, VulkanShmTexture, VulkanShmTextureError};
 
 const MAX_CACHED_SURFACE_TEXTURES: usize = 128;
 const MAX_CACHED_SURFACE_TEXTURE_BYTES: usize = 256 * 1024 * 1024;
@@ -36,9 +34,9 @@ impl fmt::Display for VulkanSurfaceTextureCacheError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Texture(error) => write!(formatter, "SHM texture cache upload failed: {error}"),
-            Self::CacheBudgetExceeded => formatter.write_str(
-                "Visible SHM textures exceed the cache resource budget",
-            ),
+            Self::CacheBudgetExceeded => {
+                formatter.write_str("Visible SHM textures exceed the cache resource budget")
+            }
         }
     }
 }
@@ -134,7 +132,12 @@ impl VulkanSurfaceTextureCache {
             missing_bytes = missing_bytes
                 .checked_add(byte_len)
                 .ok_or(VulkanSurfaceTextureCacheError::CacheBudgetExceeded)?;
-            missing.push((surface_id.clone(), *revision, Arc::clone(snapshot), byte_len));
+            missing.push((
+                surface_id.clone(),
+                *revision,
+                Arc::clone(snapshot),
+                byte_len,
+            ));
         }
 
         while self.entries.len().saturating_add(missing.len()) > MAX_CACHED_SURFACE_TEXTURES
@@ -240,7 +243,8 @@ impl VulkanSurfaceTextureCache {
         incoming_bytes: usize,
     ) -> Result<(), VulkanSurfaceTextureCacheError> {
         while self.pending_uploads.len() >= MAX_PENDING_UPLOAD_BATCHES
-            || self.pending_bytes
+            || self
+                .pending_bytes
                 .checked_add(incoming_bytes)
                 .map_or(true, |total| total > MAX_PENDING_UPLOAD_BYTES)
         {

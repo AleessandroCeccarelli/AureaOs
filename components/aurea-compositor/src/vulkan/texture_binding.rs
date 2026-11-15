@@ -33,7 +33,10 @@ impl fmt::Display for VulkanTextureBindingError {
                 formatter.write_str("Texture descriptor pool capacity must be greater than zero")
             }
             Self::PoolCreation(error) => {
-                write!(formatter, "Texture descriptor pool creation failed: {error:?}")
+                write!(
+                    formatter,
+                    "Texture descriptor pool creation failed: {error:?}"
+                )
             }
             Self::SetAllocation(error) => {
                 write!(formatter, "Texture descriptor allocation failed: {error:?}")
@@ -95,7 +98,11 @@ impl VulkanTextureBindingPool {
 
 impl Drop for VulkanTextureBindingPool {
     fn drop(&mut self) {
-        unsafe { self.device.handle().destroy_descriptor_pool(self.pool, None) };
+        unsafe {
+            self.device
+                .handle()
+                .destroy_descriptor_pool(self.pool, None)
+        };
     }
 }
 
@@ -264,7 +271,9 @@ impl Drop for VulkanTextureBinding<'_, '_, '_, '_> {
     fn drop(&mut self) {
         if self.owns_pool {
             unsafe {
-                self.device.handle().destroy_descriptor_pool(self.pool, None);
+                self.device
+                    .handle()
+                    .destroy_descriptor_pool(self.pool, None);
             }
         }
     }

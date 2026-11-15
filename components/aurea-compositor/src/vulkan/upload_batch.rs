@@ -10,8 +10,8 @@ use std::sync::Arc;
 use smithay::reexports::ash::vk;
 
 use super::{
-    select_memory_type_index, VulkanImageView, VulkanLogicalDevice, VulkanUploadBuffer,
-    VulkanUploadError,
+    VulkanImageView, VulkanLogicalDevice, VulkanUploadBuffer, VulkanUploadError,
+    select_memory_type_index,
 };
 
 /// One staging allocation shared by all texture copies in a submission.

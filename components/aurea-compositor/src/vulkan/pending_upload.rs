@@ -37,19 +37,18 @@ impl<T> VulkanPendingUpload<T> {
             .command_pool(command_pool)
             .level(vk::CommandBufferLevel::PRIMARY)
             .command_buffer_count(1);
-        let command_buffer =
-            match unsafe { device.handle().allocate_command_buffers(&allocation) } {
-                Ok(buffers) => buffers[0],
-                Err(error) => {
-                    unsafe { device.handle().destroy_command_pool(command_pool, None) };
-                    return Err(error);
-                }
-            };
+        let command_buffer = match unsafe { device.handle().allocate_command_buffers(&allocation) }
+        {
+            Ok(buffers) => buffers[0],
+            Err(error) => {
+                unsafe { device.handle().destroy_command_pool(command_pool, None) };
+                return Err(error);
+            }
+        };
 
         let begin = vk::CommandBufferBeginInfo::default()
             .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
-        if let Err(error) =
-            unsafe { device.handle().begin_command_buffer(command_buffer, &begin) }
+        if let Err(error) = unsafe { device.handle().begin_command_buffer(command_buffer, &begin) }
         {
             unsafe { device.handle().destroy_command_pool(command_pool, None) };
             return Err(error);
@@ -84,7 +83,11 @@ impl<T> VulkanPendingUpload<T> {
 
     /// Ends and submits the command buffer without waiting for the GPU.
     pub(super) fn submit(mut self) -> Result<Self, vk::Result> {
-        unsafe { self.device.handle().end_command_buffer(self.command_buffer)? };
+        unsafe {
+            self.device
+                .handle()
+                .end_command_buffer(self.command_buffer)?
+        };
 
         let fence_info = vk::FenceCreateInfo::default();
         self.fence = unsafe { self.device.handle().create_fence(&fence_info, None) }?;
@@ -140,7 +143,9 @@ impl<T> VulkanPendingUpload<T> {
                 self.fence = vk::Fence::null();
             }
             if self.command_pool != vk::CommandPool::null() {
-                self.device.handle().destroy_command_pool(self.command_pool, None);
+                self.device
+                    .handle()
+                    .destroy_command_pool(self.command_pool, None);
                 self.command_pool = vk::CommandPool::null();
             }
         }
@@ -156,8 +161,7 @@ impl<T> Drop for VulkanPendingUpload<T> {
                     .handle()
                     .wait_for_fences(&[self.fence], true, u64::MAX)
             };
-            if fence_result.is_err()
-                && unsafe { self.device.handle().device_wait_idle() }.is_err()
+            if fence_result.is_err() && unsafe { self.device.handle().device_wait_idle() }.is_err()
             {
                 if let Some(staging) = self.staging.take() {
                     mem::forget(staging);

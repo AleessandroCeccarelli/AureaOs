@@ -13,9 +13,7 @@ use std::sync::Arc;
 
 use crate::{
     render::{
-        RenderScene,
-        geometry::surface_geometry,
-        shm_buffer::ShmBufferSnapshot,
+        RenderScene, geometry::surface_geometry, shm_buffer::ShmBufferSnapshot,
         surface_tree::SurfaceTreeSnapshot,
     },
     renderer::RenderTarget,
@@ -124,7 +122,13 @@ pub(crate) fn render_and_release(
                     on_submitted,
                 )
             }
-            None => clear_and_release(device, view, previous_image_state, before_submit, on_submitted),
+            None => clear_and_release(
+                device,
+                view,
+                previous_image_state,
+                before_submit,
+                on_submitted,
+            ),
         };
     }
     let (composition_view, composition_previous_state) = match display_color {

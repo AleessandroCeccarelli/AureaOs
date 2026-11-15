@@ -332,7 +332,6 @@ fn foreign_acquire_is_rejected_while_kms_still_owns_the_image() {
     );
 }
 
-
 #[test]
 fn rejected_submission_can_cancel_render_and_reuse_resource() {
     let mut resource = VulkanFrameResource::new();

@@ -151,6 +151,6 @@ pub use texture_layout::{VulkanTextureDescriptorSetLayout, VulkanTextureLayoutEr
 pub use upload_buffer::{VulkanUploadBuffer, VulkanUploadError};
 
 pub(super) use device_owner::VulkanDeviceOwner;
-pub(super) use queue_submitter::VulkanQueueSubmitter;
 pub(super) use pending_upload::VulkanPendingUpload;
+pub(super) use queue_submitter::VulkanQueueSubmitter;
 pub(super) use upload_batch::VulkanUploadBatch;

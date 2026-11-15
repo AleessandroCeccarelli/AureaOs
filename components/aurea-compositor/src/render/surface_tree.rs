@@ -8,9 +8,7 @@
 use std::sync::Arc;
 
 use smithay::{
-    reexports::wayland_server::{
-        backend::ObjectId, protocol::wl_surface::WlSurface, Resource,
-    },
+    reexports::wayland_server::{Resource, backend::ObjectId, protocol::wl_surface::WlSurface},
     utils::{Logical, Point, Transform},
     wayland::compositor::{
         SubsurfaceCachedState, SurfaceData, TraversalAction, with_surface_tree_downward,

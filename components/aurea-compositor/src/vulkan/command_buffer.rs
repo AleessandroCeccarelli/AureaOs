@@ -7,7 +7,7 @@
 
 use smithay::reexports::ash::vk;
 
-use super::{queue_submitter::VulkanQueueSubmitError, VulkanLogicalDevice};
+use super::{VulkanLogicalDevice, queue_submitter::VulkanQueueSubmitError};
 
 /// Internal lifecycle state of a Vulkan command buffer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -146,8 +146,10 @@ impl<'device> VulkanCommandBuffer<'device> {
                 self.state = CommandBufferState::Executable;
                 Err(error)
             }
-            Err(error @ (VulkanQueueSubmitError::SubmissionUncertain(_)
-                | VulkanQueueSubmitError::CompletionUncertain { .. })) => {
+            Err(
+                error @ (VulkanQueueSubmitError::SubmissionUncertain(_)
+                | VulkanQueueSubmitError::CompletionUncertain { .. }),
+            ) => {
                 // Accepted work is still potentially in flight.
                 Err(error)
             }

@@ -10,9 +10,7 @@ pub mod shm_buffer;
 pub mod shm_surface;
 pub mod surface_tree;
 
-use surface_tree::{
-    SurfaceTreeSnapshot, collect_surface_tree_ids, collect_surface_tree_snapshots,
-};
+use surface_tree::{SurfaceTreeSnapshot, collect_surface_tree_ids, collect_surface_tree_snapshots};
 
 use smithay::{
     backend::renderer::{
