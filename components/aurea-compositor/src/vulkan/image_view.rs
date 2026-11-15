@@ -11,7 +11,7 @@ use smithay::reexports::ash::vk;
 
 #[cfg(feature = "drm")]
 use super::VulkanDrmImage;
-use super::{VulkanImage, VulkanLogicalDevice};
+use super::{VulkanImage, VulkanLogicalDevice, VulkanSharedImage};
 
 /// Errors returned while creating an image view.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -46,6 +46,39 @@ pub struct VulkanImageView<'image, 'device> {
 impl<'image, 'device> VulkanImageView<'image, 'device> {
     /// Creates a 2D color view over a Vulkan image.
     pub fn color(image: &'image VulkanImage<'device>) -> Result<Self, VulkanImageViewError> {
+        let subresource_range = vk::ImageSubresourceRange::default()
+            .aspect_mask(vk::ImageAspectFlags::COLOR)
+            .base_mip_level(0)
+            .level_count(1)
+            .base_array_layer(0)
+            .layer_count(1);
+
+        let create_info = vk::ImageViewCreateInfo::default()
+            .image(image.handle())
+            .view_type(vk::ImageViewType::TYPE_2D)
+            .format(image.format())
+            .subresource_range(subresource_range);
+
+        let device = image.device();
+        let handle = unsafe { device.handle().create_image_view(&create_info, None) }
+            .map_err(VulkanImageViewError::Creation)?;
+
+        Ok(Self {
+            device,
+            _image: PhantomData,
+            image: image.handle(),
+            handle,
+            format: image.format(),
+            width: image.width(),
+            height: image.height(),
+            usage: image.usage(),
+        })
+    }
+
+    /// Creates a 2D color view over a device-owned intermediate image.
+    pub fn color_shared(
+        image: &'image VulkanSharedImage,
+    ) -> Result<VulkanImageView<'image, 'image>, VulkanImageViewError> {
         let subresource_range = vk::ImageSubresourceRange::default()
             .aspect_mask(vk::ImageAspectFlags::COLOR)
             .base_mip_level(0)
