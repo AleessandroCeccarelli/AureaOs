@@ -26,7 +26,7 @@ use crate::{
     vulkan::{
         DrmVulkanCompatibility, VulkanBackend, VulkanDrmFramePool, VulkanDrmScanoutFrame,
         VulkanExternalMemoryCapabilities, VulkanFormatCapabilities, VulkanImageState,
-        VulkanImageView, VulkanLogicalDevice, surface_compositor,
+        VulkanImageView, VulkanLogicalDevice, VulkanDisplayColorManager, surface_compositor,
     },
 };
 
@@ -58,6 +58,8 @@ pub(crate) struct VulkanOutputScanoutBackend<'a> {
     gbm_devices: &'a GbmDeviceManager,
     output: &'a mut ManagedDrmSurface,
     vulkan: &'a VulkanBackend,
+    display_color: &'a mut VulkanDisplayColorManager,
+    warmth_percent: u8,
 }
 
 impl<'a> VulkanOutputScanoutBackend<'a> {
@@ -66,12 +68,16 @@ impl<'a> VulkanOutputScanoutBackend<'a> {
         gbm_devices: &'a GbmDeviceManager,
         output: &'a mut ManagedDrmSurface,
         vulkan: &'a VulkanBackend,
+        display_color: &'a mut VulkanDisplayColorManager,
+        warmth_percent: u8,
     ) -> Self {
         Self {
             drm_device,
             gbm_devices,
             output,
             vulkan,
+            display_color,
+            warmth_percent,
         }
     }
 }
@@ -238,6 +244,9 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
             target,
             scene,
             previous_image_state,
+            self.display_color,
+            self.warmth_percent,
+            self.vulkan.shared_device(),
         ) {
             let acquire_result = frame_pool
                 .acquire_after_foreign_release(framebuffer, presentation.frame_coordinator_mut());
@@ -273,13 +282,16 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
 
 fn render_and_present(
     surface: &DrmSurface,
-    frame_pool: &VulkanDrmFramePool,
+    frame_pool: &mut VulkanDrmFramePool,
     presentation: &mut DrmPresentationBackend,
     framebuffer: DrmFramebufferId,
     device: &VulkanLogicalDevice,
     target: &RenderTarget,
     scene: &RenderScene<'_>,
     previous_image_state: VulkanImageState,
+    display_color_manager: &mut VulkanDisplayColorManager,
+    warmth_percent: u8,
+    shared_device: std::sync::Arc<VulkanLogicalDevice>,
 ) -> Result<(), VulkanScanoutError> {
     let width_i32 = i32::try_from(target.width())
         .map_err(|_| VulkanScanoutError::new("DRM output width exceeds supported coordinates"))?;
@@ -296,12 +308,36 @@ fn render_and_present(
     let view = VulkanImageView::color_drm(image)
         .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
 
+    let display_pass = if warmth_percent > 0 {
+        display_color_manager.pass_for_format(image.format()).ok()
+    } else {
+        None
+    };
+
+    let intermediate = if display_pass.is_some() {
+        let frame = frame_pool.get_mut(framebuffer).ok_or_else(|| {
+            VulkanScanoutError::new("The scanout frame disappeared before intermediate allocation")
+        })?;
+        frame.ensure_intermediate(std::sync::Arc::clone(&shared_device));
+        frame.intermediate_image().zip(frame.intermediate_state())
+    } else {
+        None
+    };
+    let intermediate_view = intermediate
+        .as_ref()
+        .and_then(|(image, _)| VulkanImageView::color_shared(image).ok());
+    let effective_display = display_pass
+        .zip(intermediate_view.as_ref())
+        .zip(intermediate.as_ref().map(|(_, state)| *state))
+        .map(|((pass, intermediate_view), state)| (pass, warmth_percent, intermediate_view, state));
+
     surface_compositor::render_and_release(
         device,
         &view,
         target,
         scene,
         previous_image_state,
+        effective_display,
         || {
             let coordinator = presentation.frame_coordinator_mut();
             coordinator
@@ -313,6 +349,12 @@ fn render_and_present(
         },
     )
     .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
+
+    if effective_display.is_some() {
+        if let Some(frame) = frame_pool.get(framebuffer) {
+            frame.set_intermediate_state(VulkanImageState::ShaderRead);
+        }
+    }
 
     {
         let coordinator = presentation.frame_coordinator_mut();
