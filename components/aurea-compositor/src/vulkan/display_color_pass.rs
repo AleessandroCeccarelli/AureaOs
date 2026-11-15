@@ -184,10 +184,10 @@ impl<'device> VulkanDisplayColorPass<'device> {
     /// a descriptor set referenced by recorded commands.
     pub fn bind_source<'resources, 'image, 'image_device>(
         &'resources self,
-        device: &'image_device VulkanLogicalDevice,
         source: &'resources VulkanImageView<'image, 'image_device>,
     ) -> Result<VulkanTextureBinding<'resources, 'image, 'image_device>, VulkanDisplayColorPassError>
     {
+        let device = source.device();
         if source.device().handle().handle() != device.handle().handle() {
             return Err(VulkanDisplayColorPassError::IncompatibleImages);
         }
