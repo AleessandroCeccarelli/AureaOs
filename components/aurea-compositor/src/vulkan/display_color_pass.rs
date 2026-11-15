@@ -3,7 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Full-output Vulkan color adjustment pass.
+//! Reusable full-output Vulkan color adjustment pipeline.
 
 use std::{error::Error, fmt};
 
@@ -16,7 +16,7 @@ use super::{
     VulkanTextureDescriptorSetLayout,
 };
 
-/// Errors raised while recording a full-output color adjustment.
+/// Errors raised while creating or recording a full-output color adjustment.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum VulkanDisplayColorPassError {
     InvalidIntensity,
@@ -35,7 +35,7 @@ impl fmt::Display for VulkanDisplayColorPassError {
             Self::UndefinedImageState => formatter.write_str("Display color pass requires defined image states"),
             Self::MissingSampledUsage => formatter.write_str("Display color source lacks sampled-image usage"),
             Self::MissingColorAttachmentUsage => formatter.write_str("Display color target lacks color-attachment usage"),
-            Self::IncompatibleImages => formatter.write_str("Display color source and target must share a device and dimensions"),
+            Self::IncompatibleImages => formatter.write_str("Display color resources must share a device and compatible dimensions and format"),
             Self::Pipeline(error) => write!(formatter, "Display color pipeline initialization failed: {error}"),
             Self::Descriptor(error) => write!(formatter, "Display color descriptor initialization failed: {error}"),
         }
@@ -44,19 +44,71 @@ impl fmt::Display for VulkanDisplayColorPassError {
 
 impl Error for VulkanDisplayColorPassError {}
 
-/// Records a full-screen warmth transform after scene composition.
+/// Owns reusable GPU state for the final display-color transform.
 ///
-/// The initial transform is an SDR-oriented approximation operating on the
-/// values supplied by the current compositor path. It is deliberately not
-/// advertised as ICC, HDR, or display-native color management.
-pub struct VulkanDisplayColorPass;
+/// Create one instance per Vulkan device and scanout format, then reuse it
+/// across frames. Per-frame descriptor bindings remain short-lived and are
+/// retained until the command buffer has completed.
+pub struct VulkanDisplayColorPass<'device> {
+    // Keep the pipeline layout's descriptor-set layout alive for this object's
+    // entire lifetime. The pipeline itself is dropped before its dependencies.
+    pipeline: VulkanGraphicsPipeline<'device>,
+    descriptor_layout: VulkanTextureDescriptorSetLayout<'device>,
+    sampler: VulkanSampler<'device>,
+}
 
-impl VulkanDisplayColorPass {
+impl<'device> VulkanDisplayColorPass<'device> {
+    /// Creates the reusable pipeline for one scanout format.
+    pub fn new(
+        device: &'device VulkanLogicalDevice,
+        target_format: vk::Format,
+    ) -> Result<Self, VulkanDisplayColorPassError> {
+        let descriptor_layout = VulkanTextureDescriptorSetLayout::new(device)
+            .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
+        let sampler = VulkanSampler::linear_clamp(device)
+            .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
+
+        let vertex = VulkanShaderModule::from_bytes(
+            device,
+            include_bytes!(env!("AUREA_DISPLAY_COLOR_VERT_SPV")),
+        )
+        .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
+        let fragment = VulkanShaderModule::from_bytes(
+            device,
+            include_bytes!(env!("AUREA_DISPLAY_COLOR_FRAG_SPV")),
+        )
+        .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
+
+        let descriptor_layouts = [&descriptor_layout];
+        let push_ranges = [vk::PushConstantRange::default()
+            .stage_flags(vk::ShaderStageFlags::FRAGMENT)
+            .offset(0)
+            .size(std::mem::size_of::<f32>() as u32)];
+        let pipeline = VulkanGraphicsPipeline::new_with_descriptor_layouts_and_push_constants(
+            device,
+            VulkanGraphicsShaders {
+                vertex: &vertex,
+                fragment: &fragment,
+            },
+            target_format,
+            &descriptor_layouts,
+            &push_ranges,
+        )
+        .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
+
+        Ok(Self {
+            pipeline,
+            descriptor_layout,
+            sampler,
+        })
+    }
+
     /// Records the adjustment from a sampled scene image into a scanout target.
     ///
     /// The source is left in SHADER_READ_ONLY_OPTIMAL. The destination is left
     /// in `final_state`, ready for the caller's next ownership transition.
     pub fn record(
+        &self,
         device: &VulkanLogicalDevice,
         command_buffer: vk::CommandBuffer,
         source: &VulkanImageView<'_, '_>,
@@ -84,44 +136,18 @@ impl VulkanDisplayColorPass {
             || target.device().handle().handle() != device.handle().handle()
             || source.width() != target.width()
             || source.height() != target.height()
+            || !self.pipeline.is_compatible_with(device, target.format())
         {
             return Err(VulkanDisplayColorPassError::IncompatibleImages);
         }
 
-        let descriptor_layout = VulkanTextureDescriptorSetLayout::new(device)
-            .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
-        let sampler = VulkanSampler::linear_clamp(device)
-            .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
-        let binding = VulkanTextureBinding::new(device, &descriptor_layout, source, &sampler)
-            .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
-
-        let vertex = VulkanShaderModule::from_bytes(
+        let binding = VulkanTextureBinding::new(
             device,
-            include_bytes!(env!("AUREA_DISPLAY_COLOR_VERT_SPV")),
+            &self.descriptor_layout,
+            source,
+            &self.sampler,
         )
-        .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
-        let fragment = VulkanShaderModule::from_bytes(
-            device,
-            include_bytes!(env!("AUREA_DISPLAY_COLOR_FRAG_SPV")),
-        )
-        .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
-
-        let descriptor_layouts = [&descriptor_layout];
-        let push_ranges = [vk::PushConstantRange::default()
-            .stage_flags(vk::ShaderStageFlags::FRAGMENT)
-            .offset(0)
-            .size(std::mem::size_of::<f32>() as u32)];
-        let pipeline = VulkanGraphicsPipeline::new_with_descriptor_layouts_and_push_constants(
-            device,
-            VulkanGraphicsShaders {
-                vertex: &vertex,
-                fragment: &fragment,
-            },
-            target.format(),
-            &descriptor_layouts,
-            &push_ranges,
-        )
-        .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
+        .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
 
         VulkanImageTransition::record_color(
             device,
@@ -143,17 +169,18 @@ impl VulkanDisplayColorPass {
             target,
             VulkanColorLoad::DontCare,
         );
-        pipeline.bind(command_buffer);
-        binding.bind(command_buffer, pipeline.layout(), 0);
-        pipeline.set_viewport_and_scissor(command_buffer, target.width(), target.height());
+        self.pipeline.bind(command_buffer);
+        binding.bind(command_buffer, self.pipeline.layout(), 0);
+        self.pipeline
+            .set_viewport_and_scissor(command_buffer, target.width(), target.height());
         let strength = (warmth_percent as f32) / 100.0;
-        pipeline.push_constants(
+        self.pipeline.push_constants(
             command_buffer,
             vk::ShaderStageFlags::FRAGMENT,
             0,
             &strength.to_ne_bytes(),
         );
-        pipeline.draw(command_buffer, 3, 1);
+        self.pipeline.draw(command_buffer, 3, 1);
         scope.end();
 
         VulkanImageTransition::record_color(
