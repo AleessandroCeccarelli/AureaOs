@@ -174,7 +174,7 @@ impl<'device> VulkanDisplayColorPass<'device> {
             &push_ranges,
         ).map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
 
-        Ok(Self { pipeline, descriptor_layout, sampler })
+        Ok(VulkanDisplayColorPass { pipeline, descriptor_layout, sampler })
     }
 
     /// Creates a per-frame sampled-image binding.
