@@ -1,7 +1,7 @@
 {
   "project": "AureaOS Original Sound Library",
   "version": "0.1.0-review",
-  "license": "GPL-3.0-or-later (proposed project asset license)",
+  "license": "GPL-3.0-or-later",
   "provenance": "Original procedural synthesis generated for AureaOS; no third-party recordings or samples used.",
   "format": {
     "codec": "Ogg Vorbis",
