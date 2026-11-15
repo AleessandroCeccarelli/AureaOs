@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024"
+     role="img" aria-labelledby="title desc">
+  <title id="title">Quaero symbol</title>
+  <desc id="desc">A glossy blue and cyan magnifying glass on a transparent background.</desc>
+  
+  <defs>
+    <linearGradient id="handle" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#B9F5FF"/>
+      <stop offset=".24" stop-color="#4CCCF4"/>
+      <stop offset=".62" stop-color="#168FE0"/>
+      <stop offset="1" stop-color="#0755B5"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E9FFFF"/>
+      <stop offset=".24" stop-color="#83E8FF"/>
+      <stop offset=".62" stop-color="#249CEB"/>
+      <stop offset="1" stop-color="#0754B4"/>
+    </linearGradient>
+    <radialGradient id="lens" cx=".28" cy=".2" r=".9">
+      <stop offset="0" stop-color="#F8FFFF"/>
+      <stop offset=".26" stop-color="#C4F4FF"/>
+      <stop offset=".62" stop-color="#55C5F3"/>
+      <stop offset="1" stop-color="#1474D1"/>
+    </radialGradient>
+    <linearGradient id="glint" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity=".98"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-40%" y="-40%" width="190%" height="200%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="15" result="blur"/>
+      <feOffset dy="17" result="offset"/>
+      <feColorMatrix in="offset" type="matrix"
+        values="0 0 0 0 .02 0 0 0 0 .20 0 0 0 0 .42 0 0 0 .28 0" result="shade"/>
+      <feMerge><feMergeNode in="shade"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="lensClip"><circle cx="414" cy="414" r="190"/></clipPath>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M552 552 L806 806 Q837 837 806 868 Q775 899 744 868 L490 614Z"
+          fill="url(#handle)"/>
+    <path d="M565 568 L792 795" fill="none" stroke="#E5FCFF" stroke-opacity=".7"
+          stroke-width="15" stroke-linecap="round"/>
+    <circle cx="414" cy="414" r="218" fill="url(#rim)"/>
+    <circle cx="414" cy="414" r="190" fill="url(#lens)"/>
+    <g clip-path="url(#lensClip)">
+      <ellipse cx="337" cy="306" rx="142" ry="72" transform="rotate(-28 337 306)"
+               fill="url(#glint)" opacity=".9"/>
+      <path d="M250 458 C322 382 415 372 520 415" fill="none"
+            stroke="#FFFFFF" stroke-opacity=".32" stroke-width="18"
+            stroke-linecap="round"/>
+      <circle cx="500" cy="514" r="115" fill="#0B73D0" opacity=".08"/>
+    </g>
+    <circle cx="414" cy="414" r="190" fill="none"
+            stroke="#F1FFFF" stroke-opacity=".8" stroke-width="8"/>
+    <path d="M286 279 C323 237 380 215 433 224" fill="none"
+          stroke="#FFFFFF" stroke-opacity=".92" stroke-width="17"
+          stroke-linecap="round"/>
+  </g>
+</svg>
