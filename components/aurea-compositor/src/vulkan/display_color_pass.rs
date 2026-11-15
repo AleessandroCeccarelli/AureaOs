@@ -167,7 +167,7 @@ impl<'device> VulkanDisplayColorPass<'device> {
             .offset(0)
             .size(std::mem::size_of::<f32>() as u32)];
         let pipeline = VulkanGraphicsPipeline::new_shared_with_descriptor_layout_handles(
-            device,
+            std::sync::Arc::clone(&device),
             VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
             target_format,
             &descriptor_handles,
