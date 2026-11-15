@@ -57,7 +57,8 @@ Developing first-party replacements for these application categories may be cons
 - Output registration, removal, configuration, and logical layout management.
 - Output reconciliation when discovered display configurations change.
 - Publication and removal of registered outputs as Wayland output globals.
-- Initial Night Light preference and local schedule model in the shell, with validation and unit tests; scheduler, persistence, compositor transport and visible controls remain pending.
+- Initial Night Light preference and local schedule model in the shell, with validation and unit tests.
+- Shared lock-free display color controller connected from the shell runtime through the desktop API into Wayland server state; actual Vulkan output processing, scheduling, persistence and visible controls remain pending.
 
 These components establish an initial desktop and graphics-device foundation. They do not yet constitute a usable graphical desktop or a complete graphics pipeline.
 
@@ -93,7 +94,7 @@ Vulkan is the selected and exclusive graphics rendering API for AureaOS. A compl
 - Implement safe fallbacks for unsupported or unavailable display capabilities.
 - Implement Night Light as a system-wide output color-temperature adjustment, with manual intensity, sunset-to-sunrise and custom local schedules.
 - Apply Night Light after complete desktop composition through a dedicated Vulkan output stage; negotiate the required image usage capabilities and retain an explicit safe fallback when a KMS/Vulkan format cannot support the stage.
-- Connect the shell preference model to the compositor through the shared desktop API and a thread-safe runtime update path.
+- Complete and consume the shared shell-to-compositor display policy channel already established through the desktop API and Wayland server state.
 - Account for color-space/transfer-function handling, output formats, HDR behavior and accessibility preferences before enabling the filter by default.
 
 Night Light controls belong in Settings → Appearance and in the right-side Quick Settings panel. Sunset-to-sunrise scheduling requires a permission-aware location/timezone service; a custom local schedule must remain available without geolocation. The software adjustment is a display color-temperature approximation, not a claim of hardware spectral blue-light filtering.
