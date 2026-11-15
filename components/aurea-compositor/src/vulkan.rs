@@ -12,6 +12,7 @@ mod clear_pass;
 mod command_buffer;
 mod context;
 mod device_extensions;
+mod device_owner;
 #[cfg(feature = "drm")]
 mod display_color_pass;
 #[cfg(feature = "drm")]
