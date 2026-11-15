@@ -9,7 +9,7 @@ use std::{any::Any, os::fd::{FromRawFd, OwnedFd}};
 
 use smithay::reexports::ash::{self, vk};
 
-use super::VulkanLogicalDevice;
+use super::{queue_submitter::VulkanQueueSubmitError, VulkanLogicalDevice};
 
 /// Owns command and resource lifetimes until the previous GPU submission ends.
 pub(super) struct VulkanFrameSlot {
@@ -18,6 +18,7 @@ pub(super) struct VulkanFrameSlot {
     command_buffer: Option<vk::CommandBuffer>,
     pub(super) sync_fd_semaphore: Option<vk::Semaphore>,
     pub(super) retained_resources: Vec<Box<dyn Any>>,
+    quarantined: bool,
 }
 
 impl VulkanFrameSlot {
@@ -57,6 +58,7 @@ impl VulkanFrameSlot {
             command_buffer: None,
             sync_fd_semaphore,
             retained_resources: Vec::new(),
+            quarantined: false,
         })
     }
 
@@ -71,6 +73,9 @@ impl VulkanFrameSlot {
         &mut self,
         device: &VulkanLogicalDevice,
     ) -> Result<vk::CommandBuffer, vk::Result> {
+        if self.quarantined {
+            return Err(vk::Result::ERROR_DEVICE_LOST);
+        }
         if self.completion_fence == vk::Fence::null() {
             return Err(vk::Result::ERROR_INITIALIZATION_FAILED);
         }
@@ -170,11 +175,20 @@ impl VulkanFrameSlot {
         );
 
         if let Err(error) = result {
-            unsafe { device.handle().destroy_fence(self.completion_fence, None) };
-            let signaled = vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
-            self.completion_fence = unsafe { device.handle().create_fence(&signaled, None) }
+            if error.is_uncertain() {
+                // Never reset/reuse a slot after a submission whose acceptance
+                // became uncertain because the device was lost.
+                self.quarantined = true;
+            } else {
+                unsafe { device.handle().destroy_fence(self.completion_fence, None) };
+                let signaled =
+                    vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
+                self.completion_fence = unsafe {
+                    device.handle().create_fence(&signaled, None)
+                }
                 .unwrap_or(vk::Fence::null());
-            return Err(error);
+            }
+            return Err(error.result());
         }
 
         Ok(())

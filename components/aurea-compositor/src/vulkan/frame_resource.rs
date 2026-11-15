@@ -146,7 +146,7 @@ impl VulkanFrameResource {
         Ok(())
     }
 
-    /// Records that rendering commands have been successfully submitted.
+    /// Records an accepted or uncertain submission so the resource cannot be reused.
     pub fn mark_submitted(&mut self) -> Result<(), VulkanFrameResourceError> {
         if self.state != FrameResourceState::Rendering {
             return Err(VulkanFrameResourceError::NotRendering);

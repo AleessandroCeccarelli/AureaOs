@@ -379,7 +379,7 @@ fn render_and_present(
             presentation
                 .frame_coordinator_mut()
                 .mark_submitted(framebuffer)
-                .expect("frame must remain Rendering until queue acceptance");
+                .expect("frame must remain Rendering until submission acceptance is resolved");
         },
     )
     .map_err(|error| VulkanScanoutError::new(error.to_string()))?;

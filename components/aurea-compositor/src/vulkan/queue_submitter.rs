@@ -9,17 +9,33 @@ use std::sync::Mutex;
 
 use smithay::reexports::ash::{self, vk};
 
-/// Distinguishes a rejected queue submission from uncertain GPU completion.
+/// Distinguishes rejected submissions from submissions with uncertain completion.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum VulkanQueueSubmitError {
     Rejected(vk::Result),
+    SubmissionUncertain(vk::Result),
     CompletionUncertain { wait_error: vk::Result, idle_error: vk::Result },
 }
 
 impl VulkanQueueSubmitError {
+    pub(super) const fn from_submit_error(error: vk::Result) -> Self {
+        if matches!(error, vk::Result::ERROR_DEVICE_LOST) {
+            Self::SubmissionUncertain(error)
+        } else {
+            Self::Rejected(error)
+        }
+    }
+
+    pub(super) const fn is_uncertain(self) -> bool {
+        matches!(
+            self,
+            Self::SubmissionUncertain(_) | Self::CompletionUncertain { .. }
+        )
+    }
+
     pub(super) const fn result(self) -> vk::Result {
         match self {
-            Self::Rejected(error) => error,
+            Self::Rejected(error) | Self::SubmissionUncertain(error) => error,
             Self::CompletionUncertain { wait_error, .. } => wait_error,
         }
     }
@@ -42,7 +58,7 @@ impl<'device> VulkanQueueSubmitter<'device> {
         Self { device, queue, queue_submit_lock }
     }
 
-    /// Notifies the caller after queue acceptance, then waits for completion.
+    /// Notifies the caller after acceptance or uncertain acceptance, then waits for completion.
     pub(super) fn submit_and_wait_with(
         &self,
         command_buffer: vk::CommandBuffer,
@@ -66,8 +82,15 @@ impl<'device> VulkanQueueSubmitter<'device> {
         };
 
         if let Err(error) = submit_result {
-            unsafe { self.device.destroy_fence(fence, None) };
-            return Err(VulkanQueueSubmitError::Rejected(error));
+            let submit_error = VulkanQueueSubmitError::from_submit_error(error);
+            if submit_error.is_uncertain() {
+                // Device loss makes queue acceptance uncertain. Conservatively
+                // advance the caller's resource lifecycle and preserve the fence.
+                on_submitted();
+            } else {
+                unsafe { self.device.destroy_fence(fence, None) };
+            }
+            return Err(submit_error);
         }
 
         // The queue owns the work from this point onward.
@@ -97,5 +120,27 @@ impl<'device> VulkanQueueSubmitter<'device> {
     pub fn submit_and_wait(&self, command_buffer: vk::CommandBuffer) -> Result<(), vk::Result> {
         self.submit_and_wait_with(command_buffer, || {})
             .map_err(VulkanQueueSubmitError::result)
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn device_lost_submission_is_not_treated_as_rejected() {
+        assert_eq!(
+            VulkanQueueSubmitError::from_submit_error(vk::Result::ERROR_DEVICE_LOST),
+            VulkanQueueSubmitError::SubmissionUncertain(vk::Result::ERROR_DEVICE_LOST)
+        );
+    }
+
+    #[test]
+    fn ordinary_submit_errors_are_rejected() {
+        assert_eq!(
+            VulkanQueueSubmitError::from_submit_error(vk::Result::ERROR_OUT_OF_HOST_MEMORY),
+            VulkanQueueSubmitError::Rejected(vk::Result::ERROR_OUT_OF_HOST_MEMORY)
+        );
     }
 }

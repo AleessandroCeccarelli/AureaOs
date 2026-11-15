@@ -207,7 +207,7 @@ impl VulkanLogicalDevice {
         &self,
         command_buffer: vk::CommandBuffer,
         fence: vk::Fence,
-    ) -> Result<(), vk::Result> {
+    ) -> Result<(), VulkanQueueSubmitError> {
         self.submit_async_with_signal(command_buffer, fence, None)
     }
 
@@ -217,11 +217,11 @@ impl VulkanLogicalDevice {
         command_buffer: vk::CommandBuffer,
         fence: vk::Fence,
         signal_semaphore: Option<vk::Semaphore>,
-    ) -> Result<(), vk::Result> {
+    ) -> Result<(), VulkanQueueSubmitError> {
         let _queue_guard = self
             .queue_submit_lock
             .lock()
-            .map_err(|_| vk::Result::ERROR_UNKNOWN)?;
+            .map_err(|_| VulkanQueueSubmitError::Rejected(vk::Result::ERROR_UNKNOWN))?;
         let command_buffers = [command_buffer];
         let signal_semaphores = signal_semaphore.into_iter().collect::<Vec<_>>();
         let mut submit_info = vk::SubmitInfo::default().command_buffers(&command_buffers);
@@ -229,6 +229,7 @@ impl VulkanLogicalDevice {
             submit_info = submit_info.signal_semaphores(&signal_semaphores);
         }
         unsafe { self.device.queue_submit(self.graphics_queue, &[submit_info], fence) }
+            .map_err(VulkanQueueSubmitError::from_submit_error)
     }
 
     /// Submits a recorded command buffer and waits for its completion.

@@ -120,7 +120,7 @@ impl<'device> VulkanCommandBuffer<'device> {
             .map_err(VulkanQueueSubmitError::result)
     }
 
-    /// Calls the lifecycle hook only after the queue accepts this command buffer.
+    /// Calls the lifecycle hook after acceptance or when device loss makes acceptance uncertain.
     pub(crate) fn submit_and_wait_with(
         &mut self,
         on_submitted: impl FnOnce(),
@@ -146,7 +146,8 @@ impl<'device> VulkanCommandBuffer<'device> {
                 self.state = CommandBufferState::Executable;
                 Err(error)
             }
-            Err(error @ VulkanQueueSubmitError::CompletionUncertain { .. }) => {
+            Err(error @ (VulkanQueueSubmitError::SubmissionUncertain(_)
+                | VulkanQueueSubmitError::CompletionUncertain { .. })) => {
                 // Accepted work is still potentially in flight.
                 Err(error)
             }
