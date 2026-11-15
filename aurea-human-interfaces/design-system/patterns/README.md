@@ -2,32 +2,26 @@
 
 # Patterns
 
-This folder contains recurring interface compositions and interaction patterns for AureaOS.
+Canonical specifications for recurring interface compositions and interaction patterns across the AureaOS desktop and first-party applications.
 
-## Intent
+## Pattern index
 
-Patterns describe how interface elements work together, not just how they look individually. This includes layout models, desktop shells, dialogues, navigation structures, and application composition.
+- [Desktop shell](DESKTOP-SHELL.md) — dock, launcher, workspaces and system surfaces.
+- [Application navigation](APPLICATION-NAVIGATION.md) — stable in-app navigation and hierarchy.
+- [Feedback and notifications](FEEDBACK-AND-NOTIFICATIONS.md) — inline feedback, toasts, system notifications and glass material.
+- [Forms and settings](FORMS-AND-SETTINGS.md) — grouping, saving behavior and setting controls.
 
-## Example pattern groups
+## Shared visual direction
 
-- desktop shell layout
-- settings and system panel layouts
-- file manager patterns
-- onboarding and first-run flows
-- system dialogs and confirmations
-- search and launcher flows
+Patterns use the AureaOS semantic tokens and component contracts. The visual language is Windows 11-inspired: clean layered surfaces, blue/cyan accents, restrained gradients, rounded geometry and subtle depth. The dock and floating system surfaces may use more pronounced translucency; application content remains calm and readable.
 
-## Core design principle
+Notifications are a signature glass surface: cool translucent material, real backdrop blur when supported, subtle edge highlight and soft shadow. This effect is intentionally concentrated on shell-owned floating surfaces rather than applied indiscriminately to every window.
 
-Patterns should support user familiarity without sacrificing AureaOS identity.
+## Principles
 
-Users should feel that they can work efficiently from day one, with clear actions and a smaller learning curve. At the same time, the product must not present itself as a generic Windows or macOS clone.
-
-## Maintenance guidance
-
-Pattern design should stay aligned with:
-
-- accessibility expectations
-- keyboard navigation
-- predictable visual hierarchy
-- consistent spacing and layered surfaces
+- Familiarity first; refinement through integration.
+- Shared commands, surfaces and interaction states remain consistent.
+- Use transparency only when it clarifies system-level layering.
+- Preserve contrast, focus and legibility in both themes.
+- Respect reduced motion and reduced transparency.
+- A design pattern is a specification, not proof of runtime implementation.
