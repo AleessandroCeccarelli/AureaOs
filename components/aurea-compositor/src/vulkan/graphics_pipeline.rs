@@ -125,9 +125,9 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         )
     }
 
-    fn create(
-        device: &'device VulkanLogicalDevice,
-        owner: VulkanDeviceOwner<'device>,
+    fn create<'owner>(
+        device: &VulkanLogicalDevice,
+        owner: VulkanDeviceOwner<'owner>,
         shaders: VulkanGraphicsShaders<'_, '_>,
         color_format: vk::Format,
         descriptor_layout_handles: &[vk::DescriptorSetLayout],
@@ -340,6 +340,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
                 .handle()
                 .cmd_set_viewport(command_buffer, 0, &[viewport]);
             self.device
+                .device()
                 .handle()
                 .cmd_set_scissor(command_buffer, 0, &[scissor]);
         }
@@ -351,6 +352,7 @@ impl Drop for VulkanGraphicsPipeline<'_> {
         unsafe {
             self.device.device().handle().destroy_pipeline(self.pipeline, None);
             self.device
+                .device()
                 .handle()
                 .destroy_pipeline_layout(self.layout, None);
         }
