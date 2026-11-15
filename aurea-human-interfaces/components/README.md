@@ -1,12 +1,9 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# Component Reference Examples
+# Shared Component Examples
 
-The canonical component specifications live in `../design-system/components/`.
+Canonical component contracts live in `../design-system/components/`. This directory contains concise visual examples only.
 
-This directory contains small, focused examples showing how specified components are composed. It is not a second specification tree and must not define competing tokens.
+Each example should demonstrate one component or closely related composition, link its specification, use canonical tokens, show relevant states and include light/dark appearances where meaningful. Do not copy production implementations or create a second component library.
 
-## Structure
-- `examples/` — concise examples and reference compositions.
-
-Each example identifies the component specification it demonstrates, uses canonical design tokens and shows relevant states. Native Rust implementation belongs in the appropriate AureaOS component crate, not here.
+Native Rust implementation belongs in the appropriate AureaOS crate. HTML/CSS examples are design references, not runtime components.

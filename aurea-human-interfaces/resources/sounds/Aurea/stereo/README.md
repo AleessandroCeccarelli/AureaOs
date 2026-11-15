@@ -1,11 +1,11 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS Stereo Sounds
+# Aurea Runtime Sound Assets
 
-This directory will contain the original synthesized system sound effects
-for the AureaOS Aurea sound theme.
+Destination for converted, runtime-ready Aurea sound event files.
 
-Audio files will be generated locally using a Python script on macOS or Linux
-and exported in the `.oga` format.
+The approved source library is preserved separately in `../source/approved-library/`. Do not copy its review preview or documentation here, and do not rename or overwrite original sources.
 
-See `../SOUND-EVENTS.md` for the planned sound event list.
+Runtime files must use event names in `../../SOUND-EVENTS.md`, meet `../../AUDIO-SPECIFICATION.md`, and be recorded in `../../SOUND-TESTING.md` after listening and integration checks.
+
+No runtime event is complete merely because a source effect exists.

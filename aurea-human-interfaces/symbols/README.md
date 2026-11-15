@@ -1,33 +1,25 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS Symbols
+# AureaOS Symbol Sources and Catalog
 
-## Purpose
+Separates third-party reference symbols from the future stable AureaOS semantic symbol catalog.
 
-This directory contains a small, curated reference subset of Fluent UI System Icons and the documentation for the future AureaOS symbol catalog.
+## Structure
 
-The upstream collection was intentionally reduced. AureaOS keeps only commonly useful desktop and system symbols, in the 24 px Regular and Filled variants where those variants exist. This is a reference and development resource, not the final proprietary AureaOS symbol identity.
+- `source/fluent-ui/` — curated Microsoft Fluent UI System Icons subset.
+- `catalog/` — proposed AureaOS names, categories, mappings and integration contract.
+- `generated/` — reserved for optimized or packaged outputs.
 
-## Source and license
+## Current inventory
 
-- Upstream project: Microsoft Fluent UI System Icons
-- Source assets: `source/fluent-ui/`
-- License: MIT, recorded in `source/fluent-ui/LICENSE`
+The retained subset contains 89 concepts with Regular and Filled 24 px SVG variants where supplied: 178 SVG files total. It is curated, not a mirror of the complete upstream Fluent collection.
 
-The retained source files remain third-party assets. They must not be presented as original AureaOS artwork.
+The upstream MIT license is retained at `source/fluent-ui/LICENSE`. These remain Microsoft Fluent UI assets, not original AureaOS artwork.
 
-## Organization
+## Catalog status and destination
 
-- `source/` — the limited upstream reference assets
-- `catalog/` — proposed AureaOS names, categories, naming rules, and mapping guidance
-- `generated/` — reserved for future generated assets
+The catalog documents naming and functional categories. It is not yet a complete verified mapping or implemented runtime API. Each mapping must be checked against an actual retained source file and record its exact upstream filename and available variant.
 
-## Naming and compatibility
+Applications should eventually request symbols through a shared AureaOS API using stable semantic names, not upstream paths. The API, mapping manifest, variant fallback, logical sizing and runtime loader remain future work.
 
-Applications should ultimately request symbols through a shared AureaOS interface and stable AureaOS catalog names, rather than depend directly on upstream filenames. The shared interface and verified mappings have not yet been implemented.
-
-Catalog examples are proposals until each entry is checked against a retained source asset. Record the exact upstream filename and available variant when a mapping is verified.
-
-## Curation policy
-
-Keep the source collection focused on common operating-system needs. Do not re-import the full upstream pack by default. Add a symbol only when a concrete AureaOS interface requirement justifies it; prefer original AureaOS artwork for distinctive product and brand identities.
+Keep the subset curated by concrete product requirements; expand it when a real interface need justifies a new source asset.

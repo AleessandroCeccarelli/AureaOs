@@ -1,116 +1,117 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS Human Interfaces — Audit and Completion Roadmap
+# Human Interfaces — Status and Completion Roadmap
 
-**Audit baseline:** GitHub `main`, 15 November 2026  
-**Purpose:** Track the design foundation, its gaps and the next controlled work.
+**Baseline:** repository `main`, 15 November 2026. This inventory distinguishes source assets, approved design decisions, missing production work and the intended destination. It is not evidence of runtime behavior or hardware validation.
 
-This is a repository and specification audit. It is not evidence that prototypes or runtime features have been tested on hardware.
+## Product direction
 
-## 1. Product direction — authoritative
+AureaOS follows **familiarity first; refinement through integration**. Windows is the primary usability reference for desktop conventions and common workflows; KDE Plasma informs the floating dock and desktop flexibility; macOS informs consistency, visual finish and notification refinement. These are usability references, not assets or interface templates to copy.
 
-AureaOS follows **familiarity first; refinement through integration**.
+## Canonical collections
 
-- **Windows is the primary usability reference:** desktop mental model, launcher, menus, file manager, context menus, window controls, keyboard shortcuts and common workflows.
-- **KDE Plasma is a secondary reference:** floating bottom dock, adaptable panel behavior and workspace organization.
-- **macOS is a refinement reference:** cross-application consistency, visual finish, coherent surfaces and notification quality.
-
-These are references for conventions and usability, not artwork or interface templates to copy. AureaOS owns its branding and visual assets. It must not make ordinary desktop tasks unfamiliar merely to appear original.
-
-A first-time Windows user should recognize where to launch applications, find files, access context menus, manage windows and use common shortcuts.
-
-## 2. Current inventory
-
-| Area | Current role | Audit note |
+| Area | Responsibility | Current state |
 |---|---|---|
-| `assets/` | Source artwork and design inputs | Avoid duplicating runtime-ready resources |
-| `brand/` | AureaOS identity | Brand usage rules and canonical logo package remain to be completed |
-| `components/` | Practical examples | Keep examples small; specifications live in design-system |
-| `design-system/` | Tokens, components, patterns and keyboard conventions | Canonical shared design source |
-| `fonts/` | Font sources and notices | Final system font is not yet approved |
-| `icons/` | Original system and application artwork | Inventory, export rules and coverage review remain |
-| `previews/` | Review samples | Gallery still needs useful previews |
-| `prototypes/` | Interactive and static design experiments | Simulated actions are not runtime functionality |
-| `resources/` | Reusable wallpapers, illustrations, textures and sound resources | Sound specifications exist; production audio remains future work |
-| `symbols/` | Curated third-party reference subset | Not a complete AureaOS icon API |
-| `themes/` | Compatibility entry points | Must not become a second token source |
+| `brand/` | Product identity and presentation | Initial artwork retained; full identity guide/logo package pending |
+| `design-system/` | Tokens, components, patterns and shortcuts | Canonical token source and core specifications present; coverage/previews incomplete |
+| `icons/` | Original application, system and folder artwork | Folder family and five system/app marks present; application coverage and exports pending |
+| `symbols/` | Curated Fluent source and AureaOS semantic catalog | 89 concepts / 178 SVGs retained; verified catalog/API pending |
+| `cursors/` | Original cursor SVG source | Nine masters present; Xcursor build and compositor integration pending |
+| `fonts/` | Third-party font support and future Aurea Sans | Temporary families retained with notices; Aurea Sans not created or approved |
+| `themes/` | Legacy compatibility wrappers | Must delegate to canonical tokens only |
+| `resources/` | Wallpapers, illustrations, textures and sounds | Source collections present; runtime packaging and coverage incomplete |
+| `components/` | Focused visual examples | Guidance present; examples to be authored |
+| `prototypes/` | Visual and interaction experiments | Two HTML prototypes and one concept image retained |
+| `previews/` | Review exports | Directories reserved; useful gallery pending |
 
-## 3. Work completed in this direction
+## Existing source and specification work
 
-- [x] Established Windows-first familiarity as the primary usability rule.
-- [x] Defined KDE Plasma's floating dock as a secondary desktop influence.
-- [x] Defined macOS as a reference for visual consistency and notification refinement.
-- [x] Reworked the desktop specification around familiar launcher, taskbar, window, file-manager and shortcut behavior.
-- [x] Reworked application guidelines around stable menu categories and command placement.
-- [x] Added a shared keyboard and command convention document.
-- [x] Clarified that prototypes are visual/interaction references, not proof of runtime behavior.
-- [x] Made `design-system/tokens/index.css` the single token source; light/dark CSS files are compatibility imports.
+- [x] Windows-first familiarity and KDE/macOS reference roles documented.
+- [x] Desktop experience and application design specifications present.
+- [x] Shared keyboard and command conventions documented.
+- [x] Canonical CSS token file established at `design-system/tokens/index.css`.
+- [x] Core component specifications: buttons, dialogs, menus, selection controls, text fields and window chrome.
+- [x] Core patterns: desktop shell, application navigation, feedback/notifications and forms/settings.
+- [x] Original Fides folder artwork v5 retained with license.
+- [x] Original system artwork retained for AureaOS, Aurea AI, File Manager and Wallet.
+- [x] Nine original cursor SVG masters retained.
+- [x] Nine wallpaper images, three original SVG illustrations and texture CSS retained.
+- [x] Original procedural sound library retained: 16 effects plus review preview, manifest, usage guide and license.
+- [x] Curated Fluent UI source subset retained with upstream MIT license.
+- [x] Temporary font families retained with upstream notices.
+- [x] Two desktop HTML prototypes and one concept image retained.
 
-## 4. Remaining design gaps
+## Structure and consistency
 
-### Desktop and application behavior
-- [ ] Validate the launcher and dock against the selected prototype.
-- [ ] Specify exact taskbar grouping, previews, pinning and minimized-window behavior.
-- [ ] Complete snap layouts, overview and multi-monitor rules.
-- [ ] Verify every documented shortcut against actual intended runtime behavior before implementation.
-- [ ] Complete Fides navigation, file operations, drives and context-menu behavior.
+- [x] `resources/` established as canonical home for wallpapers, illustrations, textures and sounds.
+- [x] Brand presentation artwork moved into the brand collection; redundant Human Interfaces `assets/` tree removed.
+- [x] Original-project and third-party license boundaries documented.
+- [x] `design-system/tokens/index.css` designated the sole CSS token authority.
+- [ ] Validate all relative links after reorganization.
+- [ ] Review authored files for SPDX headers and accurate status statements.
 
-### Shared design system
-- [ ] Review all component specifications against familiar desktop conventions.
-- [ ] Complete typography scale, line heights, font fallback and localization guidance.
-- [ ] Complete accessibility and reduced-transparency guidance.
-- [ ] Define responsive and display-scaling rules.
-- [ ] Add light/dark component previews.
+## Remaining work
 
-### Visual assets
-- [ ] Inventory original AureaOS icons and folder variants.
-- [ ] Verify source and licensing for third-party symbols.
-- [ ] Define icon sizes, optical alignment, stroke/fill and state rules.
-- [ ] Complete wallpaper catalog, aspect ratios and attribution.
-- [ ] Approve the production font only after repository font/license review.
-- [ ] Produce original system sounds and document event mapping.
+### Brand and icons
+- [ ] Complete canonical logo/mark masters and usage rules.
+- [ ] Create missing first-party application artwork, including Quaero.
+- [ ] Define icon export sizes, optical alignment, states and packaging.
+- [ ] Generate previews and validate light/dark variants.
 
-### Review and implementation
-- [ ] Add focused component examples and useful preview galleries.
-- [ ] Map approved patterns to Rust/native implementation owners.
-- [ ] Keep design approval separate from runtime implementation status.
-- [ ] Validate the native shell against the prototype and specification on actual hardware.
+### Symbols
+- [ ] Inventory exact upstream filenames and available variants.
+- [ ] Verify AureaOS semantic names against actual source assets.
+- [ ] Design shared symbol API, package format, fallback rules and runtime loader.
+- [ ] Expand the curated source subset only for concrete product needs.
 
-## 5. Directory ownership
+### Typography
+- [ ] Define Aurea Sans brief, glyph design and language coverage.
+- [ ] Validate spacing, kerning, shaping, hinting, readability and scaling.
+- [ ] Establish metadata/license and build reproducible font binaries.
+- [ ] Approve the production font before replacing temporary fallbacks.
 
-- `assets/`: source artwork and design inputs.
-- `brand/`: logo and identity rules.
-- `components/`: practical component examples.
-- `design-system/`: semantic tokens, component contracts, patterns and keyboard rules.
-- `fonts/`: source fonts, licenses and approved font assets.
-- `icons/`: original AureaOS app and system icon artwork.
-- `previews/`: reviewed visual samples.
-- `prototypes/`: experiments and concept validation.
-- `resources/`: runtime-ready wallpapers, illustrations, textures and sounds.
-- `symbols/`: curated third-party source symbols and attribution.
-- `themes/`: compatibility entry points only.
+### Cursors
+- [ ] Define sizes and hotspots; build standard Xcursor output.
+- [ ] Add reproducible generation and validation.
+- [ ] Integrate cursor loading/state selection with Smithay.
+- [ ] Test fractional scaling, high-DPI, reduced motion and pointer states.
 
-Do not create parallel folders or duplicate canonical assets.
+### Resources and sounds
+- [ ] Validate wallpaper dimensions, image quality, focal points and multi-display crops.
+- [ ] Add illustrations for identified product flows only.
+- [ ] Review texture contrast and reduced-transparency behavior.
+- [ ] Convert approved mono `.ogg` source effects into separate runtime `.oga` stereo files where required.
+- [ ] Complete event mapping; create dedicated low-battery and power cues if still required.
+- [ ] Listen-test runtime copies and integrate the theme with the shell.
 
-## 6. Working rules
+### Design system and previews
+- [ ] Complete accessibility, typography, localization and display-scaling guidance.
+- [ ] Add component contracts based on real shell/application needs.
+- [ ] Produce focused examples and light/dark previews.
+- [ ] Reconcile prototypes with the canonical desktop specification.
+- [ ] Validate first-login workflows on supported hardware.
 
-- One file, one responsibility; keep specifications focused.
-- Familiar behavior takes priority over novelty.
-- Do not relocate or rename common controls without a demonstrated usability benefit.
-- Do not create a second menu, shortcut, theme or component system.
-- Use shared tokens; never fork palettes inside applications.
-- Review both themes and accessibility for every shared component.
-- Do not create placeholder assets that imply completion.
-- Preserve third-party license notices and source attribution.
-- Never claim simulated prototype actions are implemented system functionality.
+## Runtime ownership
 
-## 7. Next sequence
+- Compositor: windows, focus, input, cursor presentation, workspaces and placement.
+- Shell: dock, launcher, overview, quick settings and notification presentation.
+- System services: network, audio, power, display, appearance and notification state.
+- Fides and Quaero: file-management and search workflows.
+- Packaging: installation/discovery of wallpapers, icons, fonts, cursors and sounds.
 
-1. Finish the behavioral contract for dock, windows, menus, shortcuts and Fides.
-2. Review the current prototypes and align them with that contract rather than designing a competing desktop.
-3. Complete the shared visual component rules and light/dark previews.
-4. Audit iconography and folder artwork.
-5. Complete typography, accessibility and responsive rules.
-6. Move to wallpaper and sound production only after the interaction and visual system are coherent.
+A design preview or source asset must never be reported as a working runtime feature.
 
-**Conclusion:** AureaOS should feel familiar on first use. Its identity comes from the quality of the integration, the consistency of its surfaces and its original assets—not from making users relearn their desktop.
+## Completion sequence
+
+1. Finish structure, licensing, links and token compatibility.
+2. Complete brand and application/system icon coverage.
+3. Establish the semantic symbol catalog and API contract.
+4. Develop Aurea Sans and typography rules.
+5. Complete component specifications and previews.
+6. Build cursor and sound runtime packages.
+7. Validate desktop prototypes against specifications.
+8. Integrate and test on the actual AureaOS runtime and supported hardware.
+
+A collection is complete only when its source, provenance, license, documentation, generation path, output format, accessibility behavior and runtime owner are known. Runtime integration additionally requires reproducible builds and target-system tests.
+
+**Destination:** a coherent, original and accessible AureaOS visual language, centrally maintained and consistently consumed by the shell and first-party applications.

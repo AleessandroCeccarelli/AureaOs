@@ -2,34 +2,17 @@
 
 # AureaOS Design System
 
-This directory is the canonical source for shared visual and interaction rules used by the desktop and first-party applications.
+Canonical source for shared visual tokens, component contracts, recurring interaction patterns and keyboard conventions.
 
 ## Structure
 
-- `tokens/` — semantic colors, surfaces, typography and elevation. `tokens/index.css` is the only token source.
-- `components/` — reusable component specifications, states, behavior and accessibility.
-- `patterns/` — recurring task flows and compositions built from shared components.
-- `KEYBOARD-AND-COMMAND-CONVENTIONS.md` — shared shortcut defaults, command placement and ownership.
+- `tokens/index.css` — sole canonical CSS token source, including light/dark values.
+- `components/` — component anatomy, behavior, states and accessibility contracts.
+- `patterns/` — recurring compositions and workflows.
+- `KEYBOARD-AND-COMMAND-CONVENTIONS.md` — shortcut defaults, command placement and ownership.
 
-## Product direction
+Applications and prototypes consume canonical tokens. Legacy `../themes/` files are compatibility wrappers only and must not contain an independent palette.
 
-AureaOS follows familiarity first. Windows is the primary reference for desktop conventions and common workflows; KDE Plasma informs the floating bottom dock and desktop flexibility; macOS informs consistency, visual finish and notification refinement.
+## Rules
 
-These references guide usability, not copying. Keep familiar commands, locations and shortcuts predictable while using original AureaOS visual assets.
-
-## Authority
-
-The design system owns shared visual and interaction decisions. Applications must not invent parallel palettes, spacing scales, menu conventions or shortcut systems.
-
-The root `themes/` directory and theme-specific token files are compatibility entry points only. `tokens/index.css` remains authoritative.
-
-## Status and rules
-
-Specifications define intended contracts; they do not imply that native Rust components or system services already exist.
-
-- Use semantic tokens rather than hard-coded colors.
-- Review every component in light and dark themes.
-- Include keyboard, focus, disabled and error behavior.
-- Respect reduced motion, reduced transparency and accessibility preferences.
-- Keep files focused: one component family or pattern per document.
-- Update the relevant index whenever a specification is added.
+Familiar desktop behavior takes priority over novelty. Keep shared commands, menu order and window controls consistent. Review both themes together. Define keyboard, pointer, focus, disabled, error and loading behavior. Respect reduced motion, reduced transparency, scalable text and accessibility. Keep specifications focused. Specifications describe intended contracts; native Rust implementation and service integration are tracked separately.

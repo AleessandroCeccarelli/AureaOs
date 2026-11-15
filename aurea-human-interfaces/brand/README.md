@@ -1,30 +1,25 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# Brand and Visual Identity
+# AureaOS Brand and Identity
 
-This area contains the brand-facing visual identity for AureaOS.
+This collection owns product identity: official marks, logo masters, visual identity guidance and presentation artwork.
 
-It is intended for:
+Brand identity is distinct from interface behavior. The design system owns interface tokens and interaction rules; application and system icons remain in `../icons/`.
 
-- brand direction
-- logo references
-- identity and visual language exploration
-- visual mood and presentation assets
-- product launch and promotion material
+## Structure
 
-## Scope
+- `identity/` — approved brand imagery and identity references.
+- `logos/` — canonical logo and mark masters, as they are consolidated.
+- `presentation/` — product presentation, launch and social-preview artwork.
+- `guidelines/` — future clear-space, minimum-size, background, color-variant and misuse rules.
 
-This scope should remain separate from the actual system interface implementation. The brand layer should define how AureaOS presents itself, while the design system defines how the product behaves in use.
+## Current material
 
-## Typical content
+- `identity/aureaos-roma-al-tramonto.png` — existing AureaOS Roma presentation artwork.
+- `presentation/aureaos-social-preview.jpg` — existing social preview image.
 
-- logos and marks
-- presentation art
-- promotional graphics
-- brand color references
-- usage guidance
-- asset attribution and licensing notes
+These are retained assets, not proof of a complete logo package or trademark policy.
 
-## Rule
+## Destination
 
-Brand assets should not be mixed with UI component source files or runtime implementation files.
+Define canonical logo and symbol variants, safe area, minimum size, monochrome/light/dark usage, approved backgrounds, export formats, naming/versioning and trademark guidance. Do not put application icons, folder artwork, cursors or component sources here.

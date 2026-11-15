@@ -1,45 +1,45 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS Sound Theme — Audio Testing Checklist
+# AureaOS Sound Theme — Testing Checklist
 
-Use this checklist to review the original system sound effects before including them in AureaOS Roma.
+Use this checklist for converted runtime files and the installed Aurea sound theme. The original source library is reviewed separately and must remain unchanged.
 
-Use `AUDIO-SPECIFICATION.md` as the reference for target durations, frequencies, and synthesis parameters.
+## Source and mapping
 
-## File and format
+- [ ] Source file exists in `source/approved-library/`.
+- [ ] Source purpose matches the event mapping in `SOUND-EVENTS.md`.
+- [ ] No unrelated source effect has been assigned to an event.
+- [ ] Dedicated battery/power cues are created only if those events are required.
 
-* [ ]	All nine event sounds are present in Aurea/stereo/.
-* [ ]	Files use the expected names listed in SOUND-EVENTS.md.
-* [ ]	Audio files use the .oga extension and contain Ogg Vorbis audio.
-* [ ]	Files play correctly and are not corrupted.
-* [ ]	Each sound is short and appropriate for a system event.
+## Runtime file and format
+
+- [ ] Runtime event file uses the exact `.oga` name in `SOUND-EVENTS.md`.
+- [ ] Ogg Vorbis encoding is verified; changing the extension alone is not conversion.
+- [ ] Sample rate, stereo channels and peak level meet `AUDIO-SPECIFICATION.md`.
+- [ ] File plays correctly and is not corrupted.
+- [ ] Duration and silence are appropriate.
 
 ## Audio quality
 
-* [ ]	Loudness is consistent across all nine sounds.
-* [ ]	No clipping, distortion, clicks, or unintended noise.
-* [ ]	No sudden peaks or unnecessarily startling transients.
-* [ ]	Sounds remain recognizable at low playback volume.
-* [ ]	Stereo presentation is balanced and does not rely on extreme panning.
-
-## Listening review
-
-* [ ]	Listen to each sound through speakers.
-* [ ]	Listen to each sound through headphones.
-* [ ]	Check that notification and warning sounds are distinguishable.
-* [ ]	Confirm that repeated playback is not irritating or distracting.
-* [ ]	Confirm that the sound matches the event description in SOUND-EVENTS.md.
+- [ ] Perceived loudness is consistent.
+- [ ] No clipping, distortion, clicks or unintended noise.
+- [ ] No sudden or startling peaks.
+- [ ] Sounds remain recognizable at low playback volume.
+- [ ] Repeated playback is not irritating or distracting.
 
 ## Integration
 
-* [ ]	Verify that the Aurea theme metadata is installed correctly.
-* [ ]	Confirm that missing events fall back to the freedesktop theme.
-* [ ]	Test playback in the target desktop environment.
-* [ ]	Record any issues and revise the affected audio before approval.
+- [ ] Theme metadata installs correctly.
+- [ ] Missing events fall back to the freedesktop theme.
+- [ ] Playback works through the target desktop notification/audio path.
+- [ ] No duplicate cues play for the same event.
+- [ ] Reduced-volume and muted behavior are respected.
 
-## Approval
+## Approval record
 
-* Review date:
-* Reviewed by:
-* Result: Pending / Approved / Needs revision
-* Notes:
+- Review date:
+- Reviewer:
+- Source file:
+- Runtime event:
+- Result: Pending / Approved / Needs revision
+- Notes:

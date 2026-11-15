@@ -1,59 +1,62 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# Aurea Human Interfaces
+# AureaOS Human Interfaces
 
-This directory defines the visual and interaction foundation for AureaOS: a familiar desktop experience, carefully integrated into one coherent product.
+The design authority for AureaOS visual identity, desktop interaction, shared interface rules and reusable human-facing assets.
 
-## Product direction
+## Product principle
 
 **Familiarity first; refinement through integration.**
 
-Windows is the primary usability reference because its desktop conventions are already familiar to most PC users. AureaOS should preserve expected navigation, menu placement, file-management concepts, window controls, keyboard shortcuts and system workflows.
+- Windows is the primary usability reference for common desktop conventions, navigation, file management, menus, window controls and keyboard behavior.
+- KDE Plasma informs the floating bottom dock, desktop flexibility and workspace organization.
+- macOS informs cross-application consistency, visual finish and notification quality.
 
-The experience is refined with:
-- **Windows:** the primary reference for desktop information architecture, menus, launcher, file manager, window management and keyboard conventions.
-- **KDE Plasma:** the floating bottom dock, adaptable desktop organization and practical customization.
-- **macOS:** consistency across applications, attention to detail, coherent surfaces and polished notification behavior.
+These are usability references, not artwork or interfaces to copy. AureaOS owns its identity and implementation.
 
-These are usability references, not assets or interfaces to copy. AureaOS combines their useful conventions into one predictable environment. Users should feel at home on first login, not be required to relearn ordinary desktop tasks.
+## Directory map
 
-## Core specifications
+| Directory | Responsibility |
+|---|---|
+| `brand/` | AureaOS identity, logo masters and presentation artwork |
+| `design-system/` | Canonical tokens, component contracts, patterns and keyboard conventions |
+| `icons/` | Original application, system and folder artwork |
+| `symbols/` | Curated third-party symbol sources and AureaOS semantic catalog |
+| `cursors/` | Original pointer artwork and future cursor-theme outputs |
+| `fonts/` | Font sources, notices and future Aurea Sans family |
+| `themes/` | Compatibility entry points delegating to canonical tokens |
+| `resources/` | Wallpapers, illustrations, textures and sound-theme assets |
+| `components/` | Small visual examples of shared components |
+| `prototypes/` | Desktop and application design experiments |
+| `previews/` | Review exports for components, fonts, icons and themes |
 
-- [Application Design Guidelines](APP-DESIGN-GUIDELINES.md) — shared window structure, familiar menu conventions, application behavior and integration.
-- [Desktop Experience Specification](DESKTOP-EXPERIENCE-SPEC.md) — shell, dock, launcher, workspaces, windows, notifications and quick settings.
-- [Keyboard and Command Conventions](design-system/KEYBOARD-AND-COMMAND-CONVENTIONS.md) — familiar shortcuts, command placement and conflict rules.
-- [Audit and Completion Roadmap](AUDIT-AND-COMPLETION-ROADMAP.md) — inventory, gaps and staged completion plan.
+There is no parallel `assets/` directory: reusable assets have one canonical home.
 
-## Non-negotiable experience rules
+## Source-of-truth rules
 
-- Familiar desktop tasks must work where users expect them to.
-- Standard commands keep familiar names, locations and meanings.
-- Keyboard shortcuts follow established Windows conventions by default.
-- Window controls, title bars, menus and context menus remain predictable.
-- Fides follows familiar file-manager organization and terminology.
-- The floating dock and system surfaces enhance the experience without changing its basic mental model.
-- Light and dark themes share the same layout, hierarchy and interaction rules.
-- Visual effects never reduce readability or hide important controls.
-- First-party applications share components and tokens; third-party applications remain compatible.
+1. `design-system/tokens/index.css` is the sole canonical CSS token source.
+2. Specifications define intended behavior; they do not prove runtime implementation.
+3. Editable masters remain in their relevant `source/` collection.
+4. Generated/runtime outputs stay separate from masters.
+5. Third-party source assets retain their upstream licenses and notices.
+6. Never replace or silently modify a source when generating an output.
+7. Every collection documents purpose, provenance, format, license and integration status.
 
-## Visual identity
+## Main specifications
 
-AureaOS owns its logo, colors, icons, typography, folder artwork, wallpapers, sounds and finish. Originality belongs in the quality and consistency of these elements—not in moving familiar controls or inventing new interaction rules without a clear user benefit.
+- [Application design guidelines](APP-DESIGN-GUIDELINES.md)
+- [Desktop experience](DESKTOP-EXPERIENCE-SPEC.md)
+- [Design system](design-system/README.md)
+- [Keyboard and command conventions](design-system/KEYBOARD-AND-COMMAND-CONVENTIONS.md)
+- [Icons](icons/README.md) · [Symbols](symbols/README.md) · [Cursors](cursors/README.md)
+- [Fonts](fonts/README.md) · [Resources](resources/README.md)
+- [Licensing and provenance](LICENSING-AND-PROVENANCE.md)
+- [Completion roadmap](AUDIT-AND-COMPLETION-ROADMAP.md)
 
-## Separation of concerns
+## Licensing
 
-- `design-system/` defines shared tokens, components, patterns and keyboard conventions.
-- `assets/` contains wallpaper, illustrations, textures and derived visual resources.
-- `brand/` contains product identity and presentation material.
-- `components/` contains reusable interface examples.
-- `fonts/` contains font sources and notices.
-- `icons/` and `symbols/` contain graphical assets.
-- `prototypes/` contains interaction and visual experiments.
-- `previews/` contains visual review samples and screenshots.
-- `resources/` contains approved reusable visual and audio resources.
+Original AureaOS material is GPL-3.0-or-later unless a file-specific notice says otherwise. Third-party material is not relicensed by the project. See [Licensing and Provenance](LICENSING-AND-PROVENANCE.md), repository `LICENSE` and `licenses/THIRD_PARTY_NOTICES.md`.
 
-## Design governance
+## Status
 
-Specifications describe intended behavior; they do not claim that a runtime feature is implemented. Prototypes validate visual direction and interaction flow, not hardware or compositor behavior.
-
-A shared rule is defined once and reused. Do not create parallel palettes, shortcut systems, menu conventions or competing component libraries. Keep documents and implementation modules focused on one responsibility.
+Some collections are approved source artwork but are not yet built, packaged, connected to the shell or validated on hardware. The roadmap distinguishes these states.

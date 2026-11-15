@@ -1,48 +1,29 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
-/* AureaOS legacy theme compatibility wrapper.
- * Source of truth: aurea-human-interfaces/design-system/tokens/index.css
- */
+/* Legacy aliases only. Canonical values live in design-system/tokens/index.css. */
+@import url("../../design-system/tokens/index.css");
+
 :root,
+:root[data-theme="light"],
 [data-theme="light"] {
   color-scheme: light;
-
-  --aurea-accent: #6fa6ff;
-  --aurea-accent-hover: #4d8df7;
-  --aurea-accent-soft: rgba(111, 166, 255, 0.16);
-  --aurea-accent-warm: #d8a86a;
-  --aurea-accent-warm-soft: rgba(216, 168, 106, 0.18);
-
-  --aurea-canvas: #edf4ff;
-  --aurea-surface: #ffffff;
-  --aurea-surface-secondary: #f5f9ff;
-  --aurea-surface-raised: #ffffff;
-  --aurea-surface-sunken: #edf3ff;
-
-  --aurea-text-primary: #121a24;
-  --aurea-text-secondary: #2f3d4d;
-  --aurea-text-tertiary: #5d6d7f;
-  --aurea-text-disabled: #7b8898;
-
-  --aurea-border: rgba(17, 24, 39, 0.10);
-  --aurea-border-strong: rgba(17, 24, 39, 0.18);
-  --aurea-focus-ring: #3d7af6;
-  --aurea-selection: rgba(111, 166, 255, 0.14);
-  --aurea-hover: rgba(17, 24, 39, 0.04);
-  --aurea-pressed: rgba(17, 24, 39, 0.08);
-
-  --aurea-success: #3c7b5e;
-  --aurea-success-container: #eaf5ef;
-  --aurea-warning: #bc8229;
-  --aurea-warning-container: #f7efd8;
-  --aurea-error: #b6504a;
-  --aurea-error-container: #f9ebea;
-  --aurea-information: #4a7ed7;
-  --aurea-information-container: #edf4ff;
-
-  --aurea-glass-fill: rgba(255, 255, 255, 0.62);
-  --aurea-glass-fill-strong: rgba(255, 255, 255, 0.76);
-  --aurea-glass-highlight: rgba(255, 255, 255, 0.72);
-  --aurea-glass-border: rgba(255, 255, 255, 0.70);
-  --aurea-glass-shadow: 0 14px 30px rgba(17, 24, 39, 0.10);
+  --aurea-accent: var(--aurea-accent-primary);
+  --aurea-accent-hover: var(--aurea-accent-strong);
+  --aurea-canvas: var(--aurea-surface-desktop);
+  --aurea-surface: var(--aurea-surface-window);
+  --aurea-surface-secondary: var(--aurea-surface-elevated);
+  --aurea-surface-raised: var(--aurea-surface-strong);
+  --aurea-surface-sunken: var(--aurea-surface-desktop);
+  --aurea-text-tertiary: var(--aurea-text-muted);
+  --aurea-text-disabled: var(--aurea-text-muted);
+  --aurea-border: var(--aurea-border-subtle);
+  --aurea-focus-ring: var(--aurea-focus);
+  --aurea-selection: var(--aurea-accent-soft);
+  --aurea-hover: var(--aurea-accent-soft);
+  --aurea-pressed: var(--aurea-accent-soft);
+  --aurea-error: var(--aurea-critical);
+  --aurea-information: var(--aurea-accent-strong);
+  --aurea-glass-fill-strong: var(--aurea-surface-panel);
+  --aurea-glass-highlight: var(--aurea-glass-border);
+  --aurea-glass-shadow: var(--aurea-shadow-soft);
 }

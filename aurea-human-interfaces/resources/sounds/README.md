@@ -1,22 +1,26 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS Sound Resources
+# AureaOS Sound Theme
 
-This directory is the source location for the AureaOS system sound theme.
+Contains the approved original AureaOS sound source library and the separate freedesktop-compatible runtime theme layout.
 
-## Planned layout
+## Structure
 
-- `Aurea/` — freedesktop-compatible sound theme metadata and event audio.
-- `Aurea/index.theme` — theme metadata and inheritance.
-- `Aurea/stereo/` — short stereo event sounds, named with standard freedesktop event identifiers where applicable.
+- `source/approved-library/` — preserved procedural Ogg Vorbis source effects, preview, manifest, usage guide and license.
+- `Aurea/index.theme` — freedesktop sound-theme metadata.
+- `Aurea/stereo/` — destination for converted runtime event sounds.
+- `SOUND-EVENTS.md` — runtime event names and source mapping.
+- `AUDIO-SPECIFICATION.md` — runtime audio requirements.
+- `SOUND-TESTING.md` — listening and integration checklist.
 
-## Design guidelines
+## Current state
 
-- Keep sounds brief, restrained, and recognizable without being distracting.
-- Provide notification, completion, error, device-connect/disconnect, and low-battery cues.
-- Avoid sounds for routine clicks or every minor interaction.
-- Keep source assets and licensing/attribution notes with the theme.
-- The desktop installation target is `/usr/share/sounds/Aurea/`; this repository remains the editable source.
+The approved source library contains 16 original effects plus a combined review preview. Sources are Ogg Vorbis, 48 kHz, mono, with a -3 dBFS peak ceiling. They were procedurally synthesized for AureaOS; no third-party recordings or samples are included.
 
-The event list and sound direction are documented in `SOUND-EVENTS.md`.
-Original audio assets will be generated locally and added after review.
+Preserve source files unchanged. Runtime copies require separate conversion, event naming, listening review and integration.
+
+## Runtime destination
+
+The intended system installation path is `/usr/share/sounds/Aurea/`. The repository's `Aurea/` directory is editable theme source, not the installed system directory.
+
+See [source library usage](source/approved-library/USAGE.md) before preparing runtime copies.

@@ -1,16 +1,17 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS Roma wallpaper collection
+# AureaOS Roma Wallpaper Collection
 
-This is the canonical location for AureaOS desktop wallpapers: `aurea-human-interfaces/resources/wallpapers/`.
+Canonical source location for the current AureaOS desktop wallpaper collection.
 
-Nine original AI-generated wallpaper concepts created for the AureaOS Roma project.
-The collection includes three abstract color wallpapers and six Rome-inspired scenes.
+Nine original AI-assisted wallpaper concepts are retained: three abstract color compositions and six Rome-inspired scenes.
 
-- Format: JPEG
-- Export resolution: 3840 × 2160 (16:9)
-- Source artwork: generated specifically for this collection; no third-party photographs were incorporated.
-- Attribution: AureaOS project (AI-assisted artwork)
-- Usage: intended for inclusion in AureaOS. Keep this README with the collection.
+- Format: JPEG.
+- Intended aspect ratio: 16:9.
+- Documented export target: 3840 × 2160.
+- Provenance: generated specifically for AureaOS; no third-party photographs were incorporated.
+- Intended use: desktop and lock-screen background candidates.
 
-Note: The artwork was generated as a contact sheet and each panel was cropped and upscaled to 4K. Fine details may be softer than native 4K artwork.
+The artwork was generated as a contact sheet and individual panels were cropped and upscaled. Fine detail may be softer than native 4K artwork. Validate actual dimensions and quality before release packaging.
+
+Future work: distinguish source and preview files, add thumbnail metadata, dark/light suitability, focal-point guidance for overlays, multi-display aspect ratios and per-image provenance. The collection does not imply that every image is a final default selection.

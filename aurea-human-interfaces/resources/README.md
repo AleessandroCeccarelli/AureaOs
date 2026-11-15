@@ -1,13 +1,20 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS Human Interfaces Resources
+# AureaOS Human Interface Resources
 
-This directory holds reusable visual assets for the AureaOS Human Interfaces library and desktop.
+The single canonical home for reusable visual and audio resources that are not application/system icon masters or font sources.
 
-- `illustrations/` — authored SVG illustrations for onboarding, empty states, and system messages. Keep wording out of the artwork so products can localize the accompanying UI text.
-- `textures/` — subtle, reusable surface treatments. `textures.css` provides theme-aware grid, diagonal-line, and glow patterns using the AureaOS color tokens.
-- `wallpapers/` — desktop background collections and their attribution or usage notes. This is the canonical wallpaper location.
+## Collections
 
-Keep each collection's README and licensing or attribution details with its assets. Shared colors and glass treatments belong in `../themes/`, not as baked-in images here. Avoid keeping duplicate copies of an asset in another folder.
+- `wallpapers/` — desktop wallpaper masters and collection metadata.
+- `illustrations/` — onboarding, empty-state and explanatory SVG artwork.
+- `textures/` — lightweight theme-aware CSS surface treatments.
+- `sounds/` — original sound source library and freedesktop-compatible theme layout.
 
-The illustrations in this directory are decorative examples and should be paired with accessible UI text. Import `textures/textures.css` after the shared theme tokens before using its `.aurea-texture-*` classes.
+## Rules
+
+Keep each resource in one canonical collection; do not duplicate it under a parallel `assets/` tree. Preserve editable sources, provenance and license. Keep generated runtime outputs separate from masters. Record dimensions, format and intended use. Avoid baking UI text into illustrations. Visual resources must never be required for readability or accessibility.
+
+## Runtime boundary
+
+This repository stores source material. Packaging, installation, service integration and hardware validation belong to the relevant build/runtime components. A resource is not integrated until that path is implemented and tested.

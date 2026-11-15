@@ -2,34 +2,28 @@
 
 # AureaOS Typography
 
-This directory contains the approved direction and the limited set of temporary font sources used during development.
+Owns font sources, licensing records, typography decisions and the future original Aurea Sans family.
 
-## Font direction
+## Structure
 
-AureaOS is developing an original type family under the name **Aurea Sans**. It is intended to become the primary typeface for the desktop and first-party applications after validation of originality, language coverage, rendering, accessibility, metadata, and licensing.
+- `source/google-fonts/` — retained Noto families and upstream notices.
+- `source/adobe/` — retained Source Code Pro and its upstream notice.
+- `generated/` — reserved for original font build outputs, subsets and validated runtime packages.
 
-Aurea Sans is not yet an approved production system font. Until it is ready, the retained third-party families are development and coverage fallbacks only; they are not the final AureaOS typography identity.
+## Current development support
 
-## Retained development support
+| Family | Role | License |
+|---|---|---|
+| Noto Sans | Temporary general UI fallback | SIL Open Font License 1.1 |
+| Noto Color Emoji | Temporary emoji coverage | SIL Open Font License 1.1 |
+| Noto Sans Symbols 2 | Supplementary Unicode coverage | SIL Open Font License 1.1 |
+| Noto Sans Math | Mathematical glyph coverage | SIL Open Font License 1.1 |
+| Source Code Pro | Temporary monospaced/developer fallback | SIL Open Font License 1.1 |
 
-- **Noto Sans** — broad-coverage temporary sans-serif fallback.
-- **Source Code Pro** — temporary monospaced fallback for terminal and developer interfaces.
-- **Noto Color Emoji** — temporary emoji glyph coverage while the AureaOS emoji direction is designed.
-- **Noto Sans Symbols 2** — supplementary Unicode symbol coverage.
-- **Noto Sans Math** — mathematical glyph coverage.
+Keep upstream notices beside each family. These are not the final AureaOS typography identity.
 
-These sources are deliberately limited to distinct coverage needs. Redundant general-purpose sans-serif families and duplicate font families have been removed.
+## Destination: Aurea Sans
 
-## Product policy
+Aurea Sans is an intended original project type family, not an existing approved production font. Planned work: typography brief, glyph design, spacing/kerning, language coverage, regular and emphasized styles, shaping and hinting validation, readability and display-scale tests, metadata and license review, reproducible font build and runtime packaging.
 
-The shipped desktop and first-party applications should use AureaOS-approved and certified font assets. Third-party font installation and arbitrary external font stacks are outside the supported product customization model.
-
-The Aurea Sans project is intended to use the **GPL-3.0-or-later** license. Its metadata must identify AureaOS and the relevant family and style information. Final font files must be reviewed before approval for system use.
-
-## Design intent
-
-Typography should be readable, clean, modern, calm, and consistent across shell, applications, and settings. Prefer comfort and legibility over ornamental styling.
-
-## Licensing
-
-Third-party font sources retain their upstream licenses. Their notices are recorded in `../../licenses/THIRD_PARTY_NOTICES.md`.
+Do not rename or relicense third-party fonts as Aurea Sans. Do not select the final system font stack until the original family is approved and fallback coverage is tested.

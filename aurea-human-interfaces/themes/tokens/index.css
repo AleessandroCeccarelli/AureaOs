@@ -1,17 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
-/* Import this file once in a web-based AureaOS interface. Light is the default. */
-@import "../light/theme.css";
-@import "../dark/theme.css";
+/* Legacy entry point. Canonical tokens live only in design-system/tokens/index.css. */
+@import url("../../design-system/tokens/index.css");
+@import url("../light/theme.css");
+@import url("../dark/theme.css");
 
-/* Surface fallback when the user asks for reduced transparency. */
 @media (prefers-reduced-transparency: reduce) {
   :root,
   [data-theme] {
-    --aurea-glass-fill: var(--aurea-surface);
-    --aurea-glass-fill-strong: var(--aurea-surface-raised);
+    --aurea-glass-fill: var(--aurea-surface-window);
+    --aurea-glass-fill-strong: var(--aurea-surface-strong);
     --aurea-glass-highlight: transparent;
-    --aurea-glass-border: var(--aurea-border);
-    --aurea-glass-shadow: 0 8px 24px rgba(28, 35, 49, 0.14);
+    --aurea-glass-border: var(--aurea-border-subtle);
   }
 }
