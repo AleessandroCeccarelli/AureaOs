@@ -139,6 +139,7 @@ pub use sampler::{VulkanSampler, VulkanSamplerError};
 pub use shader_module::{VulkanShaderError, VulkanShaderModule};
 pub use shared_image::{VulkanSharedImage, VulkanSharedImageError};
 pub use shm_texture::{VulkanShmTexture, VulkanShmTextureError};
+pub(crate) use surface_pipeline_cache::{VulkanSurfacePipelineCache, VulkanSurfacePipelineCacheError};
 pub use texture_binding::{VulkanTextureBinding, VulkanTextureBindingError};
 pub use texture_layout::{VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError};
 pub use upload_buffer::{VulkanUploadBuffer, VulkanUploadError};
