@@ -29,7 +29,7 @@ Gli shader per la composizione vengono compilati da `build.rs` con `glslangValid
 - I buffer Wayland DMA-BUF non sono ancora importati come superfici; non vanno confusi con il DMA-BUF usato come destinazione di scanout.
 - Le trasformazioni buffer diverse da `Transform::Normal` vengono rifiutate esplicitamente: non vengono presentate texture ruotate o specchiate in modo scorretto.
 - Le texture SHM vengono caricate in modo sincrono e ricreate a ogni frame. Il caching per revisione e la gestione incrementale del damage sono ottimizzazioni successive.
-- La pipeline e le risorse descriptor vengono ricreate per frame con superfici visibili; il percorso è di bring-up, non ancora ottimizzato per uso quotidiano.
+- La pipeline grafica SHM, il descriptor-set layout e il sampler sono ora mantenuti in una cache per dispositivo; viene creata una pipeline distinta solo al primo utilizzo di ciascun formato. Le texture SHM e i relativi descriptor set sono ancora ricreati a ogni frame: il percorso è di bring-up, non ancora ottimizzato per uso quotidiano.
 - Il limite aggregato del frame è 256 MiB di snapshot SHM visibili e 128 superfici; i singoli snapshot hanno inoltre il proprio limite.
 - Il percorso fisico deve ancora essere verificato su hardware reale, inclusi formati/modifier, DMA-BUF export, ownership delle queue, blending, atomic KMS, VBlank, hotplug e teardown.
 - Il successo di una build o dei test unitari non dimostra che il monitor mostri correttamente le finestre.
@@ -40,7 +40,7 @@ Gli shader per la composizione vengono compilati da `build.rs` con `glslangValid
 2. Verificare la composizione SHM con client Wayland reali e controllare ordine delle superfici, alpha, clipping, scala e multi-monitor.
 3. Aggiungere import e sincronizzazione dei buffer DMA-BUF Wayland con controlli rigorosi su formato, modifier, stride, offset e ownership.
 4. Implementare le trasformazioni buffer non standard e la gestione corretta di viewport/damage.
-5. Introdurre cache texture basata su revisione e upload incrementale, senza rilasciare risorse ancora usate dalla GPU.
+5. Introdurre cache texture basata su revisione e upload incrementale, senza rilasciare risorse ancora usate dalla GPU. La cache persistente di pipeline, descriptor layout e sampler è già stata introdotta.
 6. Verificare errori, hot-unplug, sospensione/ripresa e teardown con più output prima di considerare il percorso affidabile.
 
 ## Regole di implementazione
