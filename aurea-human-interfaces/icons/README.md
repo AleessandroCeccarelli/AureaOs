@@ -16,7 +16,7 @@ Brand presentation artwork belongs in `../brand/`; generic third-party symbols b
 
 ## Current state
 
-System sources include AureaOS icon and symbol artwork, Aurea AI Orb, File Manager and Wallet. Folder v5 contains 14 semantic locations in light and dark variants, open/drop states and an SVG sprite. First-party application artwork now includes the approved Quaero identity in two coordinated SVG variants: a complete icon tile and a transparent standalone symbol. Other first-party application icons remain to be designed.
+System sources include AureaOS icon and symbol artwork, Aurea AI Orb, File Manager and Wallet. Folder v5 contains 14 semantic locations in light and dark variants, open/drop states and an SVG sprite. First-party application artwork includes Quaero and Aurea Store, each with two coordinated SVG variants: a complete icon tile and a transparent standalone symbol. Other first-party application icons remain to be designed.
 
 ## Rules and destination
 
