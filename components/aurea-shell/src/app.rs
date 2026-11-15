@@ -9,7 +9,7 @@ use std::panic::{self, AssertUnwindSafe};
 use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
 
-use aurea_desktop_api::{CompositorFactory, ShutdownSignal};
+use aurea_desktop_api::{CompositorFactory, ShutdownSignal, display::DisplayColorController};
 
 use crate::config::ShellConfig;
 use crate::error::ShellError;
@@ -51,7 +51,8 @@ fn run_with_shutdown_handler(
     compositor_factory: impl CompositorFactory,
     register_shutdown_handler: impl FnOnce(Box<dyn FnMut() + Send + 'static>) -> bool,
 ) -> Result<(), ShellError> {
-    let mut runtime = ShellRuntime::new();
+    let display_color = DisplayColorController::new();
+    let mut runtime = ShellRuntime::with_display_color(display_color.clone());
     let (event_bus, receiver) = EventBus::new();
 
     let shutdown = ShutdownSignal::new();
@@ -63,7 +64,7 @@ fn run_with_shutdown_handler(
 
     let compositor_thread = thread::spawn(move || {
         // Create the compositor inside its owning thread.
-        let mut compositor = compositor_factory.create()?;
+        let mut compositor = compositor_factory.create(display_color)?;
 
         // Report readiness only after successful initialization.
         ready_sender
