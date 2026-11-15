@@ -5,18 +5,25 @@
 
 //! Vulkan command submission and fence synchronization.
 
+use std::sync::Mutex;
+
 use smithay::reexports::ash::{self, vk};
 
 /// Submits command buffers to a Vulkan queue and waits for completion.
 pub struct VulkanQueueSubmitter<'device> {
     device: &'device ash::Device,
     queue: vk::Queue,
+    queue_submit_lock: &'device Mutex<()>,
 }
 
 impl<'device> VulkanQueueSubmitter<'device> {
     /// Creates a submitter for the specified device queue.
-    pub(super) fn new(device: &'device ash::Device, queue: vk::Queue) -> Self {
-        Self { device, queue }
+    pub(super) fn new(
+        device: &'device ash::Device,
+        queue: vk::Queue,
+        queue_submit_lock: &'device Mutex<()>,
+    ) -> Self {
+        Self { device, queue, queue_submit_lock }
     }
 
     /// Submits a recorded command buffer and waits for its completion.
@@ -32,7 +39,13 @@ impl<'device> VulkanQueueSubmitter<'device> {
 
         let fence = unsafe { self.device.create_fence(&fence_info, None) }?;
 
-        let submit_result = unsafe { self.device.queue_submit(self.queue, &submit_info, fence) };
+        let submit_result = {
+            let _queue_guard = self.queue_submit_lock.lock().map_err(|_| {
+                unsafe { self.device.destroy_fence(fence, None) };
+                vk::Result::ERROR_UNKNOWN
+            })?;
+            unsafe { self.device.queue_submit(self.queue, &submit_info, fence) }
+        };
 
         if let Err(error) = submit_result {
             unsafe {

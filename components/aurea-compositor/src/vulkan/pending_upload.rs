@@ -88,15 +88,7 @@ impl<T> VulkanPendingUpload<T> {
 
         let fence_info = vk::FenceCreateInfo::default();
         self.fence = unsafe { self.device.handle().create_fence(&fence_info, None) }?;
-        let command_buffers = [self.command_buffer];
-        let submit_info = [vk::SubmitInfo::default().command_buffers(&command_buffers)];
-        if let Err(error) = unsafe {
-            self.device.handle().queue_submit(
-                self.device.graphics_queue(),
-                &submit_info,
-                self.fence,
-            )
-        } {
+        if let Err(error) = self.device.submit_async(self.command_buffer, self.fence) {
             unsafe { self.device.handle().destroy_fence(self.fence, None) };
             self.fence = vk::Fence::null();
             return Err(error);

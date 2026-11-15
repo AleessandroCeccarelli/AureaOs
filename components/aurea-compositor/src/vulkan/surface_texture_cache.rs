@@ -22,6 +22,8 @@ use super::{
 
 const MAX_CACHED_SURFACE_TEXTURES: usize = 128;
 const MAX_CACHED_SURFACE_TEXTURE_BYTES: usize = 256 * 1024 * 1024;
+const MAX_PENDING_UPLOAD_BATCHES: usize = 2;
+const MAX_PENDING_UPLOAD_BYTES: usize = 128 * 1024 * 1024;
 
 /// Errors returned while synchronizing the SHM texture cache.
 #[derive(Debug)]
@@ -54,6 +56,7 @@ struct CachedSurfaceTexture {
 struct PendingSurfaceTextureBatch {
     upload: VulkanPendingUpload<Vec<Arc<VulkanShmTexture>>>,
     surface_ids: Vec<ObjectId>,
+    byte_len: usize,
 }
 
 /// Retains uploaded textures while their Wayland surfaces remain active.
@@ -62,6 +65,7 @@ pub(crate) struct VulkanSurfaceTextureCache {
     entries: HashMap<ObjectId, CachedSurfaceTexture>,
     pending_uploads: Vec<PendingSurfaceTextureBatch>,
     cached_bytes: usize,
+    pending_bytes: usize,
     frame: u64,
 }
 
@@ -72,6 +76,7 @@ impl VulkanSurfaceTextureCache {
             entries: HashMap::new(),
             pending_uploads: Vec::new(),
             cached_bytes: 0,
+            pending_bytes: 0,
             frame: 0,
         }
     }
@@ -82,7 +87,7 @@ impl VulkanSurfaceTextureCache {
         active_surface_ids: &[ObjectId],
         visible_surfaces: &[(ObjectId, u64, Arc<ShmBufferSnapshot>)],
     ) -> Result<(), VulkanSurfaceTextureCacheError> {
-        self.complete_pending_uploads()?;
+        self.reap_completed_uploads()?;
         self.frame = self.frame.wrapping_add(1);
         let active: HashSet<_> = active_surface_ids.iter().cloned().collect();
         self.entries.retain(|id, _| active.contains(id));
@@ -154,6 +159,8 @@ impl VulkanSurfaceTextureCache {
             return Ok(());
         }
 
+        self.apply_upload_backpressure(missing_bytes)?;
+
         let snapshots = missing
             .iter()
             .map(|(_, _, snapshot, _)| snapshot.as_ref().clone())
@@ -182,18 +189,32 @@ impl VulkanSurfaceTextureCache {
             );
         }
 
-        self.pending_uploads
-            .push(PendingSurfaceTextureBatch { upload, surface_ids });
+        self.pending_bytes = self.pending_bytes.saturating_add(missing_bytes);
+        self.pending_uploads.push(PendingSurfaceTextureBatch {
+            upload,
+            surface_ids,
+            byte_len: missing_bytes,
+        });
 
         Ok(())
     }
 
-    /// Completes pending batches only when the renderer is ready to sample them.
-    pub(crate) fn complete_pending_uploads(
-        &mut self,
-    ) -> Result<(), VulkanSurfaceTextureCacheError> {
-        let pending = std::mem::take(&mut self.pending_uploads);
-        for batch in pending {
+    /// Polls completed uploads without blocking the compositor thread.
+    fn reap_completed_uploads(&mut self) -> Result<(), VulkanSurfaceTextureCacheError> {
+        let mut index = 0;
+        while index < self.pending_uploads.len() {
+            let complete = self.pending_uploads[index]
+                .upload
+                .is_complete()
+                .map_err(|error| VulkanSurfaceTextureCacheError::Texture(
+                    VulkanShmTextureError::Command(error),
+                ))?;
+            if !complete {
+                index += 1;
+                continue;
+            }
+            let batch = self.pending_uploads.remove(index);
+            self.pending_bytes = self.pending_bytes.saturating_sub(batch.byte_len);
             if let Err(error) = batch.upload.wait() {
                 for surface_id in batch.surface_ids {
                     self.remove_surface(&surface_id);
@@ -202,6 +223,49 @@ impl VulkanSurfaceTextureCache {
                     VulkanShmTextureError::Command(error),
                 ));
             }
+        }
+        Ok(())
+    }
+
+    /// Applies bounded backpressure before another staging allocation is submitted.
+    fn apply_upload_backpressure(
+        &mut self,
+        incoming_bytes: usize,
+    ) -> Result<(), VulkanSurfaceTextureCacheError> {
+        while self.pending_uploads.len() >= MAX_PENDING_UPLOAD_BATCHES
+            || self.pending_bytes
+                .checked_add(incoming_bytes)
+                .map_or(true, |total| total > MAX_PENDING_UPLOAD_BYTES)
+        {
+            if self.pending_uploads.is_empty() {
+                return Err(VulkanSurfaceTextureCacheError::CacheBudgetExceeded);
+            }
+            self.complete_oldest_upload()?;
+        }
+        Ok(())
+    }
+
+    /// Waits for the oldest batch only when the in-flight budget is exhausted.
+    fn complete_oldest_upload(&mut self) -> Result<(), VulkanSurfaceTextureCacheError> {
+        let batch = self.pending_uploads.remove(0);
+        self.pending_bytes = self.pending_bytes.saturating_sub(batch.byte_len);
+        if let Err(error) = batch.upload.wait() {
+            for surface_id in batch.surface_ids {
+                self.remove_surface(&surface_id);
+            }
+            return Err(VulkanSurfaceTextureCacheError::Texture(
+                VulkanShmTextureError::Command(error),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Completes every upload before the renderer samples cached textures.
+    pub(crate) fn complete_pending_uploads(
+        &mut self,
+    ) -> Result<(), VulkanSurfaceTextureCacheError> {
+        while !self.pending_uploads.is_empty() {
+            self.complete_oldest_upload()?;
         }
         Ok(())
     }

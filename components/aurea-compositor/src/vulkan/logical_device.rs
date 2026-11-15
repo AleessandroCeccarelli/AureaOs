@@ -5,7 +5,7 @@
 
 //! Vulkan logical-device and command-pool resource management.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use smithay::{
     backend::vulkan::PhysicalDevice,
@@ -24,6 +24,7 @@ pub struct VulkanLogicalDevice {
     device: ash::Device,
     graphics_queue: vk::Queue,
     graphics_queue_family: u32,
+    queue_submit_lock: Mutex<()>,
     command_pool: vk::CommandPool,
     extension_plan: VulkanDeviceExtensionPlan,
     rendering_features: VulkanRenderingFeaturePlan,
@@ -116,6 +117,7 @@ impl VulkanLogicalDevice {
             device,
             graphics_queue,
             graphics_queue_family: queue_family_index,
+            queue_submit_lock: Mutex::new(()),
             command_pool,
             extension_plan,
             rendering_features,
@@ -200,12 +202,25 @@ impl VulkanLogicalDevice {
         }
     }
 
+    /// Submits an asynchronous command buffer under Vulkan queue external synchronization.
+    pub(super) fn submit_async(
+        &self,
+        command_buffer: vk::CommandBuffer,
+        fence: vk::Fence,
+    ) -> Result<(), vk::Result> {
+        let _queue_guard = self.queue_submit_lock.lock().map_err(|_| vk::Result::ERROR_UNKNOWN)?;
+        let command_buffers = [command_buffer];
+        let submit_info = [vk::SubmitInfo::default().command_buffers(&command_buffers)];
+        unsafe { self.device.queue_submit(self.graphics_queue, &submit_info, fence) }
+    }
+
     /// Submits a recorded command buffer and waits for its completion.
     pub(super) fn submit_and_wait(
         &self,
         command_buffer: vk::CommandBuffer,
     ) -> Result<(), vk::Result> {
-        VulkanQueueSubmitter::new(&self.device, self.graphics_queue).submit_and_wait(command_buffer)
+        VulkanQueueSubmitter::new(&self.device, self.graphics_queue, &self.queue_submit_lock)
+            .submit_and_wait(command_buffer)
     }
 }
 
