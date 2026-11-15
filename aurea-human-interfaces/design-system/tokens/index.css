@@ -103,3 +103,17 @@
   --aurea-shadow-soft: 0 12px 28px rgba(0, 0, 0, 0.26);
   --aurea-shadow-strong: 0 24px 52px rgba(0, 0, 0, 0.38);
 }
+
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  :root[data-theme],
+  [data-theme] {
+    --aurea-surface-panel: var(--aurea-surface-window);
+    --aurea-dock-bg: var(--aurea-surface-window);
+    --aurea-dock-bg-strong: var(--aurea-surface-elevated);
+    --aurea-panel-bg: var(--aurea-surface-window);
+    --aurea-notification-bg: var(--aurea-surface-window);
+    --aurea-glass-fill: var(--aurea-surface-window);
+    --aurea-glass-border: var(--aurea-border-subtle);
+  }
+}
