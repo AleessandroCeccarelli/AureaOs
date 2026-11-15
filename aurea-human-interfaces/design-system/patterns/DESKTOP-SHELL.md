@@ -6,20 +6,28 @@
 **Full specification:** [Desktop Experience](../../DESKTOP-EXPERIENCE-SPEC.md)
 
 ## Purpose
-The shell provides persistent access to applications, workspaces and system status without competing with active work.
+
+The shell provides familiar access to applications, open windows, workspaces and system status. It should feel immediately understandable to a Windows desktop user.
 
 ## Composition
-- Full-width intelligent dock at the bottom.
-- Aurea A launcher entry and workspace navigation on the left.
-- Running and pinned applications in the center.
-- Clock, connectivity, audio, power and system-panel entries on the right.
-- Floating launcher, notifications and quick settings as system-owned surfaces.
+
+- Floating bottom dock with familiar taskbar behavior.
+- Aurea A launcher entry at the left.
+- Pinned and running applications with clear active-window indication.
+- Clock, connectivity, audio, power and notification access at the right.
+- Floating launcher, quick settings and notification surfaces.
+- Four workspaces available as an additional organization tool.
 
 ## Interaction
-The launcher opens from the dock's A mark or Super key. The dock adapts to available workspace and user visibility preference. Workspaces remain discoverable. System panels display real service state.
 
-## Consistency
-The dock, launcher, panels and windows use shared tokens and motion rules. No application may draw a competing system dock or launcher.
+Super opens the launcher. Alt+Tab switches open windows. The dock distinguishes pinned applications, running applications and minimized windows. The launcher provides search, pinned apps and a discoverable full application list.
+
+The dock may float, remain visible or auto-hide. These presentation modes must not change the familiar meaning of pinned and running applications.
+
+## Visual consistency
+
+Use shared tokens, window controls, menu rules and motion behavior. The dock may take visual cues from KDE Plasma; shell consistency and notification refinement may take cues from macOS. These references must not make ordinary desktop tasks unfamiliar.
 
 ## Status
-This pattern documents the intended experience; it does not assert that every shell surface or service integration is implemented.
+
+This pattern documents intended behavior. It does not assert that shell surfaces, shortcuts or service integrations are already implemented.
