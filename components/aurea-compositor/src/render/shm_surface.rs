@@ -158,11 +158,16 @@ fn update_surface_state(states: &SurfaceData) -> Result<(), ShmBufferError> {
         None => Ok(()),
     };
 
+    // Keep damage pending when snapshot validation fails so a later commit
+    // can retry the same buffer instead of leaving the surface permanently empty.
+    result?;
+
     // Smithay aggregates damage across commits until the compositor consumes
-    // it. Clear only after this callback has attempted to refresh our owned
-    // snapshot, otherwise the same damage would be copied on every later commit.
+    // it. Clear only after a successful refresh (including an intentional
+    // unsupported-buffer result), otherwise the same damage would be copied
+    // on every later commit.
     current.damage.clear();
-    result
+    Ok(())
 }
 
 fn copy_surface_buffer(
