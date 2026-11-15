@@ -1,16 +1,6 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
-/* Legacy entry point. Canonical tokens live only in design-system/tokens/index.css. */
+/* Legacy entry point. Canonical tokens and accessibility overrides live in design-system/tokens/index.css. */
 @import url("../../design-system/tokens/index.css");
 @import url("../light/theme.css");
 @import url("../dark/theme.css");
-
-@media (prefers-reduced-transparency: reduce) {
-  :root,
-  [data-theme] {
-    --aurea-glass-fill: var(--aurea-surface-window);
-    --aurea-glass-fill-strong: var(--aurea-surface-strong);
-    --aurea-glass-highlight: transparent;
-    --aurea-glass-border: var(--aurea-border-subtle);
-  }
-}
