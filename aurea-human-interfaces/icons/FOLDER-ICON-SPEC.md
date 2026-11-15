@@ -1,68 +1,43 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-
 # Fides folder icon specification
 
 ## Purpose
-
-Define the requirements for the folder and location artwork used by Fides and the AureaOS desktop. This document is an acceptance contract, not a claim that artwork or runtime integration is complete.
+Define the folder and location artwork used by Fides and the AureaOS desktop.
 
 ## Visual direction
+- One coherent family with consistent folder silhouette, perspective, lighting, edge treatment, corner geometry and visual weight.
+- The approved AureaOS family uses the standard gold folder as its geometry reference; category icons retain the same proportions and differ by palette and emblem.
+- Category marks are optically centered on the folder face and use a layered dimensional treatment.
+- Separate light and dark theme palettes are provided.
+- Keep the Fides application icon separate from folder/location artwork.
 
-- Prefer the familiar, immediately readable folder language used by modern Windows desktops.
-- Use one coherent icon family: consistent folder silhouette, perspective, lighting, edge treatment, corner geometry and visual weight.
-- Category marks must be recognizable without turning each icon into a different illustration style.
-- AureaOS may adapt the palette and distinctive details to its own identity. Do not copy a third-party icon drawing or brand asset.
-- Keep the application icon for Fides separate from folder/location artwork.
+## Required locations
+| Identifier | Meaning |
+|---|---|
+| `folder` | Generic folder fallback |
+| `home` | User home directory |
+| `user` | User profile/home identity |
+| `desktop` | Desktop directory |
+| `documents` | Personal documents |
+| `downloads` | Downloaded files |
+| `pictures` | Images and photographs |
+| `music` | Audio and music files |
+| `videos` | Video files |
+| `network` | Network locations |
+| `shared` | Shared folders |
+| `system` | AureaOS system location |
+| `favorites` | Favorites |
+| `trash` | Trash |
 
-## Required initial locations
+## Technical and runtime requirements
+- SVG source uses a square 512 × 512 viewBox and transparent background.
+- Artwork should be validated at 16, 24, 32, 48, 64, 96, 128 and 256 logical pixels.
+- Fides selects the matching light/dark symbol from the active system theme.
+- Open/drop animation is driven by actual drag-and-drop events in Fides; honor reduced-motion preferences.
+- The symbol sprite is stored in `source/folders/v5/folder-icons.svg`.
 
-| Semantic identifier | User-facing label (English) | Meaning |
-|---|---|---|
-| `folder` | Folder | Generic folder fallback |
-| `desktop` | Desktop | User desktop directory |
-| `home` | Home | User's home directory |
-| `documents` | Documents | Personal documents |
-| `downloads` | Downloads | Downloaded files |
-| `pictures` | Pictures | Images and photographs |
-| `music` | Music | Audio and music files |
-| `videos` | Videos | Video files |
-| `network` | Network | Network locations and shared resources |
-| `system` | AureaOS | Clearly identified system-owned location, if exposed in Fides |
-
-Optional later categories (Archives, Favorites, Trash, removable drives and cloud locations) require separate product decisions. Do not imply a network share is connected or available merely by displaying its icon.
-
-## Source and export requirements
-
-- Prefer editable SVG source with a square `viewBox="0 0 256 256"` and transparent background.
-- Artwork must remain crisp when rendered at 16, 24, 32, 48, 64, 96, 128 and 256 logical pixels.
-- Keep the primary silhouette and category mark optically centered, with consistent safe margins.
-- Avoid embedded raster images, external resources, fonts, scripts, filters with excessive rendering cost, and hard-coded background rectangles.
-- If a source family provides raster-only artwork, retain the original source and document the approved export sizes; do not pretend it is vector artwork.
-- Small-size variants may be introduced only when testing demonstrates that simplification is necessary.
-
-## Licensing and provenance gate
-
-Before an asset is added:
-1. Record the exact source project and asset/family name.
-2. Record the license applying to that exact asset and its version.
-3. Confirm modification, commercial use, redistribution and inclusion in a GPL-3.0-or-later operating-system repository are permitted.
-4. Preserve required copyright, attribution and license notices.
-5. Do not commit assets whose terms prohibit redistribution of the artwork, including modified artwork.
-6. Keep third-party assets separate from original AureaOS artwork and do not relicense them as GPL if their license does not permit it.
-
-A free download or an editable SVG does not by itself establish redistribution rights.
-
-## Review checklist
-
-- [ ] A complete, visually coherent family has been selected.
-- [ ] Provenance and redistribution rights are documented for every asset.
-- [ ] Icons are visually consistent at 256 px.
-- [ ] Icons remain distinguishable at 48 px and 32 px.
-- [ ] 24 px and 16 px rendering has been reviewed; simplified variants are supplied if needed.
-- [ ] Light and dark backgrounds have been checked.
-- [ ] Fides application icon remains distinct from folder icons.
-- [ ] Approved assets are mapped to semantic identifiers before runtime integration.
+## Licensing and provenance
+Original AureaOS artwork. Copyright (c) 2026 Alessandro Ceccarelli and AureaOS contributors. Licensed under GPL-3.0-or-later; see `source/folders/v5/LICENSE.md`. No Folder11 artwork or third-party brand logos are included.
 
 ## Status
-
-Artwork selection is pending. No folder artwork is approved by this specification, and no runtime integration is implied.
+Artwork family approved for repository inclusion. Runtime integration and visual testing in Fides remain separate tasks.
