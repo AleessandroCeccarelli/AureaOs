@@ -28,3 +28,11 @@ The symbol geometry, proportions and colors must remain consistent between the t
 - Both masters use a 1024 × 1024 viewBox and are self-contained SVGs without external image dependencies.
 - The bag carries a restrained Aurea “A” mark; both variants share the same symbol geometry and palette.
 - SPDX: GPL-3.0-or-later.
+
+## Fides
+
+- `fides-icon.svg` — complete white rounded-square tile with a glossy dimensional blue/cyan folder and layered document sheets.
+- `fides-symbol.svg` — matching folder-and-documents artwork on a transparent canvas.
+- Both masters use a 1024 × 1024 viewBox and are self-contained SVGs without external image dependencies.
+- The folder silhouette, document layers, lighting direction and palette are shared between the two variants.
+- SPDX: GPL-3.0-or-later.
