@@ -209,7 +209,11 @@ impl VulkanFrame<'_, '_> {
         }
 
         let sync_fd = scheduler.slots[self.slot_index]
-            .submit_with_sync_fd(\n                scheduler.device,\n                self.command_buffer,\n                std::mem::take(&mut self.retained_resources),\n            )
+            .submit_with_sync_fd(
+                scheduler.device,
+                self.command_buffer,
+                std::mem::take(&mut self.retained_resources),
+            )
             .map_err(VulkanFrameSchedulerError::Vulkan)?;
 
         scheduler.next_slot =
