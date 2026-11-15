@@ -5,11 +5,11 @@
 
 //! Vulkan sampler ownership for compositor textures.
 
-use std::{error::Error, fmt};
+use std::{error::Error, fmt, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
-use super::VulkanLogicalDevice;
+use super::{VulkanDeviceOwner, VulkanLogicalDevice};
 
 /// Errors returned while creating a Vulkan sampler.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -27,14 +27,25 @@ impl fmt::Display for VulkanSamplerError {
 
 impl Error for VulkanSamplerError {}
 
-/// Owns a linear, clamp-to-edge sampler for compositor textures.
+/// Owns a linear, clamp-to-edge sampler and its device lifetime.
 pub struct VulkanSampler<'device> {
-    device: &'device VulkanLogicalDevice,
+    device: VulkanDeviceOwner<'device>,
     handle: vk::Sampler,
 }
 
 impl<'device> VulkanSampler<'device> {
     pub fn linear_clamp(device: &'device VulkanLogicalDevice) -> Result<Self, VulkanSamplerError> {
+        Self::create(VulkanDeviceOwner::Borrowed(device))
+    }
+
+    /// Creates a sampler that independently retains its logical device.
+    pub fn linear_clamp_shared(
+        device: Arc<VulkanLogicalDevice>,
+    ) -> Result<VulkanSampler<'static>, VulkanSamplerError> {
+        Self::create(VulkanDeviceOwner::Shared(device))
+    }
+
+    fn create(device: VulkanDeviceOwner<'device>) -> Result<Self, VulkanSamplerError> {
         let info = vk::SamplerCreateInfo::default()
             .mag_filter(vk::Filter::LINEAR)
             .min_filter(vk::Filter::LINEAR)
@@ -50,7 +61,7 @@ impl<'device> VulkanSampler<'device> {
             .border_color(vk::BorderColor::FLOAT_TRANSPARENT_BLACK)
             .unnormalized_coordinates(false);
 
-        let handle = unsafe { device.handle().create_sampler(&info, None) }
+        let handle = unsafe { device.device().handle().create_sampler(&info, None) }
             .map_err(VulkanSamplerError::Creation)?;
 
         Ok(Self { device, handle })
@@ -61,14 +72,14 @@ impl<'device> VulkanSampler<'device> {
     }
 
     pub(super) fn device_handle(&self) -> vk::Device {
-        self.device.handle().handle()
+        self.device.device().handle().handle()
     }
 }
 
 impl Drop for VulkanSampler<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.handle().destroy_sampler(self.handle, None);
+            self.device.device().handle().destroy_sampler(self.handle, None);
         }
     }
 }
