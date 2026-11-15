@@ -9,7 +9,9 @@ use std::{error::Error, fmt, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
-use super::{VulkanImageView, VulkanLogicalDevice, VulkanSampler, VulkanTextureDescriptorSetLayout};
+use super::{
+    VulkanImageView, VulkanLogicalDevice, VulkanSampler, VulkanTextureDescriptorSetLayout,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VulkanTextureBindingError {
@@ -23,11 +25,19 @@ pub enum VulkanTextureBindingError {
 impl fmt::Display for VulkanTextureBindingError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::DeviceMismatch => formatter.write_str("Texture binding resources use different Vulkan devices"),
+            Self::DeviceMismatch => {
+                formatter.write_str("Texture binding resources use different Vulkan devices")
+            }
             Self::MissingSampledUsage => formatter.write_str("Texture image lacks sampled usage"),
-            Self::InvalidPoolCapacity => formatter.write_str("Texture descriptor pool capacity must be greater than zero"),
-            Self::PoolCreation(error) => write!(formatter, "Texture descriptor pool creation failed: {error:?}"),
-            Self::SetAllocation(error) => write!(formatter, "Texture descriptor allocation failed: {error:?}"),
+            Self::InvalidPoolCapacity => {
+                formatter.write_str("Texture descriptor pool capacity must be greater than zero")
+            }
+            Self::PoolCreation(error) => {
+                write!(formatter, "Texture descriptor pool creation failed: {error:?}")
+            }
+            Self::SetAllocation(error) => {
+                write!(formatter, "Texture descriptor allocation failed: {error:?}")
+            }
         }
     }
 }
@@ -41,7 +51,10 @@ pub struct VulkanTextureBindingPool {
 }
 
 impl VulkanTextureBindingPool {
-    pub fn new(device: Arc<VulkanLogicalDevice>, max_sets: u32) -> Result<Self, VulkanTextureBindingError> {
+    pub fn new(
+        device: Arc<VulkanLogicalDevice>,
+        max_sets: u32,
+    ) -> Result<Self, VulkanTextureBindingError> {
         if max_sets == 0 {
             return Err(VulkanTextureBindingError::InvalidPoolCapacity);
         }
@@ -72,7 +85,7 @@ impl VulkanTextureBindingPool {
             .set_layouts(&layouts);
         let mut sets = unsafe { self.device.handle().allocate_descriptor_sets(&info) }
             .map_err(VulkanTextureBindingError::SetAllocation)?;
-        Ok(sets.remove(0))
+        Ok(sets.pop().expect("one descriptor set was requested"))
     }
 
     fn device_handle(&self) -> vk::Device {
@@ -124,7 +137,7 @@ impl<'resources, 'image, 'image_device, 'resource_device>
             .descriptor_pool(pool)
             .set_layouts(&layouts);
         let set = match unsafe { device.handle().allocate_descriptor_sets(&info) } {
-            Ok(mut sets) => sets.remove(0),
+            Ok(mut sets) => sets.pop().expect("one descriptor set was requested"),
             Err(error) => {
                 unsafe { device.handle().destroy_descriptor_pool(pool, None) };
                 return Err(VulkanTextureBindingError::SetAllocation(error));
@@ -212,16 +225,22 @@ impl<'resources, 'image, 'image_device, 'resource_device>
         self.set
     }
 
+    /// Returns whether this descriptor set samples the exact supplied image view.
+    ///
+    /// Matching only the Vulkan device is insufficient: a descriptor set may
+    /// legally reference another image on the same device.
     pub(super) fn references_view(&self, view: &VulkanImageView<'_, '_>) -> bool {
         self._view.handle() == view.handle()
             && self._view.device().handle().handle() == view.device().handle().handle()
     }
 
+    /// Returns whether this descriptor set was allocated with the exact layout.
     pub(super) fn uses_layout(&self, layout: &VulkanTextureDescriptorSetLayout<'_>) -> bool {
         self._layout.handle() == layout.handle()
             && self._layout.device_handle() == layout.device_handle()
     }
 
+    /// Binds this sampled texture at the requested graphics descriptor-set index.
     pub fn bind(
         &self,
         command_buffer: vk::CommandBuffer,
