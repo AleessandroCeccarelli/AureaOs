@@ -3,283 +3,225 @@
 # AureaOS Desktop Experience Specification
 
 **Status:** Design specification  
-**Scope:** Desktop shell composition, launcher, dock, workspaces, window organization, notifications and quick settings  
+**Scope:** Desktop shell, launcher, dock, workspaces, window organization, notifications and quick settings  
 **Visual source of truth:** `design-system/tokens/index.css`  
-**Related application rules:** `APP-DESIGN-GUIDELINES.md`
+**Interaction conventions:** `design-system/KEYBOARD-AND-COMMAND-CONVENTIONS.md`  
+**Application rules:** `APP-DESIGN-GUIDELINES.md`
 
-## 1. Purpose and design identity
+## 1. Product direction
 
-The AureaOS desktop is the primary environment through which users access applications, organize work and control the system.
+AureaOS must feel immediately familiar to people who use a modern Windows desktop. Familiarity is a usability requirement, not a lack of originality.
 
-Its design combines useful ideas from modern desktop environments without reproducing another system's interface. The intended result is recognizably AureaOS: calm blue-gray surfaces, a luminous blue visual identity, restrained glass materials, clear typography, predictable controls and purposeful motion.
+The desktop adopts:
+- **Windows as the primary reference:** taskbar/launcher expectations, file-manager mental model, standard menus, window controls, keyboard shortcuts, context menus and everyday workflows.
+- **KDE Plasma as a secondary reference:** a floating bottom dock, adaptable panel behavior and practical workspace organization.
+- **macOS as a refinement reference:** consistency between applications, careful visual details, coherent surfaces, restrained motion and polished notification behavior.
 
-The desktop must feel like one coherent product. Dock, launcher, windows, notifications, quick settings and applications must share the same design tokens and interaction rules.
+AureaOS must not reproduce another product's branding, artwork or exact interface. It must preserve established user expectations while integrating them into one coherent visual system.
 
-This document defines the intended experience. It does not claim that every described behavior is already implemented.
+**First-login test:** a Windows user should be able to open the application launcher, find files, use the right-click menu, minimize/maximize/close a window, switch applications and use common shortcuts without having to learn a new desktop model.
+
+This specification describes the intended experience. It does not claim every behavior is implemented.
 
 ## 2. Desktop composition
 
-The default desktop is an uncluttered workspace with:
+The default desktop contains:
+- An approved AureaOS wallpaper.
+- A floating bottom dock with familiar taskbar behavior.
+- A launcher opened from the Aurea A mark or Super key.
+- Four virtual workspaces, presented without obscuring ordinary task switching.
+- Application windows with predictable title bars and standard controls.
+- System notifications and quick settings.
+- Familiar access to files, applications, settings and power/session actions.
 
-- A wallpaper from the approved AureaOS visual collection.
-- A full-width intelligent dock along the bottom.
-- Four virtual workspaces.
-- Floating system surfaces for launcher, notifications and quick settings.
-- Application windows managed consistently by the desktop shell and compositor.
+The desktop must remain uncluttered. Do not introduce widgets or permanent panels merely for decoration.
 
-The default desktop should not be crowded with decorative widgets or unnecessary permanent panels. Information should appear when useful and remain easy to reach.
+## 3. Dock and taskbar behavior
 
-## 3. Dock
+The dock is AureaOS's refined interpretation of a familiar desktop taskbar.
 
 ### 3.1 Structure
 
-The dock spans the full usable width of the screen and is divided into three functional zones:
+The dock spans the usable screen width and has three stable zones:
 
-**Left — system entry and workspaces**
-- Aurea **A** mark, which opens the launcher.
-- Workspace navigation and current-workspace indication.
+**Left — system entry**
+- Aurea A launcher button.
+- Workspace entry or indicator, without displacing the launcher.
 
 **Center — applications**
 - Pinned applications.
 - Running applications.
-- Clear active and attention-needed indicators.
-- Window previews when supported.
+- Clear active-window indicators.
+- Window previews where supported.
+- Predictable pin/unpin and application grouping behavior.
 
 **Right — system status**
 - Clock and date.
-- Network status.
-- Audio status.
+- Network and audio.
 - Battery and power status when available.
 - Notification entry point.
 - Quick Settings entry point.
 
-The order and grouping of these zones must remain stable. Items may adapt to available space, but must not become unpredictably rearranged.
+Users must understand the difference between pinned applications, running applications and minimized windows at a glance.
 
-### 3.2 Appearance
+### 3.2 Appearance and placement
 
-The dock uses the shared AureaOS glass surface tokens, restrained blur, a subtle border and controlled elevation. It must remain legible over both light and dark wallpapers.
+The dock floats slightly above the bottom edge by default, with a restrained translucent surface, subtle border and soft shadow. It must remain legible over varied wallpapers in both themes.
 
-Icons use a consistent visual size and alignment. Running, pinned and attention states must be distinguishable without relying only on color.
+Its visual behavior may take inspiration from KDE Plasma, but its taskbar role and application interactions remain familiar to Windows users.
 
-### 3.3 Adaptive behavior
+### 3.3 Visibility
 
-The dock has an intelligent presentation:
+Provide predictable modes:
+- Intelligent: floating while useful, adapting when windows occupy the available space.
+- Always visible.
+- Auto-hide.
 
-- When there is sufficient desktop space, it floats slightly above the bottom edge.
-- When a maximized or tiled window needs the available space, the dock can attach to the bottom edge and reduce its visual footprint.
-- Users may choose an always-visible or auto-hide behavior where supported.
-- In auto-hide mode, the dock reappears through pointer-edge or keyboard navigation.
-- It must not obscure important window controls or content.
-- Its geometry and animation must remain stable and predictable during window changes.
-
-Exact dimensions, thresholds and animation timing must be validated in the interactive prototype and then in native implementation.
+Do not change dock position, grouping or interaction unexpectedly. Dock animations must be brief and must not delay access.
 
 ## 4. Application launcher
 
 ### 4.1 Entry and dismissal
 
-The launcher opens when the user:
+- Super / Windows key opens the launcher.
+- Selecting the Aurea A mark opens it.
+- Pressing Super again or Escape closes it.
+- Clicking outside dismisses it when safe.
+- Search receives focus immediately.
+- Selecting an application launches it and closes the launcher.
 
-- Clicks the Aurea **A** mark on the dock.
-- Presses the **Super / Windows** key.
-
-The opening animation must be short, subtle and consistent with the system motion language. It should communicate where the launcher appears without delaying interaction.
-
-Behavior:
-- Pressing Super while the launcher is closed opens it.
-- Pressing Super again toggles it closed.
-- Escape closes it.
-- Selecting an application launches it and closes the launcher unless a future interaction explicitly requires it to remain open.
-- Clicking outside dismisses it where this does not interfere with another active operation.
-- The launcher receives keyboard focus and makes search immediately available.
-
-The launcher respects the system reduced-motion preference.
+The launcher should be recognizable as an application menu, not an unfamiliar full-screen control center.
 
 ### 4.2 Information architecture
 
-The launcher should contain:
+Use a familiar hierarchy:
+1. Search at the top.
+2. Pinned/favorite applications.
+3. Recommended or recent items, if enabled.
+4. Full application list, with clear categories or alphabetical browsing.
+5. User/session and power actions in a predictable, clearly separated area.
 
-1. Search field at the top.
-2. Pinned or favorite applications.
-3. Recently used applications or relevant recent items, where enabled.
-4. Application catalog organized by categories.
-5. A clearly accessible route to system settings and power/session actions.
-
-The launcher must not become a crowded dashboard. Search and pinned applications are the primary access paths; secondary content should remain visually subordinate.
+Search and pinned applications are primary. Recommendations must not dominate or obscure the installed application list. Users should be able to find an application without knowing its category.
 
 ### 4.3 Search
 
-The launcher integrates with Quaero rather than implementing a separate competing search engine.
+The launcher integrates with Quaero; it must not create a competing search engine.
 
-The search experience is intended to cover:
-- Installed applications.
-- Files and folders.
-- System settings.
-- Supported system actions.
-- Other indexed sources only when explicitly supported and permission-appropriate.
+Search may include installed applications, files and folders, settings and supported system actions. Results must be labeled, keyboard navigable, permission-aware and clear about loading, empty, unavailable or restricted states.
 
-Results must be grouped or labeled clearly, ordered by relevance and navigable from the keyboard. The interface must communicate when results are loading, empty, unavailable or restricted.
+## 5. Window behavior
 
-Search must respect file permissions and service boundaries. The launcher must not expose content that the current user is not authorized to access.
+### 5.1 Standard controls
 
-## 5. Window organization
+Every first-party window provides recognizable minimize, maximize/restore and close controls in a consistent location and order. Their symbols, hit targets, hover states and behavior must remain consistent.
 
-The desktop must make window organization discoverable without overwhelming the user.
+- Minimize sends the window to the dock/taskbar's running-app area.
+- Maximize fills the available work area without covering reserved system surfaces.
+- Restore returns to the previous window geometry.
+- Close closes the window and respects unsaved work.
 
-### 5.1 Window controls and title area
+Do not replace standard controls with unfamiliar icons or hide them behind a custom interaction.
 
-All first-party windows use the shared window framework and application chrome defined in `APP-DESIGN-GUIDELINES.md`.
+### 5.2 Title bar and menus
 
-Minimize, maximize/restore and close controls must have consistent placement and behavior. Window titles and application identity must remain clear.
+Window title bars clearly identify the application and current document or view where relevant. The application menu uses the shared menu categories and ordering defined in `APP-DESIGN-GUIDELINES.md`.
 
-### 5.2 Snap and tiling
+Context menus use familiar right-click behavior, standard terminology and consistent placement near the pointer, while remaining inside screen bounds.
 
-The intended desktop experience includes pointer-accessible snap choices from the maximize control and predictable keyboard operations.
+### 5.3 Snap and tiling
 
-The snap system should support common arrangements such as:
-- Left and right halves.
-- Four screen quadrants.
-- One large area with a smaller adjacent area.
-- Other layouts only when they remain understandable and useful.
+Provide discoverable snap layouts from the maximize control and predictable keyboard operations. Initial layouts should cover left/right halves and four quadrants. Additional arrangements are allowed only when they remain easy to understand.
 
-Snap previews must clearly show the destination before the window is placed. Keyboard and pointer workflows should offer equivalent access.
+Show a clear preview before placement. Pointer and keyboard workflows must offer equivalent access. Do not claim a snap feature is implemented until compositor support exists.
 
-The exact layout catalogue, keyboard bindings and compositor implementation must be specified and tested before being treated as implemented.
+### 5.4 Task switching and overview
 
-### 5.3 Window overview
+Alt+Tab must provide familiar switching between open windows. The visual switcher should clearly identify applications and windows, preserve predictable ordering and support keyboard navigation.
 
-A window overview should provide a clear view of open windows and workspaces. It must help users find and switch tasks without introducing duplicate or confusing window representations.
+A separate overview may expose workspaces and all windows, but must not replace or break the familiar Alt+Tab workflow.
 
-The overview must be keyboard accessible and should support direct selection of a window or workspace.
+## 6. File access and Fides integration
 
-## 6. Virtual workspaces
+The desktop must provide familiar entry points to Desktop, Documents, Downloads, Music, Pictures and Videos. Fides is the default file manager and must preserve recognizable file-manager concepts:
 
-AureaOS provides four virtual workspaces by default.
+- Navigation sidebar and common locations.
+- Breadcrumb/location path.
+- Search within the current location.
+- List and grid views.
+- Sorting, selection, copy, cut, paste, rename, delete and properties.
+- Familiar right-click context menus.
+- Clear access to mounted drives and removable media.
 
-The desktop should:
-- Show the active workspace clearly.
-- Allow direct workspace selection.
-- Provide predictable previous/next navigation.
-- Keep window placement and workspace membership understandable.
-- Animate workspace transitions subtly and respect reduced motion.
-- Support keyboard navigation and touchpad gestures where hardware and compositor support are available.
+AureaOS may add its own folder artwork and visual finish, but must not rename common locations or hide expected file operations.
 
-The visual design must not imply that a gesture or shortcut works until the relevant input and compositor behavior is implemented.
+## 7. Workspaces
 
-## 7. Quick Settings
+Four workspaces are available by default. They complement, rather than replace, ordinary window switching.
 
-Quick Settings is a system-owned panel opened from the dock's status area.
+The desktop must show the active workspace clearly, provide direct selection and predictable previous/next navigation, and keep window membership understandable. Gestures are optional enhancements; every essential action must have a discoverable pointer or keyboard route.
 
-It should group controls by purpose rather than present an unstructured collection of toggles.
+## 8. Quick Settings
 
-Planned groups include:
-- Connectivity: Wi-Fi, wired network, Bluetooth and airplane mode, where supported.
-- Audio: volume, mute and available output/input selection.
-- Display: brightness and display configuration when supported by hardware and services.
-- Appearance: light, dark and automatic theme selection.
-- Accessibility: direct access to relevant system accessibility settings.
-- Capture: screen recording controls only when the recording service is available.
-- Power and session: clearly separated system actions.
+Quick Settings is a system-owned panel opened from the dock status area. It groups real controls for connectivity, audio, display, appearance, accessibility and power/session actions where supported.
 
-Controls must display actual system state. An unavailable capability must be hidden or clearly marked unavailable; the interface must never simulate a successful hardware action.
+Controls must reflect actual service state. Unavailable hardware capabilities must be hidden or explicitly marked unavailable. Never simulate a successful action.
 
-Destructive or disruptive actions must be separated from routine toggles and require appropriate confirmation.
+The panel should be compact, recognizable and consistent with the desktop's established visual hierarchy.
 
-## 8. Notifications
+## 9. Notifications
 
-Notifications are system-managed surfaces and must follow the shared notification policy.
+Notifications are system-managed and visually consistent across the desktop. They should be unobtrusive, readable, actionable where appropriate and grouped according to system policy.
 
-The intended desktop presentation is a restrained stack along the left side of the screen.
+Use macOS as a reference for refinement and consistency, not as a reason to relocate or reinvent familiar desktop workflows. Notifications must not steal focus unexpectedly, cover essential controls or imitate security prompts.
 
-Each notification should:
-- Identify its originating application.
-- Show a concise title and message.
-- Expose only relevant and supported actions.
-- Provide predictable dismissal behavior.
-- Remain readable in both themes.
-- Support keyboard access and accessible announcements.
+Users need predictable controls for dismissing notifications and accessing notification history where implemented.
 
-Notifications must not cover essential application controls or steal focus unexpectedly. Grouping, priority and interruption behavior should be governed by system policy rather than each application inventing its own rules.
+## 10. Visual system
 
-## 9. Theme and materials
+Dock, launcher, windows, menus, context menus, quick settings and notifications use the same semantic tokens.
 
-The desktop follows the global AureaOS appearance setting:
-- Light.
-- Dark.
-- Automatic / follow system.
+The visual target combines:
+- Familiar window and menu proportions.
+- Soft, realistic shadows that communicate elevation.
+- Restrained transparency and blur for floating surfaces.
+- Clear borders and strong text contrast.
+- Consistent rounded corners and icon alignment.
+- Light and dark themes with equal hierarchy and legibility.
+- Short, purposeful transitions.
 
-Dock, launcher, workspace overview, quick settings, notifications and all first-party windows must update together when the system appearance changes.
-
-Use semantic tokens from `design-system/tokens/index.css`. Do not introduce separate palettes for individual desktop panels.
-
-Transparency and blur are reserved for surfaces where they improve hierarchy. Text contrast and legibility take priority over glass effects. The desktop must remain usable when transparency, blur or animation is reduced.
-
-## 10. Motion and feedback
-
-Desktop motion must be purposeful and consistent.
-
-Use brief transitions for:
-- Opening and closing the launcher.
-- Showing and dismissing panels.
-- Switching workspaces.
-- Displaying snap previews.
-- Dock visibility changes.
-- Notification appearance and dismissal.
-
-Avoid long delays, excessive bounce, decorative movement and animations that obscure the current state.
-
-All motion must respect the system reduced-motion preference. State changes must remain understandable without animation.
+Transparency is not mandatory when it harms readability. Reduced transparency and reduced motion settings must be respected. Do not apply glass effects indiscriminately.
 
 ## 11. Accessibility and input
 
-The desktop must support:
-- Keyboard access to all primary shell functions.
-- Visible focus indicators.
-- Logical focus order and restoration.
-- Accessible names and roles for controls.
-- Pointer alternatives for keyboard operations and vice versa where practical.
-- Scalable text and display scaling.
-- Reduced motion and reduced transparency.
-- Status communication that does not rely only on color.
+All primary desktop tasks must be available by keyboard and pointer. Provide visible focus, logical focus restoration, accessible names, scalable text and status communication that does not rely only on color.
 
-Touchpad gestures are enhancements, not the only way to perform an operation.
+Use the shared keyboard convention document as the source of truth. Global shortcuts belong to the shell; applications must not intercept them without an explicit, documented exception.
 
 ## 12. Implementation boundaries
 
-The desktop experience is shared across distinct technical responsibilities:
+- **Compositor:** windows, placement, focus, input routing, workspace mechanics and presentation.
+- **Shell:** dock, launcher, overview, panels and notification presentation.
+- **System services:** network, audio, power, display, appearance and notification state.
+- **Fides / Quaero:** file-management and search workflows.
+- **Human Interfaces:** tokens, assets, component specifications, interaction rules and prototypes.
 
-- **Compositor:** window surfaces, placement, focus, input routing, workspace mechanics and presentation.
-- **Shell:** dock, launcher, overview, panels, notifications presentation and user-facing desktop state.
-- **System services:** network, audio, power, display, appearance, notifications and search capabilities.
-- **Human Interfaces:** design tokens, assets, component specifications, interaction patterns and prototypes.
+A visual control must never claim a capability that the corresponding runtime service does not provide.
 
-A visual control must not claim a capability that the relevant service or compositor interface does not provide. UI state must reflect real service state and report errors or unavailable capabilities clearly.
+## 13. First-login validation
 
-The Human Interfaces directory defines the intended visual and interaction contract; it does not replace runtime APIs or implementation documentation.
-
-## 13. Prototype validation checklist
-
-Before promoting a desktop behavior to a production requirement, validate it in the interactive prototype:
-
-- [ ] Dock zones and item order are understandable.
-- [ ] Dock remains usable in floating, attached and auto-hide states.
-- [ ] Launcher opens from the A mark and Super key.
-- [ ] Launcher animation is subtle and does not delay search.
-- [ ] Search results have clear categories and keyboard navigation.
-- [ ] Quick Settings controls are grouped and state-oriented.
-- [ ] Notifications remain readable and do not obscure essential work.
-- [ ] Workspace switching is discoverable.
-- [ ] Window snap previews are understandable.
-- [ ] Light and dark themes cover every desktop surface.
-- [ ] Reduced-motion behavior is defined.
-- [ ] Layout remains usable at supported display sizes and scales.
-
-A prototype can validate appearance and interaction flow; it cannot prove compositor, hardware or system-service functionality.
+- [ ] A Windows user recognizes the launcher and can find installed applications.
+- [ ] Super opens and closes the launcher.
+- [ ] Common shortcuts match the shared shortcut policy.
+- [ ] Alt+Tab switches windows predictably.
+- [ ] Minimize, maximize/restore and close controls are recognizable.
+- [ ] Right-click opens a familiar context menu.
+- [ ] Fides exposes common folders and file operations.
+- [ ] The dock distinguishes pinned, running and minimized applications.
+- [ ] Quick Settings shows real system state.
+- [ ] Notifications are consistent and non-disruptive.
+- [ ] Light and dark themes preserve the same information hierarchy.
+- [ ] Reduced motion and reduced transparency remain usable.
 
 ## 14. Final principle
 
-The AureaOS desktop should provide one coherent place to launch, organize and control work.
-
-The dock is the persistent navigation and status anchor. The launcher is the fast entry point. Windows and workspaces organize tasks. Quick Settings exposes real system controls. Notifications communicate without interrupting unnecessarily.
-
-Every part must share one visual language, one predictable interaction model and a distinct AureaOS identity.
+AureaOS should feel familiar before users notice its originality. Preserve the mental model they already know; improve the experience through integration, consistency, polish and reliability.
