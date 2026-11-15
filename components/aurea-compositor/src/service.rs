@@ -7,7 +7,10 @@
 
 use std::io;
 
-use aurea_desktop_api::{CompositorFactory, CompositorService, ShutdownSignal};
+use aurea_desktop_api::{
+    CompositorFactory, CompositorService, ShutdownSignal,
+    display::DisplayColorController,
+};
 
 use crate::WaylandServer;
 
@@ -35,8 +38,15 @@ impl Default for WaylandCompositorFactory {
 }
 
 impl CompositorFactory for WaylandCompositorFactory {
-    fn create(&self) -> io::Result<Box<dyn CompositorService>> {
-        let server = WaylandServer::new_with_primary_drm(&self.socket_name, &self.seat)?;
+    fn create(
+        &self,
+        display_color: DisplayColorController,
+    ) -> io::Result<Box<dyn CompositorService>> {
+        let server = WaylandServer::new_with_primary_drm(
+            &self.socket_name,
+            &self.seat,
+            display_color,
+        )?;
 
         Ok(Box::new(WaylandCompositorService { server }))
     }
