@@ -277,7 +277,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         data: &[u8],
     ) {
         unsafe {
-            self.device.handle().cmd_push_constants(
+            self.device.device().handle().cmd_push_constants(
                 command_buffer,
                 self.layout,
                 stages,
@@ -336,6 +336,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
     ) {
         unsafe {
             self.device
+                .device()
                 .handle()
                 .cmd_set_viewport(command_buffer, 0, &[viewport]);
             self.device
@@ -348,7 +349,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
 impl Drop for VulkanGraphicsPipeline<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.handle().destroy_pipeline(self.pipeline, None);
+            self.device.device().handle().destroy_pipeline(self.pipeline, None);
             self.device
                 .handle()
                 .destroy_pipeline_layout(self.layout, None);
