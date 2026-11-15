@@ -161,8 +161,10 @@ impl<'device> VulkanDisplayColorPass<'device> {
         }
         if source.device().handle().handle() != device.handle().handle()
             || target.device().handle().handle() != device.handle().handle()
+            || !binding.references_view(source)
             || source.width() != target.width()
             || source.height() != target.height()
+            || source.format() != target.format()
             || !self.pipeline.is_compatible_with(device, target.format())
         {
             return Err(VulkanDisplayColorPassError::IncompatibleImages);
