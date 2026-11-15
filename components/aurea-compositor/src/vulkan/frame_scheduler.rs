@@ -173,6 +173,8 @@ impl VulkanFrame<'_, '_> {
     /// Retains an owned object until this slot is safely reused after its
     /// completion fence signals. Use this for every object referenced by the
     /// command buffer that is not otherwise guaranteed to outlive GPU execution.
+    /// This covers GPU execution only: resources handed to KMS or another
+    /// external consumer must also be retained until that consumer releases them.
     pub fn retain_resource<T: 'static>(&mut self, resource: T) {
         self.retained_resources.push(Box::new(resource));
     }
