@@ -155,19 +155,11 @@ impl VulkanFrameSlot {
             device.handle().reset_fences(&[self.completion_fence])?;
         }
 
-        let command_buffers = [command_buffer];
-        let signal_semaphores = signal_semaphore.into_iter().collect::<Vec<_>>();
-        let mut submit_info = vk::SubmitInfo::default().command_buffers(&command_buffers);
-        if !signal_semaphores.is_empty() {
-            submit_info = submit_info.signal_semaphores(&signal_semaphores);
-        }
-        let result = unsafe {
-            device.handle().queue_submit(
-                device.graphics_queue(),
-                &[submit_info],
-                self.completion_fence,
-            )
-        };
+        let result = device.submit_async_with_signal(
+            command_buffer,
+            self.completion_fence,
+            signal_semaphore,
+        );
 
         if let Err(error) = result {
             unsafe { device.handle().destroy_fence(self.completion_fence, None) };
