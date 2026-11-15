@@ -108,6 +108,8 @@ The hierarchy is documented in [Human Interfaces](README.md) and [Design System]
 - [ ] Integrate launcher, dock, menus, dialogs, notifications and system panels with their actual services.
 - [ ] Reconcile prototypes with the canonical desktop experience specification.
 - [ ] Validate first-login workflows on supported hardware.
+- [ ] Complete Night Light runtime integration: system-wide Vulkan output processing, capability negotiation/fallback, shell-to-compositor state transport, schedule service and persistence.
+- [ ] Add Night Light controls to Settings → Appearance and the right-side Quick Settings panel, sharing one authoritative preference state.
 
 ## Explicitly deferred
 
