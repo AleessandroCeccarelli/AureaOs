@@ -9,7 +9,7 @@ use std::{any::Any, os::fd::{FromRawFd, OwnedFd}};
 
 use smithay::reexports::ash::{self, vk};
 
-use super::{queue_submitter::VulkanQueueSubmitError, VulkanLogicalDevice};
+use super::VulkanLogicalDevice;
 
 /// Owns command and resource lifetimes until the previous GPU submission ends.
 pub(super) struct VulkanFrameSlot {
