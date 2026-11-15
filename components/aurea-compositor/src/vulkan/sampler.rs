@@ -66,7 +66,7 @@ impl<'device> VulkanSampler<'device> {
         let handle = unsafe { device.device().handle().create_sampler(&info, None) }
             .map_err(VulkanSamplerError::Creation)?;
 
-        Ok(Self { device, handle })
+        Ok(VulkanSampler { device, handle })
     }
 
     pub fn handle(&self) -> vk::Sampler {
