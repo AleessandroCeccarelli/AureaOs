@@ -281,6 +281,33 @@ impl VulkanDrmFramePool {
         Ok(None)
     }
 
+    /// Retires reusable frames from obsolete modes and trims excess idle allocations.
+    /// Busy frames remain owned until the lifecycle coordinator confirms release.
+    pub fn prune(
+        &mut self,
+        width: u32,
+        height: u32,
+        formats: &[DrmVulkanFormat],
+        coordinator: &mut DrmOutputFrameCoordinator,
+    ) -> Result<usize, VulkanDrmFramePoolError> {
+        let mut removable = Vec::new();
+        for (id, frame) in &self.frames {
+            let image = frame.image();
+            let obsolete = image.width() != width
+                || image.height() != height
+                || !formats.iter().any(|format| image.drm_format() == *format);
+            if coordinator.is_available(*id)?
+                && (obsolete || self.frames.len() - removable.len() > Self::MAX_RETAINED_FRAMES)
+            {
+                removable.push(*id);
+            }
+        }
+        for id in &removable {
+            self.retire(*id, coordinator)?;
+        }
+        Ok(removable.len())
+    }
+
     pub fn insert(
         &mut self,
         frame: VulkanDrmScanoutFrame,

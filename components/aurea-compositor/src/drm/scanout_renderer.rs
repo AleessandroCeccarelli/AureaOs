@@ -188,6 +188,16 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
             )));
         }
 
+        // Drop idle images from old modes/formats and keep the pool bounded.
+        frame_pool
+            .prune(
+                target.width(),
+                target.height(),
+                &candidates,
+                presentation.frame_coordinator_mut(),
+            )
+            .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
+
         // Reuse an image only after both KMS and Vulkan ownership have
         // returned to this process. This avoids allocating and exporting a
         // fresh DMA-BUF for every page flip.
