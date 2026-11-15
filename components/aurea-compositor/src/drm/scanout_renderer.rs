@@ -26,7 +26,8 @@ use crate::{
     vulkan::{
         DrmVulkanCompatibility, VulkanBackend, VulkanDisplayColorManager, VulkanDrmFramePool,
         VulkanDrmScanoutFrame, VulkanExternalMemoryCapabilities, VulkanFormatCapabilities,
-        VulkanImageState, VulkanImageView, VulkanLogicalDevice, surface_compositor,
+        VulkanImageState, VulkanImageView, VulkanLogicalDevice, VulkanSurfacePipelineCache,
+        surface_compositor,
     },
 };
 
@@ -59,6 +60,7 @@ pub(crate) struct VulkanOutputScanoutBackend<'a> {
     output: &'a mut ManagedDrmSurface,
     vulkan: &'a VulkanBackend,
     display_color: &'a mut VulkanDisplayColorManager,
+    surface_cache: &'a mut VulkanSurfacePipelineCache,
     warmth_percent: u8,
 }
 
@@ -69,6 +71,7 @@ impl<'a> VulkanOutputScanoutBackend<'a> {
         output: &'a mut ManagedDrmSurface,
         vulkan: &'a VulkanBackend,
         display_color: &'a mut VulkanDisplayColorManager,
+        surface_cache: &'a mut VulkanSurfacePipelineCache,
         warmth_percent: u8,
     ) -> Self {
         Self {
@@ -77,6 +80,7 @@ impl<'a> VulkanOutputScanoutBackend<'a> {
             output,
             vulkan,
             display_color,
+            surface_cache,
             warmth_percent,
         }
     }
@@ -245,6 +249,7 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
             scene,
             previous_image_state,
             self.display_color,
+            self.surface_cache,
             self.warmth_percent,
             self.vulkan.shared_device(),
         ) {
@@ -290,6 +295,7 @@ fn render_and_present(
     scene: &RenderScene<'_>,
     previous_image_state: VulkanImageState,
     display_color_manager: &mut VulkanDisplayColorManager,
+    surface_cache: &mut VulkanSurfacePipelineCache,
     warmth_percent: u8,
     shared_device: std::sync::Arc<VulkanLogicalDevice>,
 ) -> Result<(), VulkanScanoutError> {
@@ -344,6 +350,7 @@ fn render_and_present(
         &view,
         target,
         scene,
+        surface_cache,
         previous_image_state,
         effective_display,
         || {
