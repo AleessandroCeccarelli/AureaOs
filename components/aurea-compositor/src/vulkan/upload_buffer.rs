@@ -23,6 +23,7 @@ pub enum VulkanUploadError {
     Mapping(vk::Result),
     Flush(vk::Result),
     InvalidByteLength,
+    InvalidOffset,
     UnsupportedImageFormat,
     MissingTransferDestinationUsage,
     InvalidImageDimensions,
@@ -49,6 +50,9 @@ impl fmt::Display for VulkanUploadError {
             Self::Flush(error) => write!(formatter, "Upload memory flush failed: {error:?}"),
             Self::InvalidByteLength => {
                 formatter.write_str("RGBA8 upload data has an unexpected byte length")
+            }
+            Self::InvalidOffset => {
+                formatter.write_str("RGBA8 upload offset is invalid or out of range")
             }
             Self::UnsupportedImageFormat => {
                 formatter.write_str("Upload currently supports R8G8B8A8_UNORM images only")

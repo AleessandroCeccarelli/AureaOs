@@ -59,6 +59,7 @@ mod surface_pipeline_cache;
 mod surface_texture_cache;
 mod texture_binding;
 mod texture_layout;
+mod upload_batch;
 mod upload_buffer;
 
 use std::{error::Error, fmt};
@@ -150,3 +151,4 @@ pub use upload_buffer::{VulkanUploadBuffer, VulkanUploadError};
 
 pub(super) use device_owner::VulkanDeviceOwner;
 pub(super) use queue_submitter::VulkanQueueSubmitter;
+pub(super) use upload_batch::VulkanUploadBatch;
