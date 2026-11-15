@@ -5,6 +5,8 @@
 
 //! Shared host-visible staging allocation for a batch of RGBA8 texture uploads.
 
+use std::sync::Arc;
+
 use smithay::reexports::ash::vk;
 
 use super::{
@@ -13,17 +15,17 @@ use super::{
 };
 
 /// One staging allocation shared by all texture copies in a submission.
-pub(super) struct VulkanUploadBatch<'device> {
-    device: &'device VulkanLogicalDevice,
+pub(super) struct VulkanUploadBatch {
+    device: Arc<VulkanLogicalDevice>,
     buffer: vk::Buffer,
     memory: vk::DeviceMemory,
     byte_len: usize,
     coherent: bool,
 }
 
-impl<'device> VulkanUploadBatch<'device> {
+impl VulkanUploadBatch {
     pub(super) fn new(
-        device: &'device VulkanLogicalDevice,
+        device: Arc<VulkanLogicalDevice>,
         byte_len: usize,
     ) -> Result<Self, VulkanUploadError> {
         if byte_len == 0 {
@@ -207,7 +209,7 @@ impl<'device> VulkanUploadBatch<'device> {
     }
 }
 
-impl Drop for VulkanUploadBatch<'_> {
+impl Drop for VulkanUploadBatch {
     fn drop(&mut self) {
         unsafe {
             self.device.handle().destroy_buffer(self.buffer, None);

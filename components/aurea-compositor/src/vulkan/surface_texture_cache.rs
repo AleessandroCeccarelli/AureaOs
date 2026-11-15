@@ -16,7 +16,9 @@ use smithay::reexports::wayland_server::backend::ObjectId;
 
 use crate::render::shm_buffer::ShmBufferSnapshot;
 
-use super::{VulkanLogicalDevice, VulkanShmTexture, VulkanShmTextureError};
+use super::{
+    VulkanLogicalDevice, VulkanPendingUpload, VulkanShmTexture, VulkanShmTextureError,
+};
 
 const MAX_CACHED_SURFACE_TEXTURES: usize = 128;
 const MAX_CACHED_SURFACE_TEXTURE_BYTES: usize = 256 * 1024 * 1024;
@@ -44,18 +46,21 @@ impl Error for VulkanSurfaceTextureCacheError {}
 struct CachedSurfaceTexture {
     revision: u64,
     snapshot: Arc<ShmBufferSnapshot>,
-    texture: VulkanShmTexture,
+    texture: Arc<VulkanShmTexture>,
     byte_len: usize,
     last_used: u64,
 }
 
+struct PendingSurfaceTextureBatch {
+    upload: VulkanPendingUpload<Vec<Arc<VulkanShmTexture>>>,
+    surface_ids: Vec<ObjectId>,
+}
+
 /// Retains uploaded textures while their Wayland surfaces remain active.
-///
-/// Entries use the full Wayland ObjectId rather than its reusable protocol
-/// integer. The bounded LRU policy protects textures required by the current frame.
 pub(crate) struct VulkanSurfaceTextureCache {
     device: Arc<VulkanLogicalDevice>,
     entries: HashMap<ObjectId, CachedSurfaceTexture>,
+    pending_uploads: Vec<PendingSurfaceTextureBatch>,
     cached_bytes: usize,
     frame: u64,
 }
@@ -65,17 +70,19 @@ impl VulkanSurfaceTextureCache {
         Self {
             device,
             entries: HashMap::new(),
+            pending_uploads: Vec::new(),
             cached_bytes: 0,
             frame: 0,
         }
     }
 
-    /// Removes inactive surfaces and prepares the textures needed by this output.
+    /// Starts missing texture uploads and retains their resources until their fences signal.
     pub(crate) fn prepare(
         &mut self,
         active_surface_ids: &[ObjectId],
         visible_surfaces: &[(ObjectId, u64, Arc<ShmBufferSnapshot>)],
     ) -> Result<(), VulkanSurfaceTextureCacheError> {
+        self.complete_pending_uploads()?;
         self.frame = self.frame.wrapping_add(1);
         let active: HashSet<_> = active_surface_ids.iter().cloned().collect();
         self.entries.retain(|id, _| active.contains(id));
@@ -98,9 +105,6 @@ impl VulkanSurfaceTextureCache {
             return Err(VulkanSurfaceTextureCacheError::CacheBudgetExceeded);
         }
 
-        // Remove every stale revision before allocating replacements. Otherwise
-        // old images for later surfaces in this same frame could be protected by
-        // the required set and temporarily exhaust the budget.
         for (surface_id, revision, snapshot) in visible_surfaces {
             let stale = self.entries.get(surface_id).is_some_and(|entry| {
                 entry.revision != *revision || !Arc::ptr_eq(&entry.snapshot, snapshot)
@@ -121,10 +125,11 @@ impl VulkanSurfaceTextureCache {
                 continue;
             }
 
+            let byte_len = snapshot.pixels().len();
             missing_bytes = missing_bytes
-                .checked_add(snapshot.pixels().len())
+                .checked_add(byte_len)
                 .ok_or(VulkanSurfaceTextureCacheError::CacheBudgetExceeded)?;
-            missing.push((surface_id.clone(), *revision, Arc::clone(snapshot)));
+            missing.push((surface_id.clone(), *revision, Arc::clone(snapshot), byte_len));
         }
 
         while self.entries.len().saturating_add(missing.len()) > MAX_CACHED_SURFACE_TEXTURES
@@ -139,23 +144,32 @@ impl VulkanSurfaceTextureCache {
                 .filter(|(id, _)| !required.contains(*id))
                 .min_by_key(|(_, entry)| entry.last_used)
                 .map(|(id, _)| id.clone());
-
             let Some(candidate) = candidate else {
                 return Err(VulkanSurfaceTextureCacheError::CacheBudgetExceeded);
             };
             self.remove_surface(&candidate);
         }
 
+        if missing.is_empty() {
+            return Ok(());
+        }
+
         let snapshots = missing
             .iter()
-            .map(|(_, _, snapshot)| snapshot.as_ref().clone())
+            .map(|(_, _, snapshot, _)| snapshot.as_ref().clone())
             .collect();
-        let textures = VulkanShmTexture::from_snapshots(Arc::clone(&self.device), snapshots)
+        let upload = VulkanShmTexture::submit_snapshots(Arc::clone(&self.device), snapshots)
             .map_err(VulkanSurfaceTextureCacheError::Texture)?;
 
-        for ((surface_id, revision, snapshot), texture) in missing.into_iter().zip(textures) {
-            let byte_len = snapshot.pixels().len();
-            self.cached_bytes += byte_len;
+        let surface_ids = missing
+            .iter()
+            .map(|(surface_id, _, _, _)| surface_id.clone())
+            .collect::<Vec<_>>();
+
+        for ((surface_id, revision, snapshot, byte_len), texture) in
+            missing.into_iter().zip(upload.resources().iter().cloned())
+        {
+            self.cached_bytes = self.cached_bytes.saturating_add(byte_len);
             self.entries.insert(
                 surface_id,
                 CachedSurfaceTexture {
@@ -168,11 +182,34 @@ impl VulkanSurfaceTextureCache {
             );
         }
 
+        self.pending_uploads
+            .push(PendingSurfaceTextureBatch { upload, surface_ids });
+
+        Ok(())
+    }
+
+    /// Completes pending batches only when the renderer is ready to sample them.
+    pub(crate) fn complete_pending_uploads(
+        &mut self,
+    ) -> Result<(), VulkanSurfaceTextureCacheError> {
+        let pending = std::mem::take(&mut self.pending_uploads);
+        for batch in pending {
+            if let Err(error) = batch.upload.wait() {
+                for surface_id in batch.surface_ids {
+                    self.remove_surface(&surface_id);
+                }
+                return Err(VulkanSurfaceTextureCacheError::Texture(
+                    VulkanShmTextureError::Command(error),
+                ));
+            }
+        }
         Ok(())
     }
 
     pub(crate) fn texture(&self, surface_id: &ObjectId) -> Option<&VulkanShmTexture> {
-        self.entries.get(surface_id).map(|entry| &entry.texture)
+        self.entries
+            .get(surface_id)
+            .map(|entry| entry.texture.as_ref())
     }
 
     fn remove_surface(&mut self, surface_id: &ObjectId) {

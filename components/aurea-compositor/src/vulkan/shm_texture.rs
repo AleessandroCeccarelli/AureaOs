@@ -12,8 +12,8 @@ use smithay::reexports::ash::vk;
 use crate::render::shm_buffer::{ShmBufferSnapshot, ShmPixelFormat};
 
 use super::{
-    VulkanCommandBuffer, VulkanImageState, VulkanImageTransition, VulkanImageView,
-    VulkanImageViewError, VulkanLogicalDevice, VulkanSharedImage, VulkanSharedImageError,
+    VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanImageViewError,
+    VulkanLogicalDevice, VulkanPendingUpload, VulkanSharedImage, VulkanSharedImageError,
     VulkanUploadBatch, VulkanUploadBuffer, VulkanUploadError,
 };
 
@@ -32,16 +32,10 @@ impl fmt::Display for VulkanShmTextureError {
         match self {
             Self::UnsupportedPixelFormat => formatter
                 .write_str("Wayland SHM snapshot must be normalized to RGBA8 before Vulkan upload"),
-            Self::Image(error) => {
-                write!(formatter, "SHM texture image allocation failed: {error}")
-            }
-            Self::ImageView(error) => {
-                write!(formatter, "SHM texture image-view creation failed: {error}")
-            }
+            Self::Image(error) => write!(formatter, "SHM texture image allocation failed: {error}"),
+            Self::ImageView(error) => write!(formatter, "SHM texture image-view creation failed: {error}"),
             Self::Upload(error) => write!(formatter, "SHM texture upload failed: {error}"),
-            Self::Command(error) => {
-                write!(formatter, "SHM texture Vulkan command failed: {error:?}")
-            }
+            Self::Command(error) => write!(formatter, "SHM texture Vulkan command failed: {error:?}"),
         }
     }
 }
@@ -60,21 +54,29 @@ impl VulkanShmTexture {
         device: Arc<VulkanLogicalDevice>,
         snapshot: ShmBufferSnapshot,
     ) -> Result<Self, VulkanShmTextureError> {
-        Self::from_snapshots(device, vec![snapshot])?
+        let mut textures = Self::submit_snapshots(device, vec![snapshot])?
+            .wait()
+            .map_err(VulkanShmTextureError::Command)?;
+        let texture = textures
             .pop()
-            .ok_or(VulkanShmTextureError::Command(vk::Result::ERROR_UNKNOWN))
+            .ok_or(VulkanShmTextureError::Command(vk::Result::ERROR_UNKNOWN))?;
+        Arc::try_unwrap(texture)
+            .map_err(|_| VulkanShmTextureError::Command(vk::Result::ERROR_UNKNOWN))
     }
 
-    /// Uploads several snapshots using one staging allocation and one submission.
-    pub(crate) fn from_snapshots(
+    /// Starts a batch upload and returns while the GPU may still be processing it.
+    pub(crate) fn submit_snapshots(
         device: Arc<VulkanLogicalDevice>,
         snapshots: Vec<ShmBufferSnapshot>,
-    ) -> Result<Vec<Self>, VulkanShmTextureError> {
+    ) -> Result<VulkanPendingUpload<Vec<Arc<Self>>>, VulkanShmTextureError> {
         if snapshots.is_empty() {
-            return Ok(Vec::new());
+            return Err(VulkanShmTextureError::Command(
+                vk::Result::ERROR_VALIDATION_FAILED_EXT,
+            ));
         }
 
-        let mut resources = Vec::with_capacity(snapshots.len());
+        let mut textures = Vec::with_capacity(snapshots.len());
+        let mut segments = Vec::with_capacity(snapshots.len());
         let mut total_bytes = 0usize;
 
         for snapshot in snapshots {
@@ -111,65 +113,48 @@ impl VulkanShmTexture {
             );
             let view = VulkanImageView::color_shared_owned(Arc::clone(&image))
                 .map_err(VulkanShmTextureError::ImageView)?;
-
-            resources.push((
-                image,
-                view,
-                offset,
-                snapshot.width(),
-                snapshot.height(),
-                snapshot.pixels().to_vec(),
-            ));
+            textures.push(Arc::new(Self { image, view }));
+            segments.push((offset, snapshot.pixels().to_vec()));
         }
 
-        let staging = VulkanUploadBatch::new(device.as_ref(), total_bytes)
+        let staging = VulkanUploadBatch::new(Arc::clone(&device), total_bytes)
             .map_err(VulkanShmTextureError::Upload)?;
-
-        let segments = resources
+        let segment_refs = segments
             .iter()
-            .map(|(_, _, offset, _, _, pixels)| (*offset, pixels.as_slice()))
+            .map(|(offset, pixels)| (*offset, pixels.as_slice()))
             .collect::<Vec<_>>();
         staging
-            .write_segments(&segments)
+            .write_segments(&segment_refs)
             .map_err(VulkanShmTextureError::Upload)?;
 
-        let mut commands = VulkanCommandBuffer::new(device.as_ref())
+        let pending = VulkanPendingUpload::new(Arc::clone(&device), staging, textures)
             .map_err(VulkanShmTextureError::Command)?;
-        commands
-            .begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
-            .map_err(VulkanShmTextureError::Command)?;
+        pending.staging().record_host_write_barrier(pending.command_buffer());
 
-        staging.record_host_write_barrier(commands.handle());
-
-        for (image, view, offset, _, _, _) in &resources {
+        for (texture, (offset, _)) in pending.resources().iter().zip(segments.iter()) {
             VulkanImageTransition::record_color(
                 device.as_ref(),
-                commands.handle(),
-                image.handle(),
+                pending.command_buffer(),
+                texture.image.handle(),
                 VulkanImageState::Undefined,
                 VulkanImageState::TransferDestination,
             );
-            staging
-                .record_upload_rgba8(commands.handle(), view, *offset)
+            pending
+                .staging()
+                .record_upload_rgba8(pending.command_buffer(), &texture.view, *offset)
                 .map_err(VulkanShmTextureError::Upload)?;
             VulkanImageTransition::record_color(
                 device.as_ref(),
-                commands.handle(),
-                image.handle(),
+                pending.command_buffer(),
+                texture.image.handle(),
                 VulkanImageState::TransferDestination,
                 VulkanImageState::ShaderRead,
             );
         }
 
-        commands.end().map_err(VulkanShmTextureError::Command)?;
-        commands
-            .submit_and_wait()
-            .map_err(VulkanShmTextureError::Command)?;
-
-        Ok(resources
-            .into_iter()
-            .map(|(image, view, _, _, _, _)| Self { image, view })
-            .collect())
+        pending
+            .submit()
+            .map_err(VulkanShmTextureError::Command)
     }
 
     /// Returns the cached image view suitable for a sampled-image descriptor.

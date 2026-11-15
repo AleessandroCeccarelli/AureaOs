@@ -44,6 +44,7 @@ mod image_view;
 mod logical_device;
 mod memory_type;
 mod offscreen_renderer;
+mod pending_upload;
 mod physical_device;
 mod queue;
 mod queue_submitter;
@@ -151,4 +152,5 @@ pub use upload_buffer::{VulkanUploadBuffer, VulkanUploadError};
 
 pub(super) use device_owner::VulkanDeviceOwner;
 pub(super) use queue_submitter::VulkanQueueSubmitter;
+pub(super) use pending_upload::VulkanPendingUpload;
 pub(super) use upload_batch::VulkanUploadBatch;

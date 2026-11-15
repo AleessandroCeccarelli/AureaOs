@@ -116,6 +116,12 @@ impl VulkanSurfacePipelineCache {
             .prepare(active_surface_ids, visible_surfaces)
     }
 
+    pub(crate) fn complete_surface_texture_uploads(
+        &mut self,
+    ) -> Result<(), VulkanSurfaceTextureCacheError> {
+        self.texture_cache.complete_pending_uploads()
+    }
+
     pub(crate) fn surface_texture(&self, surface_id: &ObjectId) -> Option<&VulkanShmTexture> {
         self.texture_cache.texture(surface_id)
     }

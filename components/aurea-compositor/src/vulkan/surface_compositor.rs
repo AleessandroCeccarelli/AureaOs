@@ -106,6 +106,9 @@ pub(crate) fn render_and_release(
         .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
 
     if visible.is_empty() {
+        surface_cache
+            .complete_surface_texture_uploads()
+            .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
         return match display_color {
             Some((pass, warmth, intermediate_view, intermediate_state)) => {
                 clear_display_and_release(
@@ -265,6 +268,11 @@ pub(crate) fn render_and_release(
     command_buffer
         .end()
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
+    // Upload and frame recording overlap on the CPU. The fence is checked
+    // only after the draw command buffer is ready for submission.
+    surface_cache
+        .complete_surface_texture_uploads()
+        .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
     before_submit().map_err(VulkanSurfaceCompositionError::Command)?;
     command_buffer
         .submit_and_wait()
