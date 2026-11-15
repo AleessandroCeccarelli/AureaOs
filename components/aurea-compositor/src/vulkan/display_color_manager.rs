@@ -33,8 +33,4 @@ impl VulkanDisplayColorManager {
         }
         self.passes.get(&format).ok_or(VulkanDisplayColorPassError::IncompatibleImages)
     }
-
-    pub(crate) fn cached_format_count(&self) -> usize {
-        self.passes.len()
-    }
 }
