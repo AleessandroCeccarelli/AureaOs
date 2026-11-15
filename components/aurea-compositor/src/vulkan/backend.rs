@@ -6,6 +6,8 @@
 //! Vulkan rendering-backend initialization and renderer integration.
 
 use std::{error::Error, fmt, sync::Arc};
+#[cfg(feature = "drm")]
+use std::sync::Mutex;
 
 use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 
@@ -52,6 +54,8 @@ impl Error for VulkanRenderError {}
 
 /// Owns the Vulkan context, selected GPU and logical device.
 pub struct VulkanBackend {
+    #[cfg(feature = "drm")]
+    display_color: Mutex<super::VulkanDisplayColorManager>,
     context: Arc<VulkanContext>,
     selected_device_info: VulkanDeviceInfo,
     physical_device_index: usize,
@@ -132,6 +136,8 @@ impl VulkanBackend {
         )?);
 
         Ok(Self {
+            #[cfg(feature = "drm")]
+            display_color: Mutex::new(super::VulkanDisplayColorManager::new(Arc::clone(&device))),
             context,
             selected_device_info,
             physical_device_index,
@@ -163,6 +169,12 @@ impl VulkanBackend {
     #[cfg(feature = "drm")]
     pub fn shared_device(&self) -> Arc<VulkanLogicalDevice> {
         Arc::clone(&self.device)
+    }
+
+    /// Returns the per-device display-color pipeline cache.
+    #[cfg(feature = "drm")]
+    pub(crate) fn display_color_manager(&self) -> &Mutex<super::VulkanDisplayColorManager> {
+        &self.display_color
     }
 
     /// Records an empty one-time command buffer.
