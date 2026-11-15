@@ -12,6 +12,7 @@ mod clear_pass;
 mod command_buffer;
 mod context;
 mod device_extensions;
+#[cfg(feature = "drm")]
 mod display_color_pass;
 #[cfg(feature = "drm")]
 mod dmabuf_layout;
@@ -84,6 +85,7 @@ pub use clear_pass::{VulkanClearPass, VulkanClearPassError};
 pub use command_buffer::VulkanCommandBuffer;
 pub use context::VulkanContext;
 pub use device_extensions::VulkanDeviceExtensionPlan;
+#[cfg(feature = "drm")]
 pub use display_color_pass::{VulkanDisplayColorPass, VulkanDisplayColorPassError};
 #[cfg(feature = "drm")]
 pub use dmabuf_layout::{DmabufImportLayout, DmabufLayoutError, DmabufPlaneLayout};
