@@ -48,9 +48,9 @@ impl<'device> VulkanTextureDescriptorSetLayout<'device> {
         Self::create(VulkanDeviceOwner::Shared(device))
     }
 
-    fn create(
-        device: VulkanDeviceOwner<'device>,
-    ) -> Result<Self, VulkanTextureLayoutError> {
+    fn create<'owner>(
+        device: VulkanDeviceOwner<'owner>,
+    ) -> Result<VulkanTextureDescriptorSetLayout<'owner>, VulkanTextureLayoutError> {
         let bindings = [vk::DescriptorSetLayoutBinding::default()
             .binding(0)
             .descriptor_type(vk::DescriptorType::COMBINED_IMAGE_SAMPLER)
