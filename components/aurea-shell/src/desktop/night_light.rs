@@ -130,7 +130,7 @@ impl NightLightState {
     ///
     /// schedule_active must come from the system scheduling service for
     /// sunset/sunrise and custom modes. Manual mode does not require a clock.
-    pub const fn display_adjustment(self, schedule_active: bool) -> DisplayColorAdjustment {
+    pub fn display_adjustment(self, schedule_active: bool) -> DisplayColorAdjustment {
         let active = match self.mode {
             NightLightMode::Manual => true,
             NightLightMode::SunsetToSunrise | NightLightMode::CustomSchedule => schedule_active,
