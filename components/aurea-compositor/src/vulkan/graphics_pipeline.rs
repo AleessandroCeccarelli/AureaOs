@@ -99,6 +99,12 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         color_format: vk::Format,
         descriptor_layouts: &[&super::VulkanTextureDescriptorSetLayout<'device>],
     ) -> Result<Self, VulkanGraphicsPipelineError> {
+        if descriptor_layouts
+            .iter()
+            .any(|layout| layout.device_handle() != device.handle().handle())
+        {
+            return Err(VulkanGraphicsPipelineError::DeviceMismatch);
+        }
         let handles = descriptor_layouts.iter().map(|layout| layout.handle()).collect::<Vec<_>>();
         Self::create(
             device,
