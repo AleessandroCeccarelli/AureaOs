@@ -253,8 +253,19 @@ impl VulkanLogicalDevice {
 
 impl Drop for VulkanLogicalDevice {
     fn drop(&mut self) {
+        // A failed idle wait does not prove that submitted work has stopped
+        // using device-owned objects. Keep the device and its parent instance
+        // alive rather than destroying the command pool under uncertain work.
+        if unsafe { self.device.device_wait_idle() }.is_err() {
+            if let Some(context) = self._context.take() {
+                // The leaked Arc also keeps the VkInstance alive for the
+                // intentionally retained VkDevice.
+                std::mem::forget(context);
+            }
+            return;
+        }
+
         unsafe {
-            let _ = self.device.device_wait_idle();
             self.device.destroy_command_pool(self.command_pool, None);
             self.device.destroy_device(None);
         }
