@@ -58,7 +58,7 @@ Developing first-party replacements for these application categories may be cons
 - Output reconciliation when discovered display configurations change.
 - Publication and removal of registered outputs as Wayland output globals.
 - Initial Night Light preference and local schedule model in the shell, with validation and unit tests.
-- Shared lock-free display color controller connected from the shell runtime through the desktop API into Wayland server state; actual Vulkan output processing, scheduling, persistence and visible controls remain pending.
+- Shared lock-free display color controller connected from the shell runtime through the desktop API into Wayland server state, plus an initial reusable Vulkan display-color pipeline and shader pair with optimal-image feature checks; wiring the pass into final output composition, scheduling, persistence and visible controls remains pending.
 
 These components establish an initial desktop and graphics-device foundation. They do not yet constitute a usable graphical desktop or a complete graphics pipeline.
 
