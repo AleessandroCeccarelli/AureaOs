@@ -146,7 +146,7 @@ impl VulkanDrawPass {
         command_buffer: vk::CommandBuffer,
         view: &VulkanImageView<'_, '_>,
         pipeline: &VulkanGraphicsPipeline<'_>,
-        texture: &VulkanTextureBinding<'_, '_, '_>,
+        texture: &VulkanTextureBinding<'_, '_, '_, '_>,
         set_index: u32,
         previous_state: VulkanImageState,
         final_state: VulkanImageState,
@@ -178,7 +178,7 @@ impl VulkanDrawPass {
         load: VulkanColorLoad,
         vertex_count: u32,
         instance_count: u32,
-        texture: Option<(&VulkanTextureBinding<'_, '_, '_>, u32)>,
+        texture: Option<(&VulkanTextureBinding<'_, '_, '_, '_>, u32)>,
         region: Option<(vk::Viewport, vk::Rect2D)>,
     ) -> Result<(), VulkanDrawPassError> {
         Self::validate(vertex_count, instance_count, final_state, load)?;
