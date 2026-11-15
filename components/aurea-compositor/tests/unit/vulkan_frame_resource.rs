@@ -331,3 +331,31 @@ fn foreign_acquire_is_rejected_while_kms_still_owns_the_image() {
         Err(VulkanFrameResourceError::KmsAlreadyOwnsResource)
     );
 }
+
+
+#[test]
+fn rejected_submission_can_cancel_render_and_reuse_resource() {
+    let mut resource = VulkanFrameResource::new();
+    resource.begin_render().unwrap();
+
+    resource.cancel_render().unwrap();
+
+    assert!(resource.is_available());
+    assert_eq!(
+        resource.mark_submitted(),
+        Err(VulkanFrameResourceError::NotRendering)
+    );
+}
+
+#[test]
+fn accepted_submission_cannot_be_cancelled_as_unsubmitted() {
+    let mut resource = VulkanFrameResource::new();
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+
+    assert_eq!(
+        resource.cancel_render(),
+        Err(VulkanFrameResourceError::NotRendering)
+    );
+    assert!(!resource.is_available());
+}
