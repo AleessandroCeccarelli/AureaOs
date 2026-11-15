@@ -10,9 +10,9 @@ use std::{collections::HashMap, error::Error, fmt, sync::Arc};
 use smithay::reexports::ash::vk;
 
 use super::{
-    VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders, VulkanLogicalDevice,
-    VulkanSampler, VulkanSamplerError, VulkanShaderError, VulkanShaderModule,
-    VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
+    VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
+    VulkanLogicalDevice, VulkanSampler, VulkanSamplerError, VulkanShaderError,
+    VulkanShaderModule, VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
 };
 
 /// Errors returned while preparing cached surface-composition resources.
@@ -27,7 +27,9 @@ pub(crate) enum VulkanSurfacePipelineCacheError {
 impl fmt::Display for VulkanSurfacePipelineCacheError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::DescriptorLayout(error) => write!(formatter, "Surface descriptor layout: {error}"),
+            Self::DescriptorLayout(error) => {
+                write!(formatter, "Surface descriptor layout: {error}")
+            }
             Self::Sampler(error) => write!(formatter, "Surface sampler: {error}"),
             Self::Shader(error) => write!(formatter, "Surface shader: {error}"),
             Self::Pipeline(error) => write!(formatter, "Surface pipeline: {error}"),
@@ -49,8 +51,9 @@ impl VulkanSurfacePipelineCache {
     pub(crate) fn new(
         device: Arc<VulkanLogicalDevice>,
     ) -> Result<Self, VulkanSurfacePipelineCacheError> {
-        let descriptor_layout = VulkanTextureDescriptorSetLayout::new_shared(Arc::clone(&device))
-            .map_err(VulkanSurfacePipelineCacheError::DescriptorLayout)?;
+        let descriptor_layout =
+            VulkanTextureDescriptorSetLayout::new_shared(Arc::clone(&device))
+                .map_err(VulkanSurfacePipelineCacheError::DescriptorLayout)?;
         let sampler = VulkanSampler::linear_clamp_shared(Arc::clone(&device))
             .map_err(VulkanSurfacePipelineCacheError::Sampler)?;
 
