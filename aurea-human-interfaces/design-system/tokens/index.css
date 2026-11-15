@@ -25,6 +25,20 @@
   --aurea-critical: #b6504a;
   --aurea-focus: #3d7af6;
 
+  /* Controls: restrained tonal depth, never a substitute for state labels. */
+  --aurea-control-fill: linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%);
+  --aurea-control-fill-hover: linear-gradient(180deg, #f8fbff 0%, #eaf2ff 100%);
+  --aurea-control-fill-pressed: linear-gradient(180deg, #e7f0ff 0%, #f2f7ff 100%);
+  --aurea-control-border: rgba(39, 74, 120, 0.14);
+  --aurea-control-border-hover: rgba(55, 111, 190, 0.28);
+  --aurea-control-disabled-opacity: 0.52;
+
+  /* Primary actions use the Aurea blue family, not generic system blue. */
+  --aurea-button-primary-fill: linear-gradient(180deg, #79b3ff 0%, #4d8df7 100%);
+  --aurea-button-primary-hover: linear-gradient(180deg, #8bc0ff 0%, #5a98fa 100%);
+  --aurea-button-primary-pressed: linear-gradient(180deg, #407fe5 0%, #5b96ed 100%);
+  --aurea-button-primary-text: #ffffff;
+
   --aurea-dock-bg: rgba(247, 250, 255, 0.58);
   --aurea-dock-bg-strong: rgba(249, 251, 255, 0.76);
   --aurea-dock-border: rgba(255, 255, 255, 0.7);
@@ -32,12 +46,17 @@
   --aurea-panel-bg: rgba(255, 255, 255, 0.66);
   --aurea-panel-border: rgba(20, 28, 38, 0.08);
 
-  --aurea-notification-bg: rgba(255, 255, 255, 0.72);
-  --aurea-notification-border: rgba(17, 24, 39, 0.08);
+  /* Notification material: translucent fill, edge light and layered depth. */
+  --aurea-notification-bg: rgba(248, 251, 255, 0.76);
+  --aurea-notification-border: rgba(255, 255, 255, 0.78);
+  --aurea-notification-highlight: rgba(255, 255, 255, 0.72);
   --aurea-notification-shadow: 0 18px 40px rgba(18, 26, 36, 0.16);
+  --aurea-notification-backdrop: blur(28px) saturate(155%);
 
   --aurea-glass-fill: rgba(255, 255, 255, 0.28);
   --aurea-glass-border: rgba(255, 255, 255, 0.58);
+  --aurea-glass-highlight: rgba(255, 255, 255, 0.66);
+  --aurea-glass-backdrop: blur(24px) saturate(145%);
 
   --aurea-shadow-soft: 0 14px 30px rgba(17, 24, 39, 0.10);
   --aurea-shadow-strong: 0 24px 48px rgba(17, 24, 39, 0.16);
@@ -45,7 +64,8 @@
   --aurea-window-radius: 18px;
   --aurea-panel-radius: 20px;
   --aurea-dock-radius: 22px;
-  --aurea-control-radius: 12px;
+  --aurea-control-radius: 10px;
+  --aurea-notification-radius: 18px;
 
   --aurea-space-1: 4px;
   --aurea-space-2: 8px;
@@ -86,6 +106,17 @@
   --aurea-critical: #d26d63;
   --aurea-focus: #8bb9ff;
 
+  --aurea-control-fill: linear-gradient(180deg, #1b2b40 0%, #152336 100%);
+  --aurea-control-fill-hover: linear-gradient(180deg, #223750 0%, #1a2d45 100%);
+  --aurea-control-fill-pressed: linear-gradient(180deg, #122035 0%, #1b2d43 100%);
+  --aurea-control-border: rgba(255, 255, 255, 0.10);
+  --aurea-control-border-hover: rgba(139, 185, 255, 0.28);
+
+  --aurea-button-primary-fill: linear-gradient(180deg, #80b7ff 0%, #568fe8 100%);
+  --aurea-button-primary-hover: linear-gradient(180deg, #95c4ff 0%, #679ef0 100%);
+  --aurea-button-primary-pressed: linear-gradient(180deg, #477fd2 0%, #6098e5 100%);
+  --aurea-button-primary-text: #081525;
+
   --aurea-dock-bg: rgba(15, 22, 31, 0.58);
   --aurea-dock-bg-strong: rgba(18, 26, 36, 0.76);
   --aurea-dock-border: rgba(255, 255, 255, 0.08);
@@ -93,12 +124,16 @@
   --aurea-panel-bg: rgba(16, 27, 42, 0.72);
   --aurea-panel-border: rgba(255, 255, 255, 0.08);
 
-  --aurea-notification-bg: rgba(18, 27, 38, 0.72);
-  --aurea-notification-border: rgba(255, 255, 255, 0.08);
+  --aurea-notification-bg: rgba(16, 27, 42, 0.78);
+  --aurea-notification-border: rgba(255, 255, 255, 0.14);
+  --aurea-notification-highlight: rgba(255, 255, 255, 0.10);
   --aurea-notification-shadow: 0 18px 42px rgba(4, 9, 16, 0.42);
+  --aurea-notification-backdrop: blur(28px) saturate(145%);
 
   --aurea-glass-fill: rgba(16, 27, 42, 0.36);
   --aurea-glass-border: rgba(255, 255, 255, 0.10);
+  --aurea-glass-highlight: rgba(255, 255, 255, 0.10);
+  --aurea-glass-backdrop: blur(24px) saturate(135%);
 
   --aurea-shadow-soft: 0 12px 28px rgba(0, 0, 0, 0.26);
   --aurea-shadow-strong: 0 24px 52px rgba(0, 0, 0, 0.38);
@@ -113,7 +148,12 @@
     --aurea-dock-bg-strong: var(--aurea-surface-elevated);
     --aurea-panel-bg: var(--aurea-surface-window);
     --aurea-notification-bg: var(--aurea-surface-window);
+    --aurea-notification-border: var(--aurea-border-strong);
+    --aurea-notification-highlight: transparent;
+    --aurea-notification-backdrop: none;
     --aurea-glass-fill: var(--aurea-surface-window);
     --aurea-glass-border: var(--aurea-border-subtle);
+    --aurea-glass-highlight: transparent;
+    --aurea-glass-backdrop: none;
   }
 }
