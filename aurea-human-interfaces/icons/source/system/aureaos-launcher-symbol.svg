@@ -1,14 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-<!-- Faithful vector interpretation of the approved AureaOS flowing ribbon-A concept. -->
+<!-- Faithful vector master of the approved AureaOS ribbon-A concept. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
-<title id="title">AureaOS launcher symbol</title><desc id="desc">A luminous blue and cyan dimensional ribbon forms an open flowing letter A, with a curved foreground ribbon weaving across its legs. Transparent background.</desc>
+<title id="title">AureaOS launcher symbol</title><desc id="desc">A sculpted glossy blue arch crossed by a luminous cyan flowing ribbon. Transparent background.</desc>
 <defs>
-<linearGradient id="arch" x1=".15" y1="0" x2=".85" y2="1"><stop stop-color="#42DCFF"/><stop offset=".25" stop-color="#087FEA"/><stop offset=".56" stop-color="#0758CE"/><stop offset=".82" stop-color="#0878DF"/><stop offset="1" stop-color="#59E5FF"/></linearGradient>
-<linearGradient id="cross" x1="0" y1="0" x2="1" y2=".8"><stop stop-color="#B8F8FF"/><stop offset=".22" stop-color="#43D9FA"/><stop offset=".62" stop-color="#12A9EF"/><stop offset=".84" stop-color="#1688E8"/><stop offset="1" stop-color="#C0FAFF"/></linearGradient>
-<linearGradient id="shine" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#FFF" stop-opacity=".08"/><stop offset=".3" stop-color="#E7FDFF" stop-opacity=".75"/><stop offset=".55" stop-color="#FFF" stop-opacity=".12"/><stop offset=".85" stop-color="#C8F8FF" stop-opacity=".55"/><stop offset="1" stop-color="#FFF" stop-opacity=".08"/></linearGradient>
-<linearGradient id="cross-shine" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#FFF" stop-opacity=".8"/><stop offset=".45" stop-color="#E8FFFF" stop-opacity=".25"/><stop offset="1" stop-color="#FFF" stop-opacity=".02"/></linearGradient>
-<filter id="ribbon-shadow" x="-.35" y="-.35" width="1.8" height="1.9"><feGaussianBlur in="SourceAlpha" stdDeviation="17"/><feOffset dy="22"/><feComponentTransfer><feFuncA type="linear" slope=".32"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-<filter id="soft-glow" x="-.5" y="-.5" width="2" height="2"><feGaussianBlur stdDeviation="15"/></filter></defs><g filter="url(#ribbon-shadow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-<path d="M252 770 C306 655 405 421 491 269 C513 230 542 210 565 238 C657 386 744 628 803 770" stroke="#064BAF" stroke-opacity=".3" stroke-width="146"/><path d="M252 770 C306 655 405 421 491 269 C513 230 542 210 565 238 C657 386 744 628 803 770" stroke="url(#arch)" stroke-width="116"/><path d="M252 770 C306 655 405 421 491 269 C513 230 542 210 565 238 C657 386 744 628 803 770" stroke="url(#shine)" stroke-width="13" stroke-dasharray="260 1100" stroke-dashoffset="-38"/></g>
-<g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M253 770 C332 787 369 699 428 633 C489 565 574 548 648 575 C715 599 761 684 803 770" stroke="#0759C0" stroke-opacity=".25" stroke-width="126" filter="url(#soft-glow)"/><path d="M253 770 C332 787 369 699 428 633 C489 565 574 548 648 575 C715 599 761 684 803 770" stroke="#0754B9" stroke-opacity=".3" stroke-width="124"/><path d="M253 770 C332 787 369 699 428 633 C489 565 574 548 648 575 C715 599 761 684 803 770" stroke="url(#cross)" stroke-width="96"/><path d="M277 754 C352 752 385 671 438 617 C500 555 573 544 643 570 C702 592 751 674 781 739" stroke="url(#cross-shine)" stroke-width="12"/></g></svg>
+<linearGradient id="arch" x1="0" y1="0" x2="1" y2=".15"><stop stop-color="#12A9F4"/><stop offset=".24" stop-color="#0875E7"/><stop offset=".52" stop-color="#0754C9"/><stop offset=".78" stop-color="#0872D9"/><stop offset="1" stop-color="#35D6FA"/></linearGradient>
+<linearGradient id="cross" x1="0" y1="0" x2=".9" y2=".15"><stop stop-color="#B9F8FF"/><stop offset=".16" stop-color="#52E2FA"/><stop offset=".48" stop-color="#21C8F4"/><stop offset=".76" stop-color="#18A9EC"/><stop offset="1" stop-color="#7DEBFF"/></linearGradient>
+<linearGradient id="archHi" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#9AF5FF" stop-opacity=".1"/><stop offset=".22" stop-color="#C9FBFF" stop-opacity=".85"/><stop offset=".48" stop-color="#FFFFFF" stop-opacity=".2"/><stop offset=".78" stop-color="#B5F8FF" stop-opacity=".48"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".1"/></linearGradient>
+<linearGradient id="crossHi" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#FFFFFF" stop-opacity=".9"/><stop offset=".25" stop-color="#E7FFFF" stop-opacity=".55"/><stop offset=".7" stop-color="#D3FCFF" stop-opacity=".08"/><stop offset="1" stop-color="#FFFFFF" stop-opacity=".02"/></linearGradient>
+<filter id="depth" x="-.35" y="-.35" width="1.8" height="1.9"><feGaussianBlur in="SourceAlpha" stdDeviation="17"/><feOffset dy="19"/><feComponentTransfer><feFuncA type="linear" slope=".38"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<filter id="glow" x="-.5" y="-.5" width="2" height="2"><feGaussianBlur stdDeviation="13"/></filter></defs><g fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 285 770 C 345 640, 432 408, 493 275 C 512 232, 540 215, 562 255 C 632 390, 723 636, 786 770" stroke="#064CB5" stroke-opacity=".28" stroke-width="145" filter="url(#depth)"/>
+<path d="M 285 770 C 345 640, 432 408, 493 275 C 512 232, 540 215, 562 255 C 632 390, 723 636, 786 770" stroke="url(#arch)" stroke-width="119"/>
+<path d="M 285 770 C 345 640, 432 408, 493 275 C 512 232, 540 215, 562 255 C 632 390, 723 636, 786 770" stroke="url(#archHi)" stroke-width="12" stroke-dasharray="180 1100" stroke-dashoffset="-85"/>
+<path d="M 285 770 C 345 640, 432 408, 493 275 C 512 232, 540 215, 562 255 C 632 390, 723 636, 786 770" stroke="#C9FAFF" stroke-opacity=".36" stroke-width="3"/>
+</g><g fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M 258 760 C 334 742, 386 656, 459 606 C 527 559, 600 557, 667 594 C 719 623, 755 699, 786 770" stroke="#0755B8" stroke-opacity=".34" stroke-width="125" filter="url(#glow)"/>
+<path d="M 258 760 C 334 742, 386 656, 459 606 C 527 559, 600 557, 667 594 C 719 623, 755 699, 786 770" stroke="#0755B8" stroke-opacity=".32" stroke-width="119"/>
+<path d="M 258 760 C 334 742, 386 656, 459 606 C 527 559, 600 557, 667 594 C 719 623, 755 699, 786 770" stroke="url(#cross)" stroke-width="96"/>
+<path d="M 270 746 C 345 724, 397 645, 466 600 C 532 557, 600 562, 662 595" stroke="url(#crossHi)" stroke-width="13"/>
+<path d="M 272 774 C 345 757, 393 687, 453 646" stroke="#E9FFFF" stroke-opacity=".4" stroke-width="3"/>
+</g></svg>
