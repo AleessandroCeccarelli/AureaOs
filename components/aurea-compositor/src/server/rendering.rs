@@ -14,6 +14,7 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) {
         drm_surfaces,
         gbm_devices,
         vulkan_backends,
+        display_color,
         ..
     } = state;
 
@@ -51,7 +52,19 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) {
             continue;
         }
 
-        let mut backend = VulkanOutputScanoutBackend::new(device, gbm_devices, output, vulkan);
+        let warmth_percent = display_color.adjustment().warmth_percent();
+        let mut display_color_manager = vulkan
+            .display_color_manager()
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut backend = VulkanOutputScanoutBackend::new(
+            device,
+            gbm_devices,
+            output,
+            vulkan,
+            &mut display_color_manager,
+            warmth_percent,
+        );
         if let Err(error) = compositor.render_output(&mut backend, output_id) {
             eprintln!("AureaOS: output {output_id} rendering failed: {error}");
         }
