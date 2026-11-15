@@ -5,11 +5,11 @@
 
 //! Graphics-pipeline creation for Vulkan 1.3 dynamic rendering.
 
-use std::{error::Error, ffi::CString, fmt};
+use std::{error::Error, ffi::CString, fmt, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
-use super::{VulkanLogicalDevice, VulkanShaderModule};
+use super::{VulkanDeviceOwner, VulkanLogicalDevice, VulkanShaderModule};
 
 /// Shader stages used to build the initial compositor graphics pipeline.
 pub struct VulkanGraphicsShaders<'shader, 'device> {
@@ -45,7 +45,7 @@ impl Error for VulkanGraphicsPipelineError {}
 
 /// Owns a pipeline layout and one dynamic-rendering-compatible graphics pipeline.
 pub struct VulkanGraphicsPipeline<'device> {
-    device: &'device VulkanLogicalDevice,
+    device: VulkanDeviceOwner<'device>,
     layout: vk::PipelineLayout,
     pipeline: vk::Pipeline,
     color_format: vk::Format,
@@ -91,31 +91,53 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         color_format: vk::Format,
         descriptor_layouts: &[&super::VulkanTextureDescriptorSetLayout<'device>],
     ) -> Result<Self, VulkanGraphicsPipelineError> {
-        Self::create(device, shaders, color_format, descriptor_layouts, &[])
+        let handles = descriptor_layouts.iter().map(|layout| layout.handle()).collect::<Vec<_>>();
+        Self::create(
+            device,
+            VulkanDeviceOwner::Borrowed(device),
+            shaders,
+            color_format,
+            &handles,
+            &[],
+        )
+    }
+
+    /// Creates a pipeline whose device is retained independently of the caller.
+    /// Descriptor layout handles are consumed only during Vulkan pipeline-layout creation;
+    /// the owner of those layouts must keep them alive for the pipeline's use contract.
+    pub fn new_shared_with_descriptor_layout_handles(
+        device: Arc<VulkanLogicalDevice>,
+        shaders: VulkanGraphicsShaders<'_, '_>,
+        color_format: vk::Format,
+        descriptor_layout_handles: &[vk::DescriptorSetLayout],
+        push_constant_ranges: &[vk::PushConstantRange],
+    ) -> Result<VulkanGraphicsPipeline<'static>, VulkanGraphicsPipelineError> {
+        let device_ref = device.as_ref();
+        Self::create(
+            device_ref,
+            VulkanDeviceOwner::Shared(device),
+            shaders,
+            color_format,
+            descriptor_layout_handles,
+            push_constant_ranges,
+        )
     }
 
     fn create(
         device: &'device VulkanLogicalDevice,
         shaders: VulkanGraphicsShaders<'_, 'device>,
         color_format: vk::Format,
-        descriptor_layouts: &[&super::VulkanTextureDescriptorSetLayout<'device>],
+        descriptor_layout_handles: &[vk::DescriptorSetLayout],
         push_constant_ranges: &[vk::PushConstantRange],
     ) -> Result<Self, VulkanGraphicsPipelineError> {
         if shaders.vertex.device_handle() != device.handle().handle()
             || shaders.fragment.device_handle() != device.handle().handle()
-            || descriptor_layouts
-                .iter()
-                .any(|layout| layout.device_handle() != device.handle().handle())
         {
             return Err(VulkanGraphicsPipelineError::DeviceMismatch);
         }
 
-        let descriptor_handles = descriptor_layouts
-            .iter()
-            .map(|layout| layout.handle())
-            .collect::<Vec<_>>();
         let layout_info = vk::PipelineLayoutCreateInfo::default()
-            .set_layouts(&descriptor_handles)
+            .set_layouts(descriptor_layout_handles)
             .push_constant_ranges(push_constant_ranges);
         let layout = unsafe { device.handle().create_pipeline_layout(&layout_info, None) }
             .map_err(VulkanGraphicsPipelineError::Creation)?;
@@ -206,7 +228,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         };
 
         Ok(Self {
-            device,
+            device: owner,
             layout,
             pipeline,
             color_format,
@@ -225,7 +247,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         device: &VulkanLogicalDevice,
         color_format: vk::Format,
     ) -> bool {
-        self.device.handle().handle() == device.handle().handle()
+        self.device.device().handle().handle() == device.handle().handle()
             && self.color_format == color_format
     }
 
