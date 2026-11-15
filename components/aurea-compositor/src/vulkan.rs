@@ -53,6 +53,7 @@ mod sampler;
 mod shader_module;
 mod shared_image;
 mod shm_texture;
+mod surface_pipeline_cache;
 #[cfg(feature = "drm")]
 pub(crate) mod surface_compositor;
 mod texture_binding;
