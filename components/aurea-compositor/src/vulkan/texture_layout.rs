@@ -65,7 +65,7 @@ impl<'device> VulkanTextureDescriptorSetLayout<'device> {
         }
         .map_err(VulkanTextureLayoutError::Creation)?;
 
-        Ok(Self { device, handle })
+        Ok(VulkanTextureDescriptorSetLayout { device, handle })
     }
 
     pub fn handle(&self) -> vk::DescriptorSetLayout {
