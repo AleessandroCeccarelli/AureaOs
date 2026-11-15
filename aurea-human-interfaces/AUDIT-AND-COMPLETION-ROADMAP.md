@@ -108,7 +108,9 @@ The hierarchy is documented in [Human Interfaces](README.md) and [Design System]
 - [ ] Integrate launcher, dock, menus, dialogs, notifications and system panels with their actual services.
 - [ ] Reconcile prototypes with the canonical desktop experience specification.
 - [ ] Validate first-login workflows on supported hardware.
-- [ ] Complete Night Light runtime integration: system-wide Vulkan output processing, capability negotiation/fallback, shell-to-compositor state transport, schedule service and persistence.
+- [ ] Complete Night Light runtime integration: system-wide Vulkan output processing, capability negotiation/fallback, schedule service and persistence.
+- [x] Establish the shared lock-free shell-to-compositor display policy channel through the desktop API and Wayland server state.
+- [ ] Consume the display policy in the final Vulkan output stage and expose capability status to the shell.
 - [ ] Add Night Light controls to Settings → Appearance and the right-side Quick Settings panel, sharing one authoritative preference state.
 
 ## Explicitly deferred
@@ -119,7 +121,7 @@ The hierarchy is documented in [Human Interfaces](README.md) and [Design System]
 
 ## Runtime ownership
 
-- **Compositor:** windows, focus, input, cursor presentation, workspaces and placement.
+- **Compositor:** windows, focus, input, cursor presentation, workspaces and placement; output color policy is received through the shared desktop API, while final Vulkan processing remains pending.
 - **Shell:** dock, launcher, overview, Quick Settings and notification presentation.
 - **System services:** network, audio, power, display, appearance and notification state.
 - **Fides and Quaero:** file-management and search workflows.
