@@ -72,11 +72,13 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         descriptor_layouts: &[&super::VulkanTextureDescriptorSetLayout<'device>],
         push_constant_ranges: &[vk::PushConstantRange],
     ) -> Result<Self, VulkanGraphicsPipelineError> {
+        let handles = descriptor_layouts.iter().map(|layout| layout.handle()).collect::<Vec<_>>();
         Self::create(
             device,
+            VulkanDeviceOwner::Borrowed(device),
             shaders,
             color_format,
-            descriptor_layouts,
+            &handles,
             push_constant_ranges,
         )
     }
@@ -125,7 +127,8 @@ impl<'device> VulkanGraphicsPipeline<'device> {
 
     fn create(
         device: &'device VulkanLogicalDevice,
-        shaders: VulkanGraphicsShaders<'_, 'device>,
+        owner: VulkanDeviceOwner<'device>,
+        shaders: VulkanGraphicsShaders<'_, '_>,
         color_format: vk::Format,
         descriptor_layout_handles: &[vk::DescriptorSetLayout],
         push_constant_ranges: &[vk::PushConstantRange],
@@ -254,7 +257,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
     /// Binds this pipeline to a recording graphics command buffer.
     pub fn bind(&self, command_buffer: vk::CommandBuffer) {
         unsafe {
-            self.device.handle().cmd_bind_pipeline(
+            self.device.device().handle().cmd_bind_pipeline(
                 command_buffer,
                 vk::PipelineBindPoint::GRAPHICS,
                 self.pipeline,
@@ -291,6 +294,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
     pub fn draw(&self, command_buffer: vk::CommandBuffer, vertex_count: u32, instance_count: u32) {
         unsafe {
             self.device
+                .device()
                 .handle()
                 .cmd_draw(command_buffer, vertex_count, instance_count, 0, 0);
         }
