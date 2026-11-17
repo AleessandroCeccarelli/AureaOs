@@ -3,13 +3,13 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! libinput backend registration and keyboard event routing.
+//! libinput backend registration and keyboard/pointer event routing.
 
 use std::io;
 
 use smithay::{
     backend::{
-        input::{Event, InputEvent, KeyboardKeyEvent},
+        input::{Event, InputEvent, KeyboardKeyEvent, PointerMotionEvent},
         libinput::{LibinputInputBackend, LibinputSessionInterface},
     },
     reexports::{calloop::LoopHandle, input::Libinput},
@@ -46,11 +46,19 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
         return;
     }
 
-    if let InputEvent::Keyboard { event } = event {
-        state.compositor.handle_keyboard_input(
-            event.key_code(),
-            event.state(),
-            event.time() as u32,
-        );
+    match event {
+        InputEvent::Keyboard { event } => {
+            state.compositor.handle_keyboard_input(
+                event.key_code(),
+                event.state(),
+                event.time() as u32,
+            );
+        }
+        InputEvent::PointerMotion { event } => {
+            state
+                .compositor
+                .handle_pointer_motion(event.delta(), event.time() as u32);
+        }
+        _ => {}
     }
 }
