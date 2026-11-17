@@ -8,6 +8,7 @@
 mod buffer;
 mod painter;
 mod protocol;
+mod typography;
 
 // Shared dimensions for the Welcome surface and its SHM buffer.
 pub(super) const WIDTH: usize = 720;
