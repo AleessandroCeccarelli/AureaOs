@@ -361,7 +361,6 @@ mod tests {
         );
     }
 
-
     #[test]
     fn converts_argb8888_native_endian_pixels_to_rgba8_in_place() {
         let argb = 0x7f12_34a5_u32;
