@@ -212,7 +212,7 @@ mod tests {
             &pixels[offset..offset + 4]
         };
 
-        assert_eq!(pixel(96, 160), [224, 169, 68, 255]);
+        assert_eq!(pixel(96, 160), [68, 169, 224, 255]);
         assert_eq!(pixel(128, 211), [NAVY[2], NAVY[1], NAVY[0], 255]);
         assert_eq!(pixel(224, 153), [250, 244, 239, 255]);
         assert_ne!(pixel(224, 153), pixel(236, 153));
