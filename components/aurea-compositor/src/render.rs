@@ -14,6 +14,7 @@ pub mod surface_tree;
 use surface_tree::{SurfaceTreeSnapshot, collect_surface_tree_ids, collect_surface_tree_snapshots};
 
 use smithay::{
+    desktop::{utils::under_from_surface_tree, WindowSurfaceType},
     backend::renderer::{
         ImportAll, Renderer,
         element::{
@@ -22,6 +23,7 @@ use smithay::{
         },
     },
     utils::{Logical, Physical, Point},
+    reexports::wayland_server::protocol::wl_surface::WlSurface,
     wayland::shell::xdg::ToplevelSurface,
 };
 
@@ -53,26 +55,31 @@ impl<'a> RenderScene<'a> {
         self.toplevels.iter().map(|toplevel| toplevel.surface)
     }
 
-    /// Returns the topmost toplevel whose committed surface tree contains a
-    /// logical pointer position.
+    /// Returns the topmost client surface under a global logical pointer position.
     ///
-    /// Both toplevel stacking and subsurface traversal are checked back-to-front
-    /// so the surface visually on top receives pointer focus.
-    pub fn toplevel_under(&self, point: Point<f64, Logical>) -> Option<&'a ToplevelSurface> {
+    /// Smithay applies committed surface geometry and input regions, including
+    /// subsurface stacking. The returned origin is in global logical coordinates.
+    pub fn surface_under(
+        &self,
+        point: Point<f64, Logical>,
+    ) -> Option<(WlSurface, Point<i32, Logical>, &'a ToplevelSurface)> {
         for toplevel in self.toplevels.iter().rev() {
-            let snapshots =
-                collect_surface_tree_snapshots(toplevel.surface.wl_surface(), toplevel.location);
-
-            if snapshots
-                .iter()
-                .rev()
-                .any(|snapshot| hit_test::contains_point(snapshot, point))
-            {
-                return Some(toplevel.surface);
+            if let Some((surface, location)) = under_from_surface_tree(
+                toplevel.surface.wl_surface(),
+                point,
+                toplevel.location,
+                WindowSurfaceType::TOPLEVEL | WindowSurfaceType::SUBSURFACE,
+            ) {
+                return Some((surface, location, toplevel.surface));
             }
         }
 
         None
+    }
+
+    /// Returns the topmost toplevel containing a client surface at this point.
+    pub fn toplevel_under(&self, point: Point<f64, Logical>) -> Option<&'a ToplevelSurface> {
+        self.surface_under(point).map(|(_, _, toplevel)| toplevel)
     }
 
     /// Imports mapped toplevel surface trees as Smithay render elements.

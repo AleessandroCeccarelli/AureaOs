@@ -39,4 +39,4 @@ aurea-desktop-api = { path = "../aurea-desktop-api" }
 [dependencies.smithay]
 version = "0.7"
 default-features = false
-features = ["wayland_frontend"]
+features = ["wayland_frontend", "desktop"]
