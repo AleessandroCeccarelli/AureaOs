@@ -144,3 +144,12 @@ These are source-level observations, not proof against all runtime or kernel-lev
 GitHub Actions run [44056628316](https://github.com/AleessandroCeccarelli/AureaOs/actions/runs/44056628316), on Ubuntu 24.04 at commit `b7494271848213a6efdcfb1cf626773e861c08ae`, completed successfully. Workspace compilation, DRM-feature compilation, workspace tests, compositor DRM/Vulkan tests, shader compilation, bootstrap fixture checks, and the Mesa lavapipe offscreen smoke test passed.
 
 `cargo audit` also exited successfully, but reported the two already tracked allowed warnings for transitive `cgmath 0.18.0`: RUSTSEC-2026-0196 (unmaintained) and RUSTSEC-2026-0197 (unsound `swap_columns` behavior for identical indices). No patched upstream release is available. This result is **not** a clean dependency audit and does not close AUR-SEC-005; continue evaluating a maintained Smithay release or a reviewed revision that removes `cgmath`. No suppression or unreviewed lockfile override was introduced.
+
+
+## 2026-11-17 — Smithay dependency investigation
+
+- The locked crates.io release Smithay 0.7.0 still brings in `cgmath 0.18.0`, which triggers the tracked RustSec advisories AUR-SEC-005.
+- Upstream Smithay master has removed `cgmath` in favor of `glam` (upstream commit `812bd33259ff58810dadef6086d8385eeac1ca55`).
+- The current upstream master head (`33323a917af13676875c27fb7748ffdaea5f4c2f`) is substantially ahead of the released 0.7.0 API. A trial pin caused compositor API incompatibilities (Wayland dispatch/delegate changes, input time, output properties and DMA-BUF plane API), so the trial pin was not retained.
+- AureaOS remains on the released Smithay 0.7.0 for build stability. Do not suppress the advisories or force a lockfile-only override. Re-evaluate when Smithay publishes a compatible release containing the upstream `cgmath` removal; alternatively assess a narrowly scoped maintained patch only if the risk warrants the maintenance cost.
+- This is a dependency warning, not evidence that Smithay itself is unmaintained. Upstream repository activity was confirmed in November 2026.
