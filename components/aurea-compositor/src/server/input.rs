@@ -9,7 +9,10 @@ use std::io;
 
 use smithay::{
     backend::{
-        input::{Event, InputEvent, KeyboardKeyEvent, PointerMotionEvent},
+        input::{
+            Axis, Event, InputEvent, KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent,
+            PointerMotionEvent,
+        },
         libinput::{LibinputInputBackend, LibinputSessionInterface},
     },
     reexports::{calloop::LoopHandle, input::Libinput},
@@ -58,6 +61,25 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             state
                 .compositor
                 .handle_pointer_motion(event.delta(), event.time() as u32);
+        }
+        InputEvent::PointerButton { event } => {
+            state.compositor.handle_pointer_button(
+                event.button_code(),
+                event.state(),
+                event.time() as u32,
+            );
+        }
+        InputEvent::PointerAxis { event } => {
+            state.compositor.handle_pointer_axis(
+                event.amount(Axis::Horizontal),
+                event.amount(Axis::Vertical),
+                event.amount_v120(Axis::Horizontal),
+                event.amount_v120(Axis::Vertical),
+                event.source(),
+                event.relative_direction(Axis::Horizontal),
+                event.relative_direction(Axis::Vertical),
+                event.time() as u32,
+            );
         }
         _ => {}
     }
