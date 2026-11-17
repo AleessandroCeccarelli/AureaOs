@@ -47,6 +47,8 @@ cargo build --locked -p aurea-desktop --bins
 
 printf '\n[2/2] Starting the bounded native DRM/Vulkan session...\n'
 set +e
+# The inner shell intentionally expands variables in its own process context.
+# shellcheck disable=SC2016
 timeout --signal=INT --kill-after=10s "${TIMEOUT_SECONDS}s" bash -c '
     compositor_pid=$$
     (
