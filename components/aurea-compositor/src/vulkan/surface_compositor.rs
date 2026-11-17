@@ -83,7 +83,6 @@ pub(crate) fn render_and_release(
         &VulkanImageView<'_, '_>,
         VulkanImageState,
     )>,
-    before_submit: impl FnOnce() -> Result<(), String>,
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let active_surface_ids = scene.surface_ids();
@@ -118,7 +117,6 @@ pub(crate) fn render_and_release(
                     warmth,
                     intermediate_view,
                     intermediate_state,
-                    before_submit,
                     on_submitted,
                 )
             }
@@ -126,11 +124,16 @@ pub(crate) fn render_and_release(
                 device,
                 view,
                 previous_image_state,
-                before_submit,
                 on_submitted,
             ),
         };
     }
+    // Finish asynchronous texture uploads before borrowing cache-owned GPU resources.
+    // This keeps upload retirement separate from the immutable descriptor/pipeline borrows.
+    surface_cache
+        .complete_surface_texture_uploads()
+        .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+
     let (composition_view, composition_previous_state) = match display_color {
         Some((_, _, intermediate_view, intermediate_state)) => {
             (intermediate_view, intermediate_state)
@@ -274,12 +277,7 @@ pub(crate) fn render_and_release(
     command_buffer
         .end()
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
-    // Upload and frame recording overlap on the CPU. The fence is checked
-    // only after the draw command buffer is ready for submission.
-    surface_cache
-        .complete_surface_texture_uploads()
-        .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
-    before_submit().map_err(VulkanSurfaceCompositionError::Command)?;
+    // All sampled texture uploads are complete before the draw submission.
     command_buffer
         .submit_and_wait_with(on_submitted)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
@@ -295,7 +293,6 @@ fn clear_display_and_release(
     warmth: u8,
     intermediate_view: &VulkanImageView<'_, '_>,
     previous_intermediate_state: VulkanImageState,
-    before_submit: impl FnOnce() -> Result<(), String>,
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let binding = pass
@@ -338,7 +335,6 @@ fn clear_display_and_release(
     command_buffer
         .end()
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
-    before_submit().map_err(VulkanSurfaceCompositionError::Command)?;
     command_buffer
         .submit_and_wait_with(on_submitted)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
@@ -350,7 +346,6 @@ fn clear_and_release(
     device: &VulkanLogicalDevice,
     view: &VulkanImageView<'_, '_>,
     previous_image_state: VulkanImageState,
-    before_submit: impl FnOnce() -> Result<(), String>,
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let mut command_buffer = VulkanCommandBuffer::new(device)
@@ -378,7 +373,6 @@ fn clear_and_release(
     command_buffer
         .end()
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
-    before_submit().map_err(VulkanSurfaceCompositionError::Command)?;
     command_buffer
         .submit_and_wait_with(on_submitted)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;

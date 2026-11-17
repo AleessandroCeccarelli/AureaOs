@@ -361,6 +361,11 @@ fn render_and_present(
         .zip(intermediate.as_ref().map(|(_, state)| *state))
         .map(|((pass, intermediate_view), state)| (pass, warmth_percent, intermediate_view, state));
 
+    presentation
+        .frame_coordinator_mut()
+        .begin_render(framebuffer)
+        .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
+
     surface_compositor::render_and_release(
         device,
         &view,
@@ -369,12 +374,6 @@ fn render_and_present(
         surface_cache,
         previous_image_state,
         effective_display,
-        || {
-            presentation
-                .frame_coordinator_mut()
-                .begin_render(framebuffer)
-                .map_err(|error| error.to_string())
-        },
         || {
             presentation
                 .frame_coordinator_mut()

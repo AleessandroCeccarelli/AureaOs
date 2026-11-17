@@ -12,7 +12,7 @@ use smithay::reexports::ash::vk;
 use super::{VulkanLogicalDevice, VulkanUploadBatch};
 
 /// Owns every temporary resource until its queue submission has completed.
-pub(super) struct VulkanPendingUpload<T> {
+pub(crate) struct VulkanPendingUpload<T> {
     device: Arc<VulkanLogicalDevice>,
     command_pool: vk::CommandPool,
     command_buffer: vk::CommandBuffer,

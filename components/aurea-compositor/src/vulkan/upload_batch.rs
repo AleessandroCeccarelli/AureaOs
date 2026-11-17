@@ -15,7 +15,7 @@ use super::{
 };
 
 /// One staging allocation shared by all texture copies in a submission.
-pub(super) struct VulkanUploadBatch {
+pub(crate) struct VulkanUploadBatch {
     device: Arc<VulkanLogicalDevice>,
     buffer: vk::Buffer,
     memory: vk::DeviceMemory,

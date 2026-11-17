@@ -199,7 +199,12 @@ impl<'device> VulkanDisplayColorPass<'device> {
     ) -> Result<
         VulkanTextureBinding<'resources, 'image, 'image_device, 'device>,
         VulkanDisplayColorPassError,
-    > {
+    >
+    where
+        'device: 'image_device,
+        'resources: 'image_device,
+        'image: 'image_device,
+    {
         let device = source.device();
         if self.descriptor_layout.device_handle() != device.handle().handle()
             || self.sampler.device_handle() != device.handle().handle()
