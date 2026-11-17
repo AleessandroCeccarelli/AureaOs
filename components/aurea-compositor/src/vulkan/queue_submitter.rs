@@ -11,7 +11,7 @@ use smithay::reexports::ash::{self, vk};
 
 /// Distinguishes rejected submissions from submissions with uncertain completion.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum VulkanQueueSubmitError {
+pub(crate) enum VulkanQueueSubmitError {
     Rejected(vk::Result),
     SubmissionUncertain(vk::Result),
     CompletionUncertain {
@@ -123,11 +123,6 @@ impl<'device> VulkanQueueSubmitter<'device> {
         })
     }
 
-    /// Submits a recorded command buffer and waits for its completion.
-    pub fn submit_and_wait(&self, command_buffer: vk::CommandBuffer) -> Result<(), vk::Result> {
-        self.submit_and_wait_with(command_buffer, || {})
-            .map_err(VulkanQueueSubmitError::result)
-    }
 }
 
 #[cfg(test)]
