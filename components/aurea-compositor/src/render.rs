@@ -14,7 +14,6 @@ pub mod surface_tree;
 use surface_tree::{SurfaceTreeSnapshot, collect_surface_tree_ids, collect_surface_tree_snapshots};
 
 use smithay::{
-    desktop::{utils::under_from_surface_tree, WindowSurfaceType},
     backend::renderer::{
         ImportAll, Renderer,
         element::{
@@ -22,8 +21,9 @@ use smithay::{
             surface::{WaylandSurfaceRenderElement, render_elements_from_surface_tree},
         },
     },
-    utils::{Logical, Physical, Point},
+    desktop::{WindowSurfaceType, utils::under_from_surface_tree},
     reexports::wayland_server::protocol::wl_surface::WlSurface,
+    utils::{Logical, Physical, Point},
     wayland::shell::xdg::ToplevelSurface,
 };
 
