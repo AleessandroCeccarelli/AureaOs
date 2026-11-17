@@ -124,7 +124,6 @@ fn fill_rect(pixels: &mut [u8], x: usize, y: usize, width: usize, height: usize,
     }
 }
 
-
 impl Dispatch<wl_registry::WlRegistry, GlobalListContents> for WelcomeWindow {
     fn event(
         _state: &mut Self,
