@@ -4,6 +4,25 @@ This procedure is for controlled physical-display tests of AureaOS on a dedicate
 test machine. It does not guarantee recovery from a kernel, GPU, firmware, or
 hardware lockup.
 
+## Automated checks before native testing
+
+Before testing on a physical display, run the same checks used by CI:
+
+```bash
+cargo fmt --all -- --check
+cargo check --workspace --locked
+cargo test --workspace --locked
+cargo check -p aurea-compositor --features drm --locked
+cargo test -p aurea-compositor --features drm --locked
+shellcheck tools/run-aurea-native-test.sh
+```
+
+The SHM validation and surface lifecycle are described in
+[`docs/architecture/WAYLAND-SURFACE-LIFECYCLE.md`](../architecture/WAYLAND-SURFACE-LIFECYCLE.md).
+The automated suite validates software behaviour; it cannot confirm that a
+physical DRM connector is active or that a frame is visible on the target
+monitor.
+
 ## Before the first native test
 
 1. Update the working tree and build from the repository root.
