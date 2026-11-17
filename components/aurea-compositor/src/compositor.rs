@@ -26,6 +26,8 @@ mod keyboard;
 mod output_publication;
 mod output_reconciliation;
 mod pointer;
+mod pointer_axis;
+mod pointer_button;
 mod rendering;
 mod workspace;
 
