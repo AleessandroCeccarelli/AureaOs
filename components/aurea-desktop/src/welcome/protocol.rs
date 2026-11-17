@@ -38,13 +38,16 @@ impl Dispatch<wl_registry::WlRegistry, GlobalListContents> for WelcomeWindow {
 
 impl Dispatch<WlBuffer, ()> for WelcomeWindow {
     fn event(
-        _state: &mut Self,
-        _proxy: &WlBuffer,
-        _event: wl_buffer::Event,
+        state: &mut Self,
+        proxy: &WlBuffer,
+        event: wl_buffer::Event,
         _data: &(),
         _conn: &Connection,
         _qh: &QueueHandle<Self>,
     ) {
+        if let wl_buffer::Event::Release = event {
+            state.release_frame(proxy);
+        }
     }
 }
 
@@ -127,8 +130,12 @@ impl Dispatch<XdgToplevel, ()> for WelcomeWindow {
         _conn: &Connection,
         _qh: &QueueHandle<Self>,
     ) {
-        if let xdg_toplevel::Event::Close = event {
-            state.closed = true;
+        match event {
+            xdg_toplevel::Event::Configure { width, height, .. } => {
+                state.configured_size = Some((width, height));
+            }
+            xdg_toplevel::Event::Close => state.closed = true,
+            _ => {}
         }
     }
 }
