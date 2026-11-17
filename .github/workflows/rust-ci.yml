@@ -6,8 +6,12 @@
 name: Rust CI
 
 on:
-  # Deliberately manual-only: development validation is performed on the
-  # project's Fedora hardware, not on GitHub-hosted runners.
+  # Validate every change integrated into the main development line.
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Keep an explicit manual entry point for targeted reruns.
   workflow_dispatch:
 
 permissions:
