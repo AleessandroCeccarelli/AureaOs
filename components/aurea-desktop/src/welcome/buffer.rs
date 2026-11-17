@@ -12,12 +12,10 @@ use wayland_client::protocol::wl_buffer::WlBuffer;
 use wayland_client::protocol::wl_shm_pool::WlShmPool;
 use wayland_client::{Dispatch, QueueHandle};
 
-use super::{WelcomeWindow, painter::paint_welcome};
+use super::{HEIGHT, WIDTH, WelcomeWindow, painter::paint_welcome};
 
-const WIDTH: u32 = 720;
-const HEIGHT: u32 = 440;
-const STRIDE: u32 = WIDTH * 4;
-const BUFFER_SIZE: u32 = STRIDE * HEIGHT;
+const STRIDE: u32 = WIDTH as u32 * 4;
+const BUFFER_SIZE: u32 = STRIDE * HEIGHT as u32;
 
 impl WelcomeWindow {
     pub(super) fn draw(&mut self, qh: &QueueHandle<Self>) -> io::Result<()> {
