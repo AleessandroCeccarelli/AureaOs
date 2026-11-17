@@ -338,6 +338,31 @@ mod tests {
     }
 
     #[test]
+    fn rejects_zero_height() {
+        assert_eq!(
+            ValidatedLayout::new(0, 1, 0, 4, 4).unwrap_err(),
+            ShmBufferError::InvalidDimensions
+        );
+    }
+
+    #[test]
+    fn rejects_offset_beyond_shared_memory_pool() {
+        assert_eq!(
+            ValidatedLayout::new(8, 1, 1, 4, 8).unwrap_err(),
+            ShmBufferError::OutOfBounds
+        );
+    }
+
+    #[test]
+    fn rejects_row_stride_overflow_before_copying() {
+        assert_eq!(
+            ValidatedLayout::new(0, i32::MAX, 1, i32::MAX, usize::MAX).unwrap_err(),
+            ShmBufferError::SnapshotTooLarge
+        );
+    }
+
+
+    #[test]
     fn converts_argb8888_native_endian_pixels_to_rgba8_in_place() {
         let argb = 0x7f12_34a5_u32;
         let snapshot = ShmBufferSnapshot {
