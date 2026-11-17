@@ -10,6 +10,7 @@ use std::{
     fs::{self, File, OpenOptions},
     io::{self, Write},
     panic,
+    os::unix::fs::{OpenOptionsExt, PermissionsExt},
     path::PathBuf,
     sync::{Mutex, OnceLock},
     time::{SystemTime, UNIX_EPOCH},
@@ -23,9 +24,15 @@ pub fn initialize() -> io::Result<PathBuf> {
         .join("aureaos")
         .join("logs");
     fs::create_dir_all(&directory)?;
+    fs::set_permissions(&directory, fs::Permissions::from_mode(0o700))?;
 
     let path = directory.join("aurea-desktop.log");
-    let file = OpenOptions::new().create(true).append(true).open(&path)?;
+    let file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .mode(0o600)
+        .open(&path)?;
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o600))?;
     LOG_FILE
         .set(Mutex::new(file))
         .map_err(|_| io::Error::other("desktop diagnostics already initialized"))?;
