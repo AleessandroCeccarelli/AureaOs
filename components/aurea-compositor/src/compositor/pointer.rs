@@ -12,7 +12,7 @@ use smithay::{
     utils::{Point, SERIAL_COUNTER},
 };
 
-use super::AureaCompositor;
+use super::{AureaCompositor, pointer_bounds::OutputGeometry};
 
 impl AureaCompositor {
     /// Initializes the seat's Wayland pointer capability.
@@ -26,15 +26,43 @@ impl AureaCompositor {
 
     /// Routes relative device motion to the topmost client surface.
     ///
-    /// Coordinates are maintained in global logical compositor space. Absolute
-    /// devices are handled separately because they require output-local mapping.
+    /// Coordinates are maintained in global logical compositor space. Motion
+    /// is constrained to the union of enabled output rectangles so the pointer
+    /// cannot become stranded in desktop gaps or beyond a display edge.
+    /// Absolute devices are handled separately because they require
+    /// output-local mapping.
     pub fn handle_pointer_motion(&mut self, delta: Point<f64, smithay::utils::Logical>, time: u32) {
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
 
         let current = pointer.current_location();
-        let location = Point::from((current.x + delta.x, current.y + delta.y));
+        let requested = Point::from((current.x + delta.x, current.y + delta.y));
+        let output_geometry = self
+            .output_manager
+            .registry()
+            .iter()
+            .filter(|output| output.is_enabled())
+            .filter_map(|output| {
+                let position = self.output_manager.layout().get(output.id())?;
+                let mode = output.current_mode();
+                let scale = f64::from(output.scale());
+
+                Some(OutputGeometry::new(
+                    f64::from(position.x()),
+                    f64::from(position.y()),
+                    f64::from(mode.width()) / scale,
+                    f64::from(mode.height()) / scale,
+                ))
+            })
+            .collect::<Vec<_>>();
+
+        let Some(location) = super::pointer_bounds::constrain_to_outputs(
+            requested,
+            output_geometry.iter().copied(),
+        ) else {
+            return;
+        };
 
         let focus = {
             let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
