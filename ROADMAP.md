@@ -32,7 +32,7 @@ Developing first-party replacements for these application categories may be cons
 
 ## Current Status
 
-**GitHub Actions verification (Ubuntu 24.04, 17 November 2026; commit `b7494271848213a6efdcfb1cf626773e861c08ae`):** Rust formatting, `cargo check --workspace --locked`, `cargo check -p aurea-compositor --features drm --locked`, workspace tests, compositor DRM/Vulkan tests, shader compilation, and the Mesa lavapipe offscreen triangle smoke test all passed. Bootstrap/security fixture checks passed. `cargo audit` completed successfully but reported two allowed RustSec warnings for transitive `cgmath 0.18.0` (unmaintained and unsound advisories; no fixed upstream release is available). This is a successful CI run, not a clean dependency audit or physical-display validation. The seven compiler errors found on 15 November have been fixed. The compositor remains an early prototype; physical DRM/KMS validation and a bootable desktop image are still pending. See [the CI run](https://github.com/AleessandroCeccarelli/AureaOs/actions/runs/44056628316) and [Vulkan / DRM scanout status](docs/architecture/VULKAN-SCANOUT-STATUS.md).
+**Latest fully green GitHub Actions run (Ubuntu 24.04, 17 November 2026; commit `29bb966975312d7ca862fcf18a826b8caf477f41`):** Rust formatting, desktop client compilation, locked workspace compilation, DRM/Vulkan compositor compilation and tests, workspace tests, shader compilation, and the Mesa lavapipe offscreen triangle smoke test all passed. The RustSec audit completed with two explicitly allowed warnings for transitive `cgmath 0.18.0` (`RUSTSEC-2026-0196` unmaintained and `RUSTSEC-2026-0197` unsound); this is not a clean dependency report. This CI run does not validate physical DRM/KMS output or a bootable installation image. Subsequent small Vulkan warning-cleanup changes are being revalidated. See [the CI run](https://github.com/AleessandroCeccarelli/AureaOs/actions/runs/44090184494) and [Vulkan / DRM scanout status](docs/architecture/VULKAN-SCANOUT-STATUS.md).
 
 
 ### Implemented in the Repository
@@ -70,7 +70,7 @@ The Debian bootstrap profile still needs package-resolution validation and does 
 
 ### In Development / Validation
 
-- Fix the seven known compositor compilation diagnostics, then validate the complete shell and compositor workspace through compilation and automated tests.
+- Keep the compositor warning-free as well as buildable; continue validating the complete shell and compositor workspace through compilation and automated tests.
 - Continue hardware-independent testing of output management and DRM lifecycle behavior.
 - Validate DRM device acquisition, output discovery, hotplug, and session handling on representative physical hardware.
 - Define and validate system identity, service defaults, storage layout, boot configuration, and security policy.
@@ -90,7 +90,7 @@ The planned desktop-services architecture is **local-first**: native services an
 - Integrate compositor rendering, presentation, and output lifecycle responsibilities.
 - Validate the graphics pipeline on representative hardware.
 
-Vulkan is the selected and exclusive graphics rendering API for AureaOS. An initial SHM scene-composition and DRM/KMS presentation path exists in source, but compilation, end-to-end functionality and physical output remain unverified.
+Vulkan is the selected and exclusive graphics rendering API for AureaOS. The current workspace and DRM/Vulkan feature compile in CI, and an offscreen lavapipe rendering test passes. End-to-end SHM scene composition and physical DRM/KMS output remain unverified.
 
 ### 2. Display Intelligence
 
