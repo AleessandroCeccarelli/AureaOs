@@ -11,6 +11,7 @@ STATE_DIR="${XDG_STATE_HOME:-${HOME:?HOME must be set}/.local/state}"
 LOG_DIR="$STATE_DIR/aureaos/logs"
 TIMEOUT_SECONDS="${AUREA_TEST_TIMEOUT:-45}"
 WELCOME_PID=""
+COMPOSITOR_PID=""
 
 if ! [[ "$TIMEOUT_SECONDS" =~ ^[0-9]+$ ]] || (( TIMEOUT_SECONDS < 5 || TIMEOUT_SECONDS > 600 )); then
     printf 'AUREA_TEST_TIMEOUT must be an integer between 5 and 600 seconds.\n' >&2
@@ -39,6 +40,10 @@ cleanup() {
     if [[ -n "$WELCOME_PID" ]] && kill -0 "$WELCOME_PID" 2>/dev/null; then
         kill -INT "$WELCOME_PID" 2>/dev/null || true
         wait "$WELCOME_PID" 2>/dev/null || true
+    fi
+    if [[ -n "$COMPOSITOR_PID" ]] && kill -0 "$COMPOSITOR_PID" 2>/dev/null; then
+        kill -INT "$COMPOSITOR_PID" 2>/dev/null || true
+        wait "$COMPOSITOR_PID" 2>/dev/null || true
     fi
 }
 trap cleanup EXIT
@@ -94,6 +99,7 @@ set +e
 wait "$COMPOSITOR_PID"
 STATUS=$?
 set -e
+COMPOSITOR_PID=""
 
 cleanup
 WELCOME_PID=""
