@@ -19,12 +19,9 @@ static LOG_FILE: OnceLock<Mutex<File>> = OnceLock::new();
 
 /// Opens the per-user log and installs a panic hook that preserves crash details.
 pub fn initialize() -> io::Result<PathBuf> {
-    let directory = resolve_state_directory(
-        env::var_os("XDG_STATE_HOME"),
-        env::var_os("HOME"),
-    )?
-    .join("aureaos")
-    .join("logs");
+    let directory = resolve_state_directory(env::var_os("XDG_STATE_HOME"), env::var_os("HOME"))?
+        .join("aureaos")
+        .join("logs");
     fs::create_dir_all(&directory)?;
 
     let path = directory.join("aurea-desktop.log");
@@ -70,14 +67,9 @@ fn resolve_state_directory(
         return Ok(PathBuf::from(path));
     }
 
-    let home = home
-        .filter(|value| !value.is_empty())
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::NotFound,
-                "HOME and XDG_STATE_HOME are unset",
-            )
-        })?;
+    let home = home.filter(|value| !value.is_empty()).ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "HOME and XDG_STATE_HOME are unset")
+    })?;
 
     Ok(PathBuf::from(home).join(".local").join("state"))
 }
