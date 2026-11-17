@@ -50,11 +50,20 @@ set +e
 # The inner shell intentionally expands variables in its own process context.
 # shellcheck disable=SC2016
 timeout --signal=INT --kill-after=10s "${TIMEOUT_SECONDS}s" bash -c '
-    compositor_pid=$$
+    welcome_pid=""
+
+    cleanup_welcome() {
+        if [[ -n "$welcome_pid" ]] && kill -0 "$welcome_pid" 2>/dev/null; then
+            kill -TERM "$welcome_pid" 2>/dev/null || true
+            wait "$welcome_pid" 2>/dev/null || true
+        fi
+    }
+
+    trap cleanup_welcome EXIT INT TERM
+
     (
         socket="$XDG_RUNTIME_DIR/wayland-0"
         for ((attempt = 0; attempt < 150; attempt++)); do
-            kill -0 "$compositor_pid" 2>/dev/null || exit 0
             if [[ -S "$socket" ]]; then
                 printf "Wayland socket ready; launching Aurea Welcome.\\n"
                 export WAYLAND_DISPLAY=wayland-0
@@ -64,7 +73,9 @@ timeout --signal=INT --kill-after=10s "${TIMEOUT_SECONDS}s" bash -c '
         done
         printf "Aurea Welcome: Wayland socket did not appear within 15 seconds.\\n" >&2
     ) &
-    exec ./target/debug/aurea-desktop
+    welcome_pid=$!
+
+    ./target/debug/aurea-desktop
 '
 STATUS=$?
 set -e
