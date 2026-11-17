@@ -113,11 +113,7 @@ impl WindowManager {
     /// The size is sent through the XDG configure handshake; clients remain
     /// responsible for committing a buffer at the configured dimensions.
     /// Returns false when the surface is not managed or has been destroyed.
-    pub fn resize_toplevel(
-        &mut self,
-        surface: &WlSurface,
-        requested: (i32, i32),
-    ) -> bool {
+    pub fn resize_toplevel(&mut self, surface: &WlSurface, requested: (i32, i32)) -> bool {
         self.remove_dead_toplevels();
 
         let Some(toplevel) = self
@@ -139,8 +135,12 @@ impl WindowManager {
     /// Clamps client-independent size requests to the compositor's supported range.
     pub fn bounded_window_size(requested: (i32, i32)) -> (i32, i32) {
         (
-            requested.0.clamp(Self::MIN_WINDOW_WIDTH, Self::MAX_WINDOW_WIDTH),
-            requested.1.clamp(Self::MIN_WINDOW_HEIGHT, Self::MAX_WINDOW_HEIGHT),
+            requested
+                .0
+                .clamp(Self::MIN_WINDOW_WIDTH, Self::MAX_WINDOW_WIDTH),
+            requested
+                .1
+                .clamp(Self::MIN_WINDOW_HEIGHT, Self::MAX_WINDOW_HEIGHT),
         )
     }
 
@@ -228,7 +228,6 @@ impl WindowManager {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::WindowManager;
@@ -236,7 +235,10 @@ mod tests {
     #[test]
     fn window_size_is_clamped_to_supported_bounds() {
         assert_eq!(WindowManager::bounded_window_size((1, 1)), (320, 240));
-        assert_eq!(WindowManager::bounded_window_size((9000, 9000)), (3840, 2160));
+        assert_eq!(
+            WindowManager::bounded_window_size((9000, 9000)),
+            (3840, 2160)
+        );
     }
 
     #[test]
