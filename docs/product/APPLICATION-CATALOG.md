@@ -10,7 +10,7 @@ It records product direction, technical foundations, and implementation status. 
 
 AureaOS Roma 1.0 targets Debian GNU/Linux 13 (Trixie), `amd64` (x86-64).
 
-AureaOS is GUI-first and Wayland-first. The repository contains an early Debian root filesystem bootstrap, package manifests, visual design resources, and a four-crate Rust desktop workspace under `components/`: `aurea-desktop`, `aurea-shell`, `aurea-desktop-api`, and `aurea-compositor`.
+AureaOS is GUI-first and targets a Wayland-only desktop session, with no X11 or XWayland compatibility layer planned. The repository contains an early Debian root filesystem bootstrap, package manifests, visual design resources, and a four-crate Rust desktop workspace under `components/`: `aurea-desktop`, `aurea-shell`, `aurea-desktop-api`, and `aurea-compositor`.
 
 The desktop foundation is under active development. It is not yet a complete graphical desktop or a bootable operating system. The latest Fedora check (15 November 2026) passed rustfmt but failed `cargo check --workspace` with seven compositor diagnostics; tests and physical display validation are pending. No complete AureaOS desktop UI or first-party end-user application is available.
 
@@ -27,7 +27,7 @@ Rust is the primary programming language for AureaOS-developed applications and 
 
 Vulkan is the selected and exclusive graphics rendering API for AureaOS. Its complete rendering and presentation pipeline is not yet implemented.
 
-No native UI toolkit has been selected. System-wide spellcheck/autocorrect, a personal dictionary, local-first desktop services and optional future account synchronization are design directions, not implemented components.
+No native UI toolkit has been selected. System-wide spellcheck/autocorrect, a personal dictionary, local-first desktop services and optional future account synchronization are design directions, not implemented components. The current `aurea-desktop-api` crate defines internal contracts between desktop crates; it is not yet a stable public application SDK or a complete permission broker.
 
 ## Catalog
 

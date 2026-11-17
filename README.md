@@ -145,6 +145,7 @@ The main documentation files are:
 - [Philosophy](PHILOSOPHY.md) — project principles.
 - [Product experience](PRODUCT_EXPERIENCE.md) — planned workflows and components.
 - [Technology principles](TECHNOLOGY.md) — technical direction and selection criteria.
+- [Project identity and terminology](docs/PROJECT-IDENTITY-AND-TERMINOLOGY.md) — explains first-party ownership, open-source licensing, local-first services, and the Wayland/Vulkan compatibility trade-offs.
 - [Roadmap](ROADMAP.md) — development status and priorities.
 - [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md) — authoritative inventory of first-party apps, tools, desktop components, services, and shared design resources.
 - [Initial architecture](docs/architecture/INITIAL-ARCHITECTURE.md) — system layers and open decisions.

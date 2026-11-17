@@ -20,7 +20,7 @@ It is not intended to be another generic Linux distribution, nor a Linux system 
 
 AureaOS aims to become a complete, coherent and carefully designed operating system: one that combines the freedom, openness and technical foundations of Linux with the simplicity, accessibility, hardware integration and attention to detail that users expect from a modern desktop operating system.
 
-The goal is to make Linux approachable without stripping away its identity.
+The goal is to make Linux approachable without stripping away its identity. AureaOS is developed as a first-party desktop and application ecosystem, but the original project code remains open source under GPL-3.0-or-later; first-party ownership must not be confused with closed-source licensing.
 
 AureaOS should offer an experience in which the desktop, system settings, applications, hardware management, security, updates and everyday workflows feel like parts of the same product.
 
@@ -118,7 +118,7 @@ Aurea Desktop should establish its own identity while offering the familiarity a
 
 ### Technical foundation
 
-The desktop architecture is Wayland-first, with separate shell and compositor components.
+The desktop target is Wayland-only, with separate shell and compositor components and no planned X11/XWayland compatibility layer.
 
 The repository already contains two initial Rust implementations:
 
@@ -212,6 +212,10 @@ Any integration with system-level authentication or passkeys requires separate t
 The objective is to make the Wallet a reliable and well-integrated AureaOS application, with a clearly defined responsibility and a security model appropriate to the data it manages.
 
 ## 10. ChatGPT Integration — Exploratory
+
+ChatGPT integration remains an exploratory product direction. It is not currently a built-in working service, must not be described as implemented, and would require an explicit online service/API, user consent, and clear disclosure of any data sent outside the device.
+
+
 
 An Aurea AI / ChatGPT integration is an exploratory, long-term idea, not a Roma 1.0 commitment.
 

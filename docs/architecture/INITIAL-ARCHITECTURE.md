@@ -37,7 +37,7 @@ The architecture follows these principles:
 3. **Reproducibility:** system artifacts must be produced through documented and repeatable procedures.
 4. **Reliability first:** changes must be testable, documented, and introduced incrementally.
 5. **Pragmatic technology selection:** open-source and proprietary components may both be selected when justified by compatibility, reliability, security, performance, usability, maintenance, licensing, and redistribution terms.
-6. **Wayland-first desktop:** the intended desktop architecture for Roma 1.0 is designed for Wayland.
+6. **Wayland-only desktop target:** Roma 1.0 is designed around Wayland without X11 or XWayland compatibility layers. The resulting application-compatibility cost is explicit and must be measured.
 7. **Coherent user experience:** system components must support a consistent and accessible operating environment.
 8. **No unnecessary reinvention:** AureaOS should focus on integration and features that distinguish the project.
 9. **Rust as the primary language:** first-party AureaOS applications and components should use Rust where appropriate. A different language requires a documented technical reason.
@@ -220,7 +220,7 @@ The [Application and Component Catalog](../product/APPLICATION-CATALOG.md) is th
 
 The first-party Roma 1.0 product direction includes:
 
-- **Aurea Desktop:** the proprietary graphical desktop environment and window-management experience.
+- **Aurea Desktop:** the AureaOS-developed, first-party graphical desktop environment and window-management experience; original project code is open source under GPL-3.0-or-later.
 - **AureaOS Human Interfaces:** the shared design system and planned native UI library.
 - **Aurea Wallet:** a first-party system application and an important pillar of Roma 1.0.
 - **Fides:** the AureaOS file manager.
@@ -311,5 +311,7 @@ AureaOs/
 
 
 ## 10. Project Licensing
+
+AureaOS uses *first-party* to identify software designed, developed, and maintained as part of the AureaOS project. It does not mean closed-source or proprietary licensing. The current license for original project work is GPL-3.0-or-later, subject to file-level notices and third-party license boundaries.
 
 Original AureaOS project work is currently licensed under **GPL-3.0-or-later**. The AureaOS product layer is first-party and project-maintained, but it is not currently closed-source or separately licensed on that basis. Product ownership, branding, design control, and software licensing are distinct matters. Third-party dependencies and assets retain their own licenses. Any future licensing or distribution-model change remains undecided and requires a separate legal and contributor-rights review.

@@ -4,6 +4,8 @@
 
 ## 1. Platform and Product Architecture
 
+**First-party does not mean closed-source.** AureaOS develops and maintains its own desktop environment, shell, compositor integration, system services, and named applications. These are first-party AureaOS components, but original project code is released under GPL-3.0-or-later unless a file explicitly states another license. In public descriptions, use *AureaOS-developed*, *first-party*, or *AureaOS-native* rather than *proprietary* when referring to code ownership or architecture. See [Project identity and terminology](docs/PROJECT-IDENTITY-AND-TERMINOLOGY.md).
+
 AureaOS Roma 1.0 targets Debian GNU/Linux 13 (Trixie) on amd64 (x86-64).
 
 AureaOS is a GUI-first Linux distribution targeting a Wayland-only desktop session. No X11 or XWayland compatibility layer is planned; this is a deliberate compatibility constraint, not a claim that all existing Linux applications will work.
@@ -56,7 +58,7 @@ This policy does not require third-party applications, drivers, firmware, librar
 
 ## 4. Desktop and Graphics Architecture
 
-AureaOS follows a Wayland-first desktop architecture.
+AureaOS targets a **Wayland-only** desktop session. X11 and XWayland compatibility are intentionally outside the target architecture. This is a deliberate compatibility trade-off, not a claim that all Linux applications or toolkits will work unchanged.
 
 The desktop is developed as an AureaOS-owned environment, with separate responsibilities for the shell, compositor, system services, and user-facing applications.
 
@@ -85,7 +87,7 @@ Full rendering, physical frame presentation, complete DRM/KMS mode setting, full
 
 ### Vulkan
 
-Vulkan is the selected and exclusive graphics rendering API for AureaOS.
+Vulkan is the selected and exclusive graphics rendering API for AureaOS. OpenGL is not part of the planned AureaOS rendering backend. This restriction applies to AureaOS system rendering; third-party application compatibility must be evaluated separately.
 
 The project will not introduce alternative rendering APIs, including OpenGL, as parallel graphics backends. This can exclude applications that require X11/XWayland or OpenGL; compatibility must be measured rather than assumed.
 
