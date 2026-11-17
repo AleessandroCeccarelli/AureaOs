@@ -120,12 +120,7 @@ pub(crate) fn render_and_release(
                     on_submitted,
                 )
             }
-            None => clear_and_release(
-                device,
-                view,
-                previous_image_state,
-                on_submitted,
-            ),
+            None => clear_and_release(device, view, previous_image_state, on_submitted),
         };
     }
     // Finish asynchronous texture uploads before borrowing cache-owned GPU resources.
