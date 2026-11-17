@@ -65,7 +65,7 @@ COMPOSITOR_PID=$!
 
 SOCKET_PATH="$XDG_RUNTIME_DIR/wayland-0"
 printf 'Waiting for the Wayland socket: %s\n' "$SOCKET_PATH"
-for _ in $(seq 1 150); do
+for ((attempt = 0; attempt < 150; attempt++)); do
     if [[ -S "$SOCKET_PATH" ]]; then
         break
     fi
