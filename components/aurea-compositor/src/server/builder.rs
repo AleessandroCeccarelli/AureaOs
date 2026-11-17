@@ -111,6 +111,7 @@ pub(super) fn build(
     };
 
     state.compositor.initialize_keyboard()?;
+    state.compositor.initialize_pointer()?;
 
     let loop_handle = event_loop.handle();
 
