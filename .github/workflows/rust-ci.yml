@@ -106,9 +106,6 @@ jobs:
           sudo python3 tools/security/tests/test-audit-rootfs-symlinks.py
           bash tools/installer/tests/check-hardware-requirements.sh
 
-      - name: Resolve pinned Smithay revision and refresh lockfile
-        run: cargo update -p smithay
-
       - name: Check workspace
         run: cargo check --workspace --locked
 
