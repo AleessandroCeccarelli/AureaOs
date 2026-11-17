@@ -5,8 +5,7 @@
 
 //! Pixel-level drawing primitives for the temporary Welcome surface.
 
-const WIDTH: usize = 720;
-const HEIGHT: usize = 440;
+use super::{HEIGHT, WIDTH};
 
 pub(super) fn paint_welcome(pixels: &mut [u8]) {
     for y in 0..HEIGHT {
@@ -32,5 +31,40 @@ fn fill_rect(pixels: &mut [u8], x: usize, y: usize, width: usize, height: usize,
             let offset = (row * WIDTH + column) * 4;
             pixels[offset..offset + 4].copy_from_slice(&color);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{HEIGHT, WIDTH, paint_welcome};
+
+    #[test]
+    fn welcome_surface_has_expected_background_and_header() {
+        let mut pixels = vec![0; WIDTH * HEIGHT * 4];
+        paint_welcome(&mut pixels);
+
+        let pixel = |x: usize, y: usize| {
+            let offset = (y * WIDTH + x) * 4;
+            &pixels[offset..offset + 4]
+        };
+
+        assert_eq!(pixel(0, 0), [75, 39, 18, 255]);
+        assert_eq!(pixel(0, 76), [37, 22, 14, 255]);
+    }
+
+    #[test]
+    fn welcome_surface_draws_the_aurea_mark_and_content_guides() {
+        let mut pixels = vec![0; WIDTH * HEIGHT * 4];
+        paint_welcome(&mut pixels);
+
+        let pixel = |x: usize, y: usize| {
+            let offset = (y * WIDTH + x) * 4;
+            &pixels[offset..offset + 4]
+        };
+
+        assert_eq!(pixel(54, 128), [55, 170, 220, 255]);
+        assert_eq!(pixel(77, 150), [37, 22, 14, 255]);
+        assert_eq!(pixel(54, 256), [125, 83, 55, 255]);
+        assert_eq!(pixel(54, 294), [244, 233, 226, 255]);
     }
 }
