@@ -6,8 +6,11 @@
 //! First native Wayland client used to validate visible desktop surfaces.
 
 mod buffer;
+mod dimensions;
+mod frame;
 mod painter;
 mod protocol;
+mod scaling;
 mod typography;
 
 // Shared dimensions for the Welcome surface and its SHM buffer.
@@ -28,9 +31,9 @@ use wayland_protocols::xdg::shell::client::{
 pub(super) struct WelcomeWindow {
     shm: WlShm,
     surface: WlSurface,
-    pool: Option<wayland_client::protocol::wl_shm_pool::WlShmPool>,
-    buffer: Option<wayland_client::protocol::wl_buffer::WlBuffer>,
-    pixels: Option<memmap2::MmapMut>,
+    frames: Vec<frame::FrameResources>,
+    configured_size: Option<(i32, i32)>,
+    current_size: Option<(usize, usize)>,
     closed: bool,
 }
 
@@ -39,9 +42,9 @@ impl WelcomeWindow {
         Self {
             shm,
             surface,
-            pool: None,
-            buffer: None,
-            pixels: None,
+            frames: Vec::new(),
+            configured_size: None,
+            current_size: None,
             closed: false,
         }
     }
