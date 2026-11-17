@@ -37,6 +37,7 @@ vulkan = ["smithay/backend_vulkan"]
 aurea-desktop-api = { path = "../aurea-desktop-api" }
 
 [dependencies.smithay]
-version = "0.7"
+git = "https://github.com/Smithay/smithay"
+rev = "33323a917af13676875c27fb7748ffdaea5f4c2f"
 default-features = false
 features = ["wayland_frontend"]

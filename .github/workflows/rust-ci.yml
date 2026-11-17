@@ -57,6 +57,9 @@ jobs:
       - name: Install stable Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Resolve pinned Smithay revision and refresh lockfile
+        run: cargo update -p smithay
+
       - name: Install Rust dependency security auditor
         run: cargo install cargo-audit --locked
 
@@ -106,6 +109,9 @@ jobs:
           sudo python3 tools/security/tests/test-audit-rootfs-symlinks.py
           bash tools/installer/tests/check-hardware-requirements.sh
 
+      - name: Resolve pinned Smithay revision and refresh lockfile
+        run: cargo update -p smithay
+
       - name: Check workspace
         run: cargo check --workspace --locked
 
@@ -149,3 +155,12 @@ jobs:
 
           cargo test -p aurea-compositor --features drm --test unit \
             renders_triangle_and_reads_back_expected_pixels -- --ignored --nocapture
+
+      - name: Upload resolved Cargo lockfile for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smithay-dependency-lockfile
+          path: Cargo.lock
+          if-no-files-found: error
+          retention-days: 3
