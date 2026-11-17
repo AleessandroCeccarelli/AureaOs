@@ -12,7 +12,10 @@ use aurea_shell::{app, config::ShellConfig};
 
 fn main() {
     match diagnostics::initialize() {
-        Ok(path) => diagnostics::record("INFO", &format!("Starting native desktop; log: {}", path.display())),
+        Ok(path) => diagnostics::record(
+            "INFO",
+            &format!("Starting native desktop; log: {}", path.display()),
+        ),
         Err(error) => eprintln!("Aurea Desktop: persistent logging unavailable: {error}"),
     }
 
