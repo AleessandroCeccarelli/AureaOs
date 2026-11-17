@@ -354,7 +354,7 @@ mod tests {
     }
 
     #[test]
-    fn rejects_row_stride_overflow_before_copying() {
+    fn rejects_stride_smaller_than_wide_pixel_row() {
         assert_eq!(
             ValidatedLayout::new(0, i32::MAX, 1, i32::MAX, usize::MAX).unwrap_err(),
             ShmBufferError::SnapshotTooLarge
