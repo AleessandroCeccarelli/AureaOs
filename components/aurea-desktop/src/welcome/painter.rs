@@ -184,7 +184,7 @@ fn blend_pixel(pixels: &mut [u8], x: usize, y: usize, color: [u8; 4]) {
 
 #[cfg(test)]
 mod tests {
-    use super::{GOLD, HEIGHT, NAVY, WIDTH, paint_welcome};
+    use super::{HEIGHT, NAVY, WIDTH, paint_welcome};
 
     #[test]
     fn welcome_surface_has_a_dark_blue_gradient() {
@@ -210,9 +210,9 @@ mod tests {
             &pixels[offset..offset + 4]
         };
 
-        assert_eq!(pixel(72, 148), [GOLD[2], GOLD[1], GOLD[0], 255]);
-        assert_eq!(pixel(128, 180), [NAVY[2], NAVY[1], NAVY[0], 255]);
-        assert!(pixel(224, 153)[3] == 255);
-        assert_ne!(pixel(224, 153), pixel(225, 153));
+        assert_eq!(pixel(96, 160), [224, 169, 68, 255]);
+        assert_eq!(pixel(128, 211), [NAVY[2], NAVY[1], NAVY[0], 255]);
+        assert_eq!(pixel(224, 153), [250, 244, 239, 255]);
+        assert_ne!(pixel(224, 153), pixel(236, 153));
     }
 }
