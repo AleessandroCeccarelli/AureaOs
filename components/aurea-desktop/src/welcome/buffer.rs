@@ -14,11 +14,7 @@ use std::{
 
 use wayland_client::{Dispatch, QueueHandle, protocol::wl_shm::Format};
 
-use super::{
-    HEIGHT, WIDTH, WelcomeWindow,
-    frame::FrameResources,
-    scaling::render_scaled,
-};
+use super::{HEIGHT, WIDTH, WelcomeWindow, frame::FrameResources, scaling::render_scaled};
 
 impl FrameResources {
     fn create(
@@ -96,7 +92,10 @@ impl WelcomeWindow {
         Ok(())
     }
 
-    pub(super) fn release_frame(&mut self, released: &wayland_client::protocol::wl_buffer::WlBuffer) {
+    pub(super) fn release_frame(
+        &mut self,
+        released: &wayland_client::protocol::wl_buffer::WlBuffer,
+    ) {
         self.frames.retain(|frame| frame.buffer != *released);
     }
 }
