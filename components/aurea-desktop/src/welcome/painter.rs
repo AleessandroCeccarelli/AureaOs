@@ -97,7 +97,9 @@ fn fill_round_rect(
     if width == 0 || height == 0 {
         return;
     }
-    let radius = radius.min(width.saturating_sub(1) / 2).min(height.saturating_sub(1) / 2);
+    let radius = radius
+        .min(width.saturating_sub(1) / 2)
+        .min(height.saturating_sub(1) / 2);
     for row in y..(y + height).min(HEIGHT) {
         for column in x..(x + width).min(WIDTH) {
             let nearest_x = column.clamp(x + radius, x + width - radius - 1);
