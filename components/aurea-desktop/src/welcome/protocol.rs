@@ -10,8 +10,7 @@ use wayland_client::{
     globals::GlobalListContents,
     protocol::{
         wl_buffer::{self, WlBuffer},
-        wl_compositor,
-        wl_registry,
+        wl_compositor, wl_registry,
         wl_shm::{self, WlShm},
         wl_shm_pool::{self, WlShmPool},
         wl_surface::{self, WlSurface},

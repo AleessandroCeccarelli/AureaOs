@@ -14,16 +14,10 @@ use std::io;
 use wayland_client::{
     Connection, Dispatch, QueueHandle,
     globals::{GlobalListContents, registry_queue_init},
-    protocol::{
-        wl_compositor::WlCompositor,
-        wl_shm::WlShm,
-        wl_surface::WlSurface,
-    },
+    protocol::{wl_compositor::WlCompositor, wl_shm::WlShm, wl_surface::WlSurface},
 };
 use wayland_protocols::xdg::shell::client::{
-    xdg_surface::XdgSurface,
-    xdg_toplevel::XdgToplevel,
-    xdg_wm_base::XdgWmBase,
+    xdg_surface::XdgSurface, xdg_toplevel::XdgToplevel, xdg_wm_base::XdgWmBase,
 };
 
 pub(super) struct WelcomeWindow {

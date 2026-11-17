@@ -34,4 +34,3 @@ fn fill_rect(pixels: &mut [u8], x: usize, y: usize, width: usize, height: usize,
         }
     }
 }
-

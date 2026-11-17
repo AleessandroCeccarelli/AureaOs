@@ -5,17 +5,12 @@
 
 //! Shared-memory buffer allocation and surface attachment.
 
-use std::{
-    fs::OpenOptions,
-    io,
-    os::fd::AsFd,
-    path::PathBuf,
-};
+use std::{fs::OpenOptions, io, os::fd::AsFd, path::PathBuf};
 
 use memmap2::MmapMut;
-use wayland_client::{Dispatch, QueueHandle};
 use wayland_client::protocol::wl_buffer::WlBuffer;
 use wayland_client::protocol::wl_shm_pool::WlShmPool;
+use wayland_client::{Dispatch, QueueHandle};
 
 use super::{WelcomeWindow, painter::paint_welcome};
 
@@ -69,4 +64,3 @@ impl WelcomeWindow {
         Ok(())
     }
 }
-
