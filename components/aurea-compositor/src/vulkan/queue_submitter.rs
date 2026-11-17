@@ -122,7 +122,6 @@ impl<'device> VulkanQueueSubmitter<'device> {
             idle_error: idle_result.expect_err("idle result checked above"),
         })
     }
-
 }
 
 #[cfg(test)]
