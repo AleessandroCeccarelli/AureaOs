@@ -235,15 +235,6 @@ impl VulkanLogicalDevice {
         .map_err(VulkanQueueSubmitError::from_submit_error)
     }
 
-    /// Submits a recorded command buffer and waits for its completion.
-    pub(super) fn submit_and_wait(
-        &self,
-        command_buffer: vk::CommandBuffer,
-    ) -> Result<(), vk::Result> {
-        VulkanQueueSubmitter::new(&self.device, self.graphics_queue, &self.queue_submit_lock)
-            .submit_and_wait(command_buffer)
-    }
-
     /// Submits work and invokes its lifecycle hook only after queue acceptance.
     pub(super) fn submit_and_wait_with(
         &self,
