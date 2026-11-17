@@ -22,8 +22,10 @@ From the repository root, run:
 bash tools/run-aurea-native-test.sh
 ```
 
-The default test window is 45 seconds. The launcher builds with the committed
-lockfile, enables Rust backtraces, stores output under
+The default test window is 45 seconds. The launcher builds both desktop binaries
+with the committed lockfile, starts the native DRM/Vulkan compositor, waits for
+its `wayland-0` socket, and launches the standalone Welcome client against that
+socket. It enables Rust backtraces, stores output under
 `$XDG_STATE_HOME/aureaos/logs` (or `~/.local/state/aureaos/logs`), and sends
 SIGINT at the deadline. It allows 10 seconds for graceful shutdown before
 sending SIGKILL.
@@ -52,8 +54,8 @@ status proves that the GPU or kernel is healthy.
 
 ## Limits of the safety measures
 
-The timeout bounds a userspace process only while the kernel continues to
-schedule it. It cannot prevent or recover from a kernel panic, GPU driver
+The timeout bounds the compositor userspace process only while the kernel continues to
+schedule it. The Welcome client is stopped by the launcher when the compositor exits. It cannot prevent or recover from a kernel panic, GPU driver
 deadlock, firmware hang, or complete hardware lockup. The persistent desktop
 log records startup, normal termination, errors, and Rust panic details; the
 launcher additionally captures compositor stderr/stdout. A hard power loss
