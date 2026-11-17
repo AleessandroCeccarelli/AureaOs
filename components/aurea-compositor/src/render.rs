@@ -6,6 +6,7 @@
 //! Collects mapped surfaces into a renderable scene.
 
 pub mod geometry;
+pub mod hit_test;
 pub mod shm_buffer;
 pub mod shm_surface;
 pub mod surface_tree;
@@ -50,6 +51,33 @@ impl<'a> RenderScene<'a> {
     /// Returns the toplevel surfaces in this scene.
     pub fn toplevels(&self) -> impl Iterator<Item = &'a ToplevelSurface> + '_ {
         self.toplevels.iter().map(|toplevel| toplevel.surface)
+    }
+
+    /// Returns the topmost toplevel whose committed surface tree contains a
+    /// logical pointer position.
+    ///
+    /// Both toplevel stacking and subsurface traversal are checked back-to-front
+    /// so the surface visually on top receives pointer focus.
+    pub fn toplevel_under(
+        &self,
+        point: Point<f64, Logical>,
+    ) -> Option<&'a ToplevelSurface> {
+        for toplevel in self.toplevels.iter().rev() {
+            let snapshots = collect_surface_tree_snapshots(
+                toplevel.surface.wl_surface(),
+                toplevel.location,
+            );
+
+            if snapshots
+                .iter()
+                .rev()
+                .any(|snapshot| hit_test::contains_point(snapshot, point))
+            {
+                return Some(toplevel.surface);
+            }
+        }
+
+        None
     }
 
     /// Imports mapped toplevel surface trees as Smithay render elements.
