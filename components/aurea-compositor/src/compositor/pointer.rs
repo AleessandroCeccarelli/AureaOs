@@ -8,7 +8,6 @@
 use std::io;
 
 use smithay::{
-    backend::input::PointerMotionEvent as BackendPointerMotionEvent,
     input::pointer::{MotionEvent, PointerHandle},
     utils::{Point, SERIAL_COUNTER},
 };
@@ -29,7 +28,11 @@ impl AureaCompositor {
     ///
     /// Coordinates are maintained in global logical compositor space. Absolute
     /// devices are handled separately because they require output-local mapping.
-    pub fn handle_pointer_motion(&mut self, delta: Point<f64, smithay::utils::Logical>, time: u32) {
+    pub fn handle_pointer_motion(
+        &mut self,
+        delta: Point<f64, smithay::utils::Logical>,
+        time: u32,
+    ) {
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -39,9 +42,12 @@ impl AureaCompositor {
 
         let focus = {
             let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
-            scene
-                .surface_under(location)
-                .map(|(surface, origin, _)| (surface, origin.to_f64()))
+            scene.surface_under(location).map(|(surface, origin, _)| {
+                (
+                    surface,
+                    Point::from((f64::from(origin.x), f64::from(origin.y))),
+                )
+            })
         };
 
         pointer.motion(
@@ -54,14 +60,5 @@ impl AureaCompositor {
             },
         );
         pointer.frame(self);
-    }
-
-    /// Resolves a backend relative-motion event without changing its units.
-    pub fn handle_backend_pointer_motion<B, E>(&mut self, event: &E)
-    where
-        B: smithay::backend::input::InputBackend,
-        E: BackendPointerMotionEvent<B>,
-    {
-        self.handle_pointer_motion(event.delta(), event.time() as u32);
     }
 }
