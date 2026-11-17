@@ -31,7 +31,9 @@ There are many ways to contribute:
 - **Documentation:** improve explanations, guides, architecture descriptions, and technical documentation.
 - **Feedback:** share your experience and help us understand what users need.
 
-Before working on a substantial change, open a discussion or issue so we can agree on the goal and approach.
+Before working on a substantial change, open a discussion or issue so we can agree on the goal and approach. GitHub provides an **Idea or suggestion** form and a **Bug report** form in the Issues area. Pull requests include a checklist to make scope, validation, and limitations clear. General questions and non-urgent feedback are welcome in Discussions.
+
+Security vulnerabilities must be reported privately using the process in [SECURITY.md](SECURITY.md), not through a public issue.
 
 ## Architecture and Modularity
 
