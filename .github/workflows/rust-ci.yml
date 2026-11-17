@@ -106,6 +106,9 @@ jobs:
           sudo python3 tools/security/tests/test-audit-rootfs-symlinks.py
           bash tools/installer/tests/check-hardware-requirements.sh
 
+      - name: Resolve and compile first Wayland client
+        run: cargo check -p aurea-desktop
+
       - name: Check workspace
         run: cargo check --workspace --locked
 
@@ -117,6 +120,15 @@ jobs:
 
       - name: Test compositor with DRM and Vulkan
         run: cargo test -p aurea-compositor --features drm --locked
+
+      - name: Preserve resolved lockfile for review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aureaos-cargo-lock
+          path: Cargo.lock
+          if-no-files-found: error
+          retention-days: 3
 
       - name: Compile Vulkan diagnostic shaders
         run: bash tools/shaders/compile-vulkan-shaders.sh

@@ -2,18 +2,14 @@
 //
 // AureaOS — Aurea Desktop
 // Copyright (C) 2026 Alessandro Ceccarelli
-//
-// Desktop application entry point.
 
-use aurea_compositor::service::WaylandCompositorFactory;
-use aurea_shell::{app, config::ShellConfig};
+//! Desktop entry point.
+
+mod welcome;
 
 fn main() {
-    let config = ShellConfig::default();
-    let compositor_factory = WaylandCompositorFactory::default();
-
-    if let Err(error) = app::run(config, compositor_factory) {
-        eprintln!("Aurea Desktop error: {error}");
+    if let Err(error) = welcome::run() {
+        eprintln!("Aurea Welcome: {error}");
         std::process::exit(1);
     }
 }
