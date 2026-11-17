@@ -16,6 +16,9 @@ AureaOS aims to make Linux feel natural, coherent, and designed to respect users
 
 ## Project Status
 
+**Build status (Fedora, 15 November 2026):** `cargo fmt --all -- --check` passed and the formatting-only changes were pushed as commit `23be5183`. The subsequent `cargo check --workspace` **failed with seven Rust compiler errors** in `aurea-compositor`: two E0365 visibility/re-export errors (`VulkanPendingUpload`, `VulkanUploadBatch`), one E0524 conflicting mutable closure borrow in `scanout_renderer.rs`, three lifetime diagnostics in `display_color_pass.rs`, and one E0502 borrow conflict in `surface_compositor.rs`. These issues remain unresolved at this checkpoint. No post-checkpoint test run or physical-display validation is claimed. See [Current engineering status](docs/architecture/VULKAN-SCANOUT-STATUS.md).
+
+
 AureaOS is in an early prototype stage. The repository includes a minimal Debian bootstrap, package manifests, design resources, and initial Rust components for the desktop session.
 
 The project has progressed beyond its initial bootstrap stage. Its first system components are being developed as independent, modular Rust projects.
@@ -42,7 +45,7 @@ These capabilities represent an important step in the graphics architecture, but
 
 AureaOS is not yet a usable graphical desktop. Several essential capabilities remain under development:
 
-- Full Vulkan scene rendering and physical-display validation. The compositor already contains a connected diagnostic blue-frame Vulkan-to-DRM/KMS path, which still requires validation on physical hardware.
+- Completion and compilation of the Vulkan SHM scene-composition and DRM/KMS scanout path, followed by physical-display validation. The source now includes SHM texture upload batching and a bounded surface texture cache, but the current workspace fails compilation and physical output is unverified.
 - Complete DRM/KMS display configuration, robust output recovery, and full session validation.
 - Complete keyboard, pointer, touch, and gesture input handling.
 - Full window management and desktop interaction.
@@ -103,14 +106,14 @@ Its current technical direction includes:
 
 - Debian GNU/Linux 13 (Trixie), `amd64`.
 - Btrfs as the selected default installed filesystem.
-- GUI-first and Wayland-first desktop architecture.
+- Wayland-only desktop target (no X11 or XWayland compatibility layer planned).
 - Rust as the primary programming language for first-party AureaOS development where appropriate.
 - Smithay as the current Wayland compositor framework.
 - Wayland protocols for desktop communication.
 - Calloop for event-loop integration.
 - libseat for session and device access management.
 - DRM and Udev for graphics-device discovery and output lifecycle foundations.
-- Vulkan as the selected and exclusive graphics rendering API.
+- Vulkan as the selected and exclusive graphics rendering API (no OpenGL rendering backend planned).
 - PipeWire for multimedia infrastructure.
 - NetworkManager for network management.
 - systemd for system and service management.
@@ -125,6 +128,12 @@ In particular, full Vulkan scene composition, physical scanout validation, compl
 Aurea Time will own system backup and restore. Btrfs native snapshots are not the planned backup and restore workflow.
 
 Open-source and proprietary third-party components may be considered, subject to technical, licensing, security, and distribution review.
+
+## Local-first Desktop Services (Design Direction)
+
+The long-term product goal is to preserve familiar desktop workflows rather than require people moving from Windows or macOS to relearn basic computing. Essential desktop functions must work locally without a mandatory cloud account. Each first-party desktop capability should eventually expose a documented, permission-controlled interface for compatible applications. System-wide spelling, autocorrection, personal dictionaries, and text substitutions are proposed capabilities, **not implemented services**. Optional account-based synchronization of contacts, calendars, mail, notes, and preferences is a later-stage idea, not a requirement for local desktop use.
+
+Application compatibility is an explicit risk: a Wayland-only, Vulkan-only compositor does not imply that all Flatpak/Flathub applications will work. X11-only applications, XWayland requirements, and OpenGL-dependent applications need individual compatibility evaluation. No percentage of Flathub compatibility has been established.
 
 ## Documentation
 

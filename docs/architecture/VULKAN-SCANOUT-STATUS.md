@@ -4,6 +4,10 @@
 
 Questo documento fotografa il percorso di presentazione fisica presente nel repository. Non equivale a una certificazione hardware né dichiara completato il desktop grafico.
 
+## Stato di verifica (Fedora, 15 novembre 2026)
+
+Il commit `23be5183` contiene soltanto la formattazione Rust, verificata con `cargo fmt --all -- --check`. Il successivo `cargo check --workspace` **non è riuscito**: sette diagnostiche nel crate `aurea-compositor` (due E0365 per la visibilità di `VulkanPendingUpload` e `VulkanUploadBatch`, una E0524 per due closure che richiedono `&mut presentation`, tre errori di lifetime in `display_color_pass.rs`, una E0502 per il prestito di `surface_cache`). I test non sono stati eseguiti dopo questo controllo. La presenza del codice non dimostra né compilazione riuscita né output fisico validato.
+
 ## Stato implementato nel codice
 
 Il percorso DRM attivo non usa il metodo generico `VulkanBackend::render_frame`, che resta intenzionalmente non disponibile finché non esiste un target di presentazione generico. Il server DRM instrada invece i frame richiesti verso `VulkanOutputScanoutBackend` in `drm/scanout_renderer.rs`.
@@ -28,19 +32,19 @@ Gli shader per la composizione vengono compilati da `build.rs` con `glslangValid
 - La composizione iniziale supporta i buffer Wayland SHM ARGB8888 e XRGB8888 già normalizzati dal percorso di snapshot. Gli snapshot vengono aggiornati anche quando un client riutilizza lo stesso wl_buffer e invia nuovo damage; per ora viene ricopiato l'intero buffer.
 - I buffer Wayland DMA-BUF non sono ancora importati come superfici; non vanno confusi con il DMA-BUF usato come destinazione di scanout.
 - Le trasformazioni buffer diverse da `Transform::Normal` vengono rifiutate esplicitamente: non vengono presentate texture ruotate o specchiate in modo scorretto.
-- Le texture SHM vengono caricate in modo sincrono e ricreate a ogni frame. Il caching per revisione e la gestione incrementale del damage sono ottimizzazioni successive.
-- La pipeline grafica SHM, il descriptor-set layout e il sampler sono ora mantenuti in una cache per dispositivo; viene creata una pipeline distinta solo al primo utilizzo di ciascun formato. Le texture SHM e i relativi descriptor set sono ancora ricreati a ogni frame: il percorso è di bring-up, non ancora ottimizzato per uso quotidiano.
+- Il codice include ora `VulkanPendingUpload`, upload raggruppati e una cache limitata delle texture SHM indicizzata per superficie/revisione. Questa evoluzione non è ancora stata compilata con successo nel workspace attuale, né validata su hardware.
+- Pipeline grafica SHM, descriptor-set layout e sampler sono mantenuti in cache per dispositivo. La nuova cache delle texture e i percorsi di upload richiedono ancora compilazione, test e validazione; non vanno considerati pronti per l'uso quotidiano.
 - Il limite aggregato del frame è 256 MiB di snapshot SHM visibili e 128 superfici; i singoli snapshot hanno inoltre il proprio limite.
 - Il percorso fisico deve ancora essere verificato su hardware reale, inclusi formati/modifier, DMA-BUF export, ownership delle queue, blending, atomic KMS, VBlank, hotplug e teardown.
 - Il successo di una build o dei test unitari non dimostra che il monitor mostri correttamente le finestre.
 
 ## Prossimi passi, in ordine
 
-1. Eseguire pull, formattazione, `cargo check -p aurea-compositor --features drm` e test unitari su Fedora.
+1. Correggere le sette diagnostiche di `cargo check --workspace`, ripetere `cargo fmt --all -- --check`, `cargo check --workspace`, `cargo check -p aurea-compositor --features drm` e i test unitari su Fedora.
 2. Verificare la composizione SHM con client Wayland reali e controllare ordine delle superfici, alpha, clipping, scala e multi-monitor.
 3. Aggiungere import e sincronizzazione dei buffer DMA-BUF Wayland con controlli rigorosi su formato, modifier, stride, offset e ownership.
 4. Implementare le trasformazioni buffer non standard e la gestione corretta di viewport/damage.
-5. Introdurre cache texture basata su revisione e upload incrementale, senza rilasciare risorse ancora usate dalla GPU. La cache persistente di pipeline, descriptor layout e sampler è già stata introdotta.
+5. Validare e consolidare la cache texture per revisione e gli upload raggruppati già presenti nel sorgente; il damage incrementale resta da implementare. Non rilasciare risorse ancora usate dalla GPU.
 6. Verificare errori, hot-unplug, sospensione/ripresa e teardown con più output prima di considerare il percorso affidabile.
 
 ## Regole di implementazione

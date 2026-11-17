@@ -10,6 +10,10 @@ AureaOS targets Debian GNU/Linux 13 (Trixie) on `amd64`. The project has progres
 
 These components are still under development. AureaOS does not yet provide a complete graphical desktop or a usable daily operating system. Its desktop experience and system applications remain part of the ongoing development roadmap.
 
+## Familiarity Before Novelty
+
+AureaOS is not trying to teach people how to use a computer again. It aims to preserve familiar, predictable desktop behaviors for people arriving from Windows, macOS or another Linux desktop. We can learn from established interaction conventions without copying another product's identity or claiming its compatibility. Continuity, local-first operation and integrated everyday services matter more than novelty for its own sake.
+
 ## Not Another Operating System Imitation
 
 AureaOS is not an attempt to recreate Windows or macOS on top of Linux.

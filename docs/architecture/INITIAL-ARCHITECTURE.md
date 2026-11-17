@@ -176,7 +176,7 @@ The following capabilities remain incomplete:
 
 GPU discovery and rendering preference selection do not establish working multi-GPU rendering.
 
-The current Vulkan backend can report `PresentationUnavailable` because the swapchain and physical presentation path are not yet implemented.
+The compositor contains a source-level Vulkan SHM composition and DRM/KMS scanout path. The 15 November 2026 `cargo check --workspace` failed with seven compositor errors; therefore the current integrated path is not yet compiling and physical presentation is unverified. The generic `VulkanBackend::render_frame` API remains intentionally unavailable without a generic presentation target.
 
 ### 4.7 Graphics and Display Architecture
 
@@ -196,9 +196,9 @@ The responsibilities are separated as follows:
 
 The current implementation supports initial device discovery, output lifecycle management, and Wayland output publication.
 
-Vulkan is selected, but its complete rendering and physical presentation pipeline is not yet implemented.
+Vulkan is selected as the exclusive rendering API. An initial physical scanout and SHM composition implementation exists in source but has not passed the latest workspace compilation or hardware validation.
 
-The architecture does not yet provide complete physical display mode setting, frame presentation, VRR control, or adaptive refresh policy.
+The architecture includes an initial DRM/KMS presentation implementation, but does not yet provide validated, complete physical display mode setting, frame presentation, VRR control, or adaptive refresh policy.
 
 The planned display architecture is documented in [Display Intelligence](DISPLAY-INTELLIGENCE.md).
 

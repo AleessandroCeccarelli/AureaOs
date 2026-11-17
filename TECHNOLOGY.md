@@ -6,7 +6,7 @@
 
 AureaOS Roma 1.0 targets Debian GNU/Linux 13 (Trixie) on amd64 (x86-64).
 
-AureaOS is a GUI-first, Wayland-first Linux distribution.
+AureaOS is a GUI-first Linux distribution targeting a Wayland-only desktop session. No X11 or XWayland compatibility layer is planned; this is a deliberate compatibility constraint, not a claim that all existing Linux applications will work.
 
 Its architecture is divided into two principal layers:
 
@@ -87,11 +87,11 @@ Full rendering, physical frame presentation, complete DRM/KMS mode setting, full
 
 Vulkan is the selected and exclusive graphics rendering API for AureaOS.
 
-The project will not introduce alternative rendering APIs as parallel graphics backends.
+The project will not introduce alternative rendering APIs, including OpenGL, as parallel graphics backends. This can exclude applications that require X11/XWayland or OpenGL; compatibility must be measured rather than assumed.
 
 This is an architectural decision, not a claim that the rendering pipeline is already complete.
 
-The concrete Vulkan backend, frame rendering, swapchain and presentation integration, and physical display output still require implementation and validation.
+An initial Vulkan SHM scene-composition and DRM/KMS scanout path, batched uploads and texture cache now exist in source. The 15 November 2026 Fedora `cargo check --workspace` failed with seven compositor compiler diagnostics; the integrated path has not yet passed compilation or physical display validation.
 
 ### User interface technologies
 
@@ -108,6 +108,10 @@ The project will evaluate suitable technologies for individual first-party compo
 CSS is currently used for design tokens and web-oriented theme resources. Its presence does not imply that a native UI toolkit or shared native component library has been implemented.
 
 See the Application and Component Catalog for per-component language and technology status.
+
+### Local-first system APIs (planned)
+
+The desktop must remain useful without an online account. First-party capabilities should expose stable, documented, permission-controlled interfaces to compatible applications, with IPC and sandbox boundaries designed explicitly. The existing `aurea-desktop-api` crate currently holds internal desktop-component contracts; it is **not yet** a public application SDK or a completed system-services framework. A system-wide dictionary, spelling suggestions, autocorrection and personal text substitutions are proposed local services. Future account synchronization is optional and out of scope for the current implementation.
 
 ## 5. AureaOS-Owned System Layer
 

@@ -32,6 +32,9 @@ Developing first-party replacements for these application categories may be cons
 
 ## Current Status
 
+**Latest verified Fedora checkpoint (15 November 2026):** formatting check passed and was committed/pushed as `23be5183`; `cargo check --workspace` failed with seven compositor errors (E0365 ×2, E0524 ×1, lifetime diagnostics ×3, E0502 ×1). The fixes, workspace tests, DRM feature check, and physical display validation are pending. The new SHM texture cache, batched uploads and Vulkan resource-quarantine paths exist in source but are not yet validated as a compiling integrated implementation.
+
+
 ### Implemented in the Repository
 
 - Project vision, contribution guidance, technical direction, and initial architecture documentation.
@@ -67,7 +70,7 @@ The Debian bootstrap profile still needs package-resolution validation and does 
 
 ### In Development / Validation
 
-- Validate the complete shell and compositor workspace through compilation and automated tests.
+- Fix the seven known compositor compilation diagnostics, then validate the complete shell and compositor workspace through compilation and automated tests.
 - Continue hardware-independent testing of output management and DRM lifecycle behavior.
 - Validate DRM device acquisition, output discovery, hotplug, and session handling on representative physical hardware.
 - Define and validate system identity, service defaults, storage layout, boot configuration, and security policy.
@@ -75,16 +78,19 @@ The Debian bootstrap profile still needs package-resolution validation and does 
 
 ## Planned Development
 
+The planned desktop-services architecture is **local-first**: native services and permission-controlled application APIs should work without a cloud account. System-wide spellchecking/autocorrect, personal dictionaries and text substitutions are design goals, not current code. Optional future synchronization (contacts, mail, calendars, notes, settings) must not be a prerequisite for using the desktop. The Wayland-only/Vulkan-only target also requires a measured Flatpak application compatibility program; universal Flathub compatibility is not claimed.
+
+
 ### 1. Desktop and Graphics Foundation
 
-- Implement the concrete Vulkan rendering backend and physical frame presentation.
+- Complete, compile, and validate the existing Vulkan SHM composition and DRM/KMS physical frame presentation implementation.
 - Complete DRM/KMS mode setting and physical display configuration.
 - Complete pointer, touch, and gesture input handling, including touchpad workspace gestures.
 - Develop complete window management and desktop interactions.
 - Integrate compositor rendering, presentation, and output lifecycle responsibilities.
 - Validate the graphics pipeline on representative hardware.
 
-Vulkan is the selected and exclusive graphics rendering API for AureaOS. A complete rendering and presentation pipeline remains to be implemented.
+Vulkan is the selected and exclusive graphics rendering API for AureaOS. An initial SHM scene-composition and DRM/KMS presentation path exists in source, but compilation, end-to-end functionality and physical output remain unverified.
 
 ### 2. Display Intelligence
 
