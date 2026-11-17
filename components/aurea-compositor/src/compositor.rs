@@ -25,6 +25,7 @@ mod frame_scheduling;
 mod keyboard;
 mod output_publication;
 mod output_reconciliation;
+mod pointer;
 mod rendering;
 mod workspace;
 
