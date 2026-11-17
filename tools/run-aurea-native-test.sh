@@ -32,6 +32,7 @@ done
 
 mkdir -p -- "$LOG_DIR"
 chmod 700 "$LOG_DIR"
+SCRIPT_PATH="$ROOT_DIR/tools/run-aurea-native-test.sh"
 LOG_FILE="$LOG_DIR/native-test-$(date +%Y%m%d-%H%M%S).log"
 umask 077
 exec > >(tee -a "$LOG_FILE") 2>&1
