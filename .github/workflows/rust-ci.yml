@@ -95,6 +95,7 @@ jobs:
 
       - name: Validate bootstrap script
         run: |
+          shellcheck tools/run-aurea-native-test.sh
           bash -n tools/build/bootstrap-debian.sh
           bash -n tools/security/audit-rootfs-permissions.sh
           bash -n tools/security/tests/test-audit-rootfs-permissions.sh
