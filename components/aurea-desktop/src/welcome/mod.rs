@@ -9,6 +9,10 @@ mod buffer;
 mod painter;
 mod protocol;
 
+// Shared dimensions for the Welcome surface and its SHM buffer.
+pub(super) const WIDTH: usize = 720;
+pub(super) const HEIGHT: usize = 440;
+
 use std::io;
 
 use wayland_client::{
