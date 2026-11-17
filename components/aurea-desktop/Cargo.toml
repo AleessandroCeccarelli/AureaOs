@@ -11,8 +11,6 @@ description = "Desktop entry point and composition root for AureaOS"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-aurea-shell = { path = "../aurea-shell" }
-aurea-compositor = { path = "../aurea-compositor", features = ["drm", "vulkan"] }
 wayland-client = "0.31"
 wayland-protocols = { version = "0.32", features = ["client"] }
 memmap2 = "0.9"

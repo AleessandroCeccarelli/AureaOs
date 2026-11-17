@@ -10,7 +10,7 @@ use std::{fs::OpenOptions, io, os::fd::AsFd, path::PathBuf};
 use memmap2::MmapMut;
 use wayland_client::{
     Connection, Dispatch, QueueHandle, delegate_noop,
-    globals::registry_queue_init,
+    globals::{GlobalListContents, registry_queue_init},
     protocol::{
         wl_buffer::{self, WlBuffer},
         wl_compositor::{self, WlCompositor},
@@ -124,6 +124,19 @@ fn fill_rect(pixels: &mut [u8], x: usize, y: usize, width: usize, height: usize,
     }
 }
 
+
+impl Dispatch<wl_registry::WlRegistry, GlobalListContents> for WelcomeWindow {
+    fn event(
+        _state: &mut Self,
+        _proxy: &wl_registry::WlRegistry,
+        _event: wl_registry::Event,
+        _data: &GlobalListContents,
+        _conn: &Connection,
+        _qh: &QueueHandle<Self>,
+    ) {
+    }
+}
+
 impl Dispatch<WlBuffer, ()> for WelcomeWindow {
     fn event(
         _state: &mut Self,
@@ -221,7 +234,6 @@ impl Dispatch<XdgToplevel, ()> for WelcomeWindow {
     }
 }
 
-delegate_noop!(WelcomeWindow: ignore wl_registry::WlRegistry);
 delegate_noop!(WelcomeWindow: ignore wl_compositor::WlCompositor);
 
 pub fn run() -> io::Result<()> {
@@ -244,8 +256,8 @@ pub fn run() -> io::Result<()> {
     let surface = compositor.create_surface(&qh, ());
     let xdg_surface = wm_base.get_xdg_surface(&surface, &qh, ());
     let toplevel = xdg_surface.get_toplevel(&qh, ());
-    toplevel.set_title("AureaOS — Welcome");
-    toplevel.set_app_id("org.aureaos.Welcome");
+    toplevel.set_title("AureaOS — Welcome".to_owned());
+    toplevel.set_app_id("org.aureaos.Welcome".to_owned());
     toplevel.set_min_size(560, 360);
     surface.commit();
 
