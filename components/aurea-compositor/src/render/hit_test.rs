@@ -83,14 +83,14 @@ mod tests {
             (40, 80),
             1,
             Transform::_90,
-            point(39.0, 79.0),
+            point(79.0, 39.0),
         ));
         assert!(!contains_surface_point(
             location(0, 0),
             (40, 80),
             1,
             Transform::_90,
-            point(40.0, 10.0),
+            point(80.0, 10.0),
         ));
     }
 

@@ -58,15 +58,10 @@ impl<'a> RenderScene<'a> {
     ///
     /// Both toplevel stacking and subsurface traversal are checked back-to-front
     /// so the surface visually on top receives pointer focus.
-    pub fn toplevel_under(
-        &self,
-        point: Point<f64, Logical>,
-    ) -> Option<&'a ToplevelSurface> {
+    pub fn toplevel_under(&self, point: Point<f64, Logical>) -> Option<&'a ToplevelSurface> {
         for toplevel in self.toplevels.iter().rev() {
-            let snapshots = collect_surface_tree_snapshots(
-                toplevel.surface.wl_surface(),
-                toplevel.location,
-            );
+            let snapshots =
+                collect_surface_tree_snapshots(toplevel.surface.wl_surface(), toplevel.location);
 
             if snapshots
                 .iter()
