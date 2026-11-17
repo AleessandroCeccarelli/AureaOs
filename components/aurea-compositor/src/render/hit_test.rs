@@ -70,10 +70,34 @@ mod tests {
         let origin = location(10, 20);
         let size = (100, 60);
 
-        assert!(contains_surface_point(origin, size, 2, Transform::Normal, point(20.0, 30.0)));
-        assert!(contains_surface_point(origin, size, 2, Transform::Normal, point(59.9, 49.9)));
-        assert!(!contains_surface_point(origin, size, 2, Transform::Normal, point(60.0, 30.0)));
-        assert!(!contains_surface_point(origin, size, 2, Transform::Normal, point(20.0, 50.0)));
+        assert!(contains_surface_point(
+            origin,
+            size,
+            2,
+            Transform::Normal,
+            point(20.0, 30.0)
+        ));
+        assert!(contains_surface_point(
+            origin,
+            size,
+            2,
+            Transform::Normal,
+            point(59.9, 49.9)
+        ));
+        assert!(!contains_surface_point(
+            origin,
+            size,
+            2,
+            Transform::Normal,
+            point(60.0, 30.0)
+        ));
+        assert!(!contains_surface_point(
+            origin,
+            size,
+            2,
+            Transform::Normal,
+            point(20.0, 50.0)
+        ));
     }
 
     #[test]
