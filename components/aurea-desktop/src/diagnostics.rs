@@ -6,10 +6,11 @@
 //! Persistent diagnostics for native desktop test runs.
 
 use std::{
+    env,
     fs::{self, File, OpenOptions},
     io::{self, Write},
-    path::PathBuf,
     panic,
+    path::PathBuf,
     sync::{Mutex, OnceLock},
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -18,7 +19,9 @@ static LOG_FILE: OnceLock<Mutex<File>> = OnceLock::new();
 
 /// Opens the per-user log and installs a panic hook that preserves crash details.
 pub fn initialize() -> io::Result<PathBuf> {
-    let directory = state_directory()?.join("aureaos").join("logs");
+    let directory = resolve_state_directory(env::var_os("XDG_STATE_HOME"), env::var_os("HOME"))?
+        .join("aureaos")
+        .join("logs");
     fs::create_dir_all(&directory)?;
 
     let path = directory.join("aurea-desktop.log");
@@ -56,14 +59,15 @@ pub fn record(level: &str, message: &str) {
     }
 }
 
-fn state_directory() -> io::Result<PathBuf> {
-    if let Some(path) = std::env::var_os("XDG_STATE_HOME") {
-        if !path.is_empty() {
-            return Ok(PathBuf::from(path));
-        }
+fn resolve_state_directory(
+    xdg_state_home: Option<std::ffi::OsString>,
+    home: Option<std::ffi::OsString>,
+) -> io::Result<PathBuf> {
+    if let Some(path) = xdg_state_home.filter(|value| !value.is_empty()) {
+        return Ok(PathBuf::from(path));
     }
 
-    let home = std::env::var_os("HOME")
+    let home = home
         .filter(|value| !value.is_empty())
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "HOME and XDG_STATE_HOME are unset"))?;
 
@@ -72,13 +76,29 @@ fn state_directory() -> io::Result<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::state_directory;
-    use std::path::PathBuf;
+    use super::resolve_state_directory;
+    use std::{ffi::OsString, path::PathBuf};
 
     #[test]
-    fn fallback_state_directory_uses_xdg_layout() {
-        // This test checks the path contract without changing process environment.
-        let expected_suffix = PathBuf::from(".local").join("state");
-        assert!(expected_suffix.ends_with("state"));
+    fn prefers_xdg_state_home_when_available() {
+        let path = resolve_state_directory(
+            Some(OsString::from("/tmp/aurea-state")),
+            Some(OsString::from("/home/tester")),
+        )
+        .unwrap();
+
+        assert_eq!(path, PathBuf::from("/tmp/aurea-state"));
+    }
+
+    #[test]
+    fn falls_back_to_local_state_under_home() {
+        let path = resolve_state_directory(None, Some(OsString::from("/home/tester"))).unwrap();
+
+        assert_eq!(path, PathBuf::from("/home/tester/.local/state"));
+    }
+
+    #[test]
+    fn reports_missing_state_directory_environment() {
+        assert!(resolve_state_directory(None, None).is_err());
     }
 }
