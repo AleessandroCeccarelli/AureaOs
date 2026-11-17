@@ -37,7 +37,14 @@ pub(super) fn paint_welcome(pixels: &mut [u8]) {
     draw_text(pixels, 224, 246, "IL DESKTOP PRENDE FORMA", 2, MUTED);
 
     fill_round_rect(pixels, 72, 300, 576, 2, 1, [61, 87, 119, 255]);
-    draw_text(pixels, 72, 326, "WAYLAND  VULKAN  SMITHAY", 2, [183, 202, 224, 255]);
+    draw_text(
+        pixels,
+        72,
+        326,
+        "WAYLAND  VULKAN  SMITHAY",
+        2,
+        [183, 202, 224, 255],
+    );
 
     // A quiet progress motif: a bright first segment, not a fake loading bar.
     fill_round_rect(pixels, 72, 366, 576, 4, 2, [37, 55, 78, 255]);
@@ -52,12 +59,7 @@ fn paint_background(pixels: &mut [u8]) {
         let blue = 25 + progress * 25 / 255;
         for x in 0..WIDTH {
             let offset = (y * WIDTH + x) * 4;
-            pixels[offset..offset + 4].copy_from_slice(&[
-                blue as u8,
-                green as u8,
-                red as u8,
-                255,
-            ]);
+            pixels[offset..offset + 4].copy_from_slice(&[blue as u8, green as u8, red as u8, 255]);
         }
     }
 }
@@ -77,8 +79,7 @@ fn paint_glow(pixels: &mut [u8], center_x: usize, center_y: usize, radius: usize
             if distance_squared >= radius_squared {
                 continue;
             }
-            let falloff = (radius_squared - distance_squared) * color[3] as usize
-                / radius_squared;
+            let falloff = (radius_squared - distance_squared) * color[3] as usize / radius_squared;
             blend_pixel(pixels, x, y, [color[0], color[1], color[2], falloff as u8]);
         }
     }
@@ -176,8 +177,7 @@ fn blend_pixel(pixels: &mut [u8], x: usize, y: usize, color: [u8; 4]) {
     for channel in 0..3 {
         let source = u16::from(color[2 - channel]);
         let destination = u16::from(pixels[offset + channel]);
-        pixels[offset + channel] =
-            ((source * alpha + destination * inverse) / 255) as u8;
+        pixels[offset + channel] = ((source * alpha + destination * inverse) / 255) as u8;
     }
     pixels[offset + 3] = 255;
 }
