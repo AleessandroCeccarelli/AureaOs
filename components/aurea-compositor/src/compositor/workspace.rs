@@ -29,6 +29,14 @@ impl AureaCompositor {
         true
     }
 
+    /// Requests a bounded logical size for a managed toplevel.
+    ///
+    /// The new dimensions are sent to the client through the XDG configure
+    /// handshake. Returns false when the surface is not managed.
+    pub fn resize_toplevel(&mut self, surface: &WlSurface, size: (i32, i32)) -> bool {
+        self.window_manager.resize_toplevel(surface, size)
+    }
+
     /// Moves a managed toplevel surface to a workspace by its zero-based index.
     ///
     /// Returns `false` when the surface is unmanaged or the workspace index
