@@ -28,11 +28,7 @@ impl AureaCompositor {
     ///
     /// Coordinates are maintained in global logical compositor space. Absolute
     /// devices are handled separately because they require output-local mapping.
-    pub fn handle_pointer_motion(
-        &mut self,
-        delta: Point<f64, smithay::utils::Logical>,
-        time: u32,
-    ) {
+    pub fn handle_pointer_motion(&mut self, delta: Point<f64, smithay::utils::Logical>, time: u32) {
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
