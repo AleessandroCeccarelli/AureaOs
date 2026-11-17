@@ -5,7 +5,12 @@
 
 //! Shared-memory buffer allocation and surface attachment.
 
-use std::{fs::OpenOptions, io, os::fd::AsFd, path::PathBuf};
+use std::{
+    fs::OpenOptions,
+    io,
+    os::{fd::AsFd, unix::fs::OpenOptionsExt},
+    path::PathBuf,
+};
 
 use memmap2::MmapMut;
 use wayland_client::protocol::wl_buffer::WlBuffer;
@@ -31,6 +36,7 @@ impl WelcomeWindow {
         let file = OpenOptions::new()
             .read(true)
             .write(true)
+            .mode(0o600)
             .create_new(true)
             .open(&path)?;
         let _ = std::fs::remove_file(&path);
