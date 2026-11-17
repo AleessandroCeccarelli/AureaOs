@@ -6,7 +6,8 @@
 //! Top-level window management.
 
 use smithay::{
-    reexports::wayland_server::protocol::wl_surface::WlSurface, utils::Point,
+    reexports::wayland_server::protocol::wl_surface::WlSurface,
+    utils::{Point, Size},
     wayland::shell::xdg::ToplevelSurface,
 };
 
@@ -27,6 +28,10 @@ struct ManagedToplevel {
 impl WindowManager {
     /// Number of virtual workspaces provided by the initial desktop model.
     pub const WORKSPACE_COUNT: usize = 4;
+    pub const MIN_WINDOW_WIDTH: i32 = 320;
+    pub const MIN_WINDOW_HEIGHT: i32 = 240;
+    pub const MAX_WINDOW_WIDTH: i32 = 3840;
+    pub const MAX_WINDOW_HEIGHT: i32 = 2160;
 
     /// Creates an empty window manager.
     pub fn new() -> Self {
@@ -101,6 +106,42 @@ impl WindowManager {
 
         toplevel.location = Point::from(location);
         true
+    }
+
+    /// Requests a bounded logical size for a managed toplevel.
+    ///
+    /// The size is sent through the XDG configure handshake; clients remain
+    /// responsible for committing a buffer at the configured dimensions.
+    /// Returns false when the surface is not managed or has been destroyed.
+    pub fn resize_toplevel(
+        &mut self,
+        surface: &WlSurface,
+        requested: (i32, i32),
+    ) -> bool {
+        self.remove_dead_toplevels();
+
+        let Some(toplevel) = self
+            .toplevels
+            .iter()
+            .find(|toplevel| toplevel.surface.wl_surface() == surface)
+        else {
+            return false;
+        };
+
+        let (width, height) = Self::bounded_window_size(requested);
+        toplevel.surface.with_pending_state(|state| {
+            state.size = Some(Size::from((width, height)));
+        });
+        toplevel.surface.send_configure();
+        true
+    }
+
+    /// Clamps client-independent size requests to the compositor's supported range.
+    pub fn bounded_window_size(requested: (i32, i32)) -> (i32, i32) {
+        (
+            requested.0.clamp(Self::MIN_WINDOW_WIDTH, Self::MAX_WINDOW_WIDTH),
+            requested.1.clamp(Self::MIN_WINDOW_HEIGHT, Self::MAX_WINDOW_HEIGHT),
+        )
     }
 
     /// Updates mapping state when a toplevel's buffer changes.
@@ -184,5 +225,22 @@ impl WindowManager {
                     && toplevel.workspace == self.active_workspace
             })
             .map(|toplevel| toplevel.surface.wl_surface().clone())
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::WindowManager;
+
+    #[test]
+    fn window_size_is_clamped_to_supported_bounds() {
+        assert_eq!(WindowManager::bounded_window_size((1, 1)), (320, 240));
+        assert_eq!(WindowManager::bounded_window_size((9000, 9000)), (3840, 2160));
+    }
+
+    #[test]
+    fn window_size_preserves_supported_dimensions() {
+        assert_eq!(WindowManager::bounded_window_size((1280, 720)), (1280, 720));
     }
 }
