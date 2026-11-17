@@ -144,7 +144,8 @@ impl Dispatch<WlShm, ()> for WelcomeWindow {
         _data: &(),
         _conn: &Connection,
         _qh: &QueueHandle<Self>,
-    ) {}
+    ) {
+    }
 }
 
 impl Dispatch<WlShmPool, ()> for WelcomeWindow {
@@ -155,7 +156,8 @@ impl Dispatch<WlShmPool, ()> for WelcomeWindow {
         _data: &(),
         _conn: &Connection,
         _qh: &QueueHandle<Self>,
-    ) {}
+    ) {
+    }
 }
 
 impl Dispatch<WlSurface, ()> for WelcomeWindow {
@@ -166,7 +168,8 @@ impl Dispatch<WlSurface, ()> for WelcomeWindow {
         _data: &(),
         _conn: &Connection,
         _qh: &QueueHandle<Self>,
-    ) {}
+    ) {
+    }
 }
 
 impl Dispatch<XdgWmBase, ()> for WelcomeWindow {
