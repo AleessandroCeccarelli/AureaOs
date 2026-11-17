@@ -5,12 +5,7 @@
 
 //! First native Wayland client used to validate visible desktop surfaces.
 
-use std::{
-    fs::OpenOptions,
-    io,
-    os::fd::AsFd,
-    path::PathBuf,
-};
+use std::{fs::OpenOptions, io, os::fd::AsFd, path::PathBuf};
 
 use memmap2::MmapMut;
 use wayland_client::{
@@ -78,7 +73,9 @@ impl WelcomeWindow {
         let mut pixels = unsafe { MmapMut::map_mut(&file)? };
         paint_welcome(&mut pixels);
 
-        let pool = self.shm.create_pool(file.as_fd(), BUFFER_SIZE as i32, qh, ());
+        let pool = self
+            .shm
+            .create_pool(file.as_fd(), BUFFER_SIZE as i32, qh, ());
         let buffer = pool.create_buffer(
             0,
             WIDTH as i32,
@@ -104,11 +101,7 @@ fn paint_welcome(pixels: &mut [u8]) {
     for y in 0..HEIGHT as usize {
         for x in 0..WIDTH as usize {
             let offset = (y * WIDTH as usize + x) * 4;
-            let (r, g, b) = if y < 76 {
-                (18, 39, 75)
-            } else {
-                (14, 22, 37)
-            };
+            let (r, g, b) = if y < 76 { (18, 39, 75) } else { (14, 22, 37) };
             pixels[offset..offset + 4].copy_from_slice(&[b, g, r, 255]);
         }
     }
@@ -139,7 +132,8 @@ impl Dispatch<WlBuffer, ()> for WelcomeWindow {
         _data: &(),
         _conn: &Connection,
         _qh: &QueueHandle<Self>,
-    ) {}
+    ) {
+    }
 }
 
 impl Dispatch<WlShm, ()> for WelcomeWindow {
