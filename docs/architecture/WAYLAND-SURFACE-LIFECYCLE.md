@@ -16,15 +16,21 @@ responsibilities are separated by file:
   creates the XDG toplevel, and owns the client state.
 - `welcome/protocol.rs`: handles XDG ping/configure/close events and protocol
   dispatch.
-- `welcome/buffer.rs`: creates the private SHM backing file, maps it, creates
-  the `wl_shm_pool` and `wl_buffer`, and attaches the first frame.
-- `welcome/painter.rs`: paints the welcome surface into the supplied pixel
-  buffer.
+- `welcome/dimensions.rs`: validates and bounds compositor-provided dimensions.
+- `welcome/frame.rs`: owns the buffer, pool, and mapped pixels for each submitted frame.
+- `welcome/buffer.rs`: allocates SHM frames, attaches them, and retires resources
+  after `wl_buffer.release`.
+- `welcome/scaling.rs`: scales the fixed artwork to the configured buffer size.
+- `welcome/painter.rs`: paints the reference Welcome artwork.
 - `welcome/typography.rs`: owns the small bitmap typeface used by the painter.
 
 The client waits for the initial XDG configure before acknowledging it and
-committing its first buffer. It keeps the pool, buffer, and mapping alive for
-the client lifetime.
+committing its first buffer. Later XDG toplevel configure events update the
+requested dimensions. Dimensions are bounded to 560×360 through 1920×1200;
+zero-sized configure hints retain the 720×440 reference size. The artwork is
+scaled into a newly allocated SHM frame when the resolved size changes. Each
+submitted frame retains its pool and mapping until its matching
+`wl_buffer.release` event arrives.
 
 ## Compositor surface path
 
@@ -57,18 +63,19 @@ little-endian byte order is converted to RGBA in place when required.
 
 ## Current limitations
 
-- The Welcome client currently paints a fixed 720x440 buffer.
-- A subsequent XDG configure does not yet allocate and attach a replacement
-  buffer; the client currently keeps its first buffer until it exits.
-- The Welcome client's `wl_buffer.release` handler is presently a no-op. This
-  is safe for the current single-buffer, immutable-frame demonstration because
-  the buffer is not rewritten or destroyed while the surface is using it.
-  It is not a complete multi-buffer or animated-client strategy.
+- The Welcome artwork is authored at 720×440 and nearest-neighbour scaled to
+  the configured buffer dimensions; responsive layout and vector rendering are
+  future work.
+- Frame resources are retained until the compositor sends the corresponding
+  `wl_buffer.release`. This is a single-frame-at-a-time redraw strategy, not a
+  reusable multi-buffer animation pipeline.
 - Popup lifecycle, interactive move/resize, and full window decorations are
   not part of this first visible-surface milestone.
 
 These limitations must be addressed before treating Welcome as a production
-shell surface or adding clients that continuously redraw.
+shell surface or adding clients that continuously redraw. The current
+resizing path handles XDG size changes but does not yet implement interactive
+window move/resize requests or a full damage-tracked rendering loop.
 
 ## Verification
 
