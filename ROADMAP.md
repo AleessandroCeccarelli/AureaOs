@@ -32,7 +32,7 @@ Developing first-party replacements for these application categories may be cons
 
 ## Current Status
 
-**Latest verified Fedora checkpoint (15 November 2026):** formatting check passed and was committed/pushed as `23be5183`; `cargo check --workspace` failed with seven compositor errors (E0365 ×2, E0524 ×1, lifetime diagnostics ×3, E0502 ×1). The fixes, workspace tests, DRM feature check, and physical display validation are pending. The new SHM texture cache, batched uploads and Vulkan resource-quarantine paths exist in source but are not yet validated as a compiling integrated implementation.
+**GitHub Actions verification (Ubuntu 24.04, 17 November 2026; commit `b7494271848213a6efdcfb1cf626773e861c08ae`):** Rust formatting, `cargo check --workspace --locked`, `cargo check -p aurea-compositor --features drm --locked`, workspace tests, compositor DRM/Vulkan tests, shader compilation, and the Mesa lavapipe offscreen triangle smoke test all passed. Bootstrap/security fixture checks passed. `cargo audit` completed successfully but reported two allowed RustSec warnings for transitive `cgmath 0.18.0` (unmaintained and unsound advisories; no fixed upstream release is available). This is a successful CI run, not a clean dependency audit or physical-display validation. The seven compiler errors found on 15 November have been fixed. The compositor remains an early prototype; physical DRM/KMS validation and a bootable desktop image are still pending. See [the CI run](https://github.com/AleessandroCeccarelli/AureaOs/actions/runs/44056628316) and [Vulkan / DRM scanout status](docs/architecture/VULKAN-SCANOUT-STATUS.md).
 
 
 ### Implemented in the Repository
@@ -62,7 +62,7 @@ Developing first-party replacements for these application categories may be cons
 - Publication and removal of registered outputs as Wayland output globals.
 - Initial Night Light preference and local schedule model in the shell, with validation and unit tests.
 - Shared lock-free display color controller connected from the shell runtime through the desktop API into Wayland server state.
-- Initial Vulkan Night Light output path: a per-device/per-format cached color pipeline, on-demand intermediate composition image, full-scene composition (including the background), final color pass, and fallback to direct scanout when the optional format/image path is unavailable. This source integration has not yet been compiled or validated on physical DRM/Vulkan hardware; schedule activation service, persistence, capability reporting and visible controls remain pending.
+- Initial Vulkan Night Light output path: a per-device/per-format cached color pipeline, on-demand intermediate composition image, full-scene composition (including the background), final color pass, and fallback to direct scanout when the optional format/image path is unavailable. The source passes GitHub Actions workspace/DRM compilation, automated tests, shader compilation and the lavapipe offscreen smoke test; physical DRM/Vulkan validation is still pending. Schedule activation service, persistence, capability reporting and visible controls also remain pending.
 
 These components establish an initial desktop and graphics-device foundation. They do not yet constitute a usable graphical desktop or a complete graphics pipeline.
 

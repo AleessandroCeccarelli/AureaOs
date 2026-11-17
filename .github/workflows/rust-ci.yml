@@ -9,8 +9,14 @@ on:
   # Validate every change integrated into the main development line.
   push:
     branches: [main]
+    paths-ignore:
+      - '*.md'
+      - '**/*.md'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '*.md'
+      - '**/*.md'
   # Keep an explicit manual entry point for targeted reruns.
   workflow_dispatch:
 

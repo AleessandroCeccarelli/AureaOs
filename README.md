@@ -16,7 +16,7 @@ AureaOS aims to make Linux feel natural, coherent, and designed to respect users
 
 ## Project Status
 
-**Build status (Fedora, 15 November 2026):** `cargo fmt --all -- --check` passed and the formatting-only changes were pushed as commit `23be5183`. The subsequent `cargo check --workspace` **failed with seven Rust compiler errors** in `aurea-compositor`: two E0365 visibility/re-export errors (`VulkanPendingUpload`, `VulkanUploadBatch`), one E0524 conflicting mutable closure borrow in `scanout_renderer.rs`, three lifetime diagnostics in `display_color_pass.rs`, and one E0502 borrow conflict in `surface_compositor.rs`. These issues remain unresolved at this checkpoint. No post-checkpoint test run or physical-display validation is claimed. See [Current engineering status](docs/architecture/VULKAN-SCANOUT-STATUS.md).
+**GitHub Actions verification (Ubuntu 24.04, 17 November 2026; commit `b7494271848213a6efdcfb1cf626773e861c08ae`):** Rust formatting, `cargo check --workspace --locked`, `cargo check -p aurea-compositor --features drm --locked`, workspace tests, compositor DRM/Vulkan tests, shader compilation, and the Mesa lavapipe offscreen triangle smoke test all passed. Bootstrap/security fixture checks passed. `cargo audit` completed successfully but reported two allowed RustSec warnings for transitive `cgmath 0.18.0` (unmaintained and unsound advisories; no fixed upstream release is available). This is a successful CI run, not a clean dependency audit or physical-display validation. The seven compiler errors found on 15 November have been fixed. The compositor remains an early prototype; physical DRM/KMS validation and a bootable desktop image are still pending. See [the CI run](https://github.com/AleessandroCeccarelli/AureaOs/actions/runs/44056628316) and [Vulkan / DRM scanout status](docs/architecture/VULKAN-SCANOUT-STATUS.md).
 
 
 AureaOS is in an early prototype stage. The repository includes a minimal Debian bootstrap, package manifests, design resources, and initial Rust components for the desktop session.
@@ -45,7 +45,7 @@ These capabilities represent an important step in the graphics architecture, but
 
 AureaOS is not yet a usable graphical desktop. Several essential capabilities remain under development:
 
-- Completion and compilation of the Vulkan SHM scene-composition and DRM/KMS scanout path, followed by physical-display validation. The source now includes SHM texture upload batching and a bounded surface texture cache, but the current workspace fails compilation and physical output is unverified.
+- Physical DRM/KMS validation of the now-compiling Vulkan SHM scene-composition and scanout path. GitHub Actions has verified workspace compilation, DRM-feature compilation, tests, shader compilation, and an offscreen lavapipe smoke test; physical output remains unverified.
 - Complete DRM/KMS display configuration, robust output recovery, and full session validation.
 - Complete keyboard, pointer, touch, and gesture input handling.
 - Full window management and desktop interaction.

@@ -176,7 +176,7 @@ The following capabilities remain incomplete:
 
 GPU discovery and rendering preference selection do not establish working multi-GPU rendering.
 
-The compositor contains a source-level Vulkan SHM composition and DRM/KMS scanout path. The 15 November 2026 `cargo check --workspace` failed with seven compositor errors; therefore the current integrated path is not yet compiling and physical presentation is unverified. The generic `VulkanBackend::render_frame` API remains intentionally unavailable without a generic presentation target.
+The compositor contains an initial Vulkan SHM composition and DRM/KMS scanout path. The seven compiler errors found on 15 November 2026 were fixed; GitHub Actions on 17 November passed workspace compilation, DRM-feature compilation, tests, shader compilation, and an offscreen Mesa lavapipe smoke test. Physical presentation remains unverified. The generic `VulkanBackend::render_frame` API remains intentionally unavailable without a generic presentation target.
 
 ### 4.7 Graphics and Display Architecture
 

@@ -93,7 +93,7 @@ The project will not introduce alternative rendering APIs, including OpenGL, as 
 
 This is an architectural decision, not a claim that the rendering pipeline is already complete.
 
-An initial Vulkan SHM scene-composition and DRM/KMS scanout path, batched uploads and texture cache now exist in source. The 15 November 2026 Fedora `cargo check --workspace` failed with seven compositor compiler diagnostics; the integrated path has not yet passed compilation or physical display validation.
+An initial Vulkan SHM scene-composition and DRM/KMS scanout path, batched uploads and texture cache now exist in source. The seven compositor compiler errors found on 15 November were fixed. GitHub Actions on Ubuntu 24.04 subsequently passed workspace and DRM-feature compilation, workspace and compositor tests, shader compilation, and an offscreen Mesa lavapipe smoke test (17 November 2026). Physical DRM/KMS presentation remains unverified; see [Vulkan / DRM Scanout status](docs/architecture/VULKAN-SCANOUT-STATUS.md).
 
 ### User interface technologies
 

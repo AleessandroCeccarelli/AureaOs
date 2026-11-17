@@ -12,7 +12,7 @@ AureaOS Roma 1.0 targets Debian GNU/Linux 13 (Trixie), `amd64` (x86-64).
 
 AureaOS is GUI-first and targets a Wayland-only desktop session, with no X11 or XWayland compatibility layer planned. The repository contains an early Debian root filesystem bootstrap, package manifests, visual design resources, and a four-crate Rust desktop workspace under `components/`: `aurea-desktop`, `aurea-shell`, `aurea-desktop-api`, and `aurea-compositor`.
 
-The desktop foundation is under active development. It is not yet a complete graphical desktop or a bootable operating system. The latest Fedora check (15 November 2026) passed rustfmt but failed `cargo check --workspace` with seven compositor diagnostics; tests and physical display validation are pending. No complete AureaOS desktop UI or first-party end-user application is available.
+The desktop foundation is under active development. It is not yet a complete graphical desktop or a bootable operating system. GitHub Actions on Ubuntu 24.04 (17 November 2026) passed Rust formatting, workspace and DRM-feature compilation, workspace and compositor tests, shader compilation, and an offscreen Mesa lavapipe smoke test. Physical display validation remains pending. No complete AureaOS desktop UI or first-party end-user application is available.
 
 ### Status Definitions
 

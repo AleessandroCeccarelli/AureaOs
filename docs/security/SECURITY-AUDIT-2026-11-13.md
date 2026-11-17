@@ -137,3 +137,10 @@ These are source-level observations, not proof against all runtime or kernel-lev
 8. Resolve or explicitly accept the transitive `cgmath 0.18.0` advisories by reviewing a maintained Smithay replacement; do not silence RustSec findings without a code-level rationale.
 
 **Conclusion:** AureaOS has a promising defensive foundation, but the bootstrap and physical graphics lifecycle still have material hardening work outstanding. No claim of complete security should be made at this stage.
+
+
+## Follow-up verification — 2026-11-17
+
+GitHub Actions run [44056628316](https://github.com/AleessandroCeccarelli/AureaOs/actions/runs/44056628316), on Ubuntu 24.04 at commit `b7494271848213a6efdcfb1cf626773e861c08ae`, completed successfully. Workspace compilation, DRM-feature compilation, workspace tests, compositor DRM/Vulkan tests, shader compilation, bootstrap fixture checks, and the Mesa lavapipe offscreen smoke test passed.
+
+`cargo audit` also exited successfully, but reported the two already tracked allowed warnings for transitive `cgmath 0.18.0`: RUSTSEC-2026-0196 (unmaintained) and RUSTSEC-2026-0197 (unsound `swap_columns` behavior for identical indices). No patched upstream release is available. This result is **not** a clean dependency audit and does not close AUR-SEC-005; continue evaluating a maintained Smithay release or a reviewed revision that removes `cgmath`. No suppression or unreviewed lockfile override was introduced.

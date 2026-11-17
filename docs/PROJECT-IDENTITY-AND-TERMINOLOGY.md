@@ -54,10 +54,14 @@ Smithay is a set of building blocks for Wayland compositors, not a complete desk
 
 The repository is an early prototype, not a usable daily desktop or a bootable AureaOS release. The Rust workspace contains the desktop composition root, shell, shared internal API, and Smithay-based compositor foundations. DRM device/output lifecycle and an initial Vulkan SHM composition/scanout path exist in source.
 
-At the latest recorded Fedora checkpoint (15 November 2026):
+At the latest recorded CI checkpoint (GitHub Actions, Ubuntu 24.04, 17 November 2026):
 - `cargo fmt --all -- --check` passed.
-- `cargo check --workspace` failed with seven compiler diagnostics in `aurea-compositor`: two E0365 visibility/re-export errors, one E0524 conflicting mutable closure borrow, three lifetime diagnostics, and one E0502 borrow conflict.
-- Workspace tests, the DRM-feature check after those fixes, and physical display validation remain pending.
+- `cargo check --workspace --locked` and `cargo check -p aurea-compositor --features drm --locked` passed.
+- Workspace tests, compositor DRM/Vulkan tests, shader compilation, and the Mesa lavapipe offscreen triangle smoke test passed; one test remained intentionally ignored.
+- `cargo audit` completed with two allowed warnings for transitive `cgmath 0.18.0`; this is not a clean dependency audit.
+- Physical DRM/KMS display validation and a bootable desktop image remain pending.
+
+The seven compiler errors identified on 15 November were fixed in commits `ae6605e` and `b749427`. See [the successful GitHub Actions run](https://github.com/AleessandroCeccarelli/AureaOs/actions/runs/44056628316).
 
 The presence of code or design documentation is not evidence that a feature is complete. Each component must be labelled as implemented, prototype, foundation, planned, candidate, or undecided according to the evidence in the repository.
 
