@@ -70,7 +70,6 @@ impl OutputCoordinateSpace {
     }
 }
 
-
 /// A non-zero extent in global logical pixels.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LogicalSize {
@@ -131,10 +130,7 @@ impl OutputLogicalBounds {
             return false;
         };
 
-        point.x >= self.origin.x
-            && point.y >= self.origin.y
-            && point.x < right
-            && point.y < bottom
+        point.x >= self.origin.x && point.y >= self.origin.y && point.x < right && point.y < bottom
     }
 
     pub fn coordinate_space(self, scale: ScaleFactor) -> OutputCoordinateSpace {
@@ -179,29 +175,44 @@ mod tests {
             1920,
             1080,
             ScaleFactor::from_percent(100).unwrap(),
-        ).unwrap();
+        )
+        .unwrap();
         let right = OutputLogicalBounds::from_physical_mode(
             LogicalPoint { x: 1920, y: 0 },
             3840,
             2160,
             ScaleFactor::from_percent(200).unwrap(),
-        ).unwrap();
+        )
+        .unwrap();
 
         assert!(left.contains(LogicalPoint { x: 1919, y: 1079 }));
         assert!(!left.contains(LogicalPoint { x: 1920, y: 500 }));
         assert!(right.contains(LogicalPoint { x: 1920, y: 0 }));
-        assert_eq!(right.size(), LogicalSize { width: 1920, height: 1080 });
+        assert_eq!(
+            right.size(),
+            LogicalSize {
+                width: 1920,
+                height: 1080
+            }
+        );
     }
 
     #[test]
     fn rejects_zero_or_overflowing_output_bounds() {
         let scale = ScaleFactor::from_percent(100).unwrap();
-        assert!(OutputLogicalBounds::from_physical_mode(
-            LogicalPoint { x: 0, y: 0 }, 0, 1080, scale
-        ).is_none());
-        assert!(OutputLogicalBounds::from_physical_mode(
-            LogicalPoint { x: i64::MAX, y: 0 }, 1920, 1080, scale
-        ).is_none());
+        assert!(
+            OutputLogicalBounds::from_physical_mode(LogicalPoint { x: 0, y: 0 }, 0, 1080, scale)
+                .is_none()
+        );
+        assert!(
+            OutputLogicalBounds::from_physical_mode(
+                LogicalPoint { x: i64::MAX, y: 0 },
+                1920,
+                1080,
+                scale
+            )
+            .is_none()
+        );
     }
 
     #[test]
