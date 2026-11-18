@@ -6,6 +6,7 @@
 //! Vulkan integration for the AureaOS compositor.
 
 mod backend;
+mod capture_target;
 #[cfg(feature = "drm")]
 mod buffer_allocator;
 mod clear_pass;
