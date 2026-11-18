@@ -148,7 +148,7 @@ pub use readback_buffer::VulkanReadbackBuffer;
 pub use readback_error::VulkanReadbackError;
 pub use readback_buffer_lease::VulkanReadbackBufferLease;
 pub use readback_buffer_pool::{VulkanReadbackBufferPool, VulkanReadbackPoolStats};
-pub use readback_coordinator::VulkanReadbackCoordinator;
+pub use readback_coordinator::{VulkanReadbackCoordinator, VulkanReadbackPoll};
 pub use readback_submission::VulkanReadbackSubmission;
 pub use rendering_features::VulkanRenderingFeaturePlan;
 pub use sampler::{VulkanSampler, VulkanSamplerError};
