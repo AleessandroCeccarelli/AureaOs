@@ -7,6 +7,7 @@ Original AureaOS SVG pointer artwork and the future cursor-theme build contract 
 ## Structure
 
 - `source/` — editable SVG masters.
+- `manifest.toml` — versioned asset inventory, logical sizes, output scales, hotspots and busy animation timing.
 - `generated/` — reserved for Xcursor theme outputs and generated frames.
 - `LICENSE.md` — project artwork license.
 
@@ -16,7 +17,9 @@ Nine SVG masters: default, pointer, text, grab, grabbing, move, resize-nwse, res
 
 ## Runtime destination
 
-Rasterize masters at supported logical sizes and output scales, generate timed busy frames, package standard Xcursor files and load them through the Smithay compositor cursor path. Xcursor is an asset format and does not require an X11 or XWayland runtime.
+The manifest is the single source of truth for source paths, hotspots, logical sizes, output scales and busy animation timing. Rasterize masters at supported logical sizes and output scales, generate timed busy frames, package standard Xcursor files and load them through the Smithay compositor cursor path. Xcursor is an asset format and does not require an X11 or XWayland runtime.
+
+Hotspots in the manifest are expressed in the original 64 × 64 SVG coordinate space. The build pipeline must scale them together with each raster output and reject values outside the generated image bounds.
 
 ## Not yet implemented
 
