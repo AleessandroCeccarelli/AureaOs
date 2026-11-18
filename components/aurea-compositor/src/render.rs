@@ -73,9 +73,8 @@ impl<'a> RenderScene<'a> {
         match status {
             CursorImageStatus::Hidden => {}
             CursorImageStatus::Named(_) => {
-                let hotspot = Point::<i32, Logical>::from(cursor::DEFAULT_CURSOR_HOTSPOT);
                 self.native_cursor_location =
-                    Some((pointer_location - hotspot.to_f64()).to_i32_round());
+                    Some(cursor::default_cursor_origin(pointer_location));
             }
             CursorImageStatus::Surface(surface) => {
                 if !surface.alive() {
