@@ -98,6 +98,15 @@ impl VulkanSharedImage {
         let image = unsafe { raw.create_image(&request, None) }
             .map_err(VulkanSharedImageError::ImageCreation)?;
         let requirements = unsafe { raw.get_image_memory_requirements(image) };
+        let allocation_size = match usize::try_from(requirements.size) {
+            Ok(size) => size,
+            Err(_) => {
+                unsafe { raw.destroy_image(image, None) };
+                return Err(VulkanSharedImageError::MemoryAllocation(
+                    vk::Result::ERROR_OUT_OF_HOST_MEMORY,
+                ));
+            }
+        };
         let memory_type = select_memory_type_index(
             device.memory_properties(),
             requirements.memory_type_bits,
@@ -136,14 +145,7 @@ impl VulkanSharedImage {
             height,
             format,
             usage,
-            allocation_size: usize::try_from(requirements.size).map_err(|_| {
-                // The allocation already exists; release it before returning.
-                unsafe {
-                    raw.destroy_image(image, None);
-                    raw.free_memory(memory, None);
-                }
-                VulkanSharedImageError::MemoryAllocation(vk::Result::ERROR_OUT_OF_HOST_MEMORY)
-            })?,
+            allocation_size,
         })
     }
 
