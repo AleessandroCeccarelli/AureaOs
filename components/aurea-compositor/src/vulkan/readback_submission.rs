@@ -18,6 +18,9 @@ use super::{
 ///
 /// The source view must own a shared image. The submission then retains both
 /// that image and its logical device independently of the caller's stack.
+/// Keep submissions on a capture worker and poll them there. Dropping an
+/// incomplete submission waits for GPU completion, so it must never happen
+/// on the compositor's presentation path.
 pub struct VulkanReadbackSubmission {
     device: Arc<VulkanLogicalDevice>,
     source_view: Option<VulkanImageView<'static, 'static>>,
@@ -161,6 +164,9 @@ impl VulkanReadbackSubmission {
 
 impl Drop for VulkanReadbackSubmission {
     fn drop(&mut self) {
+        // This fallback preserves resource safety for callers that release an
+        // unfinished capture. Normal operation polls to completion on a worker
+        // before dropping, keeping the presentation loop independent.
         if !self.completed {
             let wait = unsafe {
                 self.device
