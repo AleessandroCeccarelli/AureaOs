@@ -75,6 +75,45 @@ impl SurfaceGeometry {
     }
 }
 
+/// Scales a destination rectangle around a global logical anchor point.
+pub fn scale_surface_geometry(
+    geometry: SurfaceGeometry,
+    anchor: (i32, i32),
+    output_origin: (i32, i32),
+    output_scale: u32,
+    scale: f64,
+) -> Option<SurfaceGeometry> {
+    if output_scale == 0 || !scale.is_finite() || !(1.0..=3.0).contains(&scale) {
+        return None;
+    }
+
+    let anchor_x = i64::from(anchor.0.checked_sub(output_origin.0)?)
+        .checked_mul(i64::from(output_scale))?;
+    let anchor_y = i64::from(anchor.1.checked_sub(output_origin.1)?)
+        .checked_mul(i64::from(output_scale))?;
+
+    let x = (anchor_x as f64 + (geometry.x as f64 - anchor_x as f64) * scale).round();
+    let y = (anchor_y as f64 + (geometry.y as f64 - anchor_y as f64) * scale).round();
+    let width = (f64::from(geometry.width) * scale).round();
+    let height = (f64::from(geometry.height) * scale).round();
+
+    if !x.is_finite() || !y.is_finite() || !width.is_finite() || !height.is_finite()
+        || x < i64::MIN as f64 || x > i64::MAX as f64
+        || y < i64::MIN as f64 || y > i64::MAX as f64
+        || width < 1.0 || width > u32::MAX as f64
+        || height < 1.0 || height > u32::MAX as f64
+    {
+        return None;
+    }
+
+    Some(SurfaceGeometry {
+        x: x as i64,
+        y: y as i64,
+        width: width as u32,
+        height: height as u32,
+    })
+}
+
 /// Calculates a surface's physical destination rectangle for a target output.
 ///
 /// Buffer dimensions are transformed and divided by the Wayland buffer scale
@@ -139,6 +178,25 @@ fn scaled_buffer_dimension(dimension: i32, buffer_scale: i32, output_scale: u32)
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cursor_scale_keeps_global_hotspot_anchor_fixed() {
+        let geometry =
+            surface_geometry((90, 90), (20, 20), 1, Transform::Normal, (0, 0), 1).unwrap();
+        let scaled = scale_surface_geometry(geometry, (100, 100), (0, 0), 1, 2.0).unwrap();
+
+        assert_eq!((scaled.x(), scaled.y()), (80, 80));
+        assert_eq!((scaled.width(), scaled.height()), (40, 40));
+    }
+
+    #[test]
+    fn scaling_rejects_invalid_factors() {
+        let geometry =
+            surface_geometry((0, 0), (10, 10), 1, Transform::Normal, (0, 0), 1).unwrap();
+
+        assert!(scale_surface_geometry(geometry, (0, 0), (0, 0), 1, f64::NAN).is_none());
+        assert!(scale_surface_geometry(geometry, (0, 0), (0, 0), 1, 3.5).is_none());
+    }
 
     #[test]
     fn translates_global_position_and_applies_both_scales() {
