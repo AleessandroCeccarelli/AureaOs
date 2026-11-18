@@ -119,6 +119,13 @@ impl AureaCompositor {
         &mut self.xdg_shell_state
     }
 
+    /// Returns the registered fractional-scale protocol state.
+    pub(crate) fn fractional_scale_manager_state(
+        &self,
+    ) -> &smithay::wayland::fractional_scale::FractionalScaleManagerState {
+        &self.fractional_scale_manager_state
+    }
+
     /// Returns the window manager.
     pub fn window_manager(&mut self) -> &mut WindowManager {
         &mut self.window_manager
