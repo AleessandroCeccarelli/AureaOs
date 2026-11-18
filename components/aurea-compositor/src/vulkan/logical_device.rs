@@ -25,6 +25,7 @@ pub struct VulkanLogicalDevice {
     graphics_queue: vk::Queue,
     graphics_queue_family: u32,
     queue_submit_lock: Mutex<()>,
+    command_pool_lock: Mutex<()>,
     command_pool: vk::CommandPool,
     extension_plan: VulkanDeviceExtensionPlan,
     rendering_features: VulkanRenderingFeaturePlan,
@@ -118,6 +119,7 @@ impl VulkanLogicalDevice {
             graphics_queue,
             graphics_queue_family: queue_family_index,
             queue_submit_lock: Mutex::new(()),
+            command_pool_lock: Mutex::new(()),
             command_pool,
             extension_plan,
             rendering_features,
@@ -186,6 +188,11 @@ impl VulkanLogicalDevice {
 
     /// Allocates one primary command buffer from this device's command pool.
     pub(super) fn allocate_primary_command_buffer(&self) -> Result<vk::CommandBuffer, vk::Result> {
+        // Vulkan requires external synchronization for command-pool access.
+        let _pool_guard = self
+            .command_pool_lock
+            .lock()
+            .map_err(|_| vk::Result::ERROR_UNKNOWN)?;
         let allocation_info = vk::CommandBufferAllocateInfo::default()
             .command_pool(self.command_pool)
             .level(vk::CommandBufferLevel::PRIMARY)
@@ -196,6 +203,11 @@ impl VulkanLogicalDevice {
 
     /// Frees a command buffer allocated from this device's pool.
     pub(super) fn free_command_buffer(&self, command_buffer: vk::CommandBuffer) {
+        // If synchronization state is poisoned, leaking this handle is safer
+        // than making an unsynchronized Vulkan command-pool call.
+        let Ok(_pool_guard) = self.command_pool_lock.lock() else {
+            return;
+        };
         unsafe {
             self.device
                 .free_command_buffers(self.command_pool, &[command_buffer]);
