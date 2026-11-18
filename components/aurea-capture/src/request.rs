@@ -26,18 +26,39 @@ pub struct CaptureRegion {
 
 impl CaptureRegion {
     /// Creates a non-empty region.
-    pub fn new(x: i32, y: i32, width: u32, height: u32) -> Result<Self, CaptureError> {
+    pub fn new(
+        x: i32,
+        y: i32,
+        width: u32,
+        height: u32,
+    ) -> Result<Self, CaptureError> {
         if width == 0 || height == 0 {
             return Err(CaptureError::InvalidRegion);
         }
 
-        Ok(Self { x, y, width, height })
+        Ok(Self {
+            x,
+            y,
+            width,
+            height,
+        })
     }
 
-    pub const fn x(self) -> i32 { self.x }
-    pub const fn y(self) -> i32 { self.y }
-    pub const fn width(self) -> u32 { self.width }
-    pub const fn height(self) -> u32 { self.height }
+    pub const fn x(self) -> i32 {
+        self.x
+    }
+
+    pub const fn y(self) -> i32 {
+        self.y
+    }
+
+    pub const fn width(self) -> u32 {
+        self.width
+    }
+
+    pub const fn height(self) -> u32 {
+        self.height
+    }
 }
 
 /// Source selected by the user for a capture session.
@@ -80,10 +101,22 @@ impl CaptureRequest {
         target: CaptureTarget,
         include_cursor: bool,
     ) -> Self {
-        Self { kind, target, include_cursor }
+        Self {
+            kind,
+            target,
+            include_cursor,
+        }
     }
 
-    pub const fn kind(self) -> CaptureKind { self.kind }
-    pub const fn target(self) -> CaptureTarget { self.target }
-    pub const fn includes_cursor(self) -> bool { self.include_cursor }
+    pub const fn kind(self) -> CaptureKind {
+        self.kind
+    }
+
+    pub const fn target(self) -> CaptureTarget {
+        self.target
+    }
+
+    pub const fn includes_cursor(self) -> bool {
+        self.include_cursor
+    }
 }
