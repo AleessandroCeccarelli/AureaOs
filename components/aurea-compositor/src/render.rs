@@ -224,7 +224,15 @@ impl<'a> RenderScene<'a> {
             .collect::<Vec<_>>();
 
         if let Some((surface, location)) = &self.cursor_surface {
-            snapshots.extend(collect_surface_tree_snapshots(surface, *location));
+            let anchor = self
+                .native_cursor_location
+                .unwrap_or(*location);
+            let mut cursor_snapshots = collect_surface_tree_snapshots(surface, *location);
+            for snapshot in &mut cursor_snapshots {
+                snapshot.cursor_scale = self.native_cursor_scale;
+                snapshot.cursor_anchor = Some(anchor);
+            }
+            snapshots.extend(cursor_snapshots);
         }
 
         snapshots
