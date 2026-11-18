@@ -69,9 +69,14 @@ impl<E: Error + 'static> std::fmt::Display for CompositorRenderError<E> {
 impl<E: Error + 'static> Error for CompositorRenderError<E> {}
 
 impl AureaCompositor {
-    /// Builds a snapshot of the currently mapped surfaces.
+    /// Builds a snapshot of the currently mapped surfaces and pointer image.
     pub fn render_scene(&self) -> RenderScene<'_> {
+        let pointer_location = self
+            .seat
+            .get_pointer()
+            .map(|pointer| pointer.current_location());
         RenderScene::from_window_manager(&self.window_manager)
+            .with_cursor(&self.cursor_image, pointer_location)
     }
 
     /// Renders a previously requested frame on an enabled output.

@@ -22,16 +22,18 @@ use smithay::{
         },
     },
     desktop::{WindowSurfaceType, utils::under_from_surface_tree},
+    input::pointer::{CursorImageStatus, CursorImageSurfaceData},
     reexports::wayland_server::protocol::wl_surface::WlSurface,
     utils::{Logical, Physical, Point},
-    wayland::shell::xdg::ToplevelSurface,
+    wayland::{compositor::{self, with_states}, shell::xdg::ToplevelSurface},
 };
 
 use crate::window_manager::WindowManager;
 
-/// A snapshot of the mapped toplevels for one rendering pass.
+/// A snapshot of the mapped toplevels and pointer image for one rendering pass.
 pub struct RenderScene<'a> {
     toplevels: Vec<RenderToplevel<'a>>,
+    cursor_surface: Option<(WlSurface, Point<i32, Logical>)>,
 }
 
 struct RenderToplevel<'a> {
@@ -47,7 +49,50 @@ impl<'a> RenderScene<'a> {
                 .mapped_toplevels_with_location()
                 .map(|(surface, location)| RenderToplevel { surface, location })
                 .collect(),
+            cursor_surface: None,
         }
+    }
+
+    /// Adds the client-provided cursor surface at the pointer's global location.
+    ///
+    /// Wayland defines the cursor surface origin as pointer location minus its
+    /// surface-local hotspot. Keeping it in the scene makes it use the same
+    /// validated SHM upload/cache and output clipping path as other surfaces.
+    pub fn with_cursor(
+        mut self,
+        status: &CursorImageStatus,
+        pointer_location: Option<Point<f64, Logical>>,
+    ) -> Self {
+        let (CursorImageStatus::Surface(surface), Some(pointer_location)) =
+            (status, pointer_location)
+        else {
+            return self;
+        };
+
+        if !surface.alive() {
+            return self;
+        }
+
+        let hotspot = with_states(surface, |states| {
+            states
+                .data_map
+                .get::<CursorImageSurfaceData>()
+                .map(|data| {
+                    data.lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .hotspot
+                })
+        })
+        .flatten();
+
+        let Some(hotspot) = hotspot else {
+            return self;
+        };
+
+        let location: Point<i32, Logical> =
+            (pointer_location - hotspot.to_f64()).to_i32_round();
+        self.cursor_surface = Some((surface.clone(), location));
+        self
     }
 
     /// Returns the toplevel surfaces in this scene.
@@ -125,32 +170,46 @@ impl<'a> RenderScene<'a> {
     /// Unlike shm_snapshots, this includes surfaces that currently have no
     /// attached SHM buffer and therefore cannot produce a render snapshot.
     pub fn surface_ids(&self) -> Vec<smithay::reexports::wayland_server::backend::ObjectId> {
-        self.toplevels
+        let mut surface_ids = self
+            .toplevels
             .iter()
             .flat_map(|toplevel| collect_surface_tree_ids(toplevel.surface.wl_surface()))
-            .collect()
+            .collect::<Vec<_>>();
+
+        if let Some((surface, _)) = &self.cursor_surface {
+            surface_ids.extend(collect_surface_tree_ids(surface));
+        }
+
+        surface_ids
     }
 
     /// Returns owned SHM snapshots for every mapped surface in tree render order.
     ///
-    /// Each snapshot carries its accumulated global logical position. The
-    /// output backend subtracts its own layout origin before physical scaling.
-    /// Subsurface stacking follows Smithay's surface-tree traversal.
+    /// Cursor snapshots are appended last so the Vulkan compositor draws them
+    /// above application windows. Output clipping naturally handles monitors
+    /// that do not intersect the cursor rectangle.
     pub fn shm_snapshots(&self) -> Vec<SurfaceTreeSnapshot> {
-        self.toplevels
+        let mut snapshots = self
+            .toplevels
             .iter()
             .flat_map(|toplevel| {
                 collect_surface_tree_snapshots(toplevel.surface.wl_surface(), toplevel.location)
             })
-            .collect()
+            .collect::<Vec<_>>();
+
+        if let Some((surface, location)) = &self.cursor_surface {
+            snapshots.extend(collect_surface_tree_snapshots(surface, *location));
+        }
+
+        snapshots
     }
 
-    /// Returns the number of surfaces collected for this scene.
+    /// Returns the number of mapped toplevels in this scene.
     pub fn len(&self) -> usize {
         self.toplevels.len()
     }
 
-    /// Returns whether this scene contains no mapped surfaces.
+    /// Returns whether this scene contains no mapped toplevels.
     pub fn is_empty(&self) -> bool {
         self.toplevels.is_empty()
     }
