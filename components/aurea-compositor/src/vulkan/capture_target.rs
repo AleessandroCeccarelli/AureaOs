@@ -35,7 +35,9 @@ impl fmt::Display for VulkanCaptureTargetError {
                 formatter,
                 "Vulkan format {format:?} does not support capture color-attachment and transfer-source usage"
             ),
-            Self::Image(error) => write!(formatter, "Capture target image allocation failed: {error}"),
+            Self::Image(error) => {
+                write!(formatter, "Capture target image allocation failed: {error}")
+            }
         }
     }
 }
@@ -69,9 +71,10 @@ impl VulkanCaptureTarget {
         }
 
         let properties = unsafe {
-            device
-                .instance()
-                .get_physical_device_format_properties(device.physical_device(), VULKAN_CAPTURE_FORMAT)
+            device.instance().get_physical_device_format_properties(
+                device.physical_device(),
+                VULKAN_CAPTURE_FORMAT,
+            )
         };
         let required = vk::FormatFeatureFlags::COLOR_ATTACHMENT
             | vk::FormatFeatureFlags::TRANSFER_SRC;
@@ -116,12 +119,8 @@ impl VulkanCaptureTarget {
     }
 
     /// Updates state only after the submission recording that transition completes.
-    pub(crate) fn set_state_after_completion(&self, state: VulkanImageState) {
+    pub fn set_state_after_completion(&self, state: VulkanImageState) {
         self.state.set(state);
     }
 
-    /// Returns the device owner for worker-side readback pool construction.
-    pub(crate) fn device_owner(&self) -> Arc<VulkanLogicalDevice> {
-        self.image.device_owner()
-    }
 }
