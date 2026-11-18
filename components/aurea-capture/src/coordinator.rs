@@ -129,8 +129,3 @@ impl CaptureCoordinator {
     }
 }
 
-impl CaptureSessionId {
-    const fn from_value(value: u64) -> Self {
-        Self(value)
-    }
-}
