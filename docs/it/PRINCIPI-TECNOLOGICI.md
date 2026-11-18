@@ -117,7 +117,7 @@ Per le applicazioni isolate, l'interoperabilità passa dalle interfacce XDG Scre
 
 Il protocollo Wayland `ext-image-copy-capture-v1` potrà essere valutato con la sua maturazione, ma non è una dipendenza obbligatoria finché resta in staging. Il protocollo deprecato `wlr-screencopy` non è una dipendenza architetturale.
 
-Per responsabilità, sicurezza, pipeline e verifiche si veda [Acquisizione e registrazione dello schermo](architettura/ACQUISIZIONE-E-REGISTRAZIONE-SCHERMO.md).
+Per responsabilità, sicurezza, pipeline e verifiche si veda [Acquisizione e registrazione dello schermo](../architecture/SCREEN-CAPTURE-AND-RECORDING.md).
 
 ## 5. Modularità e responsabilità
 
