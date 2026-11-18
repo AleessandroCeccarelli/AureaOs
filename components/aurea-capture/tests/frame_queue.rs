@@ -123,3 +123,16 @@ fn queue_enforces_byte_limit_even_when_frame_slots_remain() {
     assert_eq!(queue.queued_bytes(), 16);
     assert_eq!(queue.dropped_frames(), 1);
 }
+
+#[test]
+fn queue_rejects_non_monotonic_timestamps() {
+    let mut queue = CaptureFrameQueue::new(4, 64).unwrap();
+
+    queue.try_push(frame(10, 1)).unwrap();
+    assert!(queue.try_push(frame(9, 2)).is_err());
+    assert!(queue.try_push(frame(10, 3)).is_err());
+    queue.try_push(frame(11, 4)).unwrap();
+
+    assert_eq!(queue.len(), 2);
+    assert_eq!(queue.dropped_frames(), 2);
+}
