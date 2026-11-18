@@ -10,7 +10,8 @@ use std::sync::Arc;
 use smithay::reexports::ash::vk;
 
 use super::{
-    VulkanImageView, VulkanLogicalDevice, VulkanReadbackBuffer, VulkanReadbackError,
+    VulkanImageView, VulkanLogicalDevice, VulkanReadbackBufferLease, VulkanReadbackBufferPool,
+    VulkanReadbackError,
 };
 
 /// Owns every resource referenced by an asynchronous image readback.
@@ -20,7 +21,7 @@ use super::{
 pub struct VulkanReadbackSubmission {
     device: Arc<VulkanLogicalDevice>,
     source_view: Option<VulkanImageView<'static, 'static>>,
-    readback: Option<VulkanReadbackBuffer<'static>>,
+    readback: Option<VulkanReadbackBufferLease>,
     command_buffer: vk::CommandBuffer,
     fence: vk::Fence,
     completed: bool,
@@ -34,14 +35,19 @@ impl VulkanReadbackSubmission {
     /// and synchronize prior writes before calling this method. The submission
     /// retains the view, image, staging allocation and device until completion.
     /// Returns after queue acceptance; poll it from a capture worker.
+    ///
+    /// The supplied pool must belong to the same logical device as the image.
     pub fn submit(
         view: VulkanImageView<'static, 'static>,
+        pool: &VulkanReadbackBufferPool,
     ) -> Result<Self, VulkanReadbackError> {
         let device = view
             .shared_device_owner()
             .ok_or(VulkanReadbackError::ImageNotOwned)?;
-        let readback =
-            VulkanReadbackBuffer::new_owned(Arc::clone(&device), view.width(), view.height())?;
+        if !pool.owns_device(&device) {
+            return Err(VulkanReadbackError::DeviceMismatch);
+        }
+        let readback = pool.acquire(view.width(), view.height())?;
         let command_buffer = device
             .allocate_primary_command_buffer()
             .map_err(VulkanReadbackError::CommandBuffer)?;
@@ -149,7 +155,7 @@ impl VulkanReadbackSubmission {
     pub fn byte_len(&self) -> usize {
         self.readback
             .as_ref()
-            .map_or(0, VulkanReadbackBuffer::byte_len)
+            .map_or(0, |readback| readback.byte_len())
     }
 }
 
