@@ -47,6 +47,10 @@ pub enum VulkanReadbackError {
     SubmissionNotComplete,
     PixelsAlreadyRead,
     ImageNotOwned,
+    DeviceMismatch,
+    InvalidPoolLimits,
+    PoolExhausted,
+    PoolLockPoisoned,
 }
 
 impl fmt::Display for VulkanReadbackError {
@@ -101,6 +105,18 @@ impl fmt::Display for VulkanReadbackError {
             }
             Self::ImageNotOwned => {
                 formatter.write_str("Readback requires a view that owns its source image")
+            }
+            Self::DeviceMismatch => {
+                formatter.write_str("Readback pool and source image use different Vulkan devices")
+            }
+            Self::InvalidPoolLimits => {
+                formatter.write_str("Readback pool limits must be non-zero")
+            }
+            Self::PoolExhausted => {
+                formatter.write_str("Readback staging pool capacity is exhausted")
+            }
+            Self::PoolLockPoisoned => {
+                formatter.write_str("Readback staging pool lock is poisoned")
             }
         }
     }
