@@ -5,9 +5,11 @@
 
 //! Display output descriptions and registry.
 
+pub mod coordinates;
 pub mod layout;
 pub mod limits;
 pub mod manager;
+pub mod scale;
 pub mod wayland;
 
 use std::collections::BTreeMap;
