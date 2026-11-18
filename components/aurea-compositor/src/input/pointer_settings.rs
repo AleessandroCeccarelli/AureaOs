@@ -41,12 +41,24 @@ impl PointerSettings {
         if !speed.is_finite() || !(-1.0..=1.0).contains(&speed) {
             return None;
         }
-        Some(Self { profile, speed, shake_to_locate })
+        Some(Self {
+            profile,
+            speed,
+            shake_to_locate,
+        })
     }
 
-    pub fn profile(self) -> AccelerationProfile { self.profile }
-    pub fn speed(self) -> f64 { self.speed }
-    pub fn shake_to_locate(self) -> bool { self.shake_to_locate }
+    pub fn profile(self) -> AccelerationProfile {
+        self.profile
+    }
+
+    pub fn speed(self) -> f64 {
+        self.speed
+    }
+
+    pub fn shake_to_locate(self) -> bool {
+        self.shake_to_locate
+    }
 }
 
 #[cfg(test)]
