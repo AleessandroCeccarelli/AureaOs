@@ -12,7 +12,13 @@ use crate::{CaptureKind, CaptureRequest, CaptureTarget};
 pub struct CaptureSessionId(u64);
 
 impl CaptureSessionId {
-    pub const fn value(self) -> u64 { self.0 }
+    pub(crate) const fn from_value(value: u64) -> Self {
+        Self(value)
+    }
+
+    pub const fn value(self) -> u64 {
+        self.0
+    }
 }
 
 /// Lifecycle states shared by screenshot and recording workflows.
