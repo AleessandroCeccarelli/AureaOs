@@ -7,7 +7,7 @@
 
 use std::{ops::Deref, sync::Arc};
 
-use super::{readback_buffer_pool::VulkanReadbackBufferPoolInner, VulkanReadbackBuffer};
+use super::{VulkanReadbackBuffer, readback_buffer_pool::VulkanReadbackBufferPoolInner};
 
 /// A checked-out staging buffer returned to its pool when released.
 pub struct VulkanReadbackBufferLease {
