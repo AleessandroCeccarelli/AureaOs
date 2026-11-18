@@ -199,23 +199,14 @@ impl OutputManager {
             if let Some(current) = self.registry.get(id) {
                 let mut replacement = current.clone();
                 replacement.update_from_discovery(output);
-                effective_widths.insert(
-                    id,
-                    logical_width(
-                        replacement.current_mode().width(),
-                        replacement.scale(),
-                    )? as u32,
-                );
+                effective_widths.insert(id, replacement.current_mode().width());
                 if *current != replacement {
                     changes.updated.push(id);
                     updates.push((id, replacement));
                 }
             } else {
                 changes.added.push(id);
-                effective_widths.insert(
-                    id,
-                    logical_width(output.current_mode().width(), output.scale())? as u32,
-                );
+                effective_widths.insert(id, output.current_mode().width());
                 additions.push(output);
             }
         }
