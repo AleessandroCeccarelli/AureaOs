@@ -25,8 +25,8 @@ use crate::{
     window_manager::WindowManager,
 };
 
-mod frame_scheduling;
 mod fractional_scale;
+mod frame_scheduling;
 mod keyboard;
 mod output_publication;
 mod output_reconciliation;
@@ -46,7 +46,8 @@ pub struct AureaCompositor {
     compositor_state: CompositorState,
     shm_state: ShmState,
     xdg_shell_state: XdgShellState,
-    _fractional_scale_manager_state: smithay::wayland::fractional_scale::FractionalScaleManagerState,
+    _fractional_scale_manager_state:
+        smithay::wayland::fractional_scale::FractionalScaleManagerState,
     seat_state: SeatState<Self>,
     seat: Seat<Self>,
     suppressed_shortcut_releases: HashSet<Keycode>,
@@ -117,13 +118,6 @@ impl AureaCompositor {
     /// Returns the XDG shell protocol state.
     pub fn xdg_shell_state(&mut self) -> &mut XdgShellState {
         &mut self.xdg_shell_state
-    }
-
-    /// Returns the registered fractional-scale protocol state.
-    pub(crate) fn fractional_scale_manager_state(
-        &self,
-    ) -> &smithay::wayland::fractional_scale::FractionalScaleManagerState {
-        &self.fractional_scale_manager_state
     }
 
     /// Returns the window manager.
