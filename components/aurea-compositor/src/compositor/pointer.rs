@@ -31,8 +31,19 @@ impl AureaCompositor {
     /// cannot become stranded in desktop gaps or beyond a display edge.
     /// Absolute devices are handled separately because they require
     /// output-local mapping.
-    pub fn handle_pointer_motion(\n        &mut self,\n        delta: Point<f64, smithay::utils::Logical>,\n        unaccelerated_delta: Point<f64, smithay::utils::Logical>,\n        time: u32,\n    ) {
-        if self.pointer_settings.shake_to_locate()\n            && self.pointer_shake.update(unaccelerated_delta, time)\n        {\n            self.cursor_locate_animation.trigger(time);\n        }\n\n        let Some(pointer) = self.seat.get_pointer() else {
+    pub fn handle_pointer_motion(
+        &mut self,
+        delta: Point<f64, smithay::utils::Logical>,
+        unaccelerated_delta: Point<f64, smithay::utils::Logical>,
+        time: u32,
+    ) {
+        if self.pointer_settings.shake_to_locate()
+            && self.pointer_shake.update(unaccelerated_delta, time)
+        {
+            self.cursor_locate_animation.trigger(time);
+        }
+
+        let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
 
