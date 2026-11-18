@@ -6,11 +6,12 @@
 //! Bounded reuse pool for Vulkan host-visible readback buffers.
 
 use std::{
-    ops::Deref,
     sync::{Arc, Mutex, TryLockError},
 };
 
-use super::{VulkanLogicalDevice, VulkanReadbackBuffer, VulkanReadbackError};
+use super::{
+    VulkanLogicalDevice, VulkanReadbackBuffer, VulkanReadbackBufferLease, VulkanReadbackError,
+};
 
 /// Current allocation and availability counters for a readback pool.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,24 +27,18 @@ pub struct VulkanReadbackBufferPool {
     inner: Arc<VulkanReadbackBufferPoolInner>,
 }
 
-struct VulkanReadbackBufferPoolInner {
+pub(super) struct VulkanReadbackBufferPoolInner {
     device: Arc<VulkanLogicalDevice>,
     max_buffers: usize,
     max_bytes: usize,
-    state: Mutex<VulkanReadbackBufferPoolState>,
+    pub(super) state: Mutex<VulkanReadbackBufferPoolState>,
 }
 
 #[derive(Default)]
-struct VulkanReadbackBufferPoolState {
+pub(super) struct VulkanReadbackBufferPoolState {
     allocated_buffers: usize,
     allocated_bytes: usize,
-    idle: Vec<VulkanReadbackBuffer<'static>>,
-}
-
-/// A checked-out staging buffer returned to its pool when released.
-pub struct VulkanReadbackBufferLease {
-    pool: Arc<VulkanReadbackBufferPoolInner>,
-    buffer: Option<VulkanReadbackBuffer<'static>>,
+    pub(super) idle: Vec<VulkanReadbackBuffer<'static>>,
 }
 
 impl VulkanReadbackBufferPool {
@@ -191,33 +186,6 @@ impl VulkanReadbackBufferPool {
     }
 }
 
-impl Deref for VulkanReadbackBufferLease {
-    type Target = VulkanReadbackBuffer<'static>;
-
-    fn deref(&self) -> &Self::Target {
-        self.buffer
-            .as_ref()
-            .expect("readback buffer lease is empty")
-    }
-}
-
-impl Drop for VulkanReadbackBufferLease {
-    fn drop(&mut self) {
-        let Some(buffer) = self.buffer.take() else {
-            return;
-        };
-
-        match self.pool.state.lock() {
-            Ok(mut state) => state.idle.push(buffer),
-            Err(_) => {
-                // A poisoned manager cannot safely accept returned resources.
-                // Dropping the buffer still releases its Vulkan allocation.
-                drop(buffer);
-            }
-        }
-    }
-}
-
 fn readback_byte_len(width: u32, height: u32) -> Result<usize, VulkanReadbackError> {
     if width == 0 || height == 0 {
         return Err(VulkanReadbackError::InvalidDimensions);
@@ -229,33 +197,7 @@ fn readback_byte_len(width: u32, height: u32) -> Result<usize, VulkanReadbackErr
         .ok_or(VulkanReadbackError::SizeOverflow)
 }
 
+
 #[cfg(test)]
-mod tests {
-    use super::readback_byte_len;
-    use crate::vulkan::VulkanReadbackError;
-
-    #[test]
-    fn readback_size_rejects_zero_dimensions() {
-        assert_eq!(
-            readback_byte_len(0, 1),
-            Err(VulkanReadbackError::InvalidDimensions)
-        );
-        assert_eq!(
-            readback_byte_len(1, 0),
-            Err(VulkanReadbackError::InvalidDimensions)
-        );
-    }
-
-    #[test]
-    fn readback_size_uses_four_bytes_per_pixel() {
-        assert_eq!(readback_byte_len(16, 8), Ok(512));
-    }
-
-    #[test]
-    fn readback_size_rejects_overflow() {
-        assert_eq!(
-            readback_byte_len(u32::MAX, u32::MAX),
-            Err(VulkanReadbackError::SizeOverflow)
-        );
-    }
-}
+#[path = "readback_buffer_pool_tests.rs"]
+mod tests;
