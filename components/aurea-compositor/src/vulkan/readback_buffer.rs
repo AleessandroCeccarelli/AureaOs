@@ -27,6 +27,7 @@ pub enum VulkanReadbackError {
     CommandBuffer(vk::Result),
     FenceCreation(vk::Result),
     Submission(vk::Result),
+    SubmissionUncertain(vk::Result),
     FenceStatus(vk::Result),
     SubmissionNotComplete,
     PixelsAlreadyRead,
@@ -62,6 +63,7 @@ impl fmt::Display for VulkanReadbackError {
             Self::CommandBuffer(error) => write!(formatter, "Readback command-buffer operation failed: {error:?}"),
             Self::FenceCreation(error) => write!(formatter, "Readback fence creation failed: {error:?}"),
             Self::Submission(error) => write!(formatter, "Readback queue submission failed: {error:?}"),
+            Self::SubmissionUncertain(error) => write!(formatter, "Readback queue submission status is uncertain: {error:?}"),
             Self::FenceStatus(error) => write!(formatter, "Readback fence status query failed: {error:?}"),
             Self::SubmissionNotComplete => formatter.write_str("Readback submission has not completed"),
             Self::PixelsAlreadyRead => formatter.write_str("Readback pixels have already been consumed"),
@@ -334,6 +336,14 @@ impl<'view, 'image, 'view_device> VulkanReadbackSubmission<'view, 'image, 'view_
         };
 
         if let Err(error) = device.submit_async(command_buffer, fence) {
+            if error.is_uncertain() {
+                // Queue acceptance is uncertain (typically device loss).
+                // Retain all potentially in-flight resources rather than
+                // freeing memory that submitted work may still reference.
+                std::mem::forget(readback);
+                return Err(VulkanReadbackError::SubmissionUncertain(error.result()));
+            }
+
             unsafe { device.handle().destroy_fence(fence, None) };
             device.free_command_buffer(command_buffer);
             return Err(VulkanReadbackError::Submission(error.result()));
