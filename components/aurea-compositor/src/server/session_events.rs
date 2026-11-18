@@ -119,6 +119,7 @@ pub(super) fn register_session_events(
 
             if state.session_active {
                 super::udev_events::activate_discovered_devices(state);
+                state.compositor.center_pointer_on_primary_output();
             }
         })
         .map_err(|_| io::Error::other("Failed to register the libseat session event notifier"))?;

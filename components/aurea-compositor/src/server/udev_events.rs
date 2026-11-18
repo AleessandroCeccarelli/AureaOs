@@ -377,7 +377,9 @@ fn refresh_device_outputs(state: &mut WaylandState, node: DrmNode) -> io::Result
     state
         .compositor
         .publish_output_reconciliation(&display, before, &changes)
-        .map_err(io::Error::other)
+        .map_err(io::Error::other)?;
+    state.compositor.center_pointer_on_primary_output();
+    Ok(())
 }
 
 fn changed_device(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {

@@ -272,6 +272,7 @@ pub(super) fn build(
         .compositor
         .publish_wayland_outputs(&display_handle)
         .map_err(io::Error::other)?;
+    state.compositor.center_pointer_on_primary_output();
 
     // Register the listening socket and incoming client handling.
     register_wayland_socket(&loop_handle, socket_name)?;

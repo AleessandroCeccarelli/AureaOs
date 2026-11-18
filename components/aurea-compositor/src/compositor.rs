@@ -33,6 +33,7 @@ mod output_reconciliation;
 mod pointer;
 mod pointer_axis;
 mod pointer_bounds;
+mod pointer_placement;
 mod pointer_button;
 mod rendering;
 mod surface_output_tracking;
