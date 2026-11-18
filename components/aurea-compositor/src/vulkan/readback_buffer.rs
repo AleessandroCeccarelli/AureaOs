@@ -5,11 +5,26 @@
 
 //! Host-visible staging buffer for Vulkan image readback.
 
-use std::{error::Error, fmt, slice};
+use std::{error::Error, fmt, slice, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
 use super::VulkanLogicalDevice;
+
+/// Retains the logical device for a staging allocation.
+enum VulkanReadbackDevice<'device> {
+    Borrowed(&'device VulkanLogicalDevice),
+    Shared(Arc<VulkanLogicalDevice>),
+}
+
+impl VulkanReadbackDevice<'_> {
+    fn device(&self) -> &VulkanLogicalDevice {
+        match self {
+            Self::Borrowed(device) => device,
+            Self::Shared(device) => device.as_ref(),
+        }
+    }
+}
 
 /// Errors returned by the offscreen readback buffer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -91,7 +106,7 @@ impl Error for VulkanReadbackError {}
 
 /// Owns a host-visible buffer sized for tightly packed RGBA8 pixels.
 pub struct VulkanReadbackBuffer<'device> {
-    device: &'device VulkanLogicalDevice,
+    device: VulkanReadbackDevice<'device>,
     buffer: vk::Buffer,
     memory: vk::DeviceMemory,
     byte_len: usize,
@@ -105,6 +120,24 @@ impl<'device> VulkanReadbackBuffer<'device> {
         width: u32,
         height: u32,
     ) -> Result<Self, VulkanReadbackError> {
+        Self::new_with_owner(VulkanReadbackDevice::Borrowed(device), width, height)
+    }
+
+    /// Allocates a staging buffer that independently retains its device.
+    pub(super) fn new_owned(
+        device: Arc<VulkanLogicalDevice>,
+        width: u32,
+        height: u32,
+    ) -> Result<VulkanReadbackBuffer<'static>, VulkanReadbackError> {
+        Self::new_with_owner(VulkanReadbackDevice::Shared(device), width, height)
+    }
+
+    fn new_with_owner(
+        device: VulkanReadbackDevice<'device>,
+        width: u32,
+        height: u32,
+    ) -> Result<Self, VulkanReadbackError> {
+        let raw_device = device.device();
         if width == 0 || height == 0 {
             return Err(VulkanReadbackError::InvalidDimensions);
         }
@@ -119,11 +152,11 @@ impl<'device> VulkanReadbackBuffer<'device> {
             .size(size)
             .usage(vk::BufferUsageFlags::TRANSFER_DST)
             .sharing_mode(vk::SharingMode::EXCLUSIVE);
-        let buffer = unsafe { device.handle().create_buffer(&create_info, None) }
+        let buffer = unsafe { raw_device.handle().create_buffer(&create_info, None) }
             .map_err(VulkanReadbackError::BufferCreation)?;
         let requirements = unsafe { device.handle().get_buffer_memory_requirements(buffer) };
 
-        let properties = device.memory_properties();
+        let properties = raw_device.memory_properties();
         let memory_type_index = match super::select_memory_type_index(
             properties,
             requirements.memory_type_bits,
@@ -208,7 +241,7 @@ impl<'device> VulkanReadbackBuffer<'device> {
                 depth: 1,
             })];
         unsafe {
-            self.device.handle().cmd_copy_image_to_buffer(
+            self.device.device().handle().cmd_copy_image_to_buffer(
                 command_buffer,
                 view.image_handle(),
                 vk::ImageLayout::TRANSFER_SRC_OPTIMAL,
@@ -230,6 +263,7 @@ impl<'device> VulkanReadbackBuffer<'device> {
         let dependency = vk::DependencyInfo::default().buffer_memory_barriers(&buffer_barrier);
         unsafe {
             self.device
+                .device()
                 .handle()
                 .cmd_pipeline_barrier2(command_buffer, &dependency);
         }
@@ -258,6 +292,7 @@ impl<'device> VulkanReadbackBuffer<'device> {
                 .size(vk::WHOLE_SIZE)];
             if let Err(error) = unsafe {
                 self.device
+                    .device()
                     .handle()
                     .invalidate_mapped_memory_ranges(&ranges)
             } {
