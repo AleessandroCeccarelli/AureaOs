@@ -16,7 +16,7 @@ AureaOS aims to make Linux feel natural, coherent, and designed to respect users
 
 ## Project Status
 
-**Latest fully green GitHub Actions run (Ubuntu 24.04, 17 November 2026; commit `29bb966975312d7ca862fcf18a826b8caf477f41`):** Rust formatting, `cargo check -p aurea-desktop`, locked workspace compilation, DRM/Vulkan compositor compilation, workspace tests, DRM/Vulkan compositor tests, Vulkan shader compilation, and the Mesa lavapipe offscreen triangle smoke test all passed. The RustSec audit completed with two explicitly allowed warnings for transitive `cgmath 0.18.0` (`RUSTSEC-2026-0196` unmaintained and `RUSTSEC-2026-0197` unsound); this is not a clean dependency report. The run verifies compilation and automated tests in CI, not physical DRM/KMS output or a bootable installation image. Subsequent small Vulkan warning-cleanup changes are being revalidated. See [the CI run](https://github.com/AleessandroCeccarelli/AureaOs/actions/runs/44090184494), [the security audit](docs/security/SECURITY-AUDIT-2026-11-13.md), and [Vulkan / DRM scanout status](docs/architecture/VULKAN-SCANOUT-STATUS.md).
+**Latest fully green GitHub Actions run (Ubuntu 24.04, 18 November 2026; commit `12cddaa8fe35dff6d8b5e1eece5c5f70ce267424`):** Rust formatting, workspace build and tests, and the Rust dependency security-audit job all passed. See [CI run 44290834407](https://github.com/AleessandroCeccarelli/AureaOs/actions/runs/44290834407). This validates the checks configured in CI; it does not verify physical DRM/KMS output, a complete graphical desktop, or a bootable installation image. The separate [security audit](docs/security/SECURITY-AUDIT-2026-11-13.md) records outstanding hardening work and the known transitive `cgmath 0.18.0` advisory; a successful CI audit job must not be interpreted as a warning-free dependency report. See also [Vulkan / DRM scanout status](docs/architecture/VULKAN-SCANOUT-STATUS.md).
 
 
 AureaOS is in an early prototype stage. The repository includes a minimal Debian bootstrap, package manifests, design resources, and initial Rust components for the desktop session.
@@ -147,6 +147,7 @@ The main documentation files are:
 - [Technology principles](TECHNOLOGY.md) — technical direction and selection criteria.
 - [Project identity and terminology](docs/PROJECT-IDENTITY-AND-TERMINOLOGY.md) — explains first-party ownership, open-source licensing, local-first services, and the Wayland/Vulkan compatibility trade-offs.
 - [Roadmap](ROADMAP.md) — development status and priorities.
+- [Development records](docs/development/README.md) — chronological engineering diary, verification results, known limitations, and next actions.
 - [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md) — authoritative inventory of first-party apps, tools, desktop components, services, and shared design resources.
 - [Initial architecture](docs/architecture/INITIAL-ARCHITECTURE.md) — system layers and open decisions.
 - [Debian base](docs/architecture/DEBIAN-BASE.md) — current bootstrap implementation and limitations.
