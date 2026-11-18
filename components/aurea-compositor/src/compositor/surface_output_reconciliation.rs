@@ -150,26 +150,30 @@ mod tests {
 
     #[test]
     fn empty_surface_rect_is_rejected() {
-        assert!(valid_rect(
-            LogicalPoint { x: 10, y: 20 },
-            LogicalSize {
-                width: 0,
-                height: 100,
-            },
-        )
-        .is_none());
+        assert!(
+            valid_rect(
+                LogicalPoint { x: 10, y: 20 },
+                LogicalSize {
+                    width: 0,
+                    height: 100,
+                },
+            )
+            .is_none()
+        );
     }
 
     #[test]
     fn overflowing_surface_rect_is_rejected() {
-        assert!(valid_rect(
-            LogicalPoint { x: i64::MAX, y: 0 },
-            LogicalSize {
-                width: 1,
-                height: 100,
-            },
-        )
-        .is_none());
+        assert!(
+            valid_rect(
+                LogicalPoint { x: i64::MAX, y: 0 },
+                LogicalSize {
+                    width: 1,
+                    height: 100,
+                },
+            )
+            .is_none()
+        );
     }
 
     #[test]
