@@ -32,6 +32,11 @@ impl AureaCompositor {
             .filter(|output| output.is_enabled())
             .map(|output| output.id());
 
+        let previous_ids = self.wayland_outputs.keys().copied().collect::<Vec<_>>();
+        for output_id in previous_ids {
+            self.forget_output_membership(output_id);
+        }
+
         self.wayland_outputs = output_ids.zip(outputs).collect();
 
         Ok(())
@@ -93,8 +98,12 @@ impl AureaCompositor {
             .unwrap_or_default();
 
         if let Some(replacement) = publish_output(display, output, position)? {
+            // The old Smithay Output owns the previous surface membership set.
+            // Emit leave events before replacing its retained handle.
+            self.forget_output_membership(output_id);
             self.wayland_outputs.insert(output_id, replacement);
         } else {
+            self.forget_output_membership(output_id);
             self.wayland_outputs.remove(&output_id);
         }
 
@@ -106,7 +115,11 @@ impl AureaCompositor {
     /// Dropping the retained Smithay output removes its global.
     /// Returns whether an output was actually removed.
     pub fn unpublish_wayland_output(&mut self, output_id: OutputId) -> bool {
-        self.wayland_outputs.remove(&output_id).is_some()
+        let removed = self.wayland_outputs.remove(&output_id).is_some();
+        if removed {
+            self.forget_output_membership(output_id);
+        }
+        removed
     }
 
     /// Returns whether an output currently has a published Wayland global.
