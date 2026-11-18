@@ -35,7 +35,7 @@ impl VulkanReadbackCoordinator {
         Ok(Self {
             pool,
             max_in_flight,
-            submissions: Vec::with_capacity(max_in_flight),
+            submissions: Vec::new(),
         })
     }
 
@@ -71,8 +71,8 @@ impl VulkanReadbackCoordinator {
                 continue;
             }
 
-            let mut submission = self.submissions.swap_remove(index);
-            let pixels = submission.take_rgba8()?;
+            let pixels = self.submissions[index].take_rgba8()?;
+            self.submissions.swap_remove(index);
             completed_frames.push(pixels);
         }
 
