@@ -58,6 +58,11 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             );
         }
         InputEvent::PointerMotion { event } => {
+            let mut device = event.device();
+            crate::input::pointer_acceleration::apply(
+                &mut device,
+                state.compositor.pointer_settings(),
+            );
             state
                 .compositor
                 .handle_pointer_motion(
