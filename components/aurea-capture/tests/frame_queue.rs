@@ -20,38 +20,44 @@ fn frame(timestamp: u64, fill: u8) -> CaptureFrame {
 
 #[test]
 fn frame_rejects_zero_dimensions() {
-    assert!(CaptureFrame::new(
-        0,
-        2,
-        8,
-        CapturePixelFormat::Rgba8,
-        CaptureTimestamp::from_nanos(0),
-        vec![0; 16],
-    )
-    .is_err());
+    assert!(
+        CaptureFrame::new(
+            0,
+            2,
+            8,
+            CapturePixelFormat::Rgba8,
+            CaptureTimestamp::from_nanos(0),
+            vec![0; 16],
+        )
+        .is_err()
+    );
 }
 
 #[test]
 fn frame_rejects_short_stride_and_incorrect_buffer_length() {
-    assert!(CaptureFrame::new(
-        2,
-        2,
-        4,
-        CapturePixelFormat::Rgba8,
-        CaptureTimestamp::from_nanos(0),
-        vec![0; 8],
-    )
-    .is_err());
+    assert!(
+        CaptureFrame::new(
+            2,
+            2,
+            4,
+            CapturePixelFormat::Rgba8,
+            CaptureTimestamp::from_nanos(0),
+            vec![0; 8],
+        )
+        .is_err()
+    );
 
-    assert!(CaptureFrame::new(
-        2,
-        2,
-        8,
-        CapturePixelFormat::Rgba8,
-        CaptureTimestamp::from_nanos(0),
-        vec![0; 15],
-    )
-    .is_err());
+    assert!(
+        CaptureFrame::new(
+            2,
+            2,
+            8,
+            CapturePixelFormat::Rgba8,
+            CaptureTimestamp::from_nanos(0),
+            vec![0; 15],
+        )
+        .is_err()
+    );
 }
 
 #[test]
