@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# AureaOS cursor asset manifest.
+# Coordinates are measured on the 64x64 SVG source canvas.
+# The build pipeline must scale hotspots with the raster output.
+
+schema_version = 1
+canvas_width = 64
+canvas_height = 64
+logical_sizes = [24, 32, 48, 64]
+output_scales = [1, 2]
+
+[[cursor]]
+name = "default"
+source = "source/default.svg"
+hotspot = [10, 5]
+role = "default"
+
+[[cursor]]
+name = "pointer"
+source = "source/pointer.svg"
+hotspot = [24, 8]
+role = "link"
+
+[[cursor]]
+name = "text"
+source = "source/text.svg"
+hotspot = [32, 32]
+role = "text-selection"
+
+[[cursor]]
+name = "grab"
+source = "source/grab.svg"
+hotspot = [31, 8]
+role = "grab"
+
+[[cursor]]
+name = "grabbing"
+source = "source/grabbing.svg"
+hotspot = [28, 14]
+role = "grabbing"
+
+[[cursor]]
+name = "move"
+source = "source/move.svg"
+hotspot = [32, 32]
+role = "move"
+
+[[cursor]]
+name = "resize-nesw"
+source = "source/resize-nesw.svg"
+hotspot = [32, 32]
+role = "resize-diagonal"
+
+[[cursor]]
+name = "resize-nwse"
+source = "source/resize-nwse.svg"
+hotspot = [32, 32]
+role = "resize-diagonal"
+
+[[cursor]]
+name = "busy"
+source = "source/busy.svg"
+hotspot = [32, 32]
+role = "busy"
+animation_frames = 12
+animation_duration_ms = 1100
