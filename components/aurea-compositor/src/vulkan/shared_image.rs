@@ -60,6 +60,7 @@ pub struct VulkanSharedImage {
     height: u32,
     format: vk::Format,
     usage: vk::ImageUsageFlags,
+    allocation_size: usize,
 }
 
 impl VulkanSharedImage {
@@ -135,6 +136,14 @@ impl VulkanSharedImage {
             height,
             format,
             usage,
+            allocation_size: usize::try_from(requirements.size).map_err(|_| {
+                // The allocation already exists; release it before returning.
+                unsafe {
+                    raw.destroy_image(image, None);
+                    raw.free_memory(memory, None);
+                }
+                VulkanSharedImageError::MemoryAllocation(vk::Result::ERROR_OUT_OF_HOST_MEMORY)
+            })?,
         })
     }
 
@@ -152,6 +161,9 @@ impl VulkanSharedImage {
     }
     pub fn usage(&self) -> vk::ImageUsageFlags {
         self.usage
+    }
+    pub fn allocation_size(&self) -> usize {
+        self.allocation_size
     }
 
     pub(super) fn device(&self) -> &VulkanLogicalDevice {
