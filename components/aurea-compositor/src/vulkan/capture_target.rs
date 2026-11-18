@@ -23,6 +23,10 @@ pub enum VulkanCaptureTargetError {
     InvalidDimensions,
     UnsupportedFormat(vk::Format),
     Image(VulkanSharedImageError),
+    InvalidPoolLimits,
+    PoolExhausted,
+    PoolBusy,
+    PoolLockPoisoned,
 }
 
 impl fmt::Display for VulkanCaptureTargetError {
@@ -38,6 +42,10 @@ impl fmt::Display for VulkanCaptureTargetError {
             Self::Image(error) => {
                 write!(formatter, "Capture target image allocation failed: {error}")
             }
+            Self::InvalidPoolLimits => formatter.write_str("Capture target pool limits must be non-zero"),
+            Self::PoolExhausted => formatter.write_str("No capture target is available within pool limits"),
+            Self::PoolBusy => formatter.write_str("Capture target pool is busy"),
+            Self::PoolLockPoisoned => formatter.write_str("Capture target pool lock is poisoned"),
         }
     }
 }
@@ -111,6 +119,11 @@ impl VulkanCaptureTarget {
 
     pub fn height(&self) -> u32 {
         self.image.height()
+    }
+
+    /// Actual Vulkan memory requirement, including implementation alignment.
+    pub fn allocation_size(&self) -> usize {
+        self.image.allocation_size()
     }
 
     /// Returns the last state committed by a completed compositor submission.
