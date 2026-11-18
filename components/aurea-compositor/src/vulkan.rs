@@ -95,6 +95,9 @@ impl fmt::Display for VulkanInitError {
 impl Error for VulkanInitError {}
 
 pub use backend::VulkanBackend;
+pub use capture_target::{
+    VULKAN_CAPTURE_FORMAT, VulkanCaptureTarget, VulkanCaptureTargetError,
+};
 #[cfg(feature = "drm")]
 pub use buffer_allocator::{VulkanBufferAllocator, VulkanBufferError, VulkanRenderTargetRequest};
 pub use clear_pass::{VulkanClearPass, VulkanClearPassError};
