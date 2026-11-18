@@ -38,6 +38,8 @@ mod rendering;
 mod workspace;
 mod surface_output_tracking;
 
+use surface_output_tracking::SurfaceOutputTracker;
+
 pub use frame_scheduling::CompositorFrameError;
 pub use output_reconciliation::OutputReconciliationError;
 pub use rendering::CompositorRenderError;
@@ -56,6 +58,7 @@ pub struct AureaCompositor {
     output_manager: OutputManager,
     frame_scheduler: FrameScheduler,
     wayland_outputs: BTreeMap<OutputId, Output>,
+    surface_output_tracker: SurfaceOutputTracker,
     cursor_image: CursorImageStatus,
     pointer_settings: PointerSettings,
     pointer_shake: PointerShakeDetector,
@@ -99,6 +102,7 @@ impl AureaCompositor {
             output_manager: OutputManager::new(),
             frame_scheduler: FrameScheduler::new(),
             wayland_outputs: BTreeMap::new(),
+            surface_output_tracker: SurfaceOutputTracker::new(),
             cursor_image: CursorImageStatus::default_named(),
             pointer_settings: PointerSettings::default(),
             pointer_shake: PointerShakeDetector::default(),
@@ -156,6 +160,34 @@ impl AureaCompositor {
     /// Returns the output manager.
     pub fn output_manager(&mut self) -> &mut OutputManager {
         &mut self.output_manager
+    }
+
+    /// Updates a surface's Wayland output membership after its geometry changes.
+    ///
+    /// The caller supplies only enabled outputs whose logical bounds intersect
+    /// the surface's committed geometry.
+    pub fn update_surface_output_membership(
+        &mut self,
+        surface: &WlSurface,
+        intersecting_outputs: impl IntoIterator<Item = (OutputId, Output)>,
+    ) {
+        self.surface_output_tracker
+            .reconcile(surface, intersecting_outputs);
+    }
+
+    /// Sends leave events and forgets a surface that has been unmapped.
+    pub fn forget_surface_output_membership(&mut self, surface: &WlSurface) {
+        self.surface_output_tracker.remove_surface(surface);
+    }
+
+    /// Sends leave events for an output that has been disabled or removed.
+    pub fn forget_output_membership(&mut self, output_id: OutputId) {
+        self.surface_output_tracker.remove_output(output_id);
+    }
+
+    /// Releases tracker entries for destroyed Wayland surfaces.
+    pub fn prune_surface_output_membership(&mut self) {
+        self.surface_output_tracker.prune_dead_surfaces();
     }
 }
 
