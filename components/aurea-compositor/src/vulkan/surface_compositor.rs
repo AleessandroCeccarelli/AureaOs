@@ -89,12 +89,19 @@ pub(crate) fn render_and_release(
     let snapshots = scene.shm_snapshots();
     let visible = visible_surfaces(snapshots, target)?;
     let cursor = scene.native_cursor_location().and_then(|location| {
+        let scale = scene.native_cursor_scale();
+        let hotspot = crate::render::cursor::DEFAULT_CURSOR_HOTSPOT;
+        let scaled_width =
+            (crate::render::cursor::DEFAULT_CURSOR_WIDTH as f64 * scale).round() as u32;
+        let scaled_height =
+            (crate::render::cursor::DEFAULT_CURSOR_HEIGHT as f64 * scale).round() as u32;
+        let scaled_location = (
+            (f64::from(location.x) + f64::from(hotspot.0) * (1.0 - scale)).round() as i32,
+            (f64::from(location.y) + f64::from(hotspot.1) * (1.0 - scale)).round() as i32,
+        );
         let geometry = surface_geometry(
-            (location.x, location.y),
-            (
-                crate::render::cursor::DEFAULT_CURSOR_WIDTH,
-                crate::render::cursor::DEFAULT_CURSOR_HEIGHT,
-            ),
+            scaled_location,
+            (scaled_width, scaled_height),
             1,
             Transform::Normal,
             target.logical_origin(),
