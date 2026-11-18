@@ -73,35 +73,30 @@ impl VulkanReadbackCoordinator {
 
     /// Retires completed submissions and returns their RGBA8 frames.
     ///
-    /// Incomplete submissions remain owned by this coordinator. Fence polling
-    /// is non-blocking; a fence or mapping error is reported without silently
-    /// discarding the affected submission.
+    /// Frames are returned in submission order. Polling stops at the first
+    /// incomplete or failed submission so a later frame cannot overtake it.
+    /// Fence polling is non-blocking; failed submissions remain owned by this
+    /// coordinator and their errors are returned alongside any completed frames.
     pub fn poll_completed(&mut self) -> VulkanReadbackPoll {
         let mut result = VulkanReadbackPoll::default();
-        let mut index = 0;
-
-        while index < self.submissions.len() {
+        while !self.submissions.is_empty() {
             match self.submissions[index].poll() {
-                Ok(false) => {
-                    index += 1;
-                    continue;
-                }
+                Ok(false) => break,
                 Err(error) => {
                     result.errors.push(error);
-                    index += 1;
-                    continue;
+                    break;
                 }
                 Ok(true) => {}
             }
 
             match self.submissions[index].take_rgba8() {
                 Ok(pixels) => {
-                    self.submissions.swap_remove(index);
+                    self.submissions.remove(index);
                     result.completed_frames.push(pixels);
                 }
                 Err(error) => {
                     result.errors.push(error);
-                    index += 1;
+                    break;
                 }
             }
         }
