@@ -14,6 +14,8 @@ pub mod wayland;
 
 use std::collections::BTreeMap;
 
+use self::scale::ScaleFactor;
+
 /// Stable identifier for a display output.
 ///
 /// The 128-bit value can encode a 64-bit DRM device identifier
@@ -63,6 +65,7 @@ pub struct DisplayOutput {
     modes: Vec<OutputMode>,
     current_mode: OutputMode,
     scale: u32,
+    fractional_scale: Option<ScaleFactor>,
     enabled: bool,
 }
 
@@ -87,6 +90,7 @@ impl DisplayOutput {
             modes,
             current_mode,
             scale,
+            fractional_scale: None,
             enabled: true,
         })
     }
@@ -111,6 +115,21 @@ impl DisplayOutput {
         self.scale
     }
 
+    /// Returns the configured fractional scale, when one is active.
+    pub fn fractional_scale(&self) -> Option<ScaleFactor> {
+        self.fractional_scale
+    }
+
+    /// Sets a validated fractional scale and disables the legacy integer scale.
+    pub fn set_fractional_scale(&mut self, scale: ScaleFactor) {
+        self.fractional_scale = Some(scale);
+    }
+
+    /// Returns the effective scale as a floating-point value for geometry APIs.
+    pub fn effective_scale(&self) -> f64 {
+        self.fractional_scale.map_or(f64::from(self.scale), ScaleFactor::as_f64)
+    }
+
     pub fn is_enabled(&self) -> bool {
         self.enabled
     }
@@ -132,6 +151,7 @@ impl DisplayOutput {
         }
 
         self.scale = scale;
+        self.fractional_scale = None;
         true
     }
 
@@ -149,6 +169,7 @@ impl DisplayOutput {
         }
 
         discovered.scale = self.scale;
+        discovered.fractional_scale = self.fractional_scale;
         discovered.enabled = self.enabled;
 
         *self = discovered;
