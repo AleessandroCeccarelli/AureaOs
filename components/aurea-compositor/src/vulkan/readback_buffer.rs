@@ -382,11 +382,11 @@ impl<'view, 'image, 'view_device> VulkanReadbackSubmission<'view, 'image, 'view_
         }
 
         match unsafe { self.device.handle().get_fence_status(self.fence) } {
-            Ok(()) => {
+            Ok(true) => {
                 self.completed = true;
                 Ok(true)
             }
-            Err(vk::Result::NOT_READY) => Ok(false),
+            Ok(false) | Err(vk::Result::NOT_READY) => Ok(false),
             Err(error) => Err(VulkanReadbackError::FenceStatus(error)),
         }
     }
