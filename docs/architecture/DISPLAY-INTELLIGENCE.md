@@ -189,6 +189,18 @@ No specific minimum or maximum refresh rate is guaranteed by AureaOS.
 
 Values such as 1 Hz, 120 Hz, 144 Hz, or 260 Hz are examples only; actual behavior depends on each display, GPU, driver, mode, and connection.
 
+## Logical scaling and coordinate foundation
+
+The compositor now contains an initial, independently testable mathematical foundation:
+
+- `output/scale.rs` represents scale factors as an exact numerator over 120, matching the Wayland fractional-scale convention. It provides checked logical/physical coordinate conversions and extent conversion.
+- `output/coordinates.rs` separates global logical coordinates from output-local physical pixels. It defines half-open logical output bounds so adjacent monitor edges have deterministic ownership.
+- The foundation includes unit tests for common scale factors, negative coordinates, overflow rejection, and mixed-scale output boundaries.
+
+This is **not yet end-to-end fractional scaling**. The existing `DisplayOutput`, output manager, Wayland publication, pointer bounds, and surface geometry still contain integer-scale paths. Those paths must be migrated together behind the shared coordinate model before fractional scaling is exposed as a user-facing feature. Until then, the new modules are a tested foundation, not a completed capability.
+
+The migration must preserve one invariant: global desktop positions and pointer locations are logical coordinates; each output converts them to its own physical pixel space exactly once. Surface buffers, cursor hotspots, clipping, hit-testing, and rendering must use the same transform and rounding policy.
+
 ## Current Status
 
 **Initial DRM and output-management foundations implemented; Display Intelligence remains planned.**
