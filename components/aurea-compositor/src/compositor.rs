@@ -182,6 +182,13 @@ impl AureaCompositor {
         self.surface_output_tracker.remove_surface(surface);
     }
 
+    /// Sends leave events for every surface in an unmapped surface tree.
+    pub(crate) fn forget_surface_tree_output_membership(&mut self, root: &WlSurface) {
+        for surface in crate::render::surface_tree::collect_surface_tree_surfaces(root) {
+            self.surface_output_tracker.remove_surface(&surface);
+        }
+    }
+
     /// Sends leave events for an output that has been disabled or removed.
     pub fn forget_output_membership(&mut self, output_id: OutputId) {
         self.surface_output_tracker.remove_output(output_id);

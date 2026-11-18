@@ -50,6 +50,20 @@ struct TraversalLocation {
 /// Surfaces without an attached SHM buffer are included. This lets resource
 /// caches distinguish a live but currently non-renderable surface from one
 /// that has been destroyed or unmapped.
+pub fn collect_surface_tree_surfaces(root: &WlSurface) -> Vec<WlSurface> {
+    let mut surfaces = Vec::new();
+
+    with_surface_tree_downward(
+        root,
+        (),
+        |_, _, _| TraversalAction::DoChildren(()),
+        |surface, _, _| surfaces.push(surface.clone()),
+        |_, _, _| true,
+    );
+
+    surfaces
+}
+
 pub fn collect_surface_tree_ids(root: &WlSurface) -> Vec<ObjectId> {
     let mut surface_ids = Vec::new();
 
