@@ -88,8 +88,8 @@ impl VulkanCaptureTarget {
                 VULKAN_CAPTURE_FORMAT,
             )
         };
-        let required = vk::FormatFeatureFlags::COLOR_ATTACHMENT
-            | vk::FormatFeatureFlags::TRANSFER_SRC;
+        let required =
+            vk::FormatFeatureFlags::COLOR_ATTACHMENT | vk::FormatFeatureFlags::TRANSFER_SRC;
         if !properties.optimal_tiling_features.contains(required) {
             return Err(VulkanCaptureTargetError::UnsupportedFormat(
                 VULKAN_CAPTURE_FORMAT,
