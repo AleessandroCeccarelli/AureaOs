@@ -5,7 +5,7 @@
 
 //! Vulkan logical-device creation and context selection.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use smithay::{
     backend::vulkan::PhysicalDevice,
