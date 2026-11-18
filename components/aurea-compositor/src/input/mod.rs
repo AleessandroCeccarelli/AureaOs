@@ -6,3 +6,6 @@
 //! Input policy and routing for desktop interactions.
 
 pub mod shortcuts;
+pub mod cursor_animation;
+pub mod pointer_settings;
+pub mod pointer_shake;
