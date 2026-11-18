@@ -130,6 +130,7 @@ pub struct VulkanReadbackBuffer<'device> {
     buffer: vk::Buffer,
     memory: vk::DeviceMemory,
     byte_len: usize,
+    allocation_size: usize,
     coherent: bool,
 }
 
@@ -179,6 +180,13 @@ impl<'device> VulkanReadbackBuffer<'device> {
         let buffer = unsafe { raw_device.handle().create_buffer(&create_info, None) }
             .map_err(VulkanReadbackError::BufferCreation)?;
         let requirements = unsafe { raw_device.handle().get_buffer_memory_requirements(buffer) };
+        let allocation_size = match usize::try_from(requirements.size) {
+            Ok(size) => size,
+            Err(_) => {
+                unsafe { raw_device.handle().destroy_buffer(buffer, None) };
+                return Err(VulkanReadbackError::SizeOverflow);
+            }
+        };
 
         let properties = raw_device.memory_properties();
         let memory_type_index = match super::select_memory_type_index(
@@ -220,6 +228,7 @@ impl<'device> VulkanReadbackBuffer<'device> {
             buffer,
             memory,
             byte_len,
+            allocation_size,
             coherent,
         })
     }
@@ -334,6 +343,10 @@ impl<'device> VulkanReadbackBuffer<'device> {
 
     pub fn byte_len(&self) -> usize {
         self.byte_len
+    }
+
+    pub(super) fn allocation_size(&self) -> usize {
+        self.allocation_size
     }
 }
 
