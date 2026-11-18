@@ -574,7 +574,7 @@ fn reconciliation_places_outputs_using_fractional_logical_width() {
     manager
         .set_fractional_scale(
             first,
-            super::super::scale::ScaleFactor::from_percent(150).unwrap(),
+            aurea_compositor::output::scale::ScaleFactor::from_percent(150).unwrap(),
         )
         .unwrap();
 
