@@ -3,6 +3,7 @@
 // AureaOS test module relocated from production source.
 
 use super::*;
+use crate::output::limits::MAX_ACTIVE_OUTPUTS;
 
 fn sample_output(id: OutputId) -> DisplayOutput {
     let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
@@ -512,9 +513,7 @@ fn disabled_output_does_not_consume_active_capacity() {
     for id in 1..=MAX_ACTIVE_OUTPUTS {
         let mut output = sample_output(id as u128);
         output.set_enabled(false);
-        manager
-            .register(output, (id as i32 * 1920, 0))
-            .unwrap();
+        manager.register(output, (id as i32 * 1920, 0)).unwrap();
     }
 
     assert_eq!(manager.active_output_count(), 0);

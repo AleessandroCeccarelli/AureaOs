@@ -37,7 +37,10 @@ impl fmt::Display for OutputManagerError {
                 write!(f, "Invalid scale {scale} for output {output}")
             }
             Self::TooManyActiveOutputs { maximum } => {
-                write!(f, "AureaOS supports at most {maximum} active display outputs")
+                write!(
+                    f,
+                    "AureaOS supports at most {maximum} active display outputs"
+                )
             }
             Self::PositionOverflow => f.write_str("Output layout position overflow"),
         }
@@ -79,7 +82,10 @@ impl OutputManager {
 
     /// Returns the number of enabled outputs.
     pub fn active_output_count(&self) -> usize {
-        self.registry.iter().filter(|output| output.is_enabled()).count()
+        self.registry
+            .iter()
+            .filter(|output| output.is_enabled())
+            .count()
     }
 
     fn ensure_active_capacity(&self, additional: usize) -> Result<(), OutputManagerError> {
@@ -110,7 +116,9 @@ impl OutputManager {
             return Err(OutputManagerError::DuplicateOutput(id));
         }
 
-        let inserted = self.layout.insert(id, OutputPosition::new(position.0, position.1));
+        let inserted = self
+            .layout
+            .insert(id, OutputPosition::new(position.0, position.1));
         if !inserted {
             self.registry.remove(id);
             return Err(OutputManagerError::DuplicateOutput(id));
@@ -177,7 +185,10 @@ impl OutputManager {
             }
         }
 
-        let discovered_ids = discovered.iter().map(DisplayOutput::id).collect::<HashSet<_>>();
+        let discovered_ids = discovered
+            .iter()
+            .map(DisplayOutput::id)
+            .collect::<HashSet<_>>();
         let mut changes = OutputReconciliation::default();
         let mut updates = Vec::new();
         let mut additions = Vec::new();
@@ -206,10 +217,15 @@ impl OutputManager {
             .collect();
 
         let removed = changes.removed.iter().copied().collect::<HashSet<_>>();
-        let retained_active = self.registry.iter()
+        let retained_active = self
+            .registry
+            .iter()
             .filter(|output| output.is_enabled() && !removed.contains(&output.id()))
             .count();
-        let added_active = additions.iter().filter(|output| output.is_enabled()).count();
+        let added_active = additions
+            .iter()
+            .filter(|output| output.is_enabled())
+            .count();
         if retained_active.saturating_add(added_active) > MAX_ACTIVE_OUTPUTS {
             return Err(OutputManagerError::TooManyActiveOutputs {
                 maximum: MAX_ACTIVE_OUTPUTS,
@@ -221,10 +237,14 @@ impl OutputManager {
                 return Ok(right);
             }
             let position = self.layout.get(output.id()).unwrap_or_default();
-            let width = effective_widths.get(&output.id())
-                .copied().unwrap_or_else(|| output.current_mode().width());
+            let width = effective_widths
+                .get(&output.id())
+                .copied()
+                .unwrap_or_else(|| output.current_mode().width());
             let width = i32::try_from(width).map_err(|_| OutputManagerError::PositionOverflow)?;
-            let edge = position.x().checked_add(width)
+            let edge = position
+                .x()
+                .checked_add(width)
                 .ok_or(OutputManagerError::PositionOverflow)?;
             Ok::<i32, OutputManagerError>(right.max(edge))
         })?;
@@ -234,7 +254,9 @@ impl OutputManager {
             let width = i32::try_from(output.current_mode().width())
                 .map_err(|_| OutputManagerError::PositionOverflow)?;
             addition_positions.push((output.id(), (next_x, 0)));
-            next_x = next_x.checked_add(width).ok_or(OutputManagerError::PositionOverflow)?;
+            next_x = next_x
+                .checked_add(width)
+                .ok_or(OutputManagerError::PositionOverflow)?;
         }
 
         // All validation and position arithmetic is complete before mutation.
@@ -269,12 +291,15 @@ impl OutputManager {
         output_id: OutputId,
         enabled: bool,
     ) -> Result<(), OutputManagerError> {
-        let output = self.registry.get(output_id)
+        let output = self
+            .registry
+            .get(output_id)
             .ok_or(OutputManagerError::UnknownOutput(output_id))?;
         if enabled && !output.is_enabled() {
             self.ensure_active_capacity(1)?;
         }
-        self.registry.get_mut(output_id)
+        self.registry
+            .get_mut(output_id)
             .ok_or(OutputManagerError::UnknownOutput(output_id))?
             .set_enabled(enabled);
         Ok(())
@@ -286,10 +311,15 @@ impl OutputManager {
         output_id: OutputId,
         mode: OutputMode,
     ) -> Result<(), OutputManagerError> {
-        let output = self.registry.get_mut(output_id)
+        let output = self
+            .registry
+            .get_mut(output_id)
             .ok_or(OutputManagerError::UnknownOutput(output_id))?;
         if !output.set_mode(mode) {
-            return Err(OutputManagerError::InvalidMode { output: output_id, mode });
+            return Err(OutputManagerError::InvalidMode {
+                output: output_id,
+                mode,
+            });
         }
         Ok(())
     }
@@ -297,7 +327,10 @@ impl OutputManager {
     /// Changes the scale of an output.
     pub fn set_scale(&mut self, output_id: OutputId, scale: u32) -> Result<(), OutputManagerError> {
         if scale == 0 {
-            return Err(OutputManagerError::InvalidScale { output: output_id, scale });
+            return Err(OutputManagerError::InvalidScale {
+                output: output_id,
+                scale,
+            });
         }
         let output = self.registry.get_mut(output_id)
             .ok_or(OutputManagerError::UnknownOutput(output_id))?;
@@ -316,7 +349,8 @@ impl OutputManager {
         if self.registry.get(output_id).is_none() {
             return Err(OutputManagerError::UnknownOutput(output_id));
         }
-        self.layout.set_position(output_id, OutputPosition::new(position.0, position.1));
+        self.layout
+            .set_position(output_id, OutputPosition::new(position.0, position.1));
         Ok(())
     }
 }
