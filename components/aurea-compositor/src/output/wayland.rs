@@ -71,7 +71,11 @@ impl WaylandOutputConfig {
         let current_mode = Self::convert_mode(output.id(), output.current_mode())?;
 
         let scale = if let Some(fractional) = output.fractional_scale() {
-            Scale::Fractional(fractional.as_f64())
+            let fractional = fractional.as_f64();
+            Scale::Custom {
+                advertised_integer: fractional.ceil() as i32,
+                fractional,
+            }
         } else {
             let integer = i32::try_from(output.scale()).map_err(|_| {
                 OutputPublicationError::value_out_of_range(output.id(), "scale", output.scale())
