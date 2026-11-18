@@ -6,6 +6,7 @@
 
 [workspace]
 members = [
+    "components/aurea-capture",
     "components/aurea-desktop-api",
     "components/aurea-shell",
     "components/aurea-compositor",
