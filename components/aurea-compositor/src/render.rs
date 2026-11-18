@@ -23,9 +23,9 @@ use smithay::{
     },
     desktop::{WindowSurfaceType, utils::under_from_surface_tree},
     input::pointer::{CursorImageStatus, CursorImageSurfaceData},
-    reexports::wayland_server::protocol::wl_surface::WlSurface,
+    reexports::wayland_server::{Resource, protocol::wl_surface::WlSurface},
     utils::{Logical, Physical, Point},
-    wayland::{compositor::{self, with_states}, shell::xdg::ToplevelSurface},
+    wayland::{compositor::with_states, shell::xdg::ToplevelSurface},
 };
 
 use crate::window_manager::WindowManager;
