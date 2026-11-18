@@ -43,7 +43,7 @@ fn recording_can_pause_resume_and_finalize() {
     let mut coordinator = CaptureCoordinator::new();
     let id = coordinator.begin(recording_request()).unwrap();
 
-    coordinator.authorize(id).unwrap();
+    coordinator.authorize(id, full_capture_grant()).unwrap();
     coordinator.start(id).unwrap();
     coordinator.pause(id).unwrap();
     assert_eq!(
@@ -71,7 +71,7 @@ fn screenshot_cannot_be_paused() {
     );
     let id = coordinator.begin(request).unwrap();
 
-    coordinator.authorize(id).unwrap();
+    coordinator.authorize(id, full_capture_grant()).unwrap();
     coordinator.start(id).unwrap();
 
     assert!(coordinator.pause(id).is_err());
