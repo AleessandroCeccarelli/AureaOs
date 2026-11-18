@@ -57,7 +57,7 @@ impl AureaCompositor {
             .filter_map(|output| {
                 let position = self.output_manager.layout().get(output.id())?;
                 let mode = output.current_mode();
-                let scale = f64::from(output.scale());
+                let scale = output.effective_scale();
 
                 OutputGeometry::new(
                     f64::from(position.x()),
