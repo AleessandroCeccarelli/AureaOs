@@ -20,6 +20,7 @@ pub struct CaptureFrameQueue {
     byte_limit: usize,
     frames: VecDeque<CaptureFrame>,
     dropped_frames: u64,
+    last_timestamp: Option<crate::CaptureTimestamp>,
 }
 
 impl CaptureFrameQueue {
@@ -39,6 +40,7 @@ impl CaptureFrameQueue {
             byte_limit,
             frames: VecDeque::with_capacity(capacity),
             dropped_frames: 0,
+            last_timestamp: None,
         })
     }
 
@@ -46,14 +48,23 @@ impl CaptureFrameQueue {
     ///
     /// Returns the rejected frame when the queue is full.
     pub fn try_push(&mut self, frame: CaptureFrame) -> Result<(), CaptureFrame> {
+        let Some(next_queued_bytes) = self.queued_bytes.checked_add(frame.byte_len()) else {
+            self.dropped_frames = self.dropped_frames.saturating_add(1);
+            return Err(frame);
+        };
+
         if self.frames.len() >= self.capacity
-            || self.queued_bytes.saturating_add(frame.byte_len()) > self.byte_limit
+            || next_queued_bytes > self.byte_limit
+            || self
+                .last_timestamp
+                .is_some_and(|timestamp| frame.timestamp() <= timestamp)
         {
             self.dropped_frames = self.dropped_frames.saturating_add(1);
             return Err(frame);
         }
 
-        self.queued_bytes = self.queued_bytes.saturating_add(frame.byte_len());
+        self.queued_bytes = next_queued_bytes;
+        self.last_timestamp = Some(frame.timestamp());
         self.frames.push_back(frame);
         Ok(())
     }
