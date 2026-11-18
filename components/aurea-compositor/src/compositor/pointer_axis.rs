@@ -7,7 +7,7 @@
 
 use smithay::{
     backend::input::{Axis, AxisRelativeDirection, AxisSource},
-    input::pointer::{AxisFrame, PointerHandle},
+    input::pointer::AxisFrame,
 };
 
 use super::AureaCompositor;

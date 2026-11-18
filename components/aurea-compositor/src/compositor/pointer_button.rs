@@ -7,7 +7,7 @@
 
 use smithay::{
     backend::input::ButtonState,
-    input::pointer::{ButtonEvent, PointerHandle},
+    input::pointer::ButtonEvent,
     utils::SERIAL_COUNTER,
 };
 

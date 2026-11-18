@@ -75,7 +75,9 @@ pub(super) fn constrain_to_outputs(
     outputs
         .into_iter()
         .map(|output| output.clamp(point))
-        .min_by(|left, right| distance_squared(*left, point).total_cmp(&distance_squared(*right, point)))
+        .min_by(|left, right| {
+            distance_squared(*left, point).total_cmp(&distance_squared(*right, point))
+        })
 }
 
 fn distance_squared(left: Point<f64, Logical>, right: Point<f64, Logical>) -> f64 {
@@ -104,10 +106,7 @@ mod tests {
     #[test]
     fn clamps_locations_beyond_output_edges() {
         assert_eq!(
-            constrain_to_outputs(
-                Point::from((150.0, 90.0)),
-                [output(0.0, 0.0, 100.0, 80.0)]
-            ),
+            constrain_to_outputs(Point::from((150.0, 90.0)), [output(0.0, 0.0, 100.0, 80.0)]),
             Some(Point::from((99.0, 79.0)))
         );
     }
@@ -134,10 +133,7 @@ mod tests {
 
     #[test]
     fn returns_none_when_no_output_is_enabled() {
-        assert_eq!(
-            constrain_to_outputs(Point::from((0.0, 0.0)), []),
-            None
-        );
+        assert_eq!(constrain_to_outputs(Point::from((0.0, 0.0)), []), None);
     }
 
     #[test]

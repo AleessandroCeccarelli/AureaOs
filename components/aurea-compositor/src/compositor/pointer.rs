@@ -48,19 +48,18 @@ impl AureaCompositor {
                 let mode = output.current_mode();
                 let scale = f64::from(output.scale());
 
-                Some(OutputGeometry::new(
+                OutputGeometry::new(
                     f64::from(position.x()),
                     f64::from(position.y()),
                     f64::from(mode.width()) / scale,
                     f64::from(mode.height()) / scale,
-                ))
+                )
             })
             .collect::<Vec<_>>();
 
-        let Some(location) = super::pointer_bounds::constrain_to_outputs(
-            requested,
-            output_geometry.iter().copied(),
-        ) else {
+        let Some(location) =
+            super::pointer_bounds::constrain_to_outputs(requested, output_geometry.iter().copied())
+        else {
             return;
         };
 
