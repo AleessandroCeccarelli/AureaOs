@@ -573,7 +573,10 @@ fn reconciliation_places_outputs_using_fractional_logical_width() {
     let second = 2;
     manager.register(sample_output(first), (0, 0)).unwrap();
     manager
-        .set_fractional_scale(first, super::super::scale::ScaleFactor::from_percent(150).unwrap())
+        .set_fractional_scale(
+            first,
+            super::super::scale::ScaleFactor::from_percent(150).unwrap(),
+        )
         .unwrap();
 
     manager
