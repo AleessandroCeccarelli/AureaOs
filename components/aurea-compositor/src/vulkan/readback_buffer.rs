@@ -9,9 +9,7 @@ use std::{slice, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
-use super::{
-    VulkanLogicalDevice, VulkanReadbackError, readback_buffer_device::VulkanReadbackDevice,
-};
+use super::{readback_buffer_device::VulkanReadbackDevice, VulkanLogicalDevice, VulkanReadbackError};
 
 /// Owns a host-visible buffer sized for tightly packed RGBA8 pixels.
 pub struct VulkanReadbackBuffer<'device> {
