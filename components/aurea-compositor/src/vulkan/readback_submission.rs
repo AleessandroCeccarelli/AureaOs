@@ -97,7 +97,6 @@ impl VulkanReadbackSubmission {
                 // resource set, including the source image and device owner.
                 std::mem::forget(view);
                 std::mem::forget(readback);
-                std::mem::forget(Arc::clone(&device));
                 return Err(VulkanReadbackError::SubmissionUncertain(error.result()));
             }
 
@@ -184,7 +183,6 @@ impl Drop for VulkanReadbackSubmission {
                 if let Some(view) = self.source_view.take() {
                     std::mem::forget(view);
                 }
-                std::mem::forget(Arc::clone(&self.device));
                 return;
             }
         }
