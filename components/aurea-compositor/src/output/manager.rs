@@ -11,6 +11,7 @@ use std::{
 };
 
 use super::layout::{OutputLayout, OutputPosition};
+use super::limits::MAX_ACTIVE_OUTPUTS;
 use super::{DisplayOutput, OutputId, OutputMode, OutputRegistry};
 
 /// Errors returned by output management operations.
@@ -20,23 +21,23 @@ pub enum OutputManagerError {
     UnknownOutput(OutputId),
     InvalidMode { output: OutputId, mode: OutputMode },
     InvalidScale { output: OutputId, scale: u32 },
+    TooManyActiveOutputs { maximum: usize },
     PositionOverflow,
 }
 
 impl fmt::Display for OutputManagerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::DuplicateOutput(output) => {
-                write!(f, "Output {output} is already registered")
-            }
-            Self::UnknownOutput(output) => {
-                write!(f, "Unknown output: {output}")
-            }
+            Self::DuplicateOutput(output) => write!(f, "Output {output} is already registered"),
+            Self::UnknownOutput(output) => write!(f, "Unknown output: {output}"),
             Self::InvalidMode { output, mode } => {
                 write!(f, "Mode {mode:?} is not supported by output {output}")
             }
             Self::InvalidScale { output, scale } => {
                 write!(f, "Invalid scale {scale} for output {output}")
+            }
+            Self::TooManyActiveOutputs { maximum } => {
+                write!(f, "AureaOS supports at most {maximum} active display outputs")
             }
             Self::PositionOverflow => f.write_str("Output layout position overflow"),
         }
@@ -76,6 +77,21 @@ impl OutputManager {
         &self.layout
     }
 
+    /// Returns the number of enabled outputs.
+    pub fn active_output_count(&self) -> usize {
+        self.registry.iter().filter(|output| output.is_enabled()).count()
+    }
+
+    fn ensure_active_capacity(&self, additional: usize) -> Result<(), OutputManagerError> {
+        if self.active_output_count().saturating_add(additional) > MAX_ACTIVE_OUTPUTS {
+            return Err(OutputManagerError::TooManyActiveOutputs {
+                maximum: MAX_ACTIVE_OUTPUTS,
+            });
+        }
+
+        Ok(())
+    }
+
     /// Registers an output and places it in the layout.
     pub fn register(
         &mut self,
@@ -87,15 +103,14 @@ impl OutputManager {
         if self.registry.get(id).is_some() {
             return Err(OutputManagerError::DuplicateOutput(id));
         }
-
+        if output.is_enabled() {
+            self.ensure_active_capacity(1)?;
+        }
         if !self.registry.register(output) {
             return Err(OutputManagerError::DuplicateOutput(id));
         }
 
-        let inserted = self
-            .layout
-            .insert(id, OutputPosition::new(position.0, position.1));
-
+        let inserted = self.layout.insert(id, OutputPosition::new(position.0, position.1));
         if !inserted {
             self.registry.remove(id);
             return Err(OutputManagerError::DuplicateOutput(id));
@@ -105,36 +120,34 @@ impl OutputManager {
     }
 
     /// Registers a group of outputs atomically.
-    ///
-    /// All IDs are validated before mutation. If an insertion unexpectedly
-    /// fails, outputs inserted by this call are removed before returning.
     pub fn register_batch(
         &mut self,
         outputs: Vec<(DisplayOutput, (i32, i32))>,
     ) -> Result<(), OutputManagerError> {
         let mut batch_ids = BTreeSet::new();
+        let additional_active = outputs
+            .iter()
+            .filter(|(output, _)| output.is_enabled())
+            .count();
+
+        self.ensure_active_capacity(additional_active)?;
 
         for (output, _) in &outputs {
             let id = output.id();
-
             if self.registry.get(id).is_some() || !batch_ids.insert(id) {
                 return Err(OutputManagerError::DuplicateOutput(id));
             }
         }
 
         let mut registered_ids = Vec::with_capacity(outputs.len());
-
         for (output, position) in outputs {
             let id = output.id();
-
             if let Err(error) = self.register(output, position) {
                 for registered_id in registered_ids {
                     self.unregister(registered_id);
                 }
-
                 return Err(error);
             }
-
             registered_ids.push(id);
         }
 
@@ -156,21 +169,15 @@ impl OutputManager {
 
         for output in &discovered {
             let id = output.id();
-
             if !desired.insert(id) {
                 return Err(OutputManagerError::DuplicateOutput(id));
             }
-
             if self.registry.get(id).is_some() && !owned.contains(&id) {
                 return Err(OutputManagerError::DuplicateOutput(id));
             }
         }
 
-        let discovered_ids = discovered
-            .iter()
-            .map(DisplayOutput::id)
-            .collect::<HashSet<_>>();
-
+        let discovered_ids = discovered.iter().map(DisplayOutput::id).collect::<HashSet<_>>();
         let mut changes = OutputReconciliation::default();
         let mut updates = Vec::new();
         let mut additions = Vec::new();
@@ -178,13 +185,10 @@ impl OutputManager {
 
         for output in discovered {
             let id = output.id();
-
             if let Some(current) = self.registry.get(id) {
                 let mut replacement = current.clone();
                 replacement.update_from_discovery(output);
-
                 effective_widths.insert(id, replacement.current_mode().width());
-
                 if *current != replacement {
                     changes.updated.push(id);
                     updates.push((id, replacement));
@@ -202,55 +206,47 @@ impl OutputManager {
             .collect();
 
         let removed = changes.removed.iter().copied().collect::<HashSet<_>>();
+        let retained_active = self.registry.iter()
+            .filter(|output| output.is_enabled() && !removed.contains(&output.id()))
+            .count();
+        let added_active = additions.iter().filter(|output| output.is_enabled()).count();
+        if retained_active.saturating_add(added_active) > MAX_ACTIVE_OUTPUTS {
+            return Err(OutputManagerError::TooManyActiveOutputs {
+                maximum: MAX_ACTIVE_OUTPUTS,
+            });
+        }
 
         let mut next_x = self.registry.iter().try_fold(0_i32, |right, output| {
             if removed.contains(&output.id()) {
                 return Ok(right);
             }
-
             let position = self.layout.get(output.id()).unwrap_or_default();
-
-            let width = effective_widths
-                .get(&output.id())
-                .copied()
-                .unwrap_or_else(|| output.current_mode().width());
-
+            let width = effective_widths.get(&output.id())
+                .copied().unwrap_or_else(|| output.current_mode().width());
             let width = i32::try_from(width).map_err(|_| OutputManagerError::PositionOverflow)?;
-
-            let edge = position
-                .x()
-                .checked_add(width)
+            let edge = position.x().checked_add(width)
                 .ok_or(OutputManagerError::PositionOverflow)?;
-
             Ok::<i32, OutputManagerError>(right.max(edge))
         })?;
 
         let mut addition_positions = Vec::with_capacity(additions.len());
-
         for output in &additions {
             let width = i32::try_from(output.current_mode().width())
                 .map_err(|_| OutputManagerError::PositionOverflow)?;
-
             addition_positions.push((output.id(), (next_x, 0)));
-
-            next_x = next_x
-                .checked_add(width)
-                .ok_or(OutputManagerError::PositionOverflow)?;
+            next_x = next_x.checked_add(width).ok_or(OutputManagerError::PositionOverflow)?;
         }
 
         // All validation and position arithmetic is complete before mutation.
         let before = self.clone();
-
         for id in &changes.removed {
             self.unregister(*id);
         }
-
         for (id, output) in updates {
             if let Some(current) = self.registry.get_mut(id) {
                 *current = output;
             }
         }
-
         for (output, (_, position)) in additions.into_iter().zip(addition_positions) {
             if let Err(error) = self.register(output, position) {
                 *self = before;
@@ -273,12 +269,14 @@ impl OutputManager {
         output_id: OutputId,
         enabled: bool,
     ) -> Result<(), OutputManagerError> {
-        let output = self
-            .registry
-            .get_mut(output_id)
+        let output = self.registry.get(output_id)
             .ok_or(OutputManagerError::UnknownOutput(output_id))?;
-
-        output.set_enabled(enabled);
+        if enabled && !output.is_enabled() {
+            self.ensure_active_capacity(1)?;
+        }
+        self.registry.get_mut(output_id)
+            .ok_or(OutputManagerError::UnknownOutput(output_id))?
+            .set_enabled(enabled);
         Ok(())
     }
 
@@ -288,42 +286,24 @@ impl OutputManager {
         output_id: OutputId,
         mode: OutputMode,
     ) -> Result<(), OutputManagerError> {
-        let output = self
-            .registry
-            .get_mut(output_id)
+        let output = self.registry.get_mut(output_id)
             .ok_or(OutputManagerError::UnknownOutput(output_id))?;
-
         if !output.set_mode(mode) {
-            return Err(OutputManagerError::InvalidMode {
-                output: output_id,
-                mode,
-            });
+            return Err(OutputManagerError::InvalidMode { output: output_id, mode });
         }
-
         Ok(())
     }
 
     /// Changes the scale of an output.
     pub fn set_scale(&mut self, output_id: OutputId, scale: u32) -> Result<(), OutputManagerError> {
         if scale == 0 {
-            return Err(OutputManagerError::InvalidScale {
-                output: output_id,
-                scale,
-            });
+            return Err(OutputManagerError::InvalidScale { output: output_id, scale });
         }
-
-        let output = self
-            .registry
-            .get_mut(output_id)
+        let output = self.registry.get_mut(output_id)
             .ok_or(OutputManagerError::UnknownOutput(output_id))?;
-
         if !output.set_scale(scale) {
-            return Err(OutputManagerError::InvalidScale {
-                output: output_id,
-                scale,
-            });
+            return Err(OutputManagerError::InvalidScale { output: output_id, scale });
         }
-
         Ok(())
     }
 
@@ -336,10 +316,11 @@ impl OutputManager {
         if self.registry.get(output_id).is_none() {
             return Err(OutputManagerError::UnknownOutput(output_id));
         }
-
-        self.layout
-            .set_position(output_id, OutputPosition::new(position.0, position.1));
-
+        self.layout.set_position(output_id, OutputPosition::new(position.0, position.1));
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[path = "../../tests/unit/output_manager.rs"]
+mod tests;
