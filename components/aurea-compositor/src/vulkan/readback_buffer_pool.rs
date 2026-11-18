@@ -7,7 +7,7 @@
 
 use std::{
     ops::Deref,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, TryLockError},
 };
 
 use super::{VulkanLogicalDevice, VulkanReadbackBuffer, VulkanReadbackError};
@@ -77,11 +77,15 @@ impl VulkanReadbackBufferPool {
         height: u32,
     ) -> Result<VulkanReadbackBufferLease, VulkanReadbackError> {
         let byte_len = readback_byte_len(width, height)?;
-        let mut state = self
-            .inner
-            .state
-            .lock()
-            .map_err(|_| VulkanReadbackError::PoolLockPoisoned)?;
+        let mut state = match self.inner.state.try_lock() {
+            Ok(state) => state,
+            Err(TryLockError::Poisoned(_)) => {
+                return Err(VulkanReadbackError::PoolLockPoisoned);
+            }
+            Err(TryLockError::WouldBlock) => {
+                return Err(VulkanReadbackError::PoolBusy);
+            }
+        };
 
         if let Some(index) = state
             .idle
