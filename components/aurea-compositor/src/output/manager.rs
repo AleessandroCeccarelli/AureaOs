@@ -344,6 +344,20 @@ impl OutputManager {
         Ok(())
     }
 
+    /// Changes the scale of an output to an exact fractional value.
+    pub fn set_fractional_scale(
+        &mut self,
+        output_id: OutputId,
+        scale: super::scale::ScaleFactor,
+    ) -> Result<(), OutputManagerError> {
+        let output = self
+            .registry
+            .get_mut(output_id)
+            .ok_or(OutputManagerError::UnknownOutput(output_id))?;
+        output.set_fractional_scale(scale);
+        Ok(())
+    }
+
     /// Updates the logical position of an output.
     pub fn set_position(
         &mut self,
