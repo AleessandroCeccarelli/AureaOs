@@ -96,11 +96,7 @@ impl VulkanCaptureTargetPool {
             drop(target);
         }
 
-        let target = VulkanCaptureTarget::allocate(
-            Arc::clone(&self.inner.device),
-            width,
-            height,
-        )?;
+        let target = VulkanCaptureTarget::allocate(Arc::clone(&self.inner.device), width, height)?;
         let allocation_size = target.allocation_size();
 
         while state
@@ -185,9 +181,7 @@ impl std::ops::Deref for VulkanCaptureTargetLease {
     type Target = VulkanCaptureTarget;
 
     fn deref(&self) -> &Self::Target {
-        self.target
-            .as_ref()
-            .expect("capture target lease is empty")
+        self.target.as_ref().expect("capture target lease is empty")
     }
 }
 
