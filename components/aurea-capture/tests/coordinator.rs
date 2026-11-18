@@ -4,8 +4,7 @@
 
 use aurea_capture::{
     AudioCaptureMode, CaptureCoordinator, CaptureKind, CapturePermissionGrant, CaptureRegion,
-    CaptureRequest,
-    CaptureSessionState, CaptureTarget, DisplayId,
+    CaptureRequest, CaptureSessionState, CaptureTarget, DisplayId,
 };
 
 fn full_capture_grant() -> CapturePermissionGrant {
@@ -64,11 +63,7 @@ fn recording_can_pause_resume_and_finalize() {
 #[test]
 fn screenshot_cannot_be_paused() {
     let mut coordinator = CaptureCoordinator::new();
-    let request = CaptureRequest::new(
-        CaptureKind::Screenshot,
-        CaptureTarget::ActiveWindow,
-        false,
-    );
+    let request = CaptureRequest::new(CaptureKind::Screenshot, CaptureTarget::ActiveWindow, false);
     let id = coordinator.begin(request).unwrap();
 
     coordinator.authorize(id, full_capture_grant()).unwrap();
