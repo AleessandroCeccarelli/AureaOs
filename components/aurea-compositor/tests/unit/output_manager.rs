@@ -3,7 +3,7 @@
 // AureaOS test module relocated from production source.
 
 use super::*;
-use crate::output::limits::MAX_ACTIVE_OUTPUTS;
+use aurea_compositor::output::limits::MAX_ACTIVE_OUTPUTS;
 
 fn sample_output(id: OutputId) -> DisplayOutput {
     let mode = OutputMode::new(1920, 1080, 60_000).unwrap();

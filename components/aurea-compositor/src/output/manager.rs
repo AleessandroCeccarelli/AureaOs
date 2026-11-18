@@ -332,10 +332,15 @@ impl OutputManager {
                 scale,
             });
         }
-        let output = self.registry.get_mut(output_id)
+        let output = self
+            .registry
+            .get_mut(output_id)
             .ok_or(OutputManagerError::UnknownOutput(output_id))?;
         if !output.set_scale(scale) {
-            return Err(OutputManagerError::InvalidScale { output: output_id, scale });
+            return Err(OutputManagerError::InvalidScale {
+                output: output_id,
+                scale,
+            });
         }
         Ok(())
     }
