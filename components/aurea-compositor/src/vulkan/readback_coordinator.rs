@@ -91,7 +91,7 @@ impl VulkanReadbackCoordinator {
 
             match self.submissions[0].take_rgba8() {
                 Ok(pixels) => {
-                    self.submissions.remove(index);
+                    self.submissions.remove(0);
                     result.completed_frames.push(pixels);
                 }
                 Err(error) => {
