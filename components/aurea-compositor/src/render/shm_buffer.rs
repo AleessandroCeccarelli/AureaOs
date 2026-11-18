@@ -99,7 +99,6 @@ impl ShmBufferSnapshot {
     }
 
     /// Creates an owned RGBA8 snapshot for compositor-generated pixel data.
-    #[cfg(test)]
     pub(crate) fn from_rgba8(
         width: u32,
         height: u32,

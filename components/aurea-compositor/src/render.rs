@@ -5,6 +5,7 @@
 
 //! Collects mapped surfaces into a renderable scene.
 
+pub mod cursor;
 pub mod geometry;
 pub mod hit_test;
 pub mod shm_buffer;
