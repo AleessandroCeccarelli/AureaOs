@@ -57,11 +57,25 @@ impl CaptureSession {
         }
     }
 
-    pub const fn id(self) -> CaptureSessionId { self.id }
-    pub const fn request(self) -> CaptureRequest { self.request }
-    pub const fn kind(self) -> CaptureKind { self.request.kind() }
-    pub const fn target(self) -> CaptureTarget { self.request.target() }
-    pub const fn state(self) -> CaptureSessionState { self.state }
+    pub const fn id(self) -> CaptureSessionId {
+        self.id
+    }
+
+    pub const fn request(self) -> CaptureRequest {
+        self.request
+    }
+
+    pub const fn kind(self) -> CaptureKind {
+        self.request.kind()
+    }
+
+    pub const fn target(self) -> CaptureTarget {
+        self.request.target()
+    }
+
+    pub const fn state(self) -> CaptureSessionState {
+        self.state
+    }
 
     pub(crate) fn set_state(&mut self, state: CaptureSessionState) {
         self.state = state;
