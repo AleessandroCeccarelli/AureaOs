@@ -75,8 +75,11 @@ impl AureaCompositor {
             .seat
             .get_pointer()
             .map(|pointer| pointer.current_location());
-        RenderScene::from_window_manager(&self.window_manager)
-            .with_cursor(&self.cursor_image, pointer_location, self.cursor_locate_scale())
+        RenderScene::from_window_manager(&self.window_manager).with_cursor(
+            &self.cursor_image,
+            pointer_location,
+            self.cursor_locate_scale(),
+        )
     }
 
     /// Renders a previously requested frame on an enabled output.
