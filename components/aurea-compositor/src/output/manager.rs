@@ -199,14 +199,23 @@ impl OutputManager {
             if let Some(current) = self.registry.get(id) {
                 let mut replacement = current.clone();
                 replacement.update_from_discovery(output);
-                effective_widths.insert(id, replacement.current_mode().width());
+                effective_widths.insert(
+                    id,
+                    logical_width(
+                        replacement.current_mode().width(),
+                        replacement.scale(),
+                    )? as u32,
+                );
                 if *current != replacement {
                     changes.updated.push(id);
                     updates.push((id, replacement));
                 }
             } else {
                 changes.added.push(id);
-                effective_widths.insert(id, output.current_mode().width());
+                effective_widths.insert(
+                    id,
+                    logical_width(output.current_mode().width(), output.scale())? as u32,
+                );
                 additions.push(output);
             }
         }
@@ -241,7 +250,7 @@ impl OutputManager {
                 .get(&output.id())
                 .copied()
                 .unwrap_or_else(|| output.current_mode().width());
-            let width = i32::try_from(width).map_err(|_| OutputManagerError::PositionOverflow)?;
+            let width = logical_width(width, output.scale())?;
             let edge = position
                 .x()
                 .checked_add(width)
@@ -251,8 +260,7 @@ impl OutputManager {
 
         let mut addition_positions = Vec::with_capacity(additions.len());
         for output in &additions {
-            let width = i32::try_from(output.current_mode().width())
-                .map_err(|_| OutputManagerError::PositionOverflow)?;
+            let width = logical_width(output.current_mode().width(), output.scale())?;
             addition_positions.push((output.id(), (next_x, 0)));
             next_x = next_x
                 .checked_add(width)
@@ -358,6 +366,21 @@ impl OutputManager {
             .set_position(output_id, OutputPosition::new(position.0, position.1));
         Ok(())
     }
+}
+
+fn logical_width(physical_width: u32, scale: u32) -> Result<i32, OutputManagerError> {
+    if scale == 0 {
+        return Err(OutputManagerError::PositionOverflow);
+    }
+
+    let physical_width = u64::from(physical_width);
+    let scale = u64::from(scale);
+    let rounded = physical_width
+        .checked_add(scale / 2)
+        .ok_or(OutputManagerError::PositionOverflow)?
+        / scale;
+
+    i32::try_from(rounded).map_err(|_| OutputManagerError::PositionOverflow)
 }
 
 #[cfg(test)]
