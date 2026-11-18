@@ -157,6 +157,10 @@ impl VulkanSharedImage {
     pub(super) fn device(&self) -> &VulkanLogicalDevice {
         self.device.as_ref()
     }
+
+    pub(super) fn device_owner(&self) -> Arc<VulkanLogicalDevice> {
+        Arc::clone(&self.device)
+    }
 }
 
 impl Drop for VulkanSharedImage {
