@@ -77,6 +77,16 @@ impl VulkanCaptureTargetPool {
             .lock()
             .map_err(|_| VulkanCaptureTargetError::PoolLockPoisoned)?;
 
+        // Preparing an already cached size is idempotent. Reusing the idle
+        // allocation avoids needless Vulkan allocation/free churn.
+        if state
+            .idle
+            .iter()
+            .any(|target| target.width() == width && target.height() == height)
+        {
+            return Ok(());
+        }
+
         while state.allocated_targets >= self.inner.max_targets {
             let Some(target) = state.idle.pop() else {
                 return Err(VulkanCaptureTargetError::PoolExhausted);
