@@ -6,6 +6,7 @@
 //! Small compositor-owned cursor bitmaps and logical hotspot metadata.
 
 use crate::render::shm_buffer::{ShmBufferError, ShmBufferSnapshot};
+use smithay::utils::{Logical, Point};
 
 /// Native AureaOS arrow cursor dimensions in logical pixels.
 pub const DEFAULT_CURSOR_WIDTH: u32 = 32;
@@ -13,6 +14,16 @@ pub const DEFAULT_CURSOR_HEIGHT: u32 = 32;
 
 /// Hotspot of the default arrow, measured from its top-left pixel.
 pub const DEFAULT_CURSOR_HOTSPOT: (i32, i32) = (5, 2);
+
+/// Converts the global pointer position to the native arrow's top-left origin.
+///
+/// The hotspot is subtracted in logical coordinates before rounding to pixels.
+pub(crate) fn default_cursor_origin(
+    pointer_location: Point<f64, Logical>,
+) -> Point<i32, Logical> {
+    let hotspot = Point::<i32, Logical>::from(DEFAULT_CURSOR_HOTSPOT);
+    (pointer_location - hotspot.to_f64()).to_i32_round()
+}
 
 /// Creates the built-in high-contrast arrow as tightly packed RGBA8 pixels.
 ///
@@ -91,6 +102,14 @@ fn distance_to_segment(point: (f32, f32), start: (f32, f32), end: (f32, f32)) ->
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn native_cursor_origin_applies_hotspot_before_rounding() {
+        let pointer = Point::<f64, Logical>::from((10.6, 20.2));
+        let origin = default_cursor_origin(pointer);
+
+        assert_eq!((origin.x, origin.y), (6, 18));
+    }
 
     #[test]
     fn default_cursor_has_expected_dimensions_and_hotspot() {
