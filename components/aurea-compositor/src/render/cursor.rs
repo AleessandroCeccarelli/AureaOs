@@ -107,8 +107,8 @@ mod tests {
         let pixels = cursor.pixels();
 
         assert_eq!(&pixels[0..4], &[0, 0, 0, 0]);
-        let tip = ((3 * DEFAULT_CURSOR_WIDTH + 6) * 4) as usize;
-        assert_eq!(&pixels[tip..tip + 4], &[255, 255, 255, 255]);
+        let interior = ((8 * DEFAULT_CURSOR_WIDTH + 8) * 4) as usize;
+        assert_eq!(&pixels[interior..interior + 4], &[255, 255, 255, 255]);
     }
 
     #[test]
