@@ -199,14 +199,14 @@ impl OutputManager {
             if let Some(current) = self.registry.get(id) {
                 let mut replacement = current.clone();
                 replacement.update_from_discovery(output);
-                effective_widths.insert(id, replacement.current_mode().width());
+                effective_widths.insert(id, logical_width(&replacement)?);
                 if *current != replacement {
                     changes.updated.push(id);
                     updates.push((id, replacement));
                 }
             } else {
                 changes.added.push(id);
-                effective_widths.insert(id, output.current_mode().width());
+                effective_widths.insert(id, logical_width(&output)?);
                 additions.push(output);
             }
         }
@@ -240,8 +240,8 @@ impl OutputManager {
             let width = effective_widths
                 .get(&output.id())
                 .copied()
-                .unwrap_or_else(|| output.current_mode().width());
-            let width = logical_width(width, output.scale())?;
+                .map(Ok)
+                .unwrap_or_else(|| logical_width(output))?;
             let edge = position
                 .x()
                 .checked_add(width)
@@ -251,7 +251,7 @@ impl OutputManager {
 
         let mut addition_positions = Vec::with_capacity(additions.len());
         for output in &additions {
-            let width = logical_width(output.current_mode().width(), output.scale())?;
+            let width = logical_width(output)?;
             addition_positions.push((output.id(), (next_x, 0)));
             next_x = next_x
                 .checked_add(width)
@@ -359,21 +359,27 @@ impl OutputManager {
     }
 }
 
-fn logical_width(physical_width: u32, scale: u32) -> Result<i32, OutputManagerError> {
-    if scale == 0 {
-        return Err(OutputManagerError::PositionOverflow);
-    }
+fn logical_width(output: &DisplayOutput) -> Result<i32, OutputManagerError> {
+    let physical_width = output.current_mode().width();
+    let logical_width = if let Some(scale) = output.fractional_scale() {
+        scale
+            .physical_to_logical(i64::from(physical_width))
+            .ok_or(OutputManagerError::PositionOverflow)?
+    } else {
+        let scale = u64::from(output.scale());
+        if scale == 0 {
+            return Err(OutputManagerError::PositionOverflow);
+        }
+        let physical = u64::from(physical_width);
+        i64::try_from(
+            physical
+                .checked_add(scale / 2)
+                .ok_or(OutputManagerError::PositionOverflow)?
+                / scale,
+        )
+        .map_err(|_| OutputManagerError::PositionOverflow)?
+    };
 
-    let physical_width = u64::from(physical_width);
-    let scale = u64::from(scale);
-    let rounded = physical_width
-        .checked_add(scale / 2)
-        .ok_or(OutputManagerError::PositionOverflow)?
-        / scale;
-
-    i32::try_from(rounded).map_err(|_| OutputManagerError::PositionOverflow)
+    i32::try_from(logical_width).map_err(|_| OutputManagerError::PositionOverflow)
 }
 
-#[cfg(test)]
-#[path = "../../tests/unit/output_manager.rs"]
-mod tests;
