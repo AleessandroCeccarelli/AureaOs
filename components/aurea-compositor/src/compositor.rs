@@ -17,7 +17,11 @@ use smithay::{
 
 use crate::{
     frame::FrameScheduler,
-    input::{cursor_animation::CursorLocateAnimation, pointer_settings::PointerSettings, pointer_shake::PointerShakeDetector},
+    input::{
+        cursor_animation::CursorLocateAnimation,
+        pointer_settings::PointerSettings,
+        pointer_shake::PointerShakeDetector,
+    },
     output::{OutputId, manager::OutputManager},
     window_manager::WindowManager,
 };
