@@ -37,6 +37,7 @@ mod pointer_button;
 mod pointer_placement;
 mod rendering;
 mod surface_output_tracking;
+mod surface_output_reconciliation;
 mod workspace;
 
 use surface_output_tracking::SurfaceOutputTracker;
@@ -184,6 +185,11 @@ impl AureaCompositor {
     /// Sends leave events for an output that has been disabled or removed.
     pub fn forget_output_membership(&mut self, output_id: OutputId) {
         self.surface_output_tracker.remove_output(output_id);
+    }
+
+    /// Reconciles mapped surfaces against enabled outputs and updates client scale.
+    pub(crate) fn reconcile_surface_outputs(&mut self) {
+        surface_output_reconciliation::reconcile(self);
     }
 
     /// Releases tracker entries for destroyed Wayland surfaces.

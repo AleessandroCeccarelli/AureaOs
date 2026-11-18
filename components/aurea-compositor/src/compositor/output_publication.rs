@@ -39,6 +39,7 @@ impl AureaCompositor {
         }
 
         self.wayland_outputs = output_ids.into_iter().zip(outputs).collect();
+        self.reconcile_surface_outputs();
 
         Ok(())
     }
@@ -108,6 +109,7 @@ impl AureaCompositor {
             self.wayland_outputs.remove(&output_id);
         }
 
+        self.reconcile_surface_outputs();
         Ok(())
     }
 

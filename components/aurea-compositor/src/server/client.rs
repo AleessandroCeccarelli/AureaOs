@@ -88,6 +88,7 @@ impl CompositorHandler for AureaCompositor {
             }
         }
 
+        self.reconcile_surface_outputs();
         self.request_all_output_frames();
     }
 }
