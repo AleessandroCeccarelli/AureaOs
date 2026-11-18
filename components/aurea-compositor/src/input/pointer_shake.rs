@@ -39,7 +39,11 @@ impl PointerShakeDetector {
             return false;
         }
 
-        self.samples.push(MotionSample { time_ms, dx: delta.x, dy: delta.y });
+        self.samples.push(MotionSample {
+            time_ms,
+            dx: delta.x,
+            dy: delta.y,
+        });
         self.prune(time_ms);
 
         let mut reversals = 0_u8;
@@ -48,7 +52,11 @@ impl PointerShakeDetector {
         let mut previous_time = None;
 
         for sample in &self.samples {
-            let axis = if sample.dx.abs() >= sample.dy.abs() { sample.dx } else { sample.dy };
+            let axis = if sample.dx.abs() >= sample.dy.abs() {
+                sample.dx
+            } else {
+                sample.dy
+            };
             let sign = if axis > 0.0 { 1 } else { -1 };
             if let Some(last_time) = previous_time {
                 if sample.time_ms.saturating_sub(last_time) > MAX_GAP_MS {
@@ -72,10 +80,13 @@ impl PointerShakeDetector {
         false
     }
 
-    pub fn reset(&mut self) { self.samples.clear(); }
+    pub fn reset(&mut self) {
+        self.samples.clear();
+    }
 
     fn prune(&mut self, now_ms: u32) {
-        self.samples.retain(|sample| now_ms.saturating_sub(sample.time_ms) <= WINDOW_MS);
+        self.samples
+            .retain(|sample| now_ms.saturating_sub(sample.time_ms) <= WINDOW_MS);
     }
 }
 
@@ -83,7 +94,9 @@ impl PointerShakeDetector {
 mod tests {
     use super::*;
 
-    fn delta(x: f64, y: f64) -> Point<f64, Logical> { Point::from((x, y)) }
+    fn delta(x: f64, y: f64) -> Point<f64, Logical> {
+        Point::from((x, y))
+    }
 
     #[test]
     fn detects_deliberate_alternating_shake_once() {
