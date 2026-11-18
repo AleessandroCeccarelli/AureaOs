@@ -30,8 +30,10 @@ pub struct VulkanReadbackSubmission {
 impl VulkanReadbackSubmission {
     /// Records and submits a copy from an owned image view.
     ///
-    /// Returns after queue acceptance. The caller should retain this object
-    /// and poll it from a capture worker; this method never waits for the GPU.
+    /// The caller must transition the source image to TRANSFER_SRC_OPTIMAL
+    /// and synchronize prior writes before calling this method. The submission
+    /// retains the view, image, staging allocation and device until completion.
+    /// Returns after queue acceptance; poll it from a capture worker.
     pub fn submit(
         view: VulkanImageView<'static, 'static>,
     ) -> Result<Self, VulkanReadbackError> {
