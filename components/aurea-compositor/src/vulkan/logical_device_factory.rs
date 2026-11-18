@@ -7,10 +7,7 @@
 
 use std::sync::{Arc, Mutex};
 
-use smithay::{
-    backend::vulkan::PhysicalDevice,
-    reexports::ash::vk,
-};
+use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 
 use super::{
     VulkanContext, VulkanDeviceExtensionPlan, VulkanInitError, VulkanLogicalDevice,
