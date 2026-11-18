@@ -120,3 +120,36 @@ impl CaptureRequest {
         self.include_cursor
     }
 }
+
+/// Permission decision returned by the trusted desktop authorization layer.
+///
+/// Construct this value only after the user has approved the corresponding
+/// capture request. Screen, system-audio and microphone grants are independent.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct CapturePermissionGrant {
+    screen: bool,
+    system_audio: bool,
+    microphone: bool,
+}
+
+impl CapturePermissionGrant {
+    pub const fn new(screen: bool, system_audio: bool, microphone: bool) -> Self {
+        Self {
+            screen,
+            system_audio,
+            microphone,
+        }
+    }
+
+    pub const fn allows_screen(self) -> bool {
+        self.screen
+    }
+
+    pub const fn allows_system_audio(self) -> bool {
+        self.system_audio
+    }
+
+    pub const fn allows_microphone(self) -> bool {
+        self.microphone
+    }
+}
