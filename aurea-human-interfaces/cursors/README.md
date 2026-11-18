@@ -30,7 +30,9 @@ python3 tools/assets/validate_cursors.py
 python3 -m unittest discover -s tools/assets/tests -p 'test_*.py' -v
 ```
 
-The validator uses only the Python standard library. It checks manifest structure, unique cursor names, source-path containment, hotspot bounds, SVG geometry, external resource references, scripts, event handlers and animation policy. The Rust/Vulkan build does not yet consume generated Xcursor assets.
+The validator uses only the Python standard library. It checks manifest structure, unique cursor names, source-path containment, hotspot bounds, SVG geometry, external resource references, scripts, event handlers and animation policy. Build the theme after validation with `python3 tools/assets/build_cursor_theme.py`. The build requires `rsvg-convert` (Fedora: `librsvg2-tools`; Debian: `librsvg2-bin`) and `xcursorgen`. Output is created at `generated/AureaOS/`; the builder refuses to overwrite an existing theme. Move the old output aside before rebuilding. GitHub Actions builds and publishes the generated theme as a workflow artifact.
+
+The Rust/Vulkan compositor does not yet consume generated Xcursor assets.
 
 ## Not yet implemented
 
