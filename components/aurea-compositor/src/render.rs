@@ -74,14 +74,11 @@ impl<'a> RenderScene<'a> {
         }
 
         let hotspot = with_states(surface, |states| {
-            states
-                .data_map
-                .get::<CursorImageSurfaceData>()
-                .map(|data| {
-                    data.lock()
-                        .unwrap_or_else(std::sync::PoisonError::into_inner)
-                        .hotspot
-                })
+            states.data_map.get::<CursorImageSurfaceData>().map(|data| {
+                data.lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner)
+                    .hotspot
+            })
         })
         .flatten();
 
@@ -89,8 +86,7 @@ impl<'a> RenderScene<'a> {
             return self;
         };
 
-        let location: Point<i32, Logical> =
-            (pointer_location - hotspot.to_f64()).to_i32_round();
+        let location: Point<i32, Logical> = (pointer_location - hotspot.to_f64()).to_i32_round();
         self.cursor_surface = Some((surface.clone(), location));
         self
     }
