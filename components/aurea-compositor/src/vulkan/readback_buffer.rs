@@ -9,22 +9,9 @@ use std::{slice, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
-use super::{VulkanLogicalDevice, VulkanReadbackError};
-
-/// Retains the logical device for a staging allocation.
-enum VulkanReadbackDevice<'device> {
-    Borrowed(&'device VulkanLogicalDevice),
-    Shared(Arc<VulkanLogicalDevice>),
-}
-
-impl VulkanReadbackDevice<'_> {
-    fn device(&self) -> &VulkanLogicalDevice {
-        match self {
-            Self::Borrowed(device) => device,
-            Self::Shared(device) => device.as_ref(),
-        }
-    }
-}
+use super::{
+    VulkanLogicalDevice, VulkanReadbackError, readback_buffer_device::VulkanReadbackDevice,
+};
 
 /// Owns a host-visible buffer sized for tightly packed RGBA8 pixels.
 pub struct VulkanReadbackBuffer<'device> {
