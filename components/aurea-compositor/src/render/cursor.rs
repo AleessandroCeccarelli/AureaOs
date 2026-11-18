@@ -18,9 +18,7 @@ pub const DEFAULT_CURSOR_HOTSPOT: (i32, i32) = (5, 2);
 /// Converts the global pointer position to the native arrow's top-left origin.
 ///
 /// The hotspot is subtracted in logical coordinates before rounding to pixels.
-pub(crate) fn default_cursor_origin(
-    pointer_location: Point<f64, Logical>,
-) -> Point<i32, Logical> {
+pub(crate) fn default_cursor_origin(pointer_location: Point<f64, Logical>) -> Point<i32, Logical> {
     let hotspot = Point::<i32, Logical>::from(DEFAULT_CURSOR_HOTSPOT);
     (pointer_location - hotspot.to_f64()).to_i32_round()
 }
