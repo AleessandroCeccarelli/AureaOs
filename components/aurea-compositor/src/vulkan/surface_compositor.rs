@@ -468,7 +468,7 @@ fn visible_surfaces(
     let mut total_bytes = 0usize;
 
     for snapshot in snapshots {
-        let geometry = surface_geometry(
+        let mut geometry = surface_geometry(
             (snapshot.location.x, snapshot.location.y),
             (snapshot.snapshot.width(), snapshot.snapshot.height()),
             snapshot.buffer_scale,
@@ -477,6 +477,17 @@ fn visible_surfaces(
             target.scale(),
         )
         .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+
+        if let Some(anchor) = snapshot.cursor_anchor {
+            geometry = crate::render::geometry::scale_surface_geometry(
+                geometry,
+                (anchor.x, anchor.y),
+                target.logical_origin(),
+                target.scale(),
+                snapshot.cursor_scale,
+            )
+            .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+        }
 
         let Some(scissor) = geometry.scissor(target.width(), target.height()) else {
             continue;
