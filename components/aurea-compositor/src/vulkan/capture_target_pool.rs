@@ -62,11 +62,7 @@ impl VulkanCaptureTargetPool {
     ///
     /// Idle targets may be evicted to respect the configured limits. Checked-out
     /// targets are never reclaimed while a GPU submission may still reference them.
-    pub fn prepare(
-        &self,
-        width: u32,
-        height: u32,
-    ) -> Result<(), VulkanCaptureTargetError> {
+    pub fn prepare(&self, width: u32, height: u32) -> Result<(), VulkanCaptureTargetError> {
         if width == 0 || height == 0 {
             return Err(VulkanCaptureTargetError::InvalidDimensions);
         }
