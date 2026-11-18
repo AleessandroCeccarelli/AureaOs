@@ -13,8 +13,8 @@ mod error;
 mod frame;
 mod frame_error;
 mod frame_queue;
-mod request;
 mod queue_error;
+mod request;
 mod session;
 
 pub use coordinator::CaptureCoordinator;
