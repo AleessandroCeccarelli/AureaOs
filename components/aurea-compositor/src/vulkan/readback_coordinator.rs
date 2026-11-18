@@ -28,15 +28,20 @@ impl VulkanReadbackCoordinator {
         pool: VulkanReadbackBufferPool,
         max_in_flight: usize,
     ) -> Result<Self, VulkanReadbackError> {
-        if max_in_flight == 0 {
-            return Err(VulkanReadbackError::InvalidCoordinatorLimit);
-        }
+        Self::validate_limit(max_in_flight)?;
 
         Ok(Self {
             pool,
             max_in_flight,
             submissions: Vec::new(),
         })
+    }
+
+    fn validate_limit(max_in_flight: usize) -> Result<(), VulkanReadbackError> {
+        if max_in_flight == 0 {
+            return Err(VulkanReadbackError::InvalidCoordinatorLimit);
+        }
+        Ok(())
     }
 
     /// Submits one owned image view if capacity is available.
@@ -94,3 +99,7 @@ impl VulkanReadbackCoordinator {
         self.submissions.len() < self.max_in_flight
     }
 }
+
+#[cfg(test)]
+#[path = "readback_coordinator_tests.rs"]
+mod tests;
