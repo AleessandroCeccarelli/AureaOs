@@ -23,11 +23,12 @@ AureaOS is in an early prototype stage. The repository includes a minimal Debian
 
 The project has progressed beyond its initial bootstrap stage. Its first system components are being developed as independent, modular Rust projects.
 
-The Rust workspace is organized under `components/` and currently contains four crates:
+The Rust workspace is organized under `components/` and currently contains five crates:
 
 - **`aurea-desktop`** — the desktop entry point and composition root. It wires the desktop components together; it is not yet a finished desktop session or graphical interface.
 - **`aurea-shell`** — coordinates session lifecycle, events, compositor startup, and shutdown.
 - **`aurea-desktop-api`** — provides shared contracts between desktop components.
+- **`aurea-capture`** — provides the technology-independent capture request and session-coordination core; media and compositor adapters are not implemented yet.
 - **`aurea-compositor`** — implements the early Smithay-based Wayland compositor and owns compositor, graphics-device, and output responsibilities.
 
 The shell, compositor, API, and composition root are separate components with explicit responsibilities. Their presence in the workspace does not mean that Aurea Desktop is complete.
