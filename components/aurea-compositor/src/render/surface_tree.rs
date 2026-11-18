@@ -26,6 +26,10 @@ pub struct SurfaceTreeSnapshot {
     pub snapshot: Arc<ShmBufferSnapshot>,
     pub buffer_scale: i32,
     pub buffer_transform: Transform,
+    /// Scale applied only when this snapshot belongs to the pointer cursor tree.
+    pub cursor_scale: f64,
+    /// Global logical point around which cursor scaling is anchored.
+    pub cursor_anchor: Option<Point<i32, Logical>>,
 }
 
 #[derive(Clone, Copy)]
@@ -87,6 +91,8 @@ pub fn collect_surface_tree_snapshots(
                     snapshot: render_snapshot.snapshot,
                     buffer_scale: render_snapshot.buffer_scale,
                     buffer_transform: render_snapshot.buffer_transform,
+                    cursor_scale: 1.0,
+                    cursor_anchor: None,
                 });
             }
         },
