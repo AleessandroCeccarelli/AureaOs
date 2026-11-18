@@ -134,8 +134,8 @@ impl VulkanSurfacePipelineCache {
             return Ok(());
         }
 
-        let snapshot = crate::render::cursor::default_cursor_snapshot()
-            .map_err(|error| error.to_string())?;
+        let snapshot =
+            crate::render::cursor::default_cursor_snapshot().map_err(|error| error.to_string())?;
         let texture = VulkanShmTexture::from_snapshot(Arc::clone(&self.device), snapshot)
             .map_err(|error| error.to_string())?;
         self.native_cursor_texture = Some(texture);

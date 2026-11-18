@@ -91,7 +91,10 @@ pub(crate) fn render_and_release(
     let cursor = scene.native_cursor_location().and_then(|location| {
         let geometry = surface_geometry(
             (location.x, location.y),
-            (crate::render::cursor::DEFAULT_CURSOR_WIDTH, crate::render::cursor::DEFAULT_CURSOR_HEIGHT),
+            (
+                crate::render::cursor::DEFAULT_CURSOR_WIDTH,
+                crate::render::cursor::DEFAULT_CURSOR_HEIGHT,
+            ),
             1,
             Transform::Normal,
             target.logical_origin(),
