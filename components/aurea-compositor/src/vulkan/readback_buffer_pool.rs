@@ -77,56 +77,58 @@ impl VulkanReadbackBufferPool {
         height: u32,
     ) -> Result<VulkanReadbackBufferLease, VulkanReadbackError> {
         let byte_len = readback_byte_len(width, height)?;
+        let mut state = self
+            .inner
+            .state
+            .lock()
+            .map_err(|_| VulkanReadbackError::PoolLockPoisoned)?;
 
+        if let Some(index) = state
+            .idle
+            .iter()
+            .position(|buffer| buffer.byte_len() == byte_len)
         {
-            let mut state = self
-                .inner
-                .state
-                .lock()
-                .map_err(|_| VulkanReadbackError::PoolLockPoisoned)?;
-
-            if let Some(index) = state
-                .idle
-                .iter()
-                .position(|buffer| buffer.byte_len() == byte_len)
-            {
-                let buffer = state.idle.swap_remove(index);
-                return Ok(VulkanReadbackBufferLease {
-                    pool: Arc::clone(&self.inner),
-                    buffer: Some(buffer),
-                });
-            }
-
-            let next_bytes = state
-                .allocated_bytes
-                .checked_add(byte_len)
-                .ok_or(VulkanReadbackError::SizeOverflow)?;
-            if state.allocated_buffers >= self.inner.max_buffers
-                || next_bytes > self.inner.max_bytes
-            {
-                return Err(VulkanReadbackError::PoolExhausted);
-            }
-
-            // Reserve capacity while the lock is held so concurrent callers
-            // cannot exceed the configured memory budget.
-            state.allocated_buffers += 1;
-            state.allocated_bytes = next_bytes;
+            let buffer = state.idle.swap_remove(index);
+            return Ok(VulkanReadbackBufferLease {
+                pool: Arc::clone(&self.inner),
+                buffer: Some(buffer),
+            });
         }
 
-        let buffer = match VulkanReadbackBuffer::new_owned(
+        if state.allocated_buffers >= self.inner.max_buffers {
+            return Err(VulkanReadbackError::PoolExhausted);
+        }
+
+        // Vulkan's memory requirements may exceed the pixel payload size.
+        // This lower-bound check avoids an allocation that cannot possibly fit.
+        let minimum_total = state
+            .allocated_bytes
+            .checked_add(byte_len)
+            .ok_or(VulkanReadbackError::SizeOverflow)?;
+        if minimum_total > self.inner.max_bytes {
+            return Err(VulkanReadbackError::PoolExhausted);
+        }
+
+        // Serialize new allocations while measuring the driver's actual
+        // requirement size. This keeps concurrent capture workers inside the
+        // hard memory budget instead of accounting only for requested bytes.
+        let buffer = VulkanReadbackBuffer::new_owned(
             Arc::clone(&self.inner.device),
             width,
             height,
-        ) {
-            Ok(buffer) => buffer,
-            Err(error) => {
-                if let Ok(mut state) = self.inner.state.lock() {
-                    state.allocated_buffers -= 1;
-                    state.allocated_bytes -= byte_len;
-                }
-                return Err(error);
-            }
-        };
+        )?;
+        let allocation_size = buffer.allocation_size();
+        let actual_total = state
+            .allocated_bytes
+            .checked_add(allocation_size)
+            .ok_or(VulkanReadbackError::SizeOverflow)?;
+        if actual_total > self.inner.max_bytes {
+            drop(buffer);
+            return Err(VulkanReadbackError::PoolExhausted);
+        }
+
+        state.allocated_buffers += 1;
+        state.allocated_bytes = actual_total;
 
         Ok(VulkanReadbackBufferLease {
             pool: Arc::clone(&self.inner),
