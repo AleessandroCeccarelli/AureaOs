@@ -5,12 +5,23 @@
 
 //! Desktop composition root.
 
+mod compositor_factory;
 mod diagnostics;
+mod welcome;
 
-use aurea_compositor::service::WaylandCompositorFactory;
+use std::ffi::OsStr;
+
 use aurea_shell::{app, config::ShellConfig};
 
 fn main() {
+    if std::env::args_os().nth(1).as_deref() == Some(OsStr::new("--welcome-client")) {
+        if let Err(error) = welcome::run() {
+            eprintln!("Aurea Welcome: {error}");
+            std::process::exit(1);
+        }
+        return;
+    }
+
     match diagnostics::initialize() {
         Ok(path) => diagnostics::record(
             "INFO",
@@ -21,7 +32,7 @@ fn main() {
 
     diagnostics::record("INFO", "Initializing shell and DRM/Vulkan compositor");
     let config = ShellConfig::default();
-    let compositor_factory = WaylandCompositorFactory::default();
+    let compositor_factory = compositor_factory::DesktopCompositorFactory::default();
 
     if let Err(error) = app::run(config, compositor_factory) {
         diagnostics::record("ERROR", &format!("Desktop stopped with an error: {error}"));
