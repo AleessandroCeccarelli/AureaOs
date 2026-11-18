@@ -49,6 +49,7 @@ mod physical_device;
 mod queue;
 mod queue_submitter;
 mod readback_buffer;
+mod readback_buffer_lease;
 mod readback_buffer_pool;
 mod readback_submission;
 mod rendering_features;
@@ -140,9 +141,8 @@ pub use offscreen_renderer::{VulkanOffscreenError, VulkanOffscreenRenderer};
 pub use physical_device::{VulkanDeviceInfo, VulkanDeviceType};
 pub use queue::VulkanQueueFamilyInfo;
 pub use readback_buffer::{VulkanReadbackBuffer, VulkanReadbackError};
-pub use readback_buffer_pool::{
-    VulkanReadbackBufferLease, VulkanReadbackBufferPool, VulkanReadbackPoolStats,
-};
+pub use readback_buffer_lease::VulkanReadbackBufferLease;
+pub use readback_buffer_pool::{VulkanReadbackBufferPool, VulkanReadbackPoolStats};
 pub use readback_submission::VulkanReadbackSubmission;
 pub use rendering_features::VulkanRenderingFeaturePlan;
 pub use sampler::{VulkanSampler, VulkanSamplerError};
