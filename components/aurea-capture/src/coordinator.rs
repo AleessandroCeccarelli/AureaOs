@@ -26,12 +26,21 @@ impl CaptureCoordinator {
     }
 
     /// Creates a session that is waiting for explicit user authorization.
-    pub fn begin(&mut self, request: CaptureRequest) -> Result<CaptureSessionId, CaptureError> {
-        if self.session.is_some_and(|session| !session.state().is_terminal()) {
+    pub fn begin(
+        &mut self,
+        request: CaptureRequest,
+    ) -> Result<CaptureSessionId, CaptureError> {
+        if self
+            .session
+            .is_some_and(|session| !session.state().is_terminal())
+        {
             return Err(CaptureError::SessionBusy);
         }
 
-        let next_id = self.next_id.checked_add(1).ok_or(CaptureError::SessionIdExhausted)?;
+        let next_id = self
+            .next_id
+            .checked_add(1)
+            .ok_or(CaptureError::SessionIdExhausted)?;
         self.next_id = next_id;
 
         let id = CaptureSessionId::from_value(next_id);
@@ -44,12 +53,21 @@ impl CaptureCoordinator {
         self.session
     }
 
+    /// Records that the external permission layer granted this session.
     pub fn authorize(&mut self, id: CaptureSessionId) -> Result<(), CaptureError> {
-        self.transition(id, CaptureSessionState::AwaitingAuthorization, CaptureSessionState::Ready)
+        self.transition(
+            id,
+            CaptureSessionState::AwaitingAuthorization,
+            CaptureSessionState::Ready,
+        )
     }
 
     pub fn start(&mut self, id: CaptureSessionId) -> Result<(), CaptureError> {
-        self.transition(id, CaptureSessionState::Ready, CaptureSessionState::Capturing)
+        self.transition(
+            id,
+            CaptureSessionState::Ready,
+            CaptureSessionState::Capturing,
+        )
     }
 
     pub fn pause(&mut self, id: CaptureSessionId) -> Result<(), CaptureError> {
@@ -58,34 +76,53 @@ impl CaptureCoordinator {
             return Err(CaptureError::InvalidTransition);
         }
 
-        self.transition(id, CaptureSessionState::Capturing, CaptureSessionState::Paused)
+        self.transition(
+            id,
+            CaptureSessionState::Capturing,
+            CaptureSessionState::Paused,
+        )
     }
 
     pub fn resume(&mut self, id: CaptureSessionId) -> Result<(), CaptureError> {
-        self.transition(id, CaptureSessionState::Paused, CaptureSessionState::Capturing)
+        self.transition(
+            id,
+            CaptureSessionState::Paused,
+            CaptureSessionState::Capturing,
+        )
     }
 
     pub fn begin_finalization(&mut self, id: CaptureSessionId) -> Result<(), CaptureError> {
         let session = self.session_for(id)?;
-        if !matches!(session.state(), CaptureSessionState::Capturing | CaptureSessionState::Paused) {
+        if !matches!(
+            session.state(),
+            CaptureSessionState::Capturing | CaptureSessionState::Paused
+        ) {
             return Err(CaptureError::InvalidTransition);
         }
 
-        self.session_mut_for(id)?.set_state(CaptureSessionState::Finalizing);
+        self.session_mut_for(id)?
+            .set_state(CaptureSessionState::Finalizing);
         Ok(())
     }
 
     pub fn complete(&mut self, id: CaptureSessionId) -> Result<(), CaptureError> {
-        self.transition(id, CaptureSessionState::Finalizing, CaptureSessionState::Completed)
+        self.transition(
+            id,
+            CaptureSessionState::Finalizing,
+            CaptureSessionState::Completed,
+        )
     }
 
     pub fn cancel(&mut self, id: CaptureSessionId) -> Result<(), CaptureError> {
         let session = self.session_for(id)?;
-        if matches!(session.state(), CaptureSessionState::Finalizing) || session.state().is_terminal() {
+        if matches!(session.state(), CaptureSessionState::Finalizing)
+            || session.state().is_terminal()
+        {
             return Err(CaptureError::InvalidTransition);
         }
 
-        self.session_mut_for(id)?.set_state(CaptureSessionState::Cancelled);
+        self.session_mut_for(id)?
+            .set_state(CaptureSessionState::Cancelled);
         Ok(())
     }
 
@@ -95,7 +132,8 @@ impl CaptureCoordinator {
             return Err(CaptureError::InvalidTransition);
         }
 
-        self.session_mut_for(id)?.set_state(CaptureSessionState::Failed);
+        self.session_mut_for(id)?
+            .set_state(CaptureSessionState::Failed);
         Ok(())
     }
 
@@ -121,11 +159,13 @@ impl CaptureCoordinator {
             .ok_or(CaptureError::NoActiveSession)
     }
 
-    fn session_mut_for(&mut self, id: CaptureSessionId) -> Result<&mut CaptureSession, CaptureError> {
+    fn session_mut_for(
+        &mut self,
+        id: CaptureSessionId,
+    ) -> Result<&mut CaptureSession, CaptureError> {
         self.session
             .as_mut()
             .filter(|session| session.id() == id)
             .ok_or(CaptureError::NoActiveSession)
     }
 }
-
