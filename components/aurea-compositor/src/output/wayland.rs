@@ -70,15 +70,20 @@ impl WaylandOutputConfig {
 
         let current_mode = Self::convert_mode(output.id(), output.current_mode())?;
 
-        let scale = i32::try_from(output.scale()).map_err(|_| {
-            OutputPublicationError::value_out_of_range(output.id(), "scale", output.scale())
-        })?;
+        let scale = if let Some(fractional) = output.fractional_scale() {
+            Scale::Fractional(fractional.as_f64())
+        } else {
+            let integer = i32::try_from(output.scale()).map_err(|_| {
+                OutputPublicationError::value_out_of_range(output.id(), "scale", output.scale())
+            })?;
+            Scale::Integer(integer)
+        };
 
         Ok(Self {
             name: output.name().to_owned(),
             modes,
             current_mode,
-            scale: Scale::Integer(scale),
+            scale,
             position,
         })
     }
