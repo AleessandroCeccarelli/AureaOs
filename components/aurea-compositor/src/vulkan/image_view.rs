@@ -183,6 +183,14 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
     pub(super) fn device(&self) -> &VulkanLogicalDevice {
         self.device.device()
     }
+
+    /// Clones the logical-device owner when this view owns a shared image.
+    pub(super) fn shared_device_owner(&self) -> Option<Arc<VulkanLogicalDevice>> {
+        match &self.device {
+            VulkanImageViewDevice::Borrowed(_) => None,
+            VulkanImageViewDevice::Shared(image) => Some(image.device_owner()),
+        }
+    }
 }
 
 impl VulkanImageView<'static, 'static> {
