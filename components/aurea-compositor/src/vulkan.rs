@@ -6,10 +6,10 @@
 //! Vulkan integration for the AureaOS compositor.
 
 mod backend;
-mod capture_target;
-mod capture_target_pool;
 #[cfg(feature = "drm")]
 mod buffer_allocator;
+mod capture_target;
+mod capture_target_pool;
 mod clear_pass;
 mod command_buffer;
 mod context;
@@ -96,14 +96,12 @@ impl fmt::Display for VulkanInitError {
 impl Error for VulkanInitError {}
 
 pub use backend::VulkanBackend;
-pub use capture_target::{
-    VULKAN_CAPTURE_FORMAT, VulkanCaptureTarget, VulkanCaptureTargetError,
-};
+#[cfg(feature = "drm")]
+pub use buffer_allocator::{VulkanBufferAllocator, VulkanBufferError, VulkanRenderTargetRequest};
+pub use capture_target::{VULKAN_CAPTURE_FORMAT, VulkanCaptureTarget, VulkanCaptureTargetError};
 pub use capture_target_pool::{
     VulkanCaptureTargetLease, VulkanCaptureTargetPool, VulkanCaptureTargetPoolStats,
 };
-#[cfg(feature = "drm")]
-pub use buffer_allocator::{VulkanBufferAllocator, VulkanBufferError, VulkanRenderTargetRequest};
 pub use clear_pass::{VulkanClearPass, VulkanClearPassError};
 pub use command_buffer::VulkanCommandBuffer;
 pub use context::VulkanContext;
