@@ -101,6 +101,24 @@ Le applicazioni native Wayland sono il bersaglio di compatibilità desktop. Le a
 
 La presenza di un’applicazione su Flathub non garantisce che funzioni su AureaOS. Occorre valutare protocollo grafico, toolkit, runtime, dipendenze e API di rendering effettivamente richieste.
 
+### Acquisizione dello schermo e registrazione (architettura pianificata)
+
+AureaOS prevede una funzionalità di prima parte per screenshot e registrazione dello schermo. È una capacità di sistema, non una responsabilità applicativa del compositor.
+
+- La shell gestisce i punti di accesso, l'interfaccia di selezione della sorgente, le scorciatoie globali, l'indicatore persistente e il comando di arresto.
+- Il compositor mantiene lo stato attendibile di superfici e uscite Wayland e fornisce i fotogrammi finali autorizzati. Non deve gestire codifica video, mix audio o file di destinazione.
+- Un servizio di acquisizione dedicato coordina sessioni autorizzate, sorgenti, annullamento, permessi e risultati.
+- Vulkan resta l'unica API di rendering del compositor AureaOS. L'acquisizione nativa deve riutilizzare il percorso dei fotogrammi finali e usare trasferimenti GPU asincroni con buffer limitati, senza introdurre un secondo renderer o bloccare la presentazione.
+- PipeWire gestisce il trasporto audio e, dove opportuno, i flussi video; WirePlumber gestisce instradamento e politiche audio. GStreamer è il framework previsto per codifica e muxing, subordinatamente alla verifica di pacchetti, codec, licenze e capacità hardware.
+- Audio di sistema e microfono sono sorgenti distinte e richiedono autorizzazioni separate. Quando entrambi vengono registrati, la sincronizzazione deve essere preservata e devono poter rimanere tracce separate.
+- PNG è il formato previsto per gli screenshot. Contenitori e codec video saranno scelti in base alle capacità effettivamente verificate; l'accelerazione hardware è facoltativa e deve esistere un ripiego software testato.
+
+Per le applicazioni isolate, l'interoperabilità passa dalle interfacce XDG Screenshot e ScreenCast. Il backend deve dichiarare solo versioni e sorgenti realmente supportate. Un flusso video ScreenCast non garantisce di per sé l'acquisizione dell'audio di sistema: l'audio richiede una sorgente PipeWire e un'autorizzazione separate.
+
+Il protocollo Wayland `ext-image-copy-capture-v1` potrà essere valutato con la sua maturazione, ma non è una dipendenza obbligatoria finché resta in staging. Il protocollo deprecato `wlr-screencopy` non è una dipendenza architetturale.
+
+Per responsabilità, sicurezza, pipeline e verifiche si veda [Acquisizione e registrazione dello schermo](architettura/ACQUISIZIONE-E-REGISTRAZIONE-SCHERMO.md).
+
 ## 5. Modularità e responsabilità
 
 La modularità è un requisito architetturale, non una preferenza estetica.
