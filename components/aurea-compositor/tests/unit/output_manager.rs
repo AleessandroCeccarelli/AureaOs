@@ -564,3 +564,24 @@ fn reconciliation_rejects_fifth_active_output_without_mutation() {
     assert_eq!(manager.active_output_count(), MAX_ACTIVE_OUTPUTS);
     assert!(manager.registry().get(5).is_none());
 }
+
+
+#[test]
+fn reconciliation_places_outputs_using_fractional_logical_width() {
+    let mut manager = OutputManager::new();
+    let first = 1;
+    let second = 2;
+    manager.register(sample_output(first), (0, 0)).unwrap();
+    manager
+        .set_fractional_scale(first, super::super::scale::ScaleFactor::from_percent(150).unwrap())
+        .unwrap();
+
+    manager
+        .reconcile_outputs(&[first], vec![sample_output(first), sample_output(second)])
+        .unwrap();
+
+    assert_eq!(
+        manager.layout().get(second),
+        Some(OutputPosition::new(1280, 0))
+    );
+}
