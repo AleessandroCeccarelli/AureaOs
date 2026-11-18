@@ -141,7 +141,7 @@ impl<'device> VulkanReadbackBuffer<'device> {
         width: u32,
         height: u32,
     ) -> Result<Self, VulkanReadbackError> {
-        Self::new_with_owner(VulkanReadbackDevice::Borrowed(device), width, height)
+        Self::new_with_owner(VulkanReadbackDevice::Borrowed(device), width, height, None)
     }
 
     /// Allocates a staging buffer that independently retains its device.
@@ -149,11 +149,13 @@ impl<'device> VulkanReadbackBuffer<'device> {
         device: Arc<VulkanLogicalDevice>,
         width: u32,
         height: u32,
+        max_allocation_size: usize,
     ) -> Result<VulkanReadbackBuffer<'static>, VulkanReadbackError> {
         VulkanReadbackBuffer::<'static>::new_with_owner(
             VulkanReadbackDevice::Shared(device),
             width,
             height,
+            Some(max_allocation_size),
         )
     }
 
@@ -161,6 +163,7 @@ impl<'device> VulkanReadbackBuffer<'device> {
         device: VulkanReadbackDevice<'device>,
         width: u32,
         height: u32,
+        max_allocation_size: Option<usize>,
     ) -> Result<Self, VulkanReadbackError> {
         let raw_device = device.device();
         if width == 0 || height == 0 {
@@ -187,6 +190,11 @@ impl<'device> VulkanReadbackBuffer<'device> {
                 return Err(VulkanReadbackError::SizeOverflow);
             }
         };
+
+        if max_allocation_size.is_some_and(|limit| allocation_size > limit) {
+            unsafe { raw_device.handle().destroy_buffer(buffer, None) };
+            return Err(VulkanReadbackError::PoolExhausted);
+        }
 
         let properties = raw_device.memory_properties();
         let memory_type_index = match super::select_memory_type_index(
