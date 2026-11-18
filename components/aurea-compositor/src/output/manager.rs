@@ -10,6 +10,7 @@ use std::{
     fmt,
 };
 
+use super::coordinates::{LogicalPoint, LogicalSize, OutputLogicalBounds};
 use super::layout::{OutputLayout, OutputPosition};
 use super::limits::MAX_ACTIVE_OUTPUTS;
 use super::{DisplayOutput, OutputId, OutputMode, OutputRegistry};
@@ -78,6 +79,43 @@ impl OutputManager {
     /// Returns the output layout.
     pub fn layout(&self) -> &OutputLayout {
         &self.layout
+    }
+
+    /// Returns the enabled output's half-open bounds in global logical space.
+    ///
+    /// The dimensions use the configured fractional scale when present, or
+    /// the legacy integer scale otherwise. Disabled outputs have no active
+    /// bounds; unknown IDs are reported as errors.
+    pub fn logical_bounds(
+        &self,
+        output_id: OutputId,
+    ) -> Result<Option<OutputLogicalBounds>, OutputManagerError> {
+        let output = self
+            .registry
+            .get(output_id)
+            .ok_or(OutputManagerError::UnknownOutput(output_id))?;
+
+        if !output.is_enabled() {
+            return Ok(None);
+        }
+
+        let position = self
+            .layout
+            .get(output_id)
+            .ok_or(OutputManagerError::UnknownOutput(output_id))?;
+        let mode = output.current_mode();
+        let size = LogicalSize {
+            width: logical_extent(output, mode.width())?,
+            height: logical_extent(output, mode.height())?,
+        };
+        let origin = LogicalPoint {
+            x: i64::from(position.x()),
+            y: i64::from(position.y()),
+        };
+
+        OutputLogicalBounds::from_logical_size(origin, size)
+            .map(Some)
+            .ok_or(OutputManagerError::PositionOverflow)
     }
 
     /// Returns the number of enabled outputs.
@@ -374,25 +412,82 @@ impl OutputManager {
 }
 
 fn logical_width(output: &DisplayOutput) -> Result<i32, OutputManagerError> {
-    let physical_width = output.current_mode().width();
-    let logical_width = if let Some(scale) = output.fractional_scale() {
-        scale
-            .physical_to_logical(i64::from(physical_width))
-            .ok_or(OutputManagerError::PositionOverflow)?
+    let logical_width = logical_extent(output, output.current_mode().width())?;
+    i32::try_from(logical_width).map_err(|_| OutputManagerError::PositionOverflow)
+}
+
+fn logical_extent(output: &DisplayOutput, physical: u32) -> Result<u32, OutputManagerError> {
+    let logical = if let Some(scale) = output.fractional_scale() {
+        scale.physical_to_logical(i64::from(physical))
     } else {
         let scale = u64::from(output.scale());
         if scale == 0 {
             return Err(OutputManagerError::PositionOverflow);
         }
-        let physical = u64::from(physical_width);
+
+        let physical = u64::from(physical);
         i64::try_from(
             physical
                 .checked_add(scale / 2)
                 .ok_or(OutputManagerError::PositionOverflow)?
                 / scale,
         )
-        .map_err(|_| OutputManagerError::PositionOverflow)?
-    };
+        .ok()
+    }
+    .ok_or(OutputManagerError::PositionOverflow)?;
 
-    i32::try_from(logical_width).map_err(|_| OutputManagerError::PositionOverflow)
+    u32::try_from(logical)
+        .ok()
+        .filter(|extent| *extent > 0)
+        .ok_or(OutputManagerError::PositionOverflow)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn logical_bounds_follow_position_and_integer_scale() {
+        let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
+        let output = DisplayOutput::new(7, "DP-1", vec![mode], mode, 2).unwrap();
+        let mut manager = OutputManager::new();
+        manager.register(output, (-1920, 40)).unwrap();
+
+        let bounds = manager.logical_bounds(7).unwrap().unwrap();
+        assert_eq!(bounds.origin(), LogicalPoint { x: -1920, y: 40 });
+        assert_eq!(bounds.size(), LogicalSize { width: 960, height: 540 });
+    }
+
+    #[test]
+    fn logical_bounds_use_fractional_scale() {
+        let mode = OutputMode::new(2560, 1440, 60_000).unwrap();
+        let mut output = DisplayOutput::new(8, "DP-2", vec![mode], mode, 1).unwrap();
+        output.set_fractional_scale(super::super::scale::ScaleFactor::from_percent(150).unwrap());
+        let mut manager = OutputManager::new();
+        manager.register(output, (100, -20)).unwrap();
+
+        let bounds = manager.logical_bounds(8).unwrap().unwrap();
+        assert_eq!(bounds.origin(), LogicalPoint { x: 100, y: -20 });
+        assert_eq!(bounds.size(), LogicalSize { width: 1707, height: 960 });
+    }
+
+    #[test]
+    fn disabled_output_has_no_active_bounds() {
+        let mode = OutputMode::new(1280, 720, 60_000).unwrap();
+        let mut output = DisplayOutput::new(9, "HDMI-A-1", vec![mode], mode, 1).unwrap();
+        output.set_enabled(false);
+        let mut manager = OutputManager::new();
+        manager.register(output, (0, 0)).unwrap();
+
+        assert_eq!(manager.logical_bounds(9).unwrap(), None);
+    }
+
+    #[test]
+    fn unknown_output_returns_an_error() {
+        let manager = OutputManager::new();
+        assert_eq!(
+            manager.logical_bounds(404).unwrap_err(),
+            OutputManagerError::UnknownOutput(404)
+        );
+    }
 }
