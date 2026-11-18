@@ -90,9 +90,13 @@ fn round_div(value: i128, denominator: i128) -> Option<i128> {
 
     let half = denominator / 2;
     if value >= 0 {
-        value.checked_add(half).map(|adjusted| adjusted / denominator)
+        value
+            .checked_add(half)
+            .map(|adjusted| adjusted / denominator)
     } else {
-        value.checked_sub(half).map(|adjusted| adjusted / denominator)
+        value
+            .checked_sub(half)
+            .map(|adjusted| adjusted / denominator)
     }
 }
 
