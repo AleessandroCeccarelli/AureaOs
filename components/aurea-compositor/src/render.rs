@@ -78,6 +78,8 @@ impl<'a> RenderScene<'a> {
             return self;
         };
 
+        let cursor_anchor = pointer_location.to_i32_round();
+
         match status {
             CursorImageStatus::Hidden => {}
             CursorImageStatus::Named(_) => {
@@ -224,13 +226,10 @@ impl<'a> RenderScene<'a> {
             .collect::<Vec<_>>();
 
         if let Some((surface, location)) = &self.cursor_surface {
-            let anchor = self
-                .native_cursor_location
-                .unwrap_or(*location);
             let mut cursor_snapshots = collect_surface_tree_snapshots(surface, *location);
             for snapshot in &mut cursor_snapshots {
                 snapshot.cursor_scale = self.native_cursor_scale;
-                snapshot.cursor_anchor = Some(anchor);
+                snapshot.cursor_anchor = Some(cursor_anchor);
             }
             snapshots.extend(cursor_snapshots);
         }
