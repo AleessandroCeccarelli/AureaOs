@@ -98,15 +98,11 @@ impl VulkanCaptureTargetPool {
             .checked_add(allocation_size)
             .is_none_or(|total| total > self.inner.max_bytes)
         {
-            let Some(index) = if state.idle.is_empty() {
-                None
-            } else {
-                Some(state.idle.len() - 1)
-            } else {
+            if state.idle.is_empty() {
                 drop(target);
                 return Err(VulkanCaptureTargetError::PoolExhausted);
-            };
-            let evicted = state.idle.swap_remove(index);
+            }
+            let evicted = state.idle.pop().expect("idle target was checked");
             state.allocated_targets -= 1;
             state.allocated_bytes -= evicted.allocation_size();
             drop(evicted);
