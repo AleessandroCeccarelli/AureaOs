@@ -95,6 +95,24 @@ This is an architectural decision, not a claim that the rendering pipeline is al
 
 An initial Vulkan SHM scene-composition and DRM/KMS scanout path, batched uploads and texture cache now exist in source. The seven compositor compiler errors found on 15 November were fixed. GitHub Actions on Ubuntu 24.04 subsequently passed workspace and DRM-feature compilation, workspace and compositor tests, shader compilation, and an offscreen Mesa lavapipe smoke test (17 November 2026). Physical DRM/KMS presentation remains unverified; see [Vulkan / DRM Scanout status](docs/architecture/VULKAN-SCANOUT-STATUS.md).
 
+### Screen capture and recording (planned architecture)
+
+AureaOS plans a first-party capture capability for screenshots and screen recording. It is a system capability, not compositor-owned application logic.
+
+- The shell owns capture entry points, source selection UI, global shortcut dispatch, persistent recording status and user stop controls.
+- The compositor owns trusted Wayland surface/output state and the authorized delivery of final composed frames. It must not own video encoding, audio mixing or destination-file management.
+- A dedicated capture service coordinates authorized sessions, source lifetime, cancellation, output handling and permission checks.
+- Vulkan remains the only AureaOS compositor rendering API. Native capture should reuse the compositor's final frame path and use asynchronous GPU readback with bounded staging-buffer pools; it must not introduce a second renderer or stall presentation for every frame.
+- PipeWire transports audio and, where appropriate, video streams. WirePlumber manages audio routing and policy. GStreamer is the planned media encoding and muxing framework, subject to package, codec, licensing and hardware-capability validation.
+- System audio and microphone capture are separate permission-controlled sources. A combined recording must preserve synchronization; separate tracks should remain possible rather than forcing an irreversible mix.
+- PNG is the planned screenshot output. Recording containers and codecs must be selected from validated installed capabilities; hardware encoding is optional, with a tested software fallback.
+
+The XDG Screenshot and ScreenCast portal interfaces are the interoperability path for sandboxed applications. AureaOS must implement only the versions and source types it can actually support. ScreenCast video availability must not be mistaken for a guarantee of system-audio capture; audio requires its own PipeWire source and permission flow.
+
+The Wayland `ext-image-copy-capture-v1` protocol may be evaluated as it matures, but it is not a required foundation while it remains staging. The deprecated `wlr-screencopy` protocol is not an architectural dependency.
+
+See [Screen Capture and Recording](docs/architecture/SCREEN-CAPTURE-AND-RECORDING.md) for ownership, security, pipeline and validation requirements.
+
 ### User interface technologies
 
 No native UI toolkit has been selected.
