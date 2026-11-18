@@ -5,8 +5,8 @@
 
 use aurea_compositor::output::{
     DisplayOutput, OutputId, OutputMode, OutputRegistry,
-    limits::MAX_ACTIVE_OUTPUTS,
     layout::{OutputLayout, OutputPosition},
+    limits::MAX_ACTIVE_OUTPUTS,
     manager::{OutputManager, OutputManagerError, OutputReconciliation},
 };
 
