@@ -125,8 +125,24 @@ impl WaylandServer {
 
         let run_result = (|| {
             while !shutdown.load(Ordering::Acquire) {
+                #[cfg(feature = "drm")]
+                let animation_active = self.state.compositor.cursor_animation_active();
+
+                #[cfg(not(feature = "drm"))]
+                let animation_active = false;
+
+                #[cfg(feature = "drm")]
+                if animation_active {
+                    self.state.compositor.request_all_output_frames();
+                }
+
+                let dispatch_interval = if animation_active {
+                    Duration::from_millis(16)
+                } else {
+                    Duration::from_millis(100)
+                };
                 self.event_loop
-                    .dispatch(Duration::from_millis(100), &mut self.state)
+                    .dispatch(dispatch_interval, &mut self.state)
                     .map_err(io::Error::other)?;
 
                 #[cfg(feature = "drm")]
