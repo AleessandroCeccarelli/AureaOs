@@ -9,12 +9,8 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use smithay::{
     output::Output,
+    reexports::wayland_server::{Resource, backend::ObjectId, protocol::wl_surface::WlSurface},
     utils::IsAlive,
-    reexports::wayland_server::{
-        Resource,
-        backend::ObjectId,
-        protocol::wl_surface::WlSurface,
-    },
 };
 
 use crate::output::OutputId;
@@ -125,8 +121,7 @@ impl SurfaceOutputTracker {
 
     /// Removes destroyed surfaces and releases their retained output handles.
     pub fn prune_dead_surfaces(&mut self) {
-        self.surfaces
-            .retain(|_, tracked| tracked.surface.alive());
+        self.surfaces.retain(|_, tracked| tracked.surface.alive());
     }
 }
 
