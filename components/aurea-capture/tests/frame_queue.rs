@@ -66,14 +66,14 @@ fn frame_preserves_format_timestamp_and_pixels() {
 #[test]
 fn queue_rejects_zero_capacity() {
     assert_eq!(
-        CaptureFrameQueue::new(0).err(),
+        CaptureFrameQueue::new(0, 1024).err(),
         Some(CaptureQueueError::ZeroCapacity)
     );
 }
 
 #[test]
 fn queue_is_bounded_and_counts_dropped_frames() {
-    let mut queue = CaptureFrameQueue::new(2).unwrap();
+    let mut queue = CaptureFrameQueue::new(2, 32).unwrap();
 
     queue.try_push(frame(1, 1)).unwrap();
     queue.try_push(frame(2, 2)).unwrap();
