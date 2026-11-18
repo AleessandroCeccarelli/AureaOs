@@ -5,9 +5,7 @@
 
 //! Bounded reuse pool for Vulkan host-visible readback buffers.
 
-use std::{
-    sync::{Arc, Mutex, TryLockError},
-};
+use std::sync::{Arc, Mutex, TryLockError};
 
 use super::{
     VulkanLogicalDevice, VulkanReadbackBuffer, VulkanReadbackBufferLease, VulkanReadbackError,
@@ -66,20 +64,21 @@ impl VulkanReadbackBufferPool {
     ///
     /// Call during initialization or from a background capture worker, never
     /// from the compositor presentation path. Repeated calls can prewarm a pool.
-    pub fn prepare(
-        &self,
-        width: u32,
-        height: u32,
-    ) -> Result<(), VulkanReadbackError> {
-        let byte_len = readback_byte_len(width, height)?;
+    pub fn prepare(&self, width: u32, height: u32) -> Result<(), VulkanReadbackError> {
+        readback_byte_len(width, height)?;
         let mut state = self
             .inner
             .state
             .lock()
             .map_err(|_| VulkanReadbackError::PoolLockPoisoned)?;
 
-        if state.allocated_buffers >= self.inner.max_buffers {
-            return Err(VulkanReadbackError::PoolExhausted);
+        while state.allocated_buffers >= self.inner.max_buffers {
+            let Some(buffer) = state.idle.pop() else {
+                return Err(VulkanReadbackError::PoolExhausted);
+            };
+            state.allocated_buffers -= 1;
+            state.allocated_bytes -= buffer.allocation_size();
+            drop(buffer);
         }
 
         let available_bytes = self
@@ -126,7 +125,6 @@ impl VulkanReadbackBufferPool {
 
         debug_assert!(state.allocated_buffers <= self.inner.max_buffers);
         debug_assert!(state.allocated_bytes <= self.inner.max_bytes);
-        let _ = byte_len;
         Ok(())
     }
 
@@ -196,7 +194,6 @@ fn readback_byte_len(width: u32, height: u32) -> Result<usize, VulkanReadbackErr
         .and_then(|pixels| pixels.checked_mul(4))
         .ok_or(VulkanReadbackError::SizeOverflow)
 }
-
 
 #[cfg(test)]
 #[path = "readback_buffer_pool_tests.rs"]
