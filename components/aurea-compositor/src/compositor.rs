@@ -26,6 +26,7 @@ use crate::{
 };
 
 mod frame_scheduling;
+mod fractional_scale;
 mod keyboard;
 mod output_publication;
 mod output_reconciliation;
@@ -45,6 +46,7 @@ pub struct AureaCompositor {
     compositor_state: CompositorState,
     shm_state: ShmState,
     xdg_shell_state: XdgShellState,
+    fractional_scale_manager_state: smithay::wayland::fractional_scale::FractionalScaleManagerState,
     seat_state: SeatState<Self>,
     seat: Seat<Self>,
     suppressed_shortcut_releases: HashSet<Keycode>,
@@ -79,6 +81,7 @@ impl AureaCompositor {
         let compositor_state = CompositorState::new::<Self>(display);
         let shm_state = ShmState::new::<Self>(display, Vec::new());
         let xdg_shell_state = XdgShellState::new::<Self>(display);
+        let fractional_scale_manager_state = fractional_scale::create_manager(display);
         let mut seat_state = SeatState::new();
         let seat = seat_state.new_wl_seat(display, "seat0");
 
@@ -86,6 +89,7 @@ impl AureaCompositor {
             compositor_state,
             shm_state,
             xdg_shell_state,
+            fractional_scale_manager_state,
             seat_state,
             seat,
             suppressed_shortcut_releases: HashSet::new(),
