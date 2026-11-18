@@ -86,7 +86,7 @@ fn queue_is_bounded_and_counts_dropped_frames() {
 
 #[test]
 fn queue_preserves_frame_order_and_releases_accounted_bytes() {
-    let mut queue = CaptureFrameQueue::new(2).unwrap();
+    let mut queue = CaptureFrameQueue::new(2, 32).unwrap();
 
     queue.try_push(frame(1, 1)).unwrap();
     queue.try_push(frame(2, 2)).unwrap();
