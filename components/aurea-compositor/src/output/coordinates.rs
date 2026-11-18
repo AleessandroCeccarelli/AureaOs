@@ -123,6 +123,21 @@ pub struct OutputLogicalBounds {
 }
 
 impl OutputLogicalBounds {
+    /// Builds bounds from an already converted logical origin and size.
+    ///
+    /// Zero-sized outputs and coordinates whose exclusive edges overflow are
+    /// rejected before the bounds can enter output/surface intersection logic.
+    pub fn from_logical_size(origin: LogicalPoint, size: LogicalSize) -> Option<Self> {
+        if size.width == 0 || size.height == 0 {
+            return None;
+        }
+
+        origin.x.checked_add(i64::from(size.width))?;
+        origin.y.checked_add(i64::from(size.height))?;
+
+        Some(Self { origin, size })
+    }
+
     /// Builds logical bounds from a physical mode and its output scale.
     pub fn from_physical_mode(
         origin: LogicalPoint,
