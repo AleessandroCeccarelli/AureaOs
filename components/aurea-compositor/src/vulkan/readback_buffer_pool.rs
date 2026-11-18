@@ -67,10 +67,78 @@ impl VulkanReadbackBufferPool {
         })
     }
 
-    /// Acquires a matching idle buffer or allocates within the configured limits.
+    /// Allocates one staging buffer on a worker and makes it available for capture.
     ///
-    /// This method never waits for GPU completion. If all capacity is checked
-    /// out, it returns PoolExhausted so the caller can skip capture for this frame.
+    /// Call during initialization or from a background capture worker, never
+    /// from the compositor presentation path. Repeated calls can prewarm a pool.
+    pub fn prepare(
+        &self,
+        width: u32,
+        height: u32,
+    ) -> Result<(), VulkanReadbackError> {
+        let byte_len = readback_byte_len(width, height)?;
+        let mut state = self
+            .inner
+            .state
+            .lock()
+            .map_err(|_| VulkanReadbackError::PoolLockPoisoned)?;
+
+        if state.allocated_buffers >= self.inner.max_buffers {
+            return Err(VulkanReadbackError::PoolExhausted);
+        }
+
+        let available_bytes = self
+            .inner
+            .max_bytes
+            .checked_sub(state.allocated_bytes)
+            .ok_or(VulkanReadbackError::PoolExhausted)?;
+
+        let buffer = match VulkanReadbackBuffer::new_owned(
+            Arc::clone(&self.inner.device),
+            width,
+            height,
+            available_bytes,
+        ) {
+            Ok(buffer) => buffer,
+            Err(VulkanReadbackError::PoolExhausted) => {
+                // Evict idle allocations only. Checked-out leases remain owned
+                // by their submissions and are never reclaimed prematurely.
+                while let Some(buffer) = state.idle.pop() {
+                    state.allocated_buffers -= 1;
+                    state.allocated_bytes -= buffer.allocation_size();
+                    drop(buffer);
+                }
+
+                let available_bytes = self
+                    .inner
+                    .max_bytes
+                    .checked_sub(state.allocated_bytes)
+                    .ok_or(VulkanReadbackError::PoolExhausted)?;
+                VulkanReadbackBuffer::new_owned(
+                    Arc::clone(&self.inner.device),
+                    width,
+                    height,
+                    available_bytes,
+                )?
+            }
+            Err(error) => return Err(error),
+        };
+
+        let allocation_size = buffer.allocation_size();
+        state.allocated_buffers += 1;
+        state.allocated_bytes += allocation_size;
+        state.idle.push(buffer);
+
+        debug_assert!(state.allocated_buffers <= self.inner.max_buffers);
+        debug_assert!(state.allocated_bytes <= self.inner.max_bytes);
+        let _ = byte_len;
+        Ok(())
+    }
+
+    /// Checks out a matching preallocated buffer without waiting or allocating.
+    ///
+    /// This method is suitable for a capture worker's frame path. When no
+    /// matching buffer is idle, callers should skip this capture frame.
     pub fn acquire(
         &self,
         width: u32,
@@ -87,50 +155,15 @@ impl VulkanReadbackBufferPool {
             }
         };
 
-        if let Some(index) = state
+        let Some(index) = state
             .idle
             .iter()
             .position(|buffer| buffer.byte_len() == byte_len)
-        {
-            let buffer = state.idle.swap_remove(index);
-            return Ok(VulkanReadbackBufferLease {
-                pool: Arc::clone(&self.inner),
-                buffer: Some(buffer),
-            });
-        }
-
-        // A different-sized request cannot reuse an idle allocation. Release
-        // idle buffers first so the driver-reported requirement is checked
-        // against the real available budget before allocating device memory.
-        while let Some(buffer) = state.idle.pop() {
-            state.allocated_buffers -= 1;
-            state.allocated_bytes -= buffer.allocation_size();
-            drop(buffer);
-        }
-
-        if state.allocated_buffers >= self.inner.max_buffers {
+        else {
             return Err(VulkanReadbackError::PoolExhausted);
-        }
+        };
 
-        let available_bytes = self
-            .inner
-            .max_bytes
-            .checked_sub(state.allocated_bytes)
-            .ok_or(VulkanReadbackError::PoolExhausted)?;
-
-        // The constructor queries VkMemoryRequirements before allocating
-        // VkDeviceMemory and rejects requests that exceed available_bytes.
-        let buffer = VulkanReadbackBuffer::new_owned(
-            Arc::clone(&self.inner.device),
-            width,
-            height,
-            available_bytes,
-        )?;
-        let allocation_size = buffer.allocation_size();
-
-        state.allocated_buffers += 1;
-        state.allocated_bytes += allocation_size;
-
+        let buffer = state.idle.swap_remove(index);
         Ok(VulkanReadbackBufferLease {
             pool: Arc::clone(&self.inner),
             buffer: Some(buffer),
