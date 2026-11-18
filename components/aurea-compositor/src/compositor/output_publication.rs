@@ -69,6 +69,7 @@ impl AureaCompositor {
 
         if let Some(wayland_output) = publish_output(display, output, position)? {
             self.wayland_outputs.insert(output_id, wayland_output);
+            self.reconcile_surface_outputs();
         }
 
         Ok(())
@@ -121,6 +122,7 @@ impl AureaCompositor {
         let removed = self.wayland_outputs.remove(&output_id).is_some();
         if removed {
             self.forget_output_membership(output_id);
+            self.reconcile_surface_outputs();
         }
         removed
     }
