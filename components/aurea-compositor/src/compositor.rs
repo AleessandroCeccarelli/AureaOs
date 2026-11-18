@@ -36,6 +36,7 @@ mod pointer_bounds;
 mod pointer_button;
 mod rendering;
 mod workspace;
+mod surface_output_tracking;
 
 pub use frame_scheduling::CompositorFrameError;
 pub use output_reconciliation::OutputReconciliationError;
