@@ -86,7 +86,7 @@ jobs:
             libxkbcommon-dev \
             glslang-tools \
             librsvg2-bin \
-            xcursorgen \
+            x11-apps \
             mesa-vulkan-drivers \
             vulkan-tools \
             pkg-config \
