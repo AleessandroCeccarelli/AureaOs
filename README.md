@@ -148,6 +148,7 @@ The main documentation files are:
 - [Project identity and terminology](docs/PROJECT-IDENTITY-AND-TERMINOLOGY.md) — explains first-party ownership, open-source licensing, local-first services, and the Wayland/Vulkan compatibility trade-offs.
 - [Roadmap](ROADMAP.md) — development status and priorities.
 - [Development records](docs/development/README.md) — chronological engineering diary, verification results, known limitations, and next actions.
+- [Documentazione in italiano](docs/it/README.md) — visione, filosofia, scelte tecnologiche, roadmap, interoperabilità e diario di bordo tradotti in italiano.
 - [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md) — authoritative inventory of first-party apps, tools, desktop components, services, and shared design resources.
 - [Initial architecture](docs/architecture/INITIAL-ARCHITECTURE.md) — system layers and open decisions.
 - [Debian base](docs/architecture/DEBIAN-BASE.md) — current bootstrap implementation and limitations.
