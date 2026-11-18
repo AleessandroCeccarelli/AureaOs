@@ -98,7 +98,7 @@ impl VulkanCaptureTargetPool {
             .checked_add(allocation_size)
             .is_none_or(|total| total > self.inner.max_bytes)
         {
-            let Some(index) = state.idle.iter().position(|_| true) else {
+            let Some(index) = (!state.idle.is_empty()).then_some(state.idle.len() - 1) else {
                 drop(target);
                 return Err(VulkanCaptureTargetError::PoolExhausted);
             };
