@@ -6,8 +6,8 @@
 //! Single-session coordinator and lifecycle transition authority.
 
 use crate::{
-    CaptureError, CaptureKind, CaptureRequest, CaptureSession, CaptureSessionId,
-    CapturePermissionGrant, CaptureSessionState,
+    CaptureError, CaptureKind, CapturePermissionGrant, CaptureRequest, CaptureSession,
+    CaptureSessionId, CaptureSessionState,
 };
 
 /// Coordinates one interactive capture workflow at a time.
@@ -26,10 +26,7 @@ impl CaptureCoordinator {
     }
 
     /// Creates a session that is waiting for explicit user authorization.
-    pub fn begin(
-        &mut self,
-        request: CaptureRequest,
-    ) -> Result<CaptureSessionId, CaptureError> {
+    pub fn begin(&mut self, request: CaptureRequest) -> Result<CaptureSessionId, CaptureError> {
         if self
             .session
             .is_some_and(|session| !session.state().is_terminal())
