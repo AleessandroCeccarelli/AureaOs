@@ -3,13 +3,15 @@
 // AureaOS — Capture Core tests.
 
 use aurea_capture::{
-    AudioCaptureMode, CaptureCoordinator, CaptureKind, CaptureRequest, CaptureSessionState,
-    CaptureTarget, DisplayId,
+    AudioCaptureMode, CaptureCoordinator, CaptureKind, CaptureRegion, CaptureRequest,
+    CaptureSessionState, CaptureTarget, DisplayId,
 };
 
 fn recording_request() -> CaptureRequest {
     CaptureRequest::new(
-        CaptureKind::Recording { audio: AudioCaptureMode::SystemAndMicrophone },
+        CaptureKind::Recording {
+            audio: AudioCaptureMode::SystemAndMicrophone,
+        },
         CaptureTarget::Display(DisplayId(1)),
         true,
     )
@@ -20,9 +22,15 @@ fn session_requires_authorization_before_capture() {
     let mut coordinator = CaptureCoordinator::new();
     let id = coordinator.begin(recording_request()).unwrap();
 
-    assert_eq!(coordinator.session().unwrap().state(), CaptureSessionState::AwaitingAuthorization);
+    assert_eq!(
+        coordinator.session().unwrap().state(),
+        CaptureSessionState::AwaitingAuthorization
+    );
     coordinator.authorize(id).unwrap();
-    assert_eq!(coordinator.session().unwrap().state(), CaptureSessionState::Ready);
+    assert_eq!(
+        coordinator.session().unwrap().state(),
+        CaptureSessionState::Ready
+    );
 }
 
 #[test]
@@ -33,13 +41,19 @@ fn recording_can_pause_resume_and_finalize() {
     coordinator.authorize(id).unwrap();
     coordinator.start(id).unwrap();
     coordinator.pause(id).unwrap();
-    assert_eq!(coordinator.session().unwrap().state(), CaptureSessionState::Paused);
+    assert_eq!(
+        coordinator.session().unwrap().state(),
+        CaptureSessionState::Paused
+    );
 
     coordinator.resume(id).unwrap();
     coordinator.begin_finalization(id).unwrap();
     coordinator.complete(id).unwrap();
 
-    assert_eq!(coordinator.session().unwrap().state(), CaptureSessionState::Completed);
+    assert_eq!(
+        coordinator.session().unwrap().state(),
+        CaptureSessionState::Completed
+    );
 }
 
 #[test]
@@ -77,7 +91,10 @@ fn cancelled_session_cannot_be_restarted() {
     coordinator.cancel(id).unwrap();
 
     assert!(coordinator.authorize(id).is_err());
-    assert_eq!(coordinator.session().unwrap().state(), CaptureSessionState::Cancelled);
+    assert_eq!(
+        coordinator.session().unwrap().state(),
+        CaptureSessionState::Cancelled
+    );
 }
 
 #[test]
@@ -88,4 +105,20 @@ fn session_identifiers_increase_after_terminal_sessions() {
     let second = coordinator.begin(recording_request()).unwrap();
 
     assert!(second.value() > first.value());
+}
+
+#[test]
+fn capture_region_rejects_empty_dimensions() {
+    assert!(CaptureRegion::new(0, 0, 0, 100).is_err());
+    assert!(CaptureRegion::new(0, 0, 100, 0).is_err());
+}
+
+#[test]
+fn capture_region_preserves_logical_coordinates() {
+    let region = CaptureRegion::new(-120, 24, 640, 480).unwrap();
+
+    assert_eq!(region.x(), -120);
+    assert_eq!(region.y(), 24);
+    assert_eq!(region.width(), 640);
+    assert_eq!(region.height(), 480);
 }
