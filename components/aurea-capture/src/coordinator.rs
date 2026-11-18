@@ -7,7 +7,7 @@
 
 use crate::{
     CaptureError, CaptureKind, CaptureRequest, CaptureSession, CaptureSessionId,
-    CaptureSessionState,
+    CapturePermissionGrant, CaptureSessionState,
 };
 
 /// Coordinates one interactive capture workflow at a time.
@@ -54,7 +54,32 @@ impl CaptureCoordinator {
     }
 
     /// Records that the external permission layer granted this session.
-    pub fn authorize(&mut self, id: CaptureSessionId) -> Result<(), CaptureError> {
+    pub fn authorize(
+        &mut self,
+        id: CaptureSessionId,
+        grant: CapturePermissionGrant,
+    ) -> Result<(), CaptureError> {
+        let session = self.session_for(id)?;
+        let audio_allowed = match session.kind() {
+            CaptureKind::Screenshot => true,
+            CaptureKind::Recording { audio } => {
+                use crate::AudioCaptureMode;
+
+                match audio {
+                    AudioCaptureMode::None => true,
+                    AudioCaptureMode::System => grant.allows_system_audio(),
+                    AudioCaptureMode::Microphone => grant.allows_microphone(),
+                    AudioCaptureMode::SystemAndMicrophone => {
+                        grant.allows_system_audio() && grant.allows_microphone()
+                    }
+                }
+            }
+        };
+
+        if !grant.allows_screen() || !audio_allowed {
+            return Err(CaptureError::PermissionDenied);
+        }
+
         self.transition(
             id,
             CaptureSessionState::AwaitingAuthorization,
