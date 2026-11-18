@@ -95,18 +95,25 @@ impl VulkanReadbackBufferPool {
             });
         }
 
-        if state.allocated_buffers >= self.inner.max_buffers {
-            return Err(VulkanReadbackError::PoolExhausted);
-        }
+        // Reclaim idle buffers of other sizes before reporting saturation.
+        // Checked-out buffers are never evicted: their leases may still be in use.
+        loop {
+            let minimum_total = state
+                .allocated_bytes
+                .checked_add(byte_len)
+                .ok_or(VulkanReadbackError::SizeOverflow)?;
+            let count_full = state.allocated_buffers >= self.inner.max_buffers;
+            let budget_too_small = minimum_total > self.inner.max_bytes;
+            if !count_full && !budget_too_small {
+                break;
+            }
 
-        // Vulkan's memory requirements may exceed the pixel payload size.
-        // This lower-bound check avoids an allocation that cannot possibly fit.
-        let minimum_total = state
-            .allocated_bytes
-            .checked_add(byte_len)
-            .ok_or(VulkanReadbackError::SizeOverflow)?;
-        if minimum_total > self.inner.max_bytes {
-            return Err(VulkanReadbackError::PoolExhausted);
+            let Some(evicted) = state.idle.pop() else {
+                return Err(VulkanReadbackError::PoolExhausted);
+            };
+            state.allocated_buffers -= 1;
+            state.allocated_bytes -= evicted.allocation_size();
+            drop(evicted);
         }
 
         // Serialize new allocations while measuring the driver's actual
@@ -118,17 +125,24 @@ impl VulkanReadbackBufferPool {
             height,
         )?;
         let allocation_size = buffer.allocation_size();
-        let actual_total = state
+
+        while state
             .allocated_bytes
             .checked_add(allocation_size)
-            .ok_or(VulkanReadbackError::SizeOverflow)?;
-        if actual_total > self.inner.max_bytes {
-            drop(buffer);
-            return Err(VulkanReadbackError::PoolExhausted);
+            .ok_or(VulkanReadbackError::SizeOverflow)?
+            > self.inner.max_bytes
+        {
+            let Some(evicted) = state.idle.pop() else {
+                drop(buffer);
+                return Err(VulkanReadbackError::PoolExhausted);
+            };
+            state.allocated_buffers -= 1;
+            state.allocated_bytes -= evicted.allocation_size();
+            drop(evicted);
         }
 
         state.allocated_buffers += 1;
-        state.allocated_bytes = actual_total;
+        state.allocated_bytes += allocation_size;
 
         Ok(VulkanReadbackBufferLease {
             pool: Arc::clone(&self.inner),
