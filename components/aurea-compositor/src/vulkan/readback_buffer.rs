@@ -60,13 +60,29 @@ impl fmt::Display for VulkanReadbackError {
             Self::MissingTransferSourceUsage => {
                 formatter.write_str("Readback image lacks TRANSFER_SRC usage")
             }
-            Self::CommandBuffer(error) => write!(formatter, "Readback command-buffer operation failed: {error:?}"),
-            Self::FenceCreation(error) => write!(formatter, "Readback fence creation failed: {error:?}"),
-            Self::Submission(error) => write!(formatter, "Readback queue submission failed: {error:?}"),
-            Self::SubmissionUncertain(error) => write!(formatter, "Readback queue submission status is uncertain: {error:?}"),
-            Self::FenceStatus(error) => write!(formatter, "Readback fence status query failed: {error:?}"),
-            Self::SubmissionNotComplete => formatter.write_str("Readback submission has not completed"),
-            Self::PixelsAlreadyRead => formatter.write_str("Readback pixels have already been consumed"),
+            Self::CommandBuffer(error) => write!(
+                formatter,
+                "Readback command-buffer operation failed: {error:?}"
+            ),
+            Self::FenceCreation(error) => {
+                write!(formatter, "Readback fence creation failed: {error:?}")
+            }
+            Self::Submission(error) => {
+                write!(formatter, "Readback queue submission failed: {error:?}")
+            }
+            Self::SubmissionUncertain(error) => write!(
+                formatter,
+                "Readback queue submission status is uncertain: {error:?}"
+            ),
+            Self::FenceStatus(error) => {
+                write!(formatter, "Readback fence status query failed: {error:?}")
+            }
+            Self::SubmissionNotComplete => {
+                formatter.write_str("Readback submission has not completed")
+            }
+            Self::PixelsAlreadyRead => {
+                formatter.write_str("Readback pixels have already been consumed")
+            }
         }
     }
 }
@@ -271,7 +287,6 @@ impl Drop for VulkanReadbackBuffer<'_> {
     }
 }
 
-
 /// Owns an in-flight image readback without blocking the submitting thread.
 ///
 /// The source image must be in TRANSFER_SRC_OPTIMAL and remain alive until
@@ -399,7 +414,9 @@ impl<'view, 'image, 'view_device> VulkanReadbackSubmission<'view, 'image, 'view_
     }
 
     pub fn byte_len(&self) -> usize {
-        self.readback.as_ref().map_or(0, VulkanReadbackBuffer::byte_len)
+        self.readback
+            .as_ref()
+            .map_or(0, VulkanReadbackBuffer::byte_len)
     }
 }
 
@@ -411,9 +428,7 @@ impl Drop for VulkanReadbackSubmission<'_, '_, '_> {
                     .handle()
                     .wait_for_fences(&[self.fence], true, u64::MAX)
             };
-            if wait.is_err()
-                && unsafe { self.device.handle().device_wait_idle() }.is_err()
-            {
+            if wait.is_err() && unsafe { self.device.handle().device_wait_idle() }.is_err() {
                 // Completion is uncertain after device loss. Leak in-flight
                 // resources rather than free memory potentially used by GPU.
                 if let Some(readback) = self.readback.take() {
