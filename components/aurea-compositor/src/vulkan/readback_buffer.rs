@@ -275,21 +275,23 @@ impl Drop for VulkanReadbackBuffer<'_> {
 /// The source image must be in TRANSFER_SRC_OPTIMAL and remain alive until
 /// the returned submission reports completion. Poll this object from a
 /// capture worker and retain it while the GPU is using it.
-pub struct VulkanReadbackSubmission<'device> {
-    device: &'device VulkanLogicalDevice,
-    readback: Option<VulkanReadbackBuffer<'device>>,
+pub struct VulkanReadbackSubmission<'view, 'image, 'view_device> {
+    device: &'view VulkanLogicalDevice,
+    _source_view: &'view super::VulkanImageView<'image, 'view_device>,
+    readback: Option<VulkanReadbackBuffer<'view>>,
     command_buffer: vk::CommandBuffer,
     fence: vk::Fence,
     completed: bool,
     pixels_read: bool,
 }
 
-impl<'device> VulkanReadbackSubmission<'device> {
+impl<'view, 'image, 'view_device> VulkanReadbackSubmission<'view, 'image, 'view_device> {
     /// Records and submits an image copy. Returns after queue acceptance.
+    /// The submission retains the source view until the GPU has finished copying.
     pub fn submit(
-        device: &'device VulkanLogicalDevice,
-        view: &super::VulkanImageView<'_, '_>,
+        view: &'view super::VulkanImageView<'image, 'view_device>,
     ) -> Result<Self, VulkanReadbackError> {
+        let device = view.device();
         let readback = VulkanReadbackBuffer::new(device, view.width(), view.height())?;
         let command_buffer = device
             .allocate_primary_command_buffer()
@@ -339,6 +341,7 @@ impl<'device> VulkanReadbackSubmission<'device> {
 
         Ok(Self {
             device,
+            _source_view: view,
             readback: Some(readback),
             command_buffer,
             fence,
@@ -390,7 +393,7 @@ impl<'device> VulkanReadbackSubmission<'device> {
     }
 }
 
-impl Drop for VulkanReadbackSubmission<'_> {
+impl Drop for VulkanReadbackSubmission<'_, '_, '_> {
     fn drop(&mut self) {
         if !self.completed {
             let wait = unsafe {
