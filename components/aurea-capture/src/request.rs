@@ -26,12 +26,7 @@ pub struct CaptureRegion {
 
 impl CaptureRegion {
     /// Creates a non-empty region.
-    pub fn new(
-        x: i32,
-        y: i32,
-        width: u32,
-        height: u32,
-    ) -> Result<Self, CaptureError> {
+    pub fn new(x: i32, y: i32, width: u32, height: u32) -> Result<Self, CaptureError> {
         if width == 0 || height == 0 {
             return Err(CaptureError::InvalidRegion);
         }
@@ -96,11 +91,7 @@ pub struct CaptureRequest {
 }
 
 impl CaptureRequest {
-    pub const fn new(
-        kind: CaptureKind,
-        target: CaptureTarget,
-        include_cursor: bool,
-    ) -> Self {
+    pub const fn new(kind: CaptureKind, target: CaptureTarget, include_cursor: bool) -> Self {
         Self {
             kind,
             target,
