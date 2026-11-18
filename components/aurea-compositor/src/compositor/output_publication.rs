@@ -38,7 +38,7 @@ impl AureaCompositor {
             self.forget_output_membership(output_id);
         }
 
-        self.wayland_outputs = output_ids.zip(outputs).collect();
+        self.wayland_outputs = output_ids.into_iter().zip(outputs).collect();
 
         Ok(())
     }
