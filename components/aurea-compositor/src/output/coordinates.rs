@@ -277,7 +277,10 @@ mod tests {
 
         let surface = LogicalRect::new(
             LogicalPoint { x: 90, y: 60 },
-            LogicalSize {\n                width: 20,\n                height: 20,\n            },
+            LogicalSize {
+                width: 20,
+                height: 20,
+            },
         );
 
         assert!(output.intersects(surface));
@@ -295,7 +298,10 @@ mod tests {
 
         let adjacent = LogicalRect::new(
             LogicalPoint { x: 2020, y: 50 },
-            LogicalSize {\n                width: 100,\n                height: 100,\n            },
+            LogicalSize {
+                width: 100,
+                height: 100,
+            },
         );
 
         assert!(!output.intersects(adjacent));
@@ -313,11 +319,17 @@ mod tests {
 
         assert!(!output.intersects(LogicalRect::new(
             LogicalPoint { x: 10, y: 10 },
-            LogicalSize {\n                width: 0,\n                height: 20\n            },
+            LogicalSize {
+                width: 0,
+                height: 20
+            },
         )));
         assert!(!output.intersects(LogicalRect::new(
             LogicalPoint { x: i64::MAX, y: 0 },
-            LogicalSize {\n                width: 10,\n                height: 10\n            },
+            LogicalSize {
+                width: 10,
+                height: 10
+            },
         )));
     }
 
