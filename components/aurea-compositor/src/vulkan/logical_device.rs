@@ -9,7 +9,10 @@ use std::sync::{Arc, Mutex};
 
 use smithay::reexports::ash::{self, vk};
 
-use super::{VulkanContext, VulkanDeviceExtensionPlan, VulkanQueueSubmitter, queue_submitter::VulkanQueueSubmitError};
+use super::{
+    VulkanContext, VulkanDeviceExtensionPlan, VulkanQueueSubmitter, VulkanRenderingFeaturePlan,
+    queue_submitter::VulkanQueueSubmitError,
+};
 
 /// A logical Vulkan device, graphics queue and command pool.
 pub struct VulkanLogicalDevice {
