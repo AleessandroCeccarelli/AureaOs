@@ -40,7 +40,7 @@ impl AureaCompositor {
         if self.pointer_settings.shake_to_locate()
             && self.pointer_shake.update(unaccelerated_delta, time)
         {
-            self.cursor_locate_animation.trigger(time);
+            self.cursor_locate_animation.trigger();
         }
 
         let Some(pointer) = self.seat.get_pointer() else {
