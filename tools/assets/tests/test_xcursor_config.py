@@ -25,7 +25,23 @@ class XcursorConfigTests(unittest.TestCase):
 
             self.assertEqual(config.read_text(encoding="utf-8"), "32 4 5 arrow.png 0\n")
 
-    def test_rejects_hotspot_outside_raster(self) -> None:
+    def test_writes_image_path_relative_to_config(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            image_dir = root / "images" / "default"
+            image_dir.mkdir(parents=True)
+            image = image_dir / "arrow.png"
+            image.write_bytes(b"fixture")
+            config = root / "default.cursor"
+
+            write_cursor_config(config, [(32, 4, 5, image, 0)])
+
+            self.assertEqual(
+                config.read_text(encoding="utf-8"),
+                "32 4 5 images/default/arrow.png 0\\n",
+            )
+
+    def test_rejects_hotspot_outside_raster(self) -> None
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             image = root / "arrow.png"
