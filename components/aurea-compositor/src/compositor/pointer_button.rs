@@ -5,11 +5,7 @@
 
 //! Pointer button delivery and click-to-focus policy.
 
-use smithay::{
-    backend::input::ButtonState,
-    input::pointer::ButtonEvent,
-    utils::SERIAL_COUNTER,
-};
+use smithay::{backend::input::ButtonState, input::pointer::ButtonEvent, utils::SERIAL_COUNTER};
 
 use super::AureaCompositor;
 

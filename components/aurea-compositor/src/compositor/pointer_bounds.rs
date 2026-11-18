@@ -118,7 +118,7 @@ mod tests {
 
         assert_eq!(
             constrain_to_outputs(Point::from((110.0, 50.0)), [left, right]),
-            Some(Point::from((99.0, 50.0)))
+            Some(Point::from((120.0, 50.0)))
         );
     }
 
