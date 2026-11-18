@@ -60,7 +60,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
         InputEvent::PointerMotion { event } => {
             state
                 .compositor
-                .handle_pointer_motion(event.delta(), event.time() as u32);
+                .handle_pointer_motion(\n                    event.delta(),\n                    event.delta_unaccel(),\n                    event.time() as u32,\n                );
         }
         InputEvent::PointerButton { event } => {
             state.compositor.handle_pointer_button(
