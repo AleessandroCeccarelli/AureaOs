@@ -46,6 +46,7 @@ pub enum VulkanReadbackError {
     FenceStatus(vk::Result),
     SubmissionNotComplete,
     PixelsAlreadyRead,
+    ImageNotOwned,
 }
 
 impl fmt::Display for VulkanReadbackError {
@@ -97,6 +98,9 @@ impl fmt::Display for VulkanReadbackError {
             }
             Self::PixelsAlreadyRead => {
                 formatter.write_str("Readback pixels have already been consumed")
+            }
+            Self::ImageNotOwned => {
+                formatter.write_str("Readback requires a view that owns its source image")
             }
         }
     }
@@ -152,7 +156,7 @@ impl<'device> VulkanReadbackBuffer<'device> {
             .size(size)
             .usage(vk::BufferUsageFlags::TRANSFER_DST)
             .sharing_mode(vk::SharingMode::EXCLUSIVE);
-        let buffer = unsafe { raw_raw_device.handle().create_buffer(&create_info, None) }
+        let buffer = unsafe { raw_device.handle().create_buffer(&create_info, None) }
             .map_err(VulkanReadbackError::BufferCreation)?;
         let requirements = unsafe { raw_device.handle().get_buffer_memory_requirements(buffer) };
 
