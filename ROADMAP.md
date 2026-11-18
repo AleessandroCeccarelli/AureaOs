@@ -40,9 +40,10 @@ Developing first-party replacements for these application categories may be cons
 - Project vision, contribution guidance, technical direction, and initial architecture documentation.
 - Debian package manifests and a bootstrap script for a minimal, terminal-only Debian root filesystem.
 - AureaOS visual design resources, including design tokens, themes, icons, illustrations, and wallpapers.
-- A four-crate Rust workspace under `components/`: `aurea-desktop`, `aurea-shell`, `aurea-desktop-api`, and `aurea-compositor`.
+- A five-crate Rust workspace under `components/`: `aurea-desktop`, `aurea-shell`, `aurea-desktop-api`, `aurea-compositor`, and `aurea-capture`.
 - An initial `aurea-desktop` composition root that wires the desktop components together; this is not a finished desktop session or graphical interface.
 - Shared desktop contracts in `aurea-desktop-api`, including a technology-independent display color adjustment value for future output policy integration.
+- Initial `aurea-capture` core with validated capture target metadata, screenshot/recording request types, audio-source selection modes, and a single-session lifecycle coordinator. It does not yet capture pixels or audio.
 - Shell session lifecycle coordination and shutdown handling through an event bus.
 - A Smithay-based Wayland server with initial XDG shell integration.
 - Initial Wayland seat and XKB keyboard support, with libinput event routing under the DRM feature.
@@ -108,7 +109,19 @@ Night Light controls belong in Settings → Appearance and in the right-side Qui
 
 The architecture and responsibilities are documented in [Display Intelligence](docs/architecture/DISPLAY-INTELLIGENCE.md).
 
-### 3. AureaOS Desktop Experience
+### 3. Screen Capture and Recording
+
+- Integrate the capture coordinator with shell-owned user consent, source selection, and persistent recording state.
+- Define a narrow compositor frame-source contract without moving capture policy or media encoding into the compositor.
+- Implement the first screenshot path with bounded asynchronous Vulkan readback and PNG export.
+- Add XDG Screenshot and ScreenCast portal support for sandboxed clients, advertising only verified capabilities.
+- Add PipeWire system-audio and microphone adapters with separate permission grants.
+- Add GStreamer recording, timestamp synchronization, bounded buffering, and validated encoder/container selection.
+- Validate cancellation, revocation, lock-screen exclusion, output hotplug, resource limits, and failure recovery.
+
+The initial `aurea-capture` crate contains only request and session lifecycle coordination. The capture backend, shell UI, portal integration, audio/video pipelines and file output are not yet implemented. See [Screen Capture and Recording](docs/architecture/SCREEN-CAPTURE-AND-RECORDING.md).
+
+### 4. AureaOS Desktop Experience
 
 - Develop the graphical desktop shell.
 - Develop the shared AureaOS Human Interfaces library and reusable UI components.
@@ -119,7 +132,7 @@ The architecture and responsibilities are documented in [Display Intelligence](d
 
 The desktop must provide a consistent AureaOS identity rather than relying on a third-party desktop environment.
 
-### 4. Core First-Party Applications
+### 5. Core First-Party Applications
 
 Develop the applications that define the AureaOS product experience:
 
@@ -133,7 +146,7 @@ Develop the applications that define the AureaOS product experience:
 
 These applications must follow the shared AureaOS Human Interfaces contract and respect the separation between system responsibilities.
 
-### 5. Third-Party Application Integration
+### 6. Third-Party Application Integration
 
 - Integrate Flathub as an application source for Aurea Store.
 - Integrate Flatpak installation, execution, removal, and update workflows.
@@ -143,7 +156,7 @@ These applications must follow the shared AureaOS Human Interfaces contract and 
 
 Third-party applications are not AureaOS first-party products. Their use allows the project to focus on its own desktop, system integration, and core applications.
 
-### 6. System Foundation and Distribution
+### 7. System Foundation and Distribution
 
 - Complete and validate the minimal Debian 13 `amd64` foundation.
 - Define system identity, default services, storage layout, boot configuration, and security boundaries.
@@ -153,7 +166,7 @@ Third-party applications are not AureaOS first-party products. Their use allows 
 - Produce and validate a bootable development image.
 - Document supported hardware and installation requirements.
 
-### 7. Final Release Preparation
+### 8. Final Release Preparation
 
 - Validate the complete desktop session on representative physical hardware.
 - Test installation, first boot, user session, system updates, and recovery workflows.
@@ -176,9 +189,10 @@ The following order describes the current engineering priorities. Some workstrea
 8. Define image, boot, installation, security, storage, and update boundaries.
 9. Build and test a bootable development image.
 10. Develop the shared GUI foundation and AureaOS desktop experience, including Settings and Quick Settings integration.
-11. Develop and integrate the Roma 1.0 first-party applications.
-12. Integrate Flathub and Flatpak through Aurea Store.
-13. Validate the complete product and define the Roma 1.0 release criteria.
+11. Implement Aurea Capture incrementally, beginning with screenshot capture and then video/audio recording.
+12. Develop and integrate the Roma 1.0 first-party applications.
+13. Integrate Flathub and Flatpak through Aurea Store.
+14. Validate the complete product and define the Roma 1.0 release criteria.
 
 ## Application and Component Status
 
