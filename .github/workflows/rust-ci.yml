@@ -101,7 +101,9 @@ jobs:
           bash -n tools/security/tests/test-audit-rootfs-permissions.sh
           bash -n tools/installer/check-hardware-requirements.sh
           bash -n tools/installer/tests/check-hardware-requirements.sh
-          python3 -m py_compile tools/build/create_staging_parent.py tools/build/publish_rootfs.py tools/security/audit-rootfs-symlinks.py
+          python3 -m py_compile tools/build/create_staging_parent.py tools/build/publish_rootfs.py tools/security/audit-rootfs-symlinks.py tools/assets/cursor_manifest.py tools/assets/cursor_svg.py tools/assets/validate_cursors.py
+          python3 tools/assets/validate_cursors.py
+          python3 -m unittest discover -s tools/assets/tests -p 'test_*.py' -v
           sudo python3 -m unittest discover -s tools/build/tests -p 'test_*.py' -v
           sudo bash tools/security/tests/test-audit-rootfs-permissions.sh
           sudo python3 tools/security/tests/test-audit-rootfs-symlinks.py
