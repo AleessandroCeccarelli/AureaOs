@@ -49,6 +49,20 @@ Il confine dei portali è anche un confine di sicurezza:
 
 AureaOS non deve dichiarare supportata un’interfaccia portal finché comportamento e proprietà di sicurezza non siano implementati e verificati.
 
+### Requisiti dei portali per screenshot e registrazione
+
+Il backend dei portali è il confine d'integrazione previsto per le applicazioni isolate che richiedono screenshot o registrazione dello schermo.
+
+- Implementare le interfacce XDG Screenshot e ScreenCast secondo le versioni pubblicate e i relativi contratti di richiesta e risposta.
+- Mostrare un selettore delle sorgenti controllato dal sistema; le applicazioni non devono poter scegliere silenziosamente schermi o finestre arbitrari.
+- Limitare ogni autorizzazione all'operazione, alla sorgente e alla sessione richieste. Screenshot, video dello schermo, microfono e audio di sistema sono capacità distinte.
+- Restituire solo flussi, descrittori o risultati autorizzati dal contratto del portale. Non esporre buffer arbitrari del compositor o percorsi illimitati del filesystem host.
+- Gestire annullamento, rifiuto, chiusura della sessione, disconnessione dell'applicazione e revoca.
+- Dichiarare onestamente sorgenti e opzioni non supportate. Non pubblicizzare selezione area, modalità cursore, persistenza o acquisizione audio finché non siano implementate e verificate.
+- Utilizzare il document portal o un flusso equivalente mediato dall'utente per i file di destinazione delle applicazioni isolate.
+
+Il flusso video ScreenCast non concede automaticamente accesso all'audio di sistema o al microfono. L'acquisizione audio deve seguire un percorso PipeWire separato, con autorizzazioni e instradamento dedicati.
+
 ## Familiarità tra sistemi operativi
 
 La continuità con Windows e macOS è un obiettivo di comportamento del prodotto, non una promessa di riprodurne API private o progettazione interna.
