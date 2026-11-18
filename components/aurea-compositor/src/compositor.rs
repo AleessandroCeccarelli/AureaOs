@@ -18,8 +18,7 @@ use smithay::{
 use crate::{
     frame::FrameScheduler,
     input::{
-        cursor_animation::CursorLocateAnimation,
-        pointer_settings::PointerSettings,
+        cursor_animation::CursorLocateAnimation, pointer_settings::PointerSettings,
         pointer_shake::PointerShakeDetector,
     },
     output::{OutputId, manager::OutputManager},
@@ -128,12 +127,14 @@ impl AureaCompositor {
 
     /// Returns the current cursor locate animation scale for a frame timestamp.
     pub fn cursor_locate_scale(&self) -> f64 {
-        self.cursor_locate_animation.scale_at(std::time::Instant::now())
+        self.cursor_locate_animation
+            .scale_at(std::time::Instant::now())
     }
 
     /// Reports whether the locate effect still needs scheduled frames.
     pub fn cursor_animation_active(&self) -> bool {
-        self.cursor_locate_animation.is_active(std::time::Instant::now())
+        self.cursor_locate_animation
+            .is_active(std::time::Instant::now())
     }
 
     /// Returns the active pointer preferences.
