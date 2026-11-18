@@ -19,7 +19,7 @@ use crate::AureaCompositor;
 impl FractionalScaleHandler for AureaCompositor {
     /// Initializes a newly created fractional-scale object with the
     /// conservative 1.0 fallback. Output-aware preferred-scale updates are
-    /// handled separately when surface/output tracking is connected.
+    /// applied by the surface/output reconciliation coordinator.
     fn new_fractional_scale(&mut self, surface: WlSurface) {
         compositor::with_states(&surface, |states| {
             fractional_scale::with_fractional_scale(states, |scale| {

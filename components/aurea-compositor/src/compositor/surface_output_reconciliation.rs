@@ -147,4 +147,41 @@ mod tests {
             (None, None)
         );
     }
+
+    #[test]
+    fn empty_surface_rect_is_rejected() {
+        assert!(valid_rect(
+            LogicalPoint { x: 10, y: 20 },
+            LogicalSize {
+                width: 0,
+                height: 100,
+            },
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn overflowing_surface_rect_is_rejected() {
+        assert!(valid_rect(
+            LogicalPoint { x: i64::MAX, y: 0 },
+            LogicalSize {
+                width: 1,
+                height: 100,
+            },
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn valid_surface_rect_preserves_global_geometry() {
+        let origin = LogicalPoint { x: -1920, y: 120 };
+        let size = LogicalSize {
+            width: 800,
+            height: 600,
+        };
+
+        let rect = valid_rect(origin, size).unwrap();
+        assert_eq!(rect.origin(), origin);
+        assert_eq!(rect.size(), size);
+    }
 }
