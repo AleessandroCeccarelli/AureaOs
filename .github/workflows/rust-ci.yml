@@ -85,6 +85,8 @@ jobs:
             libwayland-dev \
             libxkbcommon-dev \
             glslang-tools \
+            librsvg2-bin \
+            xcursorgen \
             mesa-vulkan-drivers \
             vulkan-tools \
             pkg-config \
@@ -101,9 +103,10 @@ jobs:
           bash -n tools/security/tests/test-audit-rootfs-permissions.sh
           bash -n tools/installer/check-hardware-requirements.sh
           bash -n tools/installer/tests/check-hardware-requirements.sh
-          python3 -m py_compile tools/build/create_staging_parent.py tools/build/publish_rootfs.py tools/security/audit-rootfs-symlinks.py tools/assets/cursor_manifest.py tools/assets/cursor_svg.py tools/assets/validate_cursors.py
+          python3 -m py_compile tools/build/create_staging_parent.py tools/build/publish_rootfs.py tools/security/audit-rootfs-symlinks.py tools/assets/cursor_manifest.py tools/assets/cursor_svg.py tools/assets/cursor_rasterizer.py tools/assets/xcursor_config.py tools/assets/validate_cursors.py tools/assets/build_cursor_theme.py
           python3 tools/assets/validate_cursors.py
           python3 -m unittest discover -s tools/assets/tests -p 'test_*.py' -v
+          python3 tools/assets/build_cursor_theme.py
           sudo python3 -m unittest discover -s tools/build/tests -p 'test_*.py' -v
           sudo bash tools/security/tests/test-audit-rootfs-permissions.sh
           sudo python3 tools/security/tests/test-audit-rootfs-symlinks.py
@@ -132,6 +135,14 @@ jobs:
           path: Cargo.lock
           if-no-files-found: error
           retention-days: 3
+
+      - name: Preserve generated AureaOS Xcursor theme
+        uses: actions/upload-artifact@v4
+        with:
+          name: aureaos-xcursor-theme
+          path: aurea-human-interfaces/cursors/generated/AureaOS/
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Compile Vulkan diagnostic shaders
         run: bash tools/shaders/compile-vulkan-shaders.sh
