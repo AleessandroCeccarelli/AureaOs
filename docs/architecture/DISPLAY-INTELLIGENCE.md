@@ -167,6 +167,8 @@ AureaOS should be able to use VRR on one display and fixed refresh on another.
 
 Shared GPU, CRTC, bandwidth, synchronization, and compositor constraints must be considered before applying simultaneous configurations.
 
+AureaOS supports up to four active outputs as a deliberate balance between desktop usability and compositor maintainability. The limit applies to enabled outputs; additional connected displays may be discovered but remain disabled. The rationale and operational rules are documented in [Multi-Monitor Policy](MULTI-MONITOR-POLICY.md).
+
 The implementation must also account for the possibility that different outputs have different capabilities and limitations.
 
 ## Implementation Direction

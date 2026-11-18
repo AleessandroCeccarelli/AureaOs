@@ -324,7 +324,3 @@ impl OutputManager {
 #[cfg(test)]
 #[path = "../../tests/unit/output_manager.rs"]
 mod tests;
-
-#[cfg(test)]
-#[path = "../../tests/unit/output_manager.rs"]
-mod tests;
