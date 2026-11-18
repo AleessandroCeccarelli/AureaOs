@@ -7,6 +7,8 @@
 
 mod backend;
 mod capture_target;
+mod capture_target_pool;
+mod capture_target;
 #[cfg(feature = "drm")]
 mod buffer_allocator;
 mod clear_pass;
@@ -95,6 +97,10 @@ impl fmt::Display for VulkanInitError {
 impl Error for VulkanInitError {}
 
 pub use backend::VulkanBackend;
+pub use capture_target::{VULKAN_CAPTURE_FORMAT, VulkanCaptureTarget, VulkanCaptureTargetError};
+pub use capture_target_pool::{
+    VulkanCaptureTargetLease, VulkanCaptureTargetPool, VulkanCaptureTargetPoolStats,
+};
 pub use capture_target::{
     VULKAN_CAPTURE_FORMAT, VulkanCaptureTarget, VulkanCaptureTargetError,
 };
