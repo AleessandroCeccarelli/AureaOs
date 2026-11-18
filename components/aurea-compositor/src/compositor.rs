@@ -122,7 +122,22 @@ impl AureaCompositor {
         &self.cursor_image
     }
 
-    /// Returns the current cursor locate animation scale for a frame timestamp.\n    pub fn cursor_locate_scale(&mut self, time_ms: u32) -> f64 {\n        self.cursor_locate_animation.scale_at(time_ms)\n    }\n\n    /// Returns the active pointer preferences.\n    pub fn pointer_settings(&self) -> PointerSettings {\n        self.pointer_settings\n    }\n\n    /// Updates validated pointer preferences.\n    pub fn set_pointer_settings(&mut self, settings: PointerSettings) {\n        self.pointer_settings = settings;\n    }\n\n    /// Returns the output manager.
+    /// Returns the current cursor locate animation scale for a frame timestamp.
+    pub fn cursor_locate_scale(&mut self, time_ms: u32) -> f64 {
+        self.cursor_locate_animation.scale_at(time_ms)
+    }
+
+    /// Returns the active pointer preferences.
+    pub fn pointer_settings(&self) -> PointerSettings {
+        self.pointer_settings
+    }
+
+    /// Updates validated pointer preferences.
+    pub fn set_pointer_settings(&mut self, settings: PointerSettings) {
+        self.pointer_settings = settings;
+    }
+
+    /// Returns the output manager.
     pub fn output_manager(&mut self) -> &mut OutputManager {
         &mut self.output_manager
     }
