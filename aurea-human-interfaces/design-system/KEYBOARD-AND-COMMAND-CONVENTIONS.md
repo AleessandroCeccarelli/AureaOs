@@ -37,6 +37,7 @@ Show the actual key glyphs available on the user's keyboard layout. Localize sho
 | Super + Down | Restore or minimize according to window state | Shell/compositor |
 | Ctrl + Alt + Delete | Open secure session/power options | Shell; exact action must be explicit |
 | Print Screen | Open screenshot capture workflow | Shell/service |
+| Screen recording shortcut | Not assigned yet; reserve a configurable shell-owned action after conflict review | Shell/service (planned) |
 
 If hardware, compositor or service support is unavailable, do not display a shortcut as functional. The exact Super+Tab overview and Super+arrow snap behavior must be implemented and tested before release.
 
@@ -113,5 +114,8 @@ A command available from a context menu should use the same label and shortcut a
 - [ ] Menu hints match actual key bindings.
 - [ ] Shortcuts are tested with supported keyboard layouts.
 - [ ] No shortcut is documented as implemented before runtime support exists.
+- [ ] Screenshot source selection and cancellation are keyboard accessible.
+- [ ] Recording status and stop action remain reachable from the shell.
+- [ ] No recording shortcut is advertised until its key binding and runtime action are implemented.
 
 **Principle:** familiar shortcuts are part of the user interface. Preserve them consistently, document ownership and never promise behavior that the system does not yet implement.
