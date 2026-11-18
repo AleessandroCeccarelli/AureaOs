@@ -152,9 +152,9 @@ impl<'device> VulkanReadbackBuffer<'device> {
             .size(size)
             .usage(vk::BufferUsageFlags::TRANSFER_DST)
             .sharing_mode(vk::SharingMode::EXCLUSIVE);
-        let buffer = unsafe { raw_device.handle().create_buffer(&create_info, None) }
+        let buffer = unsafe { raw_raw_device.handle().create_buffer(&create_info, None) }
             .map_err(VulkanReadbackError::BufferCreation)?;
-        let requirements = unsafe { device.handle().get_buffer_memory_requirements(buffer) };
+        let requirements = unsafe { raw_device.handle().get_buffer_memory_requirements(buffer) };
 
         let properties = raw_device.memory_properties();
         let memory_type_index = match super::select_memory_type_index(
@@ -165,7 +165,7 @@ impl<'device> VulkanReadbackBuffer<'device> {
         ) {
             Some(index) => index,
             None => {
-                unsafe { device.handle().destroy_buffer(buffer, None) };
+                unsafe { raw_device.handle().destroy_buffer(buffer, None) };
                 return Err(VulkanReadbackError::MemoryTypeUnavailable);
             }
         };
@@ -176,17 +176,17 @@ impl<'device> VulkanReadbackBuffer<'device> {
         let allocate_info = vk::MemoryAllocateInfo::default()
             .allocation_size(requirements.size)
             .memory_type_index(memory_type_index);
-        let memory = match unsafe { device.handle().allocate_memory(&allocate_info, None) } {
+        let memory = match unsafe { raw_device.handle().allocate_memory(&allocate_info, None) } {
             Ok(memory) => memory,
             Err(error) => {
-                unsafe { device.handle().destroy_buffer(buffer, None) };
+                unsafe { raw_device.handle().destroy_buffer(buffer, None) };
                 return Err(VulkanReadbackError::MemoryAllocation(error));
             }
         };
-        if let Err(error) = unsafe { device.handle().bind_buffer_memory(buffer, memory, 0) } {
+        if let Err(error) = unsafe { raw_device.handle().bind_buffer_memory(buffer, memory, 0) } {
             unsafe {
-                device.handle().free_memory(memory, None);
-                device.handle().destroy_buffer(buffer, None);
+                raw_device.handle().free_memory(memory, None);
+                raw_device.handle().destroy_buffer(buffer, None);
             }
             return Err(VulkanReadbackError::MemoryBinding(error));
         }
@@ -276,7 +276,7 @@ impl<'device> VulkanReadbackBuffer<'device> {
     /// calling this method. Non-coherent memory is invalidated before reading.
     pub fn read_rgba8(&self) -> Result<Vec<u8>, VulkanReadbackError> {
         let mapped = unsafe {
-            self.device.handle().map_memory(
+            self.device.device().handle().map_memory(
                 self.memory,
                 0,
                 vk::WHOLE_SIZE,
@@ -296,14 +296,14 @@ impl<'device> VulkanReadbackBuffer<'device> {
                     .handle()
                     .invalidate_mapped_memory_ranges(&ranges)
             } {
-                unsafe { self.device.handle().unmap_memory(self.memory) };
+                unsafe { self.device.device().handle().unmap_memory(self.memory) };
                 return Err(VulkanReadbackError::Invalidation(error));
             }
         }
 
         let bytes = unsafe { slice::from_raw_parts(mapped.cast::<u8>(), self.byte_len).to_vec() };
         unsafe {
-            self.device.handle().unmap_memory(self.memory);
+            self.device.device().handle().unmap_memory(self.memory);
         }
         Ok(bytes)
     }
@@ -316,8 +316,8 @@ impl<'device> VulkanReadbackBuffer<'device> {
 impl Drop for VulkanReadbackBuffer<'_> {
     fn drop(&mut self) {
         unsafe {
-            self.device.handle().destroy_buffer(self.buffer, None);
-            self.device.handle().free_memory(self.memory, None);
+            self.device.device().handle().destroy_buffer(self.buffer, None);
+            self.device.device().handle().free_memory(self.memory, None);
         }
     }
 }
@@ -416,7 +416,7 @@ impl<'view, 'image, 'view_device> VulkanReadbackSubmission<'view, 'image, 'view_
             return Ok(true);
         }
 
-        match unsafe { self.device.handle().get_fence_status(self.fence) } {
+        match unsafe { self.device.device().handle().get_fence_status(self.fence) } {
             Ok(true) => {
                 self.completed = true;
                 Ok(true)
@@ -463,7 +463,7 @@ impl Drop for VulkanReadbackSubmission<'_, '_, '_> {
                     .handle()
                     .wait_for_fences(&[self.fence], true, u64::MAX)
             };
-            if wait.is_err() && unsafe { self.device.handle().device_wait_idle() }.is_err() {
+            if wait.is_err() && unsafe { self.device.device().handle().device_wait_idle() }.is_err() {
                 // Completion is uncertain after device loss. Leak in-flight
                 // resources rather than free memory potentially used by GPU.
                 if let Some(readback) = self.readback.take() {
@@ -473,7 +473,7 @@ impl Drop for VulkanReadbackSubmission<'_, '_, '_> {
             }
         }
 
-        unsafe { self.device.handle().destroy_fence(self.fence, None) };
+        unsafe { self.device.device().handle().destroy_fence(self.fence, None) };
         self.device.free_command_buffer(self.command_buffer);
     }
 }
