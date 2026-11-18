@@ -50,6 +50,7 @@ pub enum VulkanReadbackError {
     DeviceMismatch,
     InvalidPoolLimits,
     PoolExhausted,
+    PoolBusy,
     PoolLockPoisoned,
 }
 
@@ -114,6 +115,9 @@ impl fmt::Display for VulkanReadbackError {
             }
             Self::PoolExhausted => {
                 formatter.write_str("Readback staging pool capacity is exhausted")
+            }
+            Self::PoolBusy => {
+                formatter.write_str("Readback staging pool is busy; capture can be skipped")
             }
             Self::PoolLockPoisoned => {
                 formatter.write_str("Readback staging pool lock is poisoned")
