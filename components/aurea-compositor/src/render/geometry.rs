@@ -87,21 +87,28 @@ pub fn scale_surface_geometry(
         return None;
     }
 
-    let anchor_x = i64::from(anchor.0.checked_sub(output_origin.0)?)
-        .checked_mul(i64::from(output_scale))?;
-    let anchor_y = i64::from(anchor.1.checked_sub(output_origin.1)?)
-        .checked_mul(i64::from(output_scale))?;
+    let anchor_x =
+        i64::from(anchor.0.checked_sub(output_origin.0)?).checked_mul(i64::from(output_scale))?;
+    let anchor_y =
+        i64::from(anchor.1.checked_sub(output_origin.1)?).checked_mul(i64::from(output_scale))?;
 
     let x = (anchor_x as f64 + (geometry.x as f64 - anchor_x as f64) * scale).round();
     let y = (anchor_y as f64 + (geometry.y as f64 - anchor_y as f64) * scale).round();
     let width = (f64::from(geometry.width) * scale).round();
     let height = (f64::from(geometry.height) * scale).round();
 
-    if !x.is_finite() || !y.is_finite() || !width.is_finite() || !height.is_finite()
-        || x < i64::MIN as f64 || x > i64::MAX as f64
-        || y < i64::MIN as f64 || y > i64::MAX as f64
-        || width < 1.0 || width > u32::MAX as f64
-        || height < 1.0 || height > u32::MAX as f64
+    if !x.is_finite()
+        || !y.is_finite()
+        || !width.is_finite()
+        || !height.is_finite()
+        || x < i64::MIN as f64
+        || x > i64::MAX as f64
+        || y < i64::MIN as f64
+        || y > i64::MAX as f64
+        || width < 1.0
+        || width > u32::MAX as f64
+        || height < 1.0
+        || height > u32::MAX as f64
     {
         return None;
     }
@@ -191,8 +198,7 @@ mod tests {
 
     #[test]
     fn scaling_rejects_invalid_factors() {
-        let geometry =
-            surface_geometry((0, 0), (10, 10), 1, Transform::Normal, (0, 0), 1).unwrap();
+        let geometry = surface_geometry((0, 0), (10, 10), 1, Transform::Normal, (0, 0), 1).unwrap();
 
         assert!(scale_surface_geometry(geometry, (0, 0), (0, 0), 1, f64::NAN).is_none());
         assert!(scale_surface_geometry(geometry, (0, 0), (0, 0), 1, 3.5).is_none());
