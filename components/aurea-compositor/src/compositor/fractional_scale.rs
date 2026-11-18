@@ -38,7 +38,6 @@ pub(super) fn create_manager(
     FractionalScaleManagerState::new::<AureaCompositor>(display)
 }
 
-
 /// Updates the preferred fractional scale of one Wayland surface.
 pub(super) fn set_surface_preferred_scale(surface: &WlSurface, scale: f64) {
     compositor::with_states(surface, |states| {

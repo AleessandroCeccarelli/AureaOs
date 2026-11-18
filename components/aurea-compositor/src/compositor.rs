@@ -36,8 +36,8 @@ mod pointer_bounds;
 mod pointer_button;
 mod pointer_placement;
 mod rendering;
-mod surface_output_tracking;
 mod surface_output_reconciliation;
+mod surface_output_tracking;
 mod workspace;
 
 use surface_output_tracking::SurfaceOutputTracker;
