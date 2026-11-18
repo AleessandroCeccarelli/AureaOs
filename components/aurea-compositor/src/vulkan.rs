@@ -42,6 +42,7 @@ mod image_allocator;
 mod image_transition;
 mod image_view;
 mod logical_device;
+mod logical_device_factory;
 mod memory_type;
 mod offscreen_renderer;
 mod pending_upload;
