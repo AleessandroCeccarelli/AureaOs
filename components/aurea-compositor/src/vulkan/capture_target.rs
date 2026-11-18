@@ -49,9 +49,7 @@ impl fmt::Display for VulkanCaptureTargetError {
                 formatter.write_str("No capture target is available within pool limits")
             }
             Self::PoolBusy => formatter.write_str("Capture target pool is busy"),
-            Self::PoolLockPoisoned => {
-                formatter.write_str("Capture target pool lock is poisoned")
-            }
+            Self::PoolLockPoisoned => formatter.write_str("Capture target pool lock is poisoned"),
         }
     }
 }
