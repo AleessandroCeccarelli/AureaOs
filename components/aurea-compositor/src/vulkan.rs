@@ -50,6 +50,7 @@ mod physical_device;
 mod queue;
 mod queue_submitter;
 mod readback_buffer;
+mod readback_buffer_device;
 mod readback_error;
 mod readback_buffer_lease;
 mod readback_buffer_pool;
