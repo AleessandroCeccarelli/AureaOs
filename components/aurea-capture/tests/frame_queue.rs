@@ -97,3 +97,23 @@ fn queue_preserves_frame_order_and_releases_accounted_bytes() {
     assert!(queue.is_empty());
     assert_eq!(queue.queued_bytes(), 0);
 }
+
+#[test]
+fn queue_rejects_zero_byte_limit() {
+    assert_eq!(
+        CaptureFrameQueue::new(2, 0).err(),
+        Some(CaptureQueueError::ZeroByteLimit)
+    );
+}
+
+#[test]
+fn queue_enforces_byte_limit_even_when_frame_slots_remain() {
+    let mut queue = CaptureFrameQueue::new(4, 16).unwrap();
+
+    queue.try_push(frame(1, 1)).unwrap();
+    assert!(queue.try_push(frame(2, 2)).is_err());
+
+    assert_eq!(queue.len(), 1);
+    assert_eq!(queue.queued_bytes(), 16);
+    assert_eq!(queue.dropped_frames(), 1);
+}
