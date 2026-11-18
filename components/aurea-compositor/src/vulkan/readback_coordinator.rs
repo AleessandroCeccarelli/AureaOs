@@ -10,6 +10,16 @@ use super::{
     VulkanReadbackSubmission,
 };
 
+/// Results collected during one non-blocking coordinator poll.
+#[derive(Debug, Default)]
+pub struct VulkanReadbackPoll {
+    /// Frames whose GPU copy and host readback completed successfully.
+    pub completed_frames: Vec<Vec<u8>>,
+    /// Per-submission errors. Failed submissions remain owned for a later retry
+    /// or safe shutdown unless their underlying Vulkan state becomes uncertain.
+    pub errors: Vec<VulkanReadbackError>,
+}
+
 /// Coordinates a bounded number of in-flight readback submissions.
 ///
 /// All methods that submit, poll or retire work belong on a capture worker.
@@ -66,22 +76,37 @@ impl VulkanReadbackCoordinator {
     /// Incomplete submissions remain owned by this coordinator. Fence polling
     /// is non-blocking; a fence or mapping error is reported without silently
     /// discarding the affected submission.
-    pub fn poll_completed(&mut self) -> Result<Vec<Vec<u8>>, VulkanReadbackError> {
-        let mut completed_frames = Vec::new();
+    pub fn poll_completed(&mut self) -> VulkanReadbackPoll {
+        let mut result = VulkanReadbackPoll::default();
         let mut index = 0;
 
         while index < self.submissions.len() {
-            if !self.submissions[index].poll()? {
-                index += 1;
-                continue;
+            match self.submissions[index].poll() {
+                Ok(false) => {
+                    index += 1;
+                    continue;
+                }
+                Err(error) => {
+                    result.errors.push(error);
+                    index += 1;
+                    continue;
+                }
+                Ok(true) => {}
             }
 
-            let pixels = self.submissions[index].take_rgba8()?;
-            self.submissions.swap_remove(index);
-            completed_frames.push(pixels);
+            match self.submissions[index].take_rgba8() {
+                Ok(pixels) => {
+                    self.submissions.swap_remove(index);
+                    result.completed_frames.push(pixels);
+                }
+                Err(error) => {
+                    result.errors.push(error);
+                    index += 1;
+                }
+            }
         }
 
-        Ok(completed_frames)
+        result
     }
 
     /// Number of GPU submissions still owned by this coordinator.
