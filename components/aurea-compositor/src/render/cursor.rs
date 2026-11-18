@@ -43,7 +43,11 @@ pub fn default_cursor_snapshot() -> Result<ShmBufferSnapshot, ShmBufferError> {
 
             if inside || border {
                 let offset = ((y * DEFAULT_CURSOR_WIDTH + x) * 4) as usize;
-                let color = if border { [24, 35, 51, 255] } else { [255, 255, 255, 255] };
+                let color = if border {
+                    [24, 35, 51, 255]
+                } else {
+                    [255, 255, 255, 255]
+                };
                 pixels[offset..offset + 4].copy_from_slice(&color);
             }
         }
@@ -78,9 +82,8 @@ fn distance_to_segment(point: (f32, f32), start: (f32, f32), end: (f32, f32)) ->
         return ((point.0 - start.0).powi(2) + (point.1 - start.1).powi(2)).sqrt();
     }
 
-    let projection = (((point.0 - start.0) * dx + (point.1 - start.1) * dy)
-        / length_squared)
-        .clamp(0.0, 1.0);
+    let projection =
+        (((point.0 - start.0) * dx + (point.1 - start.1) * dy) / length_squared).clamp(0.0, 1.0);
     let nearest = (start.0 + projection * dx, start.1 + projection * dy);
     ((point.0 - nearest.0).powi(2) + (point.1 - nearest.1).powi(2)).sqrt()
 }
