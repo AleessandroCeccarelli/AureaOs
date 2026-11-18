@@ -34,6 +34,8 @@ pub struct VulkanReadbackSubmission {
 impl VulkanReadbackSubmission {
     /// Records and submits a copy from an owned image view.
     ///
+    /// Call this method from a capture worker, not the compositor presentation
+    /// path: command-buffer allocation and queue submission use synchronization.
     /// The caller must transition the source image to TRANSFER_SRC_OPTIMAL
     /// and synchronize prior writes before calling this method. The submission
     /// retains the view, image, staging allocation and device until completion.
