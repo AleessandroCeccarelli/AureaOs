@@ -46,29 +46,45 @@ impl PointerShakeDetector {
         });
         self.prune(time_ms);
 
+        let horizontal_activity = self
+            .samples
+            .iter()
+            .map(|sample| sample.dx.abs())
+            .sum::<f64>();
+        let vertical_activity = self
+            .samples
+            .iter()
+            .map(|sample| sample.dy.abs())
+            .sum::<f64>();
+        let use_horizontal_axis = horizontal_activity >= vertical_activity;
+
         let mut reversals = 0_u8;
         let mut distance = 0.0;
         let mut previous_sign = 0_i8;
         let mut previous_time = None;
 
         for sample in &self.samples {
-            let axis = if sample.dx.abs() >= sample.dy.abs() {
+            let axis_delta = if use_horizontal_axis {
                 sample.dx
             } else {
                 sample.dy
             };
-            let sign = if axis > 0.0 { 1 } else { -1 };
+
             if let Some(last_time) = previous_time {
-                if sample.time_ms.saturating_sub(last_time) > MAX_GAP_MS {
+                if sample.time_ms.wrapping_sub(last_time) > MAX_GAP_MS {
                     reversals = 0;
-                    distance = 0.0;
                     previous_sign = 0;
                 }
             }
-            if previous_sign != 0 && sign != previous_sign {
-                reversals = reversals.saturating_add(1);
+
+            if axis_delta.abs() >= MIN_AXIS_DELTA {
+                let sign = if axis_delta > 0.0 { 1 } else { -1 };
+                if previous_sign != 0 && sign != previous_sign {
+                    reversals = reversals.saturating_add(1);
+                }
+                previous_sign = sign;
             }
-            previous_sign = sign;
+
             previous_time = Some(sample.time_ms);
             distance += sample.dx.hypot(sample.dy);
         }
@@ -86,7 +102,7 @@ impl PointerShakeDetector {
 
     fn prune(&mut self, now_ms: u32) {
         self.samples
-            .retain(|sample| now_ms.saturating_sub(sample.time_ms) <= WINDOW_MS);
+            .retain(|sample| now_ms.wrapping_sub(sample.time_ms) <= WINDOW_MS);
     }
 }
 
@@ -114,6 +130,36 @@ mod tests {
         let mut detector = PointerShakeDetector::default();
         for (time, x) in [(0, 60.0), (50, 60.0), (100, 60.0), (150, 60.0)] {
             assert!(!detector.update(delta(x, 0.0), time));
+        }
+    }
+
+    #[test]
+    fn does_not_treat_axis_changes_as_a_shake() {
+        let mut detector = PointerShakeDetector::default();
+        let motions = [
+            (0, 70.0, 0.0),
+            (60, 0.0, -70.0),
+            (120, -70.0, 0.0),
+            (180, 0.0, 70.0),
+            (240, 70.0, 0.0),
+            (300, 0.0, -70.0),
+        ];
+
+        for (time, x, y) in motions {
+            assert!(!detector.update(delta(x, y), time));
+        }
+    }
+
+    #[test]
+    fn detects_shake_across_millisecond_counter_wraparound() {
+        let mut detector = PointerShakeDetector::default();
+        let start = u32::MAX - 100;
+
+        for (offset, x) in [(0, 70.0), (60, -70.0), (120, 70.0), (180, -70.0)] {
+            assert_eq!(
+                detector.update(delta(x, 0.0), start.wrapping_add(offset)),
+                offset == 180
+            );
         }
     }
 
