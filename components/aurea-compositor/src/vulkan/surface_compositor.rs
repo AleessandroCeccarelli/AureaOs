@@ -88,6 +88,18 @@ pub(crate) fn render_and_release(
     let active_surface_ids = scene.surface_ids();
     let snapshots = scene.shm_snapshots();
     let visible = visible_surfaces(snapshots, target)?;
+    let cursor = scene.native_cursor_location().and_then(|location| {
+        let geometry = surface_geometry(
+            (location.x, location.y),
+            (crate::render::cursor::DEFAULT_CURSOR_WIDTH, crate::render::cursor::DEFAULT_CURSOR_HEIGHT),
+            1,
+            Transform::Normal,
+            target.logical_origin(),
+            target.scale(),
+        )?;
+        let scissor = geometry.scissor(target.width(), target.height())?;
+        Some((geometry, scissor))
+    });
     let texture_requests = visible
         .iter()
         .map(|surface| {
@@ -103,7 +115,7 @@ pub(crate) fn render_and_release(
         .prepare_surface_textures(&active_surface_ids, &texture_requests)
         .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
 
-    if visible.is_empty() {
+    if visible.is_empty() && cursor.is_none() {
         surface_cache
             .complete_surface_texture_uploads()
             .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
@@ -136,6 +148,12 @@ pub(crate) fn render_and_release(
         None => (view, previous_image_state),
     };
 
+    if cursor.is_some() {
+        surface_cache
+            .ensure_native_cursor_texture()
+            .map_err(VulkanSurfaceCompositionError::Texture)?;
+    }
+
     surface_cache
         .ensure_pipeline(composition_view.format())
         .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
@@ -152,7 +170,7 @@ pub(crate) fn render_and_release(
     // Cached images survive across frames. Views and descriptor sets remain
     // frame-scoped until submit_and_wait confirms GPU completion.
     let binding_pool = surface_cache
-        .create_texture_binding_pool(visible.len() as u32)
+        .create_texture_binding_pool(visible.len() as u32 + u32::from(cursor.is_some()))
         .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
     let views = visible
         .iter()
@@ -181,6 +199,26 @@ pub(crate) fn render_and_release(
         })
         .collect::<Result<Vec<_>, _>>()?;
 
+    let cursor_binding = if cursor.is_some() {
+        let texture = surface_cache.native_cursor_texture().ok_or_else(|| {
+            VulkanSurfaceCompositionError::Texture(
+                "The native cursor texture was not initialized".to_owned(),
+            )
+        })?;
+        Some(
+            VulkanTextureBinding::new_in_pool(
+                device,
+                &binding_pool,
+                &descriptor_layout,
+                texture.view(),
+                &sampler,
+            )
+            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?,
+        )
+    } else {
+        None
+    };
+
     let display_binding = if let Some((pass, _, intermediate_view, _)) = display_color {
         Some(
             pass.bind_source(intermediate_view)
@@ -208,6 +246,43 @@ pub(crate) fn render_and_release(
     for (surface, binding) in visible.iter().zip(bindings.iter()) {
         let geometry = surface.geometry;
         let scissor = surface.scissor;
+        let viewport = vk::Viewport {
+            x: geometry.x() as f32,
+            y: geometry.y() as f32,
+            width: geometry.width() as f32,
+            height: geometry.height() as f32,
+            min_depth: 0.0,
+            max_depth: 1.0,
+        };
+        let scissor = vk::Rect2D {
+            offset: vk::Offset2D {
+                x: i32::try_from(scissor.x)
+                    .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                y: i32::try_from(scissor.y)
+                    .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+            },
+            extent: vk::Extent2D {
+                width: scissor.width,
+                height: scissor.height,
+            },
+        };
+
+        VulkanDrawPass::record_textured_region(
+            command_buffer.handle(),
+            composition_view,
+            &pipeline,
+            binding,
+            0,
+            VulkanImageState::General,
+            VulkanImageState::General,
+            VulkanColorLoad::Load,
+            viewport,
+            scissor,
+        )
+        .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+    }
+
+    if let (Some((geometry, scissor)), Some(binding)) = (cursor, cursor_binding.as_ref()) {
         let viewport = vk::Viewport {
             x: geometry.x() as f32,
             y: geometry.y() as f32,

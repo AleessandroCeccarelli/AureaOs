@@ -35,6 +35,7 @@ use crate::window_manager::WindowManager;
 pub struct RenderScene<'a> {
     toplevels: Vec<RenderToplevel<'a>>,
     cursor_surface: Option<(WlSurface, Point<i32, Logical>)>,
+    native_cursor_location: Option<Point<i32, Logical>>,
 }
 
 struct RenderToplevel<'a> {
@@ -51,6 +52,7 @@ impl<'a> RenderScene<'a> {
                 .map(|(surface, location)| RenderToplevel { surface, location })
                 .collect(),
             cursor_surface: None,
+            native_cursor_location: None,
         }
     }
 
@@ -64,31 +66,48 @@ impl<'a> RenderScene<'a> {
         status: &CursorImageStatus,
         pointer_location: Option<Point<f64, Logical>>,
     ) -> Self {
-        let (CursorImageStatus::Surface(surface), Some(pointer_location)) =
-            (status, pointer_location)
-        else {
+        let Some(pointer_location) = pointer_location else {
             return self;
         };
 
-        if !surface.alive() {
-            return self;
+        match status {
+            CursorImageStatus::Hidden => {}
+            CursorImageStatus::Named(_) => {
+                let hotspot = Point::<i32, Logical>::from(cursor::DEFAULT_CURSOR_HOTSPOT);
+                self.native_cursor_location =
+                    Some((pointer_location - hotspot.to_f64()).to_i32_round());
+            }
+            CursorImageStatus::Surface(surface) => {
+                if !surface.alive() {
+                    return self;
+                }
+
+                let hotspot = with_states(surface, |states| {
+                    states.data_map.get::<CursorImageSurfaceData>().map(|data| {
+                        data.lock()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner)
+                            .hotspot
+                    })
+                });
+
+                let Some(hotspot) = hotspot else {
+                    return self;
+                };
+
+                let location: Point<i32, Logical> =
+                    (pointer_location - hotspot.to_f64()).to_i32_round();
+                self.cursor_surface = Some((surface.clone(), location));
+            }
         }
 
-        let hotspot = with_states(surface, |states| {
-            states.data_map.get::<CursorImageSurfaceData>().map(|data| {
-                data.lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner)
-                    .hotspot
-            })
-        });
-
-        let Some(hotspot) = hotspot else {
-            return self;
-        };
-
-        let location: Point<i32, Logical> = (pointer_location - hotspot.to_f64()).to_i32_round();
-        self.cursor_surface = Some((surface.clone(), location));
         self
+    }
+
+    /// Returns the compositor-owned cursor origin in global logical coordinates.
+    ///
+    /// Client-provided cursor surfaces are kept in the regular Wayland surface tree.
+    pub fn native_cursor_location(&self) -> Option<Point<i32, Logical>> {
+        self.native_cursor_location
     }
 
     /// Returns the toplevel surfaces in this scene.

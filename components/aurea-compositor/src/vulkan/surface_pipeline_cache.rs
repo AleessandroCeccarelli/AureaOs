@@ -50,6 +50,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     descriptor_layout: VulkanTextureDescriptorSetLayout<'static>,
     sampler: VulkanSampler<'static>,
     texture_cache: VulkanSurfaceTextureCache,
+    native_cursor_texture: Option<VulkanShmTexture>,
 }
 
 impl VulkanSurfacePipelineCache {
@@ -68,6 +69,7 @@ impl VulkanSurfacePipelineCache {
             descriptor_layout,
             sampler,
             texture_cache,
+            native_cursor_texture: None,
         })
     }
 
@@ -124,6 +126,24 @@ impl VulkanSurfacePipelineCache {
 
     pub(crate) fn surface_texture(&self, surface_id: &ObjectId) -> Option<&VulkanShmTexture> {
         self.texture_cache.texture(surface_id)
+    }
+
+    /// Lazily uploads the compositor-owned arrow once per Vulkan device.
+    pub(crate) fn ensure_native_cursor_texture(&mut self) -> Result<(), String> {
+        if self.native_cursor_texture.is_some() {
+            return Ok(());
+        }
+
+        let snapshot = crate::render::cursor::default_cursor_snapshot()
+            .map_err(|error| error.to_string())?;
+        let texture = VulkanShmTexture::from_snapshot(Arc::clone(&self.device), snapshot)
+            .map_err(|error| error.to_string())?;
+        self.native_cursor_texture = Some(texture);
+        Ok(())
+    }
+
+    pub(crate) fn native_cursor_texture(&self) -> Option<&VulkanShmTexture> {
+        self.native_cursor_texture.as_ref()
     }
 
     pub(crate) fn pipeline(&self, format: vk::Format) -> Option<&VulkanGraphicsPipeline<'static>> {
