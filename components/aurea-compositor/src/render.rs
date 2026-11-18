@@ -73,8 +73,7 @@ impl<'a> RenderScene<'a> {
         match status {
             CursorImageStatus::Hidden => {}
             CursorImageStatus::Named(_) => {
-                self.native_cursor_location =
-                    Some(cursor::default_cursor_origin(pointer_location));
+                self.native_cursor_location = Some(cursor::default_cursor_origin(pointer_location));
             }
             CursorImageStatus::Surface(surface) => {
                 if !surface.alive() {
