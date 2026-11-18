@@ -30,7 +30,8 @@ impl AureaCompositor {
             .registry()
             .iter()
             .filter(|output| output.is_enabled())
-            .map(|output| output.id());
+            .map(|output| output.id())
+            .collect::<Vec<_>>();
 
         let previous_ids = self.wayland_outputs.keys().copied().collect::<Vec<_>>();
         for output_id in previous_ids {
