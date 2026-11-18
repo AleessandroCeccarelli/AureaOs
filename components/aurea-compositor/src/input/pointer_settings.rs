@@ -33,11 +33,7 @@ impl Default for PointerSettings {
 }
 
 impl PointerSettings {
-    pub fn new(
-        profile: AccelerationProfile,
-        speed: f64,
-        shake_to_locate: bool,
-    ) -> Option<Self> {
+    pub fn new(profile: AccelerationProfile, speed: f64, shake_to_locate: bool) -> Option<Self> {
         if !speed.is_finite() || !(-1.0..=1.0).contains(&speed) {
             return None;
         }
