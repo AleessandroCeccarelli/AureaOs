@@ -27,7 +27,7 @@ The project should implement and test relevant freedesktop.org/XDG specification
 | File associations | Shared MIME-info database and desktop entry MIME declarations | Predictable open-with selection and default application management |
 | User folders | XDG Base Directory and user-dirs conventions | Respect user data/config/cache locations and localized standard folders |
 | Notifications | Desktop Notifications specification | Present consistent notifications with actions and replacement semantics |
-| Sandboxed applications | XDG Desktop Portal interfaces | Permission-mediated access to files, screenshots, notifications and other supported capabilities |
+| Sandboxed applications | XDG Desktop Portal interfaces | Permission-mediated access to files, screenshots, screen-cast streams, notifications and other supported capabilities |
 | Application metadata | AppStream metadata | Populate the store with accurate names, icons, summaries, categories, licenses and release information |
 | Autostart | XDG Autostart specification | Apply explicit user and system startup policy |
 | Icons | Freedesktop icon naming/theme conventions where applicable | Provide AureaOS artwork while retaining predictable icon lookup and fallbacks |
@@ -49,7 +49,21 @@ The portal boundary is a security boundary:
 
 AureaOS must not advertise a portal interface as supported until its behavior and security properties are implemented and tested.
 
-## Familiarity across operating systems
+### Screenshot and screen-cast portal requirements
+
+The portal backend is the supported integration boundary for sandboxed applications requesting screenshots or screen recording.
+
+- Implement the XDG Screenshot and ScreenCast interfaces according to their published versions and request/response contracts.
+- Present a system-controlled source picker; applications must not silently choose arbitrary screens or windows.
+- Scope each grant to the requested operation, source and session. Treat screenshot, screen video, microphone and system-audio permissions as distinct capabilities.
+- Return only the streams, file handles or results authorized by the portal contract. Do not expose unrestricted compositor buffers or host filesystem paths.
+- Support cancellation, denial, session closure, application disconnection and permission revocation.
+- Report unsupported source types or options honestly. Do not advertise area selection, cursor modes, persistence or audio capture unless each is implemented and tested.
+- Use the document portal or an equivalent user-mediated destination flow for sandboxed output files.
+
+The portal's screen-cast video stream does not by itself grant system-audio or microphone access. Audio capture must follow a separate PipeWire permission and routing path.
+
+### Familiarity across operating systems
 
 Continuity with Windows and macOS is a product-level behavior goal, not a promise to reproduce their private APIs or internal design.
 
