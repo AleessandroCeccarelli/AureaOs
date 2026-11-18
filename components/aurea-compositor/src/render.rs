@@ -36,6 +36,7 @@ pub struct RenderScene<'a> {
     toplevels: Vec<RenderToplevel<'a>>,
     cursor_surface: Option<(WlSurface, Point<i32, Logical>)>,
     native_cursor_location: Option<Point<i32, Logical>>,
+    native_cursor_scale: f64,
 }
 
 struct RenderToplevel<'a> {
@@ -53,6 +54,7 @@ impl<'a> RenderScene<'a> {
                 .collect(),
             cursor_surface: None,
             native_cursor_location: None,
+            native_cursor_scale: 1.0,
         }
     }
 
@@ -65,7 +67,13 @@ impl<'a> RenderScene<'a> {
         mut self,
         status: &CursorImageStatus,
         pointer_location: Option<Point<f64, Logical>>,
+        native_cursor_scale: f64,
     ) -> Self {
+        self.native_cursor_scale = if native_cursor_scale.is_finite() {
+            native_cursor_scale.clamp(1.0, 3.0)
+        } else {
+            1.0
+        };
         let Some(pointer_location) = pointer_location else {
             return self;
         };
@@ -106,6 +114,11 @@ impl<'a> RenderScene<'a> {
     /// Client-provided cursor surfaces are kept in the regular Wayland surface tree.
     pub fn native_cursor_location(&self) -> Option<Point<i32, Logical>> {
         self.native_cursor_location
+    }
+
+    /// Returns the current scale for the compositor-owned cursor image.
+    pub fn native_cursor_scale(&self) -> f64 {
+        self.native_cursor_scale
     }
 
     /// Returns the toplevel surfaces in this scene.
