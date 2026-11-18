@@ -455,7 +455,7 @@ mod tests {
 
         let bounds = manager.logical_bounds(7).unwrap().unwrap();
         assert_eq!(bounds.origin(), LogicalPoint { x: -1920, y: 40 });
-        assert_eq!(bounds.size(), LogicalSize { width: 960, height: 540 });
+        assert_eq!(\n            bounds.size(),\n            LogicalSize {\n                width: 960,\n                height: 540\n            }\n        );
     }
 
     #[test]
@@ -468,7 +468,7 @@ mod tests {
 
         let bounds = manager.logical_bounds(8).unwrap().unwrap();
         assert_eq!(bounds.origin(), LogicalPoint { x: 100, y: -20 });
-        assert_eq!(bounds.size(), LogicalSize { width: 1707, height: 960 });
+        assert_eq!(\n            bounds.size(),\n            LogicalSize {\n                width: 1707,\n                height: 960\n            }\n        );
     }
 
     #[test]
