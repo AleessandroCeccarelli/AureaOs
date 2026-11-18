@@ -23,8 +23,8 @@ use smithay::{
     },
     desktop::{WindowSurfaceType, utils::under_from_surface_tree},
     input::pointer::{CursorImageStatus, CursorImageSurfaceData},
-    reexports::wayland_server::{Resource, protocol::wl_surface::WlSurface},
-    utils::{Logical, Physical, Point},
+    reexports::wayland_server::protocol::wl_surface::WlSurface,
+    utils::{IsAlive, Logical, Physical, Point},
     wayland::{compositor::with_states, shell::xdg::ToplevelSurface},
 };
 
@@ -79,8 +79,7 @@ impl<'a> RenderScene<'a> {
                     .unwrap_or_else(std::sync::PoisonError::into_inner)
                     .hotspot
             })
-        })
-        .flatten();
+        });
 
         let Some(hotspot) = hotspot else {
             return self;
