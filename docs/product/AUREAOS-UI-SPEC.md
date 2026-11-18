@@ -178,7 +178,8 @@ The planned controls include:
 - Wi-Fi and network connectivity.
 - Bluetooth.
 - Airplane mode.
-- Screen recording, where the system recording service is available.
+- Screen recording status and a direct stop action while a recording is active, where the system recording service is available.
+- A discoverable screenshot action and capture-source selection, where the capture service is available.
 - Light and dark appearance.
 - Accessibility options.
 - Display configuration.
@@ -189,6 +190,35 @@ Controls must reflect the capabilities actually available on the device.
 For example, brightness controls should only be exposed when the system can manage the relevant display or backlight.
 
 Quick Settings should use shared interface components and remain consistent with both system themes.
+
+### 6.1 Screenshot and screen recording
+
+AureaOS provides a unified capture workflow with distinct screenshot and recording actions.
+
+**Screenshot sources**
+- Entire display, with an explicit display choice when multiple outputs are connected.
+- Active window.
+- A window selected by the user.
+- A user-drawn rectangular area.
+
+The capture overlay must support keyboard and pointer operation, clear cancellation, and a visible confirmation before saving when the destination or overwrite behavior is ambiguous. PNG is the initial planned screenshot format.
+
+**Recording sources**
+- One selected display or a supported display set.
+- Active window or a window selected by the user.
+- A user-selected area, when the capture service can maintain correct geometry during the session.
+
+**Recording audio choices**
+- No audio.
+- System/output audio.
+- Microphone.
+- System audio and microphone.
+
+System audio and microphone are separate sources with separate permission decisions. When both are recorded, the implementation should preserve separate tracks where the selected container supports them, with an optional mixed output considered as a user-facing choice.
+
+The recording controls must expose start, pause/resume where supported, and stop. A persistent, unmistakable recording indicator remains visible for the entire active session, with a direct user-controlled stop action in Quick Settings. The indicator must not be hidden by ordinary windows or auto-hide behavior. Capture must stop or be safely suspended at the lock screen and must never capture secure authentication prompts.
+
+Cursor inclusion, output destination, available formats and quality controls must reflect implemented capabilities. The interface must not display unsupported options as active controls.
 
 ## 7. Notifications
 
