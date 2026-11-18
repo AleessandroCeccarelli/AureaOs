@@ -16,7 +16,8 @@ mod session;
 pub use coordinator::CaptureCoordinator;
 pub use error::CaptureError;
 pub use request::{
-    AudioCaptureMode, CaptureKind, CaptureRegion, CaptureRequest, CaptureTarget,
+    AudioCaptureMode, CaptureKind, CapturePermissionGrant, CaptureRegion, CaptureRequest,
+    CaptureTarget,
     DisplayId, WindowId,
 };
 pub use session::{CaptureSession, CaptureSessionId, CaptureSessionState};
