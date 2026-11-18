@@ -94,7 +94,8 @@ impl RenderTarget {
 
     /// Effective scale for geometry calculations.
     pub fn effective_scale(self) -> f64 {
-        self.fractional_scale.map_or(f64::from(self.scale), |scale| scale.as_f64())
+        self.fractional_scale
+            .map_or(f64::from(self.scale), |scale| scale.as_f64())
     }
 
     pub fn logical_origin(self) -> (i32, i32) {
