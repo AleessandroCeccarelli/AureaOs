@@ -127,7 +127,8 @@ impl DisplayOutput {
 
     /// Returns the effective scale as a floating-point value for geometry APIs.
     pub fn effective_scale(&self) -> f64 {
-        self.fractional_scale.map_or(f64::from(self.scale), ScaleFactor::as_f64)
+        self.fractional_scale
+            .map_or(f64::from(self.scale), ScaleFactor::as_f64)
     }
 
     pub fn is_enabled(&self) -> bool {
