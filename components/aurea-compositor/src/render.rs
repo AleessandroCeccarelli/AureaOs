@@ -34,7 +34,7 @@ use crate::window_manager::WindowManager;
 /// A snapshot of the mapped toplevels and pointer image for one rendering pass.
 pub struct RenderScene<'a> {
     toplevels: Vec<RenderToplevel<'a>>,
-    cursor_surface: Option<(WlSurface, Point<i32, Logical>)>,
+    cursor_surface: Option<(WlSurface, Point<i32, Logical>, Point<i32, Logical>)>,
     native_cursor_location: Option<Point<i32, Logical>>,
     native_cursor_scale: f64,
 }
@@ -78,7 +78,7 @@ impl<'a> RenderScene<'a> {
             return self;
         };
 
-        let cursor_anchor = pointer_location.to_i32_round();
+        let cursor_anchor = pointer_location.to_i32_round::<i32>();
 
         match status {
             CursorImageStatus::Hidden => {}
@@ -104,7 +104,7 @@ impl<'a> RenderScene<'a> {
 
                 let location: Point<i32, Logical> =
                     (pointer_location - hotspot.to_f64()).to_i32_round();
-                self.cursor_surface = Some((surface.clone(), location));
+                self.cursor_surface = Some((surface.clone(), location, cursor_anchor));
             }
         }
 
@@ -204,7 +204,7 @@ impl<'a> RenderScene<'a> {
             .flat_map(|toplevel| collect_surface_tree_ids(toplevel.surface.wl_surface()))
             .collect::<Vec<_>>();
 
-        if let Some((surface, _)) = &self.cursor_surface {
+        if let Some((surface, _, _)) = &self.cursor_surface {
             surface_ids.extend(collect_surface_tree_ids(surface));
         }
 
@@ -225,11 +225,11 @@ impl<'a> RenderScene<'a> {
             })
             .collect::<Vec<_>>();
 
-        if let Some((surface, location)) = &self.cursor_surface {
+        if let Some((surface, location, cursor_anchor)) = &self.cursor_surface {
             let mut cursor_snapshots = collect_surface_tree_snapshots(surface, *location);
             for snapshot in &mut cursor_snapshots {
                 snapshot.cursor_scale = self.native_cursor_scale;
-                snapshot.cursor_anchor = Some(cursor_anchor);
+                snapshot.cursor_anchor = Some(*cursor_anchor);
             }
             snapshots.extend(cursor_snapshots);
         }
