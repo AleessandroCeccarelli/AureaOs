@@ -80,7 +80,7 @@ impl VulkanReadbackCoordinator {
     pub fn poll_completed(&mut self) -> VulkanReadbackPoll {
         let mut result = VulkanReadbackPoll::default();
         while !self.submissions.is_empty() {
-            match self.submissions[index].poll() {
+            match self.submissions[0].poll() {
                 Ok(false) => break,
                 Err(error) => {
                     result.errors.push(error);
@@ -89,7 +89,7 @@ impl VulkanReadbackCoordinator {
                 Ok(true) => {}
             }
 
-            match self.submissions[index].take_rgba8() {
+            match self.submissions[0].take_rgba8() {
                 Ok(pixels) => {
                     self.submissions.remove(index);
                     result.completed_frames.push(pixels);
