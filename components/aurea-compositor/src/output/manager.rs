@@ -396,4 +396,3 @@ fn logical_width(output: &DisplayOutput) -> Result<i32, OutputManagerError> {
 
     i32::try_from(logical_width).map_err(|_| OutputManagerError::PositionOverflow)
 }
-
