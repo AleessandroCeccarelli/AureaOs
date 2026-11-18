@@ -77,6 +77,40 @@ pub struct LogicalSize {
     pub height: u32,
 }
 
+/// A half-open rectangle in global compositor logical coordinates.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LogicalRect {
+    origin: LogicalPoint,
+    size: LogicalSize,
+}
+
+impl LogicalRect {
+    /// Creates a rectangle. Empty extents are valid values but never intersect.
+    pub const fn new(origin: LogicalPoint, size: LogicalSize) -> Self {
+        Self { origin, size }
+    }
+
+    pub const fn origin(self) -> LogicalPoint {
+        self.origin
+    }
+
+    pub const fn size(self) -> LogicalSize {
+        self.size
+    }
+
+    /// Returns the exclusive right and bottom edges, or None on overflow/emptiness.
+    fn edges(self) -> Option<(i64, i64)> {
+        if self.size.width == 0 || self.size.height == 0 {
+            return None;
+        }
+
+        Some((
+            self.origin.x.checked_add(i64::from(self.size.width))?,
+            self.origin.y.checked_add(i64::from(self.size.height))?,
+        ))
+    }
+}
+
 /// Half-open logical rectangle occupied by one output.
 ///
 /// The right and bottom edges are excluded. This makes adjacent output
@@ -119,6 +153,25 @@ impl OutputLogicalBounds {
 
     pub const fn size(self) -> LogicalSize {
         self.size
+    }
+
+    /// Returns true when a non-empty logical rectangle overlaps this output.
+    ///
+    /// Both rectangles use half-open edges, so surfaces touching only an output
+    /// boundary do not enter that output.
+    pub fn intersects(self, rect: LogicalRect) -> bool {
+        let Some((output_right, output_bottom)) = LogicalRect::new(self.origin, self.size).edges()
+        else {
+            return false;
+        };
+        let Some((rect_right, rect_bottom)) = rect.edges() else {
+            return false;
+        };
+
+        rect.origin.x < output_right
+            && self.origin.x < rect_right
+            && rect.origin.y < output_bottom
+            && self.origin.y < rect_bottom
     }
 
     /// Returns true when the point belongs to this output's half-open bounds.
@@ -195,6 +248,62 @@ mod tests {
                 height: 1080
             }
         );
+    }
+
+    #[test]
+    fn surface_rect_intersects_output_when_area_overlaps() {
+        let output = OutputLogicalBounds::from_physical_mode(
+            LogicalPoint { x: 100, y: 50 },
+            1920,
+            1080,
+            ScaleFactor::from_percent(100).unwrap(),
+        )
+        .unwrap();
+
+        let surface = LogicalRect::new(
+            LogicalPoint { x: 90, y: 60 },
+            LogicalSize { width: 20, height: 20 },
+        );
+
+        assert!(output.intersects(surface));
+    }
+
+    #[test]
+    fn surface_rect_touching_output_edge_does_not_intersect() {
+        let output = OutputLogicalBounds::from_physical_mode(
+            LogicalPoint { x: 100, y: 50 },
+            1920,
+            1080,
+            ScaleFactor::from_percent(100).unwrap(),
+        )
+        .unwrap();
+
+        let adjacent = LogicalRect::new(
+            LogicalPoint { x: 2020, y: 50 },
+            LogicalSize { width: 100, height: 100 },
+        );
+
+        assert!(!output.intersects(adjacent));
+    }
+
+    #[test]
+    fn empty_or_overflowing_surface_rect_does_not_intersect() {
+        let output = OutputLogicalBounds::from_physical_mode(
+            LogicalPoint { x: 0, y: 0 },
+            1920,
+            1080,
+            ScaleFactor::from_percent(100).unwrap(),
+        )
+        .unwrap();
+
+        assert!(!output.intersects(LogicalRect::new(
+            LogicalPoint { x: 10, y: 10 },
+            LogicalSize { width: 0, height: 20 },
+        )));
+        assert!(!output.intersects(LogicalRect::new(
+            LogicalPoint { x: i64::MAX, y: 0 },
+            LogicalSize { width: 10, height: 10 },
+        )));
     }
 
     #[test]
