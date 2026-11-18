@@ -24,6 +24,12 @@ pub enum VulkanReadbackError {
     Invalidation(vk::Result),
     UnsupportedImageFormat,
     MissingTransferSourceUsage,
+    CommandBuffer(vk::Result),
+    FenceCreation(vk::Result),
+    Submission(vk::Result),
+    FenceStatus(vk::Result),
+    SubmissionNotComplete,
+    PixelsAlreadyRead,
 }
 
 impl fmt::Display for VulkanReadbackError {
@@ -53,6 +59,12 @@ impl fmt::Display for VulkanReadbackError {
             Self::MissingTransferSourceUsage => {
                 formatter.write_str("Readback image lacks TRANSFER_SRC usage")
             }
+            Self::CommandBuffer(error) => write!(formatter, "Readback command-buffer operation failed: {error:?}"),
+            Self::FenceCreation(error) => write!(formatter, "Readback fence creation failed: {error:?}"),
+            Self::Submission(error) => write!(formatter, "Readback queue submission failed: {error:?}"),
+            Self::FenceStatus(error) => write!(formatter, "Readback fence status query failed: {error:?}"),
+            Self::SubmissionNotComplete => formatter.write_str("Readback submission has not completed"),
+            Self::PixelsAlreadyRead => formatter.write_str("Readback pixels have already been consumed"),
         }
     }
 }
@@ -254,5 +266,151 @@ impl Drop for VulkanReadbackBuffer<'_> {
             self.device.handle().destroy_buffer(self.buffer, None);
             self.device.handle().free_memory(self.memory, None);
         }
+    }
+}
+
+
+/// Owns an in-flight image readback without blocking the submitting thread.
+///
+/// The source image must be in TRANSFER_SRC_OPTIMAL and remain alive until
+/// the returned submission reports completion. Poll this object from a
+/// capture worker and retain it while the GPU is using it.
+pub struct VulkanReadbackSubmission<'device> {
+    device: &'device VulkanLogicalDevice,
+    readback: Option<VulkanReadbackBuffer<'device>>,
+    command_buffer: vk::CommandBuffer,
+    fence: vk::Fence,
+    completed: bool,
+    pixels_read: bool,
+}
+
+impl<'device> VulkanReadbackSubmission<'device> {
+    /// Records and submits an image copy. Returns after queue acceptance.
+    pub fn submit(
+        device: &'device VulkanLogicalDevice,
+        view: &super::VulkanImageView<'_, '_>,
+    ) -> Result<Self, VulkanReadbackError> {
+        let readback = VulkanReadbackBuffer::new(device, view.width(), view.height())?;
+        let command_buffer = device
+            .allocate_primary_command_buffer()
+            .map_err(VulkanReadbackError::CommandBuffer)?;
+
+        let begin_info = vk::CommandBufferBeginInfo::default()
+            .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
+        if let Err(error) = unsafe {
+            device
+                .handle()
+                .begin_command_buffer(command_buffer, &begin_info)
+        } {
+            device.free_command_buffer(command_buffer);
+            return Err(VulkanReadbackError::CommandBuffer(error));
+        }
+
+        if let Err(error) = readback.record_copy_rgba8(command_buffer, view) {
+            unsafe {
+                device
+                    .handle()
+                    .reset_command_buffer(command_buffer, vk::CommandBufferResetFlags::empty())
+                    .ok();
+            }
+            device.free_command_buffer(command_buffer);
+            return Err(error);
+        }
+
+        if let Err(error) = unsafe { device.handle().end_command_buffer(command_buffer) } {
+            device.free_command_buffer(command_buffer);
+            return Err(VulkanReadbackError::CommandBuffer(error));
+        }
+
+        let fence_info = vk::FenceCreateInfo::default();
+        let fence = match unsafe { device.handle().create_fence(&fence_info, None) } {
+            Ok(fence) => fence,
+            Err(error) => {
+                device.free_command_buffer(command_buffer);
+                return Err(VulkanReadbackError::FenceCreation(error));
+            }
+        };
+
+        if let Err(error) = device.submit_async(command_buffer, fence) {
+            unsafe { device.handle().destroy_fence(fence, None) };
+            device.free_command_buffer(command_buffer);
+            return Err(VulkanReadbackError::Submission(error.result()));
+        }
+
+        Ok(Self {
+            device,
+            readback: Some(readback),
+            command_buffer,
+            fence,
+            completed: false,
+            pixels_read: false,
+        })
+    }
+
+    /// Checks completion without waiting. False means the GPU is still working.
+    pub fn poll(&mut self) -> Result<bool, VulkanReadbackError> {
+        if self.completed {
+            return Ok(true);
+        }
+
+        match unsafe { self.device.handle().get_fence_status(self.fence) } {
+            Ok(()) => {
+                self.completed = true;
+                Ok(true)
+            }
+            Err(vk::Result::NOT_READY) => Ok(false),
+            Err(error) => Err(VulkanReadbackError::FenceStatus(error)),
+        }
+    }
+
+    /// Consumes completed pixel data. This method never waits for the GPU.
+    pub fn take_rgba8(&mut self) -> Result<Vec<u8>, VulkanReadbackError> {
+        if !self.poll()? {
+            return Err(VulkanReadbackError::SubmissionNotComplete);
+        }
+        if self.pixels_read {
+            return Err(VulkanReadbackError::PixelsAlreadyRead);
+        }
+
+        let pixels = self
+            .readback
+            .as_ref()
+            .ok_or(VulkanReadbackError::PixelsAlreadyRead)?
+            .read_rgba8()?;
+        self.pixels_read = true;
+        Ok(pixels)
+    }
+
+    pub const fn is_complete(&self) -> bool {
+        self.completed
+    }
+
+    pub fn byte_len(&self) -> usize {
+        self.readback.as_ref().map_or(0, VulkanReadbackBuffer::byte_len)
+    }
+}
+
+impl Drop for VulkanReadbackSubmission<'_> {
+    fn drop(&mut self) {
+        if !self.completed {
+            let wait = unsafe {
+                self.device
+                    .handle()
+                    .wait_for_fences(&[self.fence], true, u64::MAX)
+            };
+            if wait.is_err()
+                && unsafe { self.device.handle().device_wait_idle() }.is_err()
+            {
+                // Completion is uncertain after device loss. Leak in-flight
+                // resources rather than free memory potentially used by GPU.
+                if let Some(readback) = self.readback.take() {
+                    std::mem::forget(readback);
+                }
+                return;
+            }
+        }
+
+        unsafe { self.device.handle().destroy_fence(self.fence, None) };
+        self.device.free_command_buffer(self.command_buffer);
     }
 }
