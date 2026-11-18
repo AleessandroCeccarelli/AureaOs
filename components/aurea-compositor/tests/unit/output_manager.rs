@@ -197,7 +197,7 @@ fn reconciliation_updates_changed_output_and_only_removes_or_adds_owned_ids() {
     assert!(manager.registry().get(unrelated_id).is_some());
     assert_eq!(
         manager.layout().get(added_id),
-        Some(OutputPosition::new(1951, 0))
+        Some(OutputPosition::new(1920, 0))
     );
 }
 
