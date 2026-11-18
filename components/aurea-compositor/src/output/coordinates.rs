@@ -70,6 +70,78 @@ impl OutputCoordinateSpace {
     }
 }
 
+
+/// A non-zero extent in global logical pixels.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LogicalSize {
+    pub width: u32,
+    pub height: u32,
+}
+
+/// Half-open logical rectangle occupied by one output.
+///
+/// The right and bottom edges are excluded. This makes adjacent output
+/// boundaries deterministic and prevents two monitors claiming the same
+/// pointer coordinate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OutputLogicalBounds {
+    origin: LogicalPoint,
+    size: LogicalSize,
+}
+
+impl OutputLogicalBounds {
+    /// Builds logical bounds from a physical mode and its output scale.
+    pub fn from_physical_mode(
+        origin: LogicalPoint,
+        physical_width: u32,
+        physical_height: u32,
+        scale: ScaleFactor,
+    ) -> Option<Self> {
+        if physical_width == 0 || physical_height == 0 {
+            return None;
+        }
+
+        let width = scale.physical_to_logical(i64::from(physical_width))?;
+        let height = scale.physical_to_logical(i64::from(physical_height))?;
+        let size = LogicalSize {
+            width: u32::try_from(width).ok().filter(|value| *value > 0)?,
+            height: u32::try_from(height).ok().filter(|value| *value > 0)?,
+        };
+
+        origin.x.checked_add(i64::from(size.width))?;
+        origin.y.checked_add(i64::from(size.height))?;
+
+        Some(Self { origin, size })
+    }
+
+    pub const fn origin(self) -> LogicalPoint {
+        self.origin
+    }
+
+    pub const fn size(self) -> LogicalSize {
+        self.size
+    }
+
+    /// Returns true when the point belongs to this output's half-open bounds.
+    pub fn contains(self, point: LogicalPoint) -> bool {
+        let Some(right) = self.origin.x.checked_add(i64::from(self.size.width)) else {
+            return false;
+        };
+        let Some(bottom) = self.origin.y.checked_add(i64::from(self.size.height)) else {
+            return false;
+        };
+
+        point.x >= self.origin.x
+            && point.y >= self.origin.y
+            && point.x < right
+            && point.y < bottom
+    }
+
+    pub fn coordinate_space(self, scale: ScaleFactor) -> OutputCoordinateSpace {
+        OutputCoordinateSpace::new(self.origin, scale)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -98,6 +170,38 @@ mod tests {
             space.physical_to_logical(PhysicalPoint { x: 125, y: 250 }),
             Some(LogicalPoint { x: 2020, y: 300 })
         );
+    }
+
+    #[test]
+    fn mixed_scale_output_bounds_have_deterministic_edges() {
+        let left = OutputLogicalBounds::from_physical_mode(
+            LogicalPoint { x: 0, y: 0 },
+            1920,
+            1080,
+            ScaleFactor::from_percent(100).unwrap(),
+        ).unwrap();
+        let right = OutputLogicalBounds::from_physical_mode(
+            LogicalPoint { x: 1920, y: 0 },
+            3840,
+            2160,
+            ScaleFactor::from_percent(200).unwrap(),
+        ).unwrap();
+
+        assert!(left.contains(LogicalPoint { x: 1919, y: 1079 }));
+        assert!(!left.contains(LogicalPoint { x: 1920, y: 500 }));
+        assert!(right.contains(LogicalPoint { x: 1920, y: 0 }));
+        assert_eq!(right.size(), LogicalSize { width: 1920, height: 1080 });
+    }
+
+    #[test]
+    fn rejects_zero_or_overflowing_output_bounds() {
+        let scale = ScaleFactor::from_percent(100).unwrap();
+        assert!(OutputLogicalBounds::from_physical_mode(
+            LogicalPoint { x: 0, y: 0 }, 0, 1080, scale
+        ).is_none());
+        assert!(OutputLogicalBounds::from_physical_mode(
+            LogicalPoint { x: i64::MAX, y: 0 }, 1920, 1080, scale
+        ).is_none());
     }
 
     #[test]
