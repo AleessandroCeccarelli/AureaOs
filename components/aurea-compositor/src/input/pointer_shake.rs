@@ -73,6 +73,7 @@ impl PointerShakeDetector {
             if let Some(last_time) = previous_time {
                 if sample.time_ms.wrapping_sub(last_time) > MAX_GAP_MS {
                     reversals = 0;
+                    distance = 0.0;
                     previous_sign = 0;
                 }
             }
