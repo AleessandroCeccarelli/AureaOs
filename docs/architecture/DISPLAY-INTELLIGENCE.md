@@ -197,7 +197,9 @@ The compositor now contains an initial, independently testable mathematical foun
 - `output/coordinates.rs` separates global logical coordinates from output-local physical pixels. It defines half-open logical output bounds so adjacent monitor edges have deterministic ownership.
 - The foundation includes unit tests for common scale factors, negative coordinates, overflow rejection, and mixed-scale output boundaries.
 
-This is **not yet end-to-end fractional scaling**. The existing `DisplayOutput`, output manager, Wayland publication, pointer bounds, and surface geometry still contain integer-scale paths. Those paths must be migrated together behind the shared coordinate model before fractional scaling is exposed as a user-facing feature. Until then, the new modules are a tested foundation, not a completed capability.
+The rational scale is now also carried as an optional per-output setting in `DisplayOutput`. The output manager can configure it, automatic output placement uses the resulting logical width, pointer bounds use the effective scale, render targets retain the rational value, and Smithay receives a `Scale::Custom` value with a legacy integer advertisement.
+
+This is **still not end-to-end fractional scaling**. AureaOS has not yet initialized Smithay's fractional-scale protocol manager, so clients are not yet guaranteed to receive `wp_fractional_scale_v1` preferred-scale events. Surface-buffer viewport handling, cursor hotspots, clipping, hit-testing, and the actual Vulkan renderer must also be migrated and tested together. The compositor must not advertise fractional scaling as a completed user-facing feature until those pieces are integrated.
 
 The migration must preserve one invariant: global desktop positions and pointer locations are logical coordinates; each output converts them to its own physical pixel space exactly once. Surface buffers, cursor hotspots, clipping, hit-testing, and rendering must use the same transform and rounding policy.
 
