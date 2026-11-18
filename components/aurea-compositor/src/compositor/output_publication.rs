@@ -82,12 +82,12 @@ impl AureaCompositor {
         output_id: OutputId,
     ) -> Result<(), OutputPublicationError> {
         let Some(output) = self.output_manager.registry().get(output_id) else {
-            self.wayland_outputs.remove(&output_id);
+            self.unpublish_wayland_output(output_id);
             return Ok(());
         };
 
         if !output.is_enabled() {
-            self.wayland_outputs.remove(&output_id);
+            self.unpublish_wayland_output(output_id);
             return Ok(());
         }
 
