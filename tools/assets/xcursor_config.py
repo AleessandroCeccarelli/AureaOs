@@ -25,7 +25,7 @@ def write_cursor_config(
         if delay_ms < 0:
             raise ValueError("cursor frame delay cannot be negative")
         lines.append(
-            f"{size} {hotspot_x} {hotspot_y} {image_path.name} {delay_ms}"
+            f"{size} {hotspot_x} {hotspot_y} {image_path.relative_to(destination.parent).as_posix()} {delay_ms}"
         )
 
     destination.write_text("\n".join(lines) + "\n", encoding="utf-8")
