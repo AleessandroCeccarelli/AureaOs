@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use smithay::{
     backend::input::Keycode,
-    input::{Seat, SeatHandler, SeatState},
+    input::{Seat, SeatHandler, SeatState, pointer::CursorImageStatus},
     output::Output,
     reexports::wayland_server::{DisplayHandle, protocol::wl_surface::WlSurface},
     wayland::{compositor::CompositorState, shell::xdg::XdgShellState, shm::ShmState},
@@ -48,6 +48,7 @@ pub struct AureaCompositor {
     output_manager: OutputManager,
     frame_scheduler: FrameScheduler,
     wayland_outputs: BTreeMap<OutputId, Output>,
+    cursor_image: CursorImageStatus,
 }
 
 impl SeatHandler for AureaCompositor {
@@ -57,6 +58,11 @@ impl SeatHandler for AureaCompositor {
 
     fn seat_state(&mut self) -> &mut SeatState<Self> {
         &mut self.seat_state
+    }
+
+    fn cursor_image(&mut self, _seat: &Seat<Self>, image: CursorImageStatus) {
+        self.cursor_image = image;
+        self.request_all_output_frames();
     }
 }
 
@@ -80,6 +86,7 @@ impl AureaCompositor {
             output_manager: OutputManager::new(),
             frame_scheduler: FrameScheduler::new(),
             wayland_outputs: BTreeMap::new(),
+            cursor_image: CursorImageStatus::default_named(),
         }
     }
 
@@ -101,6 +108,11 @@ impl AureaCompositor {
     /// Returns the window manager.
     pub fn window_manager(&mut self) -> &mut WindowManager {
         &mut self.window_manager
+    }
+
+    /// Returns the cursor image currently requested by the focused Wayland client.
+    pub fn cursor_image_status(&self) -> &CursorImageStatus {
+        &self.cursor_image
     }
 
     /// Returns the output manager.

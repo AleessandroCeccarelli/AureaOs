@@ -83,5 +83,6 @@ impl AureaCompositor {
             },
         );
         pointer.frame(self);
+        self.request_all_output_frames();
     }
 }
