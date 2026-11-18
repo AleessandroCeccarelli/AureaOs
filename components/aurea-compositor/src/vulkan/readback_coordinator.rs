@@ -5,7 +5,9 @@
 
 //! Bounded coordinator for asynchronous Vulkan readback submissions.
 
-use super::{VulkanImageView, VulkanReadbackBufferPool, VulkanReadbackError, VulkanReadbackSubmission};
+use super::{
+    VulkanImageView, VulkanReadbackBufferPool, VulkanReadbackError, VulkanReadbackSubmission,
+};
 
 /// Results collected during one non-blocking coordinator poll.
 #[derive(Debug, Default)]
