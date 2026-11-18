@@ -162,4 +162,16 @@ Compilation alone is not acceptance. Unit tests, portal integration tests and ha
 
 ## 11. Implementation status
 
-This document records the intended architecture. It does not claim that a capture service, portal backend, Vulkan readback path, audio capture pipeline or user interface is implemented. Each layer must be delivered and verified incrementally before the UI advertises it as available.
+The technology-independent `aurea-capture` crate now contains an initial implementation foundation:
+
+- Capture request and target types for screenshot and recording operations.
+- A single-session coordinator with explicit authorization, lifecycle transitions and separate screen/system-audio/microphone grants.
+- Validated owned RGBA8/BGRA8 frame data with dimensions, stride and monotonic timestamp metadata.
+- A non-blocking frame queue with both a frame-count limit and a strict queued-byte limit. New frames are rejected and counted when either limit is reached.
+- Unit tests covering request/session behavior, frame validation, queue ordering, drop accounting and memory limits.
+
+These primitives do not yet acquire screen pixels or audio. They do not implement a compositor adapter, asynchronous Vulkan readback, PNG output, video encoding, PipeWire capture, portal backend or user interface.
+
+Repository inspection also confirms that the existing Vulkan readback helper is synchronous and used by the offscreen diagnostic path. The generic Vulkan render backend currently reports output presentation as unavailable. Therefore, no capture code is connected to that helper: the real final-scene rendering and presentation path must be completed before an authorized frame-source adapter can be integrated.
+
+The current frame queue is a technology-independent handoff primitive, not a GPU staging-buffer pool and not a thread-safe media pipeline. Each subsequent layer must be delivered and verified independently before the UI advertises it as available.
