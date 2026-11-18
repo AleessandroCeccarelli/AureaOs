@@ -565,7 +565,6 @@ fn reconciliation_rejects_fifth_active_output_without_mutation() {
     assert!(manager.registry().get(5).is_none());
 }
 
-
 #[test]
 fn reconciliation_places_outputs_using_fractional_logical_width() {
     let mut manager = OutputManager::new();
