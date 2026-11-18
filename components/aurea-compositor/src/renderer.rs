@@ -33,6 +33,7 @@ pub struct RenderTarget {
     height: u32,
     refresh_millihz: u32,
     scale: u32,
+    fractional_scale: Option<crate::output::scale::ScaleFactor>,
     logical_origin: (i32, i32),
 }
 
@@ -55,6 +56,7 @@ impl RenderTarget {
             height: mode.height(),
             refresh_millihz: mode.refresh_millihz(),
             scale: output.scale(),
+            fractional_scale: output.fractional_scale(),
             logical_origin,
         })
     }
@@ -79,12 +81,22 @@ impl RenderTarget {
         self.refresh_millihz
     }
 
-    /// Integer scale factor configured for the output.
+    /// Legacy integer scale factor configured for the output.
     pub fn scale(self) -> u32 {
         self.scale
     }
 
     /// Output origin in the compositor's global logical coordinate space.
+    /// Optional exact fractional scale for this output.
+    pub fn fractional_scale(self) -> Option<crate::output::scale::ScaleFactor> {
+        self.fractional_scale
+    }
+
+    /// Effective scale for geometry calculations.
+    pub fn effective_scale(self) -> f64 {
+        self.fractional_scale.map_or(f64::from(self.scale), |scale| scale.as_f64())
+    }
+
     pub fn logical_origin(self) -> (i32, i32) {
         self.logical_origin
     }
