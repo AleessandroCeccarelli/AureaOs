@@ -17,6 +17,7 @@ use smithay::{
 
 use crate::{
     frame::FrameScheduler,
+    input::{cursor_animation::CursorLocateAnimation, pointer_settings::PointerSettings, pointer_shake::PointerShakeDetector},
     output::{OutputId, manager::OutputManager},
     window_manager::WindowManager,
 };
@@ -49,6 +50,9 @@ pub struct AureaCompositor {
     frame_scheduler: FrameScheduler,
     wayland_outputs: BTreeMap<OutputId, Output>,
     cursor_image: CursorImageStatus,
+    pointer_settings: PointerSettings,
+    pointer_shake: PointerShakeDetector,
+    cursor_locate_animation: CursorLocateAnimation,
 }
 
 impl SeatHandler for AureaCompositor {
@@ -87,6 +91,9 @@ impl AureaCompositor {
             frame_scheduler: FrameScheduler::new(),
             wayland_outputs: BTreeMap::new(),
             cursor_image: CursorImageStatus::default_named(),
+            pointer_settings: PointerSettings::default(),
+            pointer_shake: PointerShakeDetector::default(),
+            cursor_locate_animation: CursorLocateAnimation::default(),
         }
     }
 
@@ -115,7 +122,7 @@ impl AureaCompositor {
         &self.cursor_image
     }
 
-    /// Returns the output manager.
+    /// Returns the current cursor locate animation scale for a frame timestamp.\n    pub fn cursor_locate_scale(&mut self, time_ms: u32) -> f64 {\n        self.cursor_locate_animation.scale_at(time_ms)\n    }\n\n    /// Returns the active pointer preferences.\n    pub fn pointer_settings(&self) -> PointerSettings {\n        self.pointer_settings\n    }\n\n    /// Updates validated pointer preferences.\n    pub fn set_pointer_settings(&mut self, settings: PointerSettings) {\n        self.pointer_settings = settings;\n    }\n\n    /// Returns the output manager.
     pub fn output_manager(&mut self) -> &mut OutputManager {
         &mut self.output_manager
     }
