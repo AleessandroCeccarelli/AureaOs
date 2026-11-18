@@ -145,11 +145,7 @@ fn system_audio_and_microphone_require_separate_grants() {
 #[test]
 fn screen_permission_is_required_for_every_capture() {
     let mut coordinator = CaptureCoordinator::new();
-    let request = CaptureRequest::new(
-        CaptureKind::Screenshot,
-        CaptureTarget::ActiveWindow,
-        false,
-    );
+    let request = CaptureRequest::new(CaptureKind::Screenshot, CaptureTarget::ActiveWindow, false);
     let id = coordinator.begin(request).unwrap();
     let no_screen_grant = CapturePermissionGrant::new(false, false, false);
 
