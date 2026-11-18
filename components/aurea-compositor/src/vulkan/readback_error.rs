@@ -35,6 +35,8 @@ pub enum VulkanReadbackError {
     PoolExhausted,
     PoolBusy,
     PoolLockPoisoned,
+    InvalidCoordinatorLimit,
+    InFlightLimitReached,
 }
 
 impl fmt::Display for VulkanReadbackError {
@@ -104,6 +106,12 @@ impl fmt::Display for VulkanReadbackError {
             }
             Self::PoolLockPoisoned => {
                 formatter.write_str("Readback staging pool lock is poisoned")
+            }
+            Self::InvalidCoordinatorLimit => {
+                formatter.write_str("Readback coordinator limit must be non-zero")
+            }
+            Self::InFlightLimitReached => {
+                formatter.write_str("Readback coordinator has reached its in-flight limit")
             }
         }
     }
