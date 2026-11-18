@@ -3,9 +3,14 @@
 // AureaOS — Capture Core tests.
 
 use aurea_capture::{
-    AudioCaptureMode, CaptureCoordinator, CaptureKind, CaptureRegion, CaptureRequest,
+    AudioCaptureMode, CaptureCoordinator, CaptureKind, CapturePermissionGrant, CaptureRegion,
+    CaptureRequest,
     CaptureSessionState, CaptureTarget, DisplayId,
 };
+
+fn full_capture_grant() -> CapturePermissionGrant {
+    CapturePermissionGrant::new(true, true, true)
+}
 
 fn recording_request() -> CaptureRequest {
     CaptureRequest::new(
@@ -26,7 +31,7 @@ fn session_requires_authorization_before_capture() {
         coordinator.session().unwrap().state(),
         CaptureSessionState::AwaitingAuthorization
     );
-    coordinator.authorize(id).unwrap();
+    coordinator.authorize(id, full_capture_grant()).unwrap();
     assert_eq!(
         coordinator.session().unwrap().state(),
         CaptureSessionState::Ready
@@ -90,7 +95,7 @@ fn cancelled_session_cannot_be_restarted() {
 
     coordinator.cancel(id).unwrap();
 
-    assert!(coordinator.authorize(id).is_err());
+    assert!(coordinator.authorize(id, full_capture_grant()).is_err());
     assert_eq!(
         coordinator.session().unwrap().state(),
         CaptureSessionState::Cancelled
@@ -121,4 +126,37 @@ fn capture_region_preserves_logical_coordinates() {
     assert_eq!(region.y(), 24);
     assert_eq!(region.width(), 640);
     assert_eq!(region.height(), 480);
+}
+
+#[test]
+fn system_audio_and_microphone_require_separate_grants() {
+    let mut coordinator = CaptureCoordinator::new();
+    let id = coordinator.begin(recording_request()).unwrap();
+    let screen_and_system_audio = CapturePermissionGrant::new(true, true, false);
+
+    assert!(coordinator.authorize(id, screen_and_system_audio).is_err());
+    assert_eq!(
+        coordinator.session().unwrap().state(),
+        CaptureSessionState::AwaitingAuthorization
+    );
+
+    coordinator.authorize(id, full_capture_grant()).unwrap();
+    assert_eq!(
+        coordinator.session().unwrap().state(),
+        CaptureSessionState::Ready
+    );
+}
+
+#[test]
+fn screen_permission_is_required_for_every_capture() {
+    let mut coordinator = CaptureCoordinator::new();
+    let request = CaptureRequest::new(
+        CaptureKind::Screenshot,
+        CaptureTarget::ActiveWindow,
+        false,
+    );
+    let id = coordinator.begin(request).unwrap();
+    let no_screen_grant = CapturePermissionGrant::new(false, false, false);
+
+    assert!(coordinator.authorize(id, no_screen_grant).is_err());
 }
