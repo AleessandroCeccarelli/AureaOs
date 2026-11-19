@@ -10,6 +10,9 @@
 //! providers. In particular, local civil time must be derived from an IANA
 //! time-zone database rather than hard-coded daylight-saving rules.
 
+mod context;
+pub use context::{TimeContextError, TimeContextProvider, TimeContextSnapshot};
+
 /// Maximum UTC offset accepted by the IANA time-zone model: 18 hours.
 pub const MAX_UTC_OFFSET_SECONDS: i32 = 18 * 60 * 60;
 
