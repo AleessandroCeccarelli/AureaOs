@@ -12,5 +12,5 @@ mod coordinator;
 
 pub use coordinator::{
     HardwareDeviceId, HardwareDeviceKind, HardwareDeviceRecord, HardwareDeviceState,
-    HardwareMonitorCoordinator, HardwareMonitorSnapshot,
+    HardwareMonitorCoordinator, HardwareMonitorModule, HardwareMonitorSnapshot,
 };
