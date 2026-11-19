@@ -319,6 +319,19 @@ mod tests {
     }
 
     #[test]
+    fn unix_time_rejects_unnormalized_nanoseconds() {
+        assert_eq!(UnixTime::new(1_800_000_000, 1_000_000_000), None);
+        let timestamp = UnixTime::new(1_800_000_000, 999_999_999).unwrap();
+        assert_eq!(timestamp.nanoseconds(), 999_999_999);
+    }
+
+    #[test]
+    fn manual_sync_policy_is_explicit() {
+        assert_eq!(TimeSyncPolicy::default(), TimeSyncPolicy::Automatic);
+        assert_eq!(TimeSyncPolicy::Manual, TimeSyncPolicy::Manual);
+    }
+
+    #[test]
     fn zone_snapshot_keeps_zone_and_instant_specific_offset_together() {
         let zone = TimeZoneId::new("Europe/Rome").unwrap();
         let offset = UtcOffset::from_seconds(7_200).unwrap();
