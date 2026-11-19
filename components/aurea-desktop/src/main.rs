@@ -7,6 +7,7 @@
 
 mod compositor_factory;
 mod diagnostics;
+mod keyboard_layout_store;
 mod welcome;
 mod welcome_process;
 
@@ -33,7 +34,14 @@ fn main() {
 
     diagnostics::record("INFO", "Initializing shell and DRM/Vulkan compositor");
     let config = ShellConfig::default();
-    let compositor_factory = compositor_factory::DesktopCompositorFactory::default();
+    let selected_layout = keyboard_layout_store::KeyboardLayoutStore::new()
+        .and_then(|store| store.load())
+        .unwrap_or_else(|error| {
+            diagnostics::record("WARN", &format!("Keyboard layout preference unavailable: {error}"));
+            None
+        });
+    let compositor_factory =
+        compositor_factory::DesktopCompositorFactory::with_keyboard_layout(selected_layout);
 
     if let Err(error) = app::run(config, compositor_factory) {
         diagnostics::record("ERROR", &format!("Desktop stopped with an error: {error}"));
