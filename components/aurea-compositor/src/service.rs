@@ -13,6 +13,12 @@ use aurea_desktop_api::{
 
 use crate::WaylandServer;
 
+/// Default Wayland display socket shared with native desktop clients.
+pub const DEFAULT_WAYLAND_DISPLAY_NAME: &str = "wayland-0";
+
+/// Default libseat seat used by the native desktop session.
+pub const DEFAULT_WAYLAND_SEAT_NAME: &str = "seat0";
+
 /// Configuration and factory for the native Wayland compositor.
 #[derive(Clone, Debug)]
 pub struct WaylandCompositorFactory {
@@ -32,7 +38,7 @@ impl WaylandCompositorFactory {
 
 impl Default for WaylandCompositorFactory {
     fn default() -> Self {
-        Self::new("wayland-0", "seat0")
+        Self::new(DEFAULT_WAYLAND_DISPLAY_NAME, DEFAULT_WAYLAND_SEAT_NAME)
     }
 }
 

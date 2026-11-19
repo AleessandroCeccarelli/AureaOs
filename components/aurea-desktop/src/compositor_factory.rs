@@ -8,13 +8,13 @@
 use std::process::{Child, Command, Stdio};
 use std::{io, process};
 
-use aurea_compositor::service::WaylandCompositorFactory;
+use aurea_compositor::service::{
+    DEFAULT_WAYLAND_DISPLAY_NAME, WaylandCompositorFactory,
+};
 use aurea_desktop_api::{
     CompositorFactory, CompositorService, ShutdownSignal, display::DisplayColorController,
 };
 
-const WAYLAND_DISPLAY_NAME: &str = "wayland-0";
-const WAYLAND_SEAT_NAME: &str = "seat0";
 const WELCOME_CLIENT_ARGUMENT: &str = "--welcome-client";
 
 /// Creates the compositor and starts the first native desktop client.
@@ -25,10 +25,7 @@ pub struct DesktopCompositorFactory {
 impl Default for DesktopCompositorFactory {
     fn default() -> Self {
         Self {
-            compositor: WaylandCompositorFactory::new(
-                WAYLAND_DISPLAY_NAME,
-                WAYLAND_SEAT_NAME,
-            ),
+            compositor: WaylandCompositorFactory::default(),
         }
     }
 }
@@ -43,11 +40,17 @@ impl CompositorFactory for DesktopCompositorFactory {
         let executable = std::env::current_exe()?;
         let welcome_client = Command::new(executable)
             .arg(WELCOME_CLIENT_ARGUMENT)
-            .env("WAYLAND_DISPLAY", WAYLAND_DISPLAY_NAME)
+            .env("WAYLAND_DISPLAY", DEFAULT_WAYLAND_DISPLAY_NAME)
             .stdin(Stdio::null())
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
-            .spawn()?;
+            .spawn()
+            .map_err(|error| {
+                io::Error::new(
+                    error.kind(),
+                    format!("cannot start the Aurea Welcome client: {error}"),
+                )
+            })?;
 
         Ok(Box::new(DesktopCompositorService {
             compositor,
