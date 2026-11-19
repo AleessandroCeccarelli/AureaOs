@@ -114,3 +114,43 @@ Do not record intentions as completed work.
 - Updated the desktop interoperability contract to distinguish internal Rust contracts, the future native Human Interfaces library and the still-unimplemented application-facing IPC/portal layer.
 - Updated the roadmap to reflect the new input and appearance API foundations.
 - Latest API-focused code commits: `4022516` and `9d2bc14`. GitHub Actions is configured to trigger for source changes pushed to `main`; the run result is not yet confirmed here.
+
+
+## 2026-11-19 — Shared display API foundation
+
+### Scope and repository alignment
+
+The existing architecture decisions were reviewed before implementation:
+
+- [Multi-Monitor Policy](../architecture/MULTI-MONITOR-POLICY.md) remains authoritative: a maximum of four active outputs, while additional connected displays may remain discovered but disabled.
+- [Display Intelligence](../architecture/DISPLAY-INTELLIGENCE.md) remains authoritative for automatic/manual management, fixed refresh, VRR capability checks, safe fallback, and the boundary between policy and compositor/DRM ownership.
+- Existing compositor output identity, mode discovery, registration, logical layout, rational scaling, and four-output enforcement remain the implementation foundations. No duplicate compositor output manager or second DRM owner was introduced.
+
+### API files added
+
+Under `components/aurea-desktop-api/src/display/`:
+
+- `modes.rs`: validated pixel dimensions and millihertz refresh values, preserving fractional rates without floating-point identity comparisons.
+- `capabilities.rs`: stable display IDs, connector type, verified VRR range, HDR/bit-depth and physical-size capability fields, and public display descriptors.
+- `layout.rs`: logical positions, rational per-display scale, enablement and primary-display layout.
+- `policy.rs`: Automatic/Manual management, Automatic/Fixed/PreferVariable refresh preference, active refresh strategy and compositor policy context.
+- `events.rs`: connected/disconnected/capability/configuration notifications.
+- `manager.rs`: snapshot and transactional configuration contracts, validation of unique displays/layout placements, primary-display validity, and the four-active-display ceiling.
+
+The existing `display.rs` remains the public entry point and retains the shared Night Light color controller. It now exports the display-management contracts without changing existing call sites.
+
+### Safety and correctness rules
+
+- Refresh rates are represented in millihertz; no universal 60/120/144 Hz assumptions are embedded.
+- VRR ranges are optional verified capability data. Unknown means unavailable for policy decisions, not guessed from EDID or marketing labels.
+- Four active displays are allowed; a fifth connected display can remain represented but disabled.
+- Layout validation rejects duplicate IDs, missing/extra placements, and a primary display that is not enabled.
+- Display configuration is specified as a single transaction. Implementations must restore the last known working configuration if applying a request fails and report rollback failure separately.
+- Automatic policy receives explicit compositor/system context; it must not inspect application pixels or private content.
+- These are API contracts only. The concrete provider, DRM/KMS mode-application path, VRR execution, persistence, Settings UI and application-facing IPC remain future work.
+
+### Verification
+
+- Source changes were committed directly to `main`.
+- Focused Rust unit tests were added for mode validation, fractional refresh representation, VRR range validation, common scale values, automatic defaults, four-display acceptance, fifth-active-display rejection, duplicate IDs/layouts, and invalid primary-display selection.
+- No local Cargo test/build is claimed. The Fedora hardware environment has not been used for validation in this change.
