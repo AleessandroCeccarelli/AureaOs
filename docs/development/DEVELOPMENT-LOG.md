@@ -193,3 +193,18 @@ The existing `display.rs` remains the public entry point and retains the shared 
 - Changes committed directly to `main`.
 - No local Cargo build/test or completed CI result is claimed in this entry.
 - Concrete Appearance provider, ambient sensor discovery, solar/time provider, Lumen coordinator, persistence, native Settings UI and application-facing IPC remain future implementation work.
+
+
+## 2026-11-19 — Clarify early-stage and provisional design status
+
+AureaOS is explicitly an embryonic project. The recent names and contracts for Aurea Appearance, Aurea Lumen, Aurea Palette and Aurea Form describe the current direction, not a final or immutable product specification.
+
+Updated the architecture document, Human Interfaces overview, design-system README, color-system specification and roadmap to state that:
+
+- Product names, palette values, shapes, visual treatments, functions, APIs, architecture and technology choices may change during development.
+- Current visual tokens and API identities are provisional and must not be presented as frozen standards.
+- Documentation and API contracts are not evidence of completed runtime services.
+- Design proposals, experimental code, implemented API contracts, hardware-validated behavior and release-ready capabilities must be reported separately.
+- A compatibility/versioning policy must be established before promising long-term stability to third-party developers.
+
+No runtime code or visual token values were changed in this documentation clarification.
