@@ -13,8 +13,8 @@ pub mod pointer;
 
 pub use action::InputAction;
 pub use device::{
-    InputDeviceCapabilities, InputDeviceDescriptor, InputDeviceId, InputDeviceKind,
-    InputDeviceProvider, StandardInputCapability,
+    InputDeviceCapabilities, InputDeviceDescriptor, InputDeviceEvent, InputDeviceId,
+    InputDeviceKind, InputDeviceProvider, StandardInputCapability,
 };
 pub use extension::{
     ExtensionCapability, ExtensionPermission, PeripheralExtensionDescriptor,
