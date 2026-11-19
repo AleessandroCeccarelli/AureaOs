@@ -5,6 +5,8 @@
 
 //! Technology-independent input-device identity and capability descriptions.
 
+use std::sync::mpsc::Receiver;
+
 /// Stable identifier assigned by the AureaOS input-device discovery layer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct InputDeviceId(pub u64);
@@ -81,8 +83,17 @@ pub struct InputDeviceDescriptor {
     pub capabilities: InputDeviceCapabilities,
 }
 
+/// Lifecycle changes visible to trusted device-management clients.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum InputDeviceEvent {
+    Connected(InputDeviceDescriptor),
+    Disconnected(InputDeviceId),
+    CapabilitiesChanged(InputDeviceDescriptor),
+}
+
 /// Read-only inventory contract for system settings and trusted desktop services.
 pub trait InputDeviceProvider: Send + Sync {
     fn devices(&self) -> Vec<InputDeviceDescriptor>;
     fn device(&self, id: InputDeviceId) -> Option<InputDeviceDescriptor>;
+    fn subscribe(&self) -> Receiver<InputDeviceEvent>;
 }
