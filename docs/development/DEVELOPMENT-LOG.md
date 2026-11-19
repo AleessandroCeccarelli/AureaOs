@@ -163,3 +163,33 @@ The existing `display.rs` remains the public entry point and retains the shared 
 - Made the requested mode optional in Automatic mode so the policy engine can choose a discovered mode. Manual mode and Fixed refresh requests require an explicit mode for each enabled display.
 - Represented unknown HDR capability explicitly instead of treating missing information as unsupported.
 - Added validation that a non-empty active layout has exactly one enabled primary display, and that output IDs and layout placements are unique and complete.
+
+
+## 2026-11-19 — Aurea Appearance, Aurea Palette, Aurea Form and Aurea Lumen
+
+### Naming and ownership
+
+- **Aurea Appearance** is the system-wide theme/accessibility appearance contract.
+- **Aurea Palette** names the canonical semantic color system.
+- **Aurea Form** names the canonical geometry and surface language.
+- **Aurea Lumen** names environmental display color adaptation, distinct from Light/Dark theme selection.
+- AureaOS Human Interfaces remains the single design system and owner of visual values. No parallel palette or token source was created.
+
+### API changes
+
+- Extended `appearance.rs` with the canonical palette identity, form profile and semantic geometry roles. The appearance snapshot now carries palette/form identity alongside the resolved color scheme and accessibility preferences.
+- Added `appearance/lumen.rs` with Manual, Schedule, Solar, Ambient and Automatic modes; validated local-clock intervals; ambient-light thresholds with hysteresis; and clamped warmth preferences.
+- Automatic Lumen policy prefers reliable ambient sensing and falls back to an available solar or local schedule. Sensor/time providers and policy execution remain separate implementation responsibilities.
+- Existing `NightLightState` and the compositor color adjustment path remain in place as migration foundations; no unverified sensor or solar service is claimed.
+
+### Documentation changes
+
+- Added `docs/architecture/AUREA-APPEARANCE-AND-LUMEN.md`.
+- Named Aurea Palette and Aurea Form in Human Interfaces documentation and the color-system specification.
+- Reaffirmed `aurea-human-interfaces/design-system/tokens/index.css` as the sole source of visual values.
+
+### Verification status
+
+- Changes committed directly to `main`.
+- No local Cargo build/test or completed CI result is claimed in this entry.
+- Concrete Appearance provider, ambient sensor discovery, solar/time provider, Lumen coordinator, persistence, native Settings UI and application-facing IPC remain future implementation work.
