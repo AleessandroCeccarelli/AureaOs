@@ -75,3 +75,33 @@ Use this structure for future entries:
 - **Next actions**
 
 Do not record intentions as completed work.
+
+
+## 2026-11-19 — Shared input and appearance API foundations
+
+### Repository references
+
+- Active branch: `main`.
+- Input API grouping and compatibility export: `872229a`, `47dc3ea`.
+- Shared pointer settings consumed by the compositor: `0cfeab6`.
+- Appearance token roles and provider contract: `8ee9ff3`.
+- Observable device, pointer and keyboard contracts: `aa2de73`, `0250c5c`, `b187afa`, `9446aca`.
+- Updated keyboard/pointer policy and Human Interfaces status: `6033a4b`, `6aae467`.
+
+### Changes committed
+
+- Grouped technology-independent keyboard, pointer, device and vendor-extension contracts under `aurea_desktop_api::input`; retained the original keyboard import path as a compatibility re-export.
+- Added device descriptors, verified capability snapshots and lifecycle notifications without exposing serial numbers or unrestricted raw input streams.
+- Added shared pointer settings and semantic button identifiers; the compositor now consumes the API's pointer-settings type instead of maintaining a duplicate definition.
+- Added observable contracts for keyboard-layout selection and pointer settings.
+- Added an appearance contract for system/light/dark preference, resolved color scheme, accessibility appearance flags and semantic color roles mapped to the canonical Human Interfaces token names.
+- Extended the vendor extension descriptor to match both vendor and product identifiers.
+- Expanded the input policy to cover standard mouse behavior and the separation between normal Wayland application input and privileged global input services.
+
+### Verification and limitations
+
+- Repository files and commit contents were inspected after publication.
+- No local Cargo build or test result is claimed for these commits. GitHub Actions is configured to run on source changes pushed to `main`; the result for this change set has not been independently confirmed in this entry.
+- Fedora hardware validation has not been performed.
+- These are public Rust contracts only. Device discovery/provider implementations, runtime layout switching, persisted pointer settings, application-facing IPC/portal transport, native Human Interfaces widgets, and the out-of-process vendor extension manager remain future implementation work.
+- The appearance API identifies canonical semantic tokens; actual palette values remain owned by `aurea-human-interfaces/design-system/tokens/index.css`.
