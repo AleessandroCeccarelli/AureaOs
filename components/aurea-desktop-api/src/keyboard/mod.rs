@@ -11,6 +11,13 @@ mod extension;
 mod layout;
 
 pub use action::KeyboardAction;
-pub use device::{InputDeviceCapabilities, InputDeviceId, InputDeviceKind, StandardInputCapability};
-pub use extension::{ExtensionCapability, ExtensionPermission, PeripheralExtensionDescriptor};
-pub use layout::{KeyboardLayoutId, KeyboardLayoutInfo, KeyboardLayoutError, KeyboardLayoutHintSource, KeyboardLayoutManager, KeyboardLayoutSelection, KeyboardLayoutSuggestion};
+pub use device::{
+    InputDeviceCapabilities, InputDeviceId, InputDeviceKind, StandardInputCapability,
+};
+pub use extension::{
+    ExtensionCapability, ExtensionPermission, PeripheralExtensionDescriptor,
+};
+pub use layout::{
+    KeyboardLayoutError, KeyboardLayoutHintSource, KeyboardLayoutId, KeyboardLayoutInfo,
+    KeyboardLayoutManager, KeyboardLayoutSelection, KeyboardLayoutSuggestion,
+};
