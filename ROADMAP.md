@@ -42,7 +42,7 @@ Developing first-party replacements for these application categories may be cons
 - AureaOS visual design resources, including design tokens, themes, icons, illustrations, and wallpapers.
 - A five-crate Rust workspace under `components/`: `aurea-desktop`, `aurea-shell`, `aurea-desktop-api`, `aurea-compositor`, and `aurea-capture`.
 - An initial `aurea-desktop` composition root that wires the desktop components together; this is not a finished desktop session or graphical interface.
-- Shared desktop contracts in `aurea-desktop-api`, including a technology-independent display color adjustment value for future output policy integration.
+- Shared desktop contracts in `aurea-desktop-api`: technology-independent display color policy, keyboard layout, pointer settings, input-device capability and lifecycle, vendor-extension metadata, and appearance/theme contracts. These are component-level API foundations; application-facing IPC and concrete input/appearance service providers remain planned.
 - Initial `aurea-capture` core with validated capture target metadata, screenshot/recording request types, audio-source selection modes, and a single-session lifecycle coordinator. It does not yet capture pixels or audio.
 - Shell session lifecycle coordination and shutdown handling through an event bus.
 - A Smithay-based Wayland server with initial XDG shell integration.
