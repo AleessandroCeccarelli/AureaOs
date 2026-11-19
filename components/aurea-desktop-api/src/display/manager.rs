@@ -10,7 +10,7 @@ use std::sync::mpsc::Receiver;
 use super::{
     capabilities::{DisplayDescriptor, DisplayId},
     events::DisplayEvent,
-    layout::{DisplayLayout, DisplayPosition, DisplayScale},
+    layout::{DisplayLayout, DisplayPlacement, DisplayPosition, DisplayScale},
     modes::DisplayMode,
     policy::{DisplayManagementMode, DisplayRefreshPolicy},
 };
