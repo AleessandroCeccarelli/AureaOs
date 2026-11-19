@@ -13,4 +13,4 @@ mod layout;
 pub use action::KeyboardAction;
 pub use device::{InputDeviceCapabilities, InputDeviceId, InputDeviceKind, StandardInputCapability};
 pub use extension::{ExtensionCapability, ExtensionPermission, PeripheralExtensionDescriptor};
-pub use layout::{KeyboardLayoutId, KeyboardLayoutInfo, KeyboardLayoutManager, KeyboardLayoutSelection};
+pub use layout::{KeyboardLayoutId, KeyboardLayoutInfo, KeyboardLayoutError, KeyboardLayoutManager, KeyboardLayoutSelection};
