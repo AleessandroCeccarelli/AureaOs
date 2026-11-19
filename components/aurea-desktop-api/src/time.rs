@@ -102,7 +102,7 @@ pub struct TimeZoneSnapshot {
 }
 
 impl TimeZoneSnapshot {
-    pub const fn new(
+    pub fn new(
         zone: TimeZoneId,
         offset: UtcOffset,
         daylight_saving: Option<bool>,
@@ -276,8 +276,9 @@ impl ClockPreferences {
 #[cfg(test)]
 mod tests {
     use super::{
-        ClockFormat, ClockPreferences, DateFormat, TimeSyncSource, TimeSyncStatus,
-        TimeZoneId, TimeZoneIdError, TimeZoneSnapshot, UtcOffset, UtcOffsetError,
+        ClockFormat, ClockPreferences, DateFormat, TimeSyncPolicy, TimeSyncSource,
+        TimeSyncStatus, TimeZoneId, TimeZoneIdError, TimeZoneSnapshot, UnixTime, UtcOffset,
+        UtcOffsetError,
     };
 
     #[test]
