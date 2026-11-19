@@ -38,6 +38,7 @@ pub struct PeripheralExtensionDescriptor {
     pub api_major: u16,
     pub api_minor: u16,
     pub supported_vendor_ids: Vec<u16>,
+    pub supported_product_ids: Vec<u16>,
     pub capabilities: Vec<ExtensionCapability>,
     pub permissions: Vec<ExtensionPermission>,
 }
