@@ -77,9 +77,11 @@ impl CompositorHandler for AureaCompositor {
 
         if let Err(error) = update_surface_tree_snapshots(surface) {
             eprintln!("AureaOS: failed to snapshot Wayland surface buffer: {error}");
-            // Do not map a surface whose committed pixels could not be
-            // snapshotted. A later commit can retry while damage remains pending.
-            return;
+            // A failed new buffer must not become visible without owned pixels.
+            // Buffer removal is still applied so stale content cannot remain mapped.
+            if mapped != Some(false) {
+                return;
+            }
         }
 
         if let Some(mapped) = self.window_manager().update_surface_buffer(surface, mapped) {
