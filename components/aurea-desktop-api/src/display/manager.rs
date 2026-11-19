@@ -10,7 +10,7 @@ use std::sync::mpsc::Receiver;
 use super::{
     capabilities::{DisplayDescriptor, DisplayId},
     events::DisplayEvent,
-    layout::{DisplayLayout, DisplayPlacement, DisplayPosition, DisplayScale},
+    layout::DisplayLayout,
     limits::MAX_ACTIVE_DISPLAYS,
     modes::DisplayMode,
     policy::{DisplayManagementMode, DisplayRefreshPolicy},
@@ -99,8 +99,10 @@ impl DisplayConfiguration {
                 .iter()
                 .any(|placement| placement.display == output.display && placement.enabled);
             if enabled
-                && ((self.management_mode == DisplayManagementMode::Manual && output.mode.is_none())
-                    || (output.refresh_policy == DisplayRefreshPolicy::Fixed && output.mode.is_none()))
+                && ((self.management_mode == DisplayManagementMode::Manual
+                    && output.mode.is_none())
+                    || (output.refresh_policy == DisplayRefreshPolicy::Fixed
+                        && output.mode.is_none()))
             {
                 return Err(DisplayManagerError::InvalidMode);
             }
@@ -147,7 +149,10 @@ pub trait DisplayManager: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::display::capabilities::DisplayConnector;
+    use crate::display::{
+        capabilities::DisplayConnector,
+        layout::{DisplayPlacement, DisplayPosition, DisplayScale},
+    };
 
     fn output(id: u128) -> DisplayOutputConfiguration {
         DisplayOutputConfiguration {
@@ -180,7 +185,7 @@ mod tests {
     #[test]
     fn accepts_four_active_displays_and_disabled_discovered_outputs() {
         let outputs = (1..=(MAX_ACTIVE_DISPLAYS as u128 + 1))
-            .map(|id| output(id))
+            .map(output)
             .collect();
         let mut config = configuration(outputs);
         config.layout.placements[MAX_ACTIVE_DISPLAYS].enabled = false;
