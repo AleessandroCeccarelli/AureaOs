@@ -285,7 +285,7 @@ mod tests {
     fn connection_and_operational_state_are_independent() {
         let mut coordinator = HardwareMonitorCoordinator::new();
         let id = HardwareDeviceId::new("usb:keyboard-1").unwrap();
-        coordinator.upsert_device(keyboard("usb:keyboard-1", HardwareDeviceState::Unavailable));
+        coordinator.upsert_device(keyboard("usb:keyboard-1", HardwareDeviceState::Ready));
 
         assert!(coordinator.is_device_connected(&id));
         assert!(coordinator.set_device_state(&id, HardwareDeviceState::Unavailable));
