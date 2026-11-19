@@ -7,7 +7,7 @@
 
 #[cfg(feature = "drm")]
 use std::sync::Mutex;
-use std::{sync::Arc};
+use std::{error::Error, fmt, sync::Arc};
 
 use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 
