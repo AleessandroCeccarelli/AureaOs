@@ -5,9 +5,11 @@
 
 //! Dispatches requested output frames to the DRM/Vulkan scanout backend.
 
+use std::io;
+
 use crate::{drm::scanout_renderer::VulkanOutputScanoutBackend, server::state::WaylandState};
 
-pub(super) fn render_pending_outputs(state: &mut WaylandState) {
+pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()> {
     let WaylandState {
         compositor,
         drm_devices,
@@ -29,24 +31,19 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) {
 
     for (node, output_id) in pending_outputs {
         let Some(device) = drm_devices.get(node) else {
-            compositor.cancel_output_frame(output_id);
-            continue;
+            return Err(io::Error::other(format!("AureaOS: DRM device {node} disappeared while output {output_id} had a pending frame")));
         };
         if !gbm_devices.contains(node) {
-            compositor.cancel_output_frame(output_id);
-            continue;
+            return Err(io::Error::other(format!("AureaOS: GBM is unavailable for DRM device {node} while output {output_id} had a pending frame")));
         }
         let Some(vulkan) = vulkan_backends.get(&node) else {
-            compositor.cancel_output_frame(output_id);
-            continue;
+            return Err(io::Error::other(format!("AureaOS: Vulkan backend is unavailable for DRM device {node} while output {output_id} had a pending frame")));
         };
         let Some(surface_manager) = drm_surfaces.get_mut(&node) else {
-            compositor.cancel_output_frame(output_id);
-            continue;
+            return Err(io::Error::other(format!("AureaOS: DRM surface manager disappeared for output {output_id}")));
         };
         let Some(output) = surface_manager.get_mut(output_id) else {
-            compositor.cancel_output_frame(output_id);
-            continue;
+            return Err(io::Error::other(format!("AureaOS: DRM surface disappeared for output {output_id}")));
         };
         if output.presentation().pending().is_some() {
             continue;
@@ -70,8 +67,14 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) {
             &mut surface_pipeline_cache,
             warmth_percent,
         );
-        if let Err(error) = compositor.render_output(&mut backend, output_id) {
-            eprintln!("AureaOS: output {output_id} rendering failed: {error}");
-        }
+        compositor
+            .render_output(&mut backend, output_id)
+            .map_err(|error| {
+                io::Error::other(format!(
+                    "AureaOS: output {output_id} rendering or presentation failed: {error}"
+                ))
+            })?;
     }
+
+    Ok(())
 }
