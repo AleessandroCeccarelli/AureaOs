@@ -161,7 +161,7 @@ mod tests {
 
     #[test]
     fn accepts_four_active_displays_and_disabled_discovered_outputs() {
-        let mut outputs = (1..=4).map(|id| output(id, true)).collect::<Vec<_>>();
+        let mut outputs = (1..=MAX_ACTIVE_DISPLAYS as u128).map(|id| output(id, true)).collect::<Vec<_>>();
         outputs.push(output(5, false));
         assert!(configuration(outputs).validate().is_ok());
     }
@@ -171,7 +171,9 @@ mod tests {
         let outputs = (1..=5).map(|id| output(id, true)).collect();
         assert_eq!(
             configuration(outputs).validate(),
-            Err(DisplayManagerError::TooManyActiveDisplays { maximum: 4 })
+            Err(DisplayManagerError::TooManyActiveDisplays {
+                maximum: MAX_ACTIVE_DISPLAYS,
+            })
         );
     }
 
