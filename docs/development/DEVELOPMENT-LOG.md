@@ -226,3 +226,30 @@ No runtime code or visual token values were changed in this documentation clarif
 - Changes were committed directly to `main`.
 - No local Cargo formatting, build or test result is claimed. The latest GitHub combined-status query did not return individual status checks for the API change.
 - The next integration step is to replace the temporary compatibility mode/scheduler interface with an explicit Lumen policy decision once its provider contract is designed and tested.
+
+
+## 2026-11-19 — Initial system time and time-zone API foundation
+
+### Direction
+
+Defined system time as a shared operating-system concern rather than a shell-only clock widget. Wall-clock time (UTC), monotonic time and local civil-time presentation are explicitly separate concepts. A time-zone identifier is not interchangeable with a fixed UTC offset.
+
+### API changes
+
+- Added `components/aurea-desktop-api/src/time.rs` and exported it from the crate.
+- Added an IANA-style `TimeZoneId` shape validator; actual zone existence and rules remain the responsibility of the installed tz database provider.
+- Added bounded `UtcOffset` and instant-specific `TimeZoneSnapshot` contracts with optional daylight-saving status.
+- Added normalized Unix timestamp representation, synchronization policy/status/source snapshots, and clock/date display preferences.
+- Added unit tests for identifier validation, UTC offset boundaries, zone snapshots, normalized timestamps, synchronization state and display defaults.
+
+### Architecture and roadmap
+
+- Added `docs/architecture/SYSTEM-TIME-AND-TIMEZONES.md`.
+- Added roadmap milestones for Debian synchronization backend selection, provider integration, privileged configuration, tzdata, shell settings and hardware validation.
+- The architecture proposes reusing one supported Debian time synchronization service (systemd-timesyncd or chrony after evaluation) rather than starting a competing NTP daemon.
+- The IANA tz database must remain updateable; daylight-saving rules must not be hard-coded.
+- Manual zone selection and offline clock operation remain required. Automatic zone detection must respect privacy and must not silently assume precise location.
+
+### Verification status
+
+These are experimental API contracts and documentation only. No daemon, NTP synchronization, tzdb resolver, privileged setter, persistence, shell clock widget or IPC implementation has been added. Cargo formatting, build and tests have not been run in this environment.
