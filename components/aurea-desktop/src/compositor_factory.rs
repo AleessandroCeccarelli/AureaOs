@@ -10,6 +10,7 @@ use std::io;
 use aurea_compositor::service::{DEFAULT_WAYLAND_DISPLAY_NAME, WaylandCompositorFactory};
 use aurea_desktop_api::{
     CompositorFactory, CompositorService, ShutdownSignal, display::DisplayColorController,
+    keyboard::KeyboardLayoutId,
 };
 
 use crate::welcome_process::WelcomeClientProcess;
@@ -21,9 +22,18 @@ pub struct DesktopCompositorFactory {
 
 impl Default for DesktopCompositorFactory {
     fn default() -> Self {
-        Self {
-            compositor: WaylandCompositorFactory::default(),
+        Self::with_keyboard_layout(None)
+    }
+}
+
+impl DesktopCompositorFactory {
+    /// Creates the desktop compositor with an optional persisted keyboard layout.
+    pub fn with_keyboard_layout(layout: Option<KeyboardLayoutId>) -> Self {
+        let mut compositor = WaylandCompositorFactory::default();
+        if let Some(layout) = layout {
+            compositor = compositor.with_keyboard_layout(layout);
         }
+        Self { compositor }
     }
 }
 
