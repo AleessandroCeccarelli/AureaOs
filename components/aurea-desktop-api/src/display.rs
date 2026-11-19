@@ -3,7 +3,29 @@
 // AureaOS — Desktop API
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Shared display color policy contracts.
+//! Shared display color and display-management contracts.
+
+pub mod capabilities;
+pub mod events;
+pub mod layout;
+pub mod manager;
+pub mod modes;
+pub mod policy;
+
+pub use capabilities::{
+    DisplayCapabilities, DisplayConnector, DisplayDescriptor, DisplayId,
+    DisplayPhysicalSize, VariableRefreshRange,
+};
+pub use events::DisplayEvent;
+pub use layout::{DisplayLayout, DisplayPlacement, DisplayPosition, DisplayScale};
+pub use manager::{
+    DisplayConfiguration, DisplayManager, DisplayManagerError, DisplayManagerSnapshot,
+    DisplayOutputConfiguration,
+};
+pub use modes::DisplayMode;
+pub use policy::{
+    ActiveRefreshStrategy, DisplayManagementMode, DisplayPolicyContext, DisplayRefreshPolicy,
+};
 
 use std::sync::{
     Arc,
