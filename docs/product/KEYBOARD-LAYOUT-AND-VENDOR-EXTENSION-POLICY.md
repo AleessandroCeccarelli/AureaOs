@@ -1,10 +1,10 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS — Keyboard Layout and Vendor Extension Policy
+# AureaOS — Keyboard, Pointer and Vendor Extension Policy
 
 ## Purpose
 
-AureaOS must provide a universal keyboard experience independent of manufacturer software. Keyboard layout selection and ordinary input behavior belong to AureaOS. Manufacturer integrations are optional extensions for additional hardware-specific capabilities.
+AureaOS must provide universal keyboard and pointing-device behavior independent of manufacturer software. Layout selection, pointer movement, standard buttons, scrolling and ordinary input behavior belong to AureaOS. Manufacturer integrations are optional extensions for additional hardware-specific capabilities.
 
 This document defines the intended architecture. It does not claim that dynamic layout management or vendor extensions are already implemented.
 
@@ -48,13 +48,17 @@ AureaOS may offer an optional guided typing check to help the user identify a ph
 
 The default policy is one active input source for the session, shared across keyboards. A future per-device layout override may be offered for users who connect keyboards with different physical layouts. Such overrides must be explicit and visible; device identity alone must not trigger an unexpected layout switch.
 
-## 3. Universal hardware behavior
+## 3. Universal keyboard and pointer behavior
 
-The core OS must handle standard keyboard and consumer-control events without a vendor extension wherever the device exposes standard HID/Linux input events.
+The core OS must handle standard keyboard, consumer-control and pointing-device events without a vendor extension wherever the device exposes standard HID/Linux input events.
 
-This includes ordinary typing, navigation, modifiers, function keys and standard media/audio controls. AureaOS semantic actions route system controls to their owning services; the compositor must not implement volume, brightness, media or keyboard-backlight operations directly.
+Keyboard behavior includes ordinary typing, navigation, modifiers, function keys and standard media/audio controls. AureaOS semantic actions route system controls to their owning services; the compositor must not implement volume, brightness, media or keyboard-backlight operations directly.
 
-Unknown keys must remain safe and configurable where possible. They must not be converted into arbitrary text or interpreted as commands.
+Mouse and pointer behavior includes relative motion, primary/secondary/middle buttons, supported back/forward buttons, vertical and horizontal scrolling, and high-resolution scroll data when exposed by the device. Standard pointer acceleration and speed preferences belong to AureaOS and must work without vendor software. Touchpad-specific capabilities such as tapping, natural scrolling and gestures must be advertised only when the hardware and input backend expose them.
+
+Applications receive ordinary focused-surface input through Wayland. They must not receive unrestricted global raw keyboard or pointer streams through the system API. Global shortcuts and privileged device configuration remain system-owned and permission-controlled.
+
+Unknown keys and buttons must remain safe and configurable where possible. They must not be converted into arbitrary text or interpreted as commands.
 
 ## 4. Manufacturer extension model
 
@@ -62,7 +66,7 @@ AureaOS should publish a stable, versioned Peripheral Extension API. Manufacture
 
 Potential extension features include:
 
-- remapping extra keys and buttons;
+- remapping extra keyboard keys, mouse buttons and supported touchpad gestures;
 - per-application profiles;
 - programmable gestures and action rings;
 - device lighting and advanced backlight effects;
