@@ -10,7 +10,7 @@ Its goal is to make display configuration automatic by default while keeping cle
 
 The Aurea compositor already provides initial DRM device discovery, connector discovery, output lifecycle management, and Wayland output publication.
 
-However, Aurea Display Intelligence itself is not yet implemented. Complete DRM/KMS mode setting, physical frame presentation, VRR control, and adaptive refresh policy remain future work.
+The technology-independent display API foundation now exists in `components/aurea-desktop-api/src/display/`. It describes modes, verified capabilities, VRR ranges, logical placement, per-display scaling, automatic/manual policy, lifecycle events, and a transactional display-manager contract. This is an API contract, not a running service. Complete DRM/KMS mode setting, physical frame presentation, VRR control, and adaptive refresh policy remain future work.
 
 ## Product Principles
 
@@ -178,7 +178,7 @@ The work should be delivered incrementally:
 1. **Display identity and output foundations — initial implementation available.** The compositor already provides stable output identities, connector discovery, output registration, removal, and logical layout management.
 2. **DRM device and output lifecycle — initial implementation available.** Device discovery, lifecycle integration, output reconciliation, and Wayland output publication are present in the compositor.
 3. **Physical display pipeline — incomplete.** Implement the Vulkan rendering and presentation path and a DRM/KMS mode-application boundary with explicit ownership and error reporting.
-4. **Capability reporting — incomplete.** Extend discovered output information into reliable per-display capability profiles and expose effective state through defined interfaces.
+4. **Capability reporting — API contract defined; provider incomplete.** Extend discovered output information into reliable per-display capability profiles and implement the service provider behind the shared desktop API.
 5. **Fixed-refresh configuration — planned.** Implement and validate fixed-mode selection as the first reliable configuration strategy.
 6. **VRR capability detection — planned.** Detect effective support across the complete display pipeline.
 7. **Controlled VRR enablement — planned.** Add VRR only where the complete pipeline supports it and safe transitions can be guaranteed.
@@ -217,7 +217,7 @@ The compositor currently provides:
 - Wayland output publication.
 - Initial DRM hotplug and session lifecycle integration.
 
-The following capabilities are not yet implemented as complete features:
+The shared API contracts are present for display modes, capability profiles, VRR ranges, output layout and scale, automatic/manual policy, lifecycle events, and transactional configuration. They do not yet have a concrete provider or application-facing IPC implementation.\n\nThe following capabilities are not yet implemented as complete features:
 
 - Physical display mode setting.
 - Complete Vulkan frame rendering and physical presentation.
