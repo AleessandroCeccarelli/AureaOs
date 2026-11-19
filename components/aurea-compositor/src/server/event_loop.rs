@@ -151,7 +151,7 @@ impl WaylandServer {
                     .map_err(io::Error::other)?;
 
                 #[cfg(feature = "drm")]
-                super::rendering::render_pending_outputs(&mut self.state);
+                super::rendering::render_pending_outputs(&mut self.state)?;
 
                 if let Some(error) = self.state.error.take() {
                     return Err(error);
