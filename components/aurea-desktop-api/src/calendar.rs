@@ -49,14 +49,17 @@ impl CalendarEvent {
         ends_at: UnixTime,
         time_zone: TimeZoneId,
     ) -> Option<Self> {
-        if title.into().trim().is_empty() {
+        let title = title.into();
+        if title.trim().is_empty()
+            || starts_at.seconds() > ends_at.seconds()
+            || (starts_at.seconds() == ends_at.seconds()
+                && starts_at.nanoseconds() > ends_at.nanoseconds())
+        {
             return None;
         }
-        // The event interval is validated by the provider at construction.
-        // This API keeps the original title and absolute instants unchanged.
         Some(Self {
             id,
-            title: title.into(),
+            title,
             starts_at,
             ends_at,
             time_zone,
