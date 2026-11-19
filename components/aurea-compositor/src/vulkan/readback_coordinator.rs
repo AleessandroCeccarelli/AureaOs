@@ -6,7 +6,8 @@
 //! Bounded coordinator for asynchronous Vulkan readback submissions.
 
 use super::{
-    VulkanImageView, VulkanReadbackBufferPool, VulkanReadbackError, VulkanReadbackSubmission,
+    VulkanCaptureTargetLease, VulkanImageView, VulkanReadbackBufferPool, VulkanReadbackError,
+    VulkanReadbackSubmission,
 };
 
 /// Results collected during one non-blocking coordinator poll.
@@ -70,12 +71,29 @@ impl VulkanReadbackCoordinator {
         Ok(())
     }
 
+    /// Submits a checked-out capture target and retains its lease until the
+    /// corresponding GPU readback and CPU copy have completed.
+    ///
+    /// A full coordinator returns immediately; the supplied lease is then
+    /// returned to its pool because no GPU work has been submitted.
+    pub fn submit_capture_target(
+        &mut self,
+        target: VulkanCaptureTargetLease,
+    ) -> Result<(), VulkanReadbackError> {
+        if self.submissions.len() >= self.max_in_flight {
+            return Err(VulkanReadbackError::InFlightLimitReached);
+        }
+
+        let submission =
+            VulkanReadbackSubmission::submit_capture_target(target, &self.pool)?;
+        self.submissions.push(submission);
+        Ok(())
+    }
+
     /// Retires completed submissions and returns their RGBA8 frames.
     ///
     /// Frames are returned in submission order. Polling stops at the first
     /// incomplete or failed submission so a later frame cannot overtake it.
-    /// Fence polling is non-blocking; failed submissions remain owned by this
-    /// coordinator and their errors are returned alongside any completed frames.
     pub fn poll_completed(&mut self) -> VulkanReadbackPoll {
         let mut result = VulkanReadbackPoll::default();
         while !self.submissions.is_empty() {

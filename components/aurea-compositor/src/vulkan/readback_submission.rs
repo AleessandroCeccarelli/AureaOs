@@ -10,21 +10,20 @@ use std::sync::Arc;
 use smithay::reexports::ash::vk;
 
 use super::{
-    VulkanImageView, VulkanLogicalDevice, VulkanReadbackBufferLease, VulkanReadbackBufferPool,
-    VulkanReadbackError,
+    VulkanCaptureTargetLease, VulkanImageView, VulkanLogicalDevice, VulkanReadbackBufferLease,
+    VulkanReadbackBufferPool, VulkanReadbackError,
 };
 
 /// Owns every resource referenced by an asynchronous image readback.
 ///
-/// The source view must own a shared image. The submission then retains both
-/// that image and its logical device independently of the caller's stack.
-/// Keep submissions on a capture worker and poll them there. Dropping an
-/// incomplete submission waits for GPU completion, so it must never happen
-/// on the compositor's presentation path.
+/// The source view must own a shared image. Capture-target submissions also
+/// retain the pool lease, preventing the target from being checked out again
+/// until readback has completed and the CPU pixel copy has been consumed.
 pub struct VulkanReadbackSubmission {
     device: Arc<VulkanLogicalDevice>,
     source_view: Option<VulkanImageView<'static, 'static>>,
     readback: Option<VulkanReadbackBufferLease>,
+    _capture_target: Option<VulkanCaptureTargetLease>,
     command_buffer: vk::CommandBuffer,
     fence: vk::Fence,
     completed: bool,
@@ -35,16 +34,38 @@ impl VulkanReadbackSubmission {
     /// Records and submits a copy from an owned image view.
     ///
     /// Call this method from a capture worker, not the compositor presentation
-    /// path: command-buffer allocation and queue submission use synchronization.
-    /// The caller must transition the source image to TRANSFER_SRC_OPTIMAL
-    /// and synchronize prior writes before calling this method. The submission
-    /// retains the view, image, staging allocation and device until completion.
-    /// Returns after queue acceptance; poll it from a capture worker.
-    ///
-    /// The supplied pool must belong to the same logical device as the image.
+    /// path. The caller must transition the source image to TRANSFER_SRC_OPTIMAL
+    /// and synchronize preceding writes before calling this method.
     pub fn submit(
         view: VulkanImageView<'static, 'static>,
         pool: &VulkanReadbackBufferPool,
+    ) -> Result<Self, VulkanReadbackError> {
+        Self::submit_inner(view, pool, None)
+    }
+
+    /// Submits readback while retaining the capture target's pool lease.
+    ///
+    /// The lease is released only when this submission is retired or safely
+    /// dropped. If queue acceptance becomes uncertain, the target is
+    /// intentionally quarantined with the other referenced GPU resources.
+    pub fn submit_capture_target(
+        target: VulkanCaptureTargetLease,
+        pool: &VulkanReadbackBufferPool,
+    ) -> Result<Self, VulkanReadbackError> {
+        let view = target
+            .create_owned_view()
+            .map_err(|error| match error {
+                super::VulkanImageViewError::Creation(result) => {
+                    VulkanReadbackError::ImageView(result)
+                }
+            })?;
+        Self::submit_inner(view, pool, Some(target))
+    }
+
+    fn submit_inner(
+        view: VulkanImageView<'static, 'static>,
+        pool: &VulkanReadbackBufferPool,
+        capture_target: Option<VulkanCaptureTargetLease>,
     ) -> Result<Self, VulkanReadbackError> {
         let device = view
             .shared_device_owner()
@@ -96,9 +117,10 @@ impl VulkanReadbackSubmission {
         if let Err(error) = device.submit_async(command_buffer, fence) {
             if error.is_uncertain() {
                 // Queue acceptance is uncertain. Quarantine the complete
-                // resource set, including the source image and device owner.
+                // resource set, including the capture target and device owner.
                 std::mem::forget(view);
                 std::mem::forget(readback);
+                std::mem::forget(capture_target);
                 return Err(VulkanReadbackError::SubmissionUncertain(error.result()));
             }
 
@@ -111,6 +133,7 @@ impl VulkanReadbackSubmission {
             device,
             source_view: Some(view),
             readback: Some(readback),
+            _capture_target: capture_target,
             command_buffer,
             fence,
             completed: false,
@@ -166,8 +189,7 @@ impl VulkanReadbackSubmission {
 impl Drop for VulkanReadbackSubmission {
     fn drop(&mut self) {
         // This fallback preserves resource safety for callers that release an
-        // unfinished capture. Normal operation polls to completion on a worker
-        // before dropping, keeping the presentation loop independent.
+        // unfinished capture. Normal operation polls to completion on a worker.
         if !self.completed {
             let wait = unsafe {
                 self.device
@@ -175,13 +197,16 @@ impl Drop for VulkanReadbackSubmission {
                     .wait_for_fences(&[self.fence], true, u64::MAX)
             };
             if wait.is_err() && unsafe { self.device.handle().device_wait_idle() }.is_err() {
-                // Device loss leaves completion uncertain. Leak all resources
+                // Device loss leaves completion uncertain. Leak every resource
                 // that may still be referenced by submitted GPU work.
                 if let Some(readback) = self.readback.take() {
                     std::mem::forget(readback);
                 }
                 if let Some(view) = self.source_view.take() {
                     std::mem::forget(view);
+                }
+                if let Some(target) = self._capture_target.take() {
+                    std::mem::forget(target);
                 }
                 return;
             }

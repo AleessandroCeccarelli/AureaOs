@@ -24,6 +24,7 @@ pub enum VulkanReadbackError {
     MissingTransferSourceUsage,
     CommandBuffer(vk::Result),
     FenceCreation(vk::Result),
+    ImageView(vk::Result),
     Submission(vk::Result),
     SubmissionUncertain(vk::Result),
     FenceStatus(vk::Result),
@@ -44,71 +45,30 @@ impl fmt::Display for VulkanReadbackError {
         match self {
             Self::InvalidDimensions => formatter.write_str("Readback dimensions must be non-zero"),
             Self::SizeOverflow => formatter.write_str("Readback byte size overflowed"),
-            Self::BufferCreation(error) => {
-                write!(formatter, "Readback buffer creation failed: {error:?}")
-            }
-            Self::MemoryTypeUnavailable => {
-                formatter.write_str("No host-visible Vulkan memory type is available")
-            }
-            Self::MemoryAllocation(error) => {
-                write!(formatter, "Readback memory allocation failed: {error:?}")
-            }
-            Self::MemoryBinding(error) => {
-                write!(formatter, "Readback memory binding failed: {error:?}")
-            }
+            Self::BufferCreation(error) => write!(formatter, "Readback buffer creation failed: {error:?}"),
+            Self::MemoryTypeUnavailable => formatter.write_str("No host-visible Vulkan memory type is available"),
+            Self::MemoryAllocation(error) => write!(formatter, "Readback memory allocation failed: {error:?}"),
+            Self::MemoryBinding(error) => write!(formatter, "Readback memory binding failed: {error:?}"),
             Self::Mapping(error) => write!(formatter, "Readback memory mapping failed: {error:?}"),
-            Self::Invalidation(error) => {
-                write!(formatter, "Readback memory invalidation failed: {error:?}")
-            }
-            Self::UnsupportedImageFormat => {
-                formatter.write_str("Readback currently supports R8G8B8A8_UNORM images only")
-            }
-            Self::MissingTransferSourceUsage => {
-                formatter.write_str("Readback image lacks TRANSFER_SRC usage")
-            }
-            Self::CommandBuffer(error) => write!(
-                formatter,
-                "Readback command-buffer operation failed: {error:?}"
-            ),
-            Self::FenceCreation(error) => {
-                write!(formatter, "Readback fence creation failed: {error:?}")
-            }
-            Self::Submission(error) => {
-                write!(formatter, "Readback queue submission failed: {error:?}")
-            }
-            Self::SubmissionUncertain(error) => write!(
-                formatter,
-                "Readback queue submission status is uncertain: {error:?}"
-            ),
-            Self::FenceStatus(error) => {
-                write!(formatter, "Readback fence status query failed: {error:?}")
-            }
-            Self::SubmissionNotComplete => {
-                formatter.write_str("Readback submission has not completed")
-            }
-            Self::PixelsAlreadyRead => {
-                formatter.write_str("Readback pixels have already been consumed")
-            }
-            Self::ImageNotOwned => {
-                formatter.write_str("Readback requires a view that owns its source image")
-            }
-            Self::DeviceMismatch => {
-                formatter.write_str("Readback pool and source image use different Vulkan devices")
-            }
+            Self::Invalidation(error) => write!(formatter, "Readback memory invalidation failed: {error:?}"),
+            Self::UnsupportedImageFormat => formatter.write_str("Readback currently supports R8G8B8A8_UNORM images only"),
+            Self::MissingTransferSourceUsage => formatter.write_str("Readback image lacks TRANSFER_SRC usage"),
+            Self::CommandBuffer(error) => write!(formatter, "Readback command-buffer operation failed: {error:?}"),
+            Self::FenceCreation(error) => write!(formatter, "Readback fence creation failed: {error:?}"),
+            Self::ImageView(error) => write!(formatter, "Readback image-view creation failed: {error:?}"),
+            Self::Submission(error) => write!(formatter, "Readback queue submission failed: {error:?}"),
+            Self::SubmissionUncertain(error) => write!(formatter, "Readback queue submission status is uncertain: {error:?}"),
+            Self::FenceStatus(error) => write!(formatter, "Readback fence status query failed: {error:?}"),
+            Self::SubmissionNotComplete => formatter.write_str("Readback submission has not completed"),
+            Self::PixelsAlreadyRead => formatter.write_str("Readback pixels have already been consumed"),
+            Self::ImageNotOwned => formatter.write_str("Readback requires a view that owns its source image"),
+            Self::DeviceMismatch => formatter.write_str("Readback pool and source image use different Vulkan devices"),
             Self::InvalidPoolLimits => formatter.write_str("Readback pool limits must be non-zero"),
-            Self::PoolExhausted => {
-                formatter.write_str("Readback staging pool capacity is exhausted")
-            }
-            Self::PoolBusy => {
-                formatter.write_str("Readback staging pool is busy; capture can be skipped")
-            }
+            Self::PoolExhausted => formatter.write_str("Readback staging pool capacity is exhausted"),
+            Self::PoolBusy => formatter.write_str("Readback staging pool is busy; capture can be skipped"),
             Self::PoolLockPoisoned => formatter.write_str("Readback staging pool lock is poisoned"),
-            Self::InvalidCoordinatorLimit => {
-                formatter.write_str("Readback coordinator limit must be non-zero")
-            }
-            Self::InFlightLimitReached => {
-                formatter.write_str("Readback coordinator has reached its in-flight limit")
-            }
+            Self::InvalidCoordinatorLimit => formatter.write_str("Readback coordinator limit must be non-zero"),
+            Self::InFlightLimitReached => formatter.write_str("Readback coordinator has reached its in-flight limit"),
         }
     }
 }
