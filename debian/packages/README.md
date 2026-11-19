@@ -15,7 +15,7 @@ These files are the version-controlled package selection for the initial AureaOS
 
 ## Package groups
 
-- `base.list`: essential command-line utilities, service infrastructure, and Debian console keyboard configuration
+- `base.list`: essential command-line utilities, service infrastructure, Debian console keyboard configuration, and the initial `systemd-timesyncd` time synchronization backend
 - `version-control.list`: Git and the GLab GitLab command-line client
 - `networking.list`: wired and Wi-Fi networking
 - `bluetooth.list`: Bluetooth service and command-line tools
