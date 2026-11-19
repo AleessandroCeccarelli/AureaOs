@@ -38,7 +38,7 @@ AureaOS must not implement daylight-saving rules by hard-coded country tables or
 
 The system should expose whether time is unknown, unsynchronized, synchronizing, synchronized or unavailable, along with the reported source and last successful synchronization when known.
 
-The initial Debian integration should reuse a supported system time service rather than run a second competing NTP daemon. Candidate backends include systemd-timesyncd or chrony; the selected service must be explicit in the base package profile and its status surfaced through a narrow Aurea adapter.
+**Initial backend decision:** use Debian's systemd-timesyncd for the first AureaOS profile. Debian identifies it as the default time synchronization service; it is appropriate for ordinary client machines. The package is now included in `debian/packages/base.list` alongside `tzdata`. Do not install or start chrony/ntpsec in parallel. Re-evaluate chrony only if later requirements demand capabilities such as operating a time server or more advanced synchronization controls.\n\nUse systemd-timedated through its D-Bus interface for privileged changes to system time, time zone, RTC mode and synchronization enablement. Do not build privileged shell-command execution into the desktop UI. The systemd service is the authority; AureaOS should add a narrow Rust adapter and its own Settings experience.
 
 The desktop must not claim that time is synchronized merely because networking is connected. If no network source is available, the system continues using its current clock and clearly reports degraded/unsynchronized status. Manual time configuration remains available through an authorized system service.
 
@@ -87,7 +87,7 @@ These are data contracts only. They do not yet read the system clock, resolve tz
 
 ## Validation still required
 
-- Select and package one initial synchronization backend for Debian Trixie.
+- Integrate and validate the selected systemd-timesyncd backend for Debian Trixie.
 - Confirm the installed tzdata source and update lifecycle.
 - Define the privileged system interface and authorization model.
 - Decide automatic time-zone detection and privacy behavior.
