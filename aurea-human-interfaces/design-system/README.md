@@ -2,7 +2,7 @@
 
 # AureaOS Design System
 
-The canonical specification for AureaOS visual tokens, shared component behavior, recurring interface patterns and keyboard conventions. The named visual foundations are **Aurea Palette** (semantic color system) and **Aurea Form** (geometry and surface language), under AureaOS Human Interfaces. It turns the product direction into consistent rules for the desktop shell and first-party applications.
+The evolving design-system specification for AureaOS visual tokens, shared component behavior, recurring interface patterns and keyboard conventions. **Aurea Palette** and **Aurea Form** are current working names for the color and geometry directions; neither freezes final values or design decisions. This is an early project direction, subject to revision through implementation, testing and design review.
 
 ## Authority and boundaries
 
