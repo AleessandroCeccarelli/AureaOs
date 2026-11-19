@@ -32,6 +32,8 @@ monitor.
 4. Do not run the desktop with `sudo`; the compositor must acquire the seat
    through the configured libseat/logind session.
 5. Confirm that the test account can access the required seat and DRM device.
+6. Start from a text TTY after ending the XFCE graphical session. Do not launch
+   this native DRM test from inside the active graphical desktop.
 
 ## Bounded test launch
 
@@ -41,13 +43,14 @@ From the repository root, run:
 bash tools/run-aurea-native-test.sh
 ```
 
-The default test window is 45 seconds. The launcher builds both desktop binaries
-with the committed lockfile, starts the native DRM/Vulkan compositor, waits for
-its `wayland-0` socket, and launches the standalone Welcome client against that
-socket. It enables Rust backtraces, stores output under
-`$XDG_STATE_HOME/aureaos/logs` (or `~/.local/state/aureaos/logs`), and sends
-SIGINT at the deadline. It allows 10 seconds for graceful shutdown before
-sending SIGKILL.
+The default test window is 45 seconds. The launcher builds the desktop
+binaries with the committed lockfile and starts the native DRM/Vulkan desktop.
+The desktop composition root starts and owns its Welcome Wayland client itself;
+the launcher deliberately does not start a second client. The client connects
+to the compositor's `wayland-0` socket. The launcher enables Rust backtraces,
+stores output under `$XDG_STATE_HOME/aureaos/logs` (or
+`~/.local/state/aureaos/logs`), and sends SIGINT at the deadline. It allows
+10 seconds for graceful shutdown before sending SIGKILL.
 
 A different bounded duration can be selected without editing the script:
 
@@ -74,11 +77,12 @@ status proves that the GPU or kernel is healthy.
 ## Limits of the safety measures
 
 The timeout bounds the compositor userspace process only while the kernel continues to
-schedule it. The Welcome client is stopped by the launcher when the compositor exits. It cannot prevent or recover from a kernel panic, GPU driver
-deadlock, firmware hang, or complete hardware lockup. The persistent desktop
-log records startup, normal termination, errors, and Rust panic details; the
-launcher additionally captures compositor stderr/stdout. A hard power loss
-can still truncate the final log entries.
+schedule it. The desktop owns and stops the Welcome client when the compositor
+exits. It cannot prevent or recover from a kernel panic, GPU driver deadlock,
+firmware hang, or complete hardware lockup. The persistent desktop log records
+startup, normal termination, errors, and Rust panic details; the launcher
+additionally captures compositor stderr/stdout. A hard power loss can still
+truncate the final log entries.
 
 A successful process start is not a successful display test. Record separately
 whether libseat acquired the session, DRM/KMS initialized, a physical output
