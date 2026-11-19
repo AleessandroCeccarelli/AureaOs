@@ -12,6 +12,7 @@ pub mod appearance;
 pub mod display;
 pub mod input;
 pub mod keyboard;
+pub mod time;
 
 use std::io;
 use std::sync::{
