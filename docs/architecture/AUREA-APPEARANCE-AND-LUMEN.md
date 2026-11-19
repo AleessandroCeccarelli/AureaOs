@@ -1,106 +1,78 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# Aurea Appearance and Aurea Lumen
+# Aurea Appearance and Aurea Lumen — Exploratory Architecture
 
-## Purpose
+## Project maturity and intent
 
-AureaOS provides one system-wide appearance contract for the desktop shell, first-party applications and compatible third-party applications. The contract is implemented in `aurea-desktop-api`; canonical visual values and component guidance remain owned by AureaOS Human Interfaces.
+AureaOS is in an early, embryonic development phase. This document records the current product direction and API experiments; it is not a final visual standard, a release promise, or a guarantee that every described capability will ship.
 
-This architecture has two related but independent responsibilities:
+Names, modes, architecture, APIs, palette values, geometry, interaction patterns and implementation choices may change during development. They should be revised when testing, accessibility review, hardware validation, developer feedback or better technical options justify it.
 
-- **Aurea Appearance** resolves the visual presentation: Light/Dark/Automatic theme, semantic palette, geometry and accessibility preferences.
-- **Aurea Lumen** adapts display color warmth according to user intent and available environmental context. It does not select the Light or Dark theme.
+The terms **proposed**, **experimental**, **implemented contract**, and **runtime implemented** must be used accurately. A type or document does not prove that a complete service exists.
 
-## Product naming
+## Current direction
 
-- **Aurea Appearance** — system appearance service and public API contract.
-- **Aurea Lumen** — environmental display adaptation feature, replacing the generic user-facing Night Light name over time.
-- **Aurea Palette** — the approved semantic color palette owned by Human Interfaces.
-- **Aurea Form** — the approved geometry language: radii, surfaces, borders, spacing and proportions.
-- **AureaOS Human Interfaces** — the overall design system and owner of visual specifications, tokens and reusable component rules.
+The current naming proposal is:
 
-These names describe product/API boundaries, not claims that all corresponding runtime services are already implemented.
+- **Aurea Appearance** — system appearance and accessibility preferences.
+- **Aurea Lumen** — environmental display color adaptation, distinct from Light/Dark theme selection.
+- **Aurea Palette** — the current proposed name for the semantic color system.
+- **Aurea Form** — the current proposed name for geometry and surface language.
+- **AureaOS Human Interfaces** — the evolving design-system project.
 
-## Aurea Appearance
+These names are working product terminology and may be renamed or reshaped.
 
-### Theme policy
+## Aurea Appearance — proposed contract
 
-Applications may request or observe the system theme preference:
+The current API direction covers Automatic/System, Light and Dark theme preferences, a resolved color scheme, semantic palette identity, form profile and accessibility preferences.
 
-- **Automatic** (API compatibility value: `System`) follows the resolved system appearance policy.
-- **Light** selects the light color scheme.
-- **Dark** selects the dark color scheme.
+The current `PaletteId::Aurea` and `FormProfile::Aurea` are provisional identifiers, not a freeze of colors or shapes. Applications should consume semantic roles and shared tokens rather than assume that present-day hex values or corner radii are permanent.
 
-The resolved `ColorScheme` is always explicit. A preference is not the same as the currently resolved scheme.
+The current token file is a working source of truth for the present design iteration. It may evolve or be reorganized as Human Interfaces matures.
 
-### Shared palette and geometry
+## Aurea Lumen — proposed feature
 
-The appearance snapshot identifies the canonical `PaletteId::Aurea` and `FormProfile::Aurea`. Applications consume semantic roles and token names rather than defining competing system palettes or arbitrary system-wide geometry.
+Aurea Lumen is the current name for system-level warm display adaptation. Its proposed modes are:
 
-Color values and geometry values remain in the single canonical source:
+- **Manual** — explicit user control.
+- **Schedule** — a local-clock interval.
+- **Solar** — sunrise/sunset using a permission-aware location/time source.
+- **Ambient** — a supported ambient-light sensor.
+- **Automatic** — select an available trusted source according to policy.
 
-`aurea-human-interfaces/design-system/tokens/index.css`
+This list and its fallback order are proposals subject to feasibility, privacy, usability and hardware validation. Sensor absence, stale readings or errors must not be silently interpreted as darkness. Local scheduling should remain possible without location access. Ambient hysteresis is a candidate technique to avoid rapid switching.
 
-The legacy theme wrappers must not define alternate values. Current semantic color roles and geometry roles map to canonical token names.
+Lumen is intended to remain conceptually separate from the Light/Dark theme, although the final UX and implementation may evolve.
 
-The API exposes semantic identity, not raw CSS parsing or a second token database. Native UI components and application adapters resolve these identifiers through the appropriate Human Interfaces implementation.
+## API and implementation boundaries — current proposal
 
-### Accessibility and motion
+- Desktop API defines portable contracts and preferences.
+- Shell/settings owns user interaction and, when implemented, preference persistence.
+- Sensor and time providers supply measurements and time/solar data.
+- A policy coordinator determines effective behavior.
+- Compositor owns physical output color adjustment.
+- Compatible applications may observe system appearance; they should not independently apply a duplicate system display filter.
 
-The appearance contract continues to expose reduced motion, reduced transparency and high-contrast preferences. Consumers must preserve readable contrast and interaction hierarchy in both themes. Reduced-transparency behavior is defined centrally in the canonical token source.
+These are proposed ownership boundaries, not a statement that all services or IPC are implemented.
 
-## Aurea Lumen
+## Guidance for application developers
 
-Aurea Lumen applies a system-level warm color adjustment through the compositor output path. It is separate from application content filters and separate from Light/Dark theme selection.
+During this early phase, developers should:
 
-### Operating modes
+1. Prefer the shared appearance contracts and semantic tokens over hard-coded assumptions.
+2. Expect names, token values and API details to evolve before a stable compatibility commitment.
+3. Avoid depending on provisional numeric colors or geometry values.
+4. Follow accessibility and readable-contrast requirements.
+5. Treat undocumented behavior as unstable and check the repository for updates.
 
-- **Manual** — the user explicitly controls activation.
-- **Schedule** — follows a local-clock interval configured by the user.
-- **Solar** — follows sunrise and sunset using a permission-aware location/time service. A location permission must not be silently assumed.
-- **Ambient** — follows a supported ambient-light sensor.
-- **Automatic** — prefers reliable ambient sensing and falls back to an available solar or local schedule. If no trusted source is available, it must remain predictable and expose its effective state.
+A future stability policy and API versioning/deprecation process must be defined before promising long-term compatibility.
 
-The local schedule works without location access and supports intervals crossing midnight. Invalid and empty intervals are rejected.
+## Current implementation status
 
-Ambient thresholds use a hysteresis band to prevent rapid switching when measured light fluctuates near a boundary. Sensor absence, stale readings or errors must not be interpreted as darkness.
+Rust contracts currently exist for appearance identity and Lumen preferences. The existing shell Night Light model and Vulkan output adjustment path are foundations, not a complete Lumen service.
 
-### User controls
+Concrete appearance provider, sensor discovery, solar/time provider, policy coordinator, persistence, native settings controls and application-facing IPC remain implementation work. Physical hardware validation is also outstanding.
 
-The user can enable/disable Lumen, choose a mode, adjust warmth strength, configure a local schedule and configure ambient thresholds. Manual override must remain available even when automatic sources exist.
+## Review and evolution
 
-### Ownership and implementation boundary
-
-- Desktop API defines portable preferences and policy data types.
-- Shell/settings owns user interaction and preference persistence.
-- Sensor and time providers own ambient measurements, timezone and solar calculations.
-- The display policy coordinator chooses the effective Lumen state.
-- Compositor owns application of the final display color adjustment.
-- Applications may observe the resolved system appearance; they do not independently apply Lumen to their content.
-
-The current shell Night Light model and Vulkan output adjustment path are existing implementation foundations. The new API contract does not imply that ambient sensors, solar scheduling, preference persistence, Settings UI, or application-facing IPC are complete.
-
-## Application developer contract
-
-Compatible applications should:
-
-1. Observe the shared appearance provider rather than guessing theme from environment variables.
-2. Use semantic color roles and the canonical Aurea palette.
-3. Use Aurea Form geometry tokens and shared Human Interfaces components.
-4. React to appearance/accessibility updates without restarting.
-5. Keep app-specific accents local only when explicitly permitted by product/design rules; never redefine the system palette.
-6. Avoid applying a second night-color filter to application content.
-
-## Canonical sources
-
-- API: `components/aurea-desktop-api/src/appearance.rs`
-- Lumen API: `components/aurea-desktop-api/src/appearance/lumen.rs`
-- Color tokens: `aurea-human-interfaces/design-system/tokens/index.css`
-- Design system: `aurea-human-interfaces/design-system/README.md`
-- Color system: `docs/human-interfaces/COLOR-SYSTEM.md`
-
-## Status
-
-The shared Rust contracts for theme identity, palette/form identity and Lumen preferences are defined. The existing appearance provider trait remains the integration point for runtime snapshots and subscriptions.
-
-Concrete appearance provider, environmental sensor discovery, solar/time provider, Lumen policy coordinator, persistence, native settings controls and application-facing IPC remain implementation work. Do not describe these planned services as complete until code and tests verify them.
+Revisit this document as implementation and testing provide evidence. Do not preserve a decision merely because it has been documented. Record significant changes and their rationale in the development log, update the API and Human Interfaces specifications together, and distinguish breaking experimental changes from stable contracts.
