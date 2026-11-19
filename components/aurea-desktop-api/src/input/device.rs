@@ -29,6 +29,7 @@ pub enum StandardInputCapability {
     ConsumerControls,
     PointerMotion,
     PointerButtons,
+    VerticalScroll,
     HorizontalScroll,
     HighResolutionScroll,
     Touch,
@@ -96,4 +97,22 @@ pub trait InputDeviceProvider: Send + Sync {
     fn devices(&self) -> Vec<InputDeviceDescriptor>;
     fn device(&self, id: InputDeviceId) -> Option<InputDeviceDescriptor>;
     fn subscribe(&self) -> Receiver<InputDeviceEvent>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{InputDeviceCapabilities, StandardInputCapability};
+
+    #[test]
+    fn capability_snapshots_deduplicate_verified_features() {
+        let capabilities = InputDeviceCapabilities::new([
+            StandardInputCapability::PointerMotion,
+            StandardInputCapability::PointerButtons,
+            StandardInputCapability::PointerMotion,
+        ]);
+
+        assert!(capabilities.supports(StandardInputCapability::PointerMotion));
+        assert_eq!(capabilities.iter().count(), 2);
+        assert!(!capabilities.supports(StandardInputCapability::Keyboard));
+    }
 }
