@@ -270,13 +270,40 @@ pub(super) fn build(
     // An active native DRM session must expose at least one usable output.
     // Otherwise the Welcome client can connect, but no frame can reach a monitor.
     #[cfg(feature = "drm")]
-    if state.drm_session.is_some()
-        && state.session_active
-        && state.compositor.output_manager().active_output_count() == 0
-    {
-        return Err(io::Error::other(
-            "No usable display output was initialized: check DRM/KMS, GBM, Vulkan compatibility, and connected monitors",
-        ));
+    if state.drm_session.is_some() && state.session_active {
+        let output_manager = state.compositor.output_manager();
+        if output_manager.active_output_count() == 0 {
+            return Err(io::Error::other(
+                "No usable display output was initialized: check DRM/KMS, GBM, Vulkan compatibility, and connected monitors",
+            ));
+        }
+
+        // A logical Wayland output is useful only when its matching native KMS
+        // surface is retained by a DRM surface manager. Without this invariant,
+        // the output could be advertised but never receive a physical frame.
+        let unbacked_outputs = output_manager
+            .registry()
+            .iter()
+            .filter(|output| output.is_enabled())
+            .filter(|output| {
+                !state
+                    .drm_surfaces
+                    .values()
+                    .any(|surfaces| surfaces.get(output.id()).is_some())
+            })
+            .map(|output| output.id())
+            .collect::<Vec<_>>();
+
+        if !unbacked_outputs.is_empty() {
+            return Err(io::Error::other(format!(
+                "Enabled Wayland outputs have no native DRM/KMS surface: {}",
+                unbacked_outputs
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )));
+        }
     }
 
     // Publish registered outputs as Wayland globals.
