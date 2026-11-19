@@ -113,10 +113,10 @@ impl FormRole {
 
 /// System-wide visual identity profile shared by compatible applications.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct FormProfile {
-    /// Uses the approved AureaOS geometry tokens; applications cannot substitute
-    /// private system-wide shapes.
-    pub canonical: bool,
+pub enum FormProfile {
+    /// Approved AureaOS geometry, radii and surface proportions.
+    #[default]
+    Aurea,
 }
 
 /// Appearance state delivered consistently to compatible applications.
