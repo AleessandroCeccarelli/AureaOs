@@ -9,7 +9,7 @@
 //! devices, open them, or own driver resources; dedicated managers will do
 //! that and report their observations here.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Stable identifier supplied by the subsystem responsible for a device.
 ///
@@ -35,17 +35,23 @@ impl HardwareDeviceId {
     }
 }
 
-/// Broad hardware category understood by the shared coordinator.
+/// Hardware-monitor service modules currently supported by AureaOS.
+///
+/// New modules are introduced deliberately as their contracts and managers
+/// are implemented; future categories are not exposed prematurely.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum HardwareMonitorModule {
+    Keyboard,
+    Mouse,
+    Monitor,
+}
+
+/// Hardware category represented in the shared inventory.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HardwareDeviceKind {
     Keyboard,
-    Pointer,
-    Display,
-    Camera,
-    Printer,
-    Audio,
-    Storage,
-    Other,
+    Mouse,
+    Monitor,
 }
 
 /// Lifecycle and operational condition reported by a device manager.
@@ -72,6 +78,7 @@ pub struct HardwareDeviceRecord {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HardwareMonitorSnapshot {
     pub revision: u64,
+    pub modules: Vec<HardwareMonitorModule>,
     pub devices: Vec<HardwareDeviceRecord>,
 }
 
@@ -82,13 +89,44 @@ pub struct HardwareMonitorSnapshot {
 #[derive(Debug, Default)]
 pub struct HardwareMonitorCoordinator {
     revision: u64,
+    modules: BTreeSet<HardwareMonitorModule>,
     devices: BTreeMap<HardwareDeviceId, HardwareDeviceRecord>,
 }
 
 impl HardwareMonitorCoordinator {
     /// Creates an empty hardware inventory.
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            revision: 0,
+            modules: [
+                HardwareMonitorModule::Keyboard,
+                HardwareMonitorModule::Mouse,
+                HardwareMonitorModule::Monitor,
+            ]
+            .into_iter()
+            .collect(),
+            devices: BTreeMap::new(),
+        }
+    }
+
+    /// Registers a supported service module. Returns false if already present.
+    pub fn register_module(&mut self, module: HardwareMonitorModule) -> bool {
+        if !self.modules.insert(module) {
+            return false;
+        }
+
+        self.advance_revision();
+        true
+    }
+
+    /// Unregisters a service module without deleting its remembered devices.
+    pub fn unregister_module(&mut self, module: HardwareMonitorModule) -> bool {
+        if !self.modules.remove(&module) {
+            return false;
+        }
+
+        self.advance_revision();
+        true
     }
 
     /// Adds a device or refreshes its reported information.
@@ -145,6 +183,7 @@ impl HardwareMonitorCoordinator {
     pub fn snapshot(&self) -> HardwareMonitorSnapshot {
         HardwareMonitorSnapshot {
             revision: self.revision,
+            modules: self.modules.iter().copied().collect(),
             devices: self.devices.values().cloned().collect(),
         }
     }
@@ -158,7 +197,7 @@ impl HardwareMonitorCoordinator {
 mod tests {
     use super::{
         HardwareDeviceId, HardwareDeviceKind, HardwareDeviceRecord, HardwareDeviceState,
-        HardwareMonitorCoordinator,
+        HardwareMonitorCoordinator, HardwareMonitorModule,
     };
 
     fn keyboard(id: &str, state: HardwareDeviceState) -> HardwareDeviceRecord {
@@ -209,6 +248,28 @@ mod tests {
 
         assert!(!coordinator.set_device_state(&id, HardwareDeviceState::Ready));
         assert_eq!(coordinator.snapshot().revision, 0);
+    }
+
+    #[test]
+    fn only_initial_hardware_modules_are_registered() {
+        let coordinator = HardwareMonitorCoordinator::new();
+        assert_eq!(
+            coordinator.snapshot().modules,
+            vec![
+                HardwareMonitorModule::Keyboard,
+                HardwareMonitorModule::Mouse,
+                HardwareMonitorModule::Monitor,
+            ]
+        );
+    }
+
+    #[test]
+    fn module_registration_is_idempotent_and_keeps_inventory_separate() {
+        let mut coordinator = HardwareMonitorCoordinator::new();
+        assert!(!coordinator.register_module(HardwareMonitorModule::Mouse));
+        assert!(coordinator.unregister_module(HardwareMonitorModule::Mouse));
+        assert!(!coordinator.snapshot().modules.contains(&HardwareMonitorModule::Mouse));
+        assert!(coordinator.register_module(HardwareMonitorModule::Mouse));
     }
 
     #[test]
