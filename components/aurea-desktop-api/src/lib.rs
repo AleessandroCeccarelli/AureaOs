@@ -14,6 +14,7 @@ pub mod display;
 pub mod input;
 pub mod keyboard;
 pub mod notes;
+pub mod notifications;
 pub mod time;
 
 use std::io;
