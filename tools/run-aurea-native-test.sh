@@ -37,46 +37,19 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 printf 'AureaOS native test started: %s\n' "$(date --iso-8601=seconds)"
 printf 'Log file: %s\n' "$LOG_FILE"
 printf 'Maximum runtime: %s seconds\n' "$TIMEOUT_SECONDS"
-printf 'The compositor receives SIGINT at the deadline, then SIGKILL after 10 seconds if it cannot exit.\n'
+printf 'The desktop receives SIGINT at the deadline, then SIGKILL after 10 seconds if it cannot exit.\n'
 
 cd "$ROOT_DIR"
 export RUST_BACKTRACE=1
 
-printf '\n[1/2] Building the desktop and standalone Welcome client...\n'
+printf '\n[1/2] Building the native desktop...\n'
 cargo build --locked -p aurea-desktop --bins
 
 printf '\n[2/2] Starting the bounded native DRM/Vulkan session...\n'
 set +e
-# The inner shell intentionally expands variables in its own process context.
-# shellcheck disable=SC2016
-timeout --signal=INT --kill-after=10s "${TIMEOUT_SECONDS}s" bash -c '
-    welcome_pid=""
-
-    cleanup_welcome() {
-        if [[ -n "$welcome_pid" ]] && kill -0 "$welcome_pid" 2>/dev/null; then
-            kill -TERM "$welcome_pid" 2>/dev/null || true
-            wait "$welcome_pid" 2>/dev/null || true
-        fi
-    }
-
-    trap cleanup_welcome EXIT INT TERM
-
-    (
-        socket="$XDG_RUNTIME_DIR/wayland-0"
-        for ((attempt = 0; attempt < 150; attempt++)); do
-            if [[ -S "$socket" ]]; then
-                printf "Wayland socket ready; launching Aurea Welcome.\\n"
-                export WAYLAND_DISPLAY=wayland-0
-                exec ./target/debug/aurea-welcome
-            fi
-            sleep 0.1
-        done
-        printf "Aurea Welcome: Wayland socket did not appear within 15 seconds.\\n" >&2
-    ) &
-    welcome_pid=$!
-
-    ./target/debug/aurea-desktop
-'
+# The desktop composition root starts and owns exactly one Welcome client.
+# exec makes timeout signal the actual desktop process rather than a wrapper shell.
+timeout --signal=INT --kill-after=10s "${TIMEOUT_SECONDS}s" ./target/debug/aurea-desktop
 STATUS=$?
 set -e
 
