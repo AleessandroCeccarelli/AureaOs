@@ -45,7 +45,7 @@ App-specific layouts may differ, but applications should share:
 
 The design system should provide common foundations without forcing every application into an identical layout.
 
-## Design system structure
+## Named visual foundations\n\n- **Aurea Palette** — canonical semantic colors and theme-aware values.\n- **Aurea Form** — shared geometry, radii, surfaces, borders, spacing and proportions.\n- **Aurea Appearance** — system-wide theme and accessibility state, exposed through the Desktop API.\n- **Aurea Lumen** — system-level environmental display color adaptation, separate from the Light/Dark theme.\n\nSee [Aurea Appearance and Aurea Lumen](../architecture/AUREA-APPEARANCE-AND-LUMEN.md) for API ownership and implementation boundaries.\n\n## Design system structure
 
 The design system is intended to provide a shared foundation for:
 
