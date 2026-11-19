@@ -4,9 +4,8 @@
 // Copyright (C) 2026 Alessandro Ceccarelli
 
 //! Software-managed keyboard layout selection contracts.
-//!
-//! These types describe user intent. XKB compilation and application belong
-//! to the input implementation, not to this technology-independent API.
+
+use std::sync::mpsc::Receiver;
 
 /// Stable XKB-compatible layout identifier, for example "it" or "us".
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -71,20 +70,21 @@ pub struct KeyboardLayoutSelection {
     pub device_override: Option<(super::super::InputDeviceId, KeyboardLayoutId)>,
 }
 
-/// Backend contract for listing and changing software-managed layouts.
-pub trait KeyboardLayoutManager: Send + Sync {
-    fn available_layouts(&self) -> Vec<KeyboardLayoutInfo>;
-    fn suggested_layouts(&self, system_locale: Option<&str>) -> Vec<KeyboardLayoutSuggestion>;
-    fn active_layout(&self) -> KeyboardLayoutId;
-    fn select_layout(&self, layout: KeyboardLayoutId) -> Result<(), KeyboardLayoutError>;
-}
-
 /// Failure while resolving or applying a keyboard layout.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KeyboardLayoutError {
     Unavailable,
     InvalidConfiguration,
     BackendFailure,
+}
+
+/// Backend contract for listing, observing and changing software-managed layouts.
+pub trait KeyboardLayoutManager: Send + Sync {
+    fn available_layouts(&self) -> Vec<KeyboardLayoutInfo>;
+    fn suggested_layouts(&self, system_locale: Option<&str>) -> Vec<KeyboardLayoutSuggestion>;
+    fn active_selection(&self) -> KeyboardLayoutSelection;
+    fn select_layout(&self, layout: KeyboardLayoutId) -> Result<(), KeyboardLayoutError>;
+    fn subscribe(&self) -> Receiver<KeyboardLayoutSelection>;
 }
 
 #[cfg(test)]
