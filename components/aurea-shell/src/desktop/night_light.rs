@@ -3,140 +3,108 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! User preferences and schedule primitives for the system night-light feature.
+//! Shell-facing compatibility adapter for Aurea Lumen preferences.
 
-use aurea_desktop_api::display::DisplayColorAdjustment;
+use aurea_desktop_api::{
+    appearance::lumen::{LumenMode, LumenPreferences, LumenSchedule},
+    display::DisplayColorAdjustment,
+};
 
-/// Supported ways to activate Night Light.
+pub use aurea_desktop_api::appearance::lumen::{
+    LumenSchedule as NightLightSchedule,
+    LumenScheduleError as NightLightScheduleError,
+};
+
+/// Legacy shell mode names retained while settings and scheduling migrate to Lumen.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum NightLightMode {
-    /// Apply the selected warmth whenever Night Light is enabled.
+    /// Apply the selected warmth whenever the feature is enabled.
     #[default]
     Manual,
-    /// Follow local sunset and sunrise once a location-aware scheduler exists.
+    /// Follow sunrise and sunset once a location-aware provider exists.
     SunsetToSunrise,
-    /// Follow the user-defined local clock interval.
+    /// Follow the user-defined local-clock interval.
     CustomSchedule,
 }
 
-/// A local-clock interval expressed as minutes after midnight.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct NightLightSchedule {
-    start_minute: u16,
-    end_minute: u16,
-}
-
-impl NightLightSchedule {
-    /// Creates a schedule with valid, distinct local-clock times.
-    pub fn new(start_minute: u16, end_minute: u16) -> Result<Self, NightLightScheduleError> {
-        if start_minute >= 1_440 || end_minute >= 1_440 {
-            return Err(NightLightScheduleError::TimeOutOfRange);
-        }
-        if start_minute == end_minute {
-            return Err(NightLightScheduleError::EmptyInterval);
-        }
-        Ok(Self {
-            start_minute,
-            end_minute,
-        })
-    }
-
-    pub const fn start_minute(self) -> u16 {
-        self.start_minute
-    }
-    pub const fn end_minute(self) -> u16 {
-        self.end_minute
-    }
-
-    /// Start is inclusive and end is exclusive; intervals may cross midnight.
-    pub const fn is_active_at(self, minute_of_day: u16) -> bool {
-        if minute_of_day >= 1_440 {
-            return false;
-        }
-        if self.start_minute < self.end_minute {
-            minute_of_day >= self.start_minute && minute_of_day < self.end_minute
-        } else {
-            minute_of_day >= self.start_minute || minute_of_day < self.end_minute
-        }
-    }
-}
-
-/// Invalid user-defined local-clock schedule.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum NightLightScheduleError {
-    TimeOutOfRange,
-    EmptyInterval,
-}
-
-/// Persistent user preference state for Night Light.
+/// Shell adapter over the shared Desktop API preferences.
 ///
-/// Schedule evaluation and persistence belong to separate services; this type
-/// validates and exposes preferences without pretending those services exist.
+/// The API owns validation and preference semantics. The shell keeps this
+/// adapter temporarily to avoid coupling the current UI/runtime migration to
+/// the first Lumen policy-provider implementation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NightLightState {
-    enabled: bool,
-    strength_percent: u8,
+    preferences: LumenPreferences,
     mode: NightLightMode,
-    schedule: NightLightSchedule,
 }
 
 impl Default for NightLightState {
     fn default() -> Self {
+        let mut preferences = LumenPreferences::default();
+        preferences.set_mode(LumenMode::Manual);
         Self {
-            enabled: false,
-            strength_percent: 50,
+            preferences,
             mode: NightLightMode::Manual,
-            schedule: NightLightSchedule {
-                start_minute: 1_200,
-                end_minute: 360,
-            },
         }
     }
 }
 
 impl NightLightState {
     pub const fn is_enabled(self) -> bool {
-        self.enabled
+        self.preferences.is_enabled()
     }
+
     pub fn set_enabled(&mut self, enabled: bool) {
-        self.enabled = enabled;
+        self.preferences.set_enabled(enabled);
     }
+
     pub const fn strength_percent(self) -> u8 {
-        self.strength_percent
+        self.preferences.warmth_percent()
     }
 
     pub fn set_strength_percent(&mut self, strength_percent: u8) {
-        self.strength_percent = if strength_percent > 100 {
-            100
-        } else {
-            strength_percent
-        };
+        self.preferences.set_warmth_percent(strength_percent);
     }
 
     pub const fn mode(self) -> NightLightMode {
         self.mode
     }
+
     pub fn set_mode(&mut self, mode: NightLightMode) {
         self.mode = mode;
-    }
-    pub const fn schedule(self) -> NightLightSchedule {
-        self.schedule
-    }
-    pub fn set_schedule(&mut self, schedule: NightLightSchedule) {
-        self.schedule = schedule;
+        let api_mode = match mode {
+            NightLightMode::Manual => LumenMode::Manual,
+            NightLightMode::SunsetToSunrise => LumenMode::Solar,
+            NightLightMode::CustomSchedule => LumenMode::Schedule,
+        };
+        self.preferences.set_mode(api_mode);
     }
 
-    /// Builds the compositor-facing adjustment from a scheduler decision.
+    pub const fn schedule(self) -> NightLightSchedule {
+        self.preferences.schedule()
+    }
+
+    pub fn set_schedule(&mut self, schedule: NightLightSchedule) {
+        self.preferences.set_schedule(schedule);
+    }
+
+    /// Exposes a copy of the shared API preferences for the next migration step.
+    pub const fn lumen_preferences(self) -> LumenPreferences {
+        self.preferences
+    }
+
+    /// Builds the compositor-facing adjustment from an external policy decision.
     ///
-    /// schedule_active must come from the system scheduling service for
-    /// sunset/sunrise and custom modes. Manual mode does not require a clock.
+    /// Until the Lumen policy coordinator exists, schedule_active is supplied
+    /// by the existing shell scheduler. Manual mode does not require a clock.
     pub fn display_adjustment(self, schedule_active: bool) -> DisplayColorAdjustment {
         let active = match self.mode {
             NightLightMode::Manual => true,
             NightLightMode::SunsetToSunrise | NightLightMode::CustomSchedule => schedule_active,
         };
-        if self.enabled && active {
-            DisplayColorAdjustment::new(self.strength_percent)
+
+        if self.is_enabled() && active {
+            DisplayColorAdjustment::new(self.strength_percent())
         } else {
             DisplayColorAdjustment::default()
         }
@@ -196,9 +164,20 @@ mod tests {
     }
 
     #[test]
-    fn strength_is_clamped() {
+    fn strength_is_clamped_by_the_shared_api() {
         let mut state = NightLightState::default();
         state.set_strength_percent(u8::MAX);
         assert_eq!(state.strength_percent(), 100);
+    }
+
+    #[test]
+    fn shell_adapter_uses_the_shared_lumen_schedule_and_preferences() {
+        let mut state = NightLightState::default();
+        let schedule = NightLightSchedule::new(300, 600).unwrap();
+        state.set_schedule(schedule);
+        state.set_enabled(true);
+
+        assert_eq!(state.schedule(), schedule);
+        assert!(state.lumen_preferences().is_enabled());
     }
 }
