@@ -7,17 +7,14 @@
 
 #[cfg(feature = "drm")]
 use std::sync::Mutex;
-use std::{error::Error, fmt, sync::Arc};
+use std::{sync::Arc};
 
 use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 
 #[cfg(feature = "drm")]
 use smithay::backend::drm::DrmNode;
 
-use crate::{
-    render::RenderScene,
-    renderer::{RenderBackend, RenderPreference, RenderTarget},
-};
+use crate::renderer::RenderPreference;
 
 use super::{
     VulkanCommandBuffer, VulkanContext, VulkanDeviceExtensionPlan, VulkanDeviceInfo,
@@ -34,23 +31,6 @@ impl fmt::Display for VulkanCommandError {
     }
 }
 impl Error for VulkanCommandError {}
-
-/// Error returned when Vulkan cannot render or present a frame.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum VulkanRenderError {
-    /// Swapchain and output presentation are not implemented yet.
-    PresentationUnavailable,
-}
-impl fmt::Display for VulkanRenderError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::PresentationUnavailable => {
-                formatter.write_str("Vulkan output presentation is not implemented yet")
-            }
-        }
-    }
-}
-impl Error for VulkanRenderError {}
 
 /// Owns the Vulkan context, selected GPU and logical device.
 pub struct VulkanBackend {
@@ -216,18 +196,5 @@ impl VulkanBackend {
             .iter()
             .any(|family| family.supports_graphics && family.queue_count > 0);
         VulkanDeviceInfo::from_device(device, has_graphics_queue)
-    }
-}
-
-impl RenderBackend for VulkanBackend {
-    type Error = VulkanRenderError;
-
-    /// Output presentation awaits surface and swapchain integration.
-    fn render_frame(
-        &mut self,
-        _target: &RenderTarget,
-        _scene: &RenderScene<'_>,
-    ) -> Result<(), Self::Error> {
-        Err(VulkanRenderError::PresentationUnavailable)
     }
 }
