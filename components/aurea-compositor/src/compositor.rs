@@ -11,7 +11,10 @@ use smithay::{
     backend::input::Keycode,
     input::{Seat, SeatHandler, SeatState, pointer::CursorImageStatus},
     output::Output,
-    reexports::wayland_server::{DisplayHandle, protocol::wl_surface::WlSurface},
+    reexports::wayland_server::{
+        DisplayHandle,
+        protocol::{wl_shm::Format, wl_surface::WlSurface},
+    },
     wayland::{compositor::CompositorState, shell::xdg::XdgShellState, shm::ShmState},
 };
 
@@ -87,7 +90,12 @@ impl AureaCompositor {
     /// Creates the compositor protocol states and managers.
     pub fn new(display: &DisplayHandle) -> Self {
         let compositor_state = CompositorState::new::<Self>(display);
-        let shm_state = ShmState::new::<Self>(display, Vec::new());
+        // Welcome and application clients use the two mandatory Wayland SHM formats.
+        // Advertising no formats prevents clients from creating their first buffer.
+        let shm_state = ShmState::new::<Self>(
+            display,
+            vec![Format::Argb8888, Format::Xrgb8888],
+        );
         let xdg_shell_state = XdgShellState::new::<Self>(display);
         let fractional_scale_manager_state = fractional_scale::create_manager(display);
         let mut seat_state = SeatState::new();
