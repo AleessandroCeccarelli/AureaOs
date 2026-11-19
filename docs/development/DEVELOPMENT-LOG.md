@@ -154,3 +154,12 @@ The existing `display.rs` remains the public entry point and retains the shared 
 - Source changes were committed directly to `main`.
 - Focused Rust unit tests were added for mode validation, fractional refresh representation, VRR range validation, common scale values, automatic defaults, four-display acceptance, fifth-active-display rejection, duplicate IDs/layouts, and invalid primary-display selection.
 - No local Cargo test/build is claimed. The Fedora hardware environment has not been used for validation in this change.
+
+
+### Display API refinement
+
+- Centralized the four-active-display product limit in `aurea-desktop-api::display::MAX_ACTIVE_DISPLAYS`. The compositor's existing `MAX_ACTIVE_OUTPUTS` symbol is now a compatibility re-export, so policy and enforcement cannot drift.
+- Kept layout state (enabled/position/scale) in one `DisplayLayout` source rather than duplicating it in each mode request.
+- Made the requested mode optional in Automatic mode so the policy engine can choose a discovered mode. Manual mode and Fixed refresh requests require an explicit mode for each enabled display.
+- Represented unknown HDR capability explicitly instead of treating missing information as unsupported.
+- Added validation that a non-empty active layout has exactly one enabled primary display, and that output IDs and layout placements are unique and complete.
