@@ -224,7 +224,7 @@ mod tests {
 
     #[test]
     fn automatic_mode_may_defer_mode_selection_to_the_policy_engine() {
-        let mut config = configuration(vec![output(1, true)]);
+        let mut config = configuration(vec![output(1)]);
         config.outputs[0].mode = None;
         assert!(config.validate().is_ok());
     }
