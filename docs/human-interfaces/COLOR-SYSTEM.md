@@ -1,12 +1,12 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS Human Interfaces — Aurea Palette
+# AureaOS Human Interfaces — Color Direction (Provisional)
 
 ## Purpose
 
-This document defines the shared color and surface tokens for AureaOS. The desktop shell, native applications, system panels, and notifications should use these semantic tokens so that theme changes remain coherent and predictable.
+This document records the current, provisional color and surface direction for AureaOS. Values, names and roles may change during development; this is not a frozen visual standard. The desktop shell, native applications, system panels, and notifications should use these semantic tokens so that theme changes remain coherent and predictable.
 
-Aurea Palette is the canonical semantic color system. Its approved foundation is a blue-gray system with a soft blue accent and a restrained warm accent reserved for identity highlights. This keeps the interface familiar and readable while preserving a clear AureaOS personality.
+Aurea Palette is the current working name for the semantic color system. The present experiment uses a blue-gray foundation with a soft blue accent and a restrained warm accent reserved for identity highlights. These choices remain open to review. This keeps the interface familiar and readable while preserving a clear AureaOS personality.
 
 ## Aurea Palette
 
