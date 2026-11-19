@@ -73,6 +73,24 @@ pub enum PointerButton {
     Other(u16),
 }
 
+/// Failure while validating or applying pointer preferences.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PointerSettingsError {
+    InvalidValue,
+    DeviceUnavailable,
+    BackendFailure,
+}
+
+/// Contract for the system service that owns pointer preferences.
+///
+/// Ordinary applications should not receive raw global pointer events. They
+/// receive normal Wayland input for their own focused surfaces; this contract
+/// is intended for trusted settings and system components.
+pub trait PointerSettingsProvider: Send + Sync {
+    fn settings(&self) -> PointerSettings;
+    fn update(&self, settings: PointerSettings) -> Result<(), PointerSettingsError>;
+}
+
 #[cfg(test)]
 mod tests {
     use super::{PointerAccelerationProfile, PointerSettings};
