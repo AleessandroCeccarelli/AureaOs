@@ -11,9 +11,10 @@ use smithay::{
     wayland::shell::xdg::ToplevelSurface,
 };
 
-/// Manages the lifecycle of XDG toplevel windows.
+/// Manages the lifecycle and stacking order of XDG toplevel windows.
 #[derive(Default)]
 pub struct WindowManager {
+    /// Bottom-to-top stacking order; the final entry is visually topmost.
     toplevels: Vec<ManagedToplevel>,
     active_workspace: usize,
 }
@@ -87,6 +88,30 @@ impl WindowManager {
         };
 
         toplevel.workspace = workspace;
+        true
+    }
+
+    /// Raises a managed toplevel to the top of its workspace's stacking order.
+    ///
+    /// The vector remains bottom-to-top, matching scene rendering and hit testing.
+    /// Returns false for unmanaged surfaces or windows on another workspace.
+    pub fn raise_toplevel(&mut self, surface: &WlSurface) -> bool {
+        self.remove_dead_toplevels();
+
+        let Some(index) = self
+            .toplevels
+            .iter()
+            .position(|toplevel| toplevel.surface.wl_surface() == surface)
+        else {
+            return false;
+        };
+
+        if self.toplevels[index].workspace != self.active_workspace {
+            return false;
+        }
+
+        let toplevel = self.toplevels.remove(index);
+        self.toplevels.push(toplevel);
         true
     }
 
@@ -215,10 +240,11 @@ impl WindowManager {
             .map(|toplevel| (&toplevel.surface, toplevel.location))
     }
 
-    /// Returns one mapped surface on the active workspace for keyboard focus.
+    /// Returns the topmost mapped toplevel on the active workspace.
     pub(crate) fn active_workspace_surface(&self) -> Option<WlSurface> {
         self.toplevels
             .iter()
+            .rev()
             .find(|toplevel| {
                 toplevel.surface.alive()
                     && toplevel.mapped
