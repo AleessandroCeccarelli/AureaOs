@@ -93,8 +93,14 @@ impl DisplayConfiguration {
         }
 
         for output in &self.outputs {
-            if (self.management_mode == DisplayManagementMode::Manual && output.mode.is_none())
-                || (output.refresh_policy == DisplayRefreshPolicy::Fixed && output.mode.is_none())
+            let enabled = self
+                .layout
+                .placements
+                .iter()
+                .any(|placement| placement.display == output.display && placement.enabled);
+            if enabled
+                && ((self.management_mode == DisplayManagementMode::Manual && output.mode.is_none())
+                    || (output.refresh_policy == DisplayRefreshPolicy::Fixed && output.mode.is_none()))
             {
                 return Err(DisplayManagerError::InvalidMode);
             }
@@ -231,7 +237,7 @@ mod tests {
 
     #[test]
     fn manual_mode_requires_an_explicit_supported_mode() {
-        let mut config = configuration(vec![output(1, true)]);
+        let mut config = configuration(vec![output(1)]);
         config.management_mode = DisplayManagementMode::Manual;
         config.outputs[0].mode = None;
         assert_eq!(config.validate(), Err(DisplayManagerError::InvalidMode));
