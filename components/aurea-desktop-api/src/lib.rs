@@ -8,7 +8,9 @@
 //! This crate contains technology-independent interfaces.
 //! It must not depend on the shell, compositor or graphics backends.
 
+pub mod appearance;
 pub mod display;
+pub mod input;
 pub mod keyboard;
 
 use std::io;
