@@ -43,9 +43,7 @@ pub enum VulkanReadbackError {
 impl fmt::Display for VulkanReadbackError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::InvalidDimensions => {
-                formatter.write_str("Readback dimensions must be non-zero")
-            }
+            Self::InvalidDimensions => formatter.write_str("Readback dimensions must be non-zero"),
             Self::SizeOverflow => formatter.write_str("Readback byte size overflowed"),
             Self::BufferCreation(error) => {
                 write!(formatter, "Readback buffer creation failed: {error:?}")
@@ -103,18 +101,14 @@ impl fmt::Display for VulkanReadbackError {
             Self::DeviceMismatch => {
                 formatter.write_str("Readback pool and source image use different Vulkan devices")
             }
-            Self::InvalidPoolLimits => {
-                formatter.write_str("Readback pool limits must be non-zero")
-            }
+            Self::InvalidPoolLimits => formatter.write_str("Readback pool limits must be non-zero"),
             Self::PoolExhausted => {
                 formatter.write_str("Readback staging pool capacity is exhausted")
             }
             Self::PoolBusy => {
                 formatter.write_str("Readback staging pool is busy; capture can be skipped")
             }
-            Self::PoolLockPoisoned => {
-                formatter.write_str("Readback staging pool lock is poisoned")
-            }
+            Self::PoolLockPoisoned => formatter.write_str("Readback staging pool lock is poisoned"),
             Self::InvalidCoordinatorLimit => {
                 formatter.write_str("Readback coordinator limit must be non-zero")
             }
