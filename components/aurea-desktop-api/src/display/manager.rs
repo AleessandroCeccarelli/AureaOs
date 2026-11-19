@@ -88,7 +88,11 @@ impl DisplayConfiguration {
             if !placement_ids.insert(placement.display) {
                 return Err(DisplayManagerError::DuplicateDisplay);
             }
-            let Some(output) = self.outputs.iter().find(|output| output.display == placement.display) else {
+            let Some(output) = self
+                .outputs
+                .iter()
+                .find(|output| output.display == placement.display)
+            else {
                 return Err(DisplayManagerError::UnknownDisplay);
             };
             if output.enabled != placement.enabled
@@ -153,7 +157,10 @@ mod tests {
             management_mode: DisplayManagementMode::Automatic,
             layout: DisplayLayout {
                 placements,
-                primary_display: outputs.iter().find(|output| output.enabled).map(|output| output.display),
+                primary_display: outputs
+                    .iter()
+                    .find(|output| output.enabled)
+                    .map(|output| output.display),
             },
             outputs,
         }
@@ -161,14 +168,18 @@ mod tests {
 
     #[test]
     fn accepts_four_active_displays_and_disabled_discovered_outputs() {
-        let mut outputs = (1..=MAX_ACTIVE_DISPLAYS as u128).map(|id| output(id, true)).collect::<Vec<_>>();
-        outputs.push(output(5, false));
+        let mut outputs = (1..=MAX_ACTIVE_DISPLAYS as u128)
+            .map(|id| output(id, true))
+            .collect::<Vec<_>>();
+        outputs.push(output(MAX_ACTIVE_DISPLAYS as u128 + 1, false));
         assert!(configuration(outputs).validate().is_ok());
     }
 
     #[test]
     fn rejects_a_fifth_active_display() {
-        let outputs = (1..=5).map(|id| output(id, true)).collect();
+        let outputs = (1..=MAX_ACTIVE_DISPLAYS as u128 + 1)
+            .map(|id| output(id, true))
+            .collect();
         assert_eq!(
             configuration(outputs).validate(),
             Err(DisplayManagerError::TooManyActiveDisplays {
@@ -189,7 +200,10 @@ mod tests {
     fn rejects_duplicate_layout_placements() {
         let mut config = configuration(vec![output(1, true), output(2, true)]);
         config.layout.placements[1].display = DisplayId(1);
-        assert_eq!(config.validate(), Err(DisplayManagerError::DuplicateDisplay));
+        assert_eq!(
+            config.validate(),
+            Err(DisplayManagerError::DuplicateDisplay)
+        );
     }
 
     #[test]
