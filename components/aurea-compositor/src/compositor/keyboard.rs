@@ -14,6 +14,8 @@ use smithay::{
     utils::SERIAL_COUNTER,
 };
 
+use aurea_desktop_api::keyboard::KeyboardLayoutId;
+
 use super::AureaCompositor;
 
 impl AureaCompositor {
@@ -26,6 +28,27 @@ impl AureaCompositor {
         }
 
         Ok(())
+    }
+
+    /// Applies a validated software-managed XKB layout to the seat keyboard.
+    ///
+    /// The caller is responsible for persisting the user's selection. This method
+    /// only changes the active compositor keymap.
+    pub fn set_keyboard_layout(&mut self, layout: &KeyboardLayoutId) -> io::Result<()> {
+        let Some(keyboard) = self.seat.get_keyboard() else {
+            return Err(io::Error::other("The compositor keyboard is not initialized"));
+        };
+
+        keyboard
+            .set_xkb_config(
+                self,
+                XkbConfig {
+                    layout: layout.layout(),
+                    variant: layout.variant().unwrap_or(""),
+                    ..XkbConfig::default()
+                },
+            )
+            .map_err(io::Error::other)
     }
 
     /// Feeds one backend key event through the compositor shortcut filter and
