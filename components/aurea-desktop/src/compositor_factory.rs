@@ -14,12 +14,23 @@ use aurea_desktop_api::{
 };
 
 const WAYLAND_DISPLAY_NAME: &str = "wayland-0";
+const WAYLAND_SEAT_NAME: &str = "seat0";
 const WELCOME_CLIENT_ARGUMENT: &str = "--welcome-client";
 
 /// Creates the compositor and starts the first native desktop client.
-#[derive(Default)]
 pub struct DesktopCompositorFactory {
     compositor: WaylandCompositorFactory,
+}
+
+impl Default for DesktopCompositorFactory {
+    fn default() -> Self {
+        Self {
+            compositor: WaylandCompositorFactory::new(
+                WAYLAND_DISPLAY_NAME,
+                WAYLAND_SEAT_NAME,
+            ),
+        }
+    }
 }
 
 impl CompositorFactory for DesktopCompositorFactory {
