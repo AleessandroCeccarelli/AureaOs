@@ -54,6 +54,7 @@ pub enum KeyboardLayoutHintSource {
     SystemLocale,
     DeviceMetadata,
     PreviousUserChoice,
+    VendorExtension,
 }
 
 /// A suggested layout. Suggestions must be confirmed before they are applied.
@@ -68,6 +69,35 @@ pub struct KeyboardLayoutSuggestion {
 pub struct KeyboardLayoutSelection {
     pub active: KeyboardLayoutId,
     pub device_override: Option<(super::super::InputDeviceId, KeyboardLayoutId)>,
+}
+
+/// Confidence assigned to a non-binding software layout detection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum KeyboardLayoutDetectionConfidence {
+    Low,
+    Medium,
+    High,
+}
+
+/// A layout candidate detected for one physical keyboard.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KeyboardLayoutDetection {
+    pub device: super::super::InputDeviceId,
+    pub suggestion: KeyboardLayoutSuggestion,
+    pub confidence: KeyboardLayoutDetectionConfidence,
+}
+
+/// Resolves likely keyboard layouts from trusted metadata and optional extensions.
+///
+/// Implementations must return suggestions only: applying a detected layout
+/// always requires an explicit user selection. Raw keystrokes must not be
+/// collected or retained for layout detection.
+pub trait KeyboardLayoutDetector: Send + Sync {
+    fn detect(
+        &self,
+        device: &super::super::InputDeviceDescriptor,
+        system_locale: Option<&str>,
+    ) -> Vec<KeyboardLayoutDetection>;
 }
 
 /// Failure while resolving or applying a keyboard layout.
@@ -102,6 +132,12 @@ mod tests {
         assert!(KeyboardLayoutId::new("", None).is_none());
         assert!(KeyboardLayoutId::new("it;rm -rf", None).is_none());
         assert!(KeyboardLayoutId::new("us", Some("bad variant".to_owned())).is_none());
+    }
+
+    #[test]
+    fn detection_confidence_is_ordered_without_applying_a_layout() {
+        assert!(KeyboardLayoutDetectionConfidence::High > KeyboardLayoutDetectionConfidence::Medium);
+        assert!(KeyboardLayoutDetectionConfidence::Medium > KeyboardLayoutDetectionConfidence::Low);
     }
 
     #[test]
