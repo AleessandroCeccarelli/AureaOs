@@ -34,6 +34,22 @@ The project should implement and test relevant freedesktop.org/XDG specification
 
 AureaOS must consult the current specification and the actual toolkit/runtime behavior before implementing each integration. Freedesktop specifications are interoperability specifications, not a guarantee that every desktop implements every interface identically.
 
+
+## AureaOS system API boundary
+
+AureaOS-specific capabilities must be exposed through documented contracts rather than private compositor or shell internals. The API has distinct layers:
+
+- **Desktop component contracts:** `components/aurea-desktop-api` contains technology-independent Rust contracts shared by AureaOS components. Its `input` module owns keyboard layouts, pointer preferences, device capabilities and optional peripheral-extension metadata. Its `appearance` module exposes the system theme, resolved color scheme, accessibility appearance preferences and semantic color-token identifiers.
+- **Human Interfaces:** `aurea-human-interfaces/design-system/tokens/index.css` remains the canonical source of visual values. The future native UI library consumes those tokens and provides reusable controls, typography, spacing, icons and interaction patterns. Applications must not copy palette values or invent a parallel AureaOS theme.
+- **Native AureaOS applications:** first-party applications should use the shared Rust contracts and Human Interfaces library rather than depending on compositor implementation types.
+- **Sandboxed and third-party applications:** use standard Wayland protocols and XDG portals/settings interfaces for the capabilities they support. AureaOS-specific cross-process APIs require a documented, versioned and permission-controlled service boundary; the transport and complete application SDK remain design work.
+
+Input privacy is part of this boundary. Applications receive normal keyboard and pointer events for their own focused Wayland surfaces. They do not receive unrestricted global keystrokes, typed text or raw pointer streams. Global shortcuts, device inventory, layout changes and privileged hardware configuration belong to trusted system services and require the appropriate authorization.
+
+A manufacturer extension is optional and additive: standard keyboards and mice must remain fully useful without it. Extensions may expose only capabilities verified for the connected device, and they must run outside the compositor with explicit permissions. A vendor or product identifier is a matching hint, not proof that a proprietary feature is supported.
+
+The current Rust contracts are foundations, not a complete application-facing IPC implementation. A capability is not supported merely because its type exists; its provider, authorization, persistence where required, failure behavior and integration tests must also exist.
+
 ## Flatpak and portals
 
 Flatpak applications are expected to use the portal model for supported desktop integration. AureaOS must provide a portal backend appropriate to its shell and compositor, or clearly report unsupported portal interfaces.
@@ -86,14 +102,17 @@ Vulkan remains the exclusive AureaOS rendering API for first-party compositor re
 
 ## Implementation order
 
-1. Application discovery and Desktop Entry validation.
-2. MIME database integration and default application selection.
-3. XDG user directories and file-manager integration.
-4. Notifications and action handling.
-5. Flatpak integration and the portal interfaces required by the first-party shell.
-6. AppStream metadata ingestion for the software store.
-7. Autostart policy and user-visible controls.
-8. Accessibility and keyboard workflow audits across the shell.
+1. Complete technology-independent desktop API contracts and their focused tests.
+2. Implement trusted system providers for input-device inventory, keyboard layouts, pointer settings and appearance preferences.
+3. Define the versioned application-facing service and permission boundary.
+4. Application discovery and Desktop Entry validation.
+5. MIME database integration and default application selection.
+6. XDG user directories and file-manager integration.
+7. Notifications and action handling.
+8. Flatpak integration and the portal interfaces required by the first-party shell.
+9. AppStream metadata ingestion for the software store.
+10. Autostart policy and user-visible controls.
+11. Accessibility and keyboard workflow audits across the shell.
 
 Each integration must have a small owner module, a documented contract, focused tests, and an explicit implementation-status label. Avoid one large "desktop integration" module that owns unrelated specifications.
 
