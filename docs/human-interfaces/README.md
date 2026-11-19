@@ -61,7 +61,7 @@ The canonical token entry point is:
 
 Changes to visual values should be made consistently across the token system rather than introducing unrelated values in individual applications.
 
-The future shared UI library should consume these foundations instead of duplicating design decisions in each component.
+The future shared UI library should consume these foundations instead of duplicating design decisions in each component. The desktop API exposes the resolved system theme and semantic color-token identifiers; Human Interfaces remains the owner of actual visual values and reusable presentation components.
 
 ## Palette
 
