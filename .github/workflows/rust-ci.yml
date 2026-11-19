@@ -129,7 +129,7 @@ jobs:
 
       - name: Preserve resolved lockfile for review
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: aureaos-cargo-lock
           path: Cargo.lock
@@ -137,7 +137,7 @@ jobs:
           retention-days: 3
 
       - name: Preserve generated AureaOS Xcursor theme
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: aureaos-xcursor-theme
           path: aurea-human-interfaces/cursors/generated/AureaOS/
