@@ -106,6 +106,20 @@ AureaOS should provide keyboard access to all essential desktop functions and a 
 7. Any intentional deviation must have a documented usability or accessibility reason.
 8. A shortcut becomes "Implemented" only after its action and tests are present.
 
+## Runtime architecture rules
+
+The compositor keeps shortcut handling separated into small, single-purpose modules:
+
+- `input/shortcuts/action.rs` defines semantic desktop actions without executing them.
+- `input/shortcuts/workspace.rs` owns only workspace-navigation bindings.
+- `input/shortcuts/mod.rs` is the registry/resolution entry point and delegates to the relevant shortcut family.
+- `compositor/keyboard.rs` owns keyboard setup, event filtering, focus and forwarding to Wayland clients.
+- `compositor/keyboard_shortcuts.rs` coordinates execution of resolved desktop actions.
+
+New shortcut families must be added in their own module when they introduce real behavior. Do not create placeholder bindings for unavailable services, and do not put application shortcuts in the global registry. Keep the product policy here as the canonical compatibility reference; runtime modules implement only the subset that is genuinely available.
+
+A shortcut family must have focused resolver tests for its accepted modifiers, rejected combinations and key mapping. Action execution must be tested at the compositor/service boundary before its runtime status is promoted to fully implemented.
+
 ## Out of scope
 
 AureaOS does not adopt shortcuts for Microsoft-only applications or Windows-specific products and services that are not part of the AureaOS product plan. Examples include Copilot, Xbox Game Bar, Windows Mixed Reality, Microsoft 365-specific commands, and Windows-only diagnostic or management tools.

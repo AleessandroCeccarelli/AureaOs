@@ -28,6 +28,7 @@ use crate::{
 mod fractional_scale;
 mod frame_scheduling;
 mod keyboard;
+mod keyboard_shortcuts;
 mod output_publication;
 mod output_reconciliation;
 mod pointer;

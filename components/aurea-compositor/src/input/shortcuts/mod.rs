@@ -15,5 +15,5 @@ use smithay::input::keyboard::{Keysym, ModifiersState};
 
 /// Resolves a registered desktop shortcut to its semantic action.
 pub fn resolve_shortcut(keysym: Keysym, modifiers: ModifiersState) -> Option<ShortcutAction> {
-    workspace::resolve(keysym, modifiers)
+    workspace::resolve(keysym.raw(), modifiers)
 }
