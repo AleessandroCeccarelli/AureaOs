@@ -54,7 +54,14 @@ pub enum HardwareDeviceKind {
     Monitor,
 }
 
-/// Lifecycle and operational condition reported by a device manager.
+/// Physical connection state reported by the platform device monitor.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HardwareConnectionState {
+    Connected,
+    Disconnected,
+}
+
+/// Operational condition reported by a device-specific manager.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HardwareDeviceState {
     Discovered,
@@ -71,6 +78,7 @@ pub struct HardwareDeviceRecord {
     pub id: HardwareDeviceId,
     pub kind: HardwareDeviceKind,
     pub name: String,
+    pub connection: HardwareConnectionState,
     pub state: HardwareDeviceState,
 }
 
@@ -169,9 +177,44 @@ impl HardwareMonitorCoordinator {
         true
     }
 
-    /// Marks a device as disconnected without deleting its identity.
+    /// Updates the physical connection state without deleting device identity.
+    pub fn set_connection_state(
+        &mut self,
+        id: &HardwareDeviceId,
+        connection: HardwareConnectionState,
+    ) -> bool {
+        let Some(record) = self.devices.get_mut(id) else {
+            return false;
+        };
+
+        if record.connection == connection {
+            return false;
+        }
+
+        record.connection = connection;
+        self.advance_revision();
+        true
+    }
+
+    /// Marks a device as physically disconnected without deleting its identity.
     pub fn disconnect_device(&mut self, id: &HardwareDeviceId) -> bool {
-        self.set_device_state(id, HardwareDeviceState::Disconnected)
+        self.set_connection_state(id, HardwareConnectionState::Disconnected)
+    }
+
+    /// Returns whether a known device is physically connected.
+    pub fn is_device_connected(&self, id: &HardwareDeviceId) -> bool {
+        self.devices
+            .get(id)
+            .is_some_and(|record| record.connection == HardwareConnectionState::Connected)
+    }
+
+    /// Returns only devices that are physically connected.
+    pub fn connected_devices(&self) -> Vec<HardwareDeviceRecord> {
+        self.devices
+            .values()
+            .filter(|record| record.connection == HardwareConnectionState::Connected)
+            .cloned()
+            .collect()
     }
 
     /// Removes a device record explicitly, for example after an identity
@@ -202,8 +245,8 @@ impl HardwareMonitorCoordinator {
 #[cfg(test)]
 mod tests {
     use super::{
-        HardwareDeviceId, HardwareDeviceKind, HardwareDeviceRecord, HardwareDeviceState,
-        HardwareMonitorCoordinator, HardwareMonitorModule,
+        HardwareConnectionState, HardwareDeviceId, HardwareDeviceKind, HardwareDeviceRecord,
+        HardwareDeviceState, HardwareMonitorCoordinator, HardwareMonitorModule,
     };
 
     fn keyboard(id: &str, state: HardwareDeviceState) -> HardwareDeviceRecord {
@@ -211,6 +254,7 @@ mod tests {
             id: HardwareDeviceId::new(id).expect("test identifier must be valid"),
             kind: HardwareDeviceKind::Keyboard,
             name: "Keyboard".to_owned(),
+            connection: HardwareConnectionState::Connected,
             state,
         }
     }
@@ -228,13 +272,24 @@ mod tests {
 
         let snapshot = coordinator.snapshot();
         assert_eq!(snapshot.devices.len(), 1);
-        assert_eq!(snapshot.devices[0].state, HardwareDeviceState::Disconnected);
+        assert_eq!(snapshot.devices[0].connection, HardwareConnectionState::Disconnected);
+        assert!(coordinator.connected_devices().is_empty());
+        assert!(!coordinator.is_device_connected(&id));
 
-        assert!(coordinator.set_device_state(&id, HardwareDeviceState::Ready));
-        assert_eq!(
-            coordinator.snapshot().devices[0].state,
-            HardwareDeviceState::Ready
-        );
+        assert!(coordinator.set_connection_state(&id, HardwareConnectionState::Connected));
+        assert!(coordinator.is_device_connected(&id));
+        assert_eq!(coordinator.connected_devices().len(), 1);
+    }
+
+    #[test]
+    fn connection_and_operational_state_are_independent() {
+        let mut coordinator = HardwareMonitorCoordinator::new();
+        let id = HardwareDeviceId::new("usb:keyboard-1").unwrap();
+        coordinator.upsert_device(keyboard("usb:keyboard-1", HardwareDeviceState::Unavailable));
+
+        assert!(coordinator.is_device_connected(&id));
+        assert!(coordinator.set_device_state(&id, HardwareDeviceState::Unavailable));
+        assert!(coordinator.is_device_connected(&id));
     }
 
     #[test]
