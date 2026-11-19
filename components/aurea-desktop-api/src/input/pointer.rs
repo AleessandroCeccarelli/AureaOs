@@ -5,6 +5,8 @@
 
 //! Shared pointer preferences and semantic pointer controls.
 
+use std::sync::mpsc::Receiver;
+
 /// Acceleration profile exposed independently from the input backend.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PointerAccelerationProfile {
@@ -89,6 +91,7 @@ pub enum PointerSettingsError {
 pub trait PointerSettingsProvider: Send + Sync {
     fn settings(&self) -> PointerSettings;
     fn update(&self, settings: PointerSettings) -> Result<(), PointerSettingsError>;
+    fn subscribe(&self) -> Receiver<PointerSettings>;
 }
 
 #[cfg(test)]
