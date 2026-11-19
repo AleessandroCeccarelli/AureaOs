@@ -45,15 +45,22 @@ impl AureaCompositor {
             time_millis,
             |compositor, modifiers, key| {
                 if state == KeyState::Released
-                    && compositor.suppressed_shortcut_releases.remove(&keycode)
+                    && compositor.consumed_shortcut_keys.remove(&keycode)
                 {
+                    return FilterResult::Intercept(());
+                }
+
+                if state == KeyState::Pressed
+                    && compositor.consumed_shortcut_keys.contains(&keycode)
+                {
+                    // Ignore key-repeat events for a shortcut already consumed.
                     return FilterResult::Intercept(());
                 }
 
                 if state == KeyState::Pressed
                     && compositor.handle_keyboard_shortcut(key.modified_sym(), *modifiers)
                 {
-                    compositor.suppressed_shortcut_releases.insert(keycode);
+                    compositor.consumed_shortcut_keys.insert(keycode);
                     return FilterResult::Intercept(());
                 }
 
