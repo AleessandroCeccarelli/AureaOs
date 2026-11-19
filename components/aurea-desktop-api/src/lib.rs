@@ -9,9 +9,11 @@
 //! It must not depend on the shell, compositor or graphics backends.
 
 pub mod appearance;
+pub mod calendar;
 pub mod display;
 pub mod input;
 pub mod keyboard;
+pub mod notes;
 pub mod time;
 
 use std::io;
