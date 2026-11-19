@@ -10,9 +10,13 @@
 
 use std::sync::mpsc::Receiver;
 
+/// System-managed environmental adaptation, separate from the Light/Dark theme.
+pub mod lumen;
+
 /// User's requested appearance policy.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ThemePreference {
+    /// Follow the system's resolved appearance policy.
     System,
     Light,
     Dark,
@@ -76,11 +80,52 @@ impl SemanticColorRole {
     }
 }
 
+
+/// Identifier of a centrally managed AureaOS semantic palette.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub enum PaletteId {
+    /// The approved blue-gray AureaOS palette with blue and restrained warm accents.
+    #[default]
+    Aurea,
+}
+
+/// Semantic geometry roles mapped to the canonical Human Interfaces form tokens.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FormRole {
+    Window,
+    Panel,
+    Dock,
+    Control,
+    Notification,
+}
+
+impl FormRole {
+    pub const fn token_name(self) -> &'static str {
+        match self {
+            Self::Window => "--aurea-window-radius",
+            Self::Panel => "--aurea-panel-radius",
+            Self::Dock => "--aurea-dock-radius",
+            Self::Control => "--aurea-control-radius",
+            Self::Notification => "--aurea-notification-radius",
+        }
+    }
+}
+
+/// System-wide visual identity profile shared by compatible applications.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct FormProfile {
+    /// Uses the approved AureaOS geometry tokens; applications cannot substitute
+    /// private system-wide shapes.
+    pub canonical: bool,
+}
+
 /// Appearance state delivered consistently to compatible applications.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AppearanceSnapshot {
     pub preference: ThemePreference,
     pub color_scheme: ColorScheme,
+    pub palette: PaletteId,
+    pub form: FormProfile,
     pub reduced_motion: bool,
     pub reduced_transparency: bool,
     pub high_contrast: bool,
