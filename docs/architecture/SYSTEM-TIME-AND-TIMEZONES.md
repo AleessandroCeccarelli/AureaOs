@@ -38,7 +38,9 @@ AureaOS must not implement daylight-saving rules by hard-coded country tables or
 
 The system should expose whether time is unknown, unsynchronized, synchronizing, synchronized or unavailable, along with the reported source and last successful synchronization when known.
 
-**Initial backend decision:** use Debian's systemd-timesyncd for the first AureaOS profile. Debian identifies it as the default time synchronization service; it is appropriate for ordinary client machines. The package is now included in `debian/packages/base.list` alongside `tzdata`. Do not install or start chrony/ntpsec in parallel. Re-evaluate chrony only if later requirements demand capabilities such as operating a time server or more advanced synchronization controls.\n\nUse systemd-timedated through its D-Bus interface for privileged changes to system time, time zone, RTC mode and synchronization enablement. Do not build privileged shell-command execution into the desktop UI. The systemd service is the authority; AureaOS should add a narrow Rust adapter and its own Settings experience.
+**Initial backend decision:** use Debian's systemd-timesyncd for the first AureaOS profile. Debian identifies it as the default time synchronization service; it is appropriate for ordinary client machines. The package is now included in `debian/packages/base.list` alongside `tzdata`. Do not install or start chrony/ntpsec in parallel. Re-evaluate chrony only if later requirements demand capabilities such as operating a time server or more advanced synchronization controls.
+
+Use systemd-timedated through its D-Bus interface for privileged changes to system time, time zone, RTC mode and synchronization enablement. Do not build privileged shell-command execution into the desktop UI. The systemd service is the authority; AureaOS should add a narrow Rust adapter and its own Settings experience.
 
 The desktop must not claim that time is synchronized merely because networking is connected. If no network source is available, the system continues using its current clock and clearly reports degraded/unsynchronized status. Manual time configuration remains available through an authorized system service.
 
@@ -47,6 +49,8 @@ RTC policy (UTC versus local time), boot-time correction, suspend/resume behavio
 ## Ownership boundaries — current proposal
 
 - **Desktop API:** portable time, time-zone, synchronization-status and display-preference contracts.
+- **Shared time context:** `TimeContextProvider` publishes one coherent wall-clock instant, time-zone snapshot and synchronization state. Consumers must not maintain independent system clocks.
+- **Aurea Lumen and day/night policies:** consume the shared time context. Their scheduling and environmental decisions remain separate policies, but use the same resolved local-time basis.
 - **System time provider:** reads wall-clock state and synchronization health from the host.
 - **Time-zone provider:** resolves IANA zone rules from the system tz database.
 - **Privileged system service:** applies time-zone and manual wall-clock changes after authorization.
