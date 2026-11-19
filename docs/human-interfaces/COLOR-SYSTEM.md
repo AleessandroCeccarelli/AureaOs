@@ -1,14 +1,14 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS Human Interfaces — Color System
+# AureaOS Human Interfaces — Aurea Palette
 
 ## Purpose
 
 This document defines the shared color and surface tokens for AureaOS. The desktop shell, native applications, system panels, and notifications should use these semantic tokens so that theme changes remain coherent and predictable.
 
-The approved palette foundation is a blue-gray system with a soft blue accent and a restrained warm accent reserved for identity highlights. This keeps the interface familiar and readable while preserving a clear AureaOS personality.
+Aurea Palette is the canonical semantic color system. Its approved foundation is a blue-gray system with a soft blue accent and a restrained warm accent reserved for identity highlights. This keeps the interface familiar and readable while preserving a clear AureaOS personality.
 
-## Palette
+## Aurea Palette
 
 Values are sRGB hex colors. Semantic names describe their use; components should not select raw palette values independently.
 
