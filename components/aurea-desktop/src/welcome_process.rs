@@ -45,8 +45,21 @@ impl WelcomeClientProcess {
         match child.try_wait() {
             Ok(Some(status)) => Ok(Some(status)),
             Ok(None) => {
-                child.kill()?;
-                child.wait().map(Some)
+                let kill_result = child.kill();
+                let wait_result = child.wait();
+
+                match wait_result {
+                    Ok(status) => Ok(Some(status)),
+                    Err(wait_error) => match kill_result {
+                        Ok(()) => Err(wait_error),
+                        Err(kill_error) => Err(io::Error::new(
+                            wait_error.kind(),
+                            format!(
+                                "cannot reap Welcome client ({wait_error}); termination also failed ({kill_error})"
+                            ),
+                        )),
+                    },
+                }
             }
             Err(error) => {
                 // Still attempt to terminate and reap the child before
@@ -70,7 +83,7 @@ impl Drop for WelcomeClientProcess {
 #[cfg(all(test, unix))]
 mod tests {
     use super::WelcomeClientProcess;
-    use std::process::Command;
+    use std::{process::Command, thread, time::Duration};
 
     #[test]
     fn stop_preserves_the_exit_status_of_an_exited_client() {
@@ -79,6 +92,21 @@ mod tests {
             .spawn()
             .expect("test client should start");
         let mut client = WelcomeClientProcess { child: Some(child) };
+
+        loop {
+            if client
+                .child
+                .as_mut()
+                .expect("child is present")
+                .try_wait()
+                .expect("test client status should be readable")
+                .is_some()
+            {
+                break;
+            }
+
+            thread::sleep(Duration::from_millis(1));
+        }
 
         let status = client.stop().expect("client should be reaped");
 

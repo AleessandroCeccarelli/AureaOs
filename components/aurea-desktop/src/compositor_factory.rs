@@ -7,9 +7,7 @@
 
 use std::io;
 
-use aurea_compositor::service::{
-    DEFAULT_WAYLAND_DISPLAY_NAME, WaylandCompositorFactory,
-};
+use aurea_compositor::service::{DEFAULT_WAYLAND_DISPLAY_NAME, WaylandCompositorFactory};
 use aurea_desktop_api::{
     CompositorFactory, CompositorService, ShutdownSignal, display::DisplayColorController,
 };
