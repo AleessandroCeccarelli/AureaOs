@@ -178,7 +178,7 @@ Third-party applications are not AureaOS first-party products. Their use allows 
 ## Early-stage project status and evolving decisions\n\nAureaOS is an embryonic project. The roadmap records current direction and sequencing, not an immutable specification or a promise that every listed idea will ship unchanged. Product names, visual identity, palette values, geometry, APIs, features, architecture and technology choices may evolve as implementation, testing, hardware validation, accessibility review and community feedback provide evidence.\n\nDistinguish design proposals, experimental code, implemented API contracts, validated runtime features and release-ready capabilities. Documentation alone is not implementation evidence. Avoid declaring experimental API or design details stable until a compatibility and versioning policy is deliberately adopted.\n\n## System time and time-zone foundation
 
 - [x] Define the first technology-independent Desktop API contracts for Unix wall time, IANA-style zone identifiers, instant-specific UTC offsets, synchronization health and clock display preferences.
-- [ ] Select and package one Debian time synchronization backend; do not run competing NTP daemons.
+- [x] Select systemd-timesyncd as the initial Debian synchronization backend and add it to the base package manifest; do not run competing NTP daemons.
 - [ ] Implement the system provider adapter and privileged, authorized time/time-zone configuration path.
 - [ ] Integrate the updateable IANA tz database and test daylight-saving transitions.
 - [ ] Add shell clock/date presentation and Settings controls for time zone, synchronization and 12/24-hour format.
