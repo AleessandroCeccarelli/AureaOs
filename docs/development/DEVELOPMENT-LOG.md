@@ -208,3 +208,21 @@ Updated the architecture document, Human Interfaces overview, design-system READ
 - A compatibility/versioning policy must be established before promising long-term stability to third-party developers.
 
 No runtime code or visual token values were changed in this documentation clarification.
+
+
+## 2026-11-19 — Lumen preference contract hardening and shell adapter
+
+### Changes committed
+
+- Made `LumenPreferences` fields private so callers cannot bypass the warmth range or replace validated schedule/ambient-threshold values through direct field mutation.
+- Added focused getters and setters for enabled state, mode, warmth, schedule and ambient thresholds.
+- Added a unit test covering preference updates through the public API.
+- Replaced the shell's duplicate Night Light schedule/preference storage with a compatibility adapter over the shared `aurea-desktop-api::appearance::lumen` types.
+- Preserved the existing shell-facing Night Light mode names and runtime call pattern during migration. The adapter maps Manual, CustomSchedule and SunsetToSunrise to the corresponding shared Lumen modes.
+- The existing shell scheduler remains the source of the current schedule decision. No ambient sensor, solar provider, policy coordinator or new runtime behavior is claimed.
+
+### Verification status
+
+- Changes were committed directly to `main`.
+- No local Cargo formatting, build or test result is claimed. The latest GitHub combined-status query did not return individual status checks for the API change.
+- The next integration step is to replace the temporary compatibility mode/scheduler interface with an explicit Lumen policy decision once its provider contract is designed and tested.
