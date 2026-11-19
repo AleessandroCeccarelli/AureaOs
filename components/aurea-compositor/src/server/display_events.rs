@@ -30,6 +30,8 @@ fn remove_disconnected_clients(state: &mut WaylandState) {
     });
 
     state.compositor.window_manager().remove_dead_toplevels();
+    state.compositor.reconcile_surface_outputs();
+    state.compositor.request_all_output_frames();
 }
 
 /// Registers the display fd and dispatches incoming client requests.
