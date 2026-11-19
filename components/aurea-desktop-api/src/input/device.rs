@@ -80,3 +80,9 @@ pub struct InputDeviceDescriptor {
     pub product_id: Option<u16>,
     pub capabilities: InputDeviceCapabilities,
 }
+
+/// Read-only inventory contract for system settings and trusted desktop services.
+pub trait InputDeviceProvider: Send + Sync {
+    fn devices(&self) -> Vec<InputDeviceDescriptor>;
+    fn device(&self, id: InputDeviceId) -> Option<InputDeviceDescriptor>;
+}
