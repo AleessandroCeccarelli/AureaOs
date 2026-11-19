@@ -51,11 +51,26 @@ pub struct KeyboardLayoutInfo {
     pub language_tag: Option<String>,
 }
 
+/// Origin of a non-binding layout suggestion.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum KeyboardLayoutHintSource {
+    SystemLocale,
+    DeviceMetadata,
+    PreviousUserChoice,
+}
+
+/// A suggested layout. Suggestions must be confirmed before they are applied.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KeyboardLayoutSuggestion {
+    pub layout: KeyboardLayoutId,
+    pub source: KeyboardLayoutHintSource,
+}
+
 /// User-selected input source and optional device override.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KeyboardLayoutSelection {
     pub active: KeyboardLayoutId,
-    pub device_override: Option<(u64, KeyboardLayoutId)>,
+    pub device_override: Option<(super::InputDeviceId, KeyboardLayoutId)>,
 }
 
 /// Backend contract for listing and changing software-managed layouts.
@@ -65,6 +80,12 @@ pub struct KeyboardLayoutSelection {
 pub trait KeyboardLayoutManager: Send + Sync {
     /// Lists layouts currently available to the system.
     fn available_layouts(&self) -> Vec<KeyboardLayoutInfo>;
+
+    /// Returns non-binding suggestions based on locale and trustworthy metadata.
+    ///
+    /// Implementations must not treat the system locale as proof of the
+    /// keyboard's physical layout and must not apply a suggestion implicitly.
+    fn suggested_layouts(&self, system_locale: Option<&str>) -> Vec<KeyboardLayoutSuggestion>;
 
     /// Returns the active session layout.
     fn active_layout(&self) -> KeyboardLayoutId;
@@ -79,4 +100,32 @@ pub enum KeyboardLayoutError {
     Unavailable,
     InvalidConfiguration,
     BackendFailure,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{KeyboardLayoutId, KeyboardLayoutHintSource, KeyboardLayoutSuggestion};
+
+    #[test]
+    fn accepts_common_xkb_layout_identifiers() {
+        assert!(KeyboardLayoutId::new("it", None).is_some());
+        assert!(KeyboardLayoutId::new("us", Some("intl".to_owned())).is_some());
+    }
+
+    #[test]
+    fn rejects_empty_or_invalid_layout_identifiers() {
+        assert!(KeyboardLayoutId::new("", None).is_none());
+        assert!(KeyboardLayoutId::new("it;rm -rf", None).is_none());
+        assert!(KeyboardLayoutId::new("us", Some("bad variant".to_owned())).is_none());
+    }
+
+    #[test]
+    fn suggestions_are_explicitly_non_binding_values() {
+        let suggestion = KeyboardLayoutSuggestion {
+            layout: KeyboardLayoutId::new("it", None).expect("valid layout"),
+            source: KeyboardLayoutHintSource::SystemLocale,
+        };
+        assert_eq!(suggestion.source, KeyboardLayoutHintSource::SystemLocale);
+        assert_eq!(suggestion.layout.layout(), "it");
+    }
 }
