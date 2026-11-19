@@ -20,10 +20,8 @@ use super::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DisplayOutputConfiguration {
     pub display: DisplayId,
-    pub enabled: bool,
-    pub mode: DisplayMode,
-    pub position: DisplayPosition,
-    pub scale: DisplayScale,
+    /// None lets Automatic management select a supported mode.
+    pub mode: Option<DisplayMode>,
     pub refresh_policy: DisplayRefreshPolicy,
 }
 
@@ -66,20 +64,39 @@ impl DisplayConfiguration {
             }
         }
 
-        let active = self.outputs.iter().filter(|output| output.enabled).count();
+        let active = self
+            .layout
+            .placements
+            .iter()
+            .filter(|placement| placement.enabled)
+            .count();
         if active > MAX_ACTIVE_DISPLAYS {
             return Err(DisplayManagerError::TooManyActiveDisplays {
                 maximum: MAX_ACTIVE_DISPLAYS,
             });
         }
 
-        if let Some(primary) = self.layout.primary_display {
-            let is_enabled = self
-                .outputs
-                .iter()
-                .any(|output| output.display == primary && output.enabled);
-            if !is_enabled {
-                return Err(DisplayManagerError::InvalidPrimaryDisplay);
+        match (active, self.layout.primary_display) {
+            (0, None) => {}
+            (0, Some(_)) => return Err(DisplayManagerError::InvalidPrimaryDisplay),
+            (_, None) => return Err(DisplayManagerError::InvalidPrimaryDisplay),
+            (_, Some(primary)) => {
+                let is_enabled = self
+                    .layout
+                    .placements
+                    .iter()
+                    .any(|placement| placement.display == primary && placement.enabled);
+                if !is_enabled {
+                    return Err(DisplayManagerError::InvalidPrimaryDisplay);
+                }
+            }
+        }
+
+        for output in &self.outputs {
+            if (self.management_mode == DisplayManagementMode::Manual && output.mode.is_none())
+                || (output.refresh_policy == DisplayRefreshPolicy::Fixed && output.mode.is_none())
+            {
+                return Err(DisplayManagerError::InvalidMode);
             }
         }
 
@@ -95,12 +112,6 @@ impl DisplayConfiguration {
             else {
                 return Err(DisplayManagerError::UnknownDisplay);
             };
-            if output.enabled != placement.enabled
-                || output.position != placement.position
-                || output.scale != placement.scale
-            {
-                return Err(DisplayManagerError::ConfigurationRejected);
-            }
         }
 
         if placement_ids != ids {
@@ -148,9 +159,9 @@ mod tests {
             .iter()
             .map(|output| DisplayPlacement {
                 display: output.display,
-                enabled: output.enabled,
-                position: output.position,
-                scale: output.scale,
+                enabled: true,
+                position: DisplayPosition::new(0, 0),
+                scale: DisplayScale::from_percent(100).unwrap(),
             })
             .collect();
         DisplayConfiguration {
@@ -168,11 +179,12 @@ mod tests {
 
     #[test]
     fn accepts_four_active_displays_and_disabled_discovered_outputs() {
-        let mut outputs = (1..=MAX_ACTIVE_DISPLAYS as u128)
+        let outputs = (1..=(MAX_ACTIVE_DISPLAYS as u128 + 1))
             .map(|id| output(id, true))
-            .collect::<Vec<_>>();
-        outputs.push(output(MAX_ACTIVE_DISPLAYS as u128 + 1, false));
-        assert!(configuration(outputs).validate().is_ok());
+            .collect();
+        let mut config = configuration(outputs);
+        config.layout.placements[MAX_ACTIVE_DISPLAYS].enabled = false;
+        assert!(config.validate().is_ok());
     }
 
     #[test]
@@ -208,12 +220,27 @@ mod tests {
 
     #[test]
     fn rejects_a_disabled_primary_display() {
-        let mut config = configuration(vec![output(1, false)]);
-        config.layout.primary_display = Some(DisplayId(1));
+        let mut config = configuration(vec![output(1, true)]);
+        config.layout.placements[0].enabled = false;
         assert_eq!(
             config.validate(),
             Err(DisplayManagerError::InvalidPrimaryDisplay)
         );
+    }
+
+    #[test]
+    fn automatic_mode_may_defer_mode_selection_to_the_policy_engine() {
+        let mut config = configuration(vec![output(1, true)]);
+        config.outputs[0].mode = None;
+        assert!(config.validate().is_ok());
+    }
+
+    #[test]
+    fn manual_mode_requires_an_explicit_supported_mode() {
+        let mut config = configuration(vec![output(1, true)]);
+        config.management_mode = DisplayManagementMode::Manual;
+        config.outputs[0].mode = None;
+        assert_eq!(config.validate(), Err(DisplayManagerError::InvalidMode));
     }
 
     #[test]
