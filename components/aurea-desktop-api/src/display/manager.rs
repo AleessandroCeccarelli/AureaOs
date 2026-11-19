@@ -11,6 +11,7 @@ use super::{
     capabilities::{DisplayDescriptor, DisplayId},
     events::DisplayEvent,
     layout::{DisplayLayout, DisplayPlacement, DisplayPosition, DisplayScale},
+    limits::MAX_ACTIVE_DISPLAYS,
     modes::DisplayMode,
     policy::{DisplayManagementMode, DisplayRefreshPolicy},
 };
@@ -58,8 +59,6 @@ pub enum DisplayManagerError {
 impl DisplayConfiguration {
     /// Validates invariants independent from hardware/backend capabilities.
     pub fn validate(&self) -> Result<(), DisplayManagerError> {
-        const MAX_ACTIVE_DISPLAYS: usize = 4;
-
         let mut ids = std::collections::BTreeSet::new();
         for output in &self.outputs {
             if !ids.insert(output.display) {
