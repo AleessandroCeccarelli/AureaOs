@@ -83,12 +83,12 @@ impl AmbientLightThresholds {
 /// User preferences for Aurea Lumen.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LumenPreferences {
-    pub enabled: bool,
-    pub mode: LumenMode,
+    enabled: bool,
+    mode: LumenMode,
     /// Warmth strength in the inclusive range 0–100.
-    pub warmth_percent: u8,
-    pub schedule: LumenSchedule,
-    pub ambient_thresholds: AmbientLightThresholds,
+    warmth_percent: u8,
+    schedule: LumenSchedule,
+    ambient_thresholds: AmbientLightThresholds,
 }
 
 impl Default for LumenPreferences {
@@ -107,10 +107,28 @@ impl Default for LumenPreferences {
 }
 
 impl LumenPreferences {
+    pub const fn is_enabled(self) -> bool { self.enabled }
+
+    pub fn set_enabled(&mut self, enabled: bool) { self.enabled = enabled; }
+
+    pub const fn mode(self) -> LumenMode { self.mode }
+
+    pub fn set_mode(&mut self, mode: LumenMode) { self.mode = mode; }
+
     pub const fn warmth_percent(self) -> u8 { self.warmth_percent }
 
     pub fn set_warmth_percent(&mut self, value: u8) {
         self.warmth_percent = if value > 100 { 100 } else { value };
+    }
+
+    pub const fn schedule(self) -> LumenSchedule { self.schedule }
+
+    pub fn set_schedule(&mut self, schedule: LumenSchedule) { self.schedule = schedule; }
+
+    pub const fn ambient_thresholds(self) -> AmbientLightThresholds { self.ambient_thresholds }
+
+    pub fn set_ambient_thresholds(&mut self, thresholds: AmbientLightThresholds) {
+        self.ambient_thresholds = thresholds;
     }
 }
 
@@ -121,8 +139,8 @@ mod tests {
     #[test]
     fn automatic_is_the_default_mode_and_lumen_starts_disabled() {
         let preferences = LumenPreferences::default();
-        assert_eq!(preferences.mode, LumenMode::Automatic);
-        assert!(!preferences.enabled);
+        assert_eq!(preferences.mode(), LumenMode::Automatic);
+        assert!(!preferences.is_enabled());
     }
 
     #[test]
@@ -145,6 +163,19 @@ mod tests {
         assert!(AmbientLightThresholds::new(80, 160).is_some());
         assert!(AmbientLightThresholds::new(160, 80).is_none());
         assert!(AmbientLightThresholds::new(80, 80).is_none());
+    }
+
+    #[test]
+    fn preferences_are_changed_through_validated_accessors() {
+        let mut preferences = LumenPreferences::default();
+        preferences.set_enabled(true);
+        preferences.set_mode(LumenMode::Schedule);
+        preferences.set_schedule(LumenSchedule::new(300, 600).unwrap());
+        preferences.set_ambient_thresholds(AmbientLightThresholds::new(40, 120).unwrap());
+        assert!(preferences.is_enabled());
+        assert_eq!(preferences.mode(), LumenMode::Schedule);
+        assert_eq!(preferences.schedule().start_minute(), 300);
+        assert_eq!(preferences.ambient_thresholds().brighter_than_lux(), 120);
     }
 
     #[test]
