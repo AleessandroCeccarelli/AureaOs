@@ -6,7 +6,7 @@
 
 AureaOS supports **up to four active display outputs at the same time**.
 
-This is a product and maintainability decision, not a universal Linux, DRM, GPU, or driver limit. The value is centralized in `MAX_ACTIVE_OUTPUTS` so it can be reviewed and changed deliberately.
+This is a product and maintainability decision, not a universal Linux, DRM, GPU, or driver limit. The canonical value is `aurea_desktop_api::display::MAX_ACTIVE_DISPLAYS`; the compositor's `MAX_ACTIVE_OUTPUTS` name is a compatibility re-export. The limit is therefore shared by API validation and compositor enforcement, and can be reviewed and changed in one place.
 
 A display may be discovered and remain registered while disabled. The four-output limit applies to enabled outputs, not to the number of devices the system can identify.
 
