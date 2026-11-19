@@ -86,11 +86,17 @@ pub struct HardwareMonitorSnapshot {
 ///
 /// A disconnected device remains in the inventory so that higher-level
 /// services can retain preferences associated with its stable identifier.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct HardwareMonitorCoordinator {
     revision: u64,
     modules: BTreeSet<HardwareMonitorModule>,
     devices: BTreeMap<HardwareDeviceId, HardwareDeviceRecord>,
+}
+
+impl Default for HardwareMonitorCoordinator {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl HardwareMonitorCoordinator {
