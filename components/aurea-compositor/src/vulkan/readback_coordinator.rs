@@ -84,8 +84,7 @@ impl VulkanReadbackCoordinator {
             return Err(VulkanReadbackError::InFlightLimitReached);
         }
 
-        let submission =
-            VulkanReadbackSubmission::submit_capture_target(target, &self.pool)?;
+        let submission = VulkanReadbackSubmission::submit_capture_target(target, &self.pool)?;
         self.submissions.push(submission);
         Ok(())
     }

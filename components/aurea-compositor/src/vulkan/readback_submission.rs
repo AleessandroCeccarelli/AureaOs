@@ -52,13 +52,9 @@ impl VulkanReadbackSubmission {
         target: VulkanCaptureTargetLease,
         pool: &VulkanReadbackBufferPool,
     ) -> Result<Self, VulkanReadbackError> {
-        let view = target
-            .create_owned_view()
-            .map_err(|error| match error {
-                super::VulkanImageViewError::Creation(result) => {
-                    VulkanReadbackError::ImageView(result)
-                }
-            })?;
+        let view = target.create_owned_view().map_err(|error| match error {
+            super::VulkanImageViewError::Creation(result) => VulkanReadbackError::ImageView(result),
+        })?;
         Self::submit_inner(view, pool, Some(target))
     }
 
