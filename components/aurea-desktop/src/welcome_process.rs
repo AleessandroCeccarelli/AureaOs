@@ -1,0 +1,103 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// AureaOS — Aurea Desktop
+// Copyright (C) 2026 Alessandro Ceccarelli
+
+//! Process ownership and teardown for the first desktop client.
+
+use std::io;
+use std::process::{Child, Command, ExitStatus, Stdio};
+
+const WELCOME_CLIENT_ARGUMENT: &str = "--welcome-client";
+
+/// Owns the Welcome client and guarantees that it is reaped on teardown.
+pub(super) struct WelcomeClientProcess {
+    child: Option<Child>,
+}
+
+impl WelcomeClientProcess {
+    /// Starts the current desktop executable in its Welcome client mode.
+    pub(super) fn spawn(display_name: &str) -> io::Result<Self> {
+        let executable = std::env::current_exe()?;
+        let child = Command::new(executable)
+            .arg(WELCOME_CLIENT_ARGUMENT)
+            .env("WAYLAND_DISPLAY", display_name)
+            .stdin(Stdio::null())
+            .stdout(Stdio::inherit())
+            .stderr(Stdio::inherit())
+            .spawn()
+            .map_err(|error| {
+                io::Error::new(
+                    error.kind(),
+                    format!("cannot start the Aurea Welcome client: {error}"),
+                )
+            })?;
+
+        Ok(Self { child: Some(child) })
+    }
+
+    /// Stops a running client and returns its final process status.
+    pub(super) fn stop(&mut self) -> io::Result<Option<ExitStatus>> {
+        let Some(mut child) = self.child.take() else {
+            return Ok(None);
+        };
+
+        match child.try_wait() {
+            Ok(Some(status)) => Ok(Some(status)),
+            Ok(None) => {
+                child.kill()?;
+                child.wait().map(Some)
+            }
+            Err(error) => {
+                // Still attempt to terminate and reap the child before
+                // returning the original inspection error.
+                let _ = child.kill();
+                let _ = child.wait();
+                Err(error)
+            }
+        }
+    }
+}
+
+impl Drop for WelcomeClientProcess {
+    fn drop(&mut self) {
+        if let Err(error) = self.stop() {
+            eprintln!("Aurea Desktop: cannot cleanly reap Welcome client: {error}");
+        }
+    }
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::WelcomeClientProcess;
+    use std::process::Command;
+
+    #[test]
+    fn stop_preserves_the_exit_status_of_an_exited_client() {
+        let child = Command::new("sh")
+            .args(["-c", "exit 7"])
+            .spawn()
+            .expect("test client should start");
+        let mut client = WelcomeClientProcess { child: Some(child) };
+
+        let status = client.stop().expect("client should be reaped");
+
+        assert_eq!(status.and_then(|status| status.code()), Some(7));
+    }
+
+    #[test]
+    fn stop_terminates_and_reaps_a_running_client() {
+        let child = Command::new("sh")
+            .args(["-c", "exec sleep 30"])
+            .spawn()
+            .expect("test client should start");
+        let mut client = WelcomeClientProcess { child: Some(child) };
+
+        let status = client
+            .stop()
+            .expect("running client should be terminated and reaped");
+
+        assert!(status.is_some_and(|status| !status.success()));
+        assert!(client.stop().expect("stop is idempotent").is_none());
+    }
+}

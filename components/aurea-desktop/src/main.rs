@@ -8,6 +8,7 @@
 mod compositor_factory;
 mod diagnostics;
 mod welcome;
+mod welcome_process;
 
 use std::ffi::OsStr;
 

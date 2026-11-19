@@ -5,8 +5,7 @@
 
 //! Desktop composition of the native compositor and first visible client.
 
-use std::process::{Child, Command, Stdio};
-use std::{io, process};
+use std::io;
 
 use aurea_compositor::service::{
     DEFAULT_WAYLAND_DISPLAY_NAME, WaylandCompositorFactory,
@@ -15,7 +14,7 @@ use aurea_desktop_api::{
     CompositorFactory, CompositorService, ShutdownSignal, display::DisplayColorController,
 };
 
-const WELCOME_CLIENT_ARGUMENT: &str = "--welcome-client";
+use crate::welcome_process::WelcomeClientProcess;
 
 /// Creates the compositor and starts the first native desktop client.
 pub struct DesktopCompositorFactory {
@@ -37,32 +36,19 @@ impl CompositorFactory for DesktopCompositorFactory {
     ) -> io::Result<Box<dyn CompositorService>> {
         // Creating the native service also creates and binds the Wayland socket.
         let compositor = self.compositor.create(display_color)?;
-        let executable = std::env::current_exe()?;
-        let welcome_client = Command::new(executable)
-            .arg(WELCOME_CLIENT_ARGUMENT)
-            .env("WAYLAND_DISPLAY", DEFAULT_WAYLAND_DISPLAY_NAME)
-            .stdin(Stdio::null())
-            .stdout(Stdio::inherit())
-            .stderr(Stdio::inherit())
-            .spawn()
-            .map_err(|error| {
-                io::Error::new(
-                    error.kind(),
-                    format!("cannot start the Aurea Welcome client: {error}"),
-                )
-            })?;
+        let welcome_client = WelcomeClientProcess::spawn(DEFAULT_WAYLAND_DISPLAY_NAME)?;
 
         Ok(Box::new(DesktopCompositorService {
             compositor,
-            welcome_client: Some(welcome_client),
+            welcome_client,
         }))
     }
 }
 
-/// Keeps the welcome client alive only for the compositor session.
+/// Keeps the Welcome client scoped to the compositor session.
 struct DesktopCompositorService {
     compositor: Box<dyn CompositorService>,
-    welcome_client: Option<Child>,
+    welcome_client: WelcomeClientProcess,
 }
 
 impl CompositorService for DesktopCompositorService {
@@ -76,27 +62,14 @@ impl CompositorService for DesktopCompositorService {
 impl DesktopCompositorService {
     /// Stops and reaps the client before the compositor session is released.
     fn stop_welcome_client(&mut self) {
-        let Some(mut child) = self.welcome_client.take() else {
-            return;
-        };
-
-        match child.try_wait() {
-            Ok(Some(_)) => {}
-            Ok(None) => {
-                let _ = child.kill();
-                let _ = child.wait();
+        match self.welcome_client.stop() {
+            Ok(Some(status)) if !status.success() => {
+                eprintln!("Aurea Desktop: Welcome client exited with status {status}");
             }
+            Ok(_) => {}
             Err(error) => {
-                eprintln!("Aurea Desktop: cannot inspect Welcome client: {error}");
-                let _ = child.kill();
-                let _ = child.wait();
+                eprintln!("Aurea Desktop: cannot stop Welcome client: {error}");
             }
         }
-    }
-}
-
-impl Drop for DesktopCompositorService {
-    fn drop(&mut self) {
-        self.stop_welcome_client();
     }
 }
