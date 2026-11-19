@@ -165,10 +165,7 @@ mod tests {
             management_mode: DisplayManagementMode::Automatic,
             layout: DisplayLayout {
                 placements,
-                primary_display: outputs
-                    .iter()
-                    .find(|output| output.enabled)
-                    .map(|output| output.display),
+                primary_display: outputs.first().map(|output| output.display),
             },
             outputs,
         }
@@ -187,7 +184,7 @@ mod tests {
     #[test]
     fn rejects_a_fifth_active_display() {
         let outputs = (1..=(MAX_ACTIVE_DISPLAYS as u128 + 1))
-            .map(|id| output(id, true))
+            .map(output)
             .collect();
         assert_eq!(
             configuration(outputs).validate(),
@@ -207,7 +204,7 @@ mod tests {
 
     #[test]
     fn rejects_duplicate_layout_placements() {
-        let mut config = configuration(vec![output(1, true), output(2)]);
+        let mut config = configuration(vec![output(1), output(2)]);
         config.layout.placements[1].display = DisplayId(1);
         assert_eq!(
             config.validate(),
@@ -217,7 +214,7 @@ mod tests {
 
     #[test]
     fn rejects_a_disabled_primary_display() {
-        let mut config = configuration(vec![output(1, true)]);
+        let mut config = configuration(vec![output(1)]);
         config.layout.placements[0].enabled = false;
         assert_eq!(
             config.validate(),
