@@ -72,7 +72,8 @@ pub enum PointerButton {
     Middle,
     Back,
     Forward,
-    Other(u16),
+    /// Additional normalized button identifier, not a raw kernel event code.
+    Additional(u16),
 }
 
 /// Failure while validating or applying pointer preferences.
