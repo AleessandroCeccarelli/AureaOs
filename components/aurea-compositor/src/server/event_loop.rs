@@ -11,7 +11,7 @@ use std::{
     time::Duration,
 };
 
-use aurea_desktop_api::display::DisplayColorController;
+use aurea_desktop_api::{display::DisplayColorController, keyboard::KeyboardLayoutId};
 use smithay::reexports::calloop::EventLoop;
 
 #[cfg(feature = "drm")]
@@ -113,6 +113,11 @@ impl WaylandServer {
             super::builder::build(socket_name, drm_session, drm_device, display_color)?;
 
         Ok(Self { event_loop, state })
+    }
+
+    /// Applies the user's selected keyboard layout before the event loop starts.
+    pub fn set_keyboard_layout(&mut self, layout: &KeyboardLayoutId) -> io::Result<()> {
+        self.state.compositor.set_keyboard_layout(layout)
     }
 
     /// Runs the server until shutdown is requested.
