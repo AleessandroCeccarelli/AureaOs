@@ -84,7 +84,11 @@ impl DisplayConfiguration {
             }
         }
 
+        let mut placement_ids = std::collections::BTreeSet::new();
         for placement in &self.layout.placements {
+            if !placement_ids.insert(placement.display) {
+                return Err(DisplayManagerError::DuplicateDisplay);
+            }
             let Some(output) = self.outputs.iter().find(|output| output.display == placement.display) else {
                 return Err(DisplayManagerError::UnknownDisplay);
             };
@@ -96,7 +100,7 @@ impl DisplayConfiguration {
             }
         }
 
-        if self.layout.placements.len() != self.outputs.len() {
+        if placement_ids != ids {
             return Err(DisplayManagerError::ConfigurationRejected);
         }
 
@@ -178,6 +182,13 @@ mod tests {
             configuration(vec![output(1, true), output(1, false)]).validate(),
             Err(DisplayManagerError::DuplicateDisplay)
         );
+    }
+
+    #[test]
+    fn rejects_duplicate_layout_placements() {
+        let mut config = configuration(vec![output(1, true), output(2, true)]);
+        config.layout.placements[1].display = DisplayId(1);
+        assert_eq!(config.validate(), Err(DisplayManagerError::DuplicateDisplay));
     }
 
     #[test]
