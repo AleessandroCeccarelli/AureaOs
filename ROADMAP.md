@@ -42,7 +42,7 @@ Developing first-party replacements for these application categories may be cons
 - AureaOS visual design resources, including design tokens, themes, icons, illustrations, and wallpapers.
 - A five-crate Rust workspace under `components/`: `aurea-desktop`, `aurea-shell`, `aurea-desktop-api`, `aurea-compositor`, and `aurea-capture`.
 - An initial `aurea-desktop` composition root that wires the desktop components together; this is not a finished desktop session or graphical interface.
-- Shared desktop contracts in `aurea-desktop-api`: technology-independent display color policy, keyboard layout, pointer settings, input-device capability and lifecycle, vendor-extension metadata, and appearance/theme contracts. These are component-level API foundations; application-facing IPC and concrete input/appearance service providers remain planned.
+- Shared desktop contracts in `aurea-desktop-api`: technology-independent display modes, per-display capability/VRR profiles, logical layout and scale, automatic/manual refresh policy, transactional display-manager interface, display lifecycle events, display color policy, keyboard layout, pointer settings, input-device capability/lifecycle, vendor-extension metadata, and appearance/theme contracts. These are component-level API foundations; application-facing IPC and concrete service providers remain planned.
 - Initial `aurea-capture` core with validated capture target metadata, screenshot/recording request types, audio-source selection modes, and a single-session lifecycle coordinator. It does not yet capture pixels or audio.
 - Shell session lifecycle coordination and shutdown handling through an event bus.
 - A Smithay-based Wayland server with initial XDG shell integration.
@@ -95,7 +95,7 @@ Vulkan is the selected and exclusive graphics rendering API for AureaOS. The cur
 
 ### 2. Display Intelligence
 
-- Develop Aurea Display Intelligence for display capability discovery and display policy.
+- Implement the display capability provider and Display Manager behind the new shared `aurea-desktop-api` contracts, then develop Aurea Display Intelligence policy.
 - Implement fixed-refresh strategies and VRR support where the complete hardware and driver path allows it.
 - Integrate display policy with compositor presentation information and the DRM/KMS backend.
 - Provide Automatic — AureaOS and manual display configuration through Settings → Display & Video.
