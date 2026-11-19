@@ -65,11 +65,9 @@ pub enum HardwareConnectionState {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HardwareDeviceState {
     Discovered,
-    Connected,
     Ready,
     Degraded,
     Unavailable,
-    Disconnected,
 }
 
 /// Backend-independent summary of one hardware device.
