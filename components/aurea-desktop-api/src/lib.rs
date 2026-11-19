@@ -9,6 +9,7 @@
 //! It must not depend on the shell, compositor or graphics backends.
 
 pub mod display;
+pub mod keyboard;
 
 use std::io;
 use std::sync::{
