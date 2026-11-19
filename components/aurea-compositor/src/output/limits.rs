@@ -3,7 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Shared limits for active display outputs.
+//! Compatibility name for the shared AureaOS active-display policy.
 
-/// Maximum number of display outputs that AureaOS can keep active at once.
-pub const MAX_ACTIVE_OUTPUTS: usize = 4;
+/// Maximum active output count, sourced from the public desktop API.
+pub use aurea_desktop_api::display::MAX_ACTIVE_DISPLAYS as MAX_ACTIVE_OUTPUTS;
