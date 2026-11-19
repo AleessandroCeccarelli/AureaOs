@@ -1,0 +1,116 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// AureaOS — Desktop API
+// Copyright (C) 2026 Alessandro Ceccarelli
+
+//! Software-managed keyboard layout selection contracts.
+//!
+//! These types describe user intent. XKB compilation and application belong
+//! to the input implementation, not to this technology-independent API.
+
+/// Stable XKB-compatible layout identifier, for example "it" or "us".
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct KeyboardLayoutId {
+    layout: String,
+    variant: Option<String>,
+}
+
+impl KeyboardLayoutId {
+    /// Creates a layout identifier after validating its basic syntax.
+    pub fn new(layout: impl Into<String>, variant: Option<String>) -> Option<Self> {
+        let layout = layout.into();
+        if layout.is_empty()
+            || !layout.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+            || variant.as_ref().is_some_and(|value| {
+                value.is_empty()
+                    || !value.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+            })
+        {
+            return None;
+        }
+
+        Some(Self { layout, variant })
+    }
+
+    pub fn layout(&self) -> &str {
+        &self.layout
+    }
+
+    pub fn variant(&self) -> Option<&str> {
+        self.variant.as_deref()
+    }
+}
+
+/// User-visible information about an available software layout.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KeyboardLayoutInfo {
+    pub id: KeyboardLayoutId,
+    pub display_name: String,
+    pub language_tag: Option<String>,
+}
+
+/// Origin of a non-binding layout suggestion.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum KeyboardLayoutHintSource {
+    SystemLocale,
+    DeviceMetadata,
+    PreviousUserChoice,
+}
+
+/// A suggested layout. Suggestions must be confirmed before they are applied.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KeyboardLayoutSuggestion {
+    pub layout: KeyboardLayoutId,
+    pub source: KeyboardLayoutHintSource,
+}
+
+/// User-selected input source and optional device override.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KeyboardLayoutSelection {
+    pub active: KeyboardLayoutId,
+    pub device_override: Option<(super::super::InputDeviceId, KeyboardLayoutId)>,
+}
+
+/// Backend contract for listing and changing software-managed layouts.
+pub trait KeyboardLayoutManager: Send + Sync {
+    fn available_layouts(&self) -> Vec<KeyboardLayoutInfo>;
+    fn suggested_layouts(&self, system_locale: Option<&str>) -> Vec<KeyboardLayoutSuggestion>;
+    fn active_layout(&self) -> KeyboardLayoutId;
+    fn select_layout(&self, layout: KeyboardLayoutId) -> Result<(), KeyboardLayoutError>;
+}
+
+/// Failure while resolving or applying a keyboard layout.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum KeyboardLayoutError {
+    Unavailable,
+    InvalidConfiguration,
+    BackendFailure,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{KeyboardLayoutHintSource, KeyboardLayoutId, KeyboardLayoutSuggestion};
+
+    #[test]
+    fn accepts_common_xkb_layout_identifiers() {
+        assert!(KeyboardLayoutId::new("it", None).is_some());
+        assert!(KeyboardLayoutId::new("us", Some("intl".to_owned())).is_some());
+    }
+
+    #[test]
+    fn rejects_empty_or_invalid_layout_identifiers() {
+        assert!(KeyboardLayoutId::new("", None).is_none());
+        assert!(KeyboardLayoutId::new("it;rm -rf", None).is_none());
+        assert!(KeyboardLayoutId::new("us", Some("bad variant".to_owned())).is_none());
+    }
+
+    #[test]
+    fn suggestions_are_explicitly_non_binding_values() {
+        let suggestion = KeyboardLayoutSuggestion {
+            layout: KeyboardLayoutId::new("it", None).expect("valid layout"),
+            source: KeyboardLayoutHintSource::SystemLocale,
+        };
+        assert_eq!(suggestion.source, KeyboardLayoutHintSource::SystemLocale);
+        assert_eq!(suggestion.layout.layout(), "it");
+    }
+}
