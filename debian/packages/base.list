@@ -2,6 +2,7 @@
 # Essential terminal-only base. No desktop environment or GUI applications.
 systemd
 systemd-sysv
+systemd-timesyncd
 dbus
 sudo
 apt
