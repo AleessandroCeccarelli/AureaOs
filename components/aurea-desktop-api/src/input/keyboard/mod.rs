@@ -8,6 +8,7 @@
 mod layout;
 
 pub use layout::{
+    KeyboardLayoutDetection, KeyboardLayoutDetectionConfidence, KeyboardLayoutDetector,
     KeyboardLayoutError, KeyboardLayoutHintSource, KeyboardLayoutId, KeyboardLayoutInfo,
     KeyboardLayoutManager, KeyboardLayoutSelection, KeyboardLayoutSuggestion,
 };
