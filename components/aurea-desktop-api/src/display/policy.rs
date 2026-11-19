@@ -53,7 +53,13 @@ mod tests {
 
     #[test]
     fn defaults_to_automatic_management_and_refresh() {
-        assert_eq!(DisplayManagementMode::default(), DisplayManagementMode::Automatic);
-        assert_eq!(DisplayRefreshPolicy::default(), DisplayRefreshPolicy::Automatic);
+        assert_eq!(
+            DisplayManagementMode::default(),
+            DisplayManagementMode::Automatic
+        );
+        assert_eq!(
+            DisplayRefreshPolicy::default(),
+            DisplayRefreshPolicy::Automatic
+        );
     }
 }
