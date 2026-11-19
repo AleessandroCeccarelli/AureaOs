@@ -157,15 +157,38 @@ pub(super) fn build(
                     continue;
                 }
 
-                let Ok(device) = DrmDevice::open(session, &path) else {
-                    continue;
+                let device = match DrmDevice::open(session, &path) {
+                    Ok(device) => device,
+                    Err(error) => {
+                        eprintln!(
+                            "AureaOS: unable to open discovered DRM device {node} at {}: {error}",
+                            path.display()
+                        );
+                        continue;
+                    }
                 };
 
-                if device.node().ok() != Some(node) {
-                    continue;
+                match device.node() {
+                    Ok(opened_node) if opened_node == node => {}
+                    Ok(opened_node) => {
+                        eprintln!(
+                            "AureaOS: refusing DRM device at {}: Udev identified {node}, but the opened descriptor identifies {opened_node}",
+                            path.display()
+                        );
+                        continue;
+                    }
+                    Err(error) => {
+                        eprintln!(
+                            "AureaOS: unable to verify DRM device identity for {} ({node}): {error}",
+                            path.display()
+                        );
+                        continue;
+                    }
                 }
 
-                let _ = state.drm_devices.register(device);
+                if let Err(error) = state.drm_devices.register(device) {
+                    eprintln!("AureaOS: unable to register DRM device {node}: {error}");
+                }
             }
         }
     }
@@ -252,6 +275,12 @@ pub(super) fn build(
             };
 
             match output_result {
+                Ok(0) => {
+                    eprintln!(
+                        "AureaOS: DRM device {node} has no connected, usable display connectors"
+                    );
+                    state.drm_surfaces.insert(node, manager);
+                }
                 Ok(_) => {
                     state.drm_surfaces.insert(node, manager);
                 }
