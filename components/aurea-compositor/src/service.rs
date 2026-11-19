@@ -26,6 +26,7 @@ pub struct WaylandCompositorFactory {
     socket_name: String,
     seat: String,
     keyboard_layout: Option<KeyboardLayoutId>,
+}
 
 impl WaylandCompositorFactory {
     /// Creates a factory with the requested Wayland socket and seat.
