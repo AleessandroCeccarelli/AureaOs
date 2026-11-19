@@ -66,7 +66,8 @@ pub struct DisplayPhysicalSize {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DisplayCapabilities {
     pub variable_refresh: Option<VariableRefreshRange>,
-    pub hdr: bool,
+    /// Unknown until the active display pipeline verifies HDR support.
+    pub hdr_supported: Option<bool>,
     pub maximum_bits_per_color: Option<u8>,
     pub physical_size: Option<DisplayPhysicalSize>,
 }
