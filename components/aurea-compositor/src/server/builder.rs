@@ -267,6 +267,18 @@ pub(super) fn build(
         }
     }
 
+    // An active native DRM session must expose at least one usable output.
+    // Otherwise the Welcome client can connect, but no frame can reach a monitor.
+    #[cfg(feature = "drm")]
+    if state.drm_session.is_some()
+        && state.session_active
+        && state.compositor.output_manager().active_output_count() == 0
+    {
+        return Err(io::Error::other(
+            "No usable display output was initialized: check DRM/KMS, GBM, Vulkan compatibility, and connected monitors",
+        ));
+    }
+
     // Publish registered outputs as Wayland globals.
     state
         .compositor
