@@ -175,7 +175,7 @@ Third-party applications are not AureaOS first-party products. Their use allows 
 - Complete documentation and release criteria.
 - Produce and validate the AureaOS Roma 1.0 installation image.
 
-## Development Priorities
+## Early-stage project status and evolving decisions\n\nAureaOS is an embryonic project. The roadmap records current direction and sequencing, not an immutable specification or a promise that every listed idea will ship unchanged. Product names, visual identity, palette values, geometry, APIs, features, architecture and technology choices may evolve as implementation, testing, hardware validation, accessibility review and community feedback provide evidence.\n\nDistinguish design proposals, experimental code, implemented API contracts, validated runtime features and release-ready capabilities. Documentation alone is not implementation evidence. Avoid declaring experimental API or design details stable until a compatibility and versioning policy is deliberately adopted.\n\n## Development Priorities
 
 The following order describes the current engineering priorities. Some workstreams may progress in parallel when their dependencies allow it.
 
