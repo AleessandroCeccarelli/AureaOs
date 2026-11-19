@@ -92,5 +92,4 @@ impl AureaCompositor {
             keyboard.set_focus(self, surface, SERIAL_COUNTER.next_serial());
         }
     }
-
 }

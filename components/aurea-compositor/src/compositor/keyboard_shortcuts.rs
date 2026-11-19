@@ -16,8 +16,8 @@ impl AureaCompositor {
     /// backend is responsible for calling this only for key press events.
     pub fn handle_keyboard_shortcut(
         &mut self,
-        keysym: smithay::input::keyboard::Keysym,
-        modifiers: smithay::input::keyboard::ModifiersState,
+        keysym: Keysym,
+        modifiers: ModifiersState,
     ) -> bool {
         use crate::input::shortcuts::{ShortcutAction, resolve_shortcut};
 
