@@ -18,6 +18,7 @@ pub enum ExtensionCapability {
     BatteryInformation,
     HapticFeedback,
     FirmwareManagement,
+    KeyboardLayoutIdentification,
 }
 
 /// Permission an extension must request before the system enables a capability.
