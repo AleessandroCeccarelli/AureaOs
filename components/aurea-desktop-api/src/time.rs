@@ -128,6 +128,45 @@ impl TimeZoneSnapshot {
     }
 }
 
+/// A wall-clock reading expressed as seconds and nanoseconds since the Unix epoch.
+///
+/// This is an absolute timestamp, independent of the selected display time zone.
+/// It must not be used to measure elapsed durations; use a monotonic clock for
+/// timeouts, animations, scheduling intervals and performance measurements.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct UnixTime {
+    seconds: i64,
+    nanoseconds: u32,
+}
+
+impl UnixTime {
+    /// Creates a timestamp with normalized nanoseconds.
+    pub const fn new(seconds: i64, nanoseconds: u32) -> Option<Self> {
+        if nanoseconds >= 1_000_000_000 {
+            return None;
+        }
+        Some(Self { seconds, nanoseconds })
+    }
+
+    pub const fn seconds(self) -> i64 {
+        self.seconds
+    }
+
+    pub const fn nanoseconds(self) -> u32 {
+        self.nanoseconds
+    }
+}
+
+/// User-selected synchronization behavior.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TimeSyncPolicy {
+    /// Let the configured system time synchronization service manage the clock.
+    #[default]
+    Automatic,
+    /// Do not request network synchronization; allow explicit manual setting.
+    Manual,
+}
+
 /// Source currently responsible for synchronizing the system wall clock.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TimeSyncSource {
