@@ -8,6 +8,7 @@
 pub mod capabilities;
 pub mod events;
 pub mod layout;
+pub mod limits;
 pub mod manager;
 pub mod modes;
 pub mod policy;
@@ -18,6 +19,7 @@ pub use capabilities::{
 };
 pub use events::DisplayEvent;
 pub use layout::{DisplayLayout, DisplayPlacement, DisplayPosition, DisplayScale};
+pub use limits::MAX_ACTIVE_DISPLAYS;
 pub use manager::{
     DisplayConfiguration, DisplayManager, DisplayManagerError, DisplayManagerSnapshot,
     DisplayOutputConfiguration,
