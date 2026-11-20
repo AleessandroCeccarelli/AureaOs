@@ -25,6 +25,10 @@ pub enum CpuPresentationError {
     UnexpectedCrtc,
     KmsOperation(String),
     Lifecycle(GbmCpuFramebufferPoolError),
+    Recovery {
+        operation: String,
+        lifecycle: GbmCpuFramebufferPoolError,
+    },
 }
 
 impl fmt::Display for CpuPresentationError {
@@ -43,6 +47,13 @@ impl fmt::Display for CpuPresentationError {
             Self::Lifecycle(error) => {
                 write!(formatter, "CPU framebuffer lifecycle failed: {error}")
             }
+            Self::Recovery {
+                operation,
+                lifecycle,
+            } => write!(
+                formatter,
+                "{operation}; CPU framebuffer lifecycle recovery failed: {lifecycle}"
+            ),
         }
     }
 }
@@ -108,8 +119,14 @@ impl CpuPresentationBackend {
         let requires_modeset = surface.commit_pending();
 
         if let Err(error) = surface.test_state(planes.iter().cloned(), requires_modeset) {
-            let _ = pool.test_failed();
-            return Err(CpuPresentationError::KmsOperation(error.to_string()));
+            let operation = format!("Atomic TEST_ONLY rejected the CPU framebuffer: {error}");
+            return match pool.test_failed() {
+                Ok(_) => Err(CpuPresentationError::KmsOperation(operation)),
+                Err(lifecycle) => Err(CpuPresentationError::Recovery {
+                    operation,
+                    lifecycle,
+                }),
+            };
         }
 
         pool.test_passed()?;
@@ -120,8 +137,14 @@ impl CpuPresentationBackend {
         };
 
         if let Err(error) = submission {
-            let _ = pool.commit_failed();
-            return Err(CpuPresentationError::KmsOperation(error.to_string()));
+            let operation = format!("KMS rejected the CPU framebuffer commit: {error}");
+            return match pool.commit_failed() {
+                Ok(_) => Err(CpuPresentationError::KmsOperation(operation)),
+                Err(lifecycle) => Err(CpuPresentationError::Recovery {
+                    operation,
+                    lifecycle,
+                }),
+            };
         }
 
         pool.commit_accepted()?;
