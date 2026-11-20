@@ -6,6 +6,7 @@
 //! Native DRM/KMS backend modules.
 
 pub mod device;
+pub mod connector_identity;
 pub mod edid;
 pub mod device_manager;
 pub mod discovery;
