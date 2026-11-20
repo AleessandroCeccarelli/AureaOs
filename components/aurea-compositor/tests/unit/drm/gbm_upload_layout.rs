@@ -33,7 +33,7 @@ fn rejects_zero_dimensions() {
 fn rejects_incorrect_source_length() {
     assert_eq!(
         pack_rgba8_rows(&[1, 2, 3], 1, 1, 4),
-        Err(GbmUploadLayoutError::SourceLengthMismatch)
+        Err(GbmUploadLayoutError::SourceSizeOverflow)
     );
 }
 
