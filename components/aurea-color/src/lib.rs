@@ -8,6 +8,7 @@ mod configuration;
 mod configuration_manager;
 mod header;
 mod identity;
+mod lcms_engine;
 mod storage;
 mod transform;
 
@@ -16,6 +17,7 @@ pub use configuration::{ColorConfigurationError, ColorConfigurationId, ColorProf
 pub use configuration_manager::ColorConfigurationManager;
 pub use header::{IccHeader, IccHeaderError, IccProfileSummary, IccTag};
 pub use identity::IccProfileFingerprint;
+pub use lcms_engine::LittleCmsTransformEngine;
 pub use storage::{IccProfileStore, ProfileStoreError, StoredProfile};
 pub use transform::{
     ColorTransformEngine, ColorTransformError, ColorTransformOptions, RenderingIntent,
@@ -126,6 +128,7 @@ mod tests {
             fingerprint_profile(&bytes).unwrap()
         );
     }
+
     #[test]
     fn rejects_unaligned_tag_data() {
         assert!(inspect_profile(&profile_with_one_tag(145, 4)).is_err());
@@ -165,5 +168,4 @@ mod tests {
         bytes[152..156].copy_from_slice(&(8_u32).to_be_bytes());
         assert!(inspect_profile(&bytes).is_err());
     }
-
 }
