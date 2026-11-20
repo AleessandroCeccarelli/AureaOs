@@ -124,12 +124,6 @@ pub(crate) fn render_and_release(
             target.height(),
             target.transform(),
         )?;
-        let geometry = transform_geometry_for_output(
-            geometry,
-            target.width(),
-            target.height(),
-            target.transform(),
-        )?;
         let scissor = geometry.scissor(target.width(), target.height())?;
         let texture_transform = surface_transform_index(compose_surface_transforms(
             Transform::Normal,
@@ -540,14 +534,6 @@ fn visible_surfaces(
             }
             .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
         }
-
-        geometry = transform_surface_geometry(
-            geometry,
-            target.width(),
-            target.height(),
-            target.transform(),
-        )
-        .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
 
         geometry = transform_geometry_for_output(
             geometry,
