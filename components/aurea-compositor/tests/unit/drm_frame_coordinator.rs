@@ -30,6 +30,14 @@ fn commit_frame(
         .unwrap();
 }
 
+fn acquire_after_foreign_release(
+    coordinator: &mut DrmOutputFrameCoordinator,
+    framebuffer: DrmFramebufferId,
+) {
+    coordinator.mark_foreign_acquire_submitted(framebuffer).unwrap();
+    coordinator.mark_foreign_acquired(framebuffer).unwrap();
+}
+
 #[test]
 fn framebuffer_registration_is_unique_per_output() {
     let mut coordinator = DrmOutputFrameCoordinator::new();
@@ -91,6 +99,8 @@ fn previous_frame_is_released_only_after_the_next_page_flip() {
 
     assert!(!coordinator.is_available(first).unwrap());
     assert_eq!(coordinator.page_flip_complete(second), Ok(Some(first)));
+    assert!(!coordinator.is_available(first).unwrap());
+    acquire_after_foreign_release(&mut coordinator, first);
     assert!(coordinator.is_available(first).unwrap());
     assert!(!coordinator.is_available(second).unwrap());
 }
@@ -148,6 +158,8 @@ fn failed_atomic_test_does_not_release_gpu_work_early() {
     assert!(!coordinator.is_available(id).unwrap());
 
     coordinator.mark_gpu_complete(id).unwrap();
+    assert!(!coordinator.is_available(id).unwrap());
+    acquire_after_foreign_release(&mut coordinator, id);
     assert!(coordinator.is_available(id).unwrap());
 }
 
@@ -172,6 +184,8 @@ fn failed_commit_keeps_previous_scanout_and_releases_candidate_after_gpu_complet
     assert_eq!(coordinator.current(), Some(current));
     assert!(!coordinator.is_available(candidate).unwrap());
     coordinator.mark_gpu_complete(candidate).unwrap();
+    assert!(!coordinator.is_available(candidate).unwrap());
+    acquire_after_foreign_release(&mut coordinator, candidate);
     assert!(coordinator.is_available(candidate).unwrap());
 }
 
@@ -213,6 +227,7 @@ fn framebuffer_can_be_unregistered_after_kms_and_gpu_release() {
     coordinator.mark_gpu_complete(second).unwrap();
     commit_frame(&mut coordinator, second, false);
     coordinator.page_flip_complete(second).unwrap();
+    acquire_after_foreign_release(&mut coordinator, first);
 
     coordinator.unregister_framebuffer(first).unwrap();
     assert_eq!(coordinator.len(), 1);
