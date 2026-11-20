@@ -14,6 +14,7 @@ pub mod edid_hdr;
 pub mod frame_coordinator;
 pub mod gbm;
 pub mod hdr_link;
+pub mod identity;
 pub mod output;
 pub mod outputs;
 pub mod plane_formats;

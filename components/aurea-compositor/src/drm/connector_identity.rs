@@ -13,8 +13,8 @@ use std::path::{Path, PathBuf};
 /// EDID evidence and duplicate detection must be evaluated separately.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DrmConnectorIdentity {
-    gpu_sysfs_path: PathBuf,
-    connector_name: String,
+    pub(crate) gpu_sysfs_path: PathBuf,
+    pub(crate) connector_name: String,
 }
 
 impl DrmConnectorIdentity {
