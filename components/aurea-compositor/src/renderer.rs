@@ -34,6 +34,7 @@ pub struct RenderTarget {
     refresh_millihz: u32,
     scale: u32,
     fractional_scale: Option<crate::output::scale::ScaleFactor>,
+    transform: smithay::utils::Transform,
     logical_origin: (i32, i32),
 }
 
@@ -57,6 +58,7 @@ impl RenderTarget {
             refresh_millihz: mode.refresh_millihz(),
             scale: output.scale(),
             fractional_scale: output.fractional_scale(),
+            transform: output.transform(),
             logical_origin,
         })
     }
@@ -90,6 +92,11 @@ impl RenderTarget {
     /// Optional exact fractional scale for this output.
     pub fn fractional_scale(self) -> Option<crate::output::scale::ScaleFactor> {
         self.fractional_scale
+    }
+
+    /// Physical orientation of the output relative to compositor space.
+    pub fn transform(self) -> smithay::utils::Transform {
+        self.transform
     }
 
     /// Effective scale for geometry calculations.
