@@ -48,10 +48,6 @@ pub(super) fn forget_changed_device<N: Copy + Eq>(changed: &mut Vec<N>, node: N)
     changed.retain(|known| *known != node);
 }
 
-fn output_belongs_to_device(output_id: OutputId, device_id: u64) -> bool {
-    (output_id >> 32) as u64 == device_id
-}
-
 pub(super) fn retry_pending_changes<N, E, F>(
     pending: Vec<N>,
     managed: &std::collections::HashSet<N>,
