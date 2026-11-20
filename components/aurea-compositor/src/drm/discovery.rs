@@ -9,6 +9,8 @@ use std::{error::Error, fmt};
 
 use smithay::reexports::drm::control::{Device as DrmControlDevice, ModeTypeFlags, connector};
 
+use super::edid::EdidInfo;
+
 use crate::drm::{
     device::DrmDevice,
     output::{DrmModeInfo, DrmOutputDescriptor},
@@ -65,6 +67,31 @@ fn output_id_for_connector(device_id: u64, connector_id: u32) -> OutputId {
 #[cfg(test)]
 pub(super) fn drm_device_id_for_output(output_id: OutputId) -> u64 {
     (output_id >> 32) as u64
+}
+
+/// Reads and validates the connector's immutable EDID property.
+///
+/// Missing, malformed, or unreadable EDID is non-fatal: the output remains
+/// usable, but must not receive an automatically inferred persistent identity.
+fn read_connector_edid(
+    device: &DrmDevice,
+    connector: connector::Handle,
+) -> Option<EdidInfo> {
+    let properties = device.fd().get_properties(connector).ok()?;
+
+    properties.iter().find_map(|(handle, raw_value)| {
+        let property = device.fd().get_property(*handle).ok()?;
+        if property.name().to_bytes() != b"EDID" {
+            return None;
+        }
+
+        let blob_id = property
+            .value_type()
+            .convert_value(*raw_value)
+            .as_blob()?;
+        let bytes = device.fd().get_property_blob(blob_id).ok()?;
+        EdidInfo::parse(&bytes)
+    })
 }
 
 /// Discovers connected DRM outputs.
@@ -149,9 +176,12 @@ pub fn discover_connected_outputs(
             connector_info.interface_id()
         );
 
+        let edid = read_connector_edid(device, *connector_handle);
+
         descriptors.push(
             DrmOutputDescriptor::new(output_id, name, modes, current_mode, 1)
-                .with_drm_configuration(*connector_handle, drm_modes[preferred_index]),
+                .with_drm_configuration(*connector_handle, drm_modes[preferred_index])
+                .with_edid(edid),
         );
     }
 
