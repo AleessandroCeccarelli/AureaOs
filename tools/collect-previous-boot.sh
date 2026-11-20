@@ -33,7 +33,7 @@ if [[ ! -d "$RUN_DIR" || ! -f "$RUN_DIR/run-info.txt" ]]; then
     exit 2
 fi
 
-for command_name in journalctl date awk chmod; do
+for command_name in journalctl date awk chmod grep; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
         printf 'Required command not found: %s\n' "$command_name" >&2
         exit 2
@@ -55,15 +55,19 @@ collect_journal() {
     local output_file="$1"
     shift
 
-    if journalctl "$@" --no-pager --output=short-precise > "$output_file" 2>&1; then
+    if journalctl "$@" --no-pager --output=short-precise > "$output_file" 2>&1 &&
+        [[ -s "$output_file" ]] &&
+        ! grep -Eiq 'no journal files were opened|permission denied|insufficient permissions' "$output_file"; then
         chmod 600 "$output_file"
         printf 'Collected %s\n' "$output_file"
         return 0
     fi
 
-    # Keep report files owned by the logged-in user; only journalctl is elevated.
+    # Some systemd versions report denied journal access with exit status 0.
     if command -v sudo >/dev/null 2>&1 &&
-        sudo journalctl "$@" --no-pager --output=short-precise > "$output_file" 2>&1; then
+        sudo journalctl "$@" --no-pager --output=short-precise > "$output_file" 2>&1 &&
+        [[ -s "$output_file" ]] &&
+        ! grep -Eiq 'no journal files were opened|permission denied|insufficient permissions' "$output_file"; then
         chmod 600 "$output_file"
         printf 'Collected %s (with elevated journal access)\n' "$output_file"
         return 0
