@@ -25,7 +25,7 @@ pub fn fingerprint_profile(bytes: &[u8]) -> Result<IccProfileFingerprint, IccHea
 
 #[cfg(test)]
 mod tests {
-    use super::{fingerprint_profile, inspect_profile, MAX_PROFILE_SIZE};
+    use super::{MAX_PROFILE_SIZE, fingerprint_profile, inspect_profile};
 
     fn minimal_profile() -> Vec<u8> {
         let mut bytes = vec![0_u8; 132];
