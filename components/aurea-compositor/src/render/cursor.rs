@@ -37,12 +37,12 @@ pub(crate) fn scaled_cursor_origin(
     } else {
         1.0
     };
-    let hotspot = Point::<i32, Logical>::from(DEFAULT_CURSOR_HOTSPOT).to_f64();
-    let adjustment = hotspot * (1.0 - scale);
+    let adjustment = 1.0 - scale;
+    let hotspot = DEFAULT_CURSOR_HOTSPOT;
 
     Point::from((
-        (f64::from(origin.x) + adjustment.x).round() as i32,
-        (f64::from(origin.y) + adjustment.y).round() as i32,
+        (f64::from(origin.x) + f64::from(hotspot.0) * adjustment).round() as i32,
+        (f64::from(origin.y) + f64::from(hotspot.1) * adjustment).round() as i32,
     ))
 }
 
@@ -130,6 +130,29 @@ mod tests {
         let origin = default_cursor_origin(pointer);
 
         assert_eq!((origin.x, origin.y), (6, 18));
+    }
+
+    #[test]
+    fn cursor_scaling_keeps_hotspot_anchored_at_pointer() {
+        let origin = Point::<i32, Logical>::from((95, 48));
+
+        assert_eq!(scaled_cursor_origin(origin, 1.0), origin);
+        assert_eq!(
+            scaled_cursor_origin(origin, 2.0),
+            Point::from((90, 46))
+        );
+        assert_eq!(
+            scaled_cursor_origin(origin, 3.0),
+            Point::from((85, 44))
+        );
+    }
+
+    #[test]
+    fn invalid_cursor_scale_falls_back_to_native_size() {
+        let origin = Point::<i32, Logical>::from((95, 48));
+
+        assert_eq!(scaled_cursor_origin(origin, f64::NAN), origin);
+        assert_eq!(scaled_cursor_origin(origin, f64::INFINITY), origin);
     }
 
     #[test]
