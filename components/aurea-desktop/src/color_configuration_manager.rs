@@ -12,7 +12,8 @@ use std::{
 
 use aurea_desktop_api::display::{
     DisplayColorConfigurationAssignment, DisplayColorConfigurationError,
-    DisplayColorConfigurationId, DisplayColorConfigurationManager, DisplayId,
+    DisplayColorConfigurationId, DisplayColorConfigurationManager, DisplayDescriptor,
+    DisplayEvent, DisplayId,
 };
 
 #[derive(Debug, Default)]
@@ -55,6 +56,51 @@ impl DesktopColorConfigurationManager {
             .map_err(|_| DisplayColorConfigurationError::AssignmentRejected)?
             .connected_displays
             .remove(&display_id);
+        Ok(())
+    }
+
+    /// Applies one lifecycle event emitted by the display manager.
+    ///
+    /// Capability and mode changes do not affect color assignments. A
+    /// disconnected output keeps its assignment so it can be restored when
+    /// the same stable display identity reconnects.
+    pub fn handle_display_event(
+        &self,
+        event: &DisplayEvent,
+    ) -> Result<(), DisplayColorConfigurationError> {
+        match event {
+            DisplayEvent::Connected(descriptor) if descriptor.connected => {
+                self.register_display(descriptor.id)
+            }
+            DisplayEvent::Connected(descriptor) if !descriptor.connected => {
+                self.unregister_display(descriptor.id)
+            }
+            DisplayEvent::Disconnected(display_id) => self.unregister_display(*display_id),
+            DisplayEvent::CapabilitiesChanged(_) 
+            | DisplayEvent::ConfigurationChanged
+            | DisplayEvent::PrimaryDisplayChanged(_) => Ok(()),
+            DisplayEvent::Connected(_) => Ok(()),
+        }
+    }
+
+    /// Reconciles the connected-output set with a fresh display snapshot.
+    ///
+    /// Existing assignments are retained for outputs absent from the snapshot.
+    pub fn synchronize_displays(
+        &self,
+        displays: &[DisplayDescriptor],
+    ) -> Result<(), DisplayColorConfigurationError> {
+        let mut state = self
+            .state
+            .write()
+            .map_err(|_| DisplayColorConfigurationError::AssignmentRejected)?;
+
+        state.connected_displays = displays
+            .iter()
+            .filter(|display| display.connected)
+            .map(|display| display.id)
+            .collect();
+
         Ok(())
     }
 
@@ -154,6 +200,72 @@ mod tests {
 
     fn configuration(value: &str) -> DisplayColorConfigurationId {
         DisplayColorConfigurationId::new(value).unwrap()
+    }
+
+    #[test]
+    fn display_lifecycle_events_register_and_unregister_outputs() {
+        use aurea_desktop_api::display::{DisplayConnector, DisplayDescriptor};
+
+        let manager = DesktopColorConfigurationManager::new();
+        let descriptor = DisplayDescriptor {
+            id: display(12),
+            name: "DP-1".to_owned(),
+            connector: DisplayConnector::DisplayPort,
+            connected: true,
+            supported_modes: Vec::new(),
+            current_mode: None,
+            capabilities: Default::default(),
+        };
+
+        manager.handle_display_event(&DisplayEvent::Connected(descriptor.clone())).unwrap();
+        assert!(manager.assign(DisplayColorConfigurationAssignment {
+            display_id: descriptor.id,
+            configuration_id: None,
+        }).is_ok());
+
+        manager.handle_display_event(&DisplayEvent::Disconnected(descriptor.id)).unwrap();
+        assert_eq!(
+            manager.assign(DisplayColorConfigurationAssignment {
+                display_id: descriptor.id,
+                configuration_id: None,
+            }),
+            Err(DisplayColorConfigurationError::DisplayNotFound)
+        );
+    }
+
+    #[test]
+    fn snapshot_reconciliation_does_not_discard_saved_assignments() {
+        use aurea_desktop_api::display::{DisplayConnector, DisplayDescriptor};
+
+        let manager = DesktopColorConfigurationManager::new();
+        let output = display(21);
+        let profile = configuration("calibrated");
+        manager.register_configuration(profile.clone()).unwrap();
+        manager.register_display(output).unwrap();
+        manager.assign(DisplayColorConfigurationAssignment {
+            display_id: output,
+            configuration_id: Some(profile.clone()),
+        }).unwrap();
+
+        let snapshot = [DisplayDescriptor {
+            id: display(22),
+            name: "HDMI-A-1".to_owned(),
+            connector: DisplayConnector::Hdmi,
+            connected: true,
+            supported_modes: Vec::new(),
+            current_mode: None,
+            capabilities: Default::default(),
+        }];
+        manager.synchronize_displays(&snapshot).unwrap();
+
+        assert_eq!(manager.assignments()[0].configuration_id, Some(profile));
+        assert_eq!(
+            manager.assign(DisplayColorConfigurationAssignment {
+                display_id: output,
+                configuration_id: None,
+            }),
+            Err(DisplayColorConfigurationError::DisplayNotFound)
+        );
     }
 
     #[test]
