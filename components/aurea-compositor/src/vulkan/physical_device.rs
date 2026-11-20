@@ -12,10 +12,10 @@ use smithay::backend::drm::DrmNode;
 
 use crate::renderer::RenderPreference;
 
-use super::{
-    VulkanContext, VulkanDeviceExtensionPlan, VulkanExternalMemoryCapabilities,
-    VulkanRenderingFeaturePlan,
-};
+use super::{VulkanContext, VulkanExternalMemoryCapabilities, VulkanRenderingFeaturePlan};
+
+#[cfg(feature = "drm")]
+use super::VulkanDeviceExtensionPlan;
 
 /// General category of a Vulkan physical device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
