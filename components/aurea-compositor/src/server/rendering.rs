@@ -68,7 +68,10 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
             rendering_gpu: rendering_node,
             presentation_gpu: presentation_node,
             direct_vulkan: rendering_node == presentation_node
-                && vulkan_backends.contains_key(&rendering_node),
+                && vulkan_backends
+                    .get(&rendering_node)
+                    .map(|backend| backend.supports_direct_presentation())
+                    .unwrap_or(false),
             compatibility: false,
         }];
         let selected_path = PresentationSelector::select(
