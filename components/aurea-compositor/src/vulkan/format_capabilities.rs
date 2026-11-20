@@ -55,7 +55,7 @@ impl VulkanFormatCapabilities {
             });
         };
 
-        let mut modifiers = Vec::new();
+        let mut modifiers: Vec<VulkanFormatModifierInfo> = Vec::new();
 
         // Do not synthesize DRM_FORMAT_MOD_LINEAR from Vulkan's generic
         // linearTilingFeatures. Core linear image support does not prove that
