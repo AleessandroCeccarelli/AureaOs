@@ -21,7 +21,7 @@ if [[ -z "${XDG_RUNTIME_DIR:-}" || ! -d "$XDG_RUNTIME_DIR" ]]; then
     exit 2
 fi
 
-for command_name in cargo timeout tee date mkdir chmod find sort; do
+for command_name in cargo timeout tee date mkdir chmod find sort grep; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
         printf 'Required command not found: %s\n' "$command_name" >&2
         exit 2
@@ -37,7 +37,7 @@ shopt -s nullglob
 for previous_info in "$RUNS_DIR"/*/run-info.txt; do
     previous_dir="${previous_info%/run-info.txt}"
     previous_id="${previous_dir##*/}"
-    if ! grep -q '^finished_at=' "$previous_info"; then
+    if ! grep -q '^finished_at=' "$previous_info" && ! grep -q '^recovered_at=' "$previous_info"; then
         printf '\nRecovering interrupted diagnostic session: %s\n' "$previous_id"
         if [[ -x "$COLLECTOR" ]]; then
             bash "$COLLECTOR" "$previous_id" || printf 'WARNING: recovery was incomplete for %s.\n' "$previous_id" >&2
