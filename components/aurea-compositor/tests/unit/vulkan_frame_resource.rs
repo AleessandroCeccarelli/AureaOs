@@ -5,6 +5,11 @@
 
 use aurea_compositor::vulkan::{VulkanFrameResource, VulkanFrameResourceError};
 
+fn acquire_from_foreign(resource: &mut VulkanFrameResource) {
+    resource.mark_foreign_acquire_submitted().unwrap();
+    resource.mark_foreign_acquired().unwrap();
+}
+
 #[test]
 fn resource_is_available_on_creation() {
     assert!(VulkanFrameResource::new().is_available());
@@ -46,6 +51,7 @@ fn resource_waits_for_kms_release_after_gpu_completion() {
     assert!(!resource.is_available());
 
     resource.mark_kms_released().unwrap();
+    acquire_from_foreign(&mut resource);
     assert!(resource.is_available());
 }
 
@@ -69,6 +75,7 @@ fn kms_cannot_take_ownership_before_gpu_completion() {
     resource.mark_foreign_release_submitted().unwrap();
     resource.mark_kms_committed().unwrap();
     resource.mark_kms_released().unwrap();
+    acquire_from_foreign(&mut resource);
     assert!(resource.is_available());
 }
 
@@ -196,6 +203,7 @@ fn fully_released_resource_can_be_reused_for_a_second_frame() {
     resource.mark_foreign_release_submitted().unwrap();
     resource.mark_kms_committed().unwrap();
     resource.mark_kms_released().unwrap();
+    acquire_from_foreign(&mut resource);
     assert!(resource.is_available());
 
     resource.begin_render().unwrap();
@@ -219,6 +227,7 @@ fn sync_file_handoff_allows_kms_to_own_frame_before_gpu_completion() {
     assert!(!resource.is_available());
 
     resource.mark_kms_released().unwrap();
+    acquire_from_foreign(&mut resource);
     assert!(resource.is_available());
 }
 
@@ -233,6 +242,8 @@ fn sync_file_handoff_still_requires_gpu_and_kms_release() {
 
     assert!(!resource.is_available());
     resource.mark_gpu_complete().unwrap();
+    assert!(!resource.is_available());
+    acquire_from_foreign(&mut resource);
     assert!(resource.is_available());
 }
 
