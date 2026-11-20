@@ -77,9 +77,7 @@ write_metadata() {
         printf 'run_id=%s\n' "$RUN_ID"
         printf 'started_at=%s\n' "$STARTED_AT"
         printf 'started_epoch=%s\n' "$STARTED_EPOCH"
-        printf 'hostname=%s\n' "$(hostname 2>/dev/null || printf unknown)"
         printf 'kernel=%s\n' "$(uname -srmo 2>/dev/null || printf unknown)"
-        printf 'user_id=%s\n' "$(id -u)"
         printf 'session_type=%s\n' "${XDG_SESSION_TYPE:-unset}"
         printf 'wayland_display_present=%s\n' "$([[ -n "${WAYLAND_DISPLAY:-}" ]] && printf yes || printf no)"
         printf 'display_present=%s\n' "$([[ -n "${DISPLAY:-}" ]] && printf yes || printf no)"
@@ -97,8 +95,6 @@ printf 'Maximum runtime: %s seconds\n' "$TIMEOUT_SECONDS"
 # Capture a safe, allowlisted hardware/software snapshot. Optional tools are
 # detected rather than installed or invoked with elevated privileges.
 {
-    printf '=== Kernel command line ===\n'
-    cat /proc/cmdline 2>/dev/null || true
     printf '\n=== PCI devices and active drivers ===\n'
     if command -v lspci >/dev/null 2>&1; then lspci -nnk || true; else printf 'lspci unavailable\n'; fi
     printf '\n=== DRM devices ===\n'
@@ -135,6 +131,7 @@ set -e
 
 {
     printf 'finished_at=%s\n' "$(date --iso-8601=seconds)"
+    printf 'finished_epoch=%s\n' "$(date +%s)"
     printf 'exit_status=%s\n' "$STATUS"
 } >> "$RUN_DIR/run-info.txt"
 
@@ -151,5 +148,5 @@ if [[ -f "$COLLECTOR" ]]; then
 fi
 
 printf '\nDiagnostic report ready: %s\n' "$RUN_DIR"
-printf 'Review privacy-sensitive details before committing and pushing.\n'
+printf 'Diagnostic report ready for Git review and push.\n'
 exit "$STATUS"
