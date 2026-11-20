@@ -15,10 +15,6 @@ use crate::output::{
 use super::{AureaCompositor, window_placement::center_first_mapped_window};
 
 fn retry_initial_window_placement(compositor: &mut AureaCompositor) {
-    if compositor.window_manager.mapped_window_count() != 1 {
-        return;
-    }
-
     let Some(surface) = compositor
         .window_manager
         .mapped_toplevels()
