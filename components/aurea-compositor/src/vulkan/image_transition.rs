@@ -91,7 +91,7 @@ impl VulkanImageTransition {
     /// The caller must use an exportable DMA-BUF image. When the selected
     /// Vulkan device matches the DRM node, EXTERNAL ownership is sufficient.
     /// FOREIGN is selected only when the device exposes that extension.
-    pub fn record_release_to_external(
+    pub fn record_release_to_foreign(
         device: &VulkanLogicalDevice,
         command_buffer: vk::CommandBuffer,
         image: vk::Image,
@@ -124,7 +124,7 @@ impl VulkanImageTransition {
     /// Call only after the KMS page-flip/release event confirms that no active
     /// plane references the image. The image is expected to be in GENERAL
     /// layout while owned by the external consumer.
-    pub fn record_acquire_from_external(
+    pub fn record_acquire_from_foreign(
         device: &VulkanLogicalDevice,
         command_buffer: vk::CommandBuffer,
         image: vk::Image,
