@@ -64,15 +64,17 @@ collect_journal() {
     fi
 
     # Some systemd versions report denied journal access with exit status 0.
-    if command -v sudo >/dev/null 2>&1 &&
+    if command -v sudo >/dev/null 2>&1; then
+        # Keep sudo non-interactive: diagnostics must never wait for a password.
         # The shell deliberately writes the report as the logged-in user.
         # shellcheck disable=SC2024
-        sudo journalctl "$@" --no-pager --output=short-precise > "$output_file" 2>&1 &&
-        [[ -s "$output_file" ]] &&
-        ! grep -Eiq 'no journal files were opened|permission denied|insufficient permissions' "$output_file"; then
-        chmod 600 "$output_file"
-        printf 'Collected %s (with elevated journal access)\n' "$output_file"
-        return 0
+        if sudo -n journalctl "$@" --no-pager --output=short-precise > "$output_file" 2>&1 &&
+            [[ -s "$output_file" ]] &&
+            ! grep -Eiq 'no journal files were opened|permission denied|insufficient permissions' "$output_file"; then
+            chmod 600 "$output_file"
+            printf 'Collected %s (with elevated journal access)\n' "$output_file"
+            return 0
+        fi
     fi
 
     printf 'WARNING: journal unavailable for %s.\n' "$output_file" >&2
