@@ -13,7 +13,10 @@ use std::sync::Arc;
 
 use crate::{
     render::{
-        RenderScene, cursor::scaled_cursor_origin, geometry::{surface_geometry, surface_geometry_with_fractional_scale},
+        RenderScene, cursor::scaled_cursor_origin, geometry::{
+            scale_surface_geometry, scale_surface_geometry_with_fractional_scale,
+            surface_geometry, surface_geometry_with_fractional_scale,
+        },
         shm_buffer::ShmBufferSnapshot, surface_tree::SurfaceTreeSnapshot,
     },
     renderer::RenderTarget,
@@ -498,13 +501,23 @@ fn visible_surfaces(
         .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
 
         if let Some(anchor) = snapshot.cursor_anchor {
-            geometry = crate::render::geometry::scale_surface_geometry(
-                geometry,
-                (anchor.x, anchor.y),
-                target.logical_origin(),
-                target.scale(),
-                snapshot.cursor_scale,
-            )
+            geometry = if let Some(scale) = target.fractional_scale() {
+                scale_surface_geometry_with_fractional_scale(
+                    geometry,
+                    (anchor.x, anchor.y),
+                    target.logical_origin(),
+                    scale,
+                    snapshot.cursor_scale,
+                )
+            } else {
+                scale_surface_geometry(
+                    geometry,
+                    (anchor.x, anchor.y),
+                    target.logical_origin(),
+                    target.scale(),
+                    snapshot.cursor_scale,
+                )
+            }
             .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
         }
 
