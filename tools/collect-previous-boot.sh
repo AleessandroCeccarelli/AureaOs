@@ -42,6 +42,15 @@ done
 
 printf 'Collecting %s diagnostics for %s\n' "$BOOT_SCOPE" "$RUN_ID"
 
+STARTED_EPOCH="$(awk -F= '$1 == "started_epoch" { print $2; exit }' "$RUN_DIR/run-info.txt" 2>/dev/null || true)"
+ENDED_EPOCH="$(awk -F= '$1 == "finished_epoch" { value=$2 } $1 == "recovered_epoch" { value=$2 } END { print value }' "$RUN_DIR/run-info.txt" 2>/dev/null || true)"
+if ! [[ "$ENDED_EPOCH" =~ ^[0-9]+$ ]]; then ENDED_EPOCH="$(date +%s)"; fi
+
+JOURNAL_RANGE=()
+if [[ "$STARTED_EPOCH" =~ ^[0-9]+$ ]]; then
+    JOURNAL_RANGE+=(--since "@$STARTED_EPOCH" --until "@$ENDED_EPOCH")
+fi
+
 collect_journal() {
     local output_file="$1"
     shift
@@ -65,12 +74,17 @@ collect_journal() {
     return 1
 }
 
-collect_journal "$RUN_DIR/$PREFIX-kernel.txt" -b "$JOURNAL_BOOT" -k || true
-collect_journal "$RUN_DIR/$PREFIX-system.txt" -b "$JOURNAL_BOOT" || true
+collect_journal "$RUN_DIR/$PREFIX-kernel.txt" -b "$JOURNAL_BOOT" -k "${JOURNAL_RANGE[@]}" || true
+collect_journal "$RUN_DIR/$PREFIX-system.txt" -b "$JOURNAL_BOOT" "${JOURNAL_RANGE[@]}" || true
 
-STARTED_EPOCH="$(awk -F= '$1 == "started_epoch" { print $2; exit }' "$RUN_DIR/run-info.txt" 2>/dev/null || true)"
-ENDED_EPOCH="$(awk -F= '$1 == "finished_epoch" { value=$2 } $1 == "recovered_epoch" { value=$2 } END { print value }' "$RUN_DIR/run-info.txt" 2>/dev/null || true)"
-if ! [[ "$ENDED_EPOCH" =~ ^[0-9]+$ ]]; then ENDED_EPOCH="$(date +%s)"; fi
+if command -v coredumpctl >/dev/null 2>&1 && [[ "${#JOURNAL_RANGE[@]}" -gt 0 ]]; then
+    if coredumpctl --no-pager list --since "@$STARTED_EPOCH" --until "@$ENDED_EPOCH" > "$RUN_DIR/coredumps.txt" 2>&1; then
+        chmod 600 "$RUN_DIR/coredumps.txt"
+        printf 'Collected coredump index. Core files themselves are not copied.\n'
+    else
+        rm -f -- "$RUN_DIR/coredumps.txt"
+    fi
+fi
 STATE_HOME="${XDG_STATE_HOME:-}"
 if [[ -z "$STATE_HOME" && -n "${HOME:-}" ]]; then
     STATE_HOME="$HOME/.local/state"
@@ -79,8 +93,8 @@ fi
 if [[ "$STARTED_EPOCH" =~ ^[0-9]+$ && -n "$STATE_HOME" ]]; then
     APP_LOG="$STATE_HOME/aureaos/logs/aurea-desktop.log"
     if [[ -f "$APP_LOG" ]]; then
-        if awk -v started="$STARTED_EPOCH" '
-            $1 ~ /^[0-9]+$/ && $1 >= started { print }
+        if awk -v started="$STARTED_EPOCH" -v ended="$ENDED_EPOCH" '
+            $1 ~ /^[0-9]+$/ && $1 >= started && $1 <= ended { print }
         ' "$APP_LOG" > "$RUN_DIR/aurea-desktop-app.txt"; then
             chmod 600 "$RUN_DIR/aurea-desktop-app.txt"
             printf 'Collected application log entries from %s\n' "$APP_LOG"
