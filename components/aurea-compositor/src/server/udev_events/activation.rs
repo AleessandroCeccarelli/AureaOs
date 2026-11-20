@@ -7,8 +7,6 @@
 
 use std::collections::HashSet;
 
-use smithay::backend::drm::DrmNode;
-
 use super::{
     super::state::WaylandState,
     device::{initialize_drm_surfaces, initialize_vulkan_backend, open_and_integrate},
