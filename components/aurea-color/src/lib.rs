@@ -3,10 +3,12 @@
 
 //! Safe, backend-independent ICC profile inspection and identity.
 
+mod adjustment;
 mod header;
 mod identity;
 mod storage;
 
+pub use adjustment::{ColorAdjustment, ColorAdjustmentError, RgbMatrix, RgbValues};
 pub use header::{IccHeader, IccHeaderError, IccProfileSummary, IccTag};
 pub use identity::IccProfileFingerprint;
 pub use storage::{IccProfileStore, ProfileStoreError, StoredProfile};
