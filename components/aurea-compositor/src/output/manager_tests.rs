@@ -87,14 +87,7 @@ fn unknown_output_returns_an_error() {
 fn configuration_commits_mode_scale_transform_and_position_together() {
     let original = OutputMode::new(1920, 1080, 60_000).unwrap();
     let smaller = OutputMode::new(1280, 720, 60_000).unwrap();
-    let output = DisplayOutput::new(
-        11,
-        "DP-4",
-        vec![original, smaller],
-        original,
-        1,
-    )
-    .unwrap();
+    let output = DisplayOutput::new(11, "DP-4", vec![original, smaller], original, 1).unwrap();
     let mut manager = OutputManager::new();
     manager.register(output, (0, 0)).unwrap();
 
@@ -117,7 +110,13 @@ fn configuration_commits_mode_scale_transform_and_position_together() {
     assert_eq!(configured.transform(), smithay::utils::Transform::_90);
     let bounds = manager.logical_bounds(11).unwrap().unwrap();
     assert_eq!(bounds.origin(), LogicalPoint { x: 120, y: 80 });
-    assert_eq!(bounds.size(), LogicalSize { width: 360, height: 640 });
+    assert_eq!(
+        bounds.size(),
+        LogicalSize {
+            width: 360,
+            height: 640
+        }
+    );
 }
 
 #[test]
