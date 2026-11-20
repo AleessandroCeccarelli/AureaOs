@@ -162,13 +162,6 @@ impl VulkanDeviceExtensionPlan {
         self.supports_drm_format_modifier
     }
 
-    /// Whether this device can use the same-device Vulkan-to-DRM path.
-    /// FOREIGN ownership is not required because the DRM node is matched
-    /// to this physical device; VK_QUEUE_FAMILY_EXTERNAL covers that case.
-    pub fn supports_same_device_drm_scanout(&self) -> bool {
-        self.supports_dmabuf_interop() && self.supports_drm_format_modifier()
-    }
-
     /// Whether VK_KHR_external_semaphore_fd is available for sync-file export.
     /// Physical-device semaphore handle properties must still be checked.
     pub fn supports_sync_fd(&self) -> bool {
