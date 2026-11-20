@@ -75,6 +75,34 @@ impl SurfaceGeometry {
     }
 }
 
+
+/// Maps surface-local normalized coordinates to buffer texture coordinates.
+///
+/// Wayland defines the buffer transform as a transform already applied by
+/// the client. Sampling therefore applies its inverse. Coordinates use a
+/// top-left origin and are normalized to the inclusive [0, 1] range.
+pub fn buffer_uv_from_surface_uv(
+    transform: Transform,
+    uv: (f32, f32),
+) -> Option<(f32, f32)> {
+    let (u, v) = uv;
+    if !u.is_finite() || !v.is_finite() {
+        return None;
+    }
+
+    Some(match transform {
+        Transform::Normal => (u, v),
+        Transform::_90 => (v, 1.0 - u),
+        Transform::_180 => (1.0 - u, 1.0 - v),
+        Transform::_270 => (1.0 - v, u),
+        Transform::Flipped => (1.0 - u, v),
+        Transform::Flipped90 => (v, u),
+        Transform::Flipped180 => (u, 1.0 - v),
+        Transform::Flipped270 => (1.0 - v, 1.0 - u),
+        _ => return None,
+    })
+}
+
 /// Scales a destination rectangle around a global logical anchor point.
 pub fn scale_surface_geometry(
     geometry: SurfaceGeometry,
@@ -265,4 +293,34 @@ mod tests {
         assert!(surface_geometry((0, 0), (10, 10), 1, Transform::Normal, (0, 0), 0).is_none());
         assert!(surface_geometry((0, 0), (0, 10), 1, Transform::Normal, (0, 0), 1).is_none());
     }
+    #[test]
+    fn buffer_uv_mapping_applies_inverse_wayland_transform_for_all_eight_cases() {
+        let surface_uv = (0.2, 0.3);
+        let cases = [
+            (Transform::Normal, (0.2, 0.3)),
+            (Transform::_90, (0.3, 0.8)),
+            (Transform::_180, (0.8, 0.7)),
+            (Transform::_270, (0.7, 0.2)),
+            (Transform::Flipped, (0.8, 0.3)),
+            (Transform::Flipped90, (0.3, 0.2)),
+            (Transform::Flipped180, (0.2, 0.7)),
+            (Transform::Flipped270, (0.7, 0.8)),
+        ];
+
+        for (transform, expected) in cases {
+            let actual = buffer_uv_from_surface_uv(transform, surface_uv).unwrap();
+            assert!(
+                (actual.0 - expected.0).abs() < f32::EPSILON
+                    && (actual.1 - expected.1).abs() < f32::EPSILON,
+                "unexpected UV mapping for {transform:?}: {actual:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn buffer_uv_mapping_rejects_non_finite_coordinates() {
+        assert!(buffer_uv_from_surface_uv(Transform::Normal, (f32::NAN, 0.5)).is_none());
+        assert!(buffer_uv_from_surface_uv(Transform::Normal, (0.5, f32::INFINITY)).is_none());
+    }
+
 }
