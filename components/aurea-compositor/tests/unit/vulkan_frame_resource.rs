@@ -40,6 +40,7 @@ fn resource_waits_for_kms_release_after_gpu_completion() {
     resource.begin_render().unwrap();
     resource.mark_submitted().unwrap();
     resource.mark_gpu_complete().unwrap();
+    resource.mark_foreign_release_submitted().unwrap();
     resource.mark_kms_committed().unwrap();
 
     assert!(!resource.is_available());
@@ -61,6 +62,11 @@ fn kms_cannot_take_ownership_before_gpu_completion() {
     assert!(!resource.is_available());
 
     resource.mark_gpu_complete().unwrap();
+    assert_eq!(
+        resource.mark_kms_committed(),
+        Err(VulkanFrameResourceError::ForeignOwnershipNotReleased)
+    );
+    resource.mark_foreign_release_submitted().unwrap();
     resource.mark_kms_committed().unwrap();
     resource.mark_kms_released().unwrap();
     assert!(resource.is_available());
@@ -110,6 +116,7 @@ fn kms_cannot_commit_a_resource_twice() {
     resource.begin_render().unwrap();
     resource.mark_submitted().unwrap();
     resource.mark_gpu_complete().unwrap();
+    resource.mark_foreign_release_submitted().unwrap();
     resource.mark_kms_committed().unwrap();
 
     assert_eq!(
@@ -185,6 +192,7 @@ fn fully_released_resource_can_be_reused_for_a_second_frame() {
     resource.begin_render().unwrap();
     resource.mark_submitted().unwrap();
     resource.mark_gpu_complete().unwrap();
+    resource.mark_foreign_release_submitted().unwrap();
     resource.mark_kms_committed().unwrap();
     resource.mark_kms_released().unwrap();
     assert!(resource.is_available());
@@ -201,6 +209,7 @@ fn sync_file_handoff_allows_kms_to_own_frame_before_gpu_completion() {
     let mut resource = VulkanFrameResource::new();
     resource.begin_render().unwrap();
     resource.mark_submitted().unwrap();
+    resource.mark_foreign_release_submitted().unwrap();
 
     resource.mark_kms_committed_with_sync_fd().unwrap();
     assert!(!resource.is_available());
@@ -217,6 +226,7 @@ fn sync_file_handoff_still_requires_gpu_and_kms_release() {
     let mut resource = VulkanFrameResource::new();
     resource.begin_render().unwrap();
     resource.mark_submitted().unwrap();
+    resource.mark_foreign_release_submitted().unwrap();
     resource.mark_kms_committed_with_sync_fd().unwrap();
     resource.mark_kms_released().unwrap();
 
