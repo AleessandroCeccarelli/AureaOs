@@ -417,6 +417,55 @@ mod tests {
     use super::*;
 
     #[test]
+    fn quarter_turn_output_transform_maps_logical_extent_to_native_scanout() {
+        let geometry = SurfaceGeometry {
+            x: 10,
+            y: 20,
+            width: 30,
+            height: 40,
+        };
+
+        assert_eq!(
+            transform_geometry_for_output(geometry, 1920, 1080, Transform::_90),
+            Some(SurfaceGeometry {
+                x: 1020,
+                y: 10,
+                width: 40,
+                height: 30,
+            })
+        );
+        assert_eq!(
+            transform_geometry_for_output(geometry, 1920, 1080, Transform::_270),
+            Some(SurfaceGeometry {
+                x: 20,
+                y: 1040,
+                width: 40,
+                height: 30,
+            })
+        );
+    }
+
+    #[test]
+    fn output_transform_preserves_native_extent_for_half_turns() {
+        let geometry = SurfaceGeometry {
+            x: 10,
+            y: 20,
+            width: 30,
+            height: 40,
+        };
+
+        assert_eq!(
+            transform_geometry_for_output(geometry, 1920, 1080, Transform::_180),
+            Some(SurfaceGeometry {
+                x: 1880,
+                y: 1020,
+                width: 30,
+                height: 40,
+            })
+        );
+    }
+
+    #[test]
     fn output_rotation_maps_rectangles_without_changing_scanout_extent() {
         let geometry = SurfaceGeometry {
             x: 10,
