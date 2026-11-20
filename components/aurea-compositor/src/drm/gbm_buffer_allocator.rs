@@ -12,11 +12,11 @@ use smithay::backend::allocator::{
     gbm::{BufferObjectFlags, GbmBuffer, GbmDevice},
 };
 
-use crate::drm::gbm_buffer_writer::{GbmBufferWriterError, GbmCpuUploadBuffer};
+use crate::drm::gbm_buffer_writer::GbmCpuUploadBuffer;
 
 /// Errors returned by the GBM CPU-upload allocator.
 #[derive(Debug)]
-pub enum GbmCpuUploadAllocationError {
+pub(crate) enum GbmCpuUploadAllocationError {
     InvalidDimensions,
     UnsupportedFormatUsage { format: Fourcc },
     Allocation(String),
@@ -27,7 +27,6 @@ pub enum GbmCpuUploadAllocationError {
         actual_width: u32,
         actual_height: u32,
     },
-    WriterInvariant(GbmBufferWriterError),
 }
 
 impl fmt::Display for GbmCpuUploadAllocationError {
@@ -56,9 +55,6 @@ impl fmt::Display for GbmCpuUploadAllocationError {
                 formatter,
                 "GBM allocated {actual_width}x{actual_height}, expected {expected_width}x{expected_height}"
             ),
-            Self::WriterInvariant(error) => {
-                write!(formatter, "GBM upload buffer invariant failed: {error}")
-            }
         }
     }
 }
@@ -69,18 +65,18 @@ impl Error for GbmCpuUploadAllocationError {}
 ///
 /// The allocator deliberately requests the single format currently supported
 /// by the RGBA8 readback writer. Other DRM formats need explicit conversion.
-pub struct GbmCpuUploadAllocator<'device, T: std::os::fd::AsFd> {
+pub(crate) struct GbmCpuUploadAllocator<'device, T: std::os::fd::AsFd> {
     device: &'device GbmDevice<T>,
 }
 
 impl<'device, T: std::os::fd::AsFd> GbmCpuUploadAllocator<'device, T> {
     /// Borrows an already initialized GBM device.
-    pub fn new(device: &'device GbmDevice<T>) -> Self {
+    pub(crate) fn new(device: &'device GbmDevice<T>) -> Self {
         Self { device }
     }
 
     /// Allocates a WRITE|SCANOUT ABGR8888 buffer after checking driver support.
-    pub fn allocate(
+    pub(crate) fn allocate(
         &self,
         width: u32,
         height: u32,
