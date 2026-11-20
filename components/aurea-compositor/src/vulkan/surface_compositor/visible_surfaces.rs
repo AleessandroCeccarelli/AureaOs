@@ -29,8 +29,8 @@ pub(super) struct VisibleSurface {
     pub(super) surface_id: smithay::reexports::wayland_server::backend::ObjectId,
     pub(super) revision: u64,
     pub(super) snapshot: Arc<ShmBufferSnapshot>,
-    pub(super) geometry: crate::render::geometry::SurfaceGeometry,
-    pub(super) scissor: crate::render::geometry::SurfaceScissor,
+    pub(super) geometry: SurfaceGeometry,
+    pub(super) scissor: SurfaceScissor,
     pub(super) texture_transform: u32,
 }
 
