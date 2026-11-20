@@ -5,9 +5,16 @@
 
 //! Dispatches requested output frames to the DRM/Vulkan scanout backend.
 
-use std::io;
+use std::{io, path::PathBuf};
 
-use crate::{drm::scanout_renderer::VulkanOutputScanoutBackend, server::state::WaylandState};
+use crate::{
+    drm::scanout_renderer::VulkanOutputScanoutBackend,
+    presentation_selector::{
+        NoCompatiblePresentationPath, PresentationBackendSupport, PresentationPath,
+        PresentationSelector,
+    },
+    server::state::WaylandState,
+};
 
 pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()> {
     let WaylandState {
@@ -16,6 +23,8 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
         drm_surfaces,
         gbm_devices,
         vulkan_backends,
+        gpu_manager,
+        drm_device_registry,
         display_color,
         ..
     } = state;
@@ -29,23 +38,65 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
         }
     }
 
-    for (node, output_id) in pending_outputs {
-        let Some(device) = drm_devices.get(node) else {
+    for (presentation_node, output_id) in pending_outputs {
+        let render_path: PathBuf = gpu_manager
+            .selected_render_device()
+            .map(|device| device.path().to_path_buf())
+            .ok_or_else(|| {
+                io::Error::other("AureaOS: no available GPU is selected for rendering")
+            })?;
+        let rendering_node = drm_device_registry
+            .node_for_path(&render_path)
+            .ok_or_else(|| {
+                io::Error::other(format!(
+                    "AureaOS: selected rendering GPU {} has no registered DRM identity",
+                    render_path.display()
+                ))
+            })?;
+
+        // Direct Vulkan scanout is currently implemented only when rendering
+        // and presentation use the same DRM device. Cross-GPU compatibility
+        // remains unavailable until its CPU-to-GBM backend is implemented.
+        let support = [PresentationBackendSupport {
+            rendering_gpu: rendering_node,
+            presentation_gpu: presentation_node,
+            direct_vulkan: rendering_node == presentation_node
+                && vulkan_backends.contains_key(&rendering_node),
+            compatibility: false,
+        }];
+        let selected_path = PresentationSelector::select(
+            &rendering_node,
+            &presentation_node,
+            &support,
+        )
+        .map_err(|NoCompatiblePresentationPath| {
+            io::Error::other(format!(
+                "AureaOS: no presentation backend supports rendering GPU {rendering_node} and output GPU {presentation_node} for output {output_id}"
+            ))
+        })?;
+
+        let PresentationPath::DirectVulkan = selected_path else {
+            return Err(io::Error::other(
+                "AureaOS: selected presentation path has no initialized backend",
+            ));
+        };
+
+        let Some(device) = drm_devices.get(presentation_node) else {
             return Err(io::Error::other(format!(
-                "AureaOS: DRM device {node} disappeared while output {output_id} had a pending frame"
+                "AureaOS: DRM device {presentation_node} disappeared while output {output_id} had a pending frame"
             )));
         };
-        if !gbm_devices.contains(node) {
+        if !gbm_devices.contains(presentation_node) {
             return Err(io::Error::other(format!(
-                "AureaOS: GBM is unavailable for DRM device {node} while output {output_id} had a pending frame"
+                "AureaOS: GBM is unavailable for DRM device {presentation_node} while output {output_id} had a pending frame"
             )));
         }
-        let Some(vulkan) = vulkan_backends.get(&node) else {
+        let Some(vulkan) = vulkan_backends.get(&rendering_node) else {
             return Err(io::Error::other(format!(
-                "AureaOS: Vulkan backend is unavailable for DRM device {node} while output {output_id} had a pending frame"
+                "AureaOS: Vulkan backend is unavailable for rendering device {rendering_node} while output {output_id} had a pending frame"
             )));
         };
-        let Some(surface_manager) = drm_surfaces.get_mut(&node) else {
+        let Some(surface_manager) = drm_surfaces.get_mut(&presentation_node) else {
             return Err(io::Error::other(format!(
                 "AureaOS: DRM surface manager disappeared for output {output_id}"
             )));
