@@ -289,6 +289,7 @@ mod tests {
                     width: 20,
                     height: 30,
                 },
+                (-5, 10, 20, 30),
                 SurfaceScissor {
                     x: 0,
                     y: 10,
@@ -303,6 +304,7 @@ mod tests {
                     width: 20,
                     height: 30,
                 },
+                (90, 10, 20, 30),
                 SurfaceScissor {
                     x: 90,
                     y: 10,
@@ -317,6 +319,7 @@ mod tests {
                     width: 20,
                     height: 30,
                 },
+                (10, -5, 20, 30),
                 SurfaceScissor {
                     x: 10,
                     y: 0,
@@ -331,6 +334,7 @@ mod tests {
                     width: 20,
                     height: 30,
                 },
+                (10, 90, 20, 30),
                 SurfaceScissor {
                     x: 10,
                     y: 90,
@@ -340,12 +344,17 @@ mod tests {
             ),
         ];
 
-        for (geometry, expected_scissor) in cases {
+        for (geometry, expected_geometry, expected_scissor) in cases {
+            assert_eq!(
+                (
+                    geometry.x(),
+                    geometry.y(),
+                    geometry.width(),
+                    geometry.height(),
+                ),
+                expected_geometry
+            );
             assert_eq!(geometry.scissor(100, 100), Some(expected_scissor));
-            assert_eq!(geometry.x, geometry.x);
-            assert_eq!(geometry.y, geometry.y);
-            assert_eq!(geometry.width, geometry.width);
-            assert_eq!(geometry.height, geometry.height);
         }
     }
 
