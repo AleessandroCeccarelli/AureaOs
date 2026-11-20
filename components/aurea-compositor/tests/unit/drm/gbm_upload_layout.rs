@@ -33,7 +33,7 @@ fn rejects_zero_dimensions() {
 fn rejects_incorrect_source_length() {
     assert_eq!(
         pack_rgba8_rows(&[1, 2, 3], 1, 1, 4),
-        Err(GbmUploadLayoutError::SourceSizeOverflow)
+        Err(GbmUploadLayoutError::SourceLengthMismatch)
     );
 }
 
@@ -46,9 +46,9 @@ fn rejects_destination_stride_smaller_than_pixel_row() {
 }
 
 #[test]
-fn rejects_destination_size_overflow() {
+fn rejects_source_size_overflow() {
     assert_eq!(
         pack_rgba8_rows(&[], u32::MAX, u32::MAX, usize::MAX),
-        Err(GbmUploadLayoutError::SourceLengthMismatch)
+        Err(GbmUploadLayoutError::SourceSizeOverflow)
     );
 }
