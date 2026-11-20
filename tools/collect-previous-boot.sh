@@ -65,6 +65,8 @@ collect_journal() {
 
     # Some systemd versions report denied journal access with exit status 0.
     if command -v sudo >/dev/null 2>&1 &&
+        # The shell deliberately writes the report as the logged-in user.
+        # shellcheck disable=SC2024
         sudo journalctl "$@" --no-pager --output=short-precise > "$output_file" 2>&1 &&
         [[ -s "$output_file" ]] &&
         ! grep -Eiq 'no journal files were opened|permission denied|insufficient permissions' "$output_file"; then
