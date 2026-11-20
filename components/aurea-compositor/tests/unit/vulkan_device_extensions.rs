@@ -96,3 +96,15 @@ fn sync_file_and_foreign_queue_family_capabilities_are_independent() {
     assert!(plan.supports_sync_fd());
     assert!(!plan.supports_foreign_queue_family());
 }
+
+#[test]
+fn same_device_drm_scanout_does_not_require_foreign_queue_family() {
+    let plan = VulkanDeviceExtensionPlan::from_available_names([
+        BASE[0],
+        BASE[1],
+        MODIFIER,
+    ]);
+
+    assert!(plan.supports_same_device_drm_scanout());
+    assert!(!plan.supports_foreign_queue_family());
+}
