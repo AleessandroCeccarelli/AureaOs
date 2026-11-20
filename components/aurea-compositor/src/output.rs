@@ -14,6 +14,8 @@ pub mod wayland;
 
 use std::collections::BTreeMap;
 
+use smithay::utils::Transform;
+
 use self::scale::ScaleFactor;
 
 /// Stable identifier for a display output.
@@ -66,6 +68,7 @@ pub struct DisplayOutput {
     current_mode: OutputMode,
     scale: u32,
     fractional_scale: Option<ScaleFactor>,
+    transform: Transform,
     enabled: bool,
 }
 
@@ -91,6 +94,7 @@ impl DisplayOutput {
             current_mode,
             scale,
             fractional_scale: None,
+            transform: Transform::Normal,
             enabled: true,
         })
     }
@@ -118,6 +122,16 @@ impl DisplayOutput {
     /// Returns the configured fractional scale, when one is active.
     pub fn fractional_scale(&self) -> Option<ScaleFactor> {
         self.fractional_scale
+    }
+
+    /// Returns the physical orientation of this output.
+    pub fn transform(&self) -> Transform {
+        self.transform
+    }
+
+    /// Sets the physical orientation reported and used by this output.
+    pub fn set_transform(&mut self, transform: Transform) {
+        self.transform = transform;
     }
 
     /// Sets a validated fractional scale and disables the legacy integer scale.
@@ -171,6 +185,7 @@ impl DisplayOutput {
 
         discovered.scale = self.scale;
         discovered.fractional_scale = self.fractional_scale;
+        discovered.transform = self.transform;
         discovered.enabled = self.enabled;
 
         *self = discovered;
