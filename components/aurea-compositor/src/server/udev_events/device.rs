@@ -15,8 +15,8 @@ use super::{
     super::state::WaylandState,
     outputs::{refresh_device_outputs, remove_device_outputs, restore_before_publish},
     tracking::{
-        forget_changed_device, forget_device, queue_changed_device, retry_pending_changes,
-        take_notifier_token, track_device,
+        forget_changed_device, forget_device, queue_changed_device, take_notifier_token,
+        track_device,
     },
 };
 
