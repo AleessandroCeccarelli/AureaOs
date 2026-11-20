@@ -12,10 +12,10 @@ use smithay::utils::Transform;
 use crate::{
     render::{
         geometry::{
-            compose_surface_transforms, scale_surface_geometry,
+            SurfaceGeometry, SurfaceScissor, compose_surface_transforms, scale_surface_geometry,
             scale_surface_geometry_with_fractional_scale, surface_geometry,
             surface_geometry_with_fractional_scale, surface_transform_index,
-            transform_geometry_for_output, SurfaceGeometry, SurfaceScissor,
+            transform_geometry_for_output,
         },
         shm_buffer::ShmBufferSnapshot,
         surface_tree::SurfaceTreeSnapshot,
