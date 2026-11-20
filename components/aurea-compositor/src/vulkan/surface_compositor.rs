@@ -98,7 +98,7 @@ pub(crate) fn render_and_release(
             (crate::render::cursor::DEFAULT_CURSOR_WIDTH as f64 * scale).round() as u32;
         let scaled_height =
             (crate::render::cursor::DEFAULT_CURSOR_HEIGHT as f64 * scale).round() as u32;
-        let scaled_location = scaled_cursor_origin(location, scale);
+        let scaled_location = scaled_cursor_origin(location, scale).into();
         let geometry = if let Some(scale) = target.fractional_scale() {
             surface_geometry_with_fractional_scale(
                 scaled_location,
