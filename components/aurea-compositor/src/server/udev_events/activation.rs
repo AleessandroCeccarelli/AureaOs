@@ -18,7 +18,7 @@ use super::{
 
 /// Restores graphics backends for existing devices, integrates devices
 /// discovered while libseat was inactive and processes deferred output changes.
-pub(super) fn activate_discovered_devices(state: &mut WaylandState) {
+pub(in crate::server) fn activate_discovered_devices(state: &mut WaylandState) {
     if !state.session_active {
         return;
     }
