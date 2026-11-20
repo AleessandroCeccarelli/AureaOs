@@ -60,7 +60,7 @@ impl IccProfileCatalog {
     /// This entry point is for system provisioning only, never for user imports.
     /// System profiles are marked read-only and cannot be removed through the
     /// regular profile manager interface.
-    pub fn install_system_profile(
+    pub(crate) fn install_system_profile(
         &self,
         profile: IccProfileImport,
     ) -> Result<IccProfileDescriptor, IccProfileManagerError> {
