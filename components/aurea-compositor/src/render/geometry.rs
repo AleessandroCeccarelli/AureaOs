@@ -593,6 +593,32 @@ mod tests {
     }
 
     #[test]
+    fn composed_surface_transforms_match_sequential_uv_mapping() {
+        let transforms = [
+            Transform::Normal,
+            Transform::_90,
+            Transform::_180,
+            Transform::_270,
+            Transform::Flipped,
+            Transform::Flipped90,
+            Transform::Flipped180,
+            Transform::Flipped270,
+        ];
+        let probes = [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)];
+
+        for buffer in transforms {
+            for output in transforms {
+                let composed = compose_surface_transforms(buffer, output).unwrap();
+                for uv in probes {
+                    let sequential = buffer_uv_from_surface_uv(buffer, uv)
+                        .and_then(|uv| buffer_uv_from_surface_uv(output, uv));
+                    assert_eq!(buffer_uv_from_surface_uv(composed, uv), sequential);
+                }
+            }
+        }
+    }
+
+    #[test]
     fn cursor_scale_keeps_global_hotspot_anchor_fixed() {
         let geometry =
             surface_geometry((90, 90), (20, 20), 1, Transform::Normal, (0, 0), 1).unwrap();
