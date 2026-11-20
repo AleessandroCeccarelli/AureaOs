@@ -43,7 +43,7 @@ mod rendering;
 mod surface_output_reconciliation;
 mod surface_output_tracking;
 mod workspace;
-mod window_placement;
+pub(crate) mod window_placement;
 
 use surface_output_tracking::SurfaceOutputTracker;
 
