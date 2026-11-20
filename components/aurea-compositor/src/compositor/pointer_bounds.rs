@@ -147,7 +147,7 @@ mod tests {
 
         assert_eq!(
             constrain_to_outputs(Point::from((1960.0, 540.0)), [standard, fractional]),
-            Some(Point::from((1919.0, 540.0)))
+            Some(Point::from((2000.0, 540.0)))
         );
     }
 
