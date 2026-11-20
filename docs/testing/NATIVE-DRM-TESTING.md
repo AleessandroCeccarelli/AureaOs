@@ -78,8 +78,8 @@ status proves that the GPU or kernel is healthy.
   recovery procedure as a last resort. Do not assume SysRq is enabled.
 - After reboot, return to the repository and start the same launcher again.
   It automatically finds unfinished report folders and attempts to collect
-  the previous boot's kernel/system journal and the matching persistent
-  application log before starting another test. You can also invoke
+  the previous boot's kernel and Aurea Desktop journal entries plus the
+  matching persistent application log before starting another test. You can also invoke
   `bash tools/collect-previous-boot.sh RUN_ID` manually.
 
 ## Limits of the safety measures
@@ -90,7 +90,8 @@ exits. It cannot prevent or recover from a kernel panic, GPU driver deadlock,
 firmware hang, or complete hardware lockup. The persistent desktop log records
 startup, normal termination, errors, and Rust panic details; the launcher
 additionally captures compositor stderr/stdout, a hardware/driver snapshot,
-time-bounded system journals, and a coredump index when available. A hard power loss can still
+time-bounded kernel and Aurea Desktop journal entries, and Aurea Desktop
+coredump metadata when available. A hard power loss can still
 truncate the final log entries.
 
 A successful process start is not a successful display test. Record separately
