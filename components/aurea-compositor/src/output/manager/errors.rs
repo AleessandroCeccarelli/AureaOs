@@ -32,7 +32,10 @@ impl fmt::Display for OutputManagerError {
                 write!(f, "Invalid scale {scale} for output {output}")
             }
             Self::TooManyActiveOutputs { maximum } => {
-                write!(f, "AureaOS supports at most {maximum} active display outputs")
+                write!(
+                    f,
+                    "AureaOS supports at most {maximum} active display outputs"
+                )
             }
             Self::PositionOverflow => f.write_str("Output layout position overflow"),
         }
