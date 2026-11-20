@@ -51,9 +51,10 @@ pub(crate) fn center_first_mapped_window(
         (snapshot.width(), snapshot.height())
     };
 
-    let scale = f64::from(buffer_scale);
-    let window_width = f64::from(buffer_width) / scale;
-    let window_height = f64::from(buffer_height) / scale;
+    let window_size = (
+        f64::from(buffer_width) / f64::from(buffer_scale),
+        f64::from(buffer_height) / f64::from(buffer_scale),
+    );
 
     let Some(output) = compositor
         .output_manager
@@ -63,30 +64,42 @@ pub(crate) fn center_first_mapped_window(
     else {
         return;
     };
-    let Some(position) = compositor.output_manager.layout().get(output.id()) else {
+    let Some(bounds) = compositor
+        .output_manager
+        .logical_bounds(output.id())
+        .ok()
+        .flatten()
+    else {
         return;
     };
 
-    let output_scale = output.effective_scale();
-    if !output_scale.is_finite() || output_scale <= 0.0 {
-        return;
-    }
-
-    let output_width = f64::from(output.current_mode().width()) / output_scale;
-    let output_height = f64::from(output.current_mode().height()) / output_scale;
-    let x = f64::from(position.x()) + ((output_width - window_width) / 2.0).max(0.0);
-    let y = f64::from(position.y()) + ((output_height - window_height) / 2.0).max(0.0);
-
-    let Some(x) = finite_logical_coordinate(x) else {
-        return;
-    };
-    let Some(y) = finite_logical_coordinate(y) else {
+    let origin = bounds.origin();
+    let size = bounds.size();
+    let Some(location) = centered_window_origin(
+        (origin.x as f64, origin.y as f64),
+        (f64::from(size.width), f64::from(size.height)),
+        window_size,
+    ) else {
         return;
     };
 
     compositor
         .window_manager
-        .set_toplevel_location(surface, (x, y));
+        .set_toplevel_location(surface, location);
+}
+
+fn centered_window_origin(
+    output_origin: (f64, f64),
+    output_size: (f64, f64),
+    window_size: (f64, f64),
+) -> Option<(i32, i32)> {
+    let x = output_origin.0 + ((output_size.0 - window_size.0) / 2.0).max(0.0);
+    let y = output_origin.1 + ((output_size.1 - window_size.1) / 2.0).max(0.0);
+
+    Some((
+        finite_logical_coordinate(x)?,
+        finite_logical_coordinate(y)?,
+    ))
 }
 
 fn finite_logical_coordinate(value: f64) -> Option<i32> {
@@ -95,4 +108,41 @@ fn finite_logical_coordinate(value: f64) -> Option<i32> {
     }
 
     Some(value.round() as i32)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::centered_window_origin;
+
+    #[test]
+    fn centers_window_in_primary_output_logical_bounds() {
+        assert_eq!(
+            centered_window_origin((0.0, 0.0), (1920.0, 1080.0), (720.0, 440.0)),
+            Some((600, 320))
+        );
+    }
+
+    #[test]
+    fn preserves_nonzero_monitor_origin() {
+        assert_eq!(
+            centered_window_origin((1920.0, 120.0), (1280.0, 720.0), (720.0, 440.0)),
+            Some((2200, 260))
+        );
+    }
+
+    #[test]
+    fn keeps_oversized_window_origin_inside_output() {
+        assert_eq!(
+            centered_window_origin((0.0, 0.0), (640.0, 480.0), (800.0, 600.0)),
+            Some((0, 0))
+        );
+    }
+
+    #[test]
+    fn rejects_non_finite_coordinates() {
+        assert_eq!(
+            centered_window_origin((f64::NAN, 0.0), (1920.0, 1080.0), (720.0, 440.0)),
+            None
+        );
+    }
 }
