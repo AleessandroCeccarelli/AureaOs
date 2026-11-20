@@ -68,6 +68,11 @@ impl GbmCpuUploadBuffer {
         Self { buffer }
     }
 
+    /// Borrows the underlying GBM allocation for KMS framebuffer registration.
+    pub(crate) fn gbm_buffer(&self) -> &GbmBuffer {
+        &self.buffer
+    }
+
     /// Copies tightly packed RGBA8 pixels into the GBM buffer.
     ///
     /// DRM_FORMAT_ABGR8888 is used because its byte order in memory on
