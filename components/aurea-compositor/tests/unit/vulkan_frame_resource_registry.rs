@@ -74,6 +74,8 @@ fn resource_can_be_unregistered_after_gpu_and_kms_release() {
     );
 
     registry.mark_kms_released(id).unwrap();
+    registry.mark_foreign_acquire_submitted(id).unwrap();
+    registry.mark_foreign_acquired(id).unwrap();
     registry.unregister(id).unwrap();
 
     assert!(registry.is_empty());
@@ -95,6 +97,9 @@ fn sync_file_commit_keeps_resource_busy_until_both_owners_release_it() {
     assert!(!registry.is_available(id).unwrap());
 
     registry.mark_kms_released(id).unwrap();
+    assert!(!registry.is_available(id).unwrap());
+    registry.mark_foreign_acquire_submitted(id).unwrap();
+    registry.mark_foreign_acquired(id).unwrap();
     assert!(registry.is_available(id).unwrap());
 }
 
@@ -110,6 +115,9 @@ fn failed_presentation_keeps_resource_busy_until_gpu_completion() {
     assert!(!registry.is_available(id).unwrap());
 
     registry.mark_gpu_complete(id).unwrap();
+    assert!(!registry.is_available(id).unwrap());
+    registry.mark_foreign_acquire_submitted(id).unwrap();
+    registry.mark_foreign_acquired(id).unwrap();
     assert!(registry.is_available(id).unwrap());
 }
 
