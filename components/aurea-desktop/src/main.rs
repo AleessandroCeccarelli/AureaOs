@@ -7,6 +7,7 @@
 
 mod compositor_factory;
 mod color_configuration_manager;
+mod display_color_assignment_store;
 mod diagnostics;
 mod keyboard_layout_store;
 mod welcome;
