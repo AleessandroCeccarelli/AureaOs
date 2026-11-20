@@ -71,4 +71,43 @@ impl AureaCompositor {
         self.request_all_output_frames();
         true
     }
+    /// Re-evaluates pointer focus after a surface changes the visible scene.
+    ///
+    /// The pointer remains at its current logical location; this only refreshes
+    /// the surface under it. Active client grabs are never disturbed.
+    pub fn refresh_pointer_focus_at_current_location(&mut self) -> bool {
+        let Some(pointer) = self.seat.get_pointer() else {
+            return false;
+        };
+
+        if pointer.is_grabbed() {
+            return false;
+        }
+
+        let location = pointer.current_location();
+        let focus = {
+            let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
+            scene.surface_under(location).map(|(surface, origin, _)| {
+                (
+                    surface,
+                    Point::from((f64::from(origin.x), f64::from(origin.y))),
+                )
+            })
+        };
+
+        let time = Clock::<Monotonic>::new().now().as_millis() as u32;
+        pointer.motion(
+            self,
+            focus,
+            &MotionEvent {
+                location,
+                serial: SERIAL_COUNTER.next_serial(),
+                time,
+            },
+        );
+        pointer.frame(self);
+        self.request_all_output_frames();
+        true
+    }
+
 }
