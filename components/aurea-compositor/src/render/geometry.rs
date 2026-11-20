@@ -124,8 +124,8 @@ pub fn compose_surface_transforms(
 
     candidates.into_iter().find(|candidate| {
         probes.into_iter().all(|uv| {
-            let expected = buffer_uv_from_surface_uv(buffer_transform, uv)
-                .and_then(|uv| buffer_uv_from_surface_uv(output_transform, uv));
+            let expected = buffer_uv_from_surface_uv(output_transform, uv)
+                .and_then(|uv| buffer_uv_from_surface_uv(buffer_transform, uv));
             let actual = buffer_uv_from_surface_uv(*candidate, uv);
             actual == expected
         })
