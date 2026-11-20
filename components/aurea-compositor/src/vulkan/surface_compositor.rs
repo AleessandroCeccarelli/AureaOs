@@ -118,12 +118,6 @@ pub(crate) fn render_and_release(
                 target.scale(),
             )?
         };
-        let geometry = transform_surface_geometry(
-            geometry,
-            target.width(),
-            target.height(),
-            target.transform(),
-        )?;
         let geometry = transform_geometry_for_output(
             geometry,
             target.width(),
