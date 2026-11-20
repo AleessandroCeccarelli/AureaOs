@@ -3,14 +3,18 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Registers CPU-upload GBM allocations as KMS framebuffers.
+//! Registers CPU-upload GBM allocations as explicit-modifier KMS framebuffers.
 
 use std::{error::Error, fmt};
 
-use smithay::backend::drm::{
-    DrmDeviceFd,
-    gbm::{GbmFramebuffer, framebuffer_from_bo},
+use smithay::{
+    backend::drm::DrmDeviceFd,
+    reexports::drm::{
+        buffer::PlanarBuffer,
+        control::{Device, FbCmd2Flags, framebuffer},
+    },
 };
+use smithay::reexports::drm_fourcc::DrmFormat;
 
 use super::{gbm_buffer_writer::GbmCpuUploadBuffer, presentation::DrmFramebufferId};
 
@@ -26,25 +30,87 @@ impl fmt::Display for GbmFramebufferRegistrationError {
 
 impl Error for GbmFramebufferRegistrationError {}
 
-/// Keeps a CPU-upload buffer alive for the complete KMS framebuffer lifetime.
+/// Owns a KMS framebuffer handle and the DRM descriptor needed to destroy it.
+pub(crate) struct StrictGbmFramebuffer {
+    handle: framebuffer::Handle,
+    format: DrmFormat,
+    drm: DrmDeviceFd,
+}
+
+impl StrictGbmFramebuffer {
+    /// Registers a GBM buffer using AddFB2 only; no legacy fallback is attempted.
+    pub(crate) fn register(
+        drm: &DrmDeviceFd,
+        buffer: &GbmCpuUploadBuffer,
+    ) -> Result<Self, GbmFramebufferRegistrationError> {
+        let gbm = buffer.gbm_buffer();
+        let modifier = gbm.modifier();
+        let flags = if modifier.is_some() {
+            FbCmd2Flags::MODIFIERS
+        } else {
+            FbCmd2Flags::empty()
+        };
+
+        let handle = drm
+            .add_planar_framebuffer(gbm, flags)
+            .map_err(|error| GbmFramebufferRegistrationError(error.to_string()))?;
+
+        Ok(Self {
+            handle,
+            format: DrmFormat {
+                code: gbm.format(),
+                modifier: modifier.unwrap_or(smithay::reexports::drm_fourcc::DrmModifier::Invalid),
+            },
+            drm: drm.clone(),
+        })
+    }
+
+    /// Returns the KMS framebuffer handle for plane configuration.
+    pub(crate) fn handle(&self) -> &framebuffer::Handle {
+        &self.handle
+    }
+
+    /// Returns the exact format registered with KMS.
+    pub(crate) fn format(&self) -> DrmFormat {
+        self.format
+    }
+}
+
+impl AsRef<framebuffer::Handle> for StrictGbmFramebuffer {
+    fn as_ref(&self) -> &framebuffer::Handle {
+        &self.handle
+    }
+}
+
+impl Drop for StrictGbmFramebuffer {
+    fn drop(&mut self) {
+        if let Err(error) = self.drm.destroy_framebuffer(self.handle) {
+            tracing::warn!(
+                framebuffer = ?self.handle,
+                %error,
+                "Failed to destroy strict GBM KMS framebuffer"
+            );
+        }
+    }
+}
+
+/// Keeps the GBM allocation alive until its KMS framebuffer has been destroyed.
 ///
-/// Field order is intentional: Rust drops fields in declaration order, so
-/// the KMS framebuffer is removed before its backing GBM allocation is freed.
+/// Field order is intentional: Rust drops fields in declaration order.
 pub(crate) struct GbmCpuUploadFramebuffer {
-    framebuffer: GbmFramebuffer,
+    framebuffer: StrictGbmFramebuffer,
     buffer: GbmCpuUploadBuffer,
     id: DrmFramebufferId,
 }
 
 impl GbmCpuUploadFramebuffer {
-    /// Registers the allocation on the DRM device and retains both resources.
+    /// Registers the allocation and retains both resources in one owner.
     pub(crate) fn register(
         id: DrmFramebufferId,
         drm: &DrmDeviceFd,
         buffer: GbmCpuUploadBuffer,
     ) -> Result<Self, GbmFramebufferRegistrationError> {
-        let framebuffer = framebuffer_from_bo(drm, buffer.gbm_buffer(), false)
-            .map_err(|error| GbmFramebufferRegistrationError(error.to_string()))?;
+        let framebuffer = StrictGbmFramebuffer::register(drm, &buffer)?;
 
         Ok(Self {
             framebuffer,
@@ -58,17 +124,17 @@ impl GbmCpuUploadFramebuffer {
         self.id
     }
 
-    /// Borrows the Smithay framebuffer for KMS plane configuration.
-    pub(crate) fn framebuffer(&self) -> &GbmFramebuffer {
+    /// Borrows the strict KMS framebuffer.
+    pub(crate) fn framebuffer(&self) -> &StrictGbmFramebuffer {
         &self.framebuffer
     }
 
-    /// Borrows the CPU-upload allocation without transferring its ownership.
+    /// Borrows the CPU-upload allocation without transferring ownership.
     pub(crate) fn buffer(&self) -> &GbmCpuUploadBuffer {
         &self.buffer
     }
 
-    /// Mutably borrows the CPU-upload allocation before it is submitted to KMS.
+    /// Mutably borrows the CPU-upload allocation before KMS submission.
     pub(crate) fn buffer_mut(&mut self) -> &mut GbmCpuUploadBuffer {
         &mut self.buffer
     }
