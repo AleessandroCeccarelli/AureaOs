@@ -104,9 +104,14 @@ impl OutputManager {
             .get(output_id)
             .ok_or(OutputManagerError::UnknownOutput(output_id))?;
         let mode = output.current_mode();
+        let (physical_width, physical_height) = if swaps_dimensions(output.transform()) {
+            (mode.height(), mode.width())
+        } else {
+            (mode.width(), mode.height())
+        };
         let size = LogicalSize {
-            width: logical_extent(output, mode.width())?,
-            height: logical_extent(output, mode.height())?,
+            width: logical_extent(output, physical_width)?,
+            height: logical_extent(output, physical_height)?,
         };
         let origin = LogicalPoint {
             x: i64::from(position.x()),
@@ -412,8 +417,24 @@ impl OutputManager {
 }
 
 fn logical_width(output: &DisplayOutput) -> Result<i32, OutputManagerError> {
-    let logical_width = logical_extent(output, output.current_mode().width())?;
+    let mode = output.current_mode();
+    let physical_width = if swaps_dimensions(output.transform()) {
+        mode.height()
+    } else {
+        mode.width()
+    };
+    let logical_width = logical_extent(output, physical_width)?;
     i32::try_from(logical_width).map_err(|_| OutputManagerError::PositionOverflow)
+}
+
+fn swaps_dimensions(transform: smithay::utils::Transform) -> bool {
+    matches!(
+        transform,
+        smithay::utils::Transform::_90
+            | smithay::utils::Transform::_270
+            | smithay::utils::Transform::Flipped90
+            | smithay::utils::Transform::Flipped270
+    )
 }
 
 fn logical_extent(output: &DisplayOutput, physical: u32) -> Result<u32, OutputManagerError> {
