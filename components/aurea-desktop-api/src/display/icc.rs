@@ -9,6 +9,8 @@
 //! owned by dedicated services. This module only describes profile identity,
 //! metadata and per-display assignment.
 
+use std::sync::mpsc::Receiver;
+
 use super::DisplayId;
 
 /// Stable identifier assigned by the profile service to an ICC profile.
@@ -82,6 +84,9 @@ pub struct IccProfileDescriptor {
     pub profile_class: IccProfileClass,
     pub origin: IccProfileOrigin,
     pub format: IccProfileFormat,
+    /// Original profile from which this user-generated profile was derived.
+    /// The source remains untouched when a user creates an edited copy.
+    pub parent_profile_id: Option<IccProfileId>,
     /// System profiles are protected from user deletion or in-place editing.
     pub read_only: bool,
 }
@@ -93,6 +98,24 @@ pub struct IccProfileDescriptor {
 pub struct DisplayIccProfileAssignment {
     pub display_id: DisplayId,
     pub profile_id: Option<IccProfileId>,
+}
+
+/// Consistent read-only view of the installed profile catalog and assignments.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct IccProfileCatalogSnapshot {
+    pub profiles: Vec<IccProfileDescriptor>,
+    pub assignments: Vec<DisplayIccProfileAssignment>,
+}
+
+/// Read-only profile catalog contract shared with shell settings and services.
+///
+/// Mutating operations such as import, download, removal and assignment are
+/// deliberately exposed by a separate manager service, not by this view.
+pub trait IccProfileProvider: Send + Sync {
+    /// Returns a consistent snapshot of profiles and display assignments.
+    fn snapshot(&self) -> IccProfileCatalogSnapshot;
+    /// Subscribes to catalog or assignment changes.
+    fn subscribe(&self) -> Receiver<IccProfileCatalogSnapshot>;
 }
 
 #[cfg(test)]
