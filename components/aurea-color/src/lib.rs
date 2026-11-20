@@ -115,4 +115,44 @@ mod tests {
             fingerprint_profile(&bytes).unwrap()
         );
     }
+    #[test]
+    fn rejects_unaligned_tag_data() {
+        assert!(inspect_profile(&profile_with_one_tag(145, 4)).is_err());
+    }
+
+    #[test]
+    fn rejects_duplicate_tag_signatures() {
+        let mut bytes = vec![0_u8; 160];
+        bytes[0..4].copy_from_slice(&(160_u32).to_be_bytes());
+        bytes[12..16].copy_from_slice(b"mntr");
+        bytes[16..20].copy_from_slice(b"RGB ");
+        bytes[20..24].copy_from_slice(b"XYZ ");
+        bytes[36..40].copy_from_slice(b"acsp");
+        bytes[128..132].copy_from_slice(&2_u32.to_be_bytes());
+        for start in [132, 144] {
+            bytes[start..start + 4].copy_from_slice(b"desc");
+            bytes[start + 4..start + 8].copy_from_slice(&(156_u32).to_be_bytes());
+            bytes[start + 8..start + 12].copy_from_slice(&(4_u32).to_be_bytes());
+        }
+        assert!(inspect_profile(&bytes).is_err());
+    }
+
+    #[test]
+    fn rejects_partially_overlapping_tag_payloads() {
+        let mut bytes = vec![0_u8; 168];
+        bytes[0..4].copy_from_slice(&(168_u32).to_be_bytes());
+        bytes[12..16].copy_from_slice(b"mntr");
+        bytes[16..20].copy_from_slice(b"RGB ");
+        bytes[20..24].copy_from_slice(b"XYZ ");
+        bytes[36..40].copy_from_slice(b"acsp");
+        bytes[128..132].copy_from_slice(&2_u32.to_be_bytes());
+        bytes[132..136].copy_from_slice(b"desc");
+        bytes[136..140].copy_from_slice(&(156_u32).to_be_bytes());
+        bytes[140..144].copy_from_slice(&(8_u32).to_be_bytes());
+        bytes[144..148].copy_from_slice(b"cprt");
+        bytes[148..152].copy_from_slice(&(160_u32).to_be_bytes());
+        bytes[152..156].copy_from_slice(&(8_u32).to_be_bytes());
+        assert!(inspect_profile(&bytes).is_err());
+    }
+
 }
