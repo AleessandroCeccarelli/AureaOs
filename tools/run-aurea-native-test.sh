@@ -11,7 +11,12 @@ RUNS_DIR="$ROOT_DIR/diagnostics/runs"
 COLLECTOR="$ROOT_DIR/tools/collect-previous-boot.sh"
 TIMEOUT_SECONDS="${AUREA_TEST_TIMEOUT:-45}"
 
-if ! [[ "$TIMEOUT_SECONDS" =~ ^[0-9]+$ ]] || (( TIMEOUT_SECONDS < 5 || TIMEOUT_SECONDS > 600 )); then
+if ! [[ "$TIMEOUT_SECONDS" =~ ^[0-9]+$ ]]; then
+    printf 'AUREA_TEST_TIMEOUT must be an integer between 5 and 600 seconds.\\n' >&2
+    exit 2
+fi
+TIMEOUT_VALUE=$((10#$TIMEOUT_SECONDS))
+if (( TIMEOUT_VALUE < 5 || TIMEOUT_VALUE > 600 )); then
     printf 'AUREA_TEST_TIMEOUT must be an integer between 5 and 600 seconds.\n' >&2
     exit 2
 fi
@@ -21,7 +26,7 @@ if [[ -z "${XDG_RUNTIME_DIR:-}" || ! -d "$XDG_RUNTIME_DIR" ]]; then
     exit 2
 fi
 
-for command_name in cargo timeout tee date mkdir chmod find sort grep; do
+for command_name in cargo timeout tee date mkdir chmod grep; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
         printf 'Required command not found: %s\n' "$command_name" >&2
         exit 2
@@ -124,7 +129,7 @@ cargo build --locked -p aurea-desktop --bins
 
 printf '\n[2/2] Starting the native DRM/Vulkan desktop...\n'
 set +e
-timeout --signal=INT --kill-after=10s "${TIMEOUT_SECONDS}s" ./target/debug/aurea-desktop
+timeout --signal=INT --kill-after=10s "${TIMEOUT_VALUE}s" ./target/debug/aurea-desktop
 STATUS=$?
 set -e
 
