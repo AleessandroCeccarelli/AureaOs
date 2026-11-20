@@ -33,6 +33,7 @@ mod frame_scheduling;
 mod keyboard;
 mod keyboard_shortcuts;
 mod output_publication;
+mod output_configuration;
 mod output_reconciliation;
 mod pointer;
 mod pointer_axis;
@@ -49,6 +50,7 @@ use surface_output_tracking::SurfaceOutputTracker;
 
 pub use frame_scheduling::CompositorFrameError;
 pub use output_reconciliation::OutputReconciliationError;
+pub use output_configuration::CompositorOutputConfigurationError;
 pub use rendering::CompositorRenderError;
 
 /// Core state owned by the AureaOS compositor.
