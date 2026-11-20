@@ -14,10 +14,11 @@ The launcher first looks for unfinished sessions and automatically attempts
 to recover their previous-boot journals and application logs. It then creates
 a new directory under `diagnostics/runs/<YYYYMMDD-HHMMSS>/`. It records
 application output in `native-test.txt`, a hardware/driver snapshot in
-`system-snapshot.txt`, and session metadata in `run-info.txt`. After a normal
-exit or timeout it automatically collects the current boot journal, the
-persistent application log, and an index of matching systemd coredumps when
-available. The test remains time-bounded by `AUREA_TEST_TIMEOUT` (default:
+`system-snapshot.txt`, and technical session metadata in `run-info.txt`.
+After a normal exit or timeout it automatically collects kernel diagnostics,
+Aurea Desktop process messages, the persistent Aurea Desktop application log,
+and an index of matching systemd coredumps when available. It does not export
+the machine-wide system journal or copy core dump contents. The test remains time-bounded by `AUREA_TEST_TIMEOUT` (default:
 45 s). If a run directory already exists for that second, the launcher stops
 rather than overwriting or mixing reports.
 
@@ -32,10 +33,11 @@ recovery remains available using the run id printed by the launcher:
 bash tools/collect-previous-boot.sh 20261120-083000
 ```
 
-The collector attempts to save the previous boot's kernel journal and system
-journal into that run directory. It first tries the current user's journal
-permissions, then asks for sudo access if needed. Only `journalctl` runs with
-elevated privileges; report files remain owned by the logged-in user.
+The collector saves only the previous boot's kernel journal and messages
+attributed to the Aurea Desktop process. It does not export the full system
+journal. It first tries the current user's journal permissions, then asks for
+sudo access if needed. Only `journalctl` runs with elevated privileges;
+report files remain owned by the logged-in user.
 
 It also extracts entries from Aurea Desktop's persistent application log
 (`$XDG_STATE_HOME/aureaos/logs/aurea-desktop.log`, or
@@ -48,12 +50,14 @@ Persistent previous-boot journal data is available only if Fedora's systemd
 journal retained it. This collector does not enable persistent journaling or
 change system configuration.
 
-## Before committing or pushing
+## Diagnostic data scope
 
-Inspect the report locally. Logs can disclose usernames, hostnames, device
-identifiers, filesystem paths, hardware details, and other machine-specific
-information. Remove anything private before sharing. Never commit passwords,
-tokens, private keys, or unrelated personal data.
+Reports are intended to contain technical diagnostics only: application
+stdout/stderr, Aurea Desktop logs, kernel/DRM/GPU messages, PCI device and
+driver identifiers, Vulkan summary, session type, kernel version, test
+timestamps, exit status, and a coredump index. The launcher does not collect
+documents, browser data, user files, passwords, tokens, private keys, or the
+machine-wide system journal. Core dump contents are never copied.
 
 Reports use text files rather than `.log` extensions so they are not silently
 excluded by the repository's existing `.gitignore` rules. Review Git status
