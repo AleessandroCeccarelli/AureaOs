@@ -55,8 +55,10 @@ to the compositor's `wayland-0` socket. The launcher enables Rust backtraces,
 stores output under `$XDG_STATE_HOME/aureaos/logs` (or
 `~/.local/state/aureaos/logs`), and sends SIGINT at the deadline. It allows
 10 seconds for graceful shutdown before sending SIGKILL. On normal exit it
-collects the current boot journal, the persistent Aurea Desktop log entries
-for that session, and a systemd coredump index when available.
+collects only the current boot's kernel journal and Aurea Desktop process
+journal entries, the persistent Aurea Desktop log entries for that session,
+and Aurea Desktop coredump metadata when available. It does not export the
+machine-wide system journal or copy core dump contents.
 
 A different bounded duration can be selected without editing the script:
 
