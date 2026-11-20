@@ -84,7 +84,36 @@ impl AureaCompositor {
             return false;
         }
 
-        let location = pointer.current_location();
+        let requested = pointer.current_location();
+        let output_geometry = self
+            .output_manager
+            .registry()
+            .iter()
+            .filter(|output| output.is_enabled())
+            .filter_map(|output| {
+                let bounds = self
+                    .output_manager
+                    .logical_bounds(output.id())
+                    .ok()
+                    .flatten()?;
+                let origin = bounds.origin();
+                let size = bounds.size();
+
+                super::pointer_bounds::OutputGeometry::new(
+                    origin.x as f64,
+                    origin.y as f64,
+                    f64::from(size.width),
+                    f64::from(size.height),
+                )
+            })
+            .collect::<Vec<_>>();
+        let Some(location) = super::pointer_bounds::constrain_to_outputs(
+            requested,
+            output_geometry.iter().copied(),
+        ) else {
+            return false;
+        };
+
         let focus = {
             let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
             scene.surface_under(location).map(|(surface, origin, _)| {
