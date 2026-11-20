@@ -9,7 +9,7 @@ use std::{error::Error, fmt};
 
 use smithay::reexports::drm::control::{Device as DrmControlDevice, ModeTypeFlags, connector};
 
-use super::edid::EdidInfo;
+use super::{connector_identity::DrmConnectorIdentity, edid::EdidInfo};
 
 use crate::drm::{
     device::DrmDevice,
@@ -177,11 +177,22 @@ pub fn discover_connected_outputs(
         );
 
         let edid = read_connector_edid(device, *connector_handle);
+        let connector_name = format!(
+            "{}-{}",
+            connector_info.interface().as_str(),
+            connector_info.interface_id()
+        );
+        let physical_identity = DrmConnectorIdentity::resolve(
+            device.device_path(),
+            &connector_name,
+            std::path::Path::new("/sys"),
+        );
 
         descriptors.push(
             DrmOutputDescriptor::new(output_id, name, modes, current_mode, 1)
                 .with_drm_configuration(*connector_handle, drm_modes[preferred_index])
-                .with_edid(edid),
+                .with_edid(edid)
+                .with_physical_identity(physical_identity),
         );
     }
 
