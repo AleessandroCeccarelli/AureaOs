@@ -15,43 +15,6 @@ pub const MAX_PROFILE_SIZE: usize = 16 * 1024 * 1024;
 /// Validates the ICC header and tag table, returning safe profile metadata.
 pub fn inspect_profile(bytes: &[u8]) -> Result<IccProfileSummary, IccHeaderError> {
     IccHeader::parse(bytes).map(|header| header.summary())
-    #[test]
-    fn rejects_tag_table_that_exceeds_profile_bounds() {
-        let mut bytes = minimal_profile();
-        bytes[128..132].copy_from_slice(&1_u32.to_be_bytes());
-        assert!(inspect_profile(&bytes).is_err());
-    }
-
-    #[test]
-    fn rejects_tag_data_overlapping_the_tag_table() {
-        let mut bytes = vec![0_u8; 144];
-        bytes[0..4].copy_from_slice(&(144_u32).to_be_bytes());
-        bytes[12..16].copy_from_slice(b"mntr");
-        bytes[16..20].copy_from_slice(b"RGB ");
-        bytes[20..24].copy_from_slice(b"XYZ ");
-        bytes[36..40].copy_from_slice(b"acsp");
-        bytes[128..132].copy_from_slice(&1_u32.to_be_bytes());
-        bytes[132..136].copy_from_slice(b"desc");
-        bytes[136..140].copy_from_slice(&(132_u32).to_be_bytes());
-        bytes[140..144].copy_from_slice(&(4_u32).to_be_bytes());
-        assert!(inspect_profile(&bytes).is_err());
-    }
-
-    #[test]
-    fn rejects_tag_data_outside_declared_profile() {
-        let mut bytes = vec![0_u8; 144];
-        bytes[0..4].copy_from_slice(&(144_u32).to_be_bytes());
-        bytes[12..16].copy_from_slice(b"mntr");
-        bytes[16..20].copy_from_slice(b"RGB ");
-        bytes[20..24].copy_from_slice(b"XYZ ");
-        bytes[36..40].copy_from_slice(b"acsp");
-        bytes[128..132].copy_from_slice(&1_u32.to_be_bytes());
-        bytes[132..136].copy_from_slice(b"desc");
-        bytes[136..140].copy_from_slice(&(140_u32).to_be_bytes());
-        bytes[140..144].copy_from_slice(&(8_u32).to_be_bytes());
-        assert!(inspect_profile(&bytes).is_err());
-    }
-
 }
 
 /// Computes a content-addressed identity for a validated ICC profile.
@@ -67,11 +30,25 @@ mod tests {
     fn minimal_profile() -> Vec<u8> {
         let mut bytes = vec![0_u8; 132];
         bytes[0..4].copy_from_slice(&(132_u32).to_be_bytes());
-        bytes[8..12].copy_from_slice(b"\x04\x30\x00\x00");
+        bytes[8..12].copy_from_slice(b"\\x04\\x30\\x00\\x00");
         bytes[12..16].copy_from_slice(b"mntr");
         bytes[16..20].copy_from_slice(b"RGB ");
         bytes[20..24].copy_from_slice(b"XYZ ");
         bytes[36..40].copy_from_slice(b"acsp");
+        bytes
+    }
+
+    fn profile_with_one_tag(offset: u32, size: u32) -> Vec<u8> {
+        let mut bytes = vec![0_u8; 144];
+        bytes[0..4].copy_from_slice(&(144_u32).to_be_bytes());
+        bytes[12..16].copy_from_slice(b"mntr");
+        bytes[16..20].copy_from_slice(b"RGB ");
+        bytes[20..24].copy_from_slice(b"XYZ ");
+        bytes[36..40].copy_from_slice(b"acsp");
+        bytes[128..132].copy_from_slice(&1_u32.to_be_bytes());
+        bytes[132..136].copy_from_slice(b"desc");
+        bytes[136..140].copy_from_slice(&offset.to_be_bytes());
+        bytes[140..144].copy_from_slice(&size.to_be_bytes());
         bytes
     }
 
@@ -94,6 +71,38 @@ mod tests {
         let mut bytes = minimal_profile();
         bytes[36..40].copy_from_slice(b"nope");
         assert!(inspect_profile(&bytes).is_err());
+    }
+
+    #[test]
+    fn rejects_tag_table_that_exceeds_profile_bounds() {
+        let mut bytes = minimal_profile();
+        bytes[128..132].copy_from_slice(&1_u32.to_be_bytes());
+        assert!(inspect_profile(&bytes).is_err());
+    }
+
+    #[test]
+    fn rejects_tag_data_overlapping_the_tag_table() {
+        assert!(inspect_profile(&profile_with_one_tag(132, 4)).is_err());
+    }
+
+    #[test]
+    fn rejects_tag_data_outside_declared_profile() {
+        assert!(inspect_profile(&profile_with_one_tag(140, 8)).is_err());
+    }
+
+    #[test]
+    fn accepts_tag_data_inside_declared_profile() {
+        let mut bytes = vec![0_u8; 148];
+        bytes[0..4].copy_from_slice(&(148_u32).to_be_bytes());
+        bytes[12..16].copy_from_slice(b"mntr");
+        bytes[16..20].copy_from_slice(b"RGB ");
+        bytes[20..24].copy_from_slice(b"XYZ ");
+        bytes[36..40].copy_from_slice(b"acsp");
+        bytes[128..132].copy_from_slice(&1_u32.to_be_bytes());
+        bytes[132..136].copy_from_slice(b"desc");
+        bytes[136..140].copy_from_slice(&(144_u32).to_be_bytes());
+        bytes[140..144].copy_from_slice(&(4_u32).to_be_bytes());
+        assert_eq!(inspect_profile(&bytes).unwrap().tag_count, 1);
     }
 
     #[test]
