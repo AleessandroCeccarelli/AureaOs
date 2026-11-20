@@ -11,7 +11,7 @@ mod visible_surfaces;
 
 pub(crate) use error::VulkanSurfaceCompositionError;
 use release::{clear_and_release, clear_display_and_release};
-use visible_surfaces::{visible_surfaces, VisibleSurface};
+use visible_surfaces::visible_surfaces;
 
 use std::sync::Arc;
 
