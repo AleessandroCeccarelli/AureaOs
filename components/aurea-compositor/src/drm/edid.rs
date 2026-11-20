@@ -100,6 +100,12 @@ impl EdidInfo {
         self.serial_number.as_deref()
     }
 
+
+/// Returns CTA-861 HDR sink capabilities parsed from the validated EDID.
+pub fn hdr_capabilities(&self) -> super::edid_hdr::EdidHdrCapabilities {
+    super::edid_hdr::EdidHdrCapabilities::parse(&self.raw)
+}
+
     /// A serial is useful evidence, but never sufficient by itself to identify
     /// a physical monitor or authorize automatic profile assignment.
     pub fn has_serial_evidence(&self) -> bool {
