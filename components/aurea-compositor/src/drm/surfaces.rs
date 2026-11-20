@@ -20,8 +20,8 @@ use crate::{
     drm::{
         device::DrmDevice,
         discovery::discover_connected_outputs,
-        output::DrmOutputDescriptor,
         cpu_presentation_backend::{CpuPresentationBackend, CpuPresentationError},
+        output::DrmOutputDescriptor,
         gbm_framebuffer_pool::{GbmCpuFramebufferPool, GbmCpuFramebufferPoolError},
         presentation_backend::{DrmPresentationBackend, DrmPresentationBackendError},
     },
@@ -329,7 +329,7 @@ impl DrmSurfaceManager {
     }
 
     /// Completes a CPU-upload page flip for its owning output.
-    pub fn on_cpu_vblank(
+    pub(crate) fn on_cpu_vblank(
         &mut self,
         node: DrmNode,
         crtc: crtc::Handle,
@@ -344,7 +344,7 @@ impl DrmSurfaceManager {
     }
 
     /// Retires a CPU framebuffer after its page flip released KMS ownership.
-    pub fn retire_released_cpu_frame(
+    pub(crate) fn retire_released_cpu_frame(
         &mut self,
         crtc: crtc::Handle,
         framebuffer: crate::drm::presentation::DrmFramebufferId,
