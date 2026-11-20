@@ -8,12 +8,9 @@
 use std::{error::Error, fmt};
 
 use smithay::{
-    backend::drm::DrmDeviceFd,
-    reexports::drm::{
-        control::{Device, FbCmd2Flags, framebuffer},
-    },
+    backend::{allocator::{Format, Modifier}, drm::DrmDeviceFd},
+    reexports::drm::control::{Device, FbCmd2Flags, framebuffer},
 };
-use smithay::reexports::drm_fourcc::DrmFormat;
 
 use super::{gbm_buffer_writer::GbmCpuUploadBuffer, presentation::DrmFramebufferId};
 
@@ -32,7 +29,7 @@ impl Error for GbmFramebufferRegistrationError {}
 /// Owns a KMS framebuffer handle and the DRM descriptor needed to destroy it.
 pub(crate) struct StrictGbmFramebuffer {
     handle: framebuffer::Handle,
-    format: DrmFormat,
+    format: Format,
     drm: DrmDeviceFd,
 }
 
@@ -58,7 +55,7 @@ impl StrictGbmFramebuffer {
             handle,
             format: DrmFormat {
                 code: gbm.format(),
-                modifier: modifier.unwrap_or(smithay::reexports::drm_fourcc::DrmModifier::Invalid),
+                modifier: modifier.unwrap_or(Modifier::Invalid),
             },
             drm: drm.clone(),
         })
@@ -70,7 +67,7 @@ impl StrictGbmFramebuffer {
     }
 
     /// Returns the exact format registered with KMS.
-    pub(crate) fn format(&self) -> DrmFormat {
+    pub(crate) fn format(&self) -> Format {
         self.format
     }
 }
