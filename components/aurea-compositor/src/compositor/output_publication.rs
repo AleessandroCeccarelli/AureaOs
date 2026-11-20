@@ -41,6 +41,7 @@ impl AureaCompositor {
         &mut self,
         display: &DisplayHandle,
     ) -> Result<(), OutputPublicationError> {
+        let had_published_outputs = !self.wayland_outputs.is_empty();
         let outputs = publish_outputs(display, &self.output_manager)?;
 
         let output_ids = self
@@ -57,7 +58,9 @@ impl AureaCompositor {
         }
 
         self.wayland_outputs = output_ids.into_iter().zip(outputs).collect();
-        retry_initial_window_placement(self);
+        if !had_published_outputs {
+            retry_initial_window_placement(self);
+        }
         self.reconcile_surface_outputs();
 
         Ok(())
@@ -104,6 +107,7 @@ impl AureaCompositor {
         display: &DisplayHandle,
         output_id: OutputId,
     ) -> Result<(), OutputPublicationError> {
+        let was_published = self.wayland_outputs.contains_key(&output_id);
         let Some(output) = self.output_manager.registry().get(output_id) else {
             self.unpublish_wayland_output(output_id);
             return Ok(());
@@ -125,7 +129,9 @@ impl AureaCompositor {
             // Emit leave events before replacing its retained handle.
             self.forget_output_membership(output_id);
             self.wayland_outputs.insert(output_id, replacement);
-            retry_initial_window_placement(self);
+            if !was_published {
+                retry_initial_window_placement(self);
+            }
         } else {
             self.forget_output_membership(output_id);
             self.wayland_outputs.remove(&output_id);
