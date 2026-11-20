@@ -157,7 +157,9 @@ impl VulkanContext {
     #[cfg(feature = "drm")]
     fn supports_drm_scanout(device: &PhysicalDevice) -> bool {
         let extensions = VulkanDeviceExtensionPlan::from_device(device);
-        extensions.supports_dmabuf_interop() && extensions.supports_foreign_queue_family()
+        extensions.supports_dmabuf_interop()
+            && extensions.supports_drm_format_modifier()
+            && extensions.supports_foreign_queue_family()
     }
 
     pub(super) fn classify_device(device: &PhysicalDevice) -> VulkanDeviceType {
