@@ -22,6 +22,7 @@ use super::{
 pub enum CpuPresentationError {
     LegacySurfaceUnsupported,
     MissingActivePlane,
+    CandidateFramebufferNotConfigured,
     UnexpectedCrtc,
     KmsOperation(String),
     Lifecycle(GbmCpuFramebufferPoolError),
@@ -34,7 +35,10 @@ impl fmt::Display for CpuPresentationError {
                 "CPU presentation requires atomic DRM TEST_ONLY support",
             ),
             Self::MissingActivePlane => formatter.write_str(
-                "CPU presentation requires at least one configured DRM plane",
+                "CPU presentation requires the output primary plane to be configured",
+            ),
+            Self::CandidateFramebufferNotConfigured => formatter.write_str(
+                "The configured primary plane does not reference the submitted CPU framebuffer",
             ),
             Self::UnexpectedCrtc => formatter.write_str(
                 "DRM event does not belong to this presentation surface",
@@ -96,8 +100,17 @@ impl CpuPresentationBackend {
         if surface.crtc() != self.crtc {
             return Err(CpuPresentationError::UnexpectedCrtc);
         }
-        if !planes.iter().any(|plane| plane.config.is_some()) {
-            return Err(CpuPresentationError::MissingActivePlane);
+        let expected_framebuffer = pool.framebuffer(candidate)?;
+        let primary_plane = surface.plane();
+        let candidate_is_primary = planes.iter().any(|plane| {
+            plane.handle == primary_plane
+                && plane
+                    .config
+                    .as_ref()
+                    .is_some_and(|config| config.fb == *expected_framebuffer)
+        });
+        if !candidate_is_primary {
+            return Err(CpuPresentationError::CandidateFramebufferNotConfigured);
         }
 
         pool.begin_test(candidate)?;
