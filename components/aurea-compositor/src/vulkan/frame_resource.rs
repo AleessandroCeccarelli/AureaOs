@@ -199,7 +199,7 @@ impl VulkanFrameResource {
         if !gpu_complete {
             return Err(VulkanFrameResourceError::GpuWorkIncomplete);
         }
-        self.validate_kms_commit(presentation_resolved, kms_owned)?;
+        self.validate_kms_commit(presentation_resolved, kms_owned, foreign_owned)?;
         self.update_submitted(
             gpu_complete,
             true,
@@ -222,7 +222,7 @@ impl VulkanFrameResource {
         else {
             return Err(VulkanFrameResourceError::NotSubmitted);
         };
-        self.validate_kms_commit(presentation_resolved, kms_owned)?;
+        self.validate_kms_commit(presentation_resolved, kms_owned, foreign_owned)?;
         self.update_submitted(
             gpu_complete,
             true,
@@ -237,12 +237,16 @@ impl VulkanFrameResource {
         &self,
         presentation_resolved: bool,
         kms_owned: bool,
+        foreign_owned: bool,
     ) -> Result<(), VulkanFrameResourceError> {
         if presentation_resolved {
             return Err(VulkanFrameResourceError::PresentationAlreadyResolved);
         }
         if kms_owned {
             return Err(VulkanFrameResourceError::KmsAlreadyOwnsResource);
+        }
+        if !foreign_owned {
+            return Err(VulkanFrameResourceError::ForeignOwnershipNotReleased);
         }
         Ok(())
     }
