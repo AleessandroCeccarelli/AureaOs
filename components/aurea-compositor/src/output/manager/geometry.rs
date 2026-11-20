@@ -101,4 +101,3 @@ fn logical_extent(output: &DisplayOutput, physical: u32) -> Result<u32, OutputMa
         .filter(|extent| *extent > 0)
         .ok_or(OutputManagerError::PositionOverflow)
 }
-
