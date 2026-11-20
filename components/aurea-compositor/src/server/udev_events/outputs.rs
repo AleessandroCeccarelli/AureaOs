@@ -17,7 +17,7 @@ use super::super::state::WaylandState;
 ///
 /// Keeping this order in one helper prevents hotplug/session recovery from
 /// advertising outputs before a working KMS path exists.
-pub(super) fn restore_before_publish<C, E>(
+pub(in crate::server) fn restore_before_publish<C, E>(
     state: &mut C,
     restore_surfaces: impl FnOnce(&mut C) -> Result<(), E>,
     publish_outputs: impl FnOnce(&mut C) -> Result<(), E>,
@@ -26,7 +26,7 @@ pub(super) fn restore_before_publish<C, E>(
     publish_outputs(state)
 }
 
-pub(super) fn output_ids_for_device(state: &mut WaylandState, node: DrmNode) -> Vec<OutputId> {
+pub(in crate::server) fn output_ids_for_device(state: &mut WaylandState, node: DrmNode) -> Vec<OutputId> {
     let device_id = node.dev_id() as u64;
 
     state
@@ -39,7 +39,7 @@ pub(super) fn output_ids_for_device(state: &mut WaylandState, node: DrmNode) -> 
         .collect()
 }
 
-pub(super) fn remove_device_outputs(state: &mut WaylandState, node: DrmNode) {
+pub(in crate::server) fn remove_device_outputs(state: &mut WaylandState, node: DrmNode) {
     let ids = output_ids_for_device(state, node);
 
     for id in ids {
@@ -53,7 +53,7 @@ pub(super) fn remove_device_outputs(state: &mut WaylandState, node: DrmNode) {
     state.compositor.center_pointer_on_primary_output();
 }
 
-pub(super) fn refresh_device_outputs(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
+pub(in crate::server) fn refresh_device_outputs(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
     let owned_ids = output_ids_for_device(state, node);
     let before = state.compositor.output_manager().clone();
 
@@ -76,6 +76,6 @@ pub(super) fn refresh_device_outputs(state: &mut WaylandState, node: DrmNode) ->
     Ok(())
 }
 
-pub(super) fn output_belongs_to_device(output_id: OutputId, device_id: u64) -> bool {
+pub(in crate::server) fn output_belongs_to_device(output_id: OutputId, device_id: u64) -> bool {
     (output_id >> 32) as u64 == device_id
 }

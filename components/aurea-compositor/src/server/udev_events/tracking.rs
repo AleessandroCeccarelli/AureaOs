@@ -7,14 +7,14 @@
 
 use std::path::PathBuf;
 
-pub(super) fn take_notifier_token<K: Eq + std::hash::Hash, V>(
+pub(in crate::server) fn take_notifier_token<K: Eq + std::hash::Hash, V>(
     map: &mut std::collections::HashMap<K, V>,
     key: &K,
 ) -> Option<V> {
     map.remove(key)
 }
 
-pub(super) fn track_device<N: Copy + Eq>(
+pub(in crate::server) fn track_device<N: Copy + Eq>(
     devices: &mut Vec<(N, PathBuf)>,
     node: N,
     path: PathBuf,
@@ -28,7 +28,7 @@ pub(super) fn track_device<N: Copy + Eq>(
     true
 }
 
-pub(super) fn forget_device<N: Copy + Eq>(
+pub(in crate::server) fn forget_device<N: Copy + Eq>(
     devices: &mut Vec<(N, PathBuf)>,
     node: N,
 ) -> Option<PathBuf> {
@@ -38,17 +38,17 @@ pub(super) fn forget_device<N: Copy + Eq>(
         .map(|index| devices.remove(index).1)
 }
 
-pub(super) fn queue_changed_device<N: Copy + Eq>(changed: &mut Vec<N>, node: N) {
+pub(in crate::server) fn queue_changed_device<N: Copy + Eq>(changed: &mut Vec<N>, node: N) {
     if !changed.contains(&node) {
         changed.push(node);
     }
 }
 
-pub(super) fn forget_changed_device<N: Copy + Eq>(changed: &mut Vec<N>, node: N) {
+pub(in crate::server) fn forget_changed_device<N: Copy + Eq>(changed: &mut Vec<N>, node: N) {
     changed.retain(|known| *known != node);
 }
 
-pub(super) fn retry_pending_changes<N, E, F>(
+pub(in crate::server) fn retry_pending_changes<N, E, F>(
     pending: Vec<N>,
     managed: &std::collections::HashSet<N>,
     mut refresh: F,
