@@ -5,7 +5,7 @@
 
 //! Native DRM/KMS backend modules.
 
-pub mod connector_identity;
+pub mod connector_identity;\npub(crate) mod cpu_presentation_backend;
 pub mod device;
 pub mod device_manager;
 pub mod discovery;
