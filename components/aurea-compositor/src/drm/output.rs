@@ -8,6 +8,8 @@ use std::{error::Error, fmt};
 
 use smithay::reexports::drm::control::{Mode, connector};
 
+use super::edid::EdidInfo;
+
 use crate::output::{
     DisplayOutput, OutputId, OutputMode, layout::OutputPosition, manager::OutputManager,
 };
@@ -66,6 +68,7 @@ pub struct DrmOutputDescriptor {
     scale: u32,
     connector: Option<connector::Handle>,
     native_mode: Option<Mode>,
+    edid: Option<EdidInfo>,
 }
 
 impl DrmOutputDescriptor {
@@ -87,6 +90,7 @@ impl DrmOutputDescriptor {
             scale,
             connector: None,
             native_mode: None,
+            edid: None,
         }
     }
 
@@ -95,6 +99,17 @@ impl DrmOutputDescriptor {
         self.connector = Some(connector);
         self.native_mode = Some(mode);
         self
+    }
+
+    /// Attaches validated monitor EDID metadata when the connector provides it.
+    pub fn with_edid(mut self, edid: Option<EdidInfo>) -> Self {
+        self.edid = edid;
+        self
+    }
+
+    /// Returns validated monitor EDID metadata, when available.
+    pub fn edid(&self) -> Option<&EdidInfo> {
+        self.edid.as_ref()
     }
 
     /// Returns the native connector handle, when discovered from DRM.
