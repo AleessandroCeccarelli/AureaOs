@@ -5,8 +5,8 @@
 
 //! Output configuration request types and transactional setters.
 
-use super::OutputManager;
 use super::super::{layout::OutputPosition, limits::MAX_ACTIVE_OUTPUTS, scale::ScaleFactor};
+use super::OutputManager;
 use crate::output::{OutputId, OutputMode};
 
 /// Scale change requested as part of an output configuration transaction.
