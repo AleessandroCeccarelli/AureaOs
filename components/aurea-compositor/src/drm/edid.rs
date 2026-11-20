@@ -100,7 +100,7 @@ mod tests {
         bytes[8..10].copy_from_slice(&vendor.to_be_bytes());
         bytes[10..12].copy_from_slice(&0x1234_u16.to_le_bytes());
         bytes[12..16].copy_from_slice(&0x5678_u32.to_le_bytes());
-        bytes[54..59].copy_from_slice(&[0, 0, 0, 0xfc]);
+        bytes[54..59].copy_from_slice(&[0, 0, 0, 0xfc, 0]);
         bytes[59..72].copy_from_slice(b"Aurea Monitor");
         let checksum = bytes[..127].iter().fold(0_u8, |sum, byte| sum.wrapping_add(*byte));
         bytes[127] = 0_u8.wrapping_sub(checksum);
@@ -114,6 +114,7 @@ mod tests {
         assert_eq!(parsed.product_code(), 0x1234);
         assert_eq!(parsed.numeric_serial(), 0x5678);
         assert!(parsed.has_serial_evidence());
+        assert_eq!(parsed.monitor_name(), Some("Aurea Monitor"));
     }
 
     #[test]
