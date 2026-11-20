@@ -88,9 +88,9 @@ impl VulkanImageTransition {
     /// the DMA-BUF. Submit this barrier on the graphics queue and signal the
     /// sync-file fence that is attached to the KMS plane as IN_FENCE_FD.
     ///
-    /// The caller must not submit this operation unless the image was created
-    /// with exportable DMA-BUF memory and the device enabled
-    /// VK_EXT_queue_family_foreign.
+    /// The caller must use an exportable DMA-BUF image. When the selected
+    /// Vulkan device matches the DRM node, EXTERNAL ownership is sufficient.
+    /// FOREIGN is selected only when the device exposes that extension.
     pub fn record_release_to_foreign(
         device: &VulkanLogicalDevice,
         command_buffer: vk::CommandBuffer,
@@ -109,7 +109,7 @@ impl VulkanImageTransition {
             .old_layout(old_state.layout())
             .new_layout(vk::ImageLayout::GENERAL)
             .src_queue_family_index(device.graphics_queue_family())
-            .dst_queue_family_index(vk::QUEUE_FAMILY_FOREIGN_EXT)
+            .dst_queue_family_index(Self::external_consumer_queue_family(device))
             .image(image)
             .subresource_range(Self::color_subresource_range())];
 
@@ -122,7 +122,7 @@ impl VulkanImageTransition {
         Ok(())
     }
 
-    /// Acquires a DMA-BUF-backed image back from KMS/foreign ownership.
+    /// Acquires a DMA-BUF-backed image back from KMS/external ownership.
     ///
     /// Call only after the KMS page-flip/release event confirms that no active
     /// plane references the image. The image is expected to be in GENERAL
@@ -144,7 +144,7 @@ impl VulkanImageTransition {
             .dst_access_mask(new_state.access())
             .old_layout(vk::ImageLayout::GENERAL)
             .new_layout(new_state.layout())
-            .src_queue_family_index(vk::QUEUE_FAMILY_FOREIGN_EXT)
+            .src_queue_family_index(Self::external_consumer_queue_family(device))
             .dst_queue_family_index(device.graphics_queue_family())
             .image(image)
             .subresource_range(Self::color_subresource_range())];
@@ -156,6 +156,18 @@ impl VulkanImageTransition {
                 .cmd_pipeline_barrier2(command_buffer, &dependency);
         }
         Ok(())
+    }
+
+    /// Chooses the narrowest valid external ownership domain.
+    /// The DRM device is matched to this Vulkan physical device, so EXTERNAL
+    /// covers the same-device/same-driver KMS consumer. FOREIGN remains
+    /// available for drivers that expose the broader extension.
+    fn external_consumer_queue_family(device: &VulkanLogicalDevice) -> u32 {
+        if device.supports_foreign_queue_family() {
+            vk::QUEUE_FAMILY_FOREIGN_EXT
+        } else {
+            vk::QUEUE_FAMILY_EXTERNAL
+        }
     }
 
     fn color_subresource_range() -> vk::ImageSubresourceRange {
