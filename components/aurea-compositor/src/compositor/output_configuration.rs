@@ -12,7 +12,6 @@ use smithay::reexports::wayland_server::DisplayHandle;
 use crate::output::{
     OutputId,
     manager::{OutputConfiguration, OutputManagerError, OutputReconciliation},
-    wayland::OutputPublicationError,
 };
 
 use super::{AureaCompositor, OutputReconciliationError};
