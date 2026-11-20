@@ -39,6 +39,8 @@ for previous_info in "$RUNS_DIR"/*/run-info.txt; do
     previous_id="${previous_dir##*/}"
     if ! grep -q '^finished_at=' "$previous_info" && ! grep -q '^recovered_at=' "$previous_info"; then
         printf '\nRecovering interrupted diagnostic session: %s\n' "$previous_id"
+        printf 'recovered_at=%s\n' "$(date --iso-8601=seconds)" >> "$previous_info"
+        printf 'recovered_epoch=%s\n' "$(date +%s)" >> "$previous_info"
         if [[ -x "$COLLECTOR" ]]; then
             bash "$COLLECTOR" "$previous_id" || printf 'WARNING: recovery was incomplete for %s.\n' "$previous_id" >&2
         elif [[ -f "$COLLECTOR" ]]; then
@@ -46,7 +48,6 @@ for previous_info in "$RUNS_DIR"/*/run-info.txt; do
         else
             printf 'WARNING: diagnostic collector is missing: %s\n' "$COLLECTOR" >&2
         fi
-        printf 'recovery_attempted_at=%s\n' "$(date --iso-8601=seconds)" >> "$previous_info"
     fi
 done
 shopt -u nullglob
