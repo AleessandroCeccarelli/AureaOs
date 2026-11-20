@@ -129,6 +129,14 @@ impl VulkanFrameResourceRegistry {
         Ok(self.resource(id)?.is_gpu_complete())
     }
 
+    /// Returns whether the resource has been released to the foreign queue family.
+    pub fn is_foreign_owned(
+        &self,
+        id: VulkanFrameResourceId,
+    ) -> Result<bool, VulkanFrameResourceRegistryError> {
+        Ok(self.resource(id)?.is_foreign_owned())
+    }
+
     /// Begins rendering into a registered resource.
     pub fn begin_render(
         &mut self,
