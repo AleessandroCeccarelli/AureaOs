@@ -36,7 +36,6 @@ pub(crate) enum VulkanSurfaceCompositionError {
     Texture(String),
     Descriptor(String),
     Command(String),
-    UnsupportedTransform,
     InvalidSurfaceGeometry,
     TooManySurfaces,
     FrameMemoryLimitExceeded,
@@ -49,7 +48,6 @@ impl fmt::Display for VulkanSurfaceCompositionError {
             Self::Texture(error) => write!(formatter, "Wayland SHM texture upload failed: {error}"),
             Self::Descriptor(error) => write!(formatter, "Surface texture descriptor creation failed: {error}"),
             Self::Command(error) => write!(formatter, "Surface composition command failed: {error}"),
-            Self::UnsupportedTransform => formatter.write_str("Non-normal Wayland buffer transforms are not supported by the initial SHM compositor"),
             Self::InvalidSurfaceGeometry => formatter.write_str("A visible Wayland surface has invalid physical geometry"),
             Self::TooManySurfaces => formatter.write_str("The frame exceeds the configured visible-surface limit"),
             Self::FrameMemoryLimitExceeded => formatter.write_str("The frame exceeds the configured aggregate SHM texture memory limit"),
@@ -65,6 +63,7 @@ struct VisibleSurface {
     snapshot: Arc<ShmBufferSnapshot>,
     geometry: crate::render::geometry::SurfaceGeometry,
     scissor: crate::render::geometry::SurfaceScissor,
+    texture_transform: u32,
 }
 
 /// Records and submits one complete SHM-composited frame, releasing the
@@ -284,6 +283,7 @@ pub(crate) fn render_and_release(
             VulkanColorLoad::Load,
             viewport,
             scissor,
+            surface.texture_transform,
         )
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
@@ -321,6 +321,7 @@ pub(crate) fn render_and_release(
             VulkanColorLoad::Load,
             viewport,
             scissor,
+            0,
         )
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
@@ -489,10 +490,6 @@ fn visible_surfaces(
             continue;
         };
 
-        if snapshot.buffer_transform != Transform::Normal {
-            return Err(VulkanSurfaceCompositionError::UnsupportedTransform);
-        }
-
         if visible.len() >= MAX_COMPOSITED_SURFACES {
             return Err(VulkanSurfaceCompositionError::TooManySurfaces);
         }
@@ -509,6 +506,17 @@ fn visible_surfaces(
             snapshot: Arc::clone(&snapshot.snapshot),
             geometry,
             scissor,
+            texture_transform: match snapshot.buffer_transform {
+                Transform::Normal => 0,
+                Transform::_90 => 1,
+                Transform::_180 => 2,
+                Transform::_270 => 3,
+                Transform::Flipped => 4,
+                Transform::Flipped90 => 5,
+                Transform::Flipped180 => 6,
+                Transform::Flipped270 => 7,
+                _ => return Err(VulkanSurfaceCompositionError::InvalidSurfaceGeometry),
+            },
         });
     }
 
