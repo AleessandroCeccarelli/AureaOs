@@ -5,6 +5,8 @@
 
 //! Logical output publication and KMS-before-Wayland restoration ordering.
 
+use std::io;
+
 use smithay::backend::drm::DrmNode;
 
 use crate::{drm::outputs::reconcile_drm_outputs, output::OutputId};
