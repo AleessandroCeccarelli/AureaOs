@@ -102,5 +102,5 @@ case "$STATUS" in
 esac
 
 printf 'Diagnostic directory: %s\n' "$RUN_DIR"
-printf 'After reboot, run: tools/collect-previous-boot.sh %s\n' "$RUN_ID"
+printf 'After reboot, run: bash tools/collect-previous-boot.sh %s\n' "$RUN_ID"
 exit "$STATUS"
