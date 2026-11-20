@@ -85,6 +85,7 @@ impl Error for DrmDeviceError {}
 /// Owns a Smithay DRM device and its Calloop notifier.
 pub struct DrmDevice {
     device: SmithayDrmDevice,
+    device_path: PathBuf,
     notifier: Option<DrmDeviceNotifier>,
 }
 
@@ -128,6 +129,7 @@ impl DrmDevice {
 
         Ok(Self {
             device,
+            device_path: device_path.to_path_buf(),
             notifier: Some(notifier),
         })
     }
@@ -135,6 +137,14 @@ impl DrmDevice {
     /// Returns a reference to the underlying Smithay DRM device.
     pub fn device(&self) -> &SmithayDrmDevice {
         &self.device
+    }
+
+    /// Returns the device path supplied by Udev when this DRM device was opened.
+    ///
+    /// This path is useful for resolving the GPU's sysfs identity. It is not
+    /// itself a persistent hardware identifier because `/dev/dri/cardN` may change.
+    pub fn device_path(&self) -> &Path {
+        &self.device_path
     }
 
     /// Returns Smithay's canonical identity for this opened DRM device.
