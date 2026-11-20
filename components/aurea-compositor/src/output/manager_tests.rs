@@ -5,6 +5,7 @@
 
 use super::*;
 use crate::output::coordinates::{LogicalPoint, LogicalSize};
+use crate::output::OutputMode;
 
 #[test]
 fn logical_bounds_follow_position_and_integer_scale() {
