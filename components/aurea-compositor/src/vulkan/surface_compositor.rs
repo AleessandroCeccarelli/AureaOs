@@ -15,7 +15,7 @@ use crate::{
     render::{
         RenderScene, cursor::scaled_cursor_origin, geometry::{
             scale_surface_geometry, scale_surface_geometry_with_fractional_scale,
-            surface_geometry, surface_geometry_with_fractional_scale,
+            surface_geometry, surface_geometry_with_fractional_scale, transform_surface_geometry,
         },
         shm_buffer::ShmBufferSnapshot, surface_tree::SurfaceTreeSnapshot,
     },
@@ -116,6 +116,12 @@ pub(crate) fn render_and_release(
                 target.scale(),
             )?
         };
+        let geometry = transform_surface_geometry(
+            geometry,
+            target.width(),
+            target.height(),
+            target.transform(),
+        )?;
         let scissor = geometry.scissor(target.width(), target.height())?;
         Some((geometry, scissor))
     });
@@ -520,6 +526,14 @@ fn visible_surfaces(
             }
             .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
         }
+
+        geometry = transform_surface_geometry(
+            geometry,
+            target.width(),
+            target.height(),
+            target.transform(),
+        )
+        .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
 
         let Some(scissor) = geometry.scissor(target.width(), target.height()) else {
             continue;
