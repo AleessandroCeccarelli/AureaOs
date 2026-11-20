@@ -23,11 +23,7 @@ impl DrmConnectorIdentity {
     /// device_path is the Udev path used to open /dev/dri/cardN.
     /// The connector name is the kernel interface name, e.g. DP-1 or
     /// DP-1-2 for an MST branch. Volatile cardN numbering is not retained.
-    pub fn resolve(
-        device_path: &Path,
-        connector_name: &str,
-        sysfs_root: &Path,
-    ) -> Option<Self> {
+    pub fn resolve(device_path: &Path, connector_name: &str, sysfs_root: &Path) -> Option<Self> {
         let card_name = device_path.file_name()?.to_str()?;
         if !is_card_name(card_name) || !is_valid_connector_name(connector_name) {
             return None;

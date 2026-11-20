@@ -210,12 +210,7 @@ impl VulkanDrawPass {
         if let Some((binding, set_index)) = texture {
             binding.bind(command_buffer, pipeline.layout(), set_index);
             let transform = texture_transform.unwrap_or(0).to_ne_bytes();
-            pipeline.push_constants(
-                command_buffer,
-                vk::ShaderStageFlags::VERTEX,
-                0,
-                &transform,
-            );
+            pipeline.push_constants(command_buffer, vk::ShaderStageFlags::VERTEX, 0, &transform);
         }
         if let Some((viewport, scissor)) = region {
             pipeline.set_viewport_and_scissor_region(command_buffer, viewport, scissor);

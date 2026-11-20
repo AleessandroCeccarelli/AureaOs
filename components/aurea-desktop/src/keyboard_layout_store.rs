@@ -26,10 +26,12 @@ impl KeyboardLayoutStore {
             _ => {
                 let home = std::env::var_os("HOME")
                     .filter(|value| !value.is_empty())
-                    .ok_or_else(|| io::Error::new(
-                        io::ErrorKind::NotFound,
-                        "neither XDG_CONFIG_HOME nor HOME is set",
-                    ))?;
+                    .ok_or_else(|| {
+                        io::Error::new(
+                            io::ErrorKind::NotFound,
+                            "neither XDG_CONFIG_HOME nor HOME is set",
+                        )
+                    })?;
                 PathBuf::from(home).join(".config")
             }
         };
@@ -48,18 +50,26 @@ impl KeyboardLayoutStore {
         };
 
         parse_layout(&content).map(Some).ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidData, "invalid keyboard layout configuration")
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "invalid keyboard layout configuration",
+            )
         })
     }
 
     /// Saves the selected layout using a same-directory atomic rename.
     pub fn save(&self, layout: &KeyboardLayoutId) -> io::Result<()> {
         let parent = self.path.parent().ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidInput, "keyboard config path has no parent")
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "keyboard config path has no parent",
+            )
         })?;
         fs::create_dir_all(parent)?;
 
-        let temporary = self.path.with_extension(format!("conf.{}.tmp", std::process::id()));
+        let temporary = self
+            .path
+            .with_extension(format!("conf.{}.tmp", std::process::id()));
         let mut options = OpenOptions::new();
         options.write(true).create_new(true);
 

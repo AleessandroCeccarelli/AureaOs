@@ -157,11 +157,7 @@ impl HardwareMonitorCoordinator {
     /// Updates the lifecycle state of a known device.
     ///
     /// Returns false when the identifier is unknown or the state is unchanged.
-    pub fn set_device_state(
-        &mut self,
-        id: &HardwareDeviceId,
-        state: HardwareDeviceState,
-    ) -> bool {
+    pub fn set_device_state(&mut self, id: &HardwareDeviceId, state: HardwareDeviceState) -> bool {
         let Some(record) = self.devices.get_mut(id) else {
             return false;
         };
@@ -262,15 +258,15 @@ mod tests {
         let mut coordinator = HardwareMonitorCoordinator::new();
         let id = HardwareDeviceId::new("usb:keyboard-1").unwrap();
 
-        coordinator.upsert_device(keyboard(
-            "usb:keyboard-1",
-            HardwareDeviceState::Ready,
-        ));
+        coordinator.upsert_device(keyboard("usb:keyboard-1", HardwareDeviceState::Ready));
         assert!(coordinator.disconnect_device(&id));
 
         let snapshot = coordinator.snapshot();
         assert_eq!(snapshot.devices.len(), 1);
-        assert_eq!(snapshot.devices[0].connection, HardwareConnectionState::Disconnected);
+        assert_eq!(
+            snapshot.devices[0].connection,
+            HardwareConnectionState::Disconnected
+        );
         assert!(coordinator.connected_devices().is_empty());
         assert!(!coordinator.is_device_connected(&id));
 
@@ -327,7 +323,12 @@ mod tests {
         let mut coordinator = HardwareMonitorCoordinator::new();
         assert!(!coordinator.register_module(HardwareMonitorModule::Mouse));
         assert!(coordinator.unregister_module(HardwareMonitorModule::Mouse));
-        assert!(!coordinator.snapshot().modules.contains(&HardwareMonitorModule::Mouse));
+        assert!(
+            !coordinator
+                .snapshot()
+                .modules
+                .contains(&HardwareMonitorModule::Mouse)
+        );
         assert!(coordinator.register_module(HardwareMonitorModule::Mouse));
     }
 

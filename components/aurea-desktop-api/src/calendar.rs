@@ -117,10 +117,7 @@ impl CalendarRange {
 /// Read-only calendar access. The IPC layer must authorize each application
 /// before forwarding a query; a provider is not an authorization boundary.
 pub trait CalendarProvider: Send + Sync {
-    fn events_in_range(
-        &self,
-        range: CalendarRange,
-    ) -> Result<Vec<CalendarEvent>, CalendarError>;
+    fn events_in_range(&self, range: CalendarRange) -> Result<Vec<CalendarEvent>, CalendarError>;
 }
 
 /// Calendar provider failure.

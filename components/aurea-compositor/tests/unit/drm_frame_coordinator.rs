@@ -15,7 +15,9 @@ fn fb(id: u64) -> DrmFramebufferId {
 fn submit_for_render(coordinator: &mut DrmOutputFrameCoordinator, framebuffer: DrmFramebufferId) {
     coordinator.begin_render(framebuffer).unwrap();
     coordinator.mark_submitted(framebuffer).unwrap();
-    coordinator.mark_foreign_release_submitted(framebuffer).unwrap();
+    coordinator
+        .mark_foreign_release_submitted(framebuffer)
+        .unwrap();
 }
 
 fn commit_frame(

@@ -60,7 +60,9 @@ impl CompositorFactory for WaylandCompositorFactory {
             WaylandServer::new_with_primary_drm(&self.socket_name, &self.seat, display_color)?;
         if let Some(layout) = self.keyboard_layout.as_ref() {
             if let Err(error) = server.set_keyboard_layout(layout) {
-                eprintln!("AureaOS: saved keyboard layout could not be applied; keeping the default XKB layout: {error}");
+                eprintln!(
+                    "AureaOS: saved keyboard layout could not be applied; keeping the default XKB layout: {error}"
+                );
             }
         }
 

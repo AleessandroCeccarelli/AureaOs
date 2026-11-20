@@ -77,16 +77,12 @@ impl SurfaceGeometry {
     }
 }
 
-
 /// Maps surface-local normalized coordinates to buffer texture coordinates.
 ///
 /// Wayland defines the buffer transform as a transform already applied by
 /// the client. Sampling therefore applies its inverse. Coordinates use a
 /// top-left origin and are normalized to the inclusive [0, 1] range.
-pub fn buffer_uv_from_surface_uv(
-    transform: Transform,
-    uv: (f32, f32),
-) -> Option<(f32, f32)> {
+pub fn buffer_uv_from_surface_uv(transform: Transform, uv: (f32, f32)) -> Option<(f32, f32)> {
     let (u, v) = uv;
     if !u.is_finite() || !v.is_finite() {
         return None;
@@ -163,14 +159,24 @@ pub fn transform_surface_geometry(
 
     let (x, y, width, height) = match transform {
         Transform::Normal => (x, y, width, height),
-        Transform::_90 => (output_height.checked_sub(y.checked_add(height)?)?, x, height, width),
+        Transform::_90 => (
+            output_height.checked_sub(y.checked_add(height)?)?,
+            x,
+            height,
+            width,
+        ),
         Transform::_180 => (
             output_width.checked_sub(x.checked_add(width)?)?,
             output_height.checked_sub(y.checked_add(height)?)?,
             width,
             height,
         ),
-        Transform::_270 => (y, output_width.checked_sub(x.checked_add(width)?)?, height, width),
+        Transform::_270 => (
+            y,
+            output_width.checked_sub(x.checked_add(width)?)?,
+            height,
+            width,
+        ),
         Transform::Flipped => (
             output_width.checked_sub(x.checked_add(width)?)?,
             y,
@@ -413,8 +419,14 @@ fn surface_geometry_with_ratio(
 
     let relative_x = i128::from(location.0).checked_sub(i128::from(output_origin.0))?;
     let relative_y = i128::from(location.1).checked_sub(i128::from(output_origin.1))?;
-    let x = round_ratio(relative_x.checked_mul(i128::from(scale_numerator))?, scale_denominator)?;
-    let y = round_ratio(relative_y.checked_mul(i128::from(scale_numerator))?, scale_denominator)?;
+    let x = round_ratio(
+        relative_x.checked_mul(i128::from(scale_numerator))?,
+        scale_denominator,
+    )?;
+    let y = round_ratio(
+        relative_y.checked_mul(i128::from(scale_numerator))?,
+        scale_denominator,
+    )?;
 
     Some(SurfaceGeometry {
         x: i64::try_from(x).ok()?,
@@ -448,9 +460,13 @@ fn round_ratio(value: i128, denominator: u64) -> Option<i128> {
     let denominator = i128::from(denominator);
     let half = denominator / 2;
     if value >= 0 {
-        value.checked_add(half).map(|adjusted| adjusted / denominator)
+        value
+            .checked_add(half)
+            .map(|adjusted| adjusted / denominator)
     } else {
-        value.checked_sub(half).map(|adjusted| adjusted / denominator)
+        value
+            .checked_sub(half)
+            .map(|adjusted| adjusted / denominator)
     }
 }
 

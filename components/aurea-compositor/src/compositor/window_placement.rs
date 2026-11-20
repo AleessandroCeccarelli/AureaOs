@@ -20,10 +20,7 @@ use super::AureaCompositor;
 /// Later windows keep their compositor-assigned position until a full
 /// placement and tiling policy is introduced. Buffer scale and transform are
 /// respected so the calculation uses logical, not physical, dimensions.
-pub(crate) fn center_first_mapped_window(
-    compositor: &mut AureaCompositor,
-    surface: &WlSurface,
-) {
+pub(crate) fn center_first_mapped_window(compositor: &mut AureaCompositor, surface: &WlSurface) {
     let Some(first_mapped_surface) = compositor
         .window_manager
         .mapped_toplevels()

@@ -40,15 +40,24 @@ impl LumenSchedule {
         if start_minute == end_minute {
             return Err(LumenScheduleError::EmptyInterval);
         }
-        Ok(Self { start_minute, end_minute })
+        Ok(Self {
+            start_minute,
+            end_minute,
+        })
     }
 
-    pub const fn start_minute(self) -> u16 { self.start_minute }
-    pub const fn end_minute(self) -> u16 { self.end_minute }
+    pub const fn start_minute(self) -> u16 {
+        self.start_minute
+    }
+    pub const fn end_minute(self) -> u16 {
+        self.end_minute
+    }
 
     /// Start is inclusive and end exclusive; intervals may cross midnight.
     pub const fn is_active_at(self, minute_of_day: u16) -> bool {
-        if minute_of_day >= 1_440 { return false; }
+        if minute_of_day >= 1_440 {
+            return false;
+        }
         if self.start_minute < self.end_minute {
             minute_of_day >= self.start_minute && minute_of_day < self.end_minute
         } else {
@@ -72,12 +81,21 @@ pub struct AmbientLightThresholds {
 
 impl AmbientLightThresholds {
     pub const fn new(darker_than_lux: u32, brighter_than_lux: u32) -> Option<Self> {
-        if brighter_than_lux <= darker_than_lux { return None; }
-        Some(Self { darker_than_lux, brighter_than_lux })
+        if brighter_than_lux <= darker_than_lux {
+            return None;
+        }
+        Some(Self {
+            darker_than_lux,
+            brighter_than_lux,
+        })
     }
 
-    pub const fn darker_than_lux(self) -> u32 { self.darker_than_lux }
-    pub const fn brighter_than_lux(self) -> u32 { self.brighter_than_lux }
+    pub const fn darker_than_lux(self) -> u32 {
+        self.darker_than_lux
+    }
+    pub const fn brighter_than_lux(self) -> u32 {
+        self.brighter_than_lux
+    }
 }
 
 /// User preferences for Aurea Lumen.
@@ -97,7 +115,10 @@ impl Default for LumenPreferences {
             enabled: false,
             mode: LumenMode::Automatic,
             warmth_percent: 50,
-            schedule: LumenSchedule { start_minute: 1_200, end_minute: 360 },
+            schedule: LumenSchedule {
+                start_minute: 1_200,
+                end_minute: 360,
+            },
             ambient_thresholds: AmbientLightThresholds {
                 darker_than_lux: 80,
                 brighter_than_lux: 160,
@@ -107,25 +128,41 @@ impl Default for LumenPreferences {
 }
 
 impl LumenPreferences {
-    pub const fn is_enabled(self) -> bool { self.enabled }
+    pub const fn is_enabled(self) -> bool {
+        self.enabled
+    }
 
-    pub fn set_enabled(&mut self, enabled: bool) { self.enabled = enabled; }
+    pub fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
 
-    pub const fn mode(self) -> LumenMode { self.mode }
+    pub const fn mode(self) -> LumenMode {
+        self.mode
+    }
 
-    pub fn set_mode(&mut self, mode: LumenMode) { self.mode = mode; }
+    pub fn set_mode(&mut self, mode: LumenMode) {
+        self.mode = mode;
+    }
 
-    pub const fn warmth_percent(self) -> u8 { self.warmth_percent }
+    pub const fn warmth_percent(self) -> u8 {
+        self.warmth_percent
+    }
 
     pub fn set_warmth_percent(&mut self, value: u8) {
         self.warmth_percent = if value > 100 { 100 } else { value };
     }
 
-    pub const fn schedule(self) -> LumenSchedule { self.schedule }
+    pub const fn schedule(self) -> LumenSchedule {
+        self.schedule
+    }
 
-    pub fn set_schedule(&mut self, schedule: LumenSchedule) { self.schedule = schedule; }
+    pub fn set_schedule(&mut self, schedule: LumenSchedule) {
+        self.schedule = schedule;
+    }
 
-    pub const fn ambient_thresholds(self) -> AmbientLightThresholds { self.ambient_thresholds }
+    pub const fn ambient_thresholds(self) -> AmbientLightThresholds {
+        self.ambient_thresholds
+    }
 
     pub fn set_ambient_thresholds(&mut self, thresholds: AmbientLightThresholds) {
         self.ambient_thresholds = thresholds;
@@ -134,7 +171,9 @@ impl LumenPreferences {
 
 #[cfg(test)]
 mod tests {
-    use super::{AmbientLightThresholds, LumenMode, LumenSchedule, LumenScheduleError, LumenPreferences};
+    use super::{
+        AmbientLightThresholds, LumenMode, LumenPreferences, LumenSchedule, LumenScheduleError,
+    };
 
     #[test]
     fn automatic_is_the_default_mode_and_lumen_starts_disabled() {
@@ -154,8 +193,14 @@ mod tests {
 
     #[test]
     fn schedule_rejects_invalid_and_empty_intervals() {
-        assert_eq!(LumenSchedule::new(1_440, 60), Err(LumenScheduleError::TimeOutOfRange));
-        assert_eq!(LumenSchedule::new(600, 600), Err(LumenScheduleError::EmptyInterval));
+        assert_eq!(
+            LumenSchedule::new(1_440, 60),
+            Err(LumenScheduleError::TimeOutOfRange)
+        );
+        assert_eq!(
+            LumenSchedule::new(600, 600),
+            Err(LumenScheduleError::EmptyInterval)
+        );
     }
 
     #[test]

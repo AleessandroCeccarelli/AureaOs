@@ -221,7 +221,9 @@ impl DrmOutputFrameCoordinator {
             return Err(DrmOutputFrameError::ResourceAlreadyResolved(framebuffer));
         }
         if !self.resources.is_foreign_owned(resource)? {
-            return Err(DrmOutputFrameError::ForeignOwnershipNotReleased(framebuffer));
+            return Err(DrmOutputFrameError::ForeignOwnershipNotReleased(
+                framebuffer,
+            ));
         }
         if !sync_file_attached && !self.resources.is_gpu_complete(resource)? {
             return Err(DrmOutputFrameError::GpuWorkIncomplete(framebuffer));
@@ -248,7 +250,9 @@ impl DrmOutputFrameCoordinator {
             return Err(DrmOutputFrameError::ResourceAlreadyResolved(framebuffer));
         }
         if !self.resources.is_foreign_owned(resource)? {
-            return Err(DrmOutputFrameError::ForeignOwnershipNotReleased(framebuffer));
+            return Err(DrmOutputFrameError::ForeignOwnershipNotReleased(
+                framebuffer,
+            ));
         }
         if !sync_file_attached && !self.resources.is_gpu_complete(resource)? {
             return Err(DrmOutputFrameError::GpuWorkIncomplete(framebuffer));

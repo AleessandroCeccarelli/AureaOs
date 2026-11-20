@@ -40,11 +40,7 @@ pub struct RgbMatrix {
 
 impl RgbMatrix {
     pub const IDENTITY: Self = Self {
-        values: [
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0],
-        ],
+        values: [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
     };
 
     fn is_finite(self) -> bool {
@@ -197,11 +193,7 @@ mod tests {
     fn rejects_singular_matrix() {
         let adjustment = ColorAdjustment {
             matrix: super::RgbMatrix {
-                values: [
-                    [1.0, 0.0, 0.0],
-                    [1.0, 0.0, 0.0],
-                    [0.0, 0.0, 1.0],
-                ],
+                values: [[1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]],
             },
             ..ColorAdjustment::NEUTRAL
         };

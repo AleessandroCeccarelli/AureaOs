@@ -30,9 +30,10 @@ impl EdidInfo {
         if bytes.len() != expected_blocks * 128 {
             return None;
         }
-        if bytes.chunks_exact(128).any(|block| {
-            block.iter().fold(0_u8, |sum, byte| sum.wrapping_add(*byte)) != 0
-        }) {
+        if bytes
+            .chunks_exact(128)
+            .any(|block| block.iter().fold(0_u8, |sum, byte| sum.wrapping_add(*byte)) != 0)
+        {
             return None;
         }
 
@@ -48,7 +49,11 @@ impl EdidInfo {
 
         let mut info = Self {
             raw: bytes.to_vec(),
-            manufacturer: [vendor[0] + b'A' - 1, vendor[1] + b'A' - 1, vendor[2] + b'A' - 1],
+            manufacturer: [
+                vendor[0] + b'A' - 1,
+                vendor[1] + b'A' - 1,
+                vendor[2] + b'A' - 1,
+            ],
             product_code: u16::from_le_bytes([bytes[10], bytes[11]]),
             numeric_serial: u32::from_le_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]),
             monitor_name: None,
@@ -59,7 +64,9 @@ impl EdidInfo {
                 continue;
             }
             let value = String::from_utf8_lossy(&descriptor[5..18])
-                .trim_matches(|character: char| character == '\0' || character.is_ascii_whitespace())
+                .trim_matches(|character: char| {
+                    character == '\0' || character.is_ascii_whitespace()
+                })
                 .to_owned();
             if value.is_empty() {
                 continue;
@@ -74,12 +81,24 @@ impl EdidInfo {
     }
 
     /// Returns the exact validated EDID bytes for domain-level fingerprinting.
-    pub fn raw(&self) -> &[u8] { &self.raw }
-    pub fn manufacturer(&self) -> [u8; 3] { self.manufacturer }
-    pub fn product_code(&self) -> u16 { self.product_code }
-    pub fn numeric_serial(&self) -> u32 { self.numeric_serial }
-    pub fn monitor_name(&self) -> Option<&str> { self.monitor_name.as_deref() }
-    pub fn serial_number(&self) -> Option<&str> { self.serial_number.as_deref() }
+    pub fn raw(&self) -> &[u8] {
+        &self.raw
+    }
+    pub fn manufacturer(&self) -> [u8; 3] {
+        self.manufacturer
+    }
+    pub fn product_code(&self) -> u16 {
+        self.product_code
+    }
+    pub fn numeric_serial(&self) -> u32 {
+        self.numeric_serial
+    }
+    pub fn monitor_name(&self) -> Option<&str> {
+        self.monitor_name.as_deref()
+    }
+    pub fn serial_number(&self) -> Option<&str> {
+        self.serial_number.as_deref()
+    }
 
     /// A serial is useful evidence, but never sufficient by itself to identify
     /// a physical monitor or authorize automatic profile assignment.
@@ -102,7 +121,9 @@ mod tests {
         bytes[12..16].copy_from_slice(&0x5678_u32.to_le_bytes());
         bytes[54..59].copy_from_slice(&[0, 0, 0, 0xfc, 0]);
         bytes[59..72].copy_from_slice(b"Aurea Monitor");
-        let checksum = bytes[..127].iter().fold(0_u8, |sum, byte| sum.wrapping_add(*byte));
+        let checksum = bytes[..127]
+            .iter()
+            .fold(0_u8, |sum, byte| sum.wrapping_add(*byte));
         bytes[127] = 0_u8.wrapping_sub(checksum);
         bytes
     }
@@ -138,7 +159,9 @@ mod tests {
     fn does_not_treat_missing_serial_as_unique_identity() {
         let mut bytes = sample_edid();
         bytes[12..16].fill(0);
-        let checksum = bytes[..127].iter().fold(0_u8, |sum, byte| sum.wrapping_add(*byte));
+        let checksum = bytes[..127]
+            .iter()
+            .fold(0_u8, |sum, byte| sum.wrapping_add(*byte));
         bytes[127] = 0_u8.wrapping_sub(checksum);
         assert!(!EdidInfo::parse(&bytes).unwrap().has_serial_evidence());
     }

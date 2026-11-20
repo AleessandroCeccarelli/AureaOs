@@ -73,10 +73,7 @@ pub(super) fn drm_device_id_for_output(output_id: OutputId) -> u64 {
 ///
 /// Missing, malformed, or unreadable EDID is non-fatal: the output remains
 /// usable, but must not receive an automatically inferred persistent identity.
-fn read_connector_edid(
-    device: &DrmDevice,
-    connector: connector::Handle,
-) -> Option<EdidInfo> {
+fn read_connector_edid(device: &DrmDevice, connector: connector::Handle) -> Option<EdidInfo> {
     let properties = device.fd().get_properties(connector).ok()?;
 
     properties.iter().find_map(|(handle, raw_value)| {
@@ -85,10 +82,7 @@ fn read_connector_edid(
             return None;
         }
 
-        let blob_id = property
-            .value_type()
-            .convert_value(*raw_value)
-            .as_blob()?;
+        let blob_id = property.value_type().convert_value(*raw_value).as_blob()?;
         let bytes = device.fd().get_property_blob(blob_id).ok()?;
         EdidInfo::parse(&bytes)
     })

@@ -57,7 +57,9 @@ impl InputDeviceCapabilities {
                 values.push(capability);
             }
         }
-        Self { capabilities: values }
+        Self {
+            capabilities: values,
+        }
     }
 
     /// Returns true only for a capability discovered on this device.

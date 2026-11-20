@@ -31,19 +31,29 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
 
     for (node, output_id) in pending_outputs {
         let Some(device) = drm_devices.get(node) else {
-            return Err(io::Error::other(format!("AureaOS: DRM device {node} disappeared while output {output_id} had a pending frame")));
+            return Err(io::Error::other(format!(
+                "AureaOS: DRM device {node} disappeared while output {output_id} had a pending frame"
+            )));
         };
         if !gbm_devices.contains(node) {
-            return Err(io::Error::other(format!("AureaOS: GBM is unavailable for DRM device {node} while output {output_id} had a pending frame")));
+            return Err(io::Error::other(format!(
+                "AureaOS: GBM is unavailable for DRM device {node} while output {output_id} had a pending frame"
+            )));
         }
         let Some(vulkan) = vulkan_backends.get(&node) else {
-            return Err(io::Error::other(format!("AureaOS: Vulkan backend is unavailable for DRM device {node} while output {output_id} had a pending frame")));
+            return Err(io::Error::other(format!(
+                "AureaOS: Vulkan backend is unavailable for DRM device {node} while output {output_id} had a pending frame"
+            )));
         };
         let Some(surface_manager) = drm_surfaces.get_mut(&node) else {
-            return Err(io::Error::other(format!("AureaOS: DRM surface manager disappeared for output {output_id}")));
+            return Err(io::Error::other(format!(
+                "AureaOS: DRM surface manager disappeared for output {output_id}"
+            )));
         };
         let Some(output) = surface_manager.get_mut(output_id) else {
-            return Err(io::Error::other(format!("AureaOS: DRM surface disappeared for output {output_id}")));
+            return Err(io::Error::other(format!(
+                "AureaOS: DRM surface disappeared for output {output_id}"
+            )));
         };
         if output.presentation().pending().is_some() {
             continue;

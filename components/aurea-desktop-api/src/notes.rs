@@ -35,11 +35,7 @@ pub struct NoteSummary {
 }
 
 impl NoteSummary {
-    pub fn new(
-        id: NoteId,
-        title: impl Into<String>,
-        modified_unix_seconds: i64,
-    ) -> Self {
+    pub fn new(id: NoteId, title: impl Into<String>, modified_unix_seconds: i64) -> Self {
         Self {
             id,
             title: title.into(),
@@ -79,12 +75,7 @@ pub trait NotesProvider: Send + Sync {
     fn list_notes(&self) -> Result<Vec<NoteSummary>, NotesError>;
     fn read_note(&self, id: &NoteId) -> Result<String, NotesError>;
     fn create_note(&self, title: &str, content: &str) -> Result<NoteId, NotesError>;
-    fn update_note(
-        &self,
-        id: &NoteId,
-        title: &str,
-        content: &str,
-    ) -> Result<(), NotesError>;
+    fn update_note(&self, id: &NoteId, title: &str, content: &str) -> Result<(), NotesError>;
     fn delete_note(&self, id: &NoteId) -> Result<(), NotesError>;
 }
 

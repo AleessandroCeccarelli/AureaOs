@@ -50,9 +50,10 @@ impl TimeZoneId {
             if segment.is_empty() || segment == "." || segment == ".." {
                 return Err(TimeZoneIdError::InvalidSegment);
             }
-            if !segment.bytes().all(|byte| {
-                byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'+')
-            }) {
+            if !segment
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'-' | b'+'))
+            {
                 return Err(TimeZoneIdError::UnsupportedCharacter);
             }
         }
@@ -105,11 +106,7 @@ pub struct TimeZoneSnapshot {
 }
 
 impl TimeZoneSnapshot {
-    pub fn new(
-        zone: TimeZoneId,
-        offset: UtcOffset,
-        daylight_saving: Option<bool>,
-    ) -> Self {
+    pub fn new(zone: TimeZoneId, offset: UtcOffset, daylight_saving: Option<bool>) -> Self {
         Self {
             zone,
             offset,
@@ -148,7 +145,10 @@ impl UnixTime {
         if nanoseconds >= 1_000_000_000 {
             return None;
         }
-        Some(Self { seconds, nanoseconds })
+        Some(Self {
+            seconds,
+            nanoseconds,
+        })
     }
 
     pub const fn seconds(self) -> i64 {
@@ -279,9 +279,8 @@ impl ClockPreferences {
 #[cfg(test)]
 mod tests {
     use super::{
-        ClockFormat, ClockPreferences, DateFormat, TimeSyncPolicy, TimeSyncSource,
-        TimeSyncStatus, TimeZoneId, TimeZoneIdError, TimeZoneSnapshot, UnixTime, UtcOffset,
-        UtcOffsetError,
+        ClockFormat, ClockPreferences, DateFormat, TimeSyncPolicy, TimeSyncSource, TimeSyncStatus,
+        TimeZoneId, TimeZoneIdError, TimeZoneSnapshot, UnixTime, UtcOffset, UtcOffsetError,
     };
 
     #[test]
@@ -317,8 +316,14 @@ mod tests {
         assert_eq!(UtcOffset::from_seconds(0).unwrap().seconds(), 0);
         assert_eq!(UtcOffset::from_seconds(64_800).unwrap().seconds(), 64_800);
         assert_eq!(UtcOffset::from_seconds(-64_800).unwrap().seconds(), -64_800);
-        assert_eq!(UtcOffset::from_seconds(64_801), Err(UtcOffsetError::OutOfRange));
-        assert_eq!(UtcOffset::from_seconds(-64_801), Err(UtcOffsetError::OutOfRange));
+        assert_eq!(
+            UtcOffset::from_seconds(64_801),
+            Err(UtcOffsetError::OutOfRange)
+        );
+        assert_eq!(
+            UtcOffset::from_seconds(-64_801),
+            Err(UtcOffsetError::OutOfRange)
+        );
     }
 
     #[test]
@@ -358,7 +363,10 @@ mod tests {
         );
         assert_eq!(synced.status(), TimeSyncStatus::Synchronized);
         assert_eq!(synced.source(), TimeSyncSource::NetworkTimeProtocol);
-        assert_eq!(synced.last_successful_sync_unix_seconds(), Some(1_800_000_000));
+        assert_eq!(
+            synced.last_successful_sync_unix_seconds(),
+            Some(1_800_000_000)
+        );
     }
 
     #[test]
@@ -368,11 +376,7 @@ mod tests {
         assert_eq!(defaults.date_format(), DateFormat::DayMonthYear);
         assert!(!defaults.show_seconds());
 
-        let custom = ClockPreferences::new(
-            ClockFormat::TwelveHour,
-            DateFormat::YearMonthDay,
-            true,
-        );
+        let custom = ClockPreferences::new(ClockFormat::TwelveHour, DateFormat::YearMonthDay, true);
         assert!(custom.show_seconds());
     }
 }

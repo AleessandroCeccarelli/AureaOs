@@ -5,9 +5,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::{
-    ColorConfigurationError, ColorConfigurationId, ColorProfileConfiguration,
-};
+use crate::{ColorConfigurationError, ColorConfigurationId, ColorProfileConfiguration};
 
 /// Coordinates creation, replacement and removal of named color configurations.
 ///
@@ -75,8 +73,8 @@ impl ColorConfigurationManager {
 mod tests {
     use super::ColorConfigurationManager;
     use crate::{
-        ColorAdjustment, ColorConfigurationError, ColorConfigurationId,
-        ColorProfileConfiguration, fingerprint_profile,
+        ColorAdjustment, ColorConfigurationError, ColorConfigurationId, ColorProfileConfiguration,
+        fingerprint_profile,
     };
 
     fn profile_fingerprint() -> crate::IccProfileFingerprint {
@@ -122,7 +120,10 @@ mod tests {
             Err(ColorConfigurationError::DuplicateId)
         );
         assert_eq!(
-            manager.get(&ColorConfigurationId::new("work").unwrap()).unwrap().name(),
+            manager
+                .get(&ColorConfigurationId::new("work").unwrap())
+                .unwrap()
+                .name(),
             "Work"
         );
     }
@@ -133,7 +134,9 @@ mod tests {
         let id = ColorConfigurationId::new("work").unwrap();
         manager.create(configuration("work", "Work")).unwrap();
 
-        manager.update(&id, configuration("work", "Workroom")).unwrap();
+        manager
+            .update(&id, configuration("work", "Workroom"))
+            .unwrap();
         assert_eq!(manager.get(&id).unwrap().name(), "Workroom");
 
         assert_eq!(

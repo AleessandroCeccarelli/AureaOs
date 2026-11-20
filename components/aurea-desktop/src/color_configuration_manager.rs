@@ -10,14 +10,12 @@ use std::{
     sync::RwLock,
 };
 
-use crate::display_color_assignment_store::{
-    DisplayColorAssignmentStore, DisplayColorStoreError,
-};
+use crate::display_color_assignment_store::{DisplayColorAssignmentStore, DisplayColorStoreError};
 
 use aurea_desktop_api::display::{
     DisplayColorConfigurationAssignment, DisplayColorConfigurationError,
-    DisplayColorConfigurationId, DisplayColorConfigurationManager, DisplayDescriptor,
-    DisplayEvent, DisplayId,
+    DisplayColorConfigurationId, DisplayColorConfigurationManager, DisplayDescriptor, DisplayEvent,
+    DisplayId,
 };
 
 #[derive(Debug, Default)]
@@ -64,9 +62,9 @@ impl DesktopColorConfigurationManager {
         let assignments = assignments
             .into_iter()
             .filter_map(|assignment| {
-                assignment.configuration_id.map(|configuration_id| {
-                    (assignment.display_id, configuration_id)
-                })
+                assignment
+                    .configuration_id
+                    .map(|configuration_id| (assignment.display_id, configuration_id))
             })
             .collect();
 
@@ -90,10 +88,12 @@ impl DesktopColorConfigurationManager {
         let assignments = state
             .assignments
             .iter()
-            .map(|(display_id, configuration_id)| DisplayColorConfigurationAssignment {
-                display_id: *display_id,
-                configuration_id: Some(configuration_id.clone()),
-            })
+            .map(
+                |(display_id, configuration_id)| DisplayColorConfigurationAssignment {
+                    display_id: *display_id,
+                    configuration_id: Some(configuration_id.clone()),
+                },
+            )
             .collect::<Vec<_>>();
         store
             .save(&assignments)
@@ -101,7 +101,10 @@ impl DesktopColorConfigurationManager {
     }
 
     /// Announces a display discovered by the active display backend.
-    pub fn register_display(&self, display_id: DisplayId) -> Result<(), DisplayColorConfigurationError> {
+    pub fn register_display(
+        &self,
+        display_id: DisplayId,
+    ) -> Result<(), DisplayColorConfigurationError> {
         self.state
             .write()
             .map_err(|_| DisplayColorConfigurationError::AssignmentRejected)?
@@ -111,7 +114,10 @@ impl DesktopColorConfigurationManager {
     }
 
     /// Marks a display disconnected without discarding its saved assignment.
-    pub fn unregister_display(&self, display_id: DisplayId) -> Result<(), DisplayColorConfigurationError> {
+    pub fn unregister_display(
+        &self,
+        display_id: DisplayId,
+    ) -> Result<(), DisplayColorConfigurationError> {
         self.state
             .write()
             .map_err(|_| DisplayColorConfigurationError::AssignmentRejected)?
@@ -137,7 +143,7 @@ impl DesktopColorConfigurationManager {
                 self.unregister_display(descriptor.id)
             }
             DisplayEvent::Disconnected(display_id) => self.unregister_display(*display_id),
-            DisplayEvent::CapabilitiesChanged(_) 
+            DisplayEvent::CapabilitiesChanged(_)
             | DisplayEvent::ConfigurationChanged
             | DisplayEvent::PrimaryDisplayChanged(_) => Ok(()),
             DisplayEvent::Connected(_) => Ok(()),
@@ -219,7 +225,9 @@ impl DisplayColorConfigurationManager for DesktopColorConfigurationManager {
         let previous = state.assignments.get(&assignment.display_id).cloned();
         match assignment.configuration_id {
             Some(configuration_id) => {
-                state.assignments.insert(assignment.display_id, configuration_id);
+                state
+                    .assignments
+                    .insert(assignment.display_id, configuration_id);
             }
             None => {
                 state.assignments.remove(&assignment.display_id);
@@ -229,7 +237,9 @@ impl DisplayColorConfigurationManager for DesktopColorConfigurationManager {
         if self.persist_assignments(&state).is_err() {
             match previous {
                 Some(configuration_id) => {
-                    state.assignments.insert(assignment.display_id, configuration_id);
+                    state
+                        .assignments
+                        .insert(assignment.display_id, configuration_id);
                 }
                 None => {
                     state.assignments.remove(&assignment.display_id);
@@ -264,10 +274,12 @@ impl DisplayColorConfigurationManager for DesktopColorConfigurationManager {
         state
             .assignments
             .iter()
-            .map(|(display_id, configuration_id)| DisplayColorConfigurationAssignment {
-                display_id: *display_id,
-                configuration_id: Some(configuration_id.clone()),
-            })
+            .map(
+                |(display_id, configuration_id)| DisplayColorConfigurationAssignment {
+                    display_id: *display_id,
+                    configuration_id: Some(configuration_id.clone()),
+                },
+            )
             .collect()
     }
 }
@@ -287,11 +299,13 @@ mod tests {
 
     #[test]
     fn persistent_assignments_survive_manager_recreation() {
-        let path = std::env::temp_dir().join(format!(
-            "aurea-color-manager-{}-{}",
-            std::process::id(),
-            configuration("persisted").as_str()
-        )).join("assignments");
+        let path = std::env::temp_dir()
+            .join(format!(
+                "aurea-color-manager-{}-{}",
+                std::process::id(),
+                configuration("persisted").as_str()
+            ))
+            .join("assignments");
         let store = DisplayColorAssignmentStore::open(&path).unwrap();
         let output = display(55);
         let profile = configuration("persisted");
@@ -300,19 +314,25 @@ mod tests {
             let manager = DesktopColorConfigurationManager::open_persistent(store.clone()).unwrap();
             manager.register_display(output).unwrap();
             manager.register_configuration(profile.clone()).unwrap();
-            manager.assign(DisplayColorConfigurationAssignment {
-                display_id: output,
-                configuration_id: Some(profile.clone()),
-            }).unwrap();
+            manager
+                .assign(DisplayColorConfigurationAssignment {
+                    display_id: output,
+                    configuration_id: Some(profile.clone()),
+                })
+                .unwrap();
         }
 
         let restored = DesktopColorConfigurationManager::open_persistent(store).unwrap();
         assert_eq!(restored.assignments()[0].configuration_id, Some(profile));
         restored.register_display(output).unwrap();
-        assert!(restored.assign(DisplayColorConfigurationAssignment {
-            display_id: output,
-            configuration_id: Some(configuration("persisted")),
-        }).is_ok());
+        assert!(
+            restored
+                .assign(DisplayColorConfigurationAssignment {
+                    display_id: output,
+                    configuration_id: Some(configuration("persisted")),
+                })
+                .is_ok()
+        );
 
         std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
     }
@@ -332,13 +352,21 @@ mod tests {
             capabilities: Default::default(),
         };
 
-        manager.handle_display_event(&DisplayEvent::Connected(descriptor.clone())).unwrap();
-        assert!(manager.assign(DisplayColorConfigurationAssignment {
-            display_id: descriptor.id,
-            configuration_id: None,
-        }).is_ok());
+        manager
+            .handle_display_event(&DisplayEvent::Connected(descriptor.clone()))
+            .unwrap();
+        assert!(
+            manager
+                .assign(DisplayColorConfigurationAssignment {
+                    display_id: descriptor.id,
+                    configuration_id: None,
+                })
+                .is_ok()
+        );
 
-        manager.handle_display_event(&DisplayEvent::Disconnected(descriptor.id)).unwrap();
+        manager
+            .handle_display_event(&DisplayEvent::Disconnected(descriptor.id))
+            .unwrap();
         assert_eq!(
             manager.assign(DisplayColorConfigurationAssignment {
                 display_id: descriptor.id,
@@ -357,10 +385,12 @@ mod tests {
         let profile = configuration("calibrated");
         manager.register_configuration(profile.clone()).unwrap();
         manager.register_display(output).unwrap();
-        manager.assign(DisplayColorConfigurationAssignment {
-            display_id: output,
-            configuration_id: Some(profile.clone()),
-        }).unwrap();
+        manager
+            .assign(DisplayColorConfigurationAssignment {
+                display_id: output,
+                configuration_id: Some(profile.clone()),
+            })
+            .unwrap();
 
         let snapshot = [DisplayDescriptor {
             id: display(22),
@@ -396,23 +426,35 @@ mod tests {
         manager.register_configuration(warm.clone()).unwrap();
         manager.register_configuration(neutral.clone()).unwrap();
 
-        manager.assign(DisplayColorConfigurationAssignment {
-            display_id: first,
-            configuration_id: Some(warm.clone()),
-        }).unwrap();
-        manager.assign(DisplayColorConfigurationAssignment {
-            display_id: second,
-            configuration_id: Some(neutral.clone()),
-        }).unwrap();
+        manager
+            .assign(DisplayColorConfigurationAssignment {
+                display_id: first,
+                configuration_id: Some(warm.clone()),
+            })
+            .unwrap();
+        manager
+            .assign(DisplayColorConfigurationAssignment {
+                display_id: second,
+                configuration_id: Some(neutral.clone()),
+            })
+            .unwrap();
 
         let assignments = manager.assignments();
         assert_eq!(assignments.len(), 2);
         assert_eq!(
-            assignments.iter().find(|item| item.display_id == first).unwrap().configuration_id,
+            assignments
+                .iter()
+                .find(|item| item.display_id == first)
+                .unwrap()
+                .configuration_id,
             Some(warm)
         );
         assert_eq!(
-            assignments.iter().find(|item| item.display_id == second).unwrap().configuration_id,
+            assignments
+                .iter()
+                .find(|item| item.display_id == second)
+                .unwrap()
+                .configuration_id,
             Some(neutral)
         );
     }
@@ -424,10 +466,12 @@ mod tests {
         let profile = configuration("photo");
         manager.register_display(output).unwrap();
         manager.register_configuration(profile.clone()).unwrap();
-        manager.assign(DisplayColorConfigurationAssignment {
-            display_id: output,
-            configuration_id: Some(profile.clone()),
-        }).unwrap();
+        manager
+            .assign(DisplayColorConfigurationAssignment {
+                display_id: output,
+                configuration_id: Some(profile.clone()),
+            })
+            .unwrap();
 
         manager.unregister_display(output).unwrap();
         assert_eq!(
@@ -472,10 +516,12 @@ mod tests {
         let profile = configuration("studio");
         manager.register_display(output).unwrap();
         manager.register_configuration(profile.clone()).unwrap();
-        manager.assign(DisplayColorConfigurationAssignment {
-            display_id: output,
-            configuration_id: Some(profile.clone()),
-        }).unwrap();
+        manager
+            .assign(DisplayColorConfigurationAssignment {
+                display_id: output,
+                configuration_id: Some(profile.clone()),
+            })
+            .unwrap();
 
         assert_eq!(manager.unregister_configuration(&profile), Ok(false));
         manager.clear(output).unwrap();

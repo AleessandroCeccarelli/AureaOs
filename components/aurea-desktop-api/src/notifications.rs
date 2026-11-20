@@ -91,7 +91,10 @@ impl NotificationRequest {
         }
 
         for (index, action) in actions.iter().enumerate() {
-            if actions[..index].iter().any(|previous| previous.id == action.id) {
+            if actions[..index]
+                .iter()
+                .any(|previous| previous.id == action.id)
+            {
                 return None;
             }
         }
@@ -143,40 +146,35 @@ pub enum NotificationError {
 #[cfg(test)]
 mod tests {
     use super::{
-        NotificationAction, NotificationRequest, NotificationUrgency,
-        MAX_NOTIFICATION_ACTIONS,
+        MAX_NOTIFICATION_ACTIONS, NotificationAction, NotificationRequest, NotificationUrgency,
     };
 
     #[test]
     fn request_requires_a_title() {
-        assert!(NotificationRequest::new(
-            "  ",
-            None,
-            NotificationUrgency::Normal,
-            Vec::new(),
-        )
-        .is_none());
+        assert!(
+            NotificationRequest::new("  ", None, NotificationUrgency::Normal, Vec::new(),)
+                .is_none()
+        );
     }
 
     #[test]
     fn request_limits_actions_and_rejects_duplicate_ids() {
         let action = || NotificationAction::new("open", "Open").unwrap();
         let too_many = vec![action(); MAX_NOTIFICATION_ACTIONS + 1];
-        assert!(NotificationRequest::new(
-            "Update",
-            None,
-            NotificationUrgency::Normal,
-            too_many,
-        )
-        .is_none());
+        assert!(
+            NotificationRequest::new("Update", None, NotificationUrgency::Normal, too_many,)
+                .is_none()
+        );
 
-        assert!(NotificationRequest::new(
-            "Update",
-            None,
-            NotificationUrgency::Normal,
-            vec![action(), action()],
-        )
-        .is_none());
+        assert!(
+            NotificationRequest::new(
+                "Update",
+                None,
+                NotificationUrgency::Normal,
+                vec![action(), action()],
+            )
+            .is_none()
+        );
     }
 
     #[test]

@@ -32,8 +32,8 @@ mod fractional_scale;
 mod frame_scheduling;
 mod keyboard;
 mod keyboard_shortcuts;
-mod output_publication;
 mod output_configuration;
+mod output_publication;
 mod output_reconciliation;
 mod pointer;
 mod pointer_axis;
@@ -43,14 +43,14 @@ mod pointer_placement;
 mod rendering;
 mod surface_output_reconciliation;
 mod surface_output_tracking;
-mod workspace;
 pub(crate) mod window_placement;
+mod workspace;
 
 use surface_output_tracking::SurfaceOutputTracker;
 
 pub use frame_scheduling::CompositorFrameError;
-pub use output_reconciliation::OutputReconciliationError;
 pub use output_configuration::CompositorOutputConfigurationError;
+pub use output_reconciliation::OutputReconciliationError;
 pub use rendering::CompositorRenderError;
 
 /// Core state owned by the AureaOS compositor.
@@ -95,10 +95,7 @@ impl AureaCompositor {
         let compositor_state = CompositorState::new::<Self>(display);
         // Welcome and application clients use the two mandatory Wayland SHM formats.
         // Advertising no formats prevents clients from creating their first buffer.
-        let shm_state = ShmState::new::<Self>(
-            display,
-            vec![Format::Argb8888, Format::Xrgb8888],
-        );
+        let shm_state = ShmState::new::<Self>(display, vec![Format::Argb8888, Format::Xrgb8888]);
         let xdg_shell_state = XdgShellState::new::<Self>(display);
         let fractional_scale_manager_state = fractional_scale::create_manager(display);
         let mut seat_state = SeatState::new();

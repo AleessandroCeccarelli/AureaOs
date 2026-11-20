@@ -107,10 +107,9 @@ impl AureaCompositor {
                 )
             })
             .collect::<Vec<_>>();
-        let Some(location) = super::pointer_bounds::constrain_to_outputs(
-            requested,
-            output_geometry.iter().copied(),
-        ) else {
+        let Some(location) =
+            super::pointer_bounds::constrain_to_outputs(requested, output_geometry.iter().copied())
+        else {
             return false;
         };
 
@@ -138,5 +137,4 @@ impl AureaCompositor {
         self.request_all_output_frames();
         true
     }
-
 }

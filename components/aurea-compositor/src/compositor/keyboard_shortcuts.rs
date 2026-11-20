@@ -14,11 +14,7 @@ impl AureaCompositor {
     ///
     /// Returns `true` when the shortcut was recognized and applied. The input
     /// backend is responsible for calling this only for key press events.
-    pub fn handle_keyboard_shortcut(
-        &mut self,
-        keysym: Keysym,
-        modifiers: ModifiersState,
-    ) -> bool {
+    pub fn handle_keyboard_shortcut(&mut self, keysym: Keysym, modifiers: ModifiersState) -> bool {
         use crate::input::shortcuts::{ShortcutAction, resolve_shortcut};
 
         let Some(action) = resolve_shortcut(keysym, modifiers) else {

@@ -19,10 +19,14 @@ impl KeyboardLayoutId {
     pub fn new(layout: impl Into<String>, variant: Option<String>) -> Option<Self> {
         let layout = layout.into();
         if layout.is_empty()
-            || !layout.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+            || !layout
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
             || variant.as_ref().is_some_and(|value| {
                 value.is_empty()
-                    || !value.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+                    || !value
+                        .bytes()
+                        .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
             })
         {
             return None;
@@ -139,7 +143,9 @@ mod tests {
 
     #[test]
     fn detection_confidence_is_ordered_without_applying_a_layout() {
-        assert!(KeyboardLayoutDetectionConfidence::High > KeyboardLayoutDetectionConfidence::Medium);
+        assert!(
+            KeyboardLayoutDetectionConfidence::High > KeyboardLayoutDetectionConfidence::Medium
+        );
         assert!(KeyboardLayoutDetectionConfidence::Medium > KeyboardLayoutDetectionConfidence::Low);
     }
 

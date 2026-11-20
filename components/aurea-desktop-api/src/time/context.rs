@@ -62,8 +62,8 @@ pub enum TimeContextError {
 mod tests {
     use super::{TimeContextError, TimeContextSnapshot};
     use crate::time::{
-        TimeSyncSnapshot, TimeSyncStatus, TimeSyncSource, TimeZoneId, TimeZoneSnapshot,
-        UnixTime, UtcOffset,
+        TimeSyncSnapshot, TimeSyncSource, TimeSyncStatus, TimeZoneId, TimeZoneSnapshot, UnixTime,
+        UtcOffset,
     };
 
     #[test]
@@ -83,7 +83,10 @@ mod tests {
         let context = TimeContextSnapshot::new(instant, zone, sync);
         assert_eq!(context.instant(), instant);
         assert_eq!(context.time_zone().zone().as_str(), "Europe/Rome");
-        assert_eq!(context.synchronization().status(), TimeSyncStatus::Synchronized);
+        assert_eq!(
+            context.synchronization().status(),
+            TimeSyncStatus::Synchronized
+        );
     }
 
     #[test]

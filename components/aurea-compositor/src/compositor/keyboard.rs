@@ -36,7 +36,9 @@ impl AureaCompositor {
     /// only changes the active compositor keymap.
     pub fn set_keyboard_layout(&mut self, layout: &KeyboardLayoutId) -> io::Result<()> {
         let Some(keyboard) = self.seat.get_keyboard() else {
-            return Err(io::Error::other("The compositor keyboard is not initialized"));
+            return Err(io::Error::other(
+                "The compositor keyboard is not initialized",
+            ));
         };
 
         keyboard
@@ -67,8 +69,7 @@ impl AureaCompositor {
             serial,
             time_millis,
             |compositor, modifiers, key| {
-                if state == KeyState::Released
-                    && compositor.consumed_shortcut_keys.remove(&keycode)
+                if state == KeyState::Released && compositor.consumed_shortcut_keys.remove(&keycode)
                 {
                     return FilterResult::Intercept(());
                 }

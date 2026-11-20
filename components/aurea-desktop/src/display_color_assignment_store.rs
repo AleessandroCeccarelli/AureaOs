@@ -79,9 +79,7 @@ impl DisplayColorAssignmentStore {
     }
 
     /// Loads saved assignments. A missing file is an empty configuration.
-    pub fn load(
-        &self,
-    ) -> Result<Vec<DisplayColorConfigurationAssignment>, DisplayColorStoreError> {
+    pub fn load(&self) -> Result<Vec<DisplayColorConfigurationAssignment>, DisplayColorStoreError> {
         let metadata = match fs::symlink_metadata(&self.path) {
             Ok(metadata) => metadata,
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
@@ -96,7 +94,8 @@ impl DisplayColorAssignmentStore {
 
         let mut file = File::open(&self.path)?;
         let mut contents = String::new();
-        file.take(MAX_ASSIGNMENT_FILE_BYTES + 1).read_to_string(&mut contents)?;
+        file.take(MAX_ASSIGNMENT_FILE_BYTES + 1)
+            .read_to_string(&mut contents)?;
         if contents.len() as u64 > MAX_ASSIGNMENT_FILE_BYTES {
             return Err(DisplayColorStoreError::InvalidData);
         }
@@ -110,12 +109,16 @@ impl DisplayColorAssignmentStore {
                 .parse::<u128>()
                 .map_err(|_| DisplayColorStoreError::InvalidData)?;
             let bytes = decode_hex(encoded_id)?;
-            let value = String::from_utf8(bytes).map_err(|_| DisplayColorStoreError::InvalidData)?;
-            let configuration_id =
-                DisplayColorConfigurationId::new(value).ok_or(DisplayColorStoreError::InvalidData)?;
-            if assignments.iter().any(|entry: &DisplayColorConfigurationAssignment| {
-                entry.display_id == DisplayId(display_id)
-            }) {
+            let value =
+                String::from_utf8(bytes).map_err(|_| DisplayColorStoreError::InvalidData)?;
+            let configuration_id = DisplayColorConfigurationId::new(value)
+                .ok_or(DisplayColorStoreError::InvalidData)?;
+            if assignments
+                .iter()
+                .any(|entry: &DisplayColorConfigurationAssignment| {
+                    entry.display_id == DisplayId(display_id)
+                })
+            {
                 return Err(DisplayColorStoreError::InvalidData);
             }
             assignments.push(DisplayColorConfigurationAssignment {
@@ -153,16 +156,22 @@ impl DisplayColorAssignmentStore {
         }
 
         let sequence = TEMPORARY_SEQUENCE.fetch_add(1, Ordering::Relaxed);
-        let temporary = self.path.with_extension(format!(
-            "tmp-{}-{sequence}",
-            std::process::id()
-        ));
+        let temporary = self
+            .path
+            .with_extension(format!("tmp-{}-{sequence}", std::process::id()));
         let result = (|| {
-            let mut file = OpenOptions::new().write(true).create_new(true).open(&temporary)?;
+            let mut file = OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(&temporary)?;
             file.write_all(contents.as_bytes())?;
             file.sync_all()?;
             fs::rename(&temporary, &self.path)?;
-            if let Ok(directory) = File::open(self.path.parent().ok_or(DisplayColorStoreError::UnsafePath)?) {
+            if let Ok(directory) = File::open(
+                self.path
+                    .parent()
+                    .ok_or(DisplayColorStoreError::UnsafePath)?,
+            ) {
                 directory.sync_all()?;
             }
             Ok::<(), DisplayColorStoreError>(())
@@ -209,7 +218,10 @@ mod tests {
     use aurea_desktop_api::display::{
         DisplayColorConfigurationAssignment, DisplayColorConfigurationId, DisplayId,
     };
-    use std::{fs, sync::atomic::{AtomicU64, Ordering}};
+    use std::{
+        fs,
+        sync::atomic::{AtomicU64, Ordering},
+    };
 
     static SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
@@ -246,7 +258,10 @@ mod tests {
         let path = test_path();
         let store = DisplayColorAssignmentStore::open(&path).unwrap();
         fs::write(&path, "7\t61\n7\t62\n").unwrap();
-        assert!(matches!(store.load(), Err(DisplayColorStoreError::InvalidData)));
+        assert!(matches!(
+            store.load(),
+            Err(DisplayColorStoreError::InvalidData)
+        ));
         fs::remove_dir_all(path.parent().unwrap()).unwrap();
     }
 }

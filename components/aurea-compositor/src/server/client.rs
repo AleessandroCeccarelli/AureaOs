@@ -21,8 +21,7 @@ use smithay::{
 };
 
 use crate::{
-    AureaCompositor,
-    compositor::window_placement::center_first_mapped_window,
+    AureaCompositor, compositor::window_placement::center_first_mapped_window,
     render::shm_surface::update_surface_tree_snapshots,
 };
 

@@ -23,15 +23,11 @@ pub(crate) fn default_cursor_origin(pointer_location: Point<f64, Logical>) -> Po
     (pointer_location - hotspot.to_f64()).to_i32_round()
 }
 
-
 /// Scales the cursor around its hotspot without moving the pointer location.
 ///
 /// The input is the unscaled top-left origin returned by
 /// `default_cursor_origin`. Invalid scales fall back to the native size.
-pub(crate) fn scaled_cursor_origin(
-    origin: Point<i32, Logical>,
-    scale: f64,
-) -> Point<i32, Logical> {
+pub(crate) fn scaled_cursor_origin(origin: Point<i32, Logical>, scale: f64) -> Point<i32, Logical> {
     let scale = if scale.is_finite() {
         scale.clamp(1.0, 3.0)
     } else {
@@ -137,14 +133,8 @@ mod tests {
         let origin = Point::<i32, Logical>::from((95, 48));
 
         assert_eq!(scaled_cursor_origin(origin, 1.0), origin);
-        assert_eq!(
-            scaled_cursor_origin(origin, 2.0),
-            Point::from((90, 46))
-        );
-        assert_eq!(
-            scaled_cursor_origin(origin, 3.0),
-            Point::from((85, 44))
-        );
+        assert_eq!(scaled_cursor_origin(origin, 2.0), Point::from((90, 46)));
+        assert_eq!(scaled_cursor_origin(origin, 3.0), Point::from((85, 44)));
     }
 
     #[test]

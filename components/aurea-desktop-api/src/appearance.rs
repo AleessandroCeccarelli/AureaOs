@@ -80,7 +80,6 @@ impl SemanticColorRole {
     }
 }
 
-
 /// Identifier of a centrally managed AureaOS semantic palette.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum PaletteId {

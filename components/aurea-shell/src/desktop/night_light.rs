@@ -11,8 +11,7 @@ use aurea_desktop_api::{
 };
 
 pub use aurea_desktop_api::appearance::lumen::{
-    LumenSchedule as NightLightSchedule,
-    LumenScheduleError as NightLightScheduleError,
+    LumenSchedule as NightLightSchedule, LumenScheduleError as NightLightScheduleError,
 };
 
 /// Legacy shell mode names retained while settings and scheduling migrate to Lumen.

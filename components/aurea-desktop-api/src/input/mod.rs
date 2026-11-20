@@ -16,9 +16,7 @@ pub use device::{
     InputDeviceCapabilities, InputDeviceDescriptor, InputDeviceEvent, InputDeviceId,
     InputDeviceKind, InputDeviceProvider, StandardInputCapability,
 };
-pub use extension::{
-    ExtensionCapability, ExtensionPermission, PeripheralExtensionDescriptor,
-};
+pub use extension::{ExtensionCapability, ExtensionPermission, PeripheralExtensionDescriptor};
 pub use pointer::{
     PointerAccelerationProfile, PointerButton, PointerSettings, PointerSettingsError,
     PointerSettingsProvider,

@@ -105,7 +105,6 @@ pub struct DisplayIccProfileAssignment {
     pub profile_id: Option<IccProfileId>,
 }
 
-
 /// Opaque reference to a saved color configuration owned by the color service.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DisplayColorConfigurationId(String);
