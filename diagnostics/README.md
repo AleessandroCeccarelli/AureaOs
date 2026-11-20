@@ -7,7 +7,7 @@ This directory stores opt-in diagnostic reports from native hardware tests.
 From the repository root, in a normal login session on a local TTY (not as root):
 
 ```bash
-tools/run-aurea-native-test.sh
+bash tools/run-aurea-native-test.sh
 ```
 
 The launcher writes a new directory under `diagnostics/runs/<YYYYMMDD-HHMMSS>/`.
@@ -23,7 +23,7 @@ Boot Fedora normally, return to the same checkout, and run the collector using
 the run id printed by the launcher:
 
 ```bash
-bash tools/collect-previous-boot.sh 20261120-083000
+bash bash tools/collect-previous-boot.sh 20261120-083000
 ```
 
 The collector attempts to save the previous boot's kernel journal and system
