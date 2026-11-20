@@ -20,7 +20,11 @@ use smithay::{
     },
 };
 
-use crate::{AureaCompositor, render::shm_surface::update_surface_tree_snapshots};
+use crate::{
+    AureaCompositor,
+    compositor::window_placement::center_first_mapped_window,
+    render::shm_surface::update_surface_tree_snapshots,
+};
 
 /// State attached to each connected Wayland client.
 pub(super) struct AureaClientState {
@@ -86,6 +90,7 @@ impl CompositorHandler for AureaCompositor {
 
         if let Some(mapped) = self.window_manager().update_surface_buffer(surface, mapped) {
             if mapped {
+                center_first_mapped_window(self, surface);
                 self.focus_surface_if_unset(surface.clone());
             } else {
                 self.forget_surface_tree_output_membership(surface);
