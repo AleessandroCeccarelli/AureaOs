@@ -6,11 +6,7 @@
 //! Output configuration request types and transactional setters.
 
 use super::OutputManager;
-use super::super::{
-    layout::OutputPosition,
-    limits::MAX_ACTIVE_OUTPUTS,
-    scale::ScaleFactor,
-};
+use super::super::{layout::OutputPosition, limits::MAX_ACTIVE_OUTPUTS, scale::ScaleFactor};
 use crate::output::{OutputId, OutputMode};
 
 /// Scale change requested as part of an output configuration transaction.
@@ -83,10 +79,10 @@ impl OutputManager {
         }
 
         if let Some(position) = configuration.position {
-            if !staged.layout.set_position(
-                output_id,
-                OutputPosition::new(position.0, position.1),
-            ) {
+            if !staged
+                .layout
+                .set_position(output_id, OutputPosition::new(position.0, position.1))
+            {
                 return Err(OutputManagerError::UnknownOutput(output_id));
             }
         }
