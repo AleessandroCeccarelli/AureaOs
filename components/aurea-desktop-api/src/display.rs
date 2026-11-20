@@ -20,9 +20,11 @@ pub use capabilities::{
 };
 pub use events::DisplayEvent;
 pub use icc::{
-    DisplayIccProfileAssignment, IccProfileCatalogSnapshot, IccProfileClass, IccProfileDescriptor,
-    IccProfileFormat, IccProfileId, IccProfileImport, IccProfileManager, IccProfileManagerError,
-    IccProfileOrigin, IccProfileProvider, MAX_ICC_PROFILE_BYTES,
+    DisplayColorConfigurationAssignment, DisplayColorConfigurationError,
+    DisplayColorConfigurationId, DisplayColorConfigurationManager, DisplayIccProfileAssignment,
+    IccProfileCatalogSnapshot, IccProfileClass, IccProfileDescriptor, IccProfileFormat,
+    IccProfileId, IccProfileImport, IccProfileManager, IccProfileManagerError, IccProfileOrigin,
+    IccProfileProvider, MAX_ICC_PROFILE_BYTES,
 };
 pub use layout::{DisplayLayout, DisplayPlacement, DisplayPosition, DisplayScale};
 pub use limits::MAX_ACTIVE_DISPLAYS;
