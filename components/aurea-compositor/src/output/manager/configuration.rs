@@ -83,10 +83,18 @@ impl OutputManager {
         }
 
         if let Some(position) = configuration.position {
-            staged.layout.set_position(
+            if !staged.layout.set_position(
                 output_id,
                 OutputPosition::new(position.0, position.1),
-            );
+            ) {
+                return Err(OutputManagerError::UnknownOutput(output_id));
+            }
+        }
+
+        // Registry and layout are a single invariant even for disabled outputs,
+        // whose logical bounds are intentionally absent.
+        if !staged.layout.contains(output_id) {
+            return Err(OutputManagerError::UnknownOutput(output_id));
         }
 
         if staged.active_output_count() > MAX_ACTIVE_OUTPUTS {
