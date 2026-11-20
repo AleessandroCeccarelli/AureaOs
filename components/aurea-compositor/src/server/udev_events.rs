@@ -25,11 +25,6 @@ use super::state::WaylandState;
 use self::device::{add_device, changed_device, remove_device};
 
 pub(super) use self::activation::activate_discovered_devices;
-pub(super) use self::outputs::{output_belongs_to_device, restore_before_publish};
-pub(super) use self::tracking::{
-    forget_changed_device, forget_device, queue_changed_device, retry_pending_changes,
-    take_notifier_token, track_device,
-};
 
 /// Registers Udev monitoring and returns the initial DRM device inventory.
 pub(super) fn register_udev_events(
