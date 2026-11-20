@@ -4,6 +4,7 @@
 // Copyright (C) 2026 Alessandro Ceccarelli
 
 use super::*;
+use crate::output::coordinates::{LogicalPoint, LogicalSize};
 
 #[test]
 fn logical_bounds_follow_position_and_integer_scale() {
