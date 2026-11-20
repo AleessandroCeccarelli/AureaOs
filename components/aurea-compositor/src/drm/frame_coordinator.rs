@@ -22,6 +22,7 @@ pub enum DrmOutputFrameError {
     ResourceNotSubmitted(DrmFramebufferId),
     ResourceAlreadyResolved(DrmFramebufferId),
     GpuWorkIncomplete(DrmFramebufferId),
+    ForeignOwnershipNotReleased(DrmFramebufferId),
     FramebufferStillScannedOut(DrmFramebufferId),
     Lifecycle(DrmPresentationError),
     Resource(VulkanFrameResourceRegistryError),
@@ -56,6 +57,11 @@ impl fmt::Display for DrmOutputFrameError {
             Self::GpuWorkIncomplete(id) => write!(
                 formatter,
                 "DRM framebuffer {} has unfinished GPU work and no sync-file handoff",
+                id.value()
+            ),
+            Self::ForeignOwnershipNotReleased(id) => write!(
+                formatter,
+                "DRM framebuffer {} has not been released to the foreign queue family",
                 id.value()
             ),
             Self::FramebufferStillScannedOut(id) => write!(
@@ -214,6 +220,9 @@ impl DrmOutputFrameCoordinator {
         if !self.resources.can_present(resource)? {
             return Err(DrmOutputFrameError::ResourceAlreadyResolved(framebuffer));
         }
+        if !self.resources.is_foreign_owned(resource)? {
+            return Err(DrmOutputFrameError::ForeignOwnershipNotReleased(framebuffer));
+        }
         if !sync_file_attached && !self.resources.is_gpu_complete(resource)? {
             return Err(DrmOutputFrameError::GpuWorkIncomplete(framebuffer));
         }
@@ -237,6 +246,9 @@ impl DrmOutputFrameCoordinator {
         let resource = self.resource_for(framebuffer)?;
         if !self.resources.can_present(resource)? {
             return Err(DrmOutputFrameError::ResourceAlreadyResolved(framebuffer));
+        }
+        if !self.resources.is_foreign_owned(resource)? {
+            return Err(DrmOutputFrameError::ForeignOwnershipNotReleased(framebuffer));
         }
         if !sync_file_attached && !self.resources.is_gpu_complete(resource)? {
             return Err(DrmOutputFrameError::GpuWorkIncomplete(framebuffer));
