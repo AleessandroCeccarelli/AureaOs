@@ -123,6 +123,7 @@ fn configuration_commits_mode_scale_transform_and_position_together() {
 #[test]
 fn invalid_configuration_rolls_back_every_property() {
     let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
+    let unsupported_mode = OutputMode::new(2560, 1440, 60_000).unwrap();
     let output = DisplayOutput::new(12, "DP-5", vec![mode], mode, 1).unwrap();
     let mut manager = OutputManager::new();
     manager.register(output, (10, 20)).unwrap();
@@ -131,14 +132,21 @@ fn invalid_configuration_rolls_back_every_property() {
     let result = manager.configure_output(
         12,
         OutputConfiguration {
+            mode: Some(unsupported_mode),
             scale: Some(OutputScale::Integer(2)),
             transform: Some(smithay::utils::Transform::_90),
-            position: Some((i32::MAX, 0)),
+            position: Some((120, 80)),
             ..OutputConfiguration::default()
         },
     );
 
-    assert_eq!(result, Err(OutputManagerError::PositionOverflow));
+    assert_eq!(
+        result,
+        Err(OutputManagerError::InvalidMode {
+            output: 12,
+            mode: unsupported_mode,
+        })
+    );
     assert_eq!(manager.registry().get(12), before.registry().get(12));
     assert_eq!(manager.layout().get(12), before.layout().get(12));
 }
