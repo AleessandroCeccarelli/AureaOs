@@ -221,6 +221,28 @@ impl GpuManager {
             .or_else(|| self.devices.values().find(|device| device.is_available()))
     }
 
+    /// Selects a rendering GPU for one output without choosing an unrelated device.
+    ///
+    /// Selection order:
+    /// 1. Explicit preferred GPU, when available.
+    /// 2. Primary GPU, when available.
+    /// 3. The GPU driving this output, when available.
+    ///
+    /// Unlike selected_render_device, this method never falls back to an
+    /// arbitrary inventory entry that may not be able to present this output.
+    pub fn selected_render_device_for_output(
+        &self,
+        output_device_path: &Path,
+    ) -> Option<&GpuDevice> {
+        self.preferred_render_device()
+            .filter(|device| device.is_available())
+            .or_else(|| self.primary_device().filter(|device| device.is_available()))
+            .or_else(|| {
+                self.get_device(output_device_path)
+                    .filter(|device| device.is_available())
+            })
+    }
+
     /// Returns a registered GPU by its DRM path.
     pub fn get_device(&self, path: &Path) -> Option<&GpuDevice> {
         self.devices.get(path)
@@ -368,6 +390,43 @@ mod tests {
         manager.register_device(second.clone()).unwrap();
 
         assert_eq!(manager.selected_render_device().unwrap().path(), first);
+    }
+
+    #[test]
+    fn output_gpu_is_used_when_no_preference_or_primary_exists() {
+        let mut manager = GpuManager::new();
+        let unrelated = path("/dev/dri/card0");
+        let output = path("/dev/dri/card1");
+
+        manager.register_device(unrelated).unwrap();
+        manager.register_device(output.clone()).unwrap();
+
+        assert_eq!(
+            manager
+                .selected_render_device_for_output(&output)
+                .unwrap()
+                .path(),
+            output
+        );
+    }
+
+    #[test]
+    fn preferred_gpu_overrides_output_gpu_for_output_selection() {
+        let mut manager = GpuManager::new();
+        let output = path("/dev/dri/card0");
+        let preferred = path("/dev/dri/card1");
+
+        manager.register_device(output.clone()).unwrap();
+        manager.register_device(preferred.clone()).unwrap();
+        manager.set_preferred_render_device(&preferred).unwrap();
+
+        assert_eq!(
+            manager
+                .selected_render_device_for_output(&output)
+                .unwrap()
+                .path(),
+            preferred
+        );
     }
 
     #[test]
