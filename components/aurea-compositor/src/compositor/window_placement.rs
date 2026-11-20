@@ -32,10 +32,10 @@ pub(super) fn center_first_mapped_window(
         return;
     };
 
-    let (buffer_scale, transform) = with_states(surface, |states| {
+    let (buffer_scale, transform): (i32, Transform) = with_states(surface, |states| {
         let mut attributes = states.cached_state.get::<SurfaceAttributes>();
         let current = attributes.current();
-        (current.buffer_scale, current.buffer_transform)
+        (current.buffer_scale, current.buffer_transform.into())
     });
 
     if buffer_scale <= 0 {
