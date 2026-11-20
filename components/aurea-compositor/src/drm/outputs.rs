@@ -65,6 +65,41 @@ impl Error for DrmOutputsError {
     }
 }
 
+fn logical_output_width(output: &crate::output::DisplayOutput) -> Result<i32, DrmOutputsError> {
+    let mode = output.current_mode();
+    let physical_width = if matches!(
+        output.transform(),
+        smithay::utils::Transform::_90
+            | smithay::utils::Transform::_270
+            | smithay::utils::Transform::Flipped90
+            | smithay::utils::Transform::Flipped270
+    ) {
+        mode.height()
+    } else {
+        mode.width()
+    };
+
+    let logical_width = if let Some(scale) = output.fractional_scale() {
+        scale.physical_to_logical(i64::from(physical_width))
+    } else if output.scale() > 0 {
+        let scale = u64::from(output.scale());
+        i64::try_from(
+            u64::from(physical_width)
+                .checked_add(scale / 2)
+                .ok_or(DrmOutputsError::PositionOverflow)?
+                / scale,
+        )
+        .ok()
+    } else {
+        None
+    }
+    .and_then(|width| u32::try_from(width).ok())
+    .filter(|width| *width > 0)
+    .ok_or(DrmOutputsError::PositionOverflow)?;
+
+    i32::try_from(logical_width).map_err(|_| DrmOutputsError::PositionOverflow)
+}
+
 /// Calculates the first free horizontal position after all registered outputs.
 ///
 /// Existing output positions are preserved. New outputs are placed to the
@@ -77,8 +112,7 @@ fn next_output_position(manager: &OutputManager) -> Result<i32, DrmOutputsError>
         .try_fold(0_i32, |rightmost, output| {
             let position = manager.layout().get(output.id()).unwrap_or_default();
 
-            let width = i32::try_from(output.current_mode().width())
-                .map_err(|_| DrmOutputsError::PositionOverflow)?;
+            let width = logical_output_width(output)?;
 
             let right_edge = position
                 .x()
@@ -127,8 +161,7 @@ pub fn register_drm_output_descriptors(
             });
         }
 
-        let width = i32::try_from(descriptor.current_mode().width())
-            .map_err(|_| DrmOutputsError::PositionOverflow)?;
+        let width = logical_output_width(&output)?;
 
         let output = descriptor
             .into_display_output()
