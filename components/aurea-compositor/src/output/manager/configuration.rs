@@ -6,13 +6,18 @@
 //! Output configuration request types and transactional setters.
 
 use super::OutputManager;
+use super::super::{
+    layout::OutputPosition,
+    limits::MAX_ACTIVE_OUTPUTS,
+    scale::ScaleFactor,
+};
 use crate::output::{OutputId, OutputMode};
 
 /// Scale change requested as part of an output configuration transaction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OutputScale {
     Integer(u32),
-    Fractional(super::super::scale::ScaleFactor),
+    Fractional(ScaleFactor),
 }
 
 /// Optional changes applied together to one output.
@@ -142,7 +147,7 @@ impl OutputManager {
     pub fn set_fractional_scale(
         &mut self,
         output_id: OutputId,
-        scale: super::scale::ScaleFactor,
+        scale: ScaleFactor,
     ) -> Result<(), OutputManagerError> {
         self.configure_output(
             output_id,
