@@ -10,7 +10,6 @@ use std::{error::Error, fmt};
 use smithay::{
     backend::drm::DrmDeviceFd,
     reexports::drm::{
-        buffer::PlanarBuffer,
         control::{Device, FbCmd2Flags, framebuffer},
     },
 };
