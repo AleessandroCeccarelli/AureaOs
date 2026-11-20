@@ -93,6 +93,10 @@ impl VulkanSurfacePipelineCache {
         )
         .map_err(VulkanSurfacePipelineCacheError::Shader)?;
         let descriptor_layouts = [self.descriptor_layout.handle()];
+        let transform_range = [vk::PushConstantRange::default()
+            .stage_flags(vk::ShaderStageFlags::VERTEX)
+            .offset(0)
+            .size(std::mem::size_of::<u32>() as u32)];
         let pipeline = VulkanGraphicsPipeline::new_shared_with_descriptor_layout_handles(
             Arc::clone(&self.device),
             VulkanGraphicsShaders {
@@ -101,7 +105,7 @@ impl VulkanSurfacePipelineCache {
             },
             format,
             &descriptor_layouts,
-            &[],
+            &transform_range,
         )
         .map_err(VulkanSurfacePipelineCacheError::Pipeline)?;
 
