@@ -7,8 +7,8 @@
 
 use super::{OutputManager, OutputManagerError};
 use crate::output::{
-    coordinates::{LogicalPoint, LogicalSize, OutputLogicalBounds},
     DisplayOutput, OutputId,
+    coordinates::{LogicalPoint, LogicalSize, OutputLogicalBounds},
 };
 
 impl OutputManager {
@@ -53,8 +53,6 @@ impl OutputManager {
             .map(Some)
             .ok_or(OutputManagerError::PositionOverflow)
     }
-
-
 }
 
 pub(super) fn logical_width(output: &DisplayOutput) -> Result<i32, OutputManagerError> {
