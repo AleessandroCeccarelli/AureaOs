@@ -30,7 +30,7 @@ mod tests {
     fn minimal_profile() -> Vec<u8> {
         let mut bytes = vec![0_u8; 132];
         bytes[0..4].copy_from_slice(&(132_u32).to_be_bytes());
-        bytes[8..12].copy_from_slice(b"\\x04\\x30\\x00\\x00");
+        bytes[8..12].copy_from_slice(b"\x04\x30\x00\x00");
         bytes[12..16].copy_from_slice(b"mntr");
         bytes[16..20].copy_from_slice(b"RGB ");
         bytes[20..24].copy_from_slice(b"XYZ ");
