@@ -21,6 +21,8 @@ use crate::{
         device::DrmDevice,
         discovery::discover_connected_outputs,
         output::DrmOutputDescriptor,
+        cpu_presentation_backend::{CpuPresentationBackend, CpuPresentationError},
+        gbm_framebuffer_pool::{GbmCpuFramebufferPool, GbmCpuFramebufferPoolError},
         presentation_backend::{DrmPresentationBackend, DrmPresentationBackendError},
     },
     output::OutputId,
@@ -90,6 +92,8 @@ pub struct ManagedDrmSurface {
     surface: DrmSurface,
     presentation: DrmPresentationBackend,
     frame_pool: VulkanDrmFramePool,
+    cpu_frame_pool: GbmCpuFramebufferPool,
+    cpu_presentation: CpuPresentationBackend,
 }
 
 impl ManagedDrmSurface {
@@ -116,6 +120,18 @@ impl ManagedDrmSurface {
     }
     pub fn frame_pool_mut(&mut self) -> &mut VulkanDrmFramePool {
         &mut self.frame_pool
+    }
+    pub(crate) fn cpu_frame_pool(&self) -> &GbmCpuFramebufferPool {
+        &self.cpu_frame_pool
+    }
+    pub(crate) fn cpu_frame_pool_mut(&mut self) -> &mut GbmCpuFramebufferPool {
+        &mut self.cpu_frame_pool
+    }
+    pub(crate) fn cpu_presentation(&self) -> &CpuPresentationBackend {
+        &self.cpu_presentation
+    }
+    pub(crate) fn cpu_presentation_mut(&mut self) -> &mut CpuPresentationBackend {
+        &mut self.cpu_presentation
     }
 
     /// Borrows the KMS surface and its mutable scanout ownership resources.
@@ -306,6 +322,7 @@ impl DrmSurfaceManager {
             };
 
             let presentation = DrmPresentationBackend::new(node, &surface);
+            let cpu_presentation = CpuPresentationBackend::new(node, &surface);
             manager.crtc_owners.insert(crtc, output_id);
             manager.surfaces.insert(
                 output_id,
@@ -315,11 +332,39 @@ impl DrmSurfaceManager {
                     surface,
                     presentation,
                     frame_pool: VulkanDrmFramePool::new(),
+                    cpu_frame_pool: GbmCpuFramebufferPool::new(),
+                    cpu_presentation,
                 },
             );
         }
 
         Ok(manager)
+    }
+
+    /// Completes a CPU-upload page flip for its owning output.
+    pub fn on_cpu_vblank(
+        &mut self,
+        node: DrmNode,
+        crtc: crtc::Handle,
+    ) -> Result<Option<crate::drm::presentation::DrmFramebufferId>, CpuPresentationError> {
+        let Some(output_id) = self.crtc_owners.get(&crtc).copied() else {
+            return Ok(None);
+        };
+        let Some(output) = self.surfaces.get_mut(&output_id) else {
+            return Ok(None);
+        };
+        output.cpu_presentation.on_vblank(node, crtc, &mut output.cpu_frame_pool)
+    }
+
+    /// Retires a CPU framebuffer after its page flip released KMS ownership.
+    pub fn retire_released_cpu_frame(
+        &mut self,
+        crtc: crtc::Handle,
+        framebuffer: crate::drm::presentation::DrmFramebufferId,
+    ) -> Option<Result<(), GbmCpuFramebufferPoolError>> {
+        let output_id = self.crtc_owners.get(&crtc).copied()?;
+        let output = self.surfaces.get_mut(&output_id)?;
+        Some(output.cpu_frame_pool.retire(framebuffer))
     }
 
     /// Routes a VBlank event to the presentation lifecycle for its CRTC.
