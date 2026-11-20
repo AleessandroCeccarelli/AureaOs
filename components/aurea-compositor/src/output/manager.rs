@@ -129,8 +129,6 @@ impl OutputManager {
         self.layout.remove(output_id);
         self.registry.remove(output_id).is_some()
     }
-
-
 }
 
 #[cfg(test)]
