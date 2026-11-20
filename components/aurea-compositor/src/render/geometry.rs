@@ -105,6 +105,48 @@ pub fn buffer_uv_from_surface_uv(
     })
 }
 
+/// Combines a client buffer transform with the compositor output transform.
+pub fn compose_surface_transforms(
+    buffer_transform: Transform,
+    output_transform: Transform,
+) -> Option<Transform> {
+    let candidates = [
+        Transform::Normal,
+        Transform::_90,
+        Transform::_180,
+        Transform::_270,
+        Transform::Flipped,
+        Transform::Flipped90,
+        Transform::Flipped180,
+        Transform::Flipped270,
+    ];
+    let probes = [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0), (1.0, 1.0)];
+
+    candidates.into_iter().find(|candidate| {
+        probes.into_iter().all(|uv| {
+            let expected = buffer_uv_from_surface_uv(buffer_transform, uv)
+                .and_then(|uv| buffer_uv_from_surface_uv(output_transform, uv));
+            let actual = buffer_uv_from_surface_uv(*candidate, uv);
+            actual == expected
+        })
+    })
+}
+
+/// Converts a supported Wayland transform to the shader's compact index.
+pub fn surface_transform_index(transform: Transform) -> Option<u32> {
+    Some(match transform {
+        Transform::Normal => 0,
+        Transform::_90 => 1,
+        Transform::_180 => 2,
+        Transform::_270 => 3,
+        Transform::Flipped => 4,
+        Transform::Flipped90 => 5,
+        Transform::Flipped180 => 6,
+        Transform::Flipped270 => 7,
+        _ => return None,
+    })
+}
+
 /// Maps an output-local rectangle through the configured physical orientation.
 pub fn transform_surface_geometry(
     geometry: SurfaceGeometry,
