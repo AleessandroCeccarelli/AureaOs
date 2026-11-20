@@ -13,6 +13,9 @@ use std::sync::mpsc::Receiver;
 
 use super::DisplayId;
 
+pub mod manager;
+pub use manager::{IccProfileImport, IccProfileManager, IccProfileManagerError, MAX_ICC_PROFILE_BYTES};
+
 /// Stable identifier assigned by the profile service to an ICC profile.
 ///
 /// The identifier is opaque to API consumers. Implementations should derive it
