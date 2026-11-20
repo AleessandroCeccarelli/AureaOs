@@ -105,6 +105,60 @@ pub fn buffer_uv_from_surface_uv(
     })
 }
 
+/// Maps an output-local rectangle through the configured physical orientation.
+pub fn transform_surface_geometry(
+    geometry: SurfaceGeometry,
+    output_width: u32,
+    output_height: u32,
+    transform: Transform,
+) -> Option<SurfaceGeometry> {
+    let x = geometry.x;
+    let y = geometry.y;
+    let width = i64::from(geometry.width);
+    let height = i64::from(geometry.height);
+    let output_width = i64::from(output_width);
+    let output_height = i64::from(output_height);
+
+    let (x, y, width, height) = match transform {
+        Transform::Normal => (x, y, width, height),
+        Transform::_90 => (output_height.checked_sub(y.checked_add(height)?)?, x, height, width),
+        Transform::_180 => (
+            output_width.checked_sub(x.checked_add(width)?)?,
+            output_height.checked_sub(y.checked_add(height)?)?,
+            width,
+            height,
+        ),
+        Transform::_270 => (y, output_width.checked_sub(x.checked_add(width)?)?, height, width),
+        Transform::Flipped => (
+            output_width.checked_sub(x.checked_add(width)?)?,
+            y,
+            width,
+            height,
+        ),
+        Transform::Flipped90 => (y, x, height, width),
+        Transform::Flipped180 => (
+            x,
+            output_height.checked_sub(y.checked_add(height)?)?,
+            width,
+            height,
+        ),
+        Transform::Flipped270 => (
+            output_height.checked_sub(y.checked_add(height)?)?,
+            output_width.checked_sub(x.checked_add(width)?)?,
+            height,
+            width,
+        ),
+        _ => return None,
+    };
+
+    Some(SurfaceGeometry {
+        x,
+        y,
+        width: u32::try_from(width).ok()?,
+        height: u32::try_from(height).ok()?,
+    })
+}
+
 /// Scales a destination rectangle around a global logical anchor point.
 pub fn scale_surface_geometry(
     geometry: SurfaceGeometry,
