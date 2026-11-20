@@ -85,7 +85,8 @@ impl GbmCpuUploadBuffer {
             ));
         }
 
-        let (actual_width, actual_height) = self.buffer.size();
+        let actual_width = self.buffer.width();
+        let actual_height = self.buffer.height();
         if actual_width != width || actual_height != height {
             return Err(GbmBufferWriterError::DimensionMismatch {
                 expected_width: width,
@@ -102,11 +103,4 @@ impl GbmCpuUploadBuffer {
             .map_err(GbmBufferWriterError::Write)
     }
 
-    pub(crate) fn buffer(&self) -> &GbmBuffer {
-        &self.buffer
-    }
-
-    pub(crate) fn into_inner(self) -> GbmBuffer {
-        self.buffer
-    }
 }
