@@ -78,5 +78,5 @@ pub fn pack_rgba8_rows(
 }
 
 #[cfg(test)]
-#[path = "../tests/unit/drm/gbm_upload_layout.rs"]
+#[path = "../../tests/unit/drm/gbm_upload_layout.rs"]
 mod tests;
