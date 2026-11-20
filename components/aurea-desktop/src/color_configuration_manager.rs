@@ -10,8 +10,6 @@ use std::{
     sync::RwLock,
 };
 
-use aurea_desktop_api::display::DisplayColorConfigurationAssignment;
-
 use crate::display_color_assignment_store::{
     DisplayColorAssignmentStore, DisplayColorStoreError,
 };
@@ -33,8 +31,8 @@ struct RegistryState {
 ///
 /// Assignments survive display disconnects for the lifetime of this registry;
 /// reconnecting the same stable DisplayId makes the saved selection available
-/// again. Durable persistence is deliberately delegated to a later storage
-/// adapter rather than being mixed into this in-memory coordinator.
+/// again. When opened with a persistent store, assignments are committed
+/// atomically and restored across desktop restarts.
 #[derive(Debug, Default)]
 pub struct DesktopColorConfigurationManager {
     state: RwLock<RegistryState>,
@@ -44,6 +42,11 @@ pub struct DesktopColorConfigurationManager {
 impl DesktopColorConfigurationManager {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Opens the coordinator using the current user's AureaOS config directory.
+    pub fn open_default_persistent() -> Result<Self, DisplayColorStoreError> {
+        Self::open_persistent(DisplayColorAssignmentStore::user_default()?)
     }
 
     /// Opens the coordinator with durable per-user display assignments.
@@ -280,6 +283,38 @@ mod tests {
 
     fn configuration(value: &str) -> DisplayColorConfigurationId {
         DisplayColorConfigurationId::new(value).unwrap()
+    }
+
+    #[test]
+    fn persistent_assignments_survive_manager_recreation() {
+        let path = std::env::temp_dir().join(format!(
+            "aurea-color-manager-{}-{}",
+            std::process::id(),
+            configuration("persisted").as_str()
+        )).join("assignments");
+        let store = DisplayColorAssignmentStore::open(&path).unwrap();
+        let output = display(55);
+        let profile = configuration("persisted");
+
+        {
+            let manager = DesktopColorConfigurationManager::open_persistent(store.clone()).unwrap();
+            manager.register_display(output).unwrap();
+            manager.register_configuration(profile.clone()).unwrap();
+            manager.assign(DisplayColorConfigurationAssignment {
+                display_id: output,
+                configuration_id: Some(profile.clone()),
+            }).unwrap();
+        }
+
+        let restored = DesktopColorConfigurationManager::open_persistent(store).unwrap();
+        assert_eq!(restored.assignments()[0].configuration_id, Some(profile));
+        restored.register_display(output).unwrap();
+        assert!(restored.assign(DisplayColorConfigurationAssignment {
+            display_id: output,
+            configuration_id: Some(configuration("persisted")),
+        }).is_ok());
+
+        std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
     }
 
     #[test]
