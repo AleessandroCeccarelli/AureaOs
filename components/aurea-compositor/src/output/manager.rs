@@ -505,6 +505,26 @@ mod tests {
     }
 
     #[test]
+    fn logical_bounds_swap_dimensions_for_quarter_turn_outputs() {
+        let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
+        let mut output = DisplayOutput::new(10, "DP-3", vec![mode], mode, 1).unwrap();
+        output.set_transform(smithay::utils::Transform::_90);
+
+        let mut manager = OutputManager::new();
+        manager.register(output, (40, 70)).unwrap();
+
+        let bounds = manager.logical_bounds(10).unwrap().unwrap();
+        assert_eq!(bounds.origin(), LogicalPoint { x: 40, y: 70 });
+        assert_eq!(
+            bounds.size(),
+            LogicalSize {
+                width: 1080,
+                height: 1920,
+            }
+        );
+    }
+
+    #[test]
     fn disabled_output_has_no_active_bounds() {
         let mode = OutputMode::new(1280, 720, 60_000).unwrap();
         let mut output = DisplayOutput::new(9, "HDMI-A-1", vec![mode], mode, 1).unwrap();
