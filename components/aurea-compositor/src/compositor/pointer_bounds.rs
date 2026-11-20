@@ -5,7 +5,7 @@
 
 //! Pure pointer-coordinate constraints derived from the enabled output layout.
 
-use smithay::utils::{Logical, Point, Transform};
+use smithay::utils::{Logical, Point};
 
 /// One enabled output rectangle in global logical compositor coordinates.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -52,30 +52,6 @@ impl OutputGeometry {
             && point.x < self.x + self.width
             && point.y < self.y + self.height
     }
-}
-
-/// Converts a physical mode into its logical dimensions for an output.
-pub(super) fn logical_output_size(
-    width: u32,
-    height: u32,
-    transform: Transform,
-    scale: f64,
-) -> Option<(f64, f64)> {
-    if !scale.is_finite() || scale <= 0.0 || width == 0 || height == 0 {
-        return None;
-    }
-
-    let swaps_dimensions = matches!(
-        transform,
-        Transform::_90 | Transform::_270 | Transform::Flipped90 | Transform::Flipped270
-    );
-    let (width, height) = if swaps_dimensions {
-        (height, width)
-    } else {
-        (width, height)
-    };
-
-    Some((f64::from(width) / scale, f64::from(height) / scale))
 }
 
 /// Keeps a pointer inside the enabled desktop outputs.
@@ -172,22 +148,6 @@ mod tests {
         assert_eq!(
             constrain_to_outputs(Point::from((1960.0, 540.0)), [standard, fractional]),
             Some(Point::from((2000.0, 540.0)))
-        );
-    }
-
-    #[test]
-    fn rotated_outputs_swap_logical_pointer_bounds() {
-        assert_eq!(
-            logical_output_size(1920, 1080, Transform::_90, 1.0),
-            Some((1080.0, 1920.0))
-        );
-        assert_eq!(
-            logical_output_size(1920, 1080, Transform::_180, 1.0),
-            Some((1920.0, 1080.0))
-        );
-        assert_eq!(
-            logical_output_size(1920, 1080, Transform::Flipped270, 2.0),
-            Some((540.0, 960.0))
         );
     }
 
