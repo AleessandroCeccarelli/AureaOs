@@ -23,6 +23,29 @@ pub(crate) fn default_cursor_origin(pointer_location: Point<f64, Logical>) -> Po
     (pointer_location - hotspot.to_f64()).to_i32_round()
 }
 
+
+/// Scales the cursor around its hotspot without moving the pointer location.
+///
+/// The input is the unscaled top-left origin returned by
+/// `default_cursor_origin`. Invalid scales fall back to the native size.
+pub(crate) fn scaled_cursor_origin(
+    origin: Point<i32, Logical>,
+    scale: f64,
+) -> Point<i32, Logical> {
+    let scale = if scale.is_finite() {
+        scale.clamp(1.0, 3.0)
+    } else {
+        1.0
+    };
+    let hotspot = Point::<i32, Logical>::from(DEFAULT_CURSOR_HOTSPOT).to_f64();
+    let adjustment = hotspot * (1.0 - scale);
+
+    Point::from((
+        (f64::from(origin.x) + adjustment.x).round() as i32,
+        (f64::from(origin.y) + adjustment.y).round() as i32,
+    ))
+}
+
 /// Creates the built-in high-contrast arrow as tightly packed RGBA8 pixels.
 ///
 /// The shape is derived from the AureaOS source cursor silhouette. This small
