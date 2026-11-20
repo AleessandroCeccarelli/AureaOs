@@ -97,7 +97,6 @@ pub fn buffer_uv_from_surface_uv(transform: Transform, uv: (f32, f32)) -> Option
         Transform::Flipped90 => (v, u),
         Transform::Flipped180 => (u, 1.0 - v),
         Transform::Flipped270 => (1.0 - v, 1.0 - u),
-        _ => return None,
     })
 }
 
@@ -139,7 +138,6 @@ pub fn surface_transform_index(transform: Transform) -> Option<u32> {
         Transform::Flipped90 => 5,
         Transform::Flipped180 => 6,
         Transform::Flipped270 => 7,
-        _ => return None,
     })
 }
 
@@ -196,7 +194,6 @@ pub fn transform_surface_geometry(
             height,
             width,
         ),
-        _ => return None,
     };
 
     Some(SurfaceGeometry {
