@@ -27,18 +27,29 @@ for command_name in cargo timeout tee date mkdir chmod; do
     fi
 done
 
+umask 077
+mkdir -p -- "$RUNS_DIR"
 RUN_ID="$(date +%Y%m%d-%H%M%S)"
 RUN_DIR="$RUNS_DIR/$RUN_ID"
-mkdir -p -- "$RUN_DIR"
+
+# Never append a new run to an older report created in the same second.
+if ! mkdir -- "$RUN_DIR"; then
+    printf 'A diagnostic run already exists for %s; wait one second and retry.\n' "$RUN_ID" >&2
+    exit 2
+fi
 chmod 700 "$RUN_DIR"
-umask 077
+
 LOG_FILE="$RUN_DIR/native-test.txt"
 exec > >(tee -a "$LOG_FILE") 2>&1
+
+STARTED_EPOCH="$(date +%s)"
+STARTED_AT="$(date --iso-8601=seconds)"
 
 write_metadata() {
     {
         printf 'run_id=%s\n' "$RUN_ID"
-        printf 'started_at=%s\n' "$(date --iso-8601=seconds)"
+        printf 'started_at=%s\n' "$STARTED_AT"
+        printf 'started_epoch=%s\n' "$STARTED_EPOCH"
         printf 'hostname=%s\n' "$(hostname 2>/dev/null || printf unknown)"
         printf 'kernel=%s\n' "$(uname -srmo 2>/dev/null || printf unknown)"
         printf 'user_id=%s\n' "$(id -u)"
@@ -52,7 +63,7 @@ write_metadata() {
 }
 write_metadata
 
-printf 'AureaOS native test started: %s\n' "$(date --iso-8601=seconds)"
+printf 'AureaOS native test started: %s\n' "$STARTED_AT"
 printf 'Diagnostic directory: %s\n' "$RUN_DIR"
 printf 'Maximum runtime: %s seconds\n' "$TIMEOUT_SECONDS"
 printf 'The desktop receives SIGINT at the deadline, then SIGKILL after 10 seconds if it cannot exit.\n'
