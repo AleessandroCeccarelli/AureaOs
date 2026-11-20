@@ -24,7 +24,16 @@ pub(crate) fn center_first_mapped_window(
     compositor: &mut AureaCompositor,
     surface: &WlSurface,
 ) {
-    if compositor.window_manager.mapped_window_count() != 1 {
+    let Some(first_mapped_surface) = compositor
+        .window_manager
+        .mapped_toplevels()
+        .next()
+        .map(|toplevel| toplevel.wl_surface().clone())
+    else {
+        return;
+    };
+
+    if first_mapped_surface != *surface {
         return;
     }
 
