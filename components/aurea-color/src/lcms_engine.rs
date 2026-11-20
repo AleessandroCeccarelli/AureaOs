@@ -5,9 +5,7 @@
 
 use lcms2::{Flags, Intent, PixelFormat, Profile, Transform};
 
-use crate::{
-    ColorTransformEngine, ColorTransformError, ColorTransformOptions, RenderingIntent,
-};
+use crate::{ColorTransformEngine, ColorTransformError, ColorTransformOptions, RenderingIntent};
 
 /// Executes RGB ICC transforms through Little CMS.
 ///
@@ -41,8 +39,8 @@ impl ColorTransformEngine for LittleCmsTransformEngine {
             return Err(ColorTransformError::UnsupportedTransform);
         }
 
-        let source = Profile::new_icc(source_profile)
-            .map_err(|_| ColorTransformError::EngineFailure)?;
+        let source =
+            Profile::new_icc(source_profile).map_err(|_| ColorTransformError::EngineFailure)?;
         let destination = Profile::new_icc(destination_profile)
             .map_err(|_| ColorTransformError::EngineFailure)?;
 
