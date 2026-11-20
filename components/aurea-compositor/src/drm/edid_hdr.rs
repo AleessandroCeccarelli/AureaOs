@@ -28,7 +28,7 @@ impl EdidHdrCapabilities {
     /// Invalid or truncated CTA data blocks are ignored safely. Other valid
     /// extension blocks do not affect the result.
     pub fn parse(edid: &[u8]) -> Self {
-        if edid.len() < 128 || edid.len() % 128 != 0 {
+        if !is_valid_edid(edid) {
             return Self::default();
         }
 
@@ -86,6 +86,21 @@ impl EdidHdrCapabilities {
     pub const fn min_luminance_millinit(self) -> Option<u32> {
         self.min_luminance_millinit
     }
+}
+
+fn is_valid_edid(edid: &[u8]) -> bool {
+    const HEADER: [u8; 8] = [0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00];
+
+    if edid.len() < 128 || edid.len() % 128 != 0 || edid.len() > 32 * 128 {
+        return false;
+    }
+    if edid[..8] != HEADER || usize::from(edid[126]) + 1 != edid.len() / 128 {
+        return false;
+    }
+
+    edid.chunks_exact(128).all(|block| {
+        block.iter().fold(0_u8, |sum, byte| sum.wrapping_add(*byte)) == 0
+    })
 }
 
 const CTA_EXTENSION_TAG: u8 = 0x02;
@@ -249,6 +264,19 @@ mod tests {
     fn malformed_data_block_does_not_read_past_collection() {
         let mut edid = hdr_edid();
         edid[132] = (7 << 5) | 31;
+        let checksum = edid[128..255]
+            .iter()
+            .fold(0_u8, |sum, byte| sum.wrapping_add(*byte));
+        edid[255] = 0_u8.wrapping_sub(checksum);
+        let parsed = EdidHdrCapabilities::parse(&edid);
+        assert!(!parsed.supports_pq());
+        assert!(!parsed.supports_bt2020());
+    }
+
+    #[test]
+    fn rejects_edid_with_invalid_checksum() {
+        let mut edid = hdr_edid();
+        edid[200] ^= 0x01;
         let parsed = EdidHdrCapabilities::parse(&edid);
         assert!(!parsed.supports_pq());
         assert!(!parsed.supports_bt2020());
