@@ -390,6 +390,91 @@ mod tests {
     use super::*;
 
     #[test]
+    fn output_rotation_maps_rectangles_without_changing_scanout_extent() {
+        let geometry = SurfaceGeometry {
+            x: 10,
+            y: 20,
+            width: 30,
+            height: 40,
+        };
+
+        assert_eq!(
+            transform_surface_geometry(geometry, 200, 100, Transform::_90),
+            Some(SurfaceGeometry {
+                x: 40,
+                y: 10,
+                width: 40,
+                height: 30,
+            })
+        );
+        assert_eq!(
+            transform_surface_geometry(geometry, 200, 100, Transform::_180),
+            Some(SurfaceGeometry {
+                x: 160,
+                y: 40,
+                width: 30,
+                height: 40,
+            })
+        );
+        assert_eq!(
+            transform_surface_geometry(geometry, 200, 100, Transform::_270),
+            Some(SurfaceGeometry {
+                x: 20,
+                y: 160,
+                width: 40,
+                height: 30,
+            })
+        );
+    }
+
+    #[test]
+    fn output_reflections_map_surface_rectangles_inside_target() {
+        let geometry = SurfaceGeometry {
+            x: 10,
+            y: 20,
+            width: 30,
+            height: 40,
+        };
+
+        assert_eq!(
+            transform_surface_geometry(geometry, 200, 100, Transform::Flipped),
+            Some(SurfaceGeometry {
+                x: 160,
+                y: 20,
+                width: 30,
+                height: 40,
+            })
+        );
+        assert_eq!(
+            transform_surface_geometry(geometry, 200, 100, Transform::Flipped90),
+            Some(SurfaceGeometry {
+                x: 20,
+                y: 10,
+                width: 40,
+                height: 30,
+            })
+        );
+        assert_eq!(
+            transform_surface_geometry(geometry, 200, 100, Transform::Flipped180),
+            Some(SurfaceGeometry {
+                x: 10,
+                y: 40,
+                width: 30,
+                height: 40,
+            })
+        );
+        assert_eq!(
+            transform_surface_geometry(geometry, 200, 100, Transform::Flipped270),
+            Some(SurfaceGeometry {
+                x: 40,
+                y: 160,
+                width: 40,
+                height: 30,
+            })
+        );
+    }
+
+    #[test]
     fn cursor_scale_keeps_global_hotspot_anchor_fixed() {
         let geometry =
             surface_geometry((90, 90), (20, 20), 1, Transform::Normal, (0, 0), 1).unwrap();
