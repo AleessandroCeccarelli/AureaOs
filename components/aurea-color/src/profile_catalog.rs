@@ -9,14 +9,16 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::Path,
-    sync::{mpsc::{self, Receiver, Sender}, Mutex},
+    sync::{
+        mpsc::{self, Receiver, Sender},
+        Mutex,
+    },
 };
 
 use aurea_desktop_api::display::{
-    DisplayId, DisplayIccProfileAssignment, IccProfileCatalogSnapshot,
-    IccProfileClass, IccProfileDescriptor, IccProfileFormat, IccProfileId,
-    IccProfileImport, IccProfileManager, IccProfileManagerError,
-    IccProfileOrigin, IccProfileProvider, MAX_ICC_PROFILE_BYTES,
+    DisplayIccProfileAssignment, DisplayId, IccProfileCatalogSnapshot, IccProfileClass,
+    IccProfileDescriptor, IccProfileFormat, IccProfileId, IccProfileImport, IccProfileManager,
+    IccProfileManagerError, IccProfileOrigin, IccProfileProvider, MAX_ICC_PROFILE_BYTES,
 };
 
 use crate::{IccProfileFingerprint, IccProfileStore, ProfileStoreError};
@@ -67,13 +69,19 @@ impl IccProfileCatalog {
         Ok(())
     }
 
-    fn lock_state(&self) -> Result<std::sync::MutexGuard<'_, CatalogState>, IccProfileManagerError> {
-        self.state.lock().map_err(|_| IccProfileManagerError::StorageFailure)
+    fn lock_state(
+        &self,
+    ) -> Result<std::sync::MutexGuard<'_, CatalogState>, IccProfileManagerError> {
+        self.state
+            .lock()
+            .map_err(|_| IccProfileManagerError::StorageFailure)
     }
 
     fn publish(state: &mut CatalogState) {
         let snapshot = snapshot_from(state);
-        state.subscribers.retain(|subscriber| subscriber.send(snapshot.clone()).is_ok());
+        state
+            .subscribers
+            .retain(|subscriber| subscriber.send(snapshot.clone()).is_ok());
     }
 
     fn install(
@@ -94,21 +102,19 @@ impl IccProfileCatalog {
         let id = IccProfileId::new(format!("sha256:{}", stored.fingerprint.to_hex()))
             .ok_or(IccProfileManagerError::InvalidProfile)?;
         let key = id.as_str().to_owned();
-        let descriptor = descriptor_for(
-            id,
-            &stored.summary,
-            profile.format,
-            origin,
-        );
+        let descriptor = descriptor_for(id, &stored.summary, profile.format, origin);
 
         let mut state = self.lock_state()?;
         if let Some(existing) = state.profiles.get(&key) {
             return Ok(existing.descriptor.clone());
         }
-        state.profiles.insert(key, CatalogEntry {
-            descriptor: descriptor.clone(),
-            fingerprint: stored.fingerprint,
-        });
+        state.profiles.insert(
+            key,
+            CatalogEntry {
+                descriptor: descriptor.clone(),
+                fingerprint: stored.fingerprint,
+            },
+        );
         Self::publish(&mut state);
         Ok(descriptor)
     }
@@ -155,7 +161,11 @@ impl IccProfileManager for IccProfileCatalog {
         if entry.descriptor.read_only || entry.descriptor.origin == IccProfileOrigin::System {
             return Err(IccProfileManagerError::SystemProfileProtected);
         }
-        if state.assignments.values().any(|assigned| assigned == profile_id) {
+        if state
+            .assignments
+            .values()
+            .any(|assigned| assigned == profile_id)
+        {
             return Err(IccProfileManagerError::AssignmentRejected);
         }
         let fingerprint = entry.fingerprint.clone();
@@ -178,7 +188,8 @@ impl IccProfileManager for IccProfileCatalog {
     fn export_profile(&self, profile_id: &IccProfileId) -> Result<Vec<u8>, IccProfileManagerError> {
         let fingerprint = {
             let state = self.lock_state()?;
-            state.profiles
+            state
+                .profiles
                 .get(profile_id.as_str())
                 .map(|entry| entry.fingerprint.clone())
                 .ok_or(IccProfileManagerError::ProfileNotFound)?
@@ -195,12 +206,16 @@ impl IccProfileManager for IccProfileCatalog {
             return Err(IccProfileManagerError::DisplayNotFound);
         }
         if let Some(profile_id) = &assignment.profile_id {
-            let entry = state.profiles.get(profile_id.as_str())
+            let entry = state
+                .profiles
+                .get(profile_id.as_str())
                 .ok_or(IccProfileManagerError::ProfileNotFound)?;
             if entry.descriptor.profile_class != IccProfileClass::Display {
                 return Err(IccProfileManagerError::UnsupportedProfileClass);
             }
-            state.assignments.insert(assignment.display_id, profile_id.clone());
+            state
+                .assignments
+                .insert(assignment.display_id, profile_id.clone());
         } else {
             state.assignments.remove(&assignment.display_id);
         }
@@ -217,17 +232,24 @@ impl IccProfileManager for IccProfileCatalog {
 }
 
 fn snapshot_from(state: &CatalogState) -> IccProfileCatalogSnapshot {
-    let mut profiles = state.profiles.values()
+    let mut profiles = state
+        .profiles
+        .values()
         .map(|entry| entry.descriptor.clone())
         .collect::<Vec<_>>();
     profiles.sort_by(|left, right| left.id.as_str().cmp(right.id.as_str()));
-    let assignments = state.assignments.iter()
+    let assignments = state
+        .assignments
+        .iter()
         .map(|(display_id, profile_id)| DisplayIccProfileAssignment {
             display_id: *display_id,
             profile_id: Some(profile_id.clone()),
         })
         .collect();
-    IccProfileCatalogSnapshot { profiles, assignments }
+    IccProfileCatalogSnapshot {
+        profiles,
+        assignments,
+    }
 }
 
 fn descriptor_for(
@@ -246,7 +268,7 @@ fn descriptor_for(
         b"nmcl" => IccProfileClass::NamedColor,
         _ => IccProfileClass::Unknown,
     };
-    let short_id = &id.as_str()[7..19.min(id.as_str().len())];
+    let short_id = id.as_str()[7..19.min(id.as_str().len())].to_owned();
     IccProfileDescriptor {
         id,
         name: format!("ICC profile {short_id}"),
@@ -263,7 +285,10 @@ fn descriptor_for(
 }
 
 fn signature_text(value: &[u8; 4]) -> Option<String> {
-    if value.iter().all(|byte| *byte == 0 || byte.is_ascii_graphic() || *byte == b' ') {
+    if value
+        .iter()
+        .all(|byte| *byte == 0 || byte.is_ascii_graphic() || *byte == b' ')
+    {
         let text = String::from_utf8_lossy(value).trim().to_owned();
         if text.is_empty() { None } else { Some(text) }
     } else {
@@ -287,7 +312,10 @@ fn map_store_error(error: ProfileStoreError) -> IccProfileManagerError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{fs, sync::atomic::{AtomicU64, Ordering}};
+    use std::{
+        fs,
+        sync::atomic::{AtomicU64, Ordering},
+    };
 
     static NEXT: AtomicU64 = AtomicU64::new(0);
 
@@ -308,7 +336,10 @@ mod tests {
         bytes[16..20].copy_from_slice(b"RGB ");
         bytes[20..24].copy_from_slice(b"XYZ ");
         bytes[36..40].copy_from_slice(b"acsp");
-        IccProfileImport { format: IccProfileFormat::Icc, bytes }
+        IccProfileImport {
+            format: IccProfileFormat::Icc,
+            bytes,
+        }
     }
 
     #[test]
@@ -334,10 +365,12 @@ mod tests {
         catalog.register_display(first).unwrap();
         catalog.register_display(second).unwrap();
         for display_id in [first, second] {
-            catalog.assign_profile(DisplayIccProfileAssignment {
-                display_id,
-                profile_id: Some(profile.id.clone()),
-            }).unwrap();
+            catalog
+                .assign_profile(DisplayIccProfileAssignment {
+                    display_id,
+                    profile_id: Some(profile.id.clone()),
+                })
+                .unwrap();
         }
         let snapshot = catalog.snapshot();
         assert_eq!(snapshot.assignments.len(), 2);
@@ -362,7 +395,10 @@ mod tests {
     fn imported_profile_can_be_exported_and_removed() {
         let (catalog, root) = test_catalog();
         let profile = catalog.import_profile(display_profile()).unwrap();
-        assert_eq!(catalog.export_profile(&profile.id).unwrap(), display_profile().bytes);
+        assert_eq!(
+            catalog.export_profile(&profile.id).unwrap(),
+            display_profile().bytes
+        );
         catalog.remove_profile(&profile.id).unwrap();
         assert_eq!(
             catalog.export_profile(&profile.id),
@@ -374,7 +410,10 @@ mod tests {
     #[test]
     fn rejects_malformed_profile_without_catalog_entry() {
         let (catalog, root) = test_catalog();
-        let invalid = IccProfileImport { format: IccProfileFormat::Icc, bytes: b"bad".to_vec() };
+        let invalid = IccProfileImport {
+            format: IccProfileFormat::Icc,
+            bytes: b"bad".to_vec(),
+        };
         assert_eq!(
             catalog.import_profile(invalid),
             Err(IccProfileManagerError::InvalidProfile)
