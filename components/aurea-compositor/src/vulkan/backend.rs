@@ -75,7 +75,7 @@ impl VulkanBackend {
             .select_device_for_drm_node(node, preference)
             .ok_or_else(|| {
                 VulkanInitError::new(
-                    "No Vulkan device matching the DRM node supports graphics rendering, DMA-BUF export and foreign queue-family ownership",
+                    "No Vulkan device matching the DRM node supports graphics rendering and DMA-BUF export with DRM modifiers",
                 )
             })?;
         let physical_device_index = context
