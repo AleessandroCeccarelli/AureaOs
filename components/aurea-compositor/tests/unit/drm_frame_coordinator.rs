@@ -15,6 +15,7 @@ fn fb(id: u64) -> DrmFramebufferId {
 fn submit_for_render(coordinator: &mut DrmOutputFrameCoordinator, framebuffer: DrmFramebufferId) {
     coordinator.begin_render(framebuffer).unwrap();
     coordinator.mark_submitted(framebuffer).unwrap();
+    coordinator.mark_foreign_release_submitted(framebuffer).unwrap();
 }
 
 fn commit_frame(
@@ -249,13 +250,11 @@ fn foreign_owned_frame_requires_completed_acquire_before_reuse() {
 
     submit_for_render(&mut coordinator, first);
     coordinator.mark_gpu_complete(first).unwrap();
-    coordinator.mark_foreign_release_submitted(first).unwrap();
     commit_frame(&mut coordinator, first, false);
     assert_eq!(coordinator.page_flip_complete(first), Ok(None));
 
     submit_for_render(&mut coordinator, second);
     coordinator.mark_gpu_complete(second).unwrap();
-    coordinator.mark_foreign_release_submitted(second).unwrap();
     commit_frame(&mut coordinator, second, false);
 
     assert_eq!(coordinator.page_flip_complete(second), Ok(Some(first)));
