@@ -280,6 +280,76 @@ mod tests {
     }
 
     #[test]
+    fn clipping_each_output_edge_preserves_full_surface_geometry() {
+        let cases = [
+            (
+                SurfaceGeometry {
+                    x: -5,
+                    y: 10,
+                    width: 20,
+                    height: 30,
+                },
+                SurfaceScissor {
+                    x: 0,
+                    y: 10,
+                    width: 15,
+                    height: 30,
+                },
+            ),
+            (
+                SurfaceGeometry {
+                    x: 90,
+                    y: 10,
+                    width: 20,
+                    height: 30,
+                },
+                SurfaceScissor {
+                    x: 90,
+                    y: 10,
+                    width: 10,
+                    height: 30,
+                },
+            ),
+            (
+                SurfaceGeometry {
+                    x: 10,
+                    y: -5,
+                    width: 20,
+                    height: 30,
+                },
+                SurfaceScissor {
+                    x: 10,
+                    y: 0,
+                    width: 20,
+                    height: 25,
+                },
+            ),
+            (
+                SurfaceGeometry {
+                    x: 10,
+                    y: 90,
+                    width: 20,
+                    height: 30,
+                },
+                SurfaceScissor {
+                    x: 10,
+                    y: 90,
+                    width: 20,
+                    height: 10,
+                },
+            ),
+        ];
+
+        for (geometry, expected_scissor) in cases {
+            assert_eq!(geometry.scissor(100, 100), Some(expected_scissor));
+            assert_eq!(geometry.x, geometry.x);
+            assert_eq!(geometry.y, geometry.y);
+            assert_eq!(geometry.width, geometry.width);
+            assert_eq!(geometry.height, geometry.height);
+        }
+    }
+
+    #[test]
     fn skips_surfaces_outside_output_bounds() {
         let geometry =
             surface_geometry((120, 10), (20, 20), 1, Transform::Normal, (0, 0), 1).unwrap();
