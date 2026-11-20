@@ -146,6 +146,17 @@ impl DrmDeviceRegistry {
         self.devices.get(&node)
     }
 
+    /// Resolves a registered primary DRM device path to its canonical node.
+    ///
+    /// This bridges the path-based GPU inventory with the node-based DRM
+    /// runtime identity without maintaining a second GPU inventory.
+    pub fn node_for_path(&self, path: &Path) -> Option<DrmNode> {
+        self.devices
+            .values()
+            .find(|device| device.path() == path)
+            .map(DrmDeviceInfo::node)
+    }
+
     /// Sets the primary DRM device.
     ///
     /// The device must already be registered.
