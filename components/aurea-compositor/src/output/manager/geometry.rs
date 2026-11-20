@@ -55,7 +55,7 @@ impl OutputManager {
     }
 }
 
-pub(super) fn logical_width(output: &DisplayOutput) -> Result<i32, OutputManagerError> {
+pub(crate) fn logical_width(output: &DisplayOutput) -> Result<i32, OutputManagerError> {
     let mode = output.current_mode();
     let physical_width = if swaps_dimensions(output.transform()) {
         mode.height()
