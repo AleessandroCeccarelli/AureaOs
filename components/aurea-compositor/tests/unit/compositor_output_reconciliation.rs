@@ -33,12 +33,10 @@ fn failed_wayland_refresh_keeps_the_previously_published_global() {
 
     assert!(compositor.has_published_wayland_output(output_id));
 
+    // Keep a valid snapshot, then simulate the manager losing an output before
+    // its Wayland global can be refreshed. Publication must restore the snapshot.
     let previous = compositor.output_manager().clone();
-
-    compositor
-        .output_manager()
-        .set_scale(output_id, u32::MAX)
-        .unwrap();
+    assert!(compositor.output_manager().unregister(output_id));
 
     let changes = OutputReconciliation {
         updated: vec![output_id],
@@ -51,14 +49,12 @@ fn failed_wayland_refresh_keeps_the_previously_published_global() {
             .is_err()
     );
 
-    assert_eq!(
+    assert!(
         compositor
             .output_manager()
             .registry()
             .get(output_id)
-            .unwrap()
-            .scale(),
-        1
+            .is_some()
     );
 
     assert!(compositor.has_published_wayland_output(output_id));

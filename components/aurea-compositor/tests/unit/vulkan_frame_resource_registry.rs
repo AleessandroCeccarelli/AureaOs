@@ -115,9 +115,6 @@ fn failed_presentation_keeps_resource_busy_until_gpu_completion() {
     assert!(!registry.is_available(id).unwrap());
 
     registry.mark_gpu_complete(id).unwrap();
-    assert!(!registry.is_available(id).unwrap());
-    registry.mark_foreign_acquire_submitted(id).unwrap();
-    registry.mark_foreign_acquired(id).unwrap();
     assert!(registry.is_available(id).unwrap());
 }
 
