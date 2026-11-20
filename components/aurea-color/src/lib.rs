@@ -9,6 +9,7 @@ mod configuration_manager;
 mod header;
 mod identity;
 mod storage;
+mod transform;
 
 pub use adjustment::{ColorAdjustment, ColorAdjustmentError, RgbMatrix, RgbValues};
 pub use configuration::{ColorConfigurationError, ColorConfigurationId, ColorProfileConfiguration};
@@ -16,6 +17,10 @@ pub use configuration_manager::ColorConfigurationManager;
 pub use header::{IccHeader, IccHeaderError, IccProfileSummary, IccTag};
 pub use identity::IccProfileFingerprint;
 pub use storage::{IccProfileStore, ProfileStoreError, StoredProfile};
+pub use transform::{
+    ColorTransformEngine, ColorTransformError, ColorTransformOptions, RenderingIntent,
+    transform_rgba_f32,
+};
 
 /// Maximum profile payload accepted by Aurea Color.
 pub const MAX_PROFILE_SIZE: usize = 16 * 1024 * 1024;
