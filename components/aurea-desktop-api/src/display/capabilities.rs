@@ -7,7 +7,10 @@
 
 use super::modes::DisplayMode;
 
-/// Stable AureaOS identifier for a discovered display output.
+/// Runtime identifier for a currently discovered display output.
+///
+/// This identifier is scoped to the active backend topology. It is not a
+/// persistent physical-monitor identity and must not key long-lived settings.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DisplayId(pub u128);
 

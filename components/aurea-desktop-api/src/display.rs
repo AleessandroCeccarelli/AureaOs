@@ -10,6 +10,7 @@ pub mod events;
 pub mod hdr;
 pub mod hdr_detection;
 pub mod icc;
+pub mod identity;
 pub mod layout;
 pub mod limits;
 pub mod manager;
@@ -35,6 +36,9 @@ pub use icc::{
     IccProfileCatalogSnapshot, IccProfileClass, IccProfileDescriptor, IccProfileFormat,
     IccProfileId, IccProfileImport, IccProfileManager, IccProfileManagerError, IccProfileOrigin,
     IccProfileProvider, MAX_ICC_PROFILE_BYTES,
+};
+pub use identity::{
+    DisplayIdentityEvidence, DisplayIdentityMatch, DisplayIdentityResolver,
 };
 pub use layout::{DisplayLayout, DisplayPlacement, DisplayPosition, DisplayScale};
 pub use limits::MAX_ACTIVE_DISPLAYS;

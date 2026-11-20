@@ -18,10 +18,10 @@ use smithay::utils::Transform;
 
 use self::scale::ScaleFactor;
 
-/// Stable identifier for a display output.
+/// Runtime identifier for an output in the active DRM topology.
 ///
-/// The 128-bit value can encode a 64-bit DRM device identifier
-/// and a 32-bit connector identifier without collisions.
+/// The value encodes a DRM device identifier and connector identifier. It is
+/// not a persistent physical-monitor identity.
 pub type OutputId = u128;
 
 /// Display mode expressed in pixels and millihertz.
