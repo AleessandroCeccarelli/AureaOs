@@ -14,9 +14,10 @@ use std::sync::Arc;
 use crate::{
     render::{
         RenderScene, cursor::scaled_cursor_origin, geometry::{
-            scale_surface_geometry, scale_surface_geometry_with_fractional_scale,
-            surface_geometry, surface_geometry_with_fractional_scale,
-            transform_geometry_for_output, transform_surface_geometry,
+            compose_surface_transforms, scale_surface_geometry,
+            scale_surface_geometry_with_fractional_scale, surface_geometry,
+            surface_geometry_with_fractional_scale, surface_transform_index,
+            transform_geometry_for_output,
         },
         shm_buffer::ShmBufferSnapshot, surface_tree::SurfaceTreeSnapshot,
     },
@@ -129,8 +130,18 @@ pub(crate) fn render_and_release(
             target.height(),
             target.transform(),
         )?;
+        let geometry = transform_geometry_for_output(
+            geometry,
+            target.width(),
+            target.height(),
+            target.transform(),
+        )?;
         let scissor = geometry.scissor(target.width(), target.height())?;
-        Some((geometry, scissor))
+        let texture_transform = surface_transform_index(compose_surface_transforms(
+            Transform::Normal,
+            target.transform(),
+        )?)?;
+        Some((geometry, scissor, texture_transform))
     });
     let texture_requests = visible
         .iter()
@@ -315,7 +326,9 @@ pub(crate) fn render_and_release(
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
 
-    if let (Some((geometry, scissor)), Some(binding)) = (cursor, cursor_binding.as_ref()) {
+    if let (Some((geometry, scissor, texture_transform)), Some(binding)) =
+        (cursor, cursor_binding.as_ref())
+    {
         let viewport = vk::Viewport {
             x: geometry.x() as f32,
             y: geometry.y() as f32,
@@ -348,7 +361,7 @@ pub(crate) fn render_and_release(
             VulkanColorLoad::Load,
             viewport,
             scissor,
-            0,
+            texture_transform,
         )
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
@@ -570,17 +583,11 @@ fn visible_surfaces(
             snapshot: Arc::clone(&snapshot.snapshot),
             geometry,
             scissor,
-            texture_transform: match snapshot.buffer_transform {
-                Transform::Normal => 0,
-                Transform::_90 => 1,
-                Transform::_180 => 2,
-                Transform::_270 => 3,
-                Transform::Flipped => 4,
-                Transform::Flipped90 => 5,
-                Transform::Flipped180 => 6,
-                Transform::Flipped270 => 7,
-                _ => return Err(VulkanSurfaceCompositionError::InvalidSurfaceGeometry),
-            },
+            texture_transform: surface_transform_index(
+                compose_surface_transforms(snapshot.buffer_transform, target.transform())
+                    .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+            )
+            .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
         });
     }
 
