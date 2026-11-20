@@ -58,6 +58,25 @@ pub struct OutputReconciliation {
     pub removed: Vec<OutputId>,
 }
 
+/// Scale change requested as part of an output configuration transaction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OutputScale {
+    Integer(u32),
+    Fractional(super::scale::ScaleFactor),
+}
+
+/// Optional changes applied together to one output.
+///
+/// Unspecified properties retain their current values.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct OutputConfiguration {
+    pub mode: Option<OutputMode>,
+    pub scale: Option<OutputScale>,
+    pub transform: Option<smithay::utils::Transform>,
+    pub enabled: Option<bool>,
+    pub position: Option<(i32, i32)>,
+}
+
 /// Coordinates output registration, layout and configuration.
 #[derive(Debug, Clone, Default)]
 pub struct OutputManager {
@@ -325,6 +344,73 @@ impl OutputManager {
     pub fn unregister(&mut self, output_id: OutputId) -> bool {
         self.layout.remove(output_id);
         self.registry.remove(output_id).is_some()
+    }
+
+    /// Applies a group of output changes atomically.
+    ///
+    /// All requested properties are staged on a cloned manager. The active
+    /// output limit and resulting logical bounds are validated before the
+    /// staged state replaces the current configuration.
+    pub fn configure_output(
+        &mut self,
+        output_id: OutputId,
+        configuration: OutputConfiguration,
+    ) -> Result<(), OutputManagerError> {
+        let mut staged = self.clone();
+        let output = staged
+            .registry
+            .get_mut(output_id)
+            .ok_or(OutputManagerError::UnknownOutput(output_id))?;
+
+        if let Some(mode) = configuration.mode {
+            if !output.set_mode(mode) {
+                return Err(OutputManagerError::InvalidMode {
+                    output: output_id,
+                    mode,
+                });
+            }
+        }
+
+        if let Some(scale) = configuration.scale {
+            match scale {
+                OutputScale::Integer(scale) => {
+                    if !output.set_scale(scale) {
+                        return Err(OutputManagerError::InvalidScale {
+                            output: output_id,
+                            scale,
+                        });
+                    }
+                }
+                OutputScale::Fractional(scale) => output.set_fractional_scale(scale),
+            }
+        }
+
+        if let Some(transform) = configuration.transform {
+            output.set_transform(transform);
+        }
+
+        if let Some(enabled) = configuration.enabled {
+            output.set_enabled(enabled);
+        }
+
+        if let Some(position) = configuration.position {
+            staged.layout.set_position(
+                output_id,
+                OutputPosition::new(position.0, position.1),
+            );
+        }
+
+        if staged.active_output_count() > MAX_ACTIVE_OUTPUTS {
+            return Err(OutputManagerError::TooManyActiveOutputs {
+                maximum: MAX_ACTIVE_OUTPUTS,
+            });
+        }
+
+        // Validate dimensions, scale conversion and global logical bounds
+        // against the complete staged configuration before committing it.
+        staged.logical_bounds(output_id)?;
+        *self = staged;
+        Ok(())
     }
 
     /// Enables or disables an output.
