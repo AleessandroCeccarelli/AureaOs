@@ -28,7 +28,10 @@ impl fmt::Display for CompositorOutputConfigurationError {
         match self {
             Self::Manager(source) => write!(formatter, "Invalid output configuration: {source}"),
             Self::Publication(source) => {
-                write!(formatter, "Failed to publish output configuration: {source}")
+                write!(
+                    formatter,
+                    "Failed to publish output configuration: {source}"
+                )
             }
         }
     }
