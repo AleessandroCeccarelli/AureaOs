@@ -53,6 +53,7 @@ struct WaylandOutputConfig {
     modes: Vec<Mode>,
     current_mode: Mode,
     scale: Scale,
+    transform: Transform,
     position: OutputPosition,
 }
 
@@ -88,6 +89,7 @@ impl WaylandOutputConfig {
             modes,
             current_mode,
             scale,
+            transform: output.transform(),
             position,
         })
     }
@@ -139,7 +141,7 @@ fn create_wayland_output(display: &DisplayHandle, config: WaylandOutputConfig) -
 
     wayland_output.change_current_state(
         Some(config.current_mode),
-        Some(Transform::Normal),
+        Some(config.transform),
         Some(config.scale),
         Some(Point::from((config.position.x(), config.position.y()))),
     );
