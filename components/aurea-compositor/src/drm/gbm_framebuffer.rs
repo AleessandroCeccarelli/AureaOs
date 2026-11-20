@@ -53,7 +53,7 @@ impl StrictGbmFramebuffer {
 
         Ok(Self {
             handle,
-            format: DrmFormat {
+            format: Format {
                 code: gbm.format(),
                 modifier: modifier.unwrap_or(Modifier::Invalid),
             },
