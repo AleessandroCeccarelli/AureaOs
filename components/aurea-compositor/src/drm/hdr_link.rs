@@ -84,7 +84,7 @@ mod tests {
         let extension = &mut edid[128..];
         extension[0] = 0x02;
         extension[1] = 3;
-        extension[2] = 14;
+        extension[2] = 15;
         extension[4] = (7 << 5) | 3;
         extension[5..8].copy_from_slice(&[0x05, 0xc0, 0x00]);
         extension[8] = (7 << 5) | 6;
