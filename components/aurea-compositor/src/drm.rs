@@ -14,6 +14,7 @@ pub mod edid_hdr;
 pub mod frame_coordinator;
 pub mod gbm;
 pub mod gbm_upload_layout;
+pub mod gbm_buffer_writer;
 pub mod hdr_link;
 pub mod identity;
 pub mod identity_registry;
