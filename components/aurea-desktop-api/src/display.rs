@@ -20,7 +20,8 @@ pub use capabilities::{
 };
 pub use events::DisplayEvent;
 pub use icc::{
-    DisplayIccProfileAssignment, IccProfileClass, IccProfileDescriptor, IccProfileFormat,
+    DisplayIccProfileAssignment, IccProfileCatalogSnapshot, IccProfileClass, IccProfileDescriptor,
+    IccProfileFormat, IccProfileProvider,
     IccProfileId, IccProfileOrigin,
 };
 pub use layout::{DisplayLayout, DisplayPlacement, DisplayPosition, DisplayScale};
