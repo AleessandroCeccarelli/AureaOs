@@ -95,7 +95,7 @@ printf 'Maximum runtime: %s seconds\n' "$TIMEOUT_SECONDS"
     printf '=== Kernel command line ===\n'
     cat /proc/cmdline 2>/dev/null || true
     printf '\n=== PCI devices and active drivers ===\n'
-    if command -v lspci >/dev/null 2>&1; then lspci -nnk; else printf 'lspci unavailable\n'; fi
+    if command -v lspci >/dev/null 2>&1; then lspci -nnk || true; else printf 'lspci unavailable\n'; fi
     printf '\n=== DRM devices ===\n'
     for device in /sys/class/drm/card[0-9]*; do
         [[ -e "$device" ]] || continue
