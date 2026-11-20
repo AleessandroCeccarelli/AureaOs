@@ -58,6 +58,14 @@ impl AureaCompositor {
         Ok(self.frame_scheduler.request_frame(output_id))
     }
 
+    /// Drops pending and in-flight scheduling state for a disconnected output.
+    ///
+    /// Output lifecycle coordinators call this after removing the output from
+    /// the registry so a stale frame token cannot survive a hot-unplug.
+    pub(crate) fn forget_output_frame_state(&mut self, output_id: OutputId) {
+        self.frame_scheduler.remove_output(output_id);
+    }
+
     /// Requests a frame for every currently enabled output.
     ///
     /// This is used when a scene change may affect multiple displays.
