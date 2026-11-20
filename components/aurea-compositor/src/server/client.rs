@@ -92,6 +92,7 @@ impl CompositorHandler for AureaCompositor {
             if mapped {
                 center_first_mapped_window(self, surface);
                 self.focus_surface_if_unset(surface.clone());
+                self.refresh_pointer_focus_at_current_location();
             } else {
                 self.forget_surface_tree_output_membership(surface);
                 let next_focus = self.window_manager().active_workspace_surface();
