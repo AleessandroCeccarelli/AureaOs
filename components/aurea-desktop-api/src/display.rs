@@ -8,6 +8,7 @@
 pub mod capabilities;
 pub mod events;
 pub mod hdr;
+pub mod hdr_detection;
 pub mod icc;
 pub mod layout;
 pub mod limits;
@@ -20,6 +21,10 @@ pub use capabilities::{
     VariableRefreshRange,
 };
 pub use events::DisplayEvent;
+pub use hdr_detection::{
+    DisplayHdrCapabilityResolver, DisplayHdrCapabilitySource, DisplayHdrManualOverride,
+    DisplayHdrResolution, HdrSinkDeclaration,
+};
 pub use hdr::{
     DisplayContentEncoding, DisplayHdrCapabilities, DisplayHdrDecision, DisplayHdrOutputMode,
     DisplayHdrPolicy,
