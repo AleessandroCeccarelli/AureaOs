@@ -113,14 +113,61 @@ pub fn scale_surface_geometry(
     output_scale: u32,
     scale: f64,
 ) -> Option<SurfaceGeometry> {
-    if output_scale == 0 || !scale.is_finite() || !(1.0..=3.0).contains(&scale) {
+    scale_surface_geometry_with_ratio(
+        geometry,
+        anchor,
+        output_origin,
+        u64::from(output_scale),
+        1,
+        scale,
+    )
+}
+
+/// Scales a surface around a global logical anchor using the output's exact
+/// fractional scale, keeping cursor hotspots aligned on mixed-DPI desktops.
+pub fn scale_surface_geometry_with_fractional_scale(
+    geometry: SurfaceGeometry,
+    anchor: (i32, i32),
+    output_origin: (i32, i32),
+    output_scale: ScaleFactor,
+    scale: f64,
+) -> Option<SurfaceGeometry> {
+    scale_surface_geometry_with_ratio(
+        geometry,
+        anchor,
+        output_origin,
+        u64::from(output_scale.numerator()),
+        u64::from(SCALE_DENOMINATOR),
+        scale,
+    )
+}
+
+fn scale_surface_geometry_with_ratio(
+    geometry: SurfaceGeometry,
+    anchor: (i32, i32),
+    output_origin: (i32, i32),
+    scale_numerator: u64,
+    scale_denominator: u64,
+    scale: f64,
+) -> Option<SurfaceGeometry> {
+    if scale_numerator == 0
+        || scale_denominator == 0
+        || !scale.is_finite()
+        || !(1.0..=3.0).contains(&scale)
+    {
         return None;
     }
 
-    let anchor_x =
-        i64::from(anchor.0.checked_sub(output_origin.0)?).checked_mul(i64::from(output_scale))?;
-    let anchor_y =
-        i64::from(anchor.1.checked_sub(output_origin.1)?).checked_mul(i64::from(output_scale))?;
+    let anchor_x = round_ratio(
+        i128::from(anchor.0.checked_sub(output_origin.0)?)
+            .checked_mul(i128::from(scale_numerator))?,
+        scale_denominator,
+    )?;
+    let anchor_y = round_ratio(
+        i128::from(anchor.1.checked_sub(output_origin.1)?)
+            .checked_mul(i128::from(scale_numerator))?,
+        scale_denominator,
+    )?;
 
     let x = (anchor_x as f64 + (geometry.x as f64 - anchor_x as f64) * scale).round();
     let y = (anchor_y as f64 + (geometry.y as f64 - anchor_y as f64) * scale).round();
