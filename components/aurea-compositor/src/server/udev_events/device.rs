@@ -9,11 +9,7 @@ use std::{io, path::PathBuf};
 
 use smithay::backend::drm::DrmNode;
 
-use crate::{
-    drm::device::DrmDevice,
-    renderer::RenderPreference,
-    vulkan::VulkanBackend,
-};
+use crate::{drm::device::DrmDevice, renderer::RenderPreference, vulkan::VulkanBackend};
 
 use super::{
     super::state::WaylandState,

@@ -14,7 +14,11 @@ pub(super) fn take_notifier_token<K: Eq + std::hash::Hash, V>(
     map.remove(key)
 }
 
-pub(super) fn track_device<N: Copy + Eq>(devices: &mut Vec<(N, PathBuf)>, node: N, path: PathBuf) -> bool {
+pub(super) fn track_device<N: Copy + Eq>(
+    devices: &mut Vec<(N, PathBuf)>,
+    node: N,
+    path: PathBuf,
+) -> bool {
     if devices.iter().any(|(known, _)| *known == node) {
         return false;
     }
@@ -24,7 +28,10 @@ pub(super) fn track_device<N: Copy + Eq>(devices: &mut Vec<(N, PathBuf)>, node: 
     true
 }
 
-pub(super) fn forget_device<N: Copy + Eq>(devices: &mut Vec<(N, PathBuf)>, node: N) -> Option<PathBuf> {
+pub(super) fn forget_device<N: Copy + Eq>(
+    devices: &mut Vec<(N, PathBuf)>,
+    node: N,
+) -> Option<PathBuf> {
     devices
         .iter()
         .position(|(known, _)| *known == node)

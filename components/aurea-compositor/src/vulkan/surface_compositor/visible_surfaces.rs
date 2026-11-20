@@ -23,7 +23,7 @@ use crate::{
     renderer::RenderTarget,
 };
 
-use super::{VulkanSurfaceCompositionError, MAX_COMPOSITED_SHM_BYTES, MAX_COMPOSITED_SURFACES};
+use super::{MAX_COMPOSITED_SHM_BYTES, MAX_COMPOSITED_SURFACES, VulkanSurfaceCompositionError};
 
 pub(super) struct VisibleSurface {
     pub(super) surface_id: smithay::reexports::wayland_server::backend::ObjectId,
