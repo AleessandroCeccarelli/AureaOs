@@ -7,6 +7,8 @@
 
 use smithay::utils::Transform;
 
+use crate::output::scale::{SCALE_DENOMINATOR, ScaleFactor};
+
 /// Physical destination rectangle for one surface on one output.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SurfaceGeometry {
@@ -162,7 +164,52 @@ pub fn surface_geometry(
     output_origin: (i32, i32),
     output_scale: u32,
 ) -> Option<SurfaceGeometry> {
-    if buffer_scale <= 0 || output_scale == 0 || buffer_size.0 == 0 || buffer_size.1 == 0 {
+    surface_geometry_with_ratio(
+        location,
+        buffer_size,
+        buffer_scale,
+        buffer_transform,
+        output_origin,
+        u64::from(output_scale),
+        1,
+    )
+}
+
+/// Calculates surface geometry using an exact Wayland fractional output scale.
+pub fn surface_geometry_with_fractional_scale(
+    location: (i32, i32),
+    buffer_size: (u32, u32),
+    buffer_scale: i32,
+    buffer_transform: Transform,
+    output_origin: (i32, i32),
+    output_scale: ScaleFactor,
+) -> Option<SurfaceGeometry> {
+    surface_geometry_with_ratio(
+        location,
+        buffer_size,
+        buffer_scale,
+        buffer_transform,
+        output_origin,
+        u64::from(output_scale.numerator()),
+        u64::from(SCALE_DENOMINATOR),
+    )
+}
+
+fn surface_geometry_with_ratio(
+    location: (i32, i32),
+    buffer_size: (u32, u32),
+    buffer_scale: i32,
+    buffer_transform: Transform,
+    output_origin: (i32, i32),
+    scale_numerator: u64,
+    scale_denominator: u64,
+) -> Option<SurfaceGeometry> {
+    if buffer_scale <= 0
+        || scale_numerator == 0
+        || scale_denominator == 0
+        || buffer_size.0 == 0
+        || buffer_size.1 == 0
+    {
         return None;
     }
 
@@ -178,36 +225,63 @@ pub fn surface_geometry(
         (buffer_width, buffer_height)
     };
 
-    let width = scaled_buffer_dimension(transformed_width, buffer_scale, output_scale)?;
-    let height = scaled_buffer_dimension(transformed_height, buffer_scale, output_scale)?;
+    let width = scaled_buffer_dimension(
+        transformed_width,
+        buffer_scale,
+        scale_numerator,
+        scale_denominator,
+    )?;
+    let height = scaled_buffer_dimension(
+        transformed_height,
+        buffer_scale,
+        scale_numerator,
+        scale_denominator,
+    )?;
     if width == 0 || height == 0 {
         return None;
     }
 
-    let relative_x = i64::from(location.0).checked_sub(i64::from(output_origin.0))?;
-    let relative_y = i64::from(location.1).checked_sub(i64::from(output_origin.1))?;
-    let x = relative_x.checked_mul(i64::from(output_scale))?;
-    let y = relative_y.checked_mul(i64::from(output_scale))?;
+    let relative_x = i128::from(location.0).checked_sub(i128::from(output_origin.0))?;
+    let relative_y = i128::from(location.1).checked_sub(i128::from(output_origin.1))?;
+    let x = round_ratio(relative_x.checked_mul(i128::from(scale_numerator))?, scale_denominator)?;
+    let y = round_ratio(relative_y.checked_mul(i128::from(scale_numerator))?, scale_denominator)?;
 
     Some(SurfaceGeometry {
-        x,
-        y,
+        x: i64::try_from(x).ok()?,
+        y: i64::try_from(y).ok()?,
         width,
         height,
     })
 }
 
-fn scaled_buffer_dimension(dimension: i32, buffer_scale: i32, output_scale: u32) -> Option<u32> {
+fn scaled_buffer_dimension(
+    dimension: i32,
+    buffer_scale: i32,
+    scale_numerator: u64,
+    scale_denominator: u64,
+) -> Option<u32> {
     if dimension <= 0 {
         return None;
     }
 
     let numerator = u128::try_from(dimension)
         .ok()?
-        .checked_mul(u128::from(output_scale))?;
-    let denominator = u128::try_from(buffer_scale).ok()?;
+        .checked_mul(u128::from(scale_numerator))?;
+    let denominator = u128::try_from(buffer_scale)
+        .ok()?
+        .checked_mul(u128::from(scale_denominator))?;
     let rounded = numerator.checked_add(denominator / 2)? / denominator;
     u32::try_from(rounded).ok()
+}
+
+fn round_ratio(value: i128, denominator: u64) -> Option<i128> {
+    let denominator = i128::from(denominator);
+    let half = denominator / 2;
+    if value >= 0 {
+        value.checked_add(half).map(|adjusted| adjusted / denominator)
+    } else {
+        value.checked_sub(half).map(|adjusted| adjusted / denominator)
+    }
 }
 
 #[cfg(test)]
