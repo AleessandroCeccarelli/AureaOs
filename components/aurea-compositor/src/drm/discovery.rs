@@ -90,9 +90,10 @@ fn read_connector_edid(device: &DrmDevice, connector: connector::Handle) -> Opti
 
 /// Discovers connected DRM outputs.
 ///
-/// Each output ID is derived from its DRM device identifier and connector ID.
-/// IDs remain stable when connectors are enumerated in a different order
-/// and remain unique across different DRM devices.
+/// Each runtime output ID is derived from its DRM device identifier and
+/// connector ID. IDs remain stable when connectors are enumerated in a
+/// different order and remain unique across different DRM devices, but must
+/// not be persisted as physical-monitor identities across device recreation.
 ///
 /// Disconnected connectors and connectors without display modes are skipped.
 /// The preferred mode is selected as the initial mode, falling back to the

@@ -34,8 +34,11 @@ impl From<std::io::Error> for DisplayColorStoreError {
 
 /// Stores assignments independently from ICC profile payloads.
 ///
-/// The file contains only stable display IDs and opaque configuration IDs.
-/// Profile bytes remain in the ICC profile store.
+/// The file contains runtime DisplayIds and opaque configuration IDs.
+/// The caller must only restore an assignment after resolving that ID against
+/// the current trusted display inventory. DisplayIds are not, by themselves,
+/// proof of a persistent physical-monitor identity. Profile bytes remain in
+/// the ICC profile store.
 #[derive(Debug, Clone)]
 pub struct DisplayColorAssignmentStore {
     path: PathBuf,
