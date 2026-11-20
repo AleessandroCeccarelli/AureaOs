@@ -21,6 +21,8 @@ impl WelcomeClientProcess {
         let executable = std::env::current_exe()?;
         let child = Command::new(executable)
             .arg(WELCOME_CLIENT_ARGUMENT)
+            // Force the client to use AureaOS's socket, not an inherited fd.
+            .env_remove("WAYLAND_SOCKET")
             .env("WAYLAND_DISPLAY", display_name)
             .stdin(Stdio::null())
             .stdout(Stdio::inherit())
