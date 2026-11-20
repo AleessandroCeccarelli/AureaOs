@@ -70,8 +70,7 @@ pub fn transform_rgba_f32(
     options: ColorTransformOptions,
 ) -> Result<(), ColorTransformError> {
     inspect_profile(source_profile).map_err(ColorTransformError::InvalidSourceProfile)?;
-    inspect_profile(destination_profile)
-        .map_err(ColorTransformError::InvalidDestinationProfile)?;
+    inspect_profile(destination_profile).map_err(ColorTransformError::InvalidDestinationProfile)?;
 
     let expected_components = pixel_count
         .checked_mul(4)
