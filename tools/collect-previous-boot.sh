@@ -80,8 +80,10 @@ collect_journal() {
     return 1
 }
 
+# Keep kernel diagnostics (including DRM/GPU driver faults) and Aurea Desktop
+# process messages only. Do not export the machine-wide system journal.
 collect_journal "$RUN_DIR/$PREFIX-kernel.txt" -b "$JOURNAL_BOOT" -k "${JOURNAL_RANGE[@]}" || true
-collect_journal "$RUN_DIR/$PREFIX-system.txt" -b "$JOURNAL_BOOT" "${JOURNAL_RANGE[@]}" || true
+collect_journal "$RUN_DIR/$PREFIX-aurea-desktop-journal.txt" -b "$JOURNAL_BOOT" _COMM=aurea-desktop "${JOURNAL_RANGE[@]}" || true
 
 if command -v coredumpctl >/dev/null 2>&1 && [[ "${#JOURNAL_RANGE[@]}" -gt 0 ]]; then
     if coredumpctl --no-pager list --since "@$STARTED_EPOCH" --until "@$ENDED_EPOCH" > "$RUN_DIR/coredumps.txt" 2>&1; then
