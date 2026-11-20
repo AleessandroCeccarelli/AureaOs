@@ -123,6 +123,35 @@ mod tests {
     }
 
     #[test]
+    fn pointer_crosses_adjacent_outputs_with_different_dpi_scales() {
+        let standard = output(0.0, 0.0, 1920.0, 1080.0);
+        let fractional = output(1920.0, 0.0, 2048.0, 1152.0);
+
+        let left_edge = Point::from((1919.5, 540.0));
+        let right_edge = Point::from((1920.5, 540.0));
+
+        assert_eq!(
+            constrain_to_outputs(left_edge, [standard, fractional]),
+            Some(left_edge)
+        );
+        assert_eq!(
+            constrain_to_outputs(right_edge, [standard, fractional]),
+            Some(right_edge)
+        );
+    }
+
+    #[test]
+    fn mixed_scale_output_gap_clamps_to_nearest_logical_edge() {
+        let standard = output(0.0, 0.0, 1920.0, 1080.0);
+        let fractional = output(2000.0, 0.0, 2048.0, 1152.0);
+
+        assert_eq!(
+            constrain_to_outputs(Point::from((1960.0, 540.0)), [standard, fractional]),
+            Some(Point::from((1919.0, 540.0)))
+        );
+    }
+
+    #[test]
     fn supports_outputs_with_negative_global_origins() {
         let point = Point::from((-150.0, 20.0));
         assert_eq!(
