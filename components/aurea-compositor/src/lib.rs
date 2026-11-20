@@ -8,6 +8,7 @@
 pub mod compositor;
 pub mod frame;
 pub mod gpu;
+pub mod presentation_selector;
 pub mod input;
 pub mod server;
 mod window_manager;
