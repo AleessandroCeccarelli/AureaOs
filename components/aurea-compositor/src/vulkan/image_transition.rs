@@ -82,7 +82,7 @@ impl Error for VulkanImageTransitionError {}
 pub struct VulkanImageTransition;
 
 impl VulkanImageTransition {
-    /// Releases a DMA-BUF-backed image from the graphics queue to KMS/foreign ownership.
+    /// Releases a DMA-BUF-backed image from the graphics queue to KMS ownership.
     ///
     /// The image is transitioned to GENERAL before the external consumer accesses
     /// the DMA-BUF. Submit this barrier on the graphics queue and signal the
@@ -91,15 +91,12 @@ impl VulkanImageTransition {
     /// The caller must use an exportable DMA-BUF image. When the selected
     /// Vulkan device matches the DRM node, EXTERNAL ownership is sufficient.
     /// FOREIGN is selected only when the device exposes that extension.
-    pub fn record_release_to_foreign(
+    pub fn record_release_to_external(
         device: &VulkanLogicalDevice,
         command_buffer: vk::CommandBuffer,
         image: vk::Image,
         old_state: VulkanImageState,
     ) -> Result<(), VulkanImageTransitionError> {
-        if !device.supports_foreign_queue_family() {
-            return Err(VulkanImageTransitionError::ForeignQueueFamilyUnsupported);
-        }
 
         let barrier = [vk::ImageMemoryBarrier2::default()
             .src_stage_mask(old_state.stage())
@@ -126,16 +123,13 @@ impl VulkanImageTransition {
     ///
     /// Call only after the KMS page-flip/release event confirms that no active
     /// plane references the image. The image is expected to be in GENERAL
-    /// layout while owned by the foreign consumer.
-    pub fn record_acquire_from_foreign(
+    /// layout while owned by the external consumer.
+    pub fn record_acquire_from_external(
         device: &VulkanLogicalDevice,
         command_buffer: vk::CommandBuffer,
         image: vk::Image,
         new_state: VulkanImageState,
     ) -> Result<(), VulkanImageTransitionError> {
-        if !device.supports_foreign_queue_family() {
-            return Err(VulkanImageTransitionError::ForeignQueueFamilyUnsupported);
-        }
 
         let barrier = [vk::ImageMemoryBarrier2::default()
             .src_stage_mask(vk::PipelineStageFlags2::NONE)
