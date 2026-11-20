@@ -74,8 +74,6 @@ pub(super) fn refresh_device_outputs(state: &mut WaylandState, node: DrmNode) ->
     Ok(())
 }
 
-fn output_belongs_to_device(output_id: OutputId, device_id: u64) -> bool {
+pub(super) fn output_belongs_to_device(output_id: OutputId, device_id: u64) -> bool {
     (output_id >> 32) as u64 == device_id
 }
-
-pub(super) use output_belongs_to_device as output_belongs_to_device_for_tests;

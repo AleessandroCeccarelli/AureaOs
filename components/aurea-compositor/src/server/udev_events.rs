@@ -5,6 +5,7 @@
 
 //! Udev discovery and DRM hotplug lifecycle coordination.
 
+mod activation;
 mod device;
 mod outputs;
 mod tracking;
@@ -23,7 +24,7 @@ use super::state::WaylandState;
 
 use device::{add_device, changed_device, remove_device};
 
-pub(super) use device::activate_discovered_devices;
+pub(super) use activation::activate_discovered_devices;
 pub(super) use outputs::{output_belongs_to_device, restore_before_publish};
 pub(super) use tracking::{
     forget_changed_device, forget_device, queue_changed_device, retry_pending_changes,
