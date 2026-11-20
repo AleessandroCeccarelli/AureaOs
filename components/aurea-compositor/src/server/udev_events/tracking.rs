@@ -14,7 +14,7 @@ pub(super) fn take_notifier_token<K: Eq + std::hash::Hash, V>(
     map.remove(key)
 }
 
-fn track_device<N: Copy + Eq>(devices: &mut Vec<(N, PathBuf)>, node: N, path: PathBuf) -> bool {
+pub(super) fn track_device<N: Copy + Eq>(devices: &mut Vec<(N, PathBuf)>, node: N, path: PathBuf) -> bool {
     if devices.iter().any(|(known, _)| *known == node) {
         return false;
     }
@@ -24,20 +24,20 @@ fn track_device<N: Copy + Eq>(devices: &mut Vec<(N, PathBuf)>, node: N, path: Pa
     true
 }
 
-fn forget_device<N: Copy + Eq>(devices: &mut Vec<(N, PathBuf)>, node: N) -> Option<PathBuf> {
+pub(super) fn forget_device<N: Copy + Eq>(devices: &mut Vec<(N, PathBuf)>, node: N) -> Option<PathBuf> {
     devices
         .iter()
         .position(|(known, _)| *known == node)
         .map(|index| devices.remove(index).1)
 }
 
-fn queue_changed_device<N: Copy + Eq>(changed: &mut Vec<N>, node: N) {
+pub(super) fn queue_changed_device<N: Copy + Eq>(changed: &mut Vec<N>, node: N) {
     if !changed.contains(&node) {
         changed.push(node);
     }
 }
 
-fn forget_changed_device<N: Copy + Eq>(changed: &mut Vec<N>, node: N) {
+pub(super) fn forget_changed_device<N: Copy + Eq>(changed: &mut Vec<N>, node: N) {
     changed.retain(|known| *known != node);
 }
 
@@ -45,7 +45,7 @@ fn output_belongs_to_device(output_id: OutputId, device_id: u64) -> bool {
     (output_id >> 32) as u64 == device_id
 }
 
-fn retry_pending_changes<N, E, F>(
+pub(super) fn retry_pending_changes<N, E, F>(
     pending: Vec<N>,
     managed: &std::collections::HashSet<N>,
     mut refresh: F,
