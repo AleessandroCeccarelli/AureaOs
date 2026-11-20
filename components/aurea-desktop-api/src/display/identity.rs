@@ -33,9 +33,7 @@ impl DisplayIdentityEvidence {
     ) -> Option<Self> {
         let connector_path = connector_path.into();
         if connector_path.trim().is_empty()
-            || !manufacturer
-                .iter()
-                .all(|byte| byte.is_ascii_uppercase())
+            || !manufacturer.iter().all(|byte| byte.is_ascii_uppercase())
         {
             return None;
         }
@@ -126,13 +124,7 @@ mod tests {
     use crate::display::DisplayId;
 
     fn evidence(connector: &str, serial: Option<&str>) -> DisplayIdentityEvidence {
-        DisplayIdentityEvidence::new(
-            connector,
-            *b"DEL",
-            0x1234,
-            serial.map(str::to_owned),
-        )
-        .unwrap()
+        DisplayIdentityEvidence::new(connector, *b"DEL", 0x1234, serial.map(str::to_owned)).unwrap()
     }
 
     #[test]

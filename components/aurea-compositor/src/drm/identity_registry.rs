@@ -5,9 +5,9 @@
 
 //! Runtime index of physical identity evidence for connected DRM outputs.
 
-use std::collections::HashMap;
-use aurea_desktop_api::display::DisplayIdentityEvidence;
 use crate::output::OutputId;
+use aurea_desktop_api::display::DisplayIdentityEvidence;
+use std::collections::HashMap;
 
 /// Associates transient output IDs with current hardware evidence.
 /// OutputId is deliberately not a persistent monitor identifier.
@@ -17,18 +17,36 @@ pub struct DrmDisplayIdentityRegistry {
 }
 
 impl DrmDisplayIdentityRegistry {
-    pub fn new() -> Self { Self::default() }
-
-    /// Replaces evidence for one DRM device after successful reconciliation.
-    pub fn replace_device(&mut self, device_id: u64, evidence: impl IntoIterator<Item = (OutputId, DisplayIdentityEvidence)>) {
-        self.entries.retain(|id, _| (*id >> 32) as u64 != device_id);
-        self.entries.extend(evidence.into_iter().filter(|(id, _)| (*id >> 32) as u64 == device_id));
+    pub fn new() -> Self {
+        Self::default()
     }
 
-    pub fn remove(&mut self, output_id: OutputId) { self.entries.remove(&output_id); }
-    pub fn get(&self, output_id: OutputId) -> Option<&DisplayIdentityEvidence> { self.entries.get(&output_id) }
-    pub fn len(&self) -> usize { self.entries.len() }
-    pub fn is_empty(&self) -> bool { self.entries.is_empty() }
+    /// Replaces evidence for one DRM device after successful reconciliation.
+    pub fn replace_device(
+        &mut self,
+        device_id: u64,
+        evidence: impl IntoIterator<Item = (OutputId, DisplayIdentityEvidence)>,
+    ) {
+        self.entries.retain(|id, _| (*id >> 32) as u64 != device_id);
+        self.entries.extend(
+            evidence
+                .into_iter()
+                .filter(|(id, _)| (*id >> 32) as u64 == device_id),
+        );
+    }
+
+    pub fn remove(&mut self, output_id: OutputId) {
+        self.entries.remove(&output_id);
+    }
+    pub fn get(&self, output_id: OutputId) -> Option<&DisplayIdentityEvidence> {
+        self.entries.get(&output_id)
+    }
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
 }
 
 #[cfg(test)]

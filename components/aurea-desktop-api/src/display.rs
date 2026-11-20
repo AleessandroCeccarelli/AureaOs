@@ -37,9 +37,7 @@ pub use icc::{
     IccProfileId, IccProfileImport, IccProfileManager, IccProfileManagerError, IccProfileOrigin,
     IccProfileProvider, MAX_ICC_PROFILE_BYTES,
 };
-pub use identity::{
-    DisplayIdentityEvidence, DisplayIdentityMatch, DisplayIdentityResolver,
-};
+pub use identity::{DisplayIdentityEvidence, DisplayIdentityMatch, DisplayIdentityResolver};
 pub use layout::{DisplayLayout, DisplayPlacement, DisplayPosition, DisplayScale};
 pub use limits::MAX_ACTIVE_DISPLAYS;
 pub use manager::{

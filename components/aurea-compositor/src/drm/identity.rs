@@ -7,7 +7,9 @@
 
 use aurea_desktop_api::display::DisplayIdentityEvidence;
 
-use super::{connector_identity::DrmConnectorIdentity, edid::EdidInfo, output::DrmOutputDescriptor};
+use super::{
+    connector_identity::DrmConnectorIdentity, edid::EdidInfo, output::DrmOutputDescriptor,
+};
 
 /// Builds conservative physical-monitor evidence from a discovered DRM output.
 ///

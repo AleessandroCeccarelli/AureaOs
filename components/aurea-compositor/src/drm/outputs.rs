@@ -169,7 +169,16 @@ pub fn reconcile_drm_outputs_with_identity(
     device: &DrmDevice,
     manager: &mut OutputManager,
     owned_ids: &[OutputId],
-) -> Result<(OutputReconciliation, Vec<(OutputId, aurea_desktop_api::display::DisplayIdentityEvidence)>), DrmOutputsError> {
+) -> Result<
+    (
+        OutputReconciliation,
+        Vec<(
+            OutputId,
+            aurea_desktop_api::display::DisplayIdentityEvidence,
+        )>,
+    ),
+    DrmOutputsError,
+> {
     let descriptors = discover_connected_outputs(device).map_err(DrmOutputsError::Discovery)?;
     let mut outputs = Vec::with_capacity(descriptors.len());
     let mut identities = Vec::new();
@@ -178,10 +187,15 @@ pub fn reconcile_drm_outputs_with_identity(
         if let Some(evidence) = super::identity::identity_evidence_for_output(&descriptor) {
             identities.push((output_id, evidence));
         }
-        outputs.push(descriptor.into_display_output()
-            .map_err(|source| DrmOutputsError::Registration { output_id, source })?);
+        outputs.push(
+            descriptor
+                .into_display_output()
+                .map_err(|source| DrmOutputsError::Registration { output_id, source })?,
+        );
     }
-    let changes = manager.reconcile_outputs(owned_ids, outputs).map_err(DrmOutputsError::Manager)?;
+    let changes = manager
+        .reconcile_outputs(owned_ids, outputs)
+        .map_err(DrmOutputsError::Manager)?;
     Ok((changes, identities))
 }
 

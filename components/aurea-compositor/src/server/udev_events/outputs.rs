@@ -73,7 +73,9 @@ pub(in crate::server) fn refresh_device_outputs(
             .map_err(io::Error::other)?
     };
 
-    state.drm_display_identities.replace_device(node.dev_id() as u64, identity_evidence);
+    state
+        .drm_display_identities
+        .replace_device(node.dev_id() as u64, identity_evidence);
 
     let display = state.display.handle();
 

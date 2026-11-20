@@ -29,8 +29,8 @@ use crate::AureaCompositor;
 use crate::{
     drm::{
         DrmSession, device_manager::DrmDeviceManager, gbm::GbmDeviceManager,
-        identity_registry::DrmDisplayIdentityRegistry,
-        registry::DrmDeviceRegistry, surfaces::DrmSurfaceManager,
+        identity_registry::DrmDisplayIdentityRegistry, registry::DrmDeviceRegistry,
+        surfaces::DrmSurfaceManager,
     },
     gpu::GpuManager,
     vulkan::VulkanBackend,
