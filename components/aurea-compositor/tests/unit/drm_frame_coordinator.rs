@@ -96,6 +96,31 @@ fn previous_frame_is_released_only_after_the_next_page_flip() {
 }
 
 #[test]
+fn kms_commit_requires_foreign_queue_release_even_with_sync_file() {
+    let mut coordinator = DrmOutputFrameCoordinator::new();
+    let id = fb(19);
+    coordinator.register_framebuffer(id).unwrap();
+    coordinator.begin_render(id).unwrap();
+    coordinator.mark_submitted(id).unwrap();
+    coordinator.begin_presentation(id).unwrap();
+    coordinator.presentation_test_passed().unwrap();
+
+    assert_eq!(
+        coordinator.validate_commit_ready(true),
+        Err(DrmOutputFrameError::ForeignOwnershipNotReleased(id))
+    );
+    assert_eq!(
+        coordinator.presentation_commit_accepted(true),
+        Err(DrmOutputFrameError::ForeignOwnershipNotReleased(id))
+    );
+
+    coordinator.mark_foreign_release_submitted(id).unwrap();
+    coordinator.presentation_commit_accepted(true).unwrap();
+    coordinator.mark_gpu_complete(id).unwrap();
+    coordinator.page_flip_complete(id).unwrap();
+}
+
+#[test]
 fn sync_file_handoff_does_not_require_gpu_completion_before_commit() {
     let mut coordinator = DrmOutputFrameCoordinator::new();
     let id = fb(20);
