@@ -337,6 +337,56 @@ mod tests {
     }
 
     #[test]
+    fn fractional_output_scale_controls_surface_origin_and_extent() {
+        let scale = ScaleFactor::from_percent(125).unwrap();
+        let geometry = surface_geometry_with_fractional_scale(
+            (10, -10),
+            (800, 600),
+            1,
+            Transform::Normal,
+            (0, 0),
+            scale,
+        )
+        .unwrap();
+
+        assert_eq!(
+            (
+                geometry.x(),
+                geometry.y(),
+                geometry.width(),
+                geometry.height(),
+            ),
+            (13, -13, 1000, 750)
+        );
+    }
+
+    #[test]
+    fn fractional_scale_keeps_multi_output_origin_local() {
+        let scale = ScaleFactor::from_percent(150).unwrap();
+        let geometry = surface_geometry_with_fractional_scale(
+            (1700, 100),
+            (800, 600),
+            1,
+            Transform::Normal,
+            (1920, 0),
+            scale,
+        )
+        .unwrap();
+
+        assert_eq!((geometry.x(), geometry.y()), (-330, 150));
+        assert_eq!((geometry.width(), geometry.height()), (1200, 900));
+        assert_eq!(
+            geometry.scissor(1920, 1080),
+            Some(SurfaceScissor {
+                x: 0,
+                y: 150,
+                width: 870,
+                height: 900,
+            })
+        );
+    }
+
+    #[test]
     fn clips_negative_surface_origin_without_changing_destination() {
         let geometry =
             surface_geometry((-10, 5), (20, 10), 1, Transform::Normal, (0, 0), 1).unwrap();
