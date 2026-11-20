@@ -22,11 +22,11 @@ use smithay::{
 
 use super::state::WaylandState;
 
-use device::{add_device, changed_device, remove_device};
+use self::device::{add_device, changed_device, remove_device};
 
-pub(super) use activation::activate_discovered_devices;
-pub(super) use outputs::{output_belongs_to_device, restore_before_publish};
-pub(super) use tracking::{
+pub(super) use self::activation::activate_discovered_devices;
+pub(super) use self::outputs::{output_belongs_to_device, restore_before_publish};
+pub(super) use self::tracking::{
     forget_changed_device, forget_device, queue_changed_device, retry_pending_changes,
     take_notifier_token, track_device,
 };
