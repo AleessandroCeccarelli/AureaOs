@@ -153,6 +153,18 @@ impl VulkanBackend {
         self.device.as_ref()
     }
 
+    /// Reports whether this initialized backend can use AureaOS's direct
+    /// Vulkan-to-KMS ownership-transfer path.
+    ///
+    /// This capability is derived from the extensions enabled on the actual
+    /// logical device, not inferred from GPU inventory or backend presence.
+    #[cfg(feature = "drm")]
+    pub fn supports_direct_presentation(&self) -> bool {
+        self.device.supports_foreign_queue_family()
+            && self.device.extension_plan().supports_dmabuf_interop()
+            && self.device.extension_plan().supports_drm_format_modifier()
+    }
+
     /// Returns shared ownership for resources that must outlive this backend borrow.
     #[cfg(feature = "drm")]
     pub fn shared_device(&self) -> Arc<VulkanLogicalDevice> {
