@@ -339,8 +339,13 @@ fn remove_device_outputs(state: &mut WaylandState, node: DrmNode) {
 
     for id in ids {
         state.compositor.unpublish_wayland_output(id);
+        state.compositor.forget_output_frame_state(id);
         state.compositor.output_manager().unregister(id);
     }
+
+    // A whole DRM device may disappear while the pointer is on one of its
+    // outputs. Reposition it only after every output from that device is gone.
+    state.compositor.center_pointer_on_primary_output();
 }
 
 fn remove_device_notifier(state: &mut WaylandState, node: DrmNode) {
