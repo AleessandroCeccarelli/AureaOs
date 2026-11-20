@@ -7,8 +7,6 @@
 
 use std::sync::Arc;
 
-use smithay::utils::Transform;
-
 use crate::{
     render::{
         geometry::{
