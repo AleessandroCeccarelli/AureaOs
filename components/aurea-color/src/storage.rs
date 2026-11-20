@@ -154,10 +154,7 @@ impl IccProfileStore {
     }
 
     /// Removes a stored profile. Unknown fingerprints are reported explicitly.
-    pub fn remove(
-        &self,
-        fingerprint: &IccProfileFingerprint,
-    ) -> Result<(), ProfileStoreError> {
+    pub fn remove(&self, fingerprint: &IccProfileFingerprint) -> Result<(), ProfileStoreError> {
         let path = self.profile_path(fingerprint);
         let metadata = fs::symlink_metadata(&path).map_err(|error| {
             if error.kind() == std::io::ErrorKind::NotFound {
@@ -179,14 +176,12 @@ impl IccProfileStore {
 
     fn temporary_path(&self) -> PathBuf {
         let sequence = TEMPORARY_FILE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
-        self.root.join(format!(".profile-{}-{sequence}.tmp", std::process::id()))
+        self.root
+            .join(format!(".profile-{}-{sequence}.tmp", std::process::id()))
     }
 
     fn write_temporary(&self, path: &Path, bytes: &[u8]) -> Result<(), ProfileStoreError> {
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(path)?;
+        let mut file = OpenOptions::new().write(true).create_new(true).open(path)?;
         file.write_all(bytes)?;
         file.sync_all()?;
         Ok(())
