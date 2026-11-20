@@ -49,9 +49,24 @@ impl OutputManager {
             y: i64::from(position.y()),
         };
 
-        OutputLogicalBounds::from_logical_size(origin, size)
-            .map(Some)
-            .ok_or(OutputManagerError::PositionOverflow)
+        let bounds = OutputLogicalBounds::from_logical_size(origin, size)
+            .ok_or(OutputManagerError::PositionOverflow)?;
+        let maximum_exclusive = i64::from(i32::MAX) + 1;
+        let right = bounds
+            .origin()
+            .x
+            .checked_add(i64::from(bounds.size().width))
+            .ok_or(OutputManagerError::PositionOverflow)?;
+        let bottom = bounds
+            .origin()
+            .y
+            .checked_add(i64::from(bounds.size().height))
+            .ok_or(OutputManagerError::PositionOverflow)?;
+        if right > maximum_exclusive || bottom > maximum_exclusive {
+            return Err(OutputManagerError::PositionOverflow);
+        }
+
+        Ok(Some(bounds))
     }
 }
 

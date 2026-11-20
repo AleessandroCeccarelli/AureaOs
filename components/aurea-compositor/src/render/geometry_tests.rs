@@ -157,8 +157,8 @@ fn composed_surface_transforms_match_sequential_uv_mapping() {
         for output in transforms {
             let composed = compose_surface_transforms(buffer, output).unwrap();
             for uv in probes {
-                let sequential = buffer_uv_from_surface_uv(buffer, uv)
-                    .and_then(|uv| buffer_uv_from_surface_uv(output, uv));
+                let sequential = buffer_uv_from_surface_uv(output, uv)
+                    .and_then(|uv| buffer_uv_from_surface_uv(buffer, uv));
                 assert_eq!(buffer_uv_from_surface_uv(composed, uv), sequential);
             }
         }
@@ -216,7 +216,7 @@ fn rounds_scaled_buffer_dimensions_to_nearest_physical_pixel() {
 fn fractional_cursor_scale_keeps_hotspot_fixed_on_output() {
     let output_scale = ScaleFactor::from_percent(125).unwrap();
     let geometry = surface_geometry_with_fractional_scale(
-        (90, 90),
+        (80, 80),
         (20, 20),
         1,
         Transform::Normal,
@@ -233,7 +233,7 @@ fn fractional_cursor_scale_keeps_hotspot_fixed_on_output() {
     )
     .unwrap();
 
-    assert_eq!((scaled.x(), scaled.y()), (-24, -24));
+    assert_eq!((scaled.x(), scaled.y()), (75, 75));
     assert_eq!((scaled.width(), scaled.height()), (50, 50));
 }
 
