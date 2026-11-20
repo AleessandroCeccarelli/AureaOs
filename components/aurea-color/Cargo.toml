@@ -9,5 +9,6 @@ description = "ICC profile inspection and color-management services for AureaOS"
 license = "GPL-3.0-or-later"
 
 [dependencies]
+aurea-desktop-api = { path = "../aurea-desktop-api" }
 lcms2 = "6.3"
 sha2 = "0.10"

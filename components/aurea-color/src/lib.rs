@@ -9,6 +9,7 @@ mod configuration_manager;
 mod header;
 mod identity;
 mod lcms_engine;
+mod profile_catalog;
 mod storage;
 mod transform;
 
@@ -18,6 +19,7 @@ pub use configuration_manager::ColorConfigurationManager;
 pub use header::{IccHeader, IccHeaderError, IccProfileSummary, IccTag};
 pub use identity::IccProfileFingerprint;
 pub use lcms_engine::LittleCmsTransformEngine;
+pub use profile_catalog::IccProfileCatalog;
 pub use storage::{IccProfileStore, ProfileStoreError, StoredProfile};
 pub use transform::{
     ColorTransformEngine, ColorTransformError, ColorTransformOptions, RenderingIntent,

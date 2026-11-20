@@ -32,6 +32,7 @@ pub enum IccProfileManagerError {
     AssignmentRejected,
     StorageFailure,
     ExportFailure,
+    UnsupportedOperation,
 }
 
 /// Service that owns ICC profile storage and per-display assignments.
