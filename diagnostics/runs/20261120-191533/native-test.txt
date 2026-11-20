@@ -1,0 +1,200 @@
+AureaOS native diagnostic session: 20261120-191533
+Report directory: /home/alessandro/Documenti/vscode/AureaOs/diagnostics/runs/20261120-191533
+Build revision: f046d47d
+Maximum runtime: 45 seconds
+
+[1/2] Building Aurea Desktop...
+   Compiling aurea-compositor v0.1.0 (/home/alessandro/Documenti/vscode/AureaOs/components/aurea-compositor)
+warning: unused import: `LumenSchedule`
+ --> components/aurea-shell/src/desktop/night_light.rs:9:54
+  |
+9 |     appearance::lumen::{LumenMode, LumenPreferences, LumenSchedule},
+  |                                                      ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `aurea-shell` (lib) generated 1 warning (run `cargo fix --lib -p aurea-shell` to apply 1 suggestion)
+   Compiling aurea-desktop v0.1.0 (/home/alessandro/Documenti/vscode/AureaOs/components/aurea-desktop)
+warning: unused import: `Dispatch`
+  --> components/aurea-desktop/src/bin/../welcome/buffer.rs:15:22
+   |
+15 | use wayland_client::{Dispatch, QueueHandle, protocol::wl_shm::Format};
+   |                      ^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `Dispatch`, `GlobalListContents`, and `QueueHandle`
+  --> components/aurea-desktop/src/bin/../welcome/mod.rs:23:17
+   |
+23 |     Connection, Dispatch, QueueHandle,
+   |                 ^^^^^^^^  ^^^^^^^^^^^
+24 |     globals::{GlobalListContents, registry_queue_init},
+   |               ^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `xdg_surface::XdgSurface` and `xdg_toplevel::XdgToplevel`
+  --> components/aurea-desktop/src/bin/../welcome/mod.rs:28:5
+   |
+28 |     xdg_surface::XdgSurface, xdg_toplevel::XdgToplevel, xdg_wm_base::XdgWmBase,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Dispatch`
+  --> components/aurea-desktop/src/welcome/buffer.rs:15:22
+   |
+15 | use wayland_client::{Dispatch, QueueHandle, protocol::wl_shm::Format};
+   |                      ^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused imports: `Dispatch`, `GlobalListContents`, and `QueueHandle`
+  --> components/aurea-desktop/src/welcome/mod.rs:23:17
+   |
+23 |     Connection, Dispatch, QueueHandle,
+   |                 ^^^^^^^^  ^^^^^^^^^^^
+24 |     globals::{GlobalListContents, registry_queue_init},
+   |               ^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `xdg_surface::XdgSurface` and `xdg_toplevel::XdgToplevel`
+  --> components/aurea-desktop/src/welcome/mod.rs:28:5
+   |
+28 |     xdg_surface::XdgSurface, xdg_toplevel::XdgToplevel, xdg_wm_base::XdgWmBase,
+   |     ^^^^^^^^^^^^^^^^^^^^^^^  ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `aurea-desktop` (bin "aurea-welcome") generated 3 warnings (run `cargo fix --bin "aurea-welcome" -p aurea-desktop` to apply 3 suggestions)
+warning: variable does not need to be mutable
+  --> components/aurea-desktop/src/display_color_assignment_store.rs:98:13
+   |
+98 |         let mut file = File::open(&self.path)?;
+   |             ----^^^^
+   |             |
+   |             help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `RegistryState` is never constructed
+  --> components/aurea-desktop/src/color_configuration_manager.rs:22:8
+   |
+22 | struct RegistryState {
+   |        ^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: struct `DesktopColorConfigurationManager` is never constructed
+  --> components/aurea-desktop/src/color_configuration_manager.rs:35:12
+   |
+35 | pub struct DesktopColorConfigurationManager {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: multiple associated items are never used
+   --> components/aurea-desktop/src/color_configuration_manager.rs:41:12
+    |
+ 40 | impl DesktopColorConfigurationManager {
+    | ------------------------------------- associated items in this implementation
+ 41 |     pub fn new() -> Self {
+    |            ^^^
+...
+ 46 |     pub fn open_default_persistent() -> Result<Self, DisplayColorStoreError> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 54 |     pub fn open_persistent(
+    |            ^^^^^^^^^^^^^^^
+...
+ 81 |     fn persist_assignments(
+    |        ^^^^^^^^^^^^^^^^^^^
+...
+104 |     pub fn register_display(
+    |            ^^^^^^^^^^^^^^^^
+...
+117 |     pub fn unregister_display(
+    |            ^^^^^^^^^^^^^^^^^^
+...
+134 |     pub fn handle_display_event(
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+156 |     pub fn synchronize_displays(
+    |            ^^^^^^^^^^^^^^^^^^^^
+...
+175 |     pub fn register_configuration(
+    |            ^^^^^^^^^^^^^^^^^^^^^^
+...
+188 |     pub fn unregister_configuration(
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `MAX_ASSIGNMENT_FILE_BYTES` is never used
+  --> components/aurea-desktop/src/display_color_assignment_store.rs:19:7
+   |
+19 | const MAX_ASSIGNMENT_FILE_BYTES: u64 = 1024 * 1024;
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: static `TEMPORARY_SEQUENCE` is never used
+  --> components/aurea-desktop/src/display_color_assignment_store.rs:20:8
+   |
+20 | static TEMPORARY_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+   |        ^^^^^^^^^^^^^^^^^^
+
+warning: enum `DisplayColorStoreError` is never used
+  --> components/aurea-desktop/src/display_color_assignment_store.rs:23:10
+   |
+23 | pub enum DisplayColorStoreError {
+   |          ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `DisplayColorAssignmentStore` is never constructed
+  --> components/aurea-desktop/src/display_color_assignment_store.rs:43:12
+   |
+43 | pub struct DisplayColorAssignmentStore {
+   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: associated items `open`, `user_default`, `load`, and `save` are never used
+   --> components/aurea-desktop/src/display_color_assignment_store.rs:49:12
+    |
+ 47 | impl DisplayColorAssignmentStore {
+    | -------------------------------- associated items in this implementation
+ 48 |     /// Opens the assignment file, creating its parent directory when needed.
+ 49 |     pub fn open(path: impl AsRef<Path>) -> Result<Self, DisplayColorStoreError> {
+    |            ^^^^
+...
+ 74 |     pub fn user_default() -> Result<Self, DisplayColorStoreError> {
+    |            ^^^^^^^^^^^^
+...
+ 85 |     pub fn load(&self) -> Result<Vec<DisplayColorConfigurationAssignment>, DisplayColorStoreError> {
+    |            ^^^^
+...
+136 |     pub fn save(
+    |            ^^^^
+
+warning: function `encode_hex` is never used
+   --> components/aurea-desktop/src/display_color_assignment_store.rs:189:4
+    |
+189 | fn encode_hex(bytes: &[u8]) -> String {
+    |    ^^^^^^^^^^
+
+warning: function `decode_hex` is never used
+   --> components/aurea-desktop/src/display_color_assignment_store.rs:199:4
+    |
+199 | fn decode_hex(value: &str) -> Result<Vec<u8>, DisplayColorStoreError> {
+    |    ^^^^^^^^^^
+
+warning: method `save` is never used
+  --> components/aurea-desktop/src/keyboard_layout_store.rs:61:12
+   |
+21 | impl KeyboardLayoutStore {
+   | ------------------------ method in this implementation
+...
+61 |     pub fn save(&self, layout: &KeyboardLayoutId) -> io::Result<()> {
+   |            ^^^^
+
+warning: `aurea-desktop` (bin "aurea-desktop") generated 15 warnings (run `cargo fix --bin "aurea-desktop" -p aurea-desktop` to apply 4 suggestions)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 41.91s
+
+[2/2] Starting the native DRM/Vulkan desktop...
+AureaOS: Vulkan backend unavailable for DRM device card1: No Vulkan device matching the DRM node supports graphics rendering, DMA-BUF export and foreign queue-family ownership
+AureaOS: skipping outputs for card1: GBM or Vulkan backend is unavailable
+Aurea Desktop error: Wayland compositor error: No usable display output was initialized: check DRM/KMS, GBM, Vulkan compatibility, and connected monitors
+AureaOS exited with status 1.
+Collecting --current-boot diagnostics for 20261120-191533
+Collected /home/alessandro/Documenti/vscode/AureaOs/diagnostics/runs/20261120-191533/current-boot-kernel.txt
+Collected /home/alessandro/Documenti/vscode/AureaOs/diagnostics/runs/20261120-191533/current-boot-aurea-desktop-journal.txt
+Collected application log entries from /home/alessandro/.local/state/aureaos/logs/aurea-desktop.log
+Collection finished: /home/alessandro/Documenti/vscode/AureaOs/diagnostics/runs/20261120-191533
+
+Diagnostic report ready: /home/alessandro/Documenti/vscode/AureaOs/diagnostics/runs/20261120-191533
+Diagnostic report ready for Git review and push.
