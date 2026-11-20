@@ -109,6 +109,12 @@ impl RenderBackend for VulkanOutputScanoutBackend<'_> {
                 "Cannot render while the DRM device is inactive",
             ));
         }
+        if !self.vulkan.device().supports_foreign_queue_family() {
+            return Err(VulkanScanoutError::new(
+                "The selected Vulkan device does not support VK_EXT_queue_family_foreign",
+            ));
+        }
+
         let (surface, frame_pool, presentation) = self.output.scanout_parts_mut();
         if surface.is_legacy() {
             return Err(VulkanScanoutError::new(
