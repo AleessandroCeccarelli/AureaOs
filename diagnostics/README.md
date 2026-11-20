@@ -23,7 +23,7 @@ Boot Fedora normally, return to the same checkout, and run the collector using
 the run id printed by the launcher:
 
 ```bash
-tools/collect-previous-boot.sh 20261120-083000
+bash tools/collect-previous-boot.sh 20261120-083000
 ```
 
 The collector attempts to save the previous boot's kernel journal and system
