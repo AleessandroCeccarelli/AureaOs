@@ -7,9 +7,9 @@
 
 use std::collections::{BTreeSet, HashMap, HashSet};
 
-use super::{OutputManager, OutputManagerError, OutputReconciliation};
 use super::geometry::logical_width;
-use crate::output::{limits::MAX_ACTIVE_OUTPUTS, DisplayOutput, OutputId};
+use super::{OutputManager, OutputManagerError, OutputReconciliation};
+use crate::output::{DisplayOutput, OutputId, limits::MAX_ACTIVE_OUTPUTS};
 
 impl OutputManager {
     /// Reconciles outputs owned by one DRM device with a fresh discovery result.
@@ -127,6 +127,4 @@ impl OutputManager {
 
         Ok(changes)
     }
-
-
 }
