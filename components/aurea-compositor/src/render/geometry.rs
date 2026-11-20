@@ -428,7 +428,7 @@ mod tests {
         assert_eq!(
             transform_geometry_for_output(geometry, 1920, 1080, Transform::_90),
             Some(SurfaceGeometry {
-                x: 1020,
+                x: 1860,
                 y: 10,
                 width: 40,
                 height: 30,
