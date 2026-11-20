@@ -128,6 +128,17 @@ impl VulkanFrameResource {
         )
     }
 
+    /// Returns whether ownership has been released to the foreign queue family.
+    pub const fn is_foreign_owned(&self) -> bool {
+        matches!(
+            self.state,
+            FrameResourceState::Submitted {
+                foreign_owned: true,
+                ..
+            }
+        )
+    }
+
     /// Begins recording/rendering into this resource.
     pub fn begin_render(&mut self) -> Result<(), VulkanFrameResourceError> {
         if !self.is_available() {
