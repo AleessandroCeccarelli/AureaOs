@@ -69,6 +69,8 @@ collect_journal "$RUN_DIR/$PREFIX-kernel.txt" -b "$JOURNAL_BOOT" -k || true
 collect_journal "$RUN_DIR/$PREFIX-system.txt" -b "$JOURNAL_BOOT" || true
 
 STARTED_EPOCH="$(awk -F= '$1 == "started_epoch" { print $2; exit }' "$RUN_DIR/run-info.txt" 2>/dev/null || true)"
+ENDED_EPOCH="$(awk -F= '$1 == "finished_epoch" { value=$2 } $1 == "recovered_epoch" { value=$2 } END { print value }' "$RUN_DIR/run-info.txt" 2>/dev/null || true)"
+if ! [[ "$ENDED_EPOCH" =~ ^[0-9]+$ ]]; then ENDED_EPOCH="$(date +%s)"; fi
 STATE_HOME="${XDG_STATE_HOME:-}"
 if [[ -z "$STATE_HOME" && -n "${HOME:-}" ]]; then
     STATE_HOME="$HOME/.local/state"
