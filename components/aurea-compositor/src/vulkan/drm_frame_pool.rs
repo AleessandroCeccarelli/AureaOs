@@ -33,6 +33,7 @@ pub enum VulkanDrmFramePoolError {
     FramebufferStillInUse(DrmFramebufferId),
     CommandBuffer(vk::Result),
     ImageTransition(VulkanImageTransitionError),
+    ForeignQueueFamilyUnavailable,
 }
 
 impl fmt::Display for VulkanDrmFramePoolError {
@@ -62,6 +63,8 @@ impl fmt::Display for VulkanDrmFramePoolError {
             Self::CommandBuffer(error) => {
                 write!(formatter, "Vulkan acquire command failed: {error:?}")
             }
+            Self::ForeignQueueFamilyUnavailable => formatter
+                .write_str("Vulkan foreign queue-family ownership is unavailable for DRM scanout"),
             Self::ImageTransition(error) => {
                 write!(
                     formatter,
@@ -111,6 +114,9 @@ impl VulkanDrmScanoutFrame {
         format: DrmVulkanFormat,
         usage: vk::ImageUsageFlags,
     ) -> Result<Self, VulkanDrmFramePoolError> {
+        if !logical_device.supports_foreign_queue_family() {
+            return Err(VulkanDrmFramePoolError::ForeignQueueFamilyUnavailable);
+        }
         let allocator = VulkanDrmImageAllocator::new(Arc::clone(&logical_device))?;
         let image = allocator.allocate_exportable(width, height, format, usage)?;
         let framebuffer = VulkanDrmFramebuffer::register(drm_device, gbm_devices, &image)?;
