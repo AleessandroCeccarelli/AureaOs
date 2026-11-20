@@ -21,7 +21,6 @@ use super::{
 #[derive(Debug)]
 pub enum CpuPresentationError {
     LegacySurfaceUnsupported,
-    MissingActivePlane,
     CandidateFramebufferNotConfigured,
     UnexpectedCrtc,
     KmsOperation(String),
@@ -34,9 +33,6 @@ impl fmt::Display for CpuPresentationError {
             Self::LegacySurfaceUnsupported => formatter.write_str(
                 "CPU presentation requires atomic DRM TEST_ONLY support",
             ),
-            Self::MissingActivePlane => formatter.write_str(
-                "CPU presentation requires the output primary plane to be configured",
-            ),
             Self::CandidateFramebufferNotConfigured => formatter.write_str(
                 "The configured primary plane does not reference the submitted CPU framebuffer",
             ),
@@ -44,7 +40,9 @@ impl fmt::Display for CpuPresentationError {
                 "DRM event does not belong to this presentation surface",
             ),
             Self::KmsOperation(message) => write!(formatter, "KMS presentation failed: {message}"),
-            Self::Lifecycle(error) => write!(formatter, "CPU framebuffer lifecycle failed: {error}"),
+            Self::Lifecycle(error) => {
+                write!(formatter, "CPU framebuffer lifecycle failed: {error}")
+            }
         }
     }
 }
@@ -70,7 +68,10 @@ pub struct CpuPresentationBackend {
 impl CpuPresentationBackend {
     /// Creates a presenter bound to the DRM node and CRTC of a surface.
     pub fn new(node: DrmNode, surface: &DrmSurface) -> Self {
-        Self { node, crtc: surface.crtc() }
+        Self {
+            node,
+            crtc: surface.crtc(),
+        }
     }
 
     /// Returns the DRM node associated with this output.
