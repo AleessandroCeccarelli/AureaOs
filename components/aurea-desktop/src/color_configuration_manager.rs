@@ -10,6 +10,12 @@ use std::{
     sync::RwLock,
 };
 
+use aurea_desktop_api::display::DisplayColorConfigurationAssignment;
+
+use crate::display_color_assignment_store::{
+    DisplayColorAssignmentStore, DisplayColorStoreError,
+};
+
 use aurea_desktop_api::display::{
     DisplayColorConfigurationAssignment, DisplayColorConfigurationError,
     DisplayColorConfigurationId, DisplayColorConfigurationManager, DisplayDescriptor,
@@ -32,11 +38,63 @@ struct RegistryState {
 #[derive(Debug, Default)]
 pub struct DesktopColorConfigurationManager {
     state: RwLock<RegistryState>,
+    persistent_store: Option<DisplayColorAssignmentStore>,
 }
 
 impl DesktopColorConfigurationManager {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Opens the coordinator with durable per-user display assignments.
+    ///
+    /// Saved configuration IDs are registered immediately; display IDs become
+    /// active only after the display backend rediscovers those outputs.
+    pub fn open_persistent(
+        store: DisplayColorAssignmentStore,
+    ) -> Result<Self, DisplayColorStoreError> {
+        let assignments = store.load()?;
+        let known_configurations = assignments
+            .iter()
+            .filter_map(|assignment| assignment.configuration_id.clone())
+            .collect();
+        let assignments = assignments
+            .into_iter()
+            .filter_map(|assignment| {
+                assignment.configuration_id.map(|configuration_id| {
+                    (assignment.display_id, configuration_id)
+                })
+            })
+            .collect();
+
+        Ok(Self {
+            state: RwLock::new(RegistryState {
+                connected_displays: BTreeSet::new(),
+                known_configurations,
+                assignments,
+            }),
+            persistent_store: Some(store),
+        })
+    }
+
+    fn persist_assignments(
+        &self,
+        state: &RegistryState,
+    ) -> Result<(), DisplayColorConfigurationError> {
+        let Some(store) = &self.persistent_store else {
+            return Ok(());
+        };
+        let assignments = state
+            .assignments
+            .iter()
+            .map(|(display_id, configuration_id)| DisplayColorConfigurationAssignment {
+                display_id: *display_id,
+                configuration_id: Some(configuration_id.clone()),
+            })
+            .collect::<Vec<_>>();
+        store
+            .save(&assignments)
+            .map_err(|_| DisplayColorConfigurationError::AssignmentRejected)
     }
 
     /// Announces a display discovered by the active display backend.
@@ -149,11 +207,15 @@ impl DisplayColorConfigurationManager for DesktopColorConfigurationManager {
             return Err(DisplayColorConfigurationError::DisplayNotFound);
         }
 
+        if let Some(configuration_id) = &assignment.configuration_id {
+            if !state.known_configurations.contains(configuration_id) {
+                return Err(DisplayColorConfigurationError::ConfigurationNotFound);
+            }
+        }
+
+        let previous = state.assignments.get(&assignment.display_id).cloned();
         match assignment.configuration_id {
             Some(configuration_id) => {
-                if !state.known_configurations.contains(&configuration_id) {
-                    return Err(DisplayColorConfigurationError::ConfigurationNotFound);
-                }
                 state.assignments.insert(assignment.display_id, configuration_id);
             }
             None => {
@@ -161,15 +223,33 @@ impl DisplayColorConfigurationManager for DesktopColorConfigurationManager {
             }
         }
 
+        if self.persist_assignments(&state).is_err() {
+            match previous {
+                Some(configuration_id) => {
+                    state.assignments.insert(assignment.display_id, configuration_id);
+                }
+                None => {
+                    state.assignments.remove(&assignment.display_id);
+                }
+            }
+            return Err(DisplayColorConfigurationError::AssignmentRejected);
+        }
+
         Ok(())
     }
 
     fn clear(&self, display_id: DisplayId) -> Result<(), DisplayColorConfigurationError> {
-        self.state
+        let mut state = self
+            .state
             .write()
-            .map_err(|_| DisplayColorConfigurationError::AssignmentRejected)?
-            .assignments
-            .remove(&display_id);
+            .map_err(|_| DisplayColorConfigurationError::AssignmentRejected)?;
+        let previous = state.assignments.remove(&display_id);
+        if self.persist_assignments(&state).is_err() {
+            if let Some(configuration_id) = previous {
+                state.assignments.insert(display_id, configuration_id);
+            }
+            return Err(DisplayColorConfigurationError::AssignmentRejected);
+        }
         Ok(())
     }
 
