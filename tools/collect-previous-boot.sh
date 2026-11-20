@@ -30,7 +30,7 @@ if [[ ! -d "$RUN_DIR" ]]; then
     exit 2
 fi
 
-for command_name in journalctl date; do
+for command_name in journalctl date awk; do
     if ! command -v "$command_name" >/dev/null 2>&1; then
         printf 'Required command not found: %s\n' "$command_name" >&2
         exit 2
@@ -43,20 +43,56 @@ printf 'This reads the previous boot only; it does not change system configurati
 collect_journal() {
     local output_file="$1"
     shift
+
     if journalctl "$@" --no-pager --output=short-precise > "$output_file" 2>&1; then
         printf 'Collected %s\n' "$output_file"
-    else
-        printf 'Journal collection returned a non-zero status for %s.\n' "$output_file" >&2
-        printf 'If access was denied, retry with sudo.\n' >&2
+        return 0
     fi
+
+    # Keep output files owned by the logged-in user: sudo applies only to
+    # journalctl, while the shell performs the redirection.
+    if command -v sudo >/dev/null 2>&1 &&
+        sudo journalctl "$@" --no-pager --output=short-precise > "$output_file" 2>&1; then
+        printf 'Collected %s (with elevated journal access)\n' "$output_file"
+        return 0
+    fi
+
+    printf 'WARNING: unable to collect %s. Check journal permissions.\n' "$output_file" >&2
+    return 1
 }
 
-collect_journal "$RUN_DIR/previous-boot-kernel.txt" -b -1 -k
-collect_journal "$RUN_DIR/previous-boot-system.txt" -b -1
+collect_journal "$RUN_DIR/previous-boot-kernel.txt" -b -1 -k || true
+collect_journal "$RUN_DIR/previous-boot-system.txt" -b -1 || true
+
+STARTED_EPOCH="$(awk -F= '$1 == "started_epoch" { print $2; exit }' "$RUN_DIR/run-info.txt" 2>/dev/null || true)"
+STATE_HOME="${XDG_STATE_HOME:-}"
+if [[ -z "$STATE_HOME" && -n "${HOME:-}" ]]; then
+    STATE_HOME="$HOME/.local/state"
+fi
+
+if [[ "$STARTED_EPOCH" =~ ^[0-9]+$ && -n "$STATE_HOME" ]]; then
+    APP_LOG="$STATE_HOME/aureaos/logs/aurea-desktop.log"
+    if [[ -f "$APP_LOG" ]]; then
+        if awk -v started="$STARTED_EPOCH" '
+            $1 ~ /^[0-9]+$/ && $1 >= started { print }
+        ' "$APP_LOG" > "$RUN_DIR/aurea-desktop-app.txt"; then
+            chmod 600 "$RUN_DIR/aurea-desktop-app.txt"
+            printf 'Collected application diagnostics from %s\n' "$APP_LOG"
+        else
+            printf 'WARNING: unable to filter the persistent application log.\n' >&2
+            rm -f -- "$RUN_DIR/aurea-desktop-app.txt"
+        fi
+    else
+        printf 'Persistent application log not found: %s\n' "$APP_LOG"
+    fi
+else
+    printf 'Application log not collected: run start time or state directory is unavailable.\n'
+fi
 
 {
     printf 'collected_at=%s\n' "$(date --iso-8601=seconds)"
-    printf 'previous_boot_journal_collected=yes\n'
+    printf 'previous_boot_journal_collection_attempted=yes\n'
+    printf 'application_log_collection_attempted=yes\n'
 } >> "$RUN_DIR/run-info.txt"
 
 printf '\nCollection finished. Review the files before committing: they may contain machine-specific details.\n'
