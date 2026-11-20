@@ -12,6 +12,7 @@ pub mod discovery;
 pub mod edid;
 pub mod edid_hdr;
 pub mod frame_coordinator;
+pub mod hdr_link;
 pub mod gbm;
 pub mod output;
 pub mod outputs;
