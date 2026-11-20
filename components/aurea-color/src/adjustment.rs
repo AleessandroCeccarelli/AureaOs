@@ -104,7 +104,13 @@ impl ColorAdjustment {
             return Err(ColorAdjustmentError::GammaOutOfRange);
         }
 
-        if self.matrix.values.iter().flatten().any(|value| !(-4.0..=4.0).contains(value)) {
+        if self
+            .matrix
+            .values
+            .iter()
+            .flatten()
+            .any(|value| !(-4.0..=4.0).contains(value))
+        {
             return Err(ColorAdjustmentError::MatrixValueOutOfRange);
         }
 
@@ -144,8 +150,16 @@ mod tests {
     #[test]
     fn accepts_bounded_user_adjustments() {
         let adjustment = ColorAdjustment {
-            channel_gain: RgbValues { red: 1.1, green: 0.95, blue: 1.05 },
-            gamma: RgbValues { red: 1.0, green: 1.02, blue: 0.98 },
+            channel_gain: RgbValues {
+                red: 1.1,
+                green: 0.95,
+                blue: 1.05,
+            },
+            gamma: RgbValues {
+                red: 1.0,
+                green: 1.02,
+                blue: 0.98,
+            },
             exposure_stops: 0.5,
             ..ColorAdjustment::NEUTRAL
         };
@@ -158,24 +172,42 @@ mod tests {
             exposure_stops: f32::NAN,
             ..ColorAdjustment::NEUTRAL
         };
-        assert_eq!(adjustment.validate(), Err(ColorAdjustmentError::NonFiniteValue));
+        assert_eq!(
+            adjustment.validate(),
+            Err(ColorAdjustmentError::NonFiniteValue)
+        );
     }
 
     #[test]
     fn rejects_out_of_range_gain() {
         let adjustment = ColorAdjustment {
-            channel_gain: RgbValues { red: 5.0, ..RgbValues::NEUTRAL },
+            channel_gain: RgbValues {
+                red: 5.0,
+                ..RgbValues::NEUTRAL
+            },
             ..ColorAdjustment::NEUTRAL
         };
-        assert_eq!(adjustment.validate(), Err(ColorAdjustmentError::GainOutOfRange));
+        assert_eq!(
+            adjustment.validate(),
+            Err(ColorAdjustmentError::GainOutOfRange)
+        );
     }
 
     #[test]
     fn rejects_singular_matrix() {
         let adjustment = ColorAdjustment {
-            matrix: super::RgbMatrix { values: [[1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]] },
+            matrix: super::RgbMatrix {
+                values: [
+                    [1.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0],
+                ],
+            },
             ..ColorAdjustment::NEUTRAL
         };
-        assert_eq!(adjustment.validate(), Err(ColorAdjustmentError::SingularMatrix));
+        assert_eq!(
+            adjustment.validate(),
+            Err(ColorAdjustmentError::SingularMatrix)
+        );
     }
 }
