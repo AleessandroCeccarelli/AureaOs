@@ -6,6 +6,7 @@
 //! Desktop composition root.
 
 mod compositor_factory;
+mod color_configuration_manager;
 mod diagnostics;
 mod keyboard_layout_store;
 mod welcome;
