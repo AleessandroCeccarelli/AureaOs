@@ -359,6 +359,38 @@ mod tests {
     }
 
     #[test]
+    fn one_surface_is_clipped_independently_for_outputs_with_different_scales() {
+        let left_output =
+            surface_geometry((1700, 100), (800, 600), 1, Transform::Normal, (0, 0), 1)
+                .unwrap();
+        let right_output =
+            surface_geometry((1700, 100), (800, 600), 1, Transform::Normal, (1920, 0), 2)
+                .unwrap();
+
+        assert_eq!((left_output.x(), left_output.width()), (1700, 800));
+        assert_eq!(
+            left_output.scissor(1920, 1080),
+            Some(SurfaceScissor {
+                x: 1700,
+                y: 100,
+                width: 220,
+                height: 600,
+            })
+        );
+
+        assert_eq!((right_output.x(), right_output.width()), (-440, 1600));
+        assert_eq!(
+            right_output.scissor(2560, 2160),
+            Some(SurfaceScissor {
+                x: 0,
+                y: 200,
+                width: 1160,
+                height: 1200,
+            })
+        );
+    }
+
+    #[test]
     fn skips_surfaces_outside_output_bounds() {
         let geometry =
             surface_geometry((120, 10), (20, 20), 1, Transform::Normal, (0, 0), 1).unwrap();
