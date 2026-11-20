@@ -7,6 +7,7 @@
 
 pub mod capabilities;
 pub mod events;
+pub mod icc;
 pub mod layout;
 pub mod limits;
 pub mod manager;
@@ -18,6 +19,10 @@ pub use capabilities::{
     DisplayPhysicalSize, VariableRefreshRange,
 };
 pub use events::DisplayEvent;
+pub use icc::{
+    DisplayIccProfileAssignment, IccProfileClass, IccProfileDescriptor, IccProfileFormat,
+    IccProfileId, IccProfileOrigin,
+};
 pub use layout::{DisplayLayout, DisplayPlacement, DisplayPosition, DisplayScale};
 pub use limits::MAX_ACTIVE_DISPLAYS;
 pub use manager::{
