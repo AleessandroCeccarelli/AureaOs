@@ -159,7 +159,7 @@ impl VulkanContext {
         // The DRM node is matched to this physical device, so KMS is an
         // external consumer of the same device/driver. EXTERNAL ownership
         // is sufficient; FOREIGN is reserved for a different device/driver.
-        extensions.supports_dmabuf_interop() && extensions.supports_drm_format_modifier()
+        extensions.supports_same_device_drm_scanout()
     }
 
     pub(super) fn classify_device(device: &PhysicalDevice) -> VulkanDeviceType {
