@@ -30,7 +30,8 @@ use crate::{
 };
 
 use super::{
-    VulkanColorLoad, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanDrawPass, VulkanImageState,
+    VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanDrawPass,
+    VulkanImageState,
     VulkanImageTransition, VulkanImageView, VulkanLogicalDevice, VulkanSurfacePipelineCache,
     VulkanTextureBinding,
 };
