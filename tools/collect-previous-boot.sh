@@ -86,9 +86,11 @@ collect_journal "$RUN_DIR/$PREFIX-kernel.txt" -b "$JOURNAL_BOOT" -k "${JOURNAL_R
 collect_journal "$RUN_DIR/$PREFIX-aurea-desktop-journal.txt" -b "$JOURNAL_BOOT" _COMM=aurea-desktop "${JOURNAL_RANGE[@]}" || true
 
 if command -v coredumpctl >/dev/null 2>&1 && [[ "${#JOURNAL_RANGE[@]}" -gt 0 ]]; then
-    if coredumpctl --no-pager list --since "@$STARTED_EPOCH" --until "@$ENDED_EPOCH" > "$RUN_DIR/coredumps.txt" 2>&1; then
+    # Keep only Aurea Desktop crash metadata, never unrelated application crashes.
+    if coredumpctl --no-pager list --since "@$STARTED_EPOCH" --until "@$ENDED_EPOCH" 2>/dev/null |
+        grep -i 'aurea-desktop' > "$RUN_DIR/coredumps.txt" && [[ -s "$RUN_DIR/coredumps.txt" ]]; then
         chmod 600 "$RUN_DIR/coredumps.txt"
-        printf 'Collected coredump index. Core files themselves are not copied.\n'
+        printf 'Collected Aurea Desktop coredump index. Core files themselves are not copied.\n'
     else
         rm -f -- "$RUN_DIR/coredumps.txt"
     fi
