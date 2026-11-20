@@ -119,7 +119,10 @@ pub trait KeyboardLayoutManager: Send + Sync {
 
 #[cfg(test)]
 mod tests {
-    use super::{KeyboardLayoutHintSource, KeyboardLayoutId, KeyboardLayoutSuggestion};
+    use super::{
+        KeyboardLayoutDetectionConfidence, KeyboardLayoutHintSource, KeyboardLayoutId,
+        KeyboardLayoutSuggestion,
+    };
 
     #[test]
     fn accepts_common_xkb_layout_identifiers() {
