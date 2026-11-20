@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // AureaOS — Color Management
 
+use std::collections::HashSet;
+
 use crate::MAX_PROFILE_SIZE;
+
+const MAX_ICC_TAG_COUNT: usize = 4096;
 
 /// Validated ICC tag table entry.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -71,6 +75,9 @@ impl IccHeader {
             return Err(IccHeaderError::NonZeroReservedBytes);
         }
         let count = read_u32(bytes, 128)? as usize;
+        if count > MAX_ICC_TAG_COUNT {
+            return Err(IccHeaderError::InvalidTagTable);
+        }
         let table_size = count
             .checked_mul(12)
             .ok_or(IccHeaderError::InvalidTagTable)?;
@@ -81,23 +88,38 @@ impl IccHeader {
             return Err(IccHeaderError::InvalidTagTable);
         }
         let mut tags = Vec::with_capacity(count);
+        let mut signatures = HashSet::with_capacity(count);
+        let mut ranges = Vec::with_capacity(count);
         for index in 0..count {
             let start = 132 + index * 12;
             let mut signature = [0_u8; 4];
             signature.copy_from_slice(&bytes[start..start + 4]);
+            if !signatures.insert(signature) {
+                return Err(IccHeaderError::InvalidTagTable);
+            }
             let offset = read_u32(bytes, start + 4)? as usize;
             let size = read_u32(bytes, start + 8)? as usize;
             let end = offset
                 .checked_add(size)
                 .ok_or(IccHeaderError::InvalidTagRange)?;
-            if size == 0 || offset < table_end || end > declared_size {
+            if size == 0 || offset < table_end || offset % 4 != 0 || end > declared_size {
                 return Err(IccHeaderError::InvalidTagRange);
             }
+            ranges.push((offset, end));
             tags.push(IccTag {
                 signature,
                 offset,
                 size,
             });
+        }
+        ranges.sort_unstable();
+        for pair in ranges.windows(2) {
+            let (previous_start, previous_end) = pair[0];
+            let (next_start, next_end) = pair[1];
+            let identical_shared_data = previous_start == next_start && previous_end == next_end;
+            if next_start < previous_end && !identical_shared_data {
+                return Err(IccHeaderError::InvalidTagRange);
+            }
         }
         Ok(Self {
             declared_size,
