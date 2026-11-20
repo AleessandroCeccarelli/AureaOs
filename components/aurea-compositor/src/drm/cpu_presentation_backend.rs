@@ -12,10 +12,13 @@ use smithay::{
     reexports::drm::control::crtc,
 };
 
-use super::{\n    gbm_framebuffer_pool::{GbmCpuFramebufferPool, GbmCpuFramebufferPoolError},\n    presentation::DrmFramebufferId,\n};
+use super::{
+    gbm_framebuffer_pool::{GbmCpuFramebufferPool, GbmCpuFramebufferPoolError},
+    presentation::DrmFramebufferId,
+};
 
 /// Errors returned by the CPU-upload KMS presenter.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum CpuPresentationError {
     LegacySurfaceUnsupported,
     MissingActivePlane,
@@ -27,49 +30,43 @@ pub enum CpuPresentationError {
 impl fmt::Display for CpuPresentationError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::LegacySurfaceUnsupported => {
-                formatter.write_str("CPU presentation requires atomic DRM TEST_ONLY support")
-            }
-            Self::MissingActivePlane => {
-                formatter.write_str("CPU presentation requires at least one configured DRM plane")
-            }
-            Self::UnexpectedCrtc => {
-                formatter.write_str("DRM event does not belong to this presentation surface")
-            }
+            Self::LegacySurfaceUnsupported => formatter.write_str(
+                "CPU presentation requires atomic DRM TEST_ONLY support",
+            ),
+            Self::MissingActivePlane => formatter.write_str(
+                "CPU presentation requires at least one configured DRM plane",
+            ),
+            Self::UnexpectedCrtc => formatter.write_str(
+                "DRM event does not belong to this presentation surface",
+            ),
             Self::KmsOperation(message) => write!(formatter, "KMS presentation failed: {message}"),
-            Self::Lifecycle(error) => write!(formatter, "Invalid CPU presentation lifecycle: {error}"),
+            Self::Lifecycle(error) => write!(formatter, "CPU framebuffer lifecycle failed: {error}"),
         }
     }
 }
 
 impl Error for CpuPresentationError {}
 
-impl From<DrmPresentationError> for CpuPresentationError {
-    fn from(error: DrmPresentationError) -> Self {
+impl From<GbmCpuFramebufferPoolError> for CpuPresentationError {
+    fn from(error: GbmCpuFramebufferPoolError) -> Self {
         Self::Lifecycle(error)
     }
 }
 
-/// Tracks KMS ownership for CPU-uploaded buffers on exactly one CRTC.
+/// Submits CPU-uploaded framebuffers for one DRM node and CRTC.
 ///
-/// The caller must finish the GBM buffer write and any required CPU cache
-/// synchronization before submitting its framebuffer. This presenter owns
-/// only lifecycle state; the GBM pool retains the actual buffer and FB.
+/// The caller must finish the GBM write and required CPU cache synchronization
+/// before submission. The pool owns the GBM allocation and KMS framebuffer.
 #[derive(Debug)]
 pub struct CpuPresentationBackend {
     node: DrmNode,
     crtc: crtc::Handle,
-    lifecycle: DrmPresentationLifecycle,
 }
 
 impl CpuPresentationBackend {
     /// Creates a presenter bound to the DRM node and CRTC of a surface.
     pub fn new(node: DrmNode, surface: &DrmSurface) -> Self {
-        Self {
-            node,
-            crtc: surface.crtc(),
-            lifecycle: DrmPresentationLifecycle::new(),
-        }
+        Self { node, crtc: surface.crtc() }
     }
 
     /// Returns the DRM node associated with this output.
@@ -82,24 +79,14 @@ impl CpuPresentationBackend {
         self.crtc
     }
 
-    /// Returns the framebuffer currently scanned out.
-    pub fn current(&self) -> Option<DrmFramebufferId> {
-        self.lifecycle.current()
-    }
-
-    /// Returns the framebuffer awaiting its page-flip event.
-    pub fn pending(&self) -> Option<DrmFramebufferId> {
-        self.lifecycle.pending_candidate()
-    }
-
     /// Submits a CPU-uploaded frame after its buffer write has completed.
     ///
-    /// No Vulkan ownership or sync-file contract is involved. Atomic TEST_ONLY
-    /// is still mandatory, and the framebuffer must remain owned by its pool
-    /// until this presenter reports it released after a page flip.
+    /// Atomic TEST_ONLY is mandatory. The pool lifecycle prevents a candidate
+    /// from being overwritten or destroyed while KMS owns it.
     pub fn submit_after_upload(
         &mut self,
         surface: &DrmSurface,
+        pool: &mut GbmCpuFramebufferPool,
         candidate: DrmFramebufferId,
         planes: &[PlaneState<'_>],
     ) -> Result<(), CpuPresentationError> {
@@ -142,15 +129,14 @@ impl CpuPresentationBackend {
         &mut self,
         node: DrmNode,
         crtc: crtc::Handle,
+        pool: &mut GbmCpuFramebufferPool,
     ) -> Result<Option<DrmFramebufferId>, CpuPresentationError> {
         if node != self.node || crtc != self.crtc {
             return Err(CpuPresentationError::UnexpectedCrtc);
         }
-        let Some(displayed) = self.pending(pool) else {
+        let Some(displayed) = pool.pending() else {
             return Ok(None);
         };
-        self.lifecycle
-            .page_flip_complete(displayed)
-            .map_err(Into::into)
+        pool.page_flip_complete(displayed).map_err(Into::into)
     }
 }
