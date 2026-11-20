@@ -5,9 +5,11 @@
 
 mod header;
 mod identity;
+mod storage;
 
 pub use header::{IccHeader, IccHeaderError, IccProfileSummary, IccTag};
 pub use identity::IccProfileFingerprint;
+pub use storage::{IccProfileStore, ProfileStoreError, StoredProfile};
 
 /// Maximum profile payload accepted by Aurea Color.
 pub const MAX_PROFILE_SIZE: usize = 16 * 1024 * 1024;
