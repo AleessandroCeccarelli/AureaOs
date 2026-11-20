@@ -56,7 +56,9 @@ impl IccHeader {
             return Err(IccHeaderError::TooSmall);
         }
         if bytes.len() > MAX_PROFILE_SIZE {
-            return Err(IccHeaderError::TooLarge { maximum_bytes: MAX_PROFILE_SIZE });
+            return Err(IccHeaderError::TooLarge {
+                maximum_bytes: MAX_PROFILE_SIZE,
+            });
         }
         let declared_size = read_u32(bytes, 0)? as usize;
         if declared_size != bytes.len() || declared_size < 132 {
@@ -69,8 +71,12 @@ impl IccHeader {
             return Err(IccHeaderError::NonZeroReservedBytes);
         }
         let count = read_u32(bytes, 128)? as usize;
-        let table_size = count.checked_mul(12).ok_or(IccHeaderError::InvalidTagTable)?;
-        let table_end = 132_usize.checked_add(table_size).ok_or(IccHeaderError::InvalidTagTable)?;
+        let table_size = count
+            .checked_mul(12)
+            .ok_or(IccHeaderError::InvalidTagTable)?;
+        let table_end = 132_usize
+            .checked_add(table_size)
+            .ok_or(IccHeaderError::InvalidTagTable)?;
         if table_end > declared_size {
             return Err(IccHeaderError::InvalidTagTable);
         }
@@ -81,11 +87,17 @@ impl IccHeader {
             signature.copy_from_slice(&bytes[start..start + 4]);
             let offset = read_u32(bytes, start + 4)? as usize;
             let size = read_u32(bytes, start + 8)? as usize;
-            let end = offset.checked_add(size).ok_or(IccHeaderError::InvalidTagRange)?;
+            let end = offset
+                .checked_add(size)
+                .ok_or(IccHeaderError::InvalidTagRange)?;
             if size == 0 || offset < table_end || end > declared_size {
                 return Err(IccHeaderError::InvalidTagRange);
             }
-            tags.push(IccTag { signature, offset, size });
+            tags.push(IccTag {
+                signature,
+                offset,
+                size,
+            });
         }
         Ok(Self {
             declared_size,
@@ -126,5 +138,10 @@ fn read_u32(bytes: &[u8], offset: usize) -> Result<u32, IccHeaderError> {
 }
 
 fn copy_signature(bytes: &[u8], offset: usize) -> [u8; 4] {
-    [bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3]]
+    [
+        bytes[offset],
+        bytes[offset + 1],
+        bytes[offset + 2],
+        bytes[offset + 3],
+    ]
 }
