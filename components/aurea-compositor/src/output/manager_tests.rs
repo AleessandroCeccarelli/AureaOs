@@ -164,4 +164,3 @@ fn invalid_integer_scale_does_not_mutate_output() {
     );
     assert_eq!(manager.registry().get(13).unwrap().scale(), 1);
 }
-
