@@ -83,3 +83,87 @@ use super::*;
             OutputManagerError::UnknownOutput(404)
         );
     }
+
+#[test]
+fn configuration_commits_mode_scale_transform_and_position_together() {
+    let original = OutputMode::new(1920, 1080, 60_000).unwrap();
+    let smaller = OutputMode::new(1280, 720, 60_000).unwrap();
+    let output = DisplayOutput::new(
+        11,
+        "DP-4",
+        vec![original, smaller],
+        original,
+        1,
+    )
+    .unwrap();
+    let mut manager = OutputManager::new();
+    manager.register(output, (0, 0)).unwrap();
+
+    manager
+        .configure_output(
+            11,
+            OutputConfiguration {
+                mode: Some(smaller),
+                scale: Some(OutputScale::Integer(2)),
+                transform: Some(smithay::utils::Transform::_90),
+                enabled: None,
+                position: Some((120, 80)),
+            },
+        )
+        .unwrap();
+
+    let configured = manager.registry().get(11).unwrap();
+    assert_eq!(configured.current_mode(), smaller);
+    assert_eq!(configured.scale(), 2);
+    assert_eq!(configured.transform(), smithay::utils::Transform::_90);
+    let bounds = manager.logical_bounds(11).unwrap().unwrap();
+    assert_eq!(bounds.origin(), LogicalPoint { x: 120, y: 80 });
+    assert_eq!(bounds.size(), LogicalSize { width: 360, height: 640 });
+}
+
+#[test]
+fn invalid_configuration_rolls_back_every_property() {
+    let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
+    let output = DisplayOutput::new(12, "DP-5", vec![mode], mode, 1).unwrap();
+    let mut manager = OutputManager::new();
+    manager.register(output, (10, 20)).unwrap();
+    let before = manager.clone();
+
+    let result = manager.configure_output(
+        12,
+        OutputConfiguration {
+            scale: Some(OutputScale::Integer(2)),
+            transform: Some(smithay::utils::Transform::_90),
+            position: Some((i32::MAX, 0)),
+            ..OutputConfiguration::default()
+        },
+    );
+
+    assert_eq!(result, Err(OutputManagerError::PositionOverflow));
+    assert_eq!(manager.registry().get(12), before.registry().get(12));
+    assert_eq!(manager.layout().get(12), before.layout().get(12));
+}
+
+#[test]
+fn invalid_integer_scale_does_not_mutate_output() {
+    let mode = OutputMode::new(1280, 720, 60_000).unwrap();
+    let output = DisplayOutput::new(13, "HDMI-A-2", vec![mode], mode, 1).unwrap();
+    let mut manager = OutputManager::new();
+    manager.register(output, (0, 0)).unwrap();
+
+    assert_eq!(
+        manager.configure_output(
+            13,
+            OutputConfiguration {
+                scale: Some(OutputScale::Integer(0)),
+                ..OutputConfiguration::default()
+            },
+        ),
+        Err(OutputManagerError::InvalidScale {
+            output: 13,
+            scale: 0,
+        })
+    );
+    assert_eq!(manager.registry().get(13).unwrap().scale(), 1);
+}
+
