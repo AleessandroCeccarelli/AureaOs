@@ -12,7 +12,10 @@ use smithay::backend::drm::DrmNode;
 
 use crate::renderer::RenderPreference;
 
-use super::{VulkanContext, VulkanExternalMemoryCapabilities, VulkanRenderingFeaturePlan};
+use super::{
+    VulkanContext, VulkanDeviceExtensionPlan, VulkanExternalMemoryCapabilities,
+    VulkanRenderingFeaturePlan,
+};
 
 /// General category of a Vulkan physical device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -126,6 +129,7 @@ impl VulkanContext {
                 (primary_matches || render_matches)
                     && self.graphics_queue_family(device).is_some()
                     && VulkanRenderingFeaturePlan::from_device(device).is_ok()
+                    && Self::supports_drm_scanout(device)
             })
             .collect::<Vec<_>>();
 
@@ -144,6 +148,16 @@ impl VulkanContext {
                     .unwrap_or(true)
             })
             .or_else(|| matching_devices.into_iter().next())
+    }
+
+    /// Checks the extensions required by AureaOS's current Vulkan-to-KMS path.
+    ///
+    /// Selection rejects devices that would otherwise initialize successfully
+    /// but fail only when the first scanout frame is rendered.
+    #[cfg(feature = "drm")]
+    fn supports_drm_scanout(device: &PhysicalDevice) -> bool {
+        let extensions = VulkanDeviceExtensionPlan::from_device(device);
+        extensions.supports_dmabuf_interop() && extensions.supports_foreign_queue_family()
     }
 
     pub(super) fn classify_device(device: &PhysicalDevice) -> VulkanDeviceType {
