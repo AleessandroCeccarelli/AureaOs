@@ -66,38 +66,7 @@ impl Error for DrmOutputsError {
 }
 
 fn logical_output_width(output: &crate::output::DisplayOutput) -> Result<i32, DrmOutputsError> {
-    let mode = output.current_mode();
-    let physical_width = if matches!(
-        output.transform(),
-        smithay::utils::Transform::_90
-            | smithay::utils::Transform::_270
-            | smithay::utils::Transform::Flipped90
-            | smithay::utils::Transform::Flipped270
-    ) {
-        mode.height()
-    } else {
-        mode.width()
-    };
-
-    let logical_width = if let Some(scale) = output.fractional_scale() {
-        scale.physical_to_logical(i64::from(physical_width))
-    } else if output.scale() > 0 {
-        let scale = u64::from(output.scale());
-        i64::try_from(
-            u64::from(physical_width)
-                .checked_add(scale / 2)
-                .ok_or(DrmOutputsError::PositionOverflow)?
-                / scale,
-        )
-        .ok()
-    } else {
-        None
-    }
-    .and_then(|width| u32::try_from(width).ok())
-    .filter(|width| *width > 0)
-    .ok_or(DrmOutputsError::PositionOverflow)?;
-
-    i32::try_from(logical_width).map_err(|_| DrmOutputsError::PositionOverflow)
+    crate::output::manager::geometry::logical_width(output).map_err(DrmOutputsError::Manager)
 }
 
 /// Calculates the first free horizontal position after all registered outputs.
