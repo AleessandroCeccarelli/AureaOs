@@ -55,6 +55,18 @@ impl IccProfileCatalog {
         })
     }
 
+    /// Installs a profile supplied by the trusted AureaOS system image.
+    ///
+    /// This entry point is for system provisioning only, never for user imports.
+    /// System profiles are marked read-only and cannot be removed through the
+    /// regular profile manager interface.
+    pub fn install_system_profile(
+        &self,
+        profile: IccProfileImport,
+    ) -> Result<IccProfileDescriptor, IccProfileManagerError> {
+        self.install(profile, IccProfileOrigin::System)
+    }
+
     /// Registers a display discovered by the active output backend.
     pub fn register_display(&self, display_id: DisplayId) -> Result<(), IccProfileManagerError> {
         let mut state = self.lock_state()?;
@@ -404,6 +416,20 @@ mod tests {
             catalog.export_profile(&profile.id),
             Err(IccProfileManagerError::ProfileNotFound)
         );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn trusted_system_profiles_are_read_only_and_cannot_be_removed() {
+        let (catalog, root) = test_catalog();
+        let profile = catalog.install_system_profile(display_profile()).unwrap();
+        assert_eq!(profile.origin, IccProfileOrigin::System);
+        assert!(profile.read_only);
+        assert_eq!(
+            catalog.remove_profile(&profile.id),
+            Err(IccProfileManagerError::SystemProfileProtected)
+        );
+        assert_eq!(catalog.snapshot().profiles.len(), 1);
         fs::remove_dir_all(root).unwrap();
     }
 
