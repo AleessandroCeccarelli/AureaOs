@@ -105,6 +105,53 @@ pub struct DisplayIccProfileAssignment {
     pub profile_id: Option<IccProfileId>,
 }
 
+
+/// Opaque reference to a saved color configuration owned by the color service.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct DisplayColorConfigurationId(String);
+
+impl DisplayColorConfigurationId {
+    /// Creates a non-empty configuration reference.
+    pub fn new(value: impl Into<String>) -> Option<Self> {
+        let value = value.into();
+        if value.trim().is_empty() || value.len() > 128 {
+            return None;
+        }
+        Some(Self(value))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+/// Saved color configuration selected for one connected display.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DisplayColorConfigurationAssignment {
+    pub display_id: DisplayId,
+    pub configuration_id: Option<DisplayColorConfigurationId>,
+}
+
+/// Independent contract for assigning saved color configurations to displays.
+pub trait DisplayColorConfigurationManager: Send + Sync {
+    fn assign(
+        &self,
+        assignment: DisplayColorConfigurationAssignment,
+    ) -> Result<(), DisplayColorConfigurationError>;
+
+    fn clear(&self, display_id: DisplayId) -> Result<(), DisplayColorConfigurationError>;
+
+    fn assignments(&self) -> Vec<DisplayColorConfigurationAssignment>;
+}
+
+/// Errors returned by the display color configuration coordinator.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DisplayColorConfigurationError {
+    DisplayNotFound,
+    ConfigurationNotFound,
+    AssignmentRejected,
+}
+
 /// Consistent read-only view of the installed profile catalog and assignments.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct IccProfileCatalogSnapshot {
