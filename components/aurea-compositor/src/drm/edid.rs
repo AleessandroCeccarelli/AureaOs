@@ -55,7 +55,7 @@ impl EdidInfo {
             serial_number: None,
         };
         for descriptor in bytes[54..126].chunks_exact(18) {
-            if descriptor[..5] != [0, 0, 0, 0, 0] {
+            if descriptor[..3] != [0, 0, 0] || descriptor[4] != 0 {
                 continue;
             }
             let value = String::from_utf8_lossy(&descriptor[5..18])
