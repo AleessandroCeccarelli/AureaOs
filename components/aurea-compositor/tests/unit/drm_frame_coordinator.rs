@@ -36,7 +36,9 @@ fn acquire_after_foreign_release(
     coordinator: &mut DrmOutputFrameCoordinator,
     framebuffer: DrmFramebufferId,
 ) {
-    coordinator.mark_foreign_acquire_submitted(framebuffer).unwrap();
+    coordinator
+        .mark_foreign_acquire_submitted(framebuffer)
+        .unwrap();
     coordinator.mark_foreign_acquired(framebuffer).unwrap();
 }
 

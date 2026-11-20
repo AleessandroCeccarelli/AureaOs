@@ -102,10 +102,7 @@ fn centered_window_origin(
     let x = output_origin.0 + ((output_size.0 - window_size.0) / 2.0).max(0.0);
     let y = output_origin.1 + ((output_size.1 - window_size.1) / 2.0).max(0.0);
 
-    Some((
-        finite_logical_coordinate(x)?,
-        finite_logical_coordinate(y)?,
-    ))
+    Some((finite_logical_coordinate(x)?, finite_logical_coordinate(y)?))
 }
 
 fn finite_logical_coordinate(value: f64) -> Option<i32> {
