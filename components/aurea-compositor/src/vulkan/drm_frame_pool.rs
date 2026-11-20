@@ -118,11 +118,7 @@ impl VulkanDrmScanoutFrame {
             return Err(VulkanDrmFramePoolError::ForeignQueueFamilyUnavailable);
         }
         let allocator = VulkanDrmImageAllocator::new(Arc::clone(&logical_device))?;
-        let image = if format.modifier == smithay::backend::allocator::Modifier::Linear {
-            allocator.allocate_linear_exportable(width, height, format, usage)?
-        } else {
-            allocator.allocate_exportable(width, height, format, usage)?
-        };
+        let image = allocator.allocate_exportable(width, height, format, usage)?;
         let framebuffer = VulkanDrmFramebuffer::register(drm_device, gbm_devices, &image)?;
         Ok(Self {
             framebuffer,
