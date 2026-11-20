@@ -152,6 +152,28 @@ fn invalid_configuration_rolls_back_every_property() {
 }
 
 #[test]
+fn position_overflow_is_rejected_without_mutating_output() {
+    let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
+    let output = DisplayOutput::new(14, "DP-6", vec![mode], mode, 1).unwrap();
+    let mut manager = OutputManager::new();
+    manager.register(output, (10, 20)).unwrap();
+    let before = manager.clone();
+
+    assert_eq!(
+        manager.configure_output(
+            14,
+            OutputConfiguration {
+                position: Some((i32::MAX, 0)),
+                ..OutputConfiguration::default()
+            },
+        ),
+        Err(OutputManagerError::PositionOverflow)
+    );
+    assert_eq!(manager.registry().get(14), before.registry().get(14));
+    assert_eq!(manager.layout().get(14), before.layout().get(14));
+}
+
+#[test]
 fn invalid_integer_scale_does_not_mutate_output() {
     let mode = OutputMode::new(1280, 720, 60_000).unwrap();
     let output = DisplayOutput::new(13, "HDMI-A-2", vec![mode], mode, 1).unwrap();
