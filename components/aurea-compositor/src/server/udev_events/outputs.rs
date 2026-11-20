@@ -26,7 +26,10 @@ pub(in crate::server) fn restore_before_publish<C, E>(
     publish_outputs(state)
 }
 
-pub(in crate::server) fn output_ids_for_device(state: &mut WaylandState, node: DrmNode) -> Vec<OutputId> {
+pub(in crate::server) fn output_ids_for_device(
+    state: &mut WaylandState,
+    node: DrmNode,
+) -> Vec<OutputId> {
     let device_id = node.dev_id() as u64;
 
     state
@@ -53,7 +56,10 @@ pub(in crate::server) fn remove_device_outputs(state: &mut WaylandState, node: D
     state.compositor.center_pointer_on_primary_output();
 }
 
-pub(in crate::server) fn refresh_device_outputs(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
+pub(in crate::server) fn refresh_device_outputs(
+    state: &mut WaylandState,
+    node: DrmNode,
+) -> io::Result<()> {
     let owned_ids = output_ids_for_device(state, node);
     let before = state.compositor.output_manager().clone();
 
