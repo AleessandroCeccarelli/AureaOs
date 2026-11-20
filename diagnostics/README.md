@@ -10,20 +10,26 @@ From the repository root, in a normal login session on a local TTY (not as root)
 bash tools/run-aurea-native-test.sh
 ```
 
-The launcher writes a new directory under `diagnostics/runs/<YYYYMMDD-HHMMSS>/`.
-It records the build and application output in `native-test.txt`, plus a small
-`run-info.txt` containing non-secret environment indicators, the tested Git
-revision, and the test start time. The test remains time-bounded by
-`AUREA_TEST_TIMEOUT` (default: 45 s). If a run directory already exists for
-that second, the launcher stops rather than overwriting or mixing reports.
+The launcher first looks for unfinished sessions and automatically attempts
+to recover their previous-boot journals and application logs. It then creates
+a new directory under `diagnostics/runs/<YYYYMMDD-HHMMSS>/`. It records
+application output in `native-test.txt`, a hardware/driver snapshot in
+`system-snapshot.txt`, and session metadata in `run-info.txt`. After a normal
+exit or timeout it automatically collects the current boot journal, the
+persistent application log, and an index of matching systemd coredumps when
+available. The test remains time-bounded by `AUREA_TEST_TIMEOUT` (default:
+45 s). If a run directory already exists for that second, the launcher stops
+rather than overwriting or mixing reports.
 
 ## After a freeze or forced reboot
 
-Boot Fedora normally, return to the same checkout, and run the collector using
-the run id printed by the launcher:
+Boot Fedora normally and start the same launcher again. It automatically
+detects run folders without a `finished_at` or `recovered_at` marker and
+attempts previous-boot recovery before starting the next session. Manual
+recovery remains available using the run id printed by the launcher:
 
 ```bash
-bash bash tools/collect-previous-boot.sh 20261120-083000
+bash tools/collect-previous-boot.sh 20261120-083000
 ```
 
 The collector attempts to save the previous boot's kernel journal and system
@@ -33,9 +39,10 @@ elevated privileges; report files remain owned by the logged-in user.
 
 It also extracts entries from Aurea Desktop's persistent application log
 (`$XDG_STATE_HOME/aureaos/logs/aurea-desktop.log`, or
-`~/.local/state/aureaos/logs/aurea-desktop.log`) whose timestamps are at or
-after the test start time. These entries are saved as
-`aurea-desktop-app.txt`.
+`~/.local/state/aureaos/logs/aurea-desktop.log`) bounded to the session
+start and finish/recovery timestamps. These entries are saved as
+`aurea-desktop-app.txt`. If `coredumpctl` is available, a time-bounded
+`coredumps.txt` index is collected; core dump contents are not copied.
 
 Persistent previous-boot journal data is available only if Fedora's systemd
 journal retained it. This collector does not enable persistent journaling or
