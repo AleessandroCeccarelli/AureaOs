@@ -39,11 +39,18 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
     }
 
     for (presentation_node, output_id) in pending_outputs {
+        let Some(device) = drm_devices.get(presentation_node) else {
+            return Err(io::Error::other(format!(
+                "AureaOS: DRM device {presentation_node} disappeared while output {output_id} had a pending frame"
+            )));
+        };
         let render_path: PathBuf = gpu_manager
-            .selected_render_device()
-            .map(|device| device.path().to_path_buf())
+            .selected_render_device_for_output(device.device_path())
+            .map(|selected| selected.path().to_path_buf())
             .ok_or_else(|| {
-                io::Error::other("AureaOS: no available GPU is selected for rendering")
+                io::Error::other(format!(
+                    "AureaOS: no available rendering GPU can be selected for output {output_id}"
+                ))
             })?;
         let rendering_node = drm_device_registry
             .node_for_path(&render_path)
@@ -81,11 +88,6 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
             ));
         };
 
-        let Some(device) = drm_devices.get(presentation_node) else {
-            return Err(io::Error::other(format!(
-                "AureaOS: DRM device {presentation_node} disappeared while output {output_id} had a pending frame"
-            )));
-        };
         if !gbm_devices.contains(presentation_node) {
             return Err(io::Error::other(format!(
                 "AureaOS: GBM is unavailable for DRM device {presentation_node} while output {output_id} had a pending frame"
