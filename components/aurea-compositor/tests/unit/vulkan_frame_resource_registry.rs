@@ -65,6 +65,7 @@ fn resource_can_be_unregistered_after_gpu_and_kms_release() {
     registry.begin_render(id).unwrap();
     registry.mark_submitted(id).unwrap();
     registry.mark_gpu_complete(id).unwrap();
+    registry.mark_foreign_release_submitted(id).unwrap();
     registry.mark_kms_committed(id).unwrap();
 
     assert_eq!(
@@ -85,6 +86,7 @@ fn sync_file_commit_keeps_resource_busy_until_both_owners_release_it() {
 
     registry.begin_render(id).unwrap();
     registry.mark_submitted(id).unwrap();
+    registry.mark_foreign_release_submitted(id).unwrap();
     registry.mark_kms_committed_with_sync_fd(id).unwrap();
 
     assert!(!registry.is_available(id).unwrap());
