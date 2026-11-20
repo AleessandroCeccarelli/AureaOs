@@ -375,22 +375,34 @@ pub(super) fn build(
                 .insert_source(notifier, move |event, _, state| match event {
                     DrmEvent::VBlank(crtc) => {
                         if let Some(surfaces) = state.drm_surfaces.get_mut(&node) {
-                            match surfaces.on_vblank(node, crtc) {
+                            match surfaces.on_cpu_vblank(node, crtc) {
                                 Ok(Some(released)) => {
                                     if let Some(Err(error)) =
-                                        surfaces.retire_released_frame(crtc, released)
+                                        surfaces.retire_released_cpu_frame(crtc, released)
                                     {
                                         eprintln!(
-                                            "AureaOS: failed to reacquire released scanout frame on {node}: {error}"
+                                            "AureaOS: failed to retire released CPU scanout frame on {node}: {error}"
                                         );
                                     }
                                 }
-                                Ok(None) => {}
-                                Err(error) => {
-                                    eprintln!(
+                                Ok(None) => match surfaces.on_vblank(node, crtc) {
+                                    Ok(Some(released)) => {
+                                        if let Some(Err(error)) =
+                                            surfaces.retire_released_frame(crtc, released)
+                                        {
+                                            eprintln!(
+                                                "AureaOS: failed to reacquire released Vulkan scanout frame on {node}: {error}"
+                                            );
+                                        }
+                                    }
+                                    Ok(None) => {}
+                                    Err(error) => eprintln!(
                                         "AureaOS: DRM presentation completion failed for {node}: {error}"
-                                    );
-                                }
+                                    ),
+                                },
+                                Err(error) => eprintln!(
+                                    "AureaOS: CPU KMS presentation completion failed for {node}: {error}"
+                                ),
                             }
                         }
                     }
