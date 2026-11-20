@@ -12,7 +12,7 @@ use smithay::{
     reexports::drm::control::crtc,
 };
 
-use super::presentation::{DrmFramebufferId, DrmPresentationError, DrmPresentationLifecycle};
+use super::{\n    gbm_framebuffer_pool::{GbmCpuFramebufferPool, GbmCpuFramebufferPoolError},\n    presentation::DrmFramebufferId,\n};
 
 /// Errors returned by the CPU-upload KMS presenter.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -21,7 +21,7 @@ pub enum CpuPresentationError {
     MissingActivePlane,
     UnexpectedCrtc,
     KmsOperation(String),
-    Lifecycle(DrmPresentationError),
+    Lifecycle(GbmCpuFramebufferPoolError),
 }
 
 impl fmt::Display for CpuPresentationError {
@@ -113,15 +113,15 @@ impl CpuPresentationBackend {
             return Err(CpuPresentationError::MissingActivePlane);
         }
 
-        self.lifecycle.begin_test(candidate)?;
+        pool.begin_test(candidate)?;
         let requires_modeset = surface.commit_pending();
 
         if let Err(error) = surface.test_state(planes.iter().cloned(), requires_modeset) {
-            let _ = self.lifecycle.test_failed();
+            let _ = pool.test_failed();
             return Err(CpuPresentationError::KmsOperation(error.to_string()));
         }
 
-        self.lifecycle.test_passed()?;
+        pool.test_passed()?;
         let submission = if requires_modeset {
             surface.commit(planes.iter().cloned(), true)
         } else {
@@ -129,11 +129,11 @@ impl CpuPresentationBackend {
         };
 
         if let Err(error) = submission {
-            let _ = self.lifecycle.commit_failed();
+            let _ = pool.commit_failed();
             return Err(CpuPresentationError::KmsOperation(error.to_string()));
         }
 
-        self.lifecycle.commit_accepted()?;
+        pool.commit_accepted()?;
         Ok(())
     }
 
@@ -146,7 +146,7 @@ impl CpuPresentationBackend {
         if node != self.node || crtc != self.crtc {
             return Err(CpuPresentationError::UnexpectedCrtc);
         }
-        let Some(displayed) = self.pending() else {
+        let Some(displayed) = self.pending(pool) else {
             return Ok(None);
         };
         self.lifecycle
