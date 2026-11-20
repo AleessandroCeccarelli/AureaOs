@@ -158,6 +158,16 @@ impl GbmCpuFramebufferPool {
         self.lifecycle.page_flip_complete(displayed).map_err(Into::into)
     }
 
+    /// Returns the framebuffer currently scanned out by this output.
+    pub(crate) fn current(&self) -> Option<DrmFramebufferId> {
+        self.lifecycle.current()
+    }
+
+    /// Returns the framebuffer awaiting its page-flip event.
+    pub(crate) fn pending(&self) -> Option<DrmFramebufferId> {
+        self.lifecycle.pending_candidate()
+    }
+
     /// Destroys a framebuffer only after KMS has released it.
     pub(crate) fn retire(
         &mut self,
