@@ -159,6 +159,33 @@ pub fn transform_surface_geometry(
     })
 }
 
+/// Applies the output's configured orientation to a surface rectangle.
+///
+/// The Vulkan scanout image keeps the DRM mode's native extent. For quarter
+/// turns, the pre-transform coordinate space therefore has swapped dimensions.
+pub fn transform_geometry_for_output(
+    geometry: SurfaceGeometry,
+    target_width: u32,
+    target_height: u32,
+    transform: Transform,
+) -> Option<SurfaceGeometry> {
+    if target_width == 0 || target_height == 0 {
+        return None;
+    }
+
+    let swaps_dimensions = matches!(
+        transform,
+        Transform::_90 | Transform::_270 | Transform::Flipped90 | Transform::Flipped270
+    );
+    let (source_width, source_height) = if swaps_dimensions {
+        (target_height, target_width)
+    } else {
+        (target_width, target_height)
+    };
+
+    transform_surface_geometry(geometry, source_width, source_height, transform)
+}
+
 /// Scales a destination rectangle around a global logical anchor point.
 pub fn scale_surface_geometry(
     geometry: SurfaceGeometry,
