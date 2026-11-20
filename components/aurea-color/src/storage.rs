@@ -108,6 +108,19 @@ impl IccProfileStore {
         &self,
         fingerprint: &IccProfileFingerprint,
     ) -> Result<StoredProfile, ProfileStoreError> {
+        let bytes = self.read_bytes(fingerprint)?;
+        let summary = inspect_profile(&bytes).map_err(|_| ProfileStoreError::InvalidProfile)?;
+        Ok(StoredProfile {
+            fingerprint: fingerprint.clone(),
+            summary,
+        })
+    }
+
+    /// Returns the exact stored bytes after validating their structure and identity.
+    pub fn read_bytes(
+        &self,
+        fingerprint: &IccProfileFingerprint,
+    ) -> Result<Vec<u8>, ProfileStoreError> {
         let path = self.profile_path(fingerprint);
         let metadata = fs::symlink_metadata(&path).map_err(|error| {
             if error.kind() == std::io::ErrorKind::NotFound {
@@ -120,7 +133,7 @@ impl IccProfileStore {
         if metadata.file_type().is_symlink() || !metadata.is_file() {
             return Err(ProfileStoreError::UnsafeStorageEntry);
         }
-        if metadata.len() as usize > MAX_PROFILE_SIZE {
+        if metadata.len() > MAX_PROFILE_SIZE as u64 {
             return Err(ProfileStoreError::ProfileTooLarge);
         }
 
@@ -137,12 +150,7 @@ impl IccProfileStore {
         if &actual_fingerprint != fingerprint {
             return Err(ProfileStoreError::InvalidProfile);
         }
-
-        let summary = inspect_profile(&bytes).map_err(|_| ProfileStoreError::InvalidProfile)?;
-        Ok(StoredProfile {
-            fingerprint: actual_fingerprint,
-            summary,
-        })
+        Ok(bytes)
     }
 
     /// Removes a stored profile. Unknown fingerprints are reported explicitly.
