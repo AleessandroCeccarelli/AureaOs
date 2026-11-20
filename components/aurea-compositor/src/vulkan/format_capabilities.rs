@@ -57,25 +57,11 @@ impl VulkanFormatCapabilities {
 
         let mut modifiers = Vec::new();
 
-        // Linear tiling is part of core Vulkan format properties and does not
-        // depend on VK_EXT_image_drm_format_modifier.
-        let format_properties = unsafe {
-            device
-                .instance()
-                .handle()
-                .get_physical_device_format_properties(device.handle(), vulkan_format)
-        };
-        if format_properties
-            .linear_tiling_features
-            .contains(vk::FormatFeatureFlags::COLOR_ATTACHMENT)
-        {
-            modifiers.push(VulkanFormatModifierInfo {
-                modifier: Modifier::Linear,
-                plane_count: 1,
-                tiling_features: format_properties.linear_tiling_features,
-            });
-        }
-
+        // Do not synthesize DRM_FORMAT_MOD_LINEAR from Vulkan's generic
+        // linearTilingFeatures. Core linear image support does not prove that
+        // the same image is exportable as DMA-BUF or usable by the KMS plane.
+        // Only advertise modifiers explicitly reported by the DRM modifier
+        // extension; allocation performs the stricter external-memory query.
         if device.has_device_extension(c"VK_EXT_image_drm_format_modifier") {
             let properties = device
                 .get_format_modifier_properties(vulkan_format)
