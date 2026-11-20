@@ -31,9 +31,8 @@ use crate::{
 
 use super::{
     VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanDrawPass,
-    VulkanImageState,
-    VulkanImageTransition, VulkanImageView, VulkanLogicalDevice, VulkanSurfacePipelineCache,
-    VulkanTextureBinding,
+    VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanLogicalDevice,
+    VulkanSurfacePipelineCache, VulkanTextureBinding,
 };
 
 pub(super) const BACKGROUND_COLOR: [f32; 4] = [0.08, 0.18, 0.32, 1.0];
