@@ -74,16 +74,6 @@ impl CpuPresentationBackend {
         }
     }
 
-    /// Returns the DRM node associated with this output.
-    pub fn node(&self) -> DrmNode {
-        self.node
-    }
-
-    /// Returns the CRTC associated with this output.
-    pub fn crtc(&self) -> crtc::Handle {
-        self.crtc
-    }
-
     /// Submits a CPU-uploaded frame after its buffer write has completed.
     ///
     /// Atomic TEST_ONLY is mandatory. The pool lifecycle prevents a candidate
