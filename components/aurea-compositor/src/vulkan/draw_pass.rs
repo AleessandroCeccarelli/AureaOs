@@ -101,6 +101,7 @@ impl VulkanDrawPass {
             instance_count,
             None,
             None,
+            None,
         )
     }
 
@@ -132,6 +133,7 @@ impl VulkanDrawPass {
             instance_count,
             Some((texture, set_index)),
             None,
+            Some(0),
         )
     }
 
@@ -153,6 +155,7 @@ impl VulkanDrawPass {
         load: VulkanColorLoad,
         viewport: vk::Viewport,
         scissor: vk::Rect2D,
+        texture_transform: u32,
     ) -> Result<(), VulkanDrawPassError> {
         Self::record_inner(
             command_buffer,
@@ -165,6 +168,7 @@ impl VulkanDrawPass {
             1,
             Some((texture, set_index)),
             Some((viewport, scissor)),
+            Some(texture_transform),
         )
     }
 
@@ -180,6 +184,7 @@ impl VulkanDrawPass {
         instance_count: u32,
         texture: Option<(&VulkanTextureBinding<'_, '_, '_, '_>, u32)>,
         region: Option<(vk::Viewport, vk::Rect2D)>,
+        texture_transform: Option<u32>,
     ) -> Result<(), VulkanDrawPassError> {
         Self::validate(vertex_count, instance_count, final_state, load)?;
         if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
@@ -204,6 +209,13 @@ impl VulkanDrawPass {
         pipeline.bind(command_buffer);
         if let Some((binding, set_index)) = texture {
             binding.bind(command_buffer, pipeline.layout(), set_index);
+            let transform = texture_transform.unwrap_or(0).to_ne_bytes();
+            pipeline.push_constants(
+                command_buffer,
+                vk::ShaderStageFlags::VERTEX,
+                0,
+                &transform,
+            );
         }
         if let Some((viewport, scissor)) = region {
             pipeline.set_viewport_and_scissor_region(command_buffer, viewport, scissor);
