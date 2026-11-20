@@ -13,8 +13,8 @@ use std::sync::Arc;
 
 use crate::{
     render::{
-        RenderScene, geometry::surface_geometry, shm_buffer::ShmBufferSnapshot,
-        surface_tree::SurfaceTreeSnapshot,
+        RenderScene, cursor::scaled_cursor_origin, geometry::surface_geometry,
+        shm_buffer::ShmBufferSnapshot, surface_tree::SurfaceTreeSnapshot,
     },
     renderer::RenderTarget,
 };
@@ -90,15 +90,11 @@ pub(crate) fn render_and_release(
     let visible = visible_surfaces(snapshots, target)?;
     let cursor = scene.native_cursor_location().and_then(|location| {
         let scale = scene.native_cursor_scale();
-        let hotspot = crate::render::cursor::DEFAULT_CURSOR_HOTSPOT;
         let scaled_width =
             (crate::render::cursor::DEFAULT_CURSOR_WIDTH as f64 * scale).round() as u32;
         let scaled_height =
             (crate::render::cursor::DEFAULT_CURSOR_HEIGHT as f64 * scale).round() as u32;
-        let scaled_location = (
-            (f64::from(location.x) + f64::from(hotspot.0) * (1.0 - scale)).round() as i32,
-            (f64::from(location.y) + f64::from(hotspot.1) * (1.0 - scale)).round() as i32,
-        );
+        let scaled_location = scaled_cursor_origin(location, scale);
         let geometry = surface_geometry(
             scaled_location,
             (scaled_width, scaled_height),
