@@ -1,6 +1,5 @@
-mod tests {
-    use crate::gpu::*;
-    use std::path::PathBuf;
+use crate::gpu::*;
+use std::path::PathBuf;
 
     fn path(value: &str) -> PathBuf {
         PathBuf::from(value)
@@ -205,4 +204,3 @@ mod tests {
 
         assert_eq!(manager.selected_render_device().unwrap().path(), primary);
     }
-}
