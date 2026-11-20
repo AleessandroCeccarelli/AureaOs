@@ -413,92 +413,75 @@ impl OutputManager {
         Ok(())
     }
 
-    /// Enables or disables an output.
+    /// Enables or disables an output after validating the resulting layout.
     pub fn set_enabled(
         &mut self,
         output_id: OutputId,
         enabled: bool,
     ) -> Result<(), OutputManagerError> {
-        let output = self
-            .registry
-            .get(output_id)
-            .ok_or(OutputManagerError::UnknownOutput(output_id))?;
-        if enabled && !output.is_enabled() {
-            self.ensure_active_capacity(1)?;
-        }
-        self.registry
-            .get_mut(output_id)
-            .ok_or(OutputManagerError::UnknownOutput(output_id))?
-            .set_enabled(enabled);
-        Ok(())
+        self.configure_output(
+            output_id,
+            OutputConfiguration {
+                enabled: Some(enabled),
+                ..OutputConfiguration::default()
+            },
+        )
     }
 
-    /// Changes the active mode of an output.
+    /// Changes the active mode after validating the resulting logical bounds.
     pub fn set_mode(
         &mut self,
         output_id: OutputId,
         mode: OutputMode,
     ) -> Result<(), OutputManagerError> {
-        let output = self
-            .registry
-            .get_mut(output_id)
-            .ok_or(OutputManagerError::UnknownOutput(output_id))?;
-        if !output.set_mode(mode) {
-            return Err(OutputManagerError::InvalidMode {
-                output: output_id,
-                mode,
-            });
-        }
-        Ok(())
+        self.configure_output(
+            output_id,
+            OutputConfiguration {
+                mode: Some(mode),
+                ..OutputConfiguration::default()
+            },
+        )
     }
 
-    /// Changes the scale of an output.
+    /// Changes the integer scale after validating the resulting logical bounds.
     pub fn set_scale(&mut self, output_id: OutputId, scale: u32) -> Result<(), OutputManagerError> {
-        if scale == 0 {
-            return Err(OutputManagerError::InvalidScale {
-                output: output_id,
-                scale,
-            });
-        }
-        let output = self
-            .registry
-            .get_mut(output_id)
-            .ok_or(OutputManagerError::UnknownOutput(output_id))?;
-        if !output.set_scale(scale) {
-            return Err(OutputManagerError::InvalidScale {
-                output: output_id,
-                scale,
-            });
-        }
-        Ok(())
+        self.configure_output(
+            output_id,
+            OutputConfiguration {
+                scale: Some(OutputScale::Integer(scale)),
+                ..OutputConfiguration::default()
+            },
+        )
     }
 
-    /// Changes the scale of an output to an exact fractional value.
+    /// Changes the fractional scale after validating the resulting logical bounds.
     pub fn set_fractional_scale(
         &mut self,
         output_id: OutputId,
         scale: super::scale::ScaleFactor,
     ) -> Result<(), OutputManagerError> {
-        let output = self
-            .registry
-            .get_mut(output_id)
-            .ok_or(OutputManagerError::UnknownOutput(output_id))?;
-        output.set_fractional_scale(scale);
-        Ok(())
+        self.configure_output(
+            output_id,
+            OutputConfiguration {
+                scale: Some(OutputScale::Fractional(scale)),
+                ..OutputConfiguration::default()
+            },
+        )
     }
 
-    /// Updates the logical position of an output.
+    /// Updates the logical position after validating the resulting output bounds.
     pub fn set_position(
         &mut self,
         output_id: OutputId,
         position: (i32, i32),
     ) -> Result<(), OutputManagerError> {
-        if self.registry.get(output_id).is_none() {
-            return Err(OutputManagerError::UnknownOutput(output_id));
-        }
-        self.layout
-            .set_position(output_id, OutputPosition::new(position.0, position.1));
-        Ok(())
+        self.configure_output(
+            output_id,
+            OutputConfiguration {
+                position: Some(position),
+                ..OutputConfiguration::default()
+            },
+        )
     }
 }
 
