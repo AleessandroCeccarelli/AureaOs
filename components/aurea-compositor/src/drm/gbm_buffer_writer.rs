@@ -7,7 +7,7 @@
 
 use std::{error::Error, fmt};
 
-use smithay::backend::allocator::{Buffer, Fourcc, gbm::GbmBuffer};
+use smithay::backend::allocator::{Fourcc, gbm::GbmBuffer};
 
 use super::gbm_upload_layout::{GbmUploadLayoutError, pack_rgba8_rows};
 
@@ -102,5 +102,4 @@ impl GbmCpuUploadBuffer {
             .write(&packed)
             .map_err(GbmBufferWriterError::Write)
     }
-
 }
