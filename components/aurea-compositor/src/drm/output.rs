@@ -8,7 +8,7 @@ use std::{error::Error, fmt};
 
 use smithay::reexports::drm::control::{Mode, connector};
 
-use super::edid::EdidInfo;
+use super::{connector_identity::DrmConnectorIdentity, edid::EdidInfo};
 
 use crate::output::{
     DisplayOutput, OutputId, OutputMode, layout::OutputPosition, manager::OutputManager,
@@ -69,6 +69,7 @@ pub struct DrmOutputDescriptor {
     connector: Option<connector::Handle>,
     native_mode: Option<Mode>,
     edid: Option<EdidInfo>,
+    physical_identity: Option<DrmConnectorIdentity>,
 }
 
 impl DrmOutputDescriptor {
@@ -91,6 +92,7 @@ impl DrmOutputDescriptor {
             connector: None,
             native_mode: None,
             edid: None,
+            physical_identity: None,
         }
     }
 
@@ -105,6 +107,17 @@ impl DrmOutputDescriptor {
     pub fn with_edid(mut self, edid: Option<EdidInfo>) -> Self {
         self.edid = edid;
         self
+    }
+
+    /// Attaches resolved sysfs hardware-path evidence for this connector.
+    pub fn with_physical_identity(mut self, identity: Option<DrmConnectorIdentity>) -> Self {
+        self.physical_identity = identity;
+        self
+    }
+
+    /// Returns physical connector identity evidence, when sysfs resolved it.
+    pub fn physical_identity(&self) -> Option<&DrmConnectorIdentity> {
+        self.physical_identity.as_ref()
     }
 
     /// Returns validated monitor EDID metadata, when available.
