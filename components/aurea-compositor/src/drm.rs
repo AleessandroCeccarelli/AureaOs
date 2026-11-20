@@ -17,6 +17,7 @@ pub mod gbm_upload_layout;
 pub mod gbm_buffer_writer;
 pub(crate) mod gbm_buffer_allocator;
 pub(crate) mod gbm_framebuffer;
+pub(crate) mod gbm_framebuffer_pool;
 pub mod hdr_link;
 pub mod identity;
 pub mod identity_registry;
