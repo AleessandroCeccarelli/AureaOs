@@ -8,6 +8,7 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 
 use super::{OutputManager, OutputManagerError, OutputReconciliation};
+use super::geometry::logical_width;
 use crate::output::{limits::MAX_ACTIVE_OUTPUTS, DisplayOutput, OutputId};
 
 impl OutputManager {
