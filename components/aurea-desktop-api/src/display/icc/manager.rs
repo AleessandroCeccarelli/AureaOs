@@ -6,8 +6,7 @@
 //! Mutating operations for the ICC profile catalog.
 
 use super::{
-    DisplayId, DisplayIccProfileAssignment, IccProfileDescriptor, IccProfileFormat,
-    IccProfileId,
+    DisplayIccProfileAssignment, DisplayId, IccProfileDescriptor, IccProfileFormat, IccProfileId,
 };
 
 /// Upper bound for an imported ICC profile, preventing unbounded allocations.
@@ -67,10 +66,7 @@ pub trait IccProfileManager: Send + Sync {
     ) -> Result<IccProfileDescriptor, IccProfileManagerError>;
 
     /// Exports the exact stored profile bytes without modifying the catalog.
-    fn export_profile(
-        &self,
-        profile_id: &IccProfileId,
-    ) -> Result<Vec<u8>, IccProfileManagerError>;
+    fn export_profile(&self, profile_id: &IccProfileId) -> Result<Vec<u8>, IccProfileManagerError>;
 
     /// Assigns a validated display-class profile to a connected display.
     fn assign_profile(
@@ -95,9 +91,6 @@ mod tests {
 
     #[test]
     fn imported_and_downloaded_profiles_have_distinct_origins() {
-        assert_ne!(
-            IccProfileOrigin::Imported,
-            IccProfileOrigin::Downloaded
-        );
+        assert_ne!(IccProfileOrigin::Imported, IccProfileOrigin::Downloaded);
     }
 }
