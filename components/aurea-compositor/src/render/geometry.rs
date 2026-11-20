@@ -384,6 +384,31 @@ mod tests {
     }
 
     #[test]
+    fn fractional_cursor_scale_keeps_hotspot_fixed_on_output() {
+        let output_scale = ScaleFactor::from_percent(125).unwrap();
+        let geometry = surface_geometry_with_fractional_scale(
+            (90, 90),
+            (20, 20),
+            1,
+            Transform::Normal,
+            (0, 0),
+            output_scale,
+        )
+        .unwrap();
+        let scaled = scale_surface_geometry_with_fractional_scale(
+            geometry,
+            (100, 100),
+            (0, 0),
+            output_scale,
+            2.0,
+        )
+        .unwrap();
+
+        assert_eq!((scaled.x(), scaled.y()), (-24, -24));
+        assert_eq!((scaled.width(), scaled.height()), (50, 50));
+    }
+
+    #[test]
     fn fractional_output_scale_controls_surface_origin_and_extent() {
         let scale = ScaleFactor::from_percent(125).unwrap();
         let geometry = surface_geometry_with_fractional_scale(
