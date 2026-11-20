@@ -10,8 +10,8 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     path::Path,
     sync::{
-        mpsc::{self, Receiver, Sender},
         Mutex,
+        mpsc::{self, Receiver, Sender},
     },
 };
 
