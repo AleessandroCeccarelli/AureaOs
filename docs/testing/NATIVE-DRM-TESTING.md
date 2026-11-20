@@ -43,14 +43,20 @@ From the repository root, run:
 bash tools/run-aurea-native-test.sh
 ```
 
-The default test window is 45 seconds. The launcher builds the desktop
-binaries with the committed lockfile and starts the native DRM/Vulkan desktop.
+The default test window is 45 seconds. The launcher first attempts to recover
+any unfinished diagnostic sessions from the previous boot, then builds the
+desktop binaries with the committed lockfile and starts the native DRM/Vulkan
+desktop. Each session gets a private report directory under
+`diagnostics/runs/`; the launcher captures stdout/stderr and a hardware,
+driver, and Vulkan summary snapshot.
 The desktop composition root starts and owns its Welcome Wayland client itself;
 the launcher deliberately does not start a second client. The client connects
 to the compositor's `wayland-0` socket. The launcher enables Rust backtraces,
 stores output under `$XDG_STATE_HOME/aureaos/logs` (or
 `~/.local/state/aureaos/logs`), and sends SIGINT at the deadline. It allows
-10 seconds for graceful shutdown before sending SIGKILL.
+10 seconds for graceful shutdown before sending SIGKILL. On normal exit it
+collects the current boot journal, the persistent Aurea Desktop log entries
+for that session, and a systemd coredump index when available.
 
 A different bounded duration can be selected without editing the script:
 
@@ -70,9 +76,11 @@ status proves that the GPU or kernel is healthy.
 - If the machine stops responding to all TTY switching and input, userspace
   timeout handling cannot recover it. Use the machine's documented hardware
   recovery procedure as a last resort. Do not assume SysRq is enabled.
-- After reboot, inspect the newest file in
-  `~/.local/state/aureaos/logs/` (or the configured XDG state directory) and
-  the kernel journal before repeating the test.
+- After reboot, return to the repository and start the same launcher again.
+  It automatically finds unfinished report folders and attempts to collect
+  the previous boot's kernel/system journal and the matching persistent
+  application log before starting another test. You can also invoke
+  `bash tools/collect-previous-boot.sh RUN_ID` manually.
 
 ## Limits of the safety measures
 
@@ -81,7 +89,8 @@ schedule it. The desktop owns and stops the Welcome client when the compositor
 exits. It cannot prevent or recover from a kernel panic, GPU driver deadlock,
 firmware hang, or complete hardware lockup. The persistent desktop log records
 startup, normal termination, errors, and Rust panic details; the launcher
-additionally captures compositor stderr/stdout. A hard power loss can still
+additionally captures compositor stderr/stdout, a hardware/driver snapshot,
+time-bounded system journals, and a coredump index when available. A hard power loss can still
 truncate the final log entries.
 
 A successful process start is not a successful display test. Record separately
