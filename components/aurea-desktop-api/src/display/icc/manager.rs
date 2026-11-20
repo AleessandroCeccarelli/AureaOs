@@ -7,7 +7,7 @@
 
 use super::{
     DisplayId, DisplayIccProfileAssignment, IccProfileDescriptor, IccProfileFormat,
-    IccProfileId, IccProfileOrigin,
+    IccProfileId,
 };
 
 /// Upper bound for an imported ICC profile, preventing unbounded allocations.
@@ -85,6 +85,7 @@ pub trait IccProfileManager: Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::MAX_ICC_PROFILE_BYTES;
+    use crate::display::IccProfileOrigin;
 
     #[test]
     fn import_size_limit_is_suitable_for_profile_payloads() {
@@ -95,8 +96,8 @@ mod tests {
     #[test]
     fn imported_and_downloaded_profiles_have_distinct_origins() {
         assert_ne!(
-            super::IccProfileOrigin::Imported,
-            super::IccProfileOrigin::Downloaded
+            IccProfileOrigin::Imported,
+            IccProfileOrigin::Downloaded
         );
     }
 }
