@@ -161,11 +161,11 @@ pub fn register_drm_output_descriptors(
             });
         }
 
-        let width = logical_output_width(&output)?;
-
         let output = descriptor
             .into_display_output()
             .map_err(|source| DrmOutputsError::Registration { output_id, source })?;
+
+        let width = logical_output_width(&output)?;
 
         staged_outputs.push((output, (next_x, 0)));
 
