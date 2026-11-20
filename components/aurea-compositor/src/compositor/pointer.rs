@@ -55,15 +55,19 @@ impl AureaCompositor {
             .iter()
             .filter(|output| output.is_enabled())
             .filter_map(|output| {
-                let position = self.output_manager.layout().get(output.id())?;
-                let mode = output.current_mode();
-                let scale = output.effective_scale();
+                let bounds = self
+                    .output_manager
+                    .logical_bounds(output.id())
+                    .ok()
+                    .flatten()?;
+                let origin = bounds.origin();
+                let size = bounds.size();
 
                 OutputGeometry::new(
-                    f64::from(position.x()),
-                    f64::from(position.y()),
-                    f64::from(mode.width()) / scale,
-                    f64::from(mode.height()) / scale,
+                    origin.x as f64,
+                    origin.y as f64,
+                    f64::from(size.width),
+                    f64::from(size.height),
                 )
             })
             .collect::<Vec<_>>();
