@@ -12,7 +12,25 @@ use crate::output::{
     wayland::{OutputPublicationError, publish_output, publish_outputs},
 };
 
-use super::AureaCompositor;
+use super::{AureaCompositor, window_placement::center_first_mapped_window};
+
+fn retry_initial_window_placement(compositor: &mut AureaCompositor) {
+    if compositor.window_manager.mapped_window_count() != 1 {
+        return;
+    }
+
+    let Some(surface) = compositor
+        .window_manager
+        .mapped_toplevels()
+        .next()
+        .map(|toplevel| toplevel.wl_surface().clone())
+    else {
+        return;
+    };
+
+    center_first_mapped_window(compositor, &surface);
+    compositor.refresh_pointer_focus_at_current_location();
+}
 
 impl AureaCompositor {
     /// Publishes all registered outputs as Wayland globals.
@@ -39,6 +57,7 @@ impl AureaCompositor {
         }
 
         self.wayland_outputs = output_ids.into_iter().zip(outputs).collect();
+        retry_initial_window_placement(self);
         self.reconcile_surface_outputs();
 
         Ok(())
@@ -69,6 +88,7 @@ impl AureaCompositor {
 
         if let Some(wayland_output) = publish_output(display, output, position)? {
             self.wayland_outputs.insert(output_id, wayland_output);
+            retry_initial_window_placement(self);
             self.reconcile_surface_outputs();
         }
 
@@ -105,6 +125,7 @@ impl AureaCompositor {
             // Emit leave events before replacing its retained handle.
             self.forget_output_membership(output_id);
             self.wayland_outputs.insert(output_id, replacement);
+            retry_initial_window_placement(self);
         } else {
             self.forget_output_membership(output_id);
             self.wayland_outputs.remove(&output_id);
