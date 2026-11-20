@@ -13,7 +13,7 @@ use std::sync::Arc;
 
 use crate::{
     render::{
-        RenderScene, cursor::scaled_cursor_origin, geometry::surface_geometry,
+        RenderScene, cursor::scaled_cursor_origin, geometry::{surface_geometry, surface_geometry_with_fractional_scale},
         shm_buffer::ShmBufferSnapshot, surface_tree::SurfaceTreeSnapshot,
     },
     renderer::RenderTarget,
@@ -94,14 +94,25 @@ pub(crate) fn render_and_release(
         let scaled_height =
             (crate::render::cursor::DEFAULT_CURSOR_HEIGHT as f64 * scale).round() as u32;
         let scaled_location = scaled_cursor_origin(location, scale);
-        let geometry = surface_geometry(
-            scaled_location,
-            (scaled_width, scaled_height),
-            1,
-            Transform::Normal,
-            target.logical_origin(),
-            target.scale(),
-        )?;
+        let geometry = if let Some(scale) = target.fractional_scale() {
+            surface_geometry_with_fractional_scale(
+                scaled_location,
+                (scaled_width, scaled_height),
+                1,
+                Transform::Normal,
+                target.logical_origin(),
+                scale,
+            )?
+        } else {
+            surface_geometry(
+                scaled_location,
+                (scaled_width, scaled_height),
+                1,
+                Transform::Normal,
+                target.logical_origin(),
+                target.scale(),
+            )?
+        };
         let scissor = geometry.scissor(target.width(), target.height())?;
         Some((geometry, scissor))
     });
@@ -465,14 +476,25 @@ fn visible_surfaces(
     let mut total_bytes = 0usize;
 
     for snapshot in snapshots {
-        let mut geometry = surface_geometry(
-            (snapshot.location.x, snapshot.location.y),
-            (snapshot.snapshot.width(), snapshot.snapshot.height()),
-            snapshot.buffer_scale,
-            snapshot.buffer_transform,
-            target.logical_origin(),
-            target.scale(),
-        )
+        let mut geometry = if let Some(scale) = target.fractional_scale() {
+            surface_geometry_with_fractional_scale(
+                (snapshot.location.x, snapshot.location.y),
+                (snapshot.snapshot.width(), snapshot.snapshot.height()),
+                snapshot.buffer_scale,
+                snapshot.buffer_transform,
+                target.logical_origin(),
+                scale,
+            )
+        } else {
+            surface_geometry(
+                (snapshot.location.x, snapshot.location.y),
+                (snapshot.snapshot.width(), snapshot.snapshot.height()),
+                snapshot.buffer_scale,
+                snapshot.buffer_transform,
+                target.logical_origin(),
+                target.scale(),
+            )
+        }
         .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
 
         if let Some(anchor) = snapshot.cursor_anchor {
