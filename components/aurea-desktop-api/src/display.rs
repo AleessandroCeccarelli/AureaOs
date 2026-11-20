@@ -15,15 +15,14 @@ pub mod modes;
 pub mod policy;
 
 pub use capabilities::{
-    DisplayCapabilities, DisplayConnector, DisplayDescriptor, DisplayId,
-    DisplayPhysicalSize, VariableRefreshRange,
+    DisplayCapabilities, DisplayConnector, DisplayDescriptor, DisplayId, DisplayPhysicalSize,
+    VariableRefreshRange,
 };
 pub use events::DisplayEvent;
 pub use icc::{
     DisplayIccProfileAssignment, IccProfileCatalogSnapshot, IccProfileClass, IccProfileDescriptor,
-    IccProfileFormat, IccProfileImport, IccProfileManager, IccProfileManagerError,
-    IccProfileProvider, MAX_ICC_PROFILE_BYTES,
-    IccProfileId, IccProfileOrigin,
+    IccProfileFormat, IccProfileId, IccProfileImport, IccProfileManager, IccProfileManagerError,
+    IccProfileOrigin, IccProfileProvider, MAX_ICC_PROFILE_BYTES,
 };
 pub use layout::{DisplayLayout, DisplayPlacement, DisplayPosition, DisplayScale};
 pub use limits::MAX_ACTIVE_DISPLAYS;
