@@ -150,16 +150,16 @@ impl VulkanContext {
             .or_else(|| matching_devices.into_iter().next())
     }
 
-    /// Checks the extensions required by the same-device Vulkan-to-KMS path.
-    /// FOREIGN queue-family support is optional because the selected Vulkan
-    /// device is matched to the DRM node and can use EXTERNAL ownership.
+    /// Checks the extensions required by AureaOS's current Vulkan-to-KMS path.
+    ///
+    /// Selection rejects devices that would otherwise initialize successfully
+    /// but fail only when the first scanout frame is rendered.
     #[cfg(feature = "drm")]
     fn supports_drm_scanout(device: &PhysicalDevice) -> bool {
         let extensions = VulkanDeviceExtensionPlan::from_device(device);
-        // The DRM node is matched to this physical device, so KMS is an
-        // external consumer of the same device/driver. EXTERNAL ownership
-        // is sufficient; FOREIGN is reserved for a different device/driver.
-        extensions.supports_same_device_drm_scanout()
+        extensions.supports_dmabuf_interop()
+            && extensions.supports_drm_format_modifier()
+            && extensions.supports_foreign_queue_family()
     }
 
     pub(super) fn classify_device(device: &PhysicalDevice) -> VulkanDeviceType {
