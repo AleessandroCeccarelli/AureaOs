@@ -9,7 +9,7 @@ use std::io;
 
 use smithay::backend::drm::DrmNode;
 
-use crate::{drm::outputs::reconcile_drm_outputs, output::OutputId};
+use crate::{drm::outputs::reconcile_drm_outputs_with_identity, output::OutputId};
 
 use super::super::state::WaylandState;
 
@@ -46,6 +46,7 @@ pub(in crate::server) fn remove_device_outputs(state: &mut WaylandState, node: D
     let ids = output_ids_for_device(state, node);
 
     for id in ids {
+        state.drm_display_identities.remove(id);
         state.compositor.unpublish_wayland_output(id);
         state.compositor.forget_output_frame_state(id);
         state.compositor.output_manager().unregister(id);
@@ -63,14 +64,16 @@ pub(in crate::server) fn refresh_device_outputs(
     let owned_ids = output_ids_for_device(state, node);
     let before = state.compositor.output_manager().clone();
 
-    let changes = {
+    let (changes, identity_evidence) = {
         let Some(device) = state.drm_devices.get(node) else {
             return Ok(());
         };
 
-        reconcile_drm_outputs(device, state.compositor.output_manager(), &owned_ids)
+        reconcile_drm_outputs_with_identity(device, state.compositor.output_manager(), &owned_ids)
             .map_err(io::Error::other)?
     };
+
+    state.drm_display_identities.replace_device(node.dev_id() as u64, identity_evidence);
 
     let display = state.display.handle();
 

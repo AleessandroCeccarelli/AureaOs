@@ -80,6 +80,9 @@ pub(super) fn build(
         drm_devices,
 
         #[cfg(feature = "drm")]
+        drm_display_identities: crate::drm::identity_registry::DrmDisplayIdentityRegistry::new(),
+
+        #[cfg(feature = "drm")]
         drm_surfaces: std::collections::HashMap::new(),
 
         #[cfg(feature = "drm")]

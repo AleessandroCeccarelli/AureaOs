@@ -155,27 +155,34 @@ pub fn register_drm_output_descriptors(
 /// Reconciles a device's existing output IDs with its current connector set.
 ///
 /// OutputManager preserves positions and user configuration for retained IDs.
+
 pub fn reconcile_drm_outputs(
     device: &DrmDevice,
     manager: &mut OutputManager,
     owned_ids: &[OutputId],
 ) -> Result<OutputReconciliation, DrmOutputsError> {
+    reconcile_drm_outputs_with_identity(device, manager, owned_ids).map(|(changes, _)| changes)
+}
+
+/// Reconciles outputs and returns physical identity evidence separately.
+pub fn reconcile_drm_outputs_with_identity(
+    device: &DrmDevice,
+    manager: &mut OutputManager,
+    owned_ids: &[OutputId],
+) -> Result<(OutputReconciliation, Vec<(OutputId, aurea_desktop_api::display::DisplayIdentityEvidence)>), DrmOutputsError> {
     let descriptors = discover_connected_outputs(device).map_err(DrmOutputsError::Discovery)?;
     let mut outputs = Vec::with_capacity(descriptors.len());
-
+    let mut identities = Vec::new();
     for descriptor in descriptors {
         let output_id = descriptor.id();
-
-        outputs.push(
-            descriptor
-                .into_display_output()
-                .map_err(|source| DrmOutputsError::Registration { output_id, source })?,
-        );
+        if let Some(evidence) = super::identity::identity_evidence_for_output(&descriptor) {
+            identities.push((output_id, evidence));
+        }
+        outputs.push(descriptor.into_display_output()
+            .map_err(|source| DrmOutputsError::Registration { output_id, source })?);
     }
-
-    manager
-        .reconcile_outputs(owned_ids, outputs)
-        .map_err(DrmOutputsError::Manager)
+    let changes = manager.reconcile_outputs(owned_ids, outputs).map_err(DrmOutputsError::Manager)?;
+    Ok((changes, identities))
 }
 
 #[cfg(test)]

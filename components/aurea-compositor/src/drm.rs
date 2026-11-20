@@ -15,6 +15,7 @@ pub mod frame_coordinator;
 pub mod gbm;
 pub mod hdr_link;
 pub mod identity;
+pub mod identity_registry;
 pub mod output;
 pub mod outputs;
 pub mod plane_formats;

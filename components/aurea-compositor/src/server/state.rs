@@ -29,6 +29,7 @@ use crate::AureaCompositor;
 use crate::{
     drm::{
         DrmSession, device_manager::DrmDeviceManager, gbm::GbmDeviceManager,
+        identity_registry::DrmDisplayIdentityRegistry,
         registry::DrmDeviceRegistry, surfaces::DrmSurfaceManager,
     },
     gpu::GpuManager,
@@ -51,6 +52,10 @@ pub(super) struct WaylandState {
 
     #[cfg(feature = "drm")]
     pub(super) drm_devices: DrmDeviceManager,
+
+    /// Current physical identity evidence indexed by transient DRM output ID.
+    #[cfg(feature = "drm")]
+    pub(super) drm_display_identities: DrmDisplayIdentityRegistry,
 
     /// Native KMS surfaces grouped by their owning DRM device.
     #[cfg(feature = "drm")]
