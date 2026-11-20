@@ -21,13 +21,13 @@ pub use capabilities::{
     VariableRefreshRange,
 };
 pub use events::DisplayEvent;
-pub use hdr_detection::{
-    DisplayHdrCapabilityResolver, DisplayHdrCapabilitySource, DisplayHdrManualOverride,
-    DisplayHdrResolution, HdrSinkDeclaration,
-};
 pub use hdr::{
     DisplayContentEncoding, DisplayHdrCapabilities, DisplayHdrDecision, DisplayHdrOutputMode,
     DisplayHdrPolicy,
+};
+pub use hdr_detection::{
+    DisplayHdrCapabilityResolver, DisplayHdrCapabilitySource, DisplayHdrManualOverride,
+    DisplayHdrResolution, HdrSinkDeclaration,
 };
 pub use icc::{
     DisplayColorConfigurationAssignment, DisplayColorConfigurationError,

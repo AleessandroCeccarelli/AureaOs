@@ -98,9 +98,8 @@ fn is_valid_edid(edid: &[u8]) -> bool {
         return false;
     }
 
-    edid.chunks_exact(128).all(|block| {
-        block.iter().fold(0_u8, |sum, byte| sum.wrapping_add(*byte)) == 0
-    })
+    edid.chunks_exact(128)
+        .all(|block| block.iter().fold(0_u8, |sum, byte| sum.wrapping_add(*byte)) == 0)
 }
 
 const CTA_EXTENSION_TAG: u8 = 0x02;
@@ -168,15 +167,13 @@ fn parse_hdr_static_metadata(data: &[u8], capabilities: &mut EdidHdrCapabilities
         capabilities.max_luminance_millinit = Some(decode_max_luminance(raw));
     }
     if let Some(raw) = data.get(3).copied().filter(|value| *value != 0) {
-        capabilities.max_frame_average_luminance_millinit =
-            Some(decode_max_luminance(raw));
+        capabilities.max_frame_average_luminance_millinit = Some(decode_max_luminance(raw));
     }
     if let (Some(maximum), Some(raw)) = (
         capabilities.max_luminance_millinit,
         data.get(4).copied().filter(|value| *value != 0),
     ) {
-        capabilities.min_luminance_millinit =
-            Some(decode_min_luminance(maximum, raw));
+        capabilities.min_luminance_millinit = Some(decode_min_luminance(maximum, raw));
     }
 }
 

@@ -58,8 +58,7 @@ impl DisplayHdrResolution {
     pub const fn needs_manual_review(self) -> bool {
         matches!(
             self.source,
-            DisplayHdrCapabilitySource::NeedsReview
-                | DisplayHdrCapabilitySource::LinkUnverified
+            DisplayHdrCapabilitySource::NeedsReview | DisplayHdrCapabilitySource::LinkUnverified
         )
     }
 }
@@ -121,17 +120,13 @@ fn resolution(
     }
 }
 
-fn intersect(
-    sink: DisplayHdrCapabilities,
-    link: DisplayHdrCapabilities,
-) -> DisplayHdrCapabilities {
+fn intersect(sink: DisplayHdrCapabilities, link: DisplayHdrCapabilities) -> DisplayHdrCapabilities {
     DisplayHdrCapabilities {
         supports_bt2020: sink.supports_bt2020 && link.supports_bt2020,
         supports_pq: sink.supports_pq && link.supports_pq,
         supports_hlg: sink.supports_hlg && link.supports_hlg,
         supports_scrgb: sink.supports_scrgb && link.supports_scrgb,
-        supports_static_metadata: sink.supports_static_metadata
-            && link.supports_static_metadata,
+        supports_static_metadata: sink.supports_static_metadata && link.supports_static_metadata,
         min_luminance_millinit: sink.min_luminance_millinit,
         max_luminance_millinit: sink.max_luminance_millinit,
         max_frame_average_luminance_millinit: sink.max_frame_average_luminance_millinit,

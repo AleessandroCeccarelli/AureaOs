@@ -100,7 +100,6 @@ impl EdidInfo {
         self.serial_number.as_deref()
     }
 
-
     /// Returns CTA-861 HDR sink capabilities parsed from this validated EDID.
     pub fn hdr_capabilities(&self) -> super::edid_hdr::EdidHdrCapabilities {
         super::edid_hdr::EdidHdrCapabilities::parse(&self.raw)

@@ -24,12 +24,7 @@ pub struct DrmHdrLinkCapabilities {
 
 impl DrmHdrLinkCapabilities {
     /// Creates link evidence from capabilities independently verified by KMS.
-    pub const fn verified(
-        bt2020: bool,
-        pq: bool,
-        hlg: bool,
-        static_metadata_type_1: bool,
-    ) -> Self {
+    pub const fn verified(bt2020: bool, pq: bool, hlg: bool, static_metadata_type_1: bool) -> Self {
         Self {
             bt2020,
             pq,
@@ -42,10 +37,7 @@ impl DrmHdrLinkCapabilities {
     ///
     /// A feature is enabled only when both the monitor and the active link
     /// advertise it. Unknown or unverified link support remains disabled.
-    pub fn intersect(
-        self,
-        sink: EdidHdrCapabilities,
-    ) -> DisplayHdrCapabilities {
+    pub fn intersect(self, sink: EdidHdrCapabilities) -> DisplayHdrCapabilities {
         let supports_bt2020 = self.bt2020 && sink.supports_bt2020();
         let supports_pq = self.pq && sink.supports_pq();
         let supports_hlg = self.hlg && sink.supports_hlg();
@@ -63,8 +55,7 @@ impl DrmHdrLinkCapabilities {
             supports_static_metadata,
             min_luminance_millinit: sink.min_luminance_millinit(),
             max_luminance_millinit: sink.max_luminance_millinit(),
-            max_frame_average_luminance_millinit:
-                sink.max_frame_average_luminance_millinit(),
+            max_frame_average_luminance_millinit: sink.max_frame_average_luminance_millinit(),
         }
     }
 }
