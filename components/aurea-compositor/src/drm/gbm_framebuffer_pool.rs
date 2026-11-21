@@ -127,27 +127,27 @@ impl GbmCpuFramebufferPool {
     /// Begins atomic TEST_ONLY validation for a candidate.
     pub(crate) fn begin_test(&mut self, id: DrmFramebufferId) -> Result<(), GbmCpuFramebufferPoolError> {
         self.ensure_registered(id)?;
-        self.lifecycle.begin_test(id).map_err(Into::into)
+        self.lifecycle.begin_test(id).map_err(GbmCpuFramebufferPoolError::Presentation)
     }
 
     /// Records successful atomic TEST_ONLY validation.
     pub(crate) fn test_passed(&mut self) -> Result<(), GbmCpuFramebufferPoolError> {
-        self.lifecycle.test_passed().map_err(Into::into)
+        self.lifecycle.test_passed().map_err(GbmCpuFramebufferPoolError::Presentation)
     }
 
     /// Cancels a rejected TEST_ONLY request.
     pub(crate) fn test_failed(&mut self) -> Result<DrmFramebufferId, GbmCpuFramebufferPoolError> {
-        self.lifecycle.test_failed().map_err(Into::into)
+        self.lifecycle.test_failed().map_err(GbmCpuFramebufferPoolError::Presentation)
     }
 
     /// Records an accepted non-blocking KMS commit.
     pub(crate) fn commit_accepted(&mut self) -> Result<(), GbmCpuFramebufferPoolError> {
-        self.lifecycle.commit_accepted().map_err(Into::into)
+        self.lifecycle.commit_accepted().map_err(GbmCpuFramebufferPoolError::Presentation)
     }
 
     /// Cancels a rejected KMS commit.
     pub(crate) fn commit_failed(&mut self) -> Result<DrmFramebufferId, GbmCpuFramebufferPoolError> {
-        self.lifecycle.commit_failed().map_err(Into::into)
+        self.lifecycle.commit_failed().map_err(GbmCpuFramebufferPoolError::Presentation)
     }
 
     /// Completes a page flip and returns the framebuffer released by KMS.
@@ -155,7 +155,7 @@ impl GbmCpuFramebufferPool {
         &mut self,
         displayed: DrmFramebufferId,
     ) -> Result<Option<DrmFramebufferId>, GbmCpuFramebufferPoolError> {
-        self.lifecycle.page_flip_complete(displayed).map_err(Into::into)
+        self.lifecycle.page_flip_complete(displayed).map_err(GbmCpuFramebufferPoolError::Presentation)
     }
 
     /// Returns the framebuffer awaiting its page-flip event.
