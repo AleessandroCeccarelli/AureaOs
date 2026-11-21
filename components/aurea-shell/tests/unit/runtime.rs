@@ -67,6 +67,13 @@ fn overview_and_context_menu_interactions_are_preserved_for_presentation() {
         runtime.take_desktop_interaction(),
         Some(DesktopInteraction::ShowContextMenu)
     );
+    assert_eq!(
+        runtime.desktop_state().panels.active(),
+        Some(crate::desktop::DesktopPanel::ContextMenu)
+    );
+
+    runtime.dismiss_desktop_panel();
+    assert_eq!(runtime.desktop_state().panels.active(), None);
 }
 
 #[test]
