@@ -13,7 +13,7 @@ use std::sync::{
 use std::thread::{self, JoinHandle, ThreadId};
 
 use aurea_desktop_api::{
-    CompositorFactory, CompositorService, ShutdownSignal, display::DisplayColorController,
+    CompositorFactory, CompositorService, ShutdownSignal, display::DisplayColorController, desktop_interaction::DesktopInteractionSender,
 };
 
 use super::{join_compositor_thread, request_shutdown};
@@ -31,6 +31,7 @@ impl CompositorFactory for InitializationFailureFactory {
     fn create(
         &self,
         _display_color: DisplayColorController,
+        _interactions: DesktopInteractionSender,
     ) -> io::Result<Box<dyn CompositorService>> {
         *self
             .observed_thread
