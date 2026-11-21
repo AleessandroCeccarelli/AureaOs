@@ -72,3 +72,68 @@ impl GestureProfile {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{GestureProfile, PointingGesture, PointingInteraction};
+
+    #[test]
+    fn horizontal_swipes_resolve_in_both_directions() {
+        let profile = GestureProfile::default();
+        assert_eq!(
+            profile.resolve(PointingGesture::Swipe {
+                fingers: 3, delta_x: -60.0, delta_y: 2.0,
+            }),
+            Some(PointingInteraction::NextWorkspace)
+        );
+        assert_eq!(
+            profile.resolve(PointingGesture::Swipe {
+                fingers: 3, delta_x: 60.0, delta_y: 2.0,
+            }),
+            Some(PointingInteraction::PreviousWorkspace)
+        );
+    }
+
+    #[test]
+    fn vertical_or_short_swipes_do_not_switch_workspaces() {
+        let profile = GestureProfile::default();
+        assert_eq!(
+            profile.resolve(PointingGesture::Swipe {
+                fingers: 3, delta_x: 10.0, delta_y: 80.0,
+            }),
+            None
+        );
+        assert_eq!(
+            profile.resolve(PointingGesture::Swipe {
+                fingers: 3, delta_x: 20.0, delta_y: 1.0,
+            }),
+            None
+        );
+    }
+
+    #[test]
+    fn four_finger_pinch_and_single_finger_hold_have_defaults() {
+        let profile = GestureProfile::default();
+        assert_eq!(
+            profile.resolve(PointingGesture::Pinch {
+                fingers: 4, scale: 0.8, rotation: 0.0,
+            }),
+            Some(PointingInteraction::Overview)
+        );
+        assert_eq!(
+            profile.resolve(PointingGesture::Hold { fingers: 1 }),
+            Some(PointingInteraction::ContextMenu)
+        );
+    }
+
+    #[test]
+    fn invalid_gesture_samples_are_ignored() {
+        let profile = GestureProfile::default();
+        assert_eq!(
+            profile.resolve(PointingGesture::Swipe {
+                fingers: 3, delta_x: f64::NAN, delta_y: 0.0,
+            }),
+            None
+        );
+    }
+}
