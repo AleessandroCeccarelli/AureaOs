@@ -7,6 +7,8 @@
 
 use std::sync::mpsc::Receiver;
 
+use super::TouchpadApplyReport;
+
 /// Stable identifier assigned by the AureaOS input-device discovery layer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct InputDeviceId(pub u64);
@@ -107,6 +109,10 @@ pub enum InputDeviceEvent {
 pub trait InputDeviceProvider: Send + Sync {
     fn devices(&self) -> Vec<InputDeviceDescriptor>;
     fn device(&self, id: InputDeviceId) -> Option<InputDeviceDescriptor>;
+    /// Returns the latest hardware-specific touchpad configuration result.
+    fn touchpad_report(&self, _id: InputDeviceId) -> Option<TouchpadApplyReport> {
+        None
+    }
     fn subscribe(&self) -> Receiver<InputDeviceEvent>;
 }
 
