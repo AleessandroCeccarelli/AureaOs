@@ -278,15 +278,18 @@ impl GpuManager {
             .or_else(|| self.devices.values().find(|device| device.is_available()))
     }
 
-    /// Selects a rendering GPU for one output without choosing an unrelated device.
+    /// Selects the rendering GPU for an output while cross-GPU sharing is unavailable.
+    ///
+    /// Until a rendering/presentation pair has passed DMA-BUF import, format,
+    /// modifier and synchronization checks, rendering stays on the GPU that
+    /// owns the output. Global render preferences must not silently route
+    /// frames across devices.
     pub fn selected_render_device_for_output(
         &self,
         output_device_path: &Path,
     ) -> Option<&GpuDevice> {
-        self.preferred_render_device()
+        self.get_device(output_device_path)
             .filter(|device| device.is_available())
-            .or_else(|| self.primary_device().filter(|device| device.is_available()))
-            .or_else(|| self.get_device(output_device_path).filter(|device| device.is_available()))
     }
 
     /// Returns a registered GPU by its DRM path.
