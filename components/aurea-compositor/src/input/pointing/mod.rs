@@ -32,7 +32,7 @@ pub use touchscreen_calibration::{
 pub use touchscreen_slots::TouchscreenSlotMap;
 
 /// Applies AureaOS defaults to a newly connected touchpad.
-pub(super) fn configure_touchpad(
+pub(crate) fn configure_touchpad(
     device: &mut smithay::reexports::input::Device,
     settings: aurea_desktop_api::input::TouchpadSettings,
 ) -> Option<aurea_desktop_api::input::TouchpadApplyReport> {
