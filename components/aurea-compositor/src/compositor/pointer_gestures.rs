@@ -34,8 +34,19 @@ impl AureaCompositor {
     fn publish_completed_interactions(&mut self) {
         while let Some(interaction) = self.interaction_engine.take_pending_interaction() {
             let desktop_interaction = match interaction {
-                crate::input::interaction::PointingInteraction::PreviousWorkspace => DesktopInteraction::PreviousWorkspace,
-                crate::input::interaction::PointingInteraction::NextWorkspace => DesktopInteraction::NextWorkspace,
+                crate::input::interaction::PointingInteraction::PreviousWorkspace => {
+                    let current = self.active_workspace();
+                    let previous = (current + crate::window_manager::WindowManager::WORKSPACE_COUNT - 1)
+                        % crate::window_manager::WindowManager::WORKSPACE_COUNT;
+                    self.switch_workspace(previous);
+                    DesktopInteraction::PreviousWorkspace
+                }
+                crate::input::interaction::PointingInteraction::NextWorkspace => {
+                    let current = self.active_workspace();
+                    let next = (current + 1) % crate::window_manager::WindowManager::WORKSPACE_COUNT;
+                    self.switch_workspace(next);
+                    DesktopInteraction::NextWorkspace
+                }
                 crate::input::interaction::PointingInteraction::Overview => DesktopInteraction::ShowOverview,
                 crate::input::interaction::PointingInteraction::ContextMenu => DesktopInteraction::ShowContextMenu,
             };
