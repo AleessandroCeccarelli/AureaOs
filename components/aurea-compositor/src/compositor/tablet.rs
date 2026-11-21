@@ -26,7 +26,7 @@ use smithay::{
 };
 
 use super::AureaCompositor;
-use crate::{input::pointing::{id_for, TabletOutputTarget}, output::OutputId};
+use crate::input::pointing::{id_for, TabletOutputTarget};
 
 impl AureaCompositor {
     /// Drops the advertised tablet when its physical libinput device disappears.
