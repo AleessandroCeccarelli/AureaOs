@@ -75,16 +75,26 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             }
         }
         InputEvent::DeviceRemoved { device } => {
-            if let Some(descriptor) = pointing::describe(&device) {
+            // Removal must not depend on rediscovering capabilities: libinput
+            // may already have withdrawn some metadata by the time this event
+            // is delivered. The sysname-derived ID is sufficient to clean up
+            // every registry and compositor-owned entry deterministically.
+            let id = pointing::id_for(&device);
+            let descriptor = state.compositor.pointing_devices().device(id);
+
+            if let Some(descriptor) = descriptor {
                 tracing::info!(
                     device = %descriptor.name,
-                    id = descriptor.id.0,
+                    id = id.0,
                     "Pointing device disconnected"
                 );
-                state.compositor.pointing_devices().disconnect(descriptor.id);
-                state.compositor.clear_pointing_device_state(descriptor.id);
-                state.compositor.sync_touchscreen_capability();
+            } else {
+                tracing::debug!(id = id.0, "Unregistered input device removed");
             }
+
+            state.compositor.pointing_devices().disconnect(id);
+            state.compositor.clear_pointing_device_state(id);
+            state.compositor.sync_touchscreen_capability();
         }
         InputEvent::Keyboard { event } => {
             state.compositor.handle_keyboard_input(
