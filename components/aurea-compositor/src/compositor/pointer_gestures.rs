@@ -18,9 +18,50 @@ use aurea_desktop_api::desktop_interaction::DesktopInteraction;
 
 use super::AureaCompositor;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum PointerGestureKind {
+    Swipe,
+    Pinch,
+    Hold,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub(super) struct PointerGestureOwner(Option<(aurea_desktop_api::input::InputDeviceId, PointerGestureKind)>);
+
+impl PointerGestureOwner {
+    fn begin(&mut self, device: aurea_desktop_api::input::InputDeviceId, kind: PointerGestureKind) -> bool {
+        match self.0 {
+            None => {
+                self.0 = Some((device, kind));
+                true
+            }
+            Some(owner) => owner == (device, kind),
+        }
+    }
+
+    fn owns(&self, device: aurea_desktop_api::input::InputDeviceId, kind: PointerGestureKind) -> bool {
+        self.0 == Some((device, kind))
+    }
+
+    fn end(&mut self, device: aurea_desktop_api::input::InputDeviceId, kind: PointerGestureKind) -> bool {
+        if !self.owns(device, kind) {
+            return false;
+        }
+        self.0 = None;
+        true
+    }
+
+    fn remove_device(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
+        if self.0.is_some_and(|(owner, _)| owner == device) {
+            self.0 = None;
+        }
+    }
+}
+
 impl AureaCompositor {
     /// Drops any unfinished gesture sequence owned by a disconnected device.
     pub fn clear_pointing_device_state(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
+        self.pointer_gesture_owner.remove_device(device);
         self.remove_pointing_device_state(device);
     }
 
@@ -54,6 +95,7 @@ impl AureaCompositor {
 
     /// Sends a touchpad swipe-begin event to the focused Wayland client.
     pub fn handle_swipe_begin(&mut self, device: aurea_desktop_api::input::InputDeviceId, fingers: u32, time: smithay::backend::input::InputTime) {
+        if !self.pointer_gesture_owner.begin(device, PointerGestureKind::Swipe) { return; }
         self.interaction_engine.begin_swipe(device, fingers);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
@@ -80,6 +122,7 @@ impl AureaCompositor {
         if !delta_x.is_finite() || !delta_y.is_finite() {
             return;
         }
+        if !self.pointer_gesture_owner.owns(device, PointerGestureKind::Swipe) { return; }
         self.interaction_engine.update_swipe(device, delta_x, delta_y);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
@@ -101,6 +144,7 @@ impl AureaCompositor {
         cancelled: bool,
         time: smithay::backend::input::InputTime,
     ) {
+        if !self.pointer_gesture_owner.end(device, PointerGestureKind::Swipe) { return; }
         self.interaction_engine.end_swipe(device, cancelled);
         self.publish_completed_interactions();
         let Some(pointer) = self.seat.get_pointer() else {
@@ -119,6 +163,7 @@ impl AureaCompositor {
 
     /// Sends a touchpad pinch-begin event to the focused Wayland client.
     pub fn handle_pinch_begin(&mut self, device: aurea_desktop_api::input::InputDeviceId, fingers: u32, time: smithay::backend::input::InputTime) {
+        if !self.pointer_gesture_owner.begin(device, PointerGestureKind::Pinch) { return; }
         self.interaction_engine.begin_pinch(device, fingers);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
@@ -151,6 +196,7 @@ impl AureaCompositor {
         {
             return;
         }
+        if !self.pointer_gesture_owner.owns(device, PointerGestureKind::Pinch) { return; }
         self.interaction_engine.update_pinch(device, scale, rotation);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
@@ -174,6 +220,7 @@ impl AureaCompositor {
         cancelled: bool,
         time: smithay::backend::input::InputTime,
     ) {
+        if !self.pointer_gesture_owner.end(device, PointerGestureKind::Pinch) { return; }
         self.interaction_engine.end_pinch(device, cancelled);
         self.publish_completed_interactions();
         let Some(pointer) = self.seat.get_pointer() else {
@@ -192,6 +239,7 @@ impl AureaCompositor {
 
     /// Sends a touchpad hold-begin event to the focused Wayland client.
     pub fn handle_hold_begin(&mut self, device: aurea_desktop_api::input::InputDeviceId, fingers: u32, time: smithay::backend::input::InputTime) {
+        if !self.pointer_gesture_owner.begin(device, PointerGestureKind::Hold) { return; }
         self.interaction_engine.begin_hold(device, fingers);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
@@ -214,6 +262,7 @@ impl AureaCompositor {
         cancelled: bool,
         time: smithay::backend::input::InputTime,
     ) {
+        if !self.pointer_gesture_owner.end(device, PointerGestureKind::Hold) { return; }
         self.interaction_engine.end_hold(device, cancelled);
         self.publish_completed_interactions();
         let Some(pointer) = self.seat.get_pointer() else {
