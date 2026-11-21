@@ -182,27 +182,29 @@ impl GpuManager {
     /// This only chooses the compositor's primary GPU. Each output continues
     /// to be owned and presented by its actual DRM device.
     pub fn select_primary_by_policy(&mut self) -> Option<&GpuDevice> {
-        let selected = [true, false].into_iter().find_map(|hardware_only| {
-            self.devices.values().find(|device| {
-                device.is_available()
-                    && (!hardware_only || device.selection.hardware_rendering)
-                    && device.selection.preferred_primary
-            }).or_else(|| self.devices.values().find(|device| {
-                device.is_available()
-                    && (!hardware_only || device.selection.hardware_rendering)
-                    && device.selection.has_builtin_panel
-            })).or_else(|| self.devices.values().find(|device| {
-                device.is_available()
-                    && (!hardware_only || device.selection.hardware_rendering)
-                    && device.selection.is_platform_device
-            })).or_else(|| self.devices.values().find(|device| {
-                device.is_available()
-                    && (!hardware_only || device.selection.hardware_rendering)
-                    && device.selection.is_boot_vga
-            })).or_else(|| self.devices.values().find(|device| {
-                device.is_available()
-                    && (!hardware_only || device.selection.hardware_rendering)
-            }))
+        // Mutter's explicit udev preference takes precedence even when the
+        // selected device needs the software-rendering pass.
+        let selected = self.devices.values().find(|device| {
+            device.is_available() && device.selection.preferred_primary
+        }).or_else(|| {
+            [true, false].into_iter().find_map(|hardware_only| {
+                self.devices.values().find(|device| {
+                    device.is_available()
+                        && (!hardware_only || device.selection.hardware_rendering)
+                        && device.selection.has_builtin_panel
+                }).or_else(|| self.devices.values().find(|device| {
+                    device.is_available()
+                        && (!hardware_only || device.selection.hardware_rendering)
+                        && device.selection.is_platform_device
+                })).or_else(|| self.devices.values().find(|device| {
+                    device.is_available()
+                        && (!hardware_only || device.selection.hardware_rendering)
+                        && device.selection.is_boot_vga
+                })).or_else(|| self.devices.values().find(|device| {
+                    device.is_available()
+                        && (!hardware_only || device.selection.hardware_rendering)
+                }))
+            })
         })?;
 
         self.primary_device = Some(selected.path.clone());
