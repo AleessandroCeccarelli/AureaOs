@@ -5,11 +5,11 @@
 
 //! Desktop composition root.
 
-mod color_configuration_manager;
+pub mod color_configuration_manager;
 mod compositor_factory;
 mod diagnostics;
-mod display_color_assignment_store;
-mod keyboard_layout_store;
+pub mod display_color_assignment_store;
+pub mod keyboard_layout_store;
 mod welcome;
 mod welcome_process;
 
