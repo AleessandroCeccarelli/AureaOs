@@ -8,7 +8,7 @@
 use smithay::{
     backend::{
         input::{
-            AbsolutePositionEvent, ButtonState, Event, TabletToolAxisEvent,
+            AbsolutePositionEvent, Event, TabletToolAxisEvent,
             TabletToolButtonEvent, TabletToolEvent, TabletToolProximityEvent,
             TabletToolTipEvent,
         },
