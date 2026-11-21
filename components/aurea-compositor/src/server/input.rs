@@ -3,22 +3,22 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! libinput backend registration and keyboard/pointer event routing.
+//! libinput backend registration and input event routing.
 
 use std::io;
 
 use smithay::{
     backend::{
         input::{
-            Axis, Event, InputEvent, KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent,
-            PointerMotionEvent,
+            Axis, Device, Event, InputEvent, KeyboardKeyEvent, PointerAxisEvent,
+            PointerButtonEvent, PointerMotionEvent,
         },
         libinput::{LibinputInputBackend, LibinputSessionInterface},
     },
     reexports::{calloop::LoopHandle, input::Libinput},
 };
 
-use crate::drm::session::DrmSession;
+use crate::{drm::session::DrmSession, input::pointing};
 
 use super::state::WaylandState;
 
@@ -55,6 +55,27 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
     }
 
     match event {
+        InputEvent::DeviceAdded { device } => {
+            if let Some(descriptor) = pointing::describe(&device) {
+                tracing::info!(
+                    device = %descriptor.name,
+                    kind = ?descriptor.kind,
+                    id = descriptor.id.0,
+                    "Pointing device connected"
+                );
+                state.compositor.pointing_devices().connect(descriptor);
+            }
+        }
+        InputEvent::DeviceRemoved { device } => {
+            if let Some(descriptor) = pointing::describe(&device) {
+                tracing::info!(
+                    device = %descriptor.name,
+                    id = descriptor.id.0,
+                    "Pointing device disconnected"
+                );
+                state.compositor.pointing_devices().disconnect(descriptor.id);
+            }
+        }
         InputEvent::Keyboard { event } => {
             state.compositor.handle_keyboard_input(
                 event.key_code(),
@@ -65,10 +86,6 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
         InputEvent::PointerMotion { event } => {
             let delta = event.delta();
             let unaccelerated_delta = event.delta_unaccel();
-            eprintln!(
-                "AureaOS input: relative pointer motion dx={:.3} dy={:.3}",
-                delta.x, delta.y
-            );
 
             let mut device = event.device();
             crate::input::pointer_acceleration::apply(
