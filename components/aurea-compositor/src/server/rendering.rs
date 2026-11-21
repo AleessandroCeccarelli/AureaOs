@@ -64,9 +64,9 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                 ))
             })?;
 
-        // Direct Vulkan scanout is currently implemented only when rendering
-        // and presentation use the same DRM device. Cross-GPU compatibility
-        // remains unavailable until its CPU-to-GBM backend is implemented.
+        // Direct Vulkan scanout requires the same DRM device and the full
+        // DMA-BUF/foreign-ownership capability set. The compatibility path
+        // can cross GPU boundaries because pixels are copied through host memory.
         let support = [PresentationBackendSupport {
             rendering_gpu: rendering_node,
             presentation_gpu: presentation_node,
