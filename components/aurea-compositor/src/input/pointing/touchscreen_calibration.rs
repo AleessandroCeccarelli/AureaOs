@@ -72,7 +72,8 @@ impl TouchscreenCalibration {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TouchscreenCalibrationError {
     NonFiniteCoefficient,
-    SingularTransform,\n    UnknownDevice,
+    SingularTransform,
+    UnknownDevice,
 }
 
 /// Keeps calibration profiles isolated by physical touchscreen.
