@@ -26,10 +26,15 @@ use crate::{drm::session::DrmSession, input::pointing};
 use super::state::WaylandState;
 
 /// Applies changed preferences without retaining libinput device handles.
-fn refresh_touchpad_settings(state: &mut WaylandState, device: &mut smithay::reexports::input::Device) {
+fn refresh_touchpad_settings(
+    state: &mut WaylandState,
+    device: &mut smithay::reexports::input::Device,
+) {
     let id = pointing::id_for(device);
     let settings = state.compositor.touchpad_settings_for(id);
-    if state.applied_touchpad_settings.get(&id) == Some(&settings) { return; }
+    if state.applied_touchpad_settings.get(&id) == Some(&settings) {
+        return;
+    }
     if let Some(report) = pointing::configure_touchpad(device, settings) {
         tracing::info!(device_id = id.0, ?report, "Updated touchpad preferences");
         state.applied_touchpad_settings.insert(id, settings);
