@@ -85,6 +85,7 @@ impl GbmCpuFramebufferPool {
         drm: &DrmDeviceFd,
         width: u32,
         height: u32,
+        plane_formats: &[smithay::backend::allocator::Fourcc],
     ) -> Result<DrmFramebufferId, GbmCpuFramebufferPoolError> {
         let id = DrmFramebufferId::new(self.next_id);
         let next_id = self
@@ -94,7 +95,7 @@ impl GbmCpuFramebufferPool {
 
         let allocator = GbmCpuUploadAllocator::new(gbm);
         let buffer = allocator
-            .allocate(width, height)
+            .allocate(width, height, plane_formats)
             .map_err(GbmCpuFramebufferPoolError::Allocation)?;
         let framebuffer = GbmCpuUploadFramebuffer::register(drm, buffer)
             .map_err(GbmCpuFramebufferPoolError::Registration)?;
