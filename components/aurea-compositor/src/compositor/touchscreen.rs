@@ -75,8 +75,8 @@ impl AureaCompositor {
         let local_y = transformed_y.clamp(0.0, f64::from(size.height - 1));
 
         Some(Point::from((
-            f64::from(origin.x) + local_x,
-            f64::from(origin.y) + local_y,
+            origin.x as f64 + local_x,
+            origin.y as f64 + local_y,
         )))
     }
 
