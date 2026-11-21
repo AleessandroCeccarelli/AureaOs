@@ -314,21 +314,27 @@ impl GpuManager {
         F: FnMut(&GpuDevice) -> bool,
     {
         let eligible = |device: &&GpuDevice| device.is_available();
+        let candidates = self
+            .preferred_render_device()
+            .into_iter()
+            .chain(self.primary_device())
+            .chain(self.get_device(output_device_path))
+            .chain(self.devices.values())
+            .filter(|device| eligible(device))
+            .collect::<Vec<_>>();
 
-        self.preferred_render_device()
-            .filter(|device| eligible(device) && renderer_ready(device))
+        // A configured preference must not make a software backend outrank
+        // an initialized hardware renderer. Preserve the policy order within
+        // each capability class and use software only when hardware is absent.
+        candidates
+            .iter()
+            .copied()
+            .find(|device| device.selection.hardware_rendering && renderer_ready(device))
             .or_else(|| {
-                self.primary_device()
-                    .filter(|device| eligible(device) && renderer_ready(device))
-            })
-            .or_else(|| {
-                self.get_device(output_device_path)
-                    .filter(|device| eligible(device) && renderer_ready(device))
-            })
-            .or_else(|| {
-                self.devices
-                    .values()
-                    .find(|device| eligible(device) && renderer_ready(device))
+                candidates
+                    .iter()
+                    .copied()
+                    .find(|device| renderer_ready(device))
             })
     }
 
