@@ -49,6 +49,7 @@ impl CompositorFactory for InitializationPanicFactory {
     fn create(
         &self,
         _display_color: DisplayColorController,
+        _interactions: DesktopInteractionSender,
     ) -> io::Result<Box<dyn CompositorService>> {
         panic!("Compositor initialization test panic");
     }
@@ -79,6 +80,7 @@ impl CompositorFactory for RuntimeFailureFactory {
     fn create(
         &self,
         _display_color: DisplayColorController,
+        _interactions: DesktopInteractionSender,
     ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(RuntimeFailureService {
             observed_shutdown: Arc::clone(&self.observed_shutdown),
@@ -102,6 +104,7 @@ impl CompositorFactory for RuntimePanicFactory {
     fn create(
         &self,
         _display_color: DisplayColorController,
+        _interactions: DesktopInteractionSender,
     ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(RuntimePanicService))
     }
@@ -128,6 +131,7 @@ impl CompositorFactory for SuccessfulFactory {
     fn create(
         &self,
         _display_color: DisplayColorController,
+        _interactions: DesktopInteractionSender,
     ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(SuccessfulService {
             started: Arc::clone(&self.started),
@@ -165,6 +169,7 @@ impl CompositorFactory for ShutdownAwareFactory {
     fn create(
         &self,
         _display_color: DisplayColorController,
+        _interactions: DesktopInteractionSender,
     ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(ShutdownAwareService {
             started: Arc::clone(&self.started),
