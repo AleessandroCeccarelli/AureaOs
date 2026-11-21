@@ -90,7 +90,6 @@ impl AureaCompositor {
                 time,
             },
         );
-        touch.frame(self);
         self.request_all_output_frames();
     }
 
@@ -106,7 +105,7 @@ impl AureaCompositor {
         let Some(location) = self.touchscreen_location(device, x, y) else {
             return;
         };
-        let Some(slot) = self.touchscreen_slots.acquire(device, physical_slot) else {
+        let Some(slot) = self.touchscreen_slots.get(device, physical_slot) else {
             return;
         };
         let Some(touch) = self.touch.clone() else {
