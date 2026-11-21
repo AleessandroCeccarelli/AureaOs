@@ -28,7 +28,7 @@ use crate::{
         pointing::{
             PointingDeviceService, PointingDeviceSettings, TouchscreenCalibration, TouchscreenCalibrationError,
             TouchscreenCalibrationMap, TouchscreenOutputMap, TouchscreenSlotMap,
-            TabletOutputMap,
+            TabletOutputMap, TabletCalibration, TabletCalibrationError, TabletCalibrationMap,
         },
     },
     output::{OutputId, manager::OutputManager},
@@ -90,6 +90,7 @@ pub struct AureaCompositor {
     pointing_settings: PointingDeviceSettings,
     touchscreen_outputs: TouchscreenOutputMap,
     tablet_outputs: TabletOutputMap,
+    tablet_calibrations: TabletCalibrationMap,
     touchscreen_calibrations: TouchscreenCalibrationMap,
     touchscreen_slots: TouchscreenSlotMap,
     interaction_engine: InteractionEngine,
@@ -156,6 +157,7 @@ impl AureaCompositor {
             pointing_settings: PointingDeviceSettings::default(),
             touchscreen_outputs: TouchscreenOutputMap::new(),
             tablet_outputs: TabletOutputMap::new(),
+            tablet_calibrations: TabletCalibrationMap::default(),
             touchscreen_calibrations: TouchscreenCalibrationMap::default(),
             touchscreen_slots: TouchscreenSlotMap::new(),
             interaction_engine: InteractionEngine::new(),
@@ -299,6 +301,44 @@ impl AureaCompositor {
         self.touchscreen_outputs.resolve(device, enabled)
     }
 
+    /// Sets a validated calibration profile for a connected pen tablet.
+    pub fn set_tablet_calibration(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+        active_area: [f64; 4],
+        rotation: crate::input::pointing::TabletRotation,
+        aspect_mode: crate::input::pointing::TabletAspectMode,
+        device_aspect_ratio: f64,
+    ) -> Result<(), TabletCalibrationError> {
+        if !self.pointing_devices.device(device).is_some_and(|descriptor| {
+            descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Tablet
+        }) {
+            return Err(TabletCalibrationError::UnknownDevice);
+        }
+
+        let profile = TabletCalibration::new(
+            active_area, rotation, aspect_mode, device_aspect_ratio,
+        )?;
+        self.tablet_calibrations.set(device, profile);
+        Ok(())
+    }
+
+    /// Restores identity mapping for one connected tablet.
+    pub fn reset_tablet_calibration(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> bool {
+        self.tablet_calibrations.remove_device(device)
+    }
+
+    /// Returns the configured tablet calibration, or identity by default.
+    pub(crate) fn tablet_calibration(
+        &self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> TabletCalibration {
+        self.tablet_calibrations.get(device)
+    }
+
     /// Returns the shared desktop interaction engine.
     pub fn interaction_engine(&self) -> &InteractionEngine {
         &self.interaction_engine
@@ -361,6 +401,7 @@ impl AureaCompositor {
         self.interaction_engine.remove_device(device);
         self.touchscreen_outputs.remove_device(device);
         self.tablet_outputs.remove_device(device);
+        self.tablet_calibrations.remove_device(device);
         self.touchscreen_calibrations.remove_device(device);
         self.touchscreen_slots.remove_device(device);
         self.pointing_settings.remove(device);
