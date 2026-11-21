@@ -21,7 +21,7 @@ use smithay::{
 use crate::{
     frame::FrameScheduler,
     input::{
-        cursor_animation::CursorLocateAnimation, interaction::InteractionEngine,
+        cursor_animation::CursorLocateAnimation, interaction::{GestureProfile, InteractionEngine},
         pointer_settings::PointerSettings, pointer_shake::PointerShakeDetector,
         pointing::PointingDeviceService,
     },
@@ -171,6 +171,11 @@ impl AureaCompositor {
     /// Returns the shared desktop interaction engine.
     pub fn interaction_engine(&self) -> &InteractionEngine {
         &self.interaction_engine
+    }
+
+    /// Replaces the default desktop gesture bindings.
+    pub fn set_gesture_profile(&mut self, profile: GestureProfile) {
+        self.interaction_engine.set_profile(profile);
     }
 
     /// Returns the active pointer preferences.
