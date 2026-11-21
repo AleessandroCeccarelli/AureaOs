@@ -14,6 +14,8 @@ use aurea_desktop_api::display::{
 };
 
 mod tests {
+    use super::*;
+
     fn display(value: u128) -> DisplayId {
         DisplayId(value)
     }
