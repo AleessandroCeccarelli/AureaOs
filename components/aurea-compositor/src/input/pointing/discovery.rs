@@ -18,7 +18,7 @@ use super::{mouse, tablet, touchscreen, touchpad};
 /// Touchpads are identified through libinput's touchpad-specific configuration
 /// capabilities, not by guessing from the product name. Tablet tools take
 /// precedence over pointer and touch capabilities.
-pub(super) fn id_for(device: &Device) -> InputDeviceId {
+pub(crate) fn id_for(device: &Device) -> InputDeviceId {
     InputDeviceId(stable_device_id(device.sysname()))
 }
 
