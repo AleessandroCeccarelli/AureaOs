@@ -9,7 +9,7 @@ use std::{error::Error, fmt};
 
 use smithay::backend::allocator::{Fourcc, gbm::GbmBuffer};
 
-use super::gbm_upload_layout::GbmUploadLayoutError;
+use super::gbm_upload_layout::{GbmUploadLayoutError, pack_rgba8_for_fourcc};
 
 /// Errors returned while uploading a CPU frame into a GBM buffer.
 #[derive(Debug)]
@@ -99,41 +99,14 @@ impl GbmCpuUploadBuffer {
             });
         }
 
-        let stride = self.buffer.stride() as usize;
-        let row_bytes = (width as usize)
-            .checked_mul(4)
-            .ok_or(GbmUploadLayoutError::SourceSizeOverflow)?;
-        let expected_len = row_bytes
-            .checked_mul(height as usize)
-            .ok_or(GbmUploadLayoutError::SourceSizeOverflow)?;
-        if pixels.len() != expected_len {
-            return Err(GbmUploadLayoutError::SourceLengthMismatch.into());
-        }
-        if stride < row_bytes {
-            return Err(GbmUploadLayoutError::DestinationStrideTooSmall.into());
-        }
-        let destination_len = stride
-            .checked_mul(height as usize)
-            .ok_or(GbmUploadLayoutError::DestinationSizeOverflow)?;
-        let mut packed = vec![0; destination_len];
+        let packed = pack_rgba8_for_fourcc(
+            pixels,
+            width,
+            height,
+            self.buffer.stride() as usize,
+            format,
+        )?;
 
-        for y in 0..height as usize {
-            for x in 0..width as usize {
-                let source = y * row_bytes + x * 4;
-                let destination = y * stride + x * 4;
-                let red = pixels[source];
-                let green = pixels[source + 1];
-                let blue = pixels[source + 2];
-                let alpha = pixels[source + 3];
-                let output = match format {
-                    Fourcc::Abgr8888 => [red, green, blue, alpha],
-                    Fourcc::Argb8888 => [blue, green, red, alpha],
-                    Fourcc::Xrgb8888 => [blue, green, red, 0xff],
-                    _ => unreachable!("format was validated above"),
-                };
-                packed[destination..destination + 4].copy_from_slice(&output);
-            }
-        }
 
         self.buffer
             .write(&packed)
