@@ -47,6 +47,7 @@ impl DesktopState {
     /// Closes transient desktop panels.
     pub fn dismiss_panels(&mut self) {
         self.launcher.close();
+        self.panels.close();
     }
 
     /// Switches between the two supported appearance preferences.
@@ -71,11 +72,13 @@ mod tests {
     }
 
     #[test]
-    fn dismissing_panels_closes_the_launcher() {
+    fn dismissing_panels_closes_launcher_and_transient_panel() {
         let mut state = DesktopState::default();
         state.toggle_launcher();
+        state.panels.show(super::DesktopPanel::Overview);
         state.dismiss_panels();
         assert!(!state.launcher.is_open());
+        assert!(!state.panels.is_open());
     }
 
     #[test]
