@@ -27,10 +27,11 @@ pub(super) use discovery::{describe, id_for};
 /// Applies AureaOS defaults to a newly connected touchpad.
 pub(super) fn configure_touchpad(
     device: &mut smithay::reexports::input::Device,
+    settings: aurea_desktop_api::input::TouchpadSettings,
 ) -> Option<aurea_desktop_api::input::TouchpadApplyReport> {
     if !touchpad::supports(device) {
         return None;
     }
 
-    touchpad_settings::apply(device, aurea_desktop_api::input::TouchpadSettings::default())
+    touchpad_settings::apply(device, settings)
 }
