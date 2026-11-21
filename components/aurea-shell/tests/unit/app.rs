@@ -51,6 +51,7 @@ impl CompositorFactory for InitializationPanicFactory {
         &self,
         _display_color: DisplayColorController,
         _interactions: DesktopInteractionSender,
+        _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         panic!("Compositor initialization test panic");
     }
