@@ -5,17 +5,15 @@
 
 //! Desktop composition root.
 
-pub mod color_configuration_manager;
 mod compositor_factory;
 mod diagnostics;
-pub mod display_color_assignment_store;
-pub mod keyboard_layout_store;
 mod welcome;
 mod welcome_process;
 
 use std::ffi::OsStr;
 
 use aurea_shell::{app, config::ShellConfig};
+use aurea_desktop::keyboard_layout_store::KeyboardLayoutStore;
 
 fn main() {
     if std::env::args_os().nth(1).as_deref() == Some(OsStr::new("--welcome-client")) {
@@ -36,7 +34,7 @@ fn main() {
 
     diagnostics::record("INFO", "Initializing shell and DRM/Vulkan compositor");
     let config = ShellConfig::default();
-    let selected_layout = keyboard_layout_store::KeyboardLayoutStore::new()
+    let selected_layout = KeyboardLayoutStore::new()
         .and_then(|store| store.load())
         .unwrap_or_else(|error| {
             diagnostics::record(
