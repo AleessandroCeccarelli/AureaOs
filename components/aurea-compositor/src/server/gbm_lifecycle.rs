@@ -60,20 +60,21 @@ pub(super) fn clear_gbm_devices(state: &mut WaylandState) {
     state.gbm_devices.clear();
 }
 
-/// Returns whether the minimum graphics dependencies for output publication exist.
-pub(super) fn graphics_dependencies_ready(gbm_available: bool, vulkan_available: bool) -> bool {
-    gbm_available && vulkan_available
+/// Returns whether a DRM device can own and present native KMS outputs.
+///
+/// Vulkan rendering is deliberately independent: a different GPU may render
+/// the scene and hand pixels to this device through the host-readback path.
+pub(super) fn output_presentation_ready(gbm_available: bool) -> bool {
+    gbm_available
 }
 
 #[cfg(test)]
 mod readiness_tests {
-    use super::graphics_dependencies_ready;
+    use super::output_presentation_ready;
 
     #[test]
-    fn output_requires_both_gbm_and_vulkan() {
-        assert!(!graphics_dependencies_ready(false, false));
-        assert!(!graphics_dependencies_ready(false, true));
-        assert!(!graphics_dependencies_ready(true, false));
-        assert!(graphics_dependencies_ready(true, true));
+    fn output_requires_gbm_but_not_a_local_vulkan_renderer() {
+        assert!(!output_presentation_ready(false));
+        assert!(output_presentation_ready(true));
     }
 }
