@@ -10,7 +10,7 @@ use std::io;
 use aurea_compositor::service::{DEFAULT_WAYLAND_DISPLAY_NAME, WaylandCompositorFactory};
 use aurea_desktop_api::{
     CompositorFactory, CompositorService, ShutdownSignal, display::DisplayColorController,
-    keyboard::KeyboardLayoutId,
+    keyboard::KeyboardLayoutId, desktop_interaction::DesktopInteractionSender,
 };
 
 use crate::welcome_process::WelcomeClientProcess;
@@ -41,9 +41,10 @@ impl CompositorFactory for DesktopCompositorFactory {
     fn create(
         &self,
         display_color: DisplayColorController,
+        interactions: DesktopInteractionSender,
     ) -> io::Result<Box<dyn CompositorService>> {
         // Creating the native service also creates and binds the Wayland socket.
-        let compositor = self.compositor.create(display_color)?;
+        let compositor = self.compositor.create(display_color, interactions)?;
         let welcome_client = WelcomeClientProcess::spawn(DEFAULT_WAYLAND_DISPLAY_NAME)?;
 
         Ok(Box::new(DesktopCompositorService {
