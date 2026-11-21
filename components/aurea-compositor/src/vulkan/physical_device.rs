@@ -159,7 +159,7 @@ impl VulkanContext {
 
                 (primary_matches || render_matches)
                     && self.graphics_queue_family(device).is_some()
-                    && VulkanRenderingFeaturePlan::from_device(device).is_ok()
+                    && Self::rendering_compatibility_error(device, true).is_none()
             })
             .collect::<Vec<_>>();
 
