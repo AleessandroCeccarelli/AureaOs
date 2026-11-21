@@ -45,8 +45,11 @@ pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
         if device.pointer_has_button(0x112).unwrap_or(false) {
             capabilities.push(StandardInputCapability::PointerMiddleButton);
         }
-        if device.pointer_has_button(0x113).unwrap_or(false)
-            || device.pointer_has_button(0x114).unwrap_or(false)
+        // Linux input codes: BTN_SIDE, BTN_EXTRA, BTN_FORWARD, BTN_BACK.
+        // Report navigation buttons as part of the side-button capability too.
+        if [0x113, 0x114, 0x115, 0x116]
+            .into_iter()
+            .any(|code| device.pointer_has_button(code).unwrap_or(false))
         {
             capabilities.push(StandardInputCapability::PointerSideButtons);
         }
