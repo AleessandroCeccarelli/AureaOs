@@ -137,7 +137,7 @@ impl IccProfileStore {
             return Err(ProfileStoreError::ProfileTooLarge);
         }
 
-        let mut file = File::open(path)?;
+        let file = File::open(path)?;
         let mut bytes = Vec::with_capacity(metadata.len() as usize);
         file.take((MAX_PROFILE_SIZE + 1) as u64)
             .read_to_end(&mut bytes)?;
