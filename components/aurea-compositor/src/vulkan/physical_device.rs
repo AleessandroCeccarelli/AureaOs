@@ -103,6 +103,21 @@ impl VulkanContext {
             })
     }
 
+
+    /// Selects a Vulkan CPU device for host-readback compatibility rendering.
+    ///
+    /// This path is intentionally separate from DRM-device matching: software
+    /// Vulkan renders into host-readable images, while GBM/KMS remains owned
+    /// by the physical display GPU.
+    pub fn select_software_device(&self) -> Option<&PhysicalDevice> {
+        self.physical_devices.iter().find(|device| {
+            Self::classify_device(device) == VulkanDeviceType::Cpu
+                && self.graphics_queue_family(device).is_some()
+                && VulkanRenderingFeaturePlan::from_device(device).is_ok()
+        })
+    }
+
+
     /// Selects a graphics-capable Vulkan device matching a DRM node.
     ///
     /// Both primary and render-node identities are considered. Selection only
