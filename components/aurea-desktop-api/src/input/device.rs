@@ -103,6 +103,7 @@ pub enum InputDeviceEvent {
     Connected(InputDeviceDescriptor),
     Disconnected(InputDeviceId),
     CapabilitiesChanged(InputDeviceDescriptor),
+    TouchpadConfigurationChanged(InputDeviceId, TouchpadApplyReport),
 }
 
 /// Read-only inventory contract for system settings and trusted desktop services.
