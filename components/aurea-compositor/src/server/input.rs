@@ -126,7 +126,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             state.compositor.handle_swipe_update(
                 event.delta_x(),
                 event.delta_y(),
-                event.time().as_millis(),
+                event.time().millis(),
             );
         }
         InputEvent::GestureSwipeEnd { event } => {
