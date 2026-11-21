@@ -79,7 +79,13 @@ impl ShellRuntime {
     }
 
     /// Runs the event loop until shutdown is requested or the channel closes.
-    pub fn run_event_loop(
+    pub fn run_event_loop(&mut self, receiver: Receiver<ShellEvent>) -> Result<(), ShellError> {
+        let (_sender, interactions) = aurea_desktop_api::desktop_interaction::desktop_interaction_channel();
+        self.run_event_loop_with_interactions(receiver, interactions)
+    }
+
+    /// Runs the shell loop while also receiving compositor-originated actions.
+    pub fn run_event_loop_with_interactions(
         &mut self,
         receiver: Receiver<ShellEvent>,
         interactions: DesktopInteractionReceiver,
