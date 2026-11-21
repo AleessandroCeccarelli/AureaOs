@@ -32,6 +32,25 @@ impl From<std::io::Error> for DisplayColorStoreError {
     }
 }
 
+impl std::fmt::Display for DisplayColorStoreError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidData => formatter.write_str("invalid display color assignment data"),
+            Self::UnsafePath => formatter.write_str("unsafe display color assignment path"),
+            Self::Io(error) => write!(formatter, "display color assignment I/O error: {error}"),
+        }
+    }
+}
+
+impl std::error::Error for DisplayColorStoreError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Io(error) => Some(error),
+            Self::InvalidData | Self::UnsafePath => None,
+        }
+    }
+}
+
 /// Stores assignments independently from ICC profile payloads.
 ///
 /// The file contains runtime DisplayIds and opaque configuration IDs.
@@ -95,7 +114,7 @@ impl DisplayColorAssignmentStore {
             return Err(DisplayColorStoreError::InvalidData);
         }
 
-        let mut file = File::open(&self.path)?;
+        let file = File::open(&self.path)?;
         let mut contents = String::new();
         file.take(MAX_ASSIGNMENT_FILE_BYTES + 1)
             .read_to_string(&mut contents)?;
