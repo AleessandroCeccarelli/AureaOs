@@ -67,6 +67,9 @@ pub(super) fn build(
         drm_devices.register(device).map_err(io::Error::other)?;
     }
 
+    #[cfg(not(feature = "drm"))]
+    let _ = touchpad_settings_receiver;
+
     let mut state = WaylandState {
         display,
         compositor,
@@ -74,6 +77,7 @@ pub(super) fn build(
         disconnected_clients: Arc::new(Mutex::new(Vec::new())),
         error: None,
         display_color,
+        #[cfg(feature = "drm")]
         touchpad_settings_receiver,
         #[cfg(feature = "drm")]
         applied_touchpad_settings: AppliedTouchpadSettings::default(),
