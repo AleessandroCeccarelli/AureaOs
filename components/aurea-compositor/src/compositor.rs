@@ -9,13 +9,13 @@ use std::collections::{BTreeMap, HashSet};
 
 use smithay::{
     backend::input::Keycode,
-    input::{Seat, SeatHandler, SeatState, pointer::CursorImageStatus},
+    input::{Seat, SeatHandler, SeatState, pointer::CursorImageStatus, tablet::TabletSeatHandler},
     output::Output,
     reexports::wayland_server::{
         DisplayHandle,
         protocol::{wl_shm::Format, wl_surface::WlSurface},
     },
-    wayland::{compositor::CompositorState, shell::xdg::XdgShellState, shm::ShmState},
+    wayland::{compositor::CompositorState, shell::xdg::XdgShellState, shm::ShmState, tablet_manager::TabletManagerState},
 };
 
 use crate::{
@@ -73,10 +73,15 @@ pub struct AureaCompositor {
     cursor_image: CursorImageStatus,
     pointer_settings: PointerSettings,
     _pointer_gestures_state: smithay::wayland::pointer_gestures::PointerGesturesState,
+    _tablet_manager_state: TabletManagerState,
     pointing_devices: PointingDeviceService,
     interaction_engine: InteractionEngine,
     pointer_shake: PointerShakeDetector,
     cursor_locate_animation: CursorLocateAnimation,
+}
+
+impl TabletSeatHandler for AureaCompositor {
+    type ToolFocus = WlSurface;
 }
 
 impl SeatHandler for AureaCompositor {
@@ -105,6 +110,7 @@ impl AureaCompositor {
         let fractional_scale_manager_state = fractional_scale::create_manager(display);
         let pointer_gestures_state =
             smithay::wayland::pointer_gestures::PointerGesturesState::new::<Self>(display);
+        let tablet_manager_state = TabletManagerState::new::<Self>(display);
         let mut seat_state = SeatState::new();
         let seat = seat_state.new_wl_seat(display, "seat0");
 
@@ -124,6 +130,7 @@ impl AureaCompositor {
             cursor_image: CursorImageStatus::default_named(),
             pointer_settings: PointerSettings::default(),
             _pointer_gestures_state: pointer_gestures_state,
+            _tablet_manager_state: tablet_manager_state,
             pointing_devices: PointingDeviceService::new(),
             interaction_engine: InteractionEngine::new(),
             pointer_shake: PointerShakeDetector::default(),
