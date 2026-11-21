@@ -47,10 +47,7 @@ pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
         }
         // Linux input codes: BTN_SIDE, BTN_EXTRA, BTN_FORWARD, BTN_BACK.
         // Report navigation buttons as part of the side-button capability too.
-        if [0x113, 0x114, 0x115, 0x116]
-            .into_iter()
-            .any(|code| device.pointer_has_button(code).unwrap_or(false))
-        {
+        if has_pointer_side_buttons(|code| device.pointer_has_button(code).unwrap_or(false)) {
             capabilities.push(StandardInputCapability::PointerSideButtons);
         }
     }
@@ -82,6 +79,15 @@ pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
     })
 }
 
+
+/// Checks Linux auxiliary and navigation button codes without assuming a layout.
+fn has_pointer_side_buttons(mut supports: impl FnMut(u32) -> bool) -> bool {
+    // BTN_SIDE, BTN_EXTRA, BTN_FORWARD, BTN_BACK.
+    [0x113, 0x114, 0x115, 0x116]
+        .into_iter()
+        .any(&mut supports)
+}
+
 fn nonzero_id(value: u32) -> Option<u16> {
     (value != 0).then_some(value as u16)
 }
@@ -91,4 +97,21 @@ fn stable_device_id(value: &str) -> u64 {
     value.bytes().fold(0xcbf29ce484222325, |hash, byte| {
         (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::has_pointer_side_buttons;
+
+    #[test]
+    fn recognizes_each_standard_auxiliary_or_navigation_button() {
+        for expected in [0x113, 0x114, 0x115, 0x116] {
+            assert!(has_pointer_side_buttons(|code| code == expected));
+        }
+    }
+
+    #[test]
+    fn does_not_report_side_buttons_when_none_are_present() {
+        assert!(!has_pointer_side_buttons(|_| false));
+    }
 }
