@@ -25,6 +25,8 @@ impl AureaCompositor {
         }
 
         self.focus_surface(self.window_manager.active_workspace_surface());
+        self.refresh_pointer_focus_at_current_location();
+        self.request_all_output_frames();
 
         true
     }
