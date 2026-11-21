@@ -79,6 +79,13 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
         if target.width() == 0 || target.height() == 0 {
             return Err(VulkanCpuScanoutError("Output dimensions are zero".into()));
         }
+
+        // Validate KMS coordinate limits before allocating any GBM resources.
+        let width = i32::try_from(target.width())
+            .map_err(|_| VulkanCpuScanoutError("Output width exceeds KMS coordinates".into()))?;
+        let height = i32::try_from(target.height())
+            .map_err(|_| VulkanCpuScanoutError("Output height exceeds KMS coordinates".into()))?;
+
         if !self.drm_device.is_active() {
             return Err(VulkanCpuScanoutError("DRM device is inactive".into()));
         }
@@ -119,10 +126,6 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
             }
         };
 
-        let width = i32::try_from(target.width())
-            .map_err(|_| VulkanCpuScanoutError("Output width exceeds KMS coordinates".into()))?;
-        let height = i32::try_from(target.height())
-            .map_err(|_| VulkanCpuScanoutError("Output height exceeds KMS coordinates".into()))?;
         let source: Size<i32, Buffer> = Size::from((width, height));
         let destination: Size<i32, Physical> = Size::from((width, height));
         let planes = [PlaneState {
