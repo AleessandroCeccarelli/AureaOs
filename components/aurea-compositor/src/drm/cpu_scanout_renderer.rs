@@ -166,7 +166,7 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
         };
         let intermediate_view = intermediate
             .as_ref()
-            .map(VulkanImageView::color)
+            .map(|image| VulkanImageView::color(image))
             .transpose()
             .map_err(|error| {
                 VulkanCpuScanoutError(format!(
