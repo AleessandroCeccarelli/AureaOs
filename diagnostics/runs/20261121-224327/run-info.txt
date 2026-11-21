@@ -1,0 +1,13 @@
+run_id=20261121-224327
+started_at=2026-11-21T22:43:27+01:00
+started_epoch=1795297407
+kernel=Linux 7.3.4-200.fc44.x86_64 x86_64 GNU/Linux
+session_type=tty
+wayland_display_present=no
+display_present=no
+timeout_seconds=45
+git_head=cd775532
+finished_at=2026-11-21T22:45:01+01:00
+finished_epoch=1795297501
+exit_status=137
+current_boot_collected_at=2026-11-21T22:45:10+01:00
