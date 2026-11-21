@@ -5,7 +5,8 @@
 
 //! Wayland server construction and backend initialization.
 
-use aurea_desktop_api::{display::DisplayColorController, desktop_interaction::DesktopInteractionSender};
+use aurea_desktop_api::{display::DisplayColorController, desktop_interaction::DesktopInteractionSender, input::TouchpadSettingsCommand};
+use std::sync::mpsc::Receiver;
 
 use std::{
     io,
@@ -44,6 +45,7 @@ pub(super) fn build(
     #[cfg(feature = "drm")] drm_device: Option<DrmDevice>,
     display_color: DisplayColorController,
     desktop_interactions: DesktopInteractionSender,
+    touchpad_settings_receiver: Receiver<TouchpadSettingsCommand>,
 ) -> io::Result<(EventLoop<'static, WaylandState>, WaylandState)> {
     let event_loop = EventLoop::<WaylandState>::try_new().map_err(io::Error::other)?;
 
@@ -72,8 +74,11 @@ pub(super) fn build(
         disconnected_clients: Arc::new(Mutex::new(Vec::new())),
         error: None,
         display_color,
+        touchpad_settings_receiver,
         #[cfg(feature = "drm")]
         applied_touchpad_settings: AppliedTouchpadSettings::default(),
+        #[cfg(feature = "drm")]
+        touchpad_devices: std::collections::HashMap::new(),
 
         #[cfg(feature = "drm")]
         drm_session,
