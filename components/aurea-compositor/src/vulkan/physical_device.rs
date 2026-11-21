@@ -14,9 +14,6 @@ use crate::renderer::RenderPreference;
 
 use super::{VulkanContext, VulkanExternalMemoryCapabilities, VulkanRenderingFeaturePlan};
 
-#[cfg(feature = "drm")]
-use super::VulkanDeviceExtensionPlan;
-
 /// General category of a Vulkan physical device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VulkanDeviceType {
@@ -108,11 +105,10 @@ impl VulkanContext {
 
     /// Selects a graphics-capable Vulkan device matching a DRM node.
     ///
-    /// Both primary and render-node identities are considered. Devices whose
-    /// DRM identity cannot be queried are excluded. This is useful when the
-    /// caller has a render node rather than the primary node.
-    ///
-    /// The preference is used when multiple matching Vulkan devices exist.
+    /// Both primary and render-node identities are considered. Selection only
+    /// requires a usable graphics queue and Aurea's rendering feature plan.
+    /// DMA-BUF export and foreign queue ownership are checked separately by
+    /// the direct-presentation capability probe.
     #[cfg(feature = "drm")]
     pub fn select_device_for_drm_node(
         &self,
@@ -129,7 +125,6 @@ impl VulkanContext {
                 (primary_matches || render_matches)
                     && self.graphics_queue_family(device).is_some()
                     && VulkanRenderingFeaturePlan::from_device(device).is_ok()
-                    && Self::supports_drm_scanout(device)
             })
             .collect::<Vec<_>>();
 
@@ -148,18 +143,6 @@ impl VulkanContext {
                     .unwrap_or(true)
             })
             .or_else(|| matching_devices.into_iter().next())
-    }
-
-    /// Checks the extensions required by AureaOS's current Vulkan-to-KMS path.
-    ///
-    /// Selection rejects devices that would otherwise initialize successfully
-    /// but fail only when the first scanout frame is rendered.
-    #[cfg(feature = "drm")]
-    fn supports_drm_scanout(device: &PhysicalDevice) -> bool {
-        let extensions = VulkanDeviceExtensionPlan::from_device(device);
-        extensions.supports_dmabuf_interop()
-            && extensions.supports_drm_format_modifier()
-            && extensions.supports_foreign_queue_family()
     }
 
     pub(super) fn classify_device(device: &PhysicalDevice) -> VulkanDeviceType {
