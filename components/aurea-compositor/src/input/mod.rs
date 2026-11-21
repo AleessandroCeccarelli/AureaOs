@@ -10,4 +10,5 @@ pub mod cursor_animation;
 pub mod pointer_acceleration;
 pub mod pointer_settings;
 pub mod pointer_shake;
+pub mod pointing;
 pub mod shortcuts;
