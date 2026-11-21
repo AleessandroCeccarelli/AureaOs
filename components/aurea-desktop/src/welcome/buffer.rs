@@ -12,7 +12,7 @@ use std::{
     path::PathBuf,
 };
 
-use wayland_client::{Dispatch, QueueHandle, protocol::wl_shm::Format};
+use wayland_client::{QueueHandle, protocol::wl_shm::Format};
 
 use super::{HEIGHT, WIDTH, WelcomeWindow, frame::FrameResources, scaling::render_scaled};
 
