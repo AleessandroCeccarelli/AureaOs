@@ -144,6 +144,7 @@ impl DrmSurfaceManager {
                     frame_pool: VulkanDrmFramePool::new(),
                     cpu_frame_pool: GbmCpuFramebufferPool::new(),
                     cpu_presentation,
+                    direct_scanout_disabled: false,
                 },
             );
         }
