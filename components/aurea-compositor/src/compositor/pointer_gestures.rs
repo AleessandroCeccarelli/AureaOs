@@ -14,6 +14,8 @@ use smithay::{
     utils::SERIAL_COUNTER,
 };
 
+use aurea_desktop_api::desktop_interaction::DesktopInteraction;
+
 use super::AureaCompositor;
 
 impl AureaCompositor {
@@ -27,6 +29,21 @@ impl AureaCompositor {
         &mut self,
     ) -> Option<crate::input::interaction::PointingInteraction> {
         self.interaction_engine.take_pending_interaction()
+    }
+
+    fn publish_completed_interactions(&mut self) {
+        while let Some(interaction) = self.interaction_engine.take_pending_interaction() {
+            let desktop_interaction = match interaction {
+                crate::input::interaction::PointingInteraction::PreviousWorkspace => DesktopInteraction::PreviousWorkspace,
+                crate::input::interaction::PointingInteraction::NextWorkspace => DesktopInteraction::NextWorkspace,
+                crate::input::interaction::PointingInteraction::Overview => DesktopInteraction::ShowOverview,
+                crate::input::interaction::PointingInteraction::ContextMenu => DesktopInteraction::ShowContextMenu,
+            };
+            if self.desktop_interactions.send(desktop_interaction).is_err() {
+                eprintln!("AureaOS: shell interaction receiver is no longer available");
+                break;
+            }
+        }
     }
 
     /// Sends a touchpad swipe-begin event to the focused Wayland client.
@@ -79,6 +96,7 @@ impl AureaCompositor {
         time: smithay::backend::input::InputTime,
     ) {
         self.interaction_engine.end_swipe(device, cancelled);
+        self.publish_completed_interactions();
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -151,6 +169,7 @@ impl AureaCompositor {
         time: smithay::backend::input::InputTime,
     ) {
         self.interaction_engine.end_pinch(device, cancelled);
+        self.publish_completed_interactions();
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -190,6 +209,7 @@ impl AureaCompositor {
         time: smithay::backend::input::InputTime,
     ) {
         self.interaction_engine.end_hold(device, cancelled);
+        self.publish_completed_interactions();
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
