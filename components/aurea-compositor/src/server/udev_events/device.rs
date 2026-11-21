@@ -11,9 +11,7 @@ use smithay::backend::drm::DrmNode;
 
 use crate::{
     drm::device::DrmDevice,
-    gpu::{GpuSelectionMetadata, discover_gpu_selection_metadata},
-    renderer::RenderPreference,
-    vulkan::{VulkanBackend, VulkanDeviceType},
+    gpu::discover_gpu_selection_metadata,
 };
 
 use super::{
@@ -119,7 +117,7 @@ pub(super) fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io:
         eprintln!("AureaOS: GBM unavailable for newly opened DRM device {node}: {error}");
     }
 
-    initialize_vulkan_backend(state, node);
+    super::super::vulkan_lifecycle::initialize_vulkan_backend(state, node);
 
     let result = (|| {
         if !state.gbm_devices.contains(node) {
@@ -162,64 +160,6 @@ pub(super) fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io:
     }
 
     Ok(())
-}
-
-/// Initializes the Vulkan backend for one DRM device.
-///
-/// Failure is isolated to the affected GPU.
-pub(super) fn initialize_vulkan_backend(state: &mut WaylandState, node: DrmNode) {
-    if state.vulkan_backends.contains_key(&node) {
-        return;
-    }
-
-    let backend = match VulkanBackend::new_for_drm_node(node, RenderPreference::Automatic) {
-        Ok(backend) => backend,
-        Err(hardware_error) => {
-            eprintln!(
-                "AureaOS: DRM-matched Vulkan renderer unavailable for {node}: {hardware_error}"
-            );
-            match VulkanBackend::new_software_fallback() {
-                Ok(backend) => {
-                    eprintln!(
-                        "AureaOS: using Vulkan CPU rendering with GBM/KMS presentation on {node}"
-                    );
-                    backend
-                }
-                Err(software_error) => {
-                    eprintln!(
-                        "AureaOS: Vulkan software fallback unavailable for {node}: {software_error}"
-                    );
-                    return;
-                }
-            }
-        }
-    };
-
-    let hardware_rendering = !matches!(
-        backend.selected_device_info().device_type,
-        VulkanDeviceType::Cpu
-    );
-    state.vulkan_backends.insert(node, backend);
-
-    if let Some((_, path)) = state
-        .udev_device_ids
-        .iter()
-        .find(|(known, _)| *known == node)
-    {
-        let path = path.clone();
-        if let Some(device) = state.gpu_manager.get_device(&path) {
-            let mut metadata: GpuSelectionMetadata = device.selection_metadata();
-            metadata.hardware_rendering = hardware_rendering;
-            if let Err(error) = state.gpu_manager.set_selection_metadata(&path, metadata) {
-                eprintln!(
-                    "AureaOS: unable to update Vulkan GPU capability for {}: {error}",
-                    path.display()
-                );
-            }
-        }
-    }
-
-    state.gpu_manager.select_primary_by_policy();
 }
 
 pub(super) fn initialize_drm_surfaces(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
