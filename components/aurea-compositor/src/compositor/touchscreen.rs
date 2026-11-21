@@ -51,10 +51,21 @@ impl AureaCompositor {
         } else {
             (size.width, size.height)
         };
+        // libinput supplies coordinates in the source output's pixel extent.
+        // Calibration operates in normalized device space before output rotation.
+        let source_max_x = f64::from(source_width.saturating_sub(1).max(1));
+        let source_max_y = f64::from(source_height.saturating_sub(1).max(1));
+        let (normalized_x, normalized_y) = self
+            .touchscreen_calibrations
+            .get(device)
+            .apply(x / source_max_x, y / source_max_y)?;
+        let calibrated_x = normalized_x * source_max_x;
+        let calibrated_y = normalized_y * source_max_y;
+
         let (transformed_x, transformed_y) = transform_touch_coordinates(
             transform,
-            x,
-            y,
+            calibrated_x,
+            calibrated_y,
             f64::from(source_width),
             f64::from(source_height),
         )?;
