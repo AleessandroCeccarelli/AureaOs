@@ -74,7 +74,11 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                     .get(&rendering_node)
                     .map(|backend| backend.supports_direct_presentation())
                     .unwrap_or(false),
-            compatibility: gbm_devices.contains(presentation_node)
+            // The current CPU readback presenter is a diagnostic clear-only
+            // path; it does not yet composite the Wayland scene. Do not advertise
+            // it as a usable cross-GPU compatibility route.
+            compatibility: rendering_node == presentation_node
+                && gbm_devices.contains(presentation_node)
                 && vulkan_backends.contains_key(&rendering_node),
         }];
         let selected_path = PresentationSelector::select(
