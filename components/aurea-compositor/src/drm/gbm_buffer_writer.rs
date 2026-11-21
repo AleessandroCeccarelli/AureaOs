@@ -9,7 +9,7 @@ use std::{error::Error, fmt};
 
 use smithay::backend::allocator::{Fourcc, gbm::GbmBuffer};
 
-use super::gbm_upload_layout::{GbmUploadLayoutError, pack_rgba8_rows};
+use super::gbm_upload_layout::GbmUploadLayoutError;
 
 /// Errors returned while uploading a CPU frame into a GBM buffer.
 #[derive(Debug)]
@@ -84,10 +84,9 @@ impl GbmCpuUploadBuffer {
         width: u32,
         height: u32,
     ) -> Result<(), GbmBufferWriterError> {
-        if self.buffer.format() != Fourcc::Abgr8888 {
-            return Err(GbmBufferWriterError::UnsupportedFormat(
-                self.buffer.format(),
-            ));
+        let format = self.buffer.format();
+        if !matches!(format, Fourcc::Abgr8888 | Fourcc::Xrgb8888 | Fourcc::Argb8888) {
+            return Err(GbmBufferWriterError::UnsupportedFormat(format));
         }
 
         let actual_width = self.buffer.width();
@@ -102,7 +101,41 @@ impl GbmCpuUploadBuffer {
         }
 
         let stride = self.buffer.stride() as usize;
-        let packed = pack_rgba8_rows(pixels, width, height, stride)?;
+        let row_bytes = (width as usize)
+            .checked_mul(4)
+            .ok_or(GbmUploadLayoutError::SourceSizeOverflow)?;
+        let expected_len = row_bytes
+            .checked_mul(height as usize)
+            .ok_or(GbmUploadLayoutError::SourceSizeOverflow)?;
+        if pixels.len() != expected_len {
+            return Err(GbmUploadLayoutError::SourceLengthMismatch.into());
+        }
+        if stride < row_bytes {
+            return Err(GbmUploadLayoutError::DestinationStrideTooSmall.into());
+        }
+        let destination_len = stride
+            .checked_mul(height as usize)
+            .ok_or(GbmUploadLayoutError::DestinationSizeOverflow)?;
+        let mut packed = vec![0; destination_len];
+
+        for y in 0..height as usize {
+            for x in 0..width as usize {
+                let source = y * row_bytes + x * 4;
+                let destination = y * stride + x * 4;
+                let red = pixels[source];
+                let green = pixels[source + 1];
+                let blue = pixels[source + 2];
+                let alpha = pixels[source + 3];
+                let output = match format {
+                    Fourcc::Abgr8888 => [red, green, blue, alpha],
+                    Fourcc::Argb8888 => [blue, green, red, alpha],
+                    Fourcc::Xrgb8888 => [blue, green, red, 0xff],
+                    _ => unreachable!("format was validated above"),
+                };
+                packed[destination..destination + 4].copy_from_slice(&output);
+            }
+        }
+
         self.buffer
             .write(&packed)
             .map_err(GbmBufferWriterError::Write)
