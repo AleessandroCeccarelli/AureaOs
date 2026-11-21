@@ -65,13 +65,13 @@ fn failed_cleanup_entry_is_retained_and_can_be_retried() {
     assert_eq!(entries.get(&2), Some(&true));
     assert_eq!(errors, vec!["KMS disable failed"]);
 
-    let retry_errors = clear_and_retain(&mut entries, |_| Ok::<(), &'static str>(())); 
+    let retry_errors = clear_and_retain(&mut entries, |_| Ok::<(), &'static str>(()));
     assert!(retry_errors.is_empty());
     assert!(entries.is_empty());
 }
 
 #[test]
 fn clearing_an_empty_collection_is_successful() {
-    let errors = clear_each(Vec::<u8>::new(), |_| Ok::<(), &'static str>(())); 
+    let errors = clear_each(Vec::<u8>::new(), |_| Ok::<(), &'static str>(()));
     assert!(errors.is_empty());
 }

@@ -3,9 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-use crate::drm::gbm_upload_layout::{
-    GbmUploadLayoutError, pack_rgba8_for_fourcc, pack_rgba8_rows,
-};
+use crate::drm::gbm_upload_layout::{GbmUploadLayoutError, pack_rgba8_for_fourcc, pack_rgba8_rows};
 use smithay::backend::allocator::Fourcc;
 
 #[test]
@@ -80,10 +78,12 @@ fn converts_rgba_to_opaque_xrgb_memory_order() {
 #[test]
 fn converts_each_pixel_and_preserves_row_padding() {
     let pixels = [10, 20, 30, 40, 50, 60, 70, 80];
-    let packed =
-        pack_rgba8_for_fourcc(&pixels, 1, 2, 8, Fourcc::Argb8888).unwrap();
+    let packed = pack_rgba8_for_fourcc(&pixels, 1, 2, 8, Fourcc::Argb8888).unwrap();
 
-    assert_eq!(packed, [30, 20, 10, 40, 0, 0, 0, 0, 70, 60, 50, 80, 0, 0, 0, 0]);
+    assert_eq!(
+        packed,
+        [30, 20, 10, 40, 0, 0, 0, 0, 70, 60, 50, 80, 0, 0, 0, 0]
+    );
 }
 
 #[test]

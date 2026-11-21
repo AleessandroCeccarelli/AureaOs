@@ -5,11 +5,7 @@
 
 //! Owns native Smithay DRM surfaces for discovered physical outputs.
 
-use std::{
-    collections::HashMap,
-    error::Error,
-    fmt,
-};
+use std::{collections::HashMap, error::Error, fmt};
 
 use smithay::{
     backend::drm::{DrmNode, DrmSurface},
@@ -339,7 +335,6 @@ where
 
     errors
 }
-
 
 #[cfg(test)]
 mod cleanup_tests;

@@ -93,13 +93,11 @@ impl VulkanBackend {
     #[cfg(feature = "drm")]
     pub fn new_software_fallback() -> Result<Self, VulkanInitError> {
         let context = Arc::new(VulkanContext::new()?);
-        let physical_device = context
-            .select_software_device()
-            .ok_or_else(|| {
-                VulkanInitError::new(
-                    "No Vulkan CPU device supports AureaOS's required rendering features",
-                )
-            })?;
+        let physical_device = context.select_software_device().ok_or_else(|| {
+            VulkanInitError::new(
+                "No Vulkan CPU device supports AureaOS's required rendering features",
+            )
+        })?;
         let physical_device_index = context
             .physical_devices()
             .iter()

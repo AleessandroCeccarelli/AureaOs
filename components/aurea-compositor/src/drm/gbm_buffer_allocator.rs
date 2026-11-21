@@ -98,8 +98,7 @@ impl<'device, T: std::os::fd::AsFd> GbmCpuUploadAllocator<'device, T> {
         let mut last_allocation_error = None;
 
         for format in [Fourcc::Xrgb8888, Fourcc::Argb8888, Fourcc::Abgr8888] {
-            if !plane_formats.contains(&format) || !self.device.is_format_supported(format, usage)
-            {
+            if !plane_formats.contains(&format) || !self.device.is_format_supported(format, usage) {
                 continue;
             }
 

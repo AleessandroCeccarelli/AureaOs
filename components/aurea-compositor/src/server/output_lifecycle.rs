@@ -22,9 +22,7 @@ pub(super) fn initialize_outputs(state: &mut WaylandState) -> io::Result<()> {
             state.gbm_devices.contains(node),
             state.vulkan_backends.contains_key(&node),
         ) {
-            eprintln!(
-                "AureaOS: skipping outputs for {node}: GBM or Vulkan backend is unavailable"
-            );
+            eprintln!("AureaOS: skipping outputs for {node}: GBM or Vulkan backend is unavailable");
             continue;
         }
 
@@ -37,9 +35,7 @@ pub(super) fn initialize_outputs(state: &mut WaylandState) -> io::Result<()> {
                 Ok(manager) => manager,
                 Err(failure) => {
                     let (partial_manager, cause) = failure.into_parts();
-                    eprintln!(
-                        "AureaOS: KMS surfaces unavailable for DRM device {node}: {cause}"
-                    );
+                    eprintln!("AureaOS: KMS surfaces unavailable for DRM device {node}: {cause}");
                     // Retain partially initialized surfaces for safe teardown.
                     state.drm_surfaces.insert(node, partial_manager);
                     continue;
@@ -51,26 +47,19 @@ pub(super) fn initialize_outputs(state: &mut WaylandState) -> io::Result<()> {
             let Some(device) = state.drm_devices.get(node) else {
                 continue;
             };
-            crate::drm::outputs::initialize_drm_outputs(
-                device,
-                state.compositor.output_manager(),
-            )
+            crate::drm::outputs::initialize_drm_outputs(device, state.compositor.output_manager())
         };
 
         match output_result {
             Ok(0) => {
-                eprintln!(
-                    "AureaOS: DRM device {node} has no connected, usable display connectors"
-                );
+                eprintln!("AureaOS: DRM device {node} has no connected, usable display connectors");
                 state.drm_surfaces.insert(node, manager);
             }
             Ok(_) => {
                 state.drm_surfaces.insert(node, manager);
             }
             Err(error) => {
-                eprintln!(
-                    "AureaOS: logical outputs unavailable for DRM device {node}: {error}"
-                );
+                eprintln!("AureaOS: logical outputs unavailable for DRM device {node}: {error}");
                 // Keep native surface ownership even when logical registration fails.
                 state.drm_surfaces.insert(node, manager);
             }

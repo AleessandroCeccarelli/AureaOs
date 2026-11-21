@@ -9,10 +9,7 @@ use std::{io, path::PathBuf};
 
 use smithay::backend::drm::DrmNode;
 
-use crate::{
-    drm::device::DrmDevice,
-    gpu::discover_gpu_selection_metadata,
-};
+use crate::{drm::device::DrmDevice, gpu::discover_gpu_selection_metadata};
 
 use super::{
     super::state::WaylandState,

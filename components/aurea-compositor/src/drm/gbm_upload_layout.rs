@@ -54,7 +54,10 @@ pub fn pack_rgba8_for_fourcc(
     if width == 0 || height == 0 {
         return Err(GbmUploadLayoutError::InvalidDimensions);
     }
-    if !matches!(format, Fourcc::Abgr8888 | Fourcc::Argb8888 | Fourcc::Xrgb8888) {
+    if !matches!(
+        format,
+        Fourcc::Abgr8888 | Fourcc::Argb8888 | Fourcc::Xrgb8888
+    ) {
         return Err(GbmUploadLayoutError::UnsupportedFormat(format));
     }
 

@@ -10,12 +10,14 @@ use std::collections::HashSet;
 use smithay::reexports::drm::control::{Device as DrmControlDevice, connector};
 
 use crate::drm::{
+    cpu_presentation_backend::CpuPresentationBackend,
     device::DrmDevice,
     discovery::discover_connected_outputs,
     output::DrmOutputDescriptor,
     presentation_backend::DrmPresentationBackend,
-    cpu_presentation_backend::CpuPresentationBackend,
-    surfaces::{DrmSurfaceInitFailure, DrmSurfaceManager, DrmSurfaceManagerError, ManagedDrmSurface},
+    surfaces::{
+        DrmSurfaceInitFailure, DrmSurfaceManager, DrmSurfaceManagerError, ManagedDrmSurface,
+    },
 };
 
 use crate::vulkan::VulkanDrmFramePool;

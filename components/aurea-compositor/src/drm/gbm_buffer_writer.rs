@@ -84,7 +84,10 @@ impl GbmCpuUploadBuffer {
         height: u32,
     ) -> Result<(), GbmBufferWriterError> {
         let format = self.buffer.format();
-        if !matches!(format, Fourcc::Abgr8888 | Fourcc::Xrgb8888 | Fourcc::Argb8888) {
+        if !matches!(
+            format,
+            Fourcc::Abgr8888 | Fourcc::Xrgb8888 | Fourcc::Argb8888
+        ) {
             return Err(GbmBufferWriterError::UnsupportedFormat(format));
         }
 
@@ -99,14 +102,8 @@ impl GbmCpuUploadBuffer {
             });
         }
 
-        let packed = pack_rgba8_for_fourcc(
-            pixels,
-            width,
-            height,
-            self.buffer.stride() as usize,
-            format,
-        )?;
-
+        let packed =
+            pack_rgba8_for_fourcc(pixels, width, height, self.buffer.stride() as usize, format)?;
 
         self.buffer
             .write(&packed)

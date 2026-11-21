@@ -8,9 +8,9 @@
 use std::collections::HashSet;
 
 use super::{
+    super::super::vulkan_lifecycle::initialize_vulkan_backend,
     super::state::WaylandState,
     device::{initialize_drm_surfaces, open_and_integrate},
-    super::super::vulkan_lifecycle::initialize_vulkan_backend,
     outputs::{refresh_device_outputs, remove_device_outputs, restore_before_publish},
     tracking::{forget_changed_device, retry_pending_changes},
 };

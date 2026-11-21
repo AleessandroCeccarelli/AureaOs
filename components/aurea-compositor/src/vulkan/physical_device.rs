@@ -103,7 +103,6 @@ impl VulkanContext {
             })
     }
 
-
     /// Selects a Vulkan CPU device for host-readback compatibility rendering.
     ///
     /// This path is intentionally separate from DRM-device matching: software
@@ -116,7 +115,6 @@ impl VulkanContext {
                 && VulkanRenderingFeaturePlan::from_device(device).is_ok()
         })
     }
-
 
     /// Selects a graphics-capable Vulkan device matching a DRM node.
     ///
