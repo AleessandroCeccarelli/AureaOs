@@ -77,6 +77,18 @@ impl TouchpadApplyReport {
             && matches!(self.disable_while_typing, TouchpadSettingStatus::Applied)
             && matches!(self.tap_and_drag, TouchpadSettingStatus::Applied)
     }
+
+    /// Returns true when libinput rejected at least one supported setting.
+    ///
+    /// Unsupported settings are a hardware capability limitation, not an
+    /// application failure, and therefore do not trigger repeated retries.
+    pub const fn has_failures(self) -> bool {
+        matches!(self.tap_to_click, TouchpadSettingStatus::Failed)
+            || matches!(self.two_finger_scroll, TouchpadSettingStatus::Failed)
+            || matches!(self.natural_scrolling, TouchpadSettingStatus::Failed)
+            || matches!(self.disable_while_typing, TouchpadSettingStatus::Failed)
+            || matches!(self.tap_and_drag, TouchpadSettingStatus::Failed)
+    }
 }
 
 #[cfg(test)]
@@ -91,6 +103,30 @@ mod tests {
         assert!(!settings.natural_scrolling());
         assert!(settings.disable_while_typing());
         assert!(settings.tap_and_drag());
+    }
+
+    #[test]
+    fn unsupported_settings_are_not_application_failures() {
+        let report = TouchpadApplyReport {
+            tap_to_click: TouchpadSettingStatus::Applied,
+            two_finger_scroll: TouchpadSettingStatus::Unsupported,
+            natural_scrolling: TouchpadSettingStatus::Applied,
+            disable_while_typing: TouchpadSettingStatus::Applied,
+            tap_and_drag: TouchpadSettingStatus::Applied,
+        };
+        assert!(!report.has_failures());
+    }
+
+    #[test]
+    fn failed_setting_is_detected_for_retry() {
+        let report = TouchpadApplyReport {
+            tap_to_click: TouchpadSettingStatus::Failed,
+            two_finger_scroll: TouchpadSettingStatus::Unsupported,
+            natural_scrolling: TouchpadSettingStatus::Applied,
+            disable_while_typing: TouchpadSettingStatus::Applied,
+            tap_and_drag: TouchpadSettingStatus::Applied,
+        };
+        assert!(report.has_failures());
     }
 
     #[test]
