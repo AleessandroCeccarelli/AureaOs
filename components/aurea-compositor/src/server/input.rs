@@ -13,7 +13,9 @@ use smithay::{
             Axis, Event, GestureBeginEvent, GestureEndEvent,
             GesturePinchUpdateEvent as BackendPinchUpdateEvent,
             GestureSwipeUpdateEvent as BackendSwipeUpdateEvent, InputEvent,
-            KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent, PointerMotionEvent,
+            AbsolutePositionEvent, KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent,
+            PointerMotionEvent, TouchCancelEvent, TouchDownEvent, TouchEvent, TouchFrameEvent,
+            TouchMotionEvent, TouchUpEvent,
         },
         libinput::{LibinputInputBackend, LibinputSessionInterface},
     },
@@ -66,6 +68,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                     "Pointing device connected"
                 );
                 state.compositor.pointing_devices().connect(descriptor);
+                state.compositor.sync_touchscreen_capability();
             }
         }
         InputEvent::DeviceRemoved { device } => {
@@ -77,6 +80,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                 );
                 state.compositor.pointing_devices().disconnect(descriptor.id);
                 state.compositor.clear_pointing_device_state(descriptor.id);
+                state.compositor.sync_touchscreen_capability();
             }
         }
         InputEvent::Keyboard { event } => {
@@ -163,6 +167,45 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
         InputEvent::GestureHoldEnd { event } => {
             let device = pointing::id_for(&event.device());
             state.compositor.handle_hold_end(device, event.cancelled(), event.time());
+        }
+        InputEvent::TouchDown { event } => {
+            let device = pointing::id_for(&event.device());
+            if let Some((width, height)) = state.compositor.touchscreen_extent(device) {
+                state.compositor.handle_touch_down(
+                    device,
+                    event.slot(),
+                    event.x_transformed(width),
+                    event.y_transformed(height),
+                    event.time().millis(),
+                );
+            }
+        }
+        InputEvent::TouchMotion { event } => {
+            let device = pointing::id_for(&event.device());
+            if let Some((width, height)) = state.compositor.touchscreen_extent(device) {
+                state.compositor.handle_touch_motion(
+                    device,
+                    event.slot(),
+                    event.x_transformed(width),
+                    event.y_transformed(height),
+                    event.time().millis(),
+                );
+            }
+        }
+        InputEvent::TouchUp { event } => {
+            let device = pointing::id_for(&event.device());
+            state.compositor.handle_touch_up(
+                device,
+                event.slot(),
+                event.time().millis(),
+            );
+        }
+        InputEvent::TouchCancel { event } => {
+            let device = pointing::id_for(&event.device());
+            state.compositor.handle_touch_cancel(device, event.time().millis());
+        }
+        InputEvent::TouchFrame { .. } => {
+            state.compositor.handle_touch_frame();
         }
         _ => {}
     }
