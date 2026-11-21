@@ -76,6 +76,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                     "Pointing device disconnected"
                 );
                 state.compositor.pointing_devices().disconnect(descriptor.id);
+                state.compositor.clear_pointing_device_state(descriptor.id);
             }
         }
         InputEvent::Keyboard { event } => {
@@ -120,23 +121,30 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             );
         }
         InputEvent::GestureSwipeBegin { event } => {
-            state.compositor.handle_swipe_begin(event.fingers(), event.time());
+            let device = pointing::id_for(&event.device());
+            state.compositor.handle_swipe_begin(device, event.fingers(), event.time());
         }
         InputEvent::GestureSwipeUpdate { event } => {
+            let device = pointing::id_for(&event.device());
             state.compositor.handle_swipe_update(
+                device,
                 event.delta_x(),
                 event.delta_y(),
                 event.time().millis(),
             );
         }
         InputEvent::GestureSwipeEnd { event } => {
-            state.compositor.handle_swipe_end(event.cancelled(), event.time());
+            let device = pointing::id_for(&event.device());
+            state.compositor.handle_swipe_end(device, event.cancelled(), event.time());
         }
         InputEvent::GesturePinchBegin { event } => {
-            state.compositor.handle_pinch_begin(event.fingers(), event.time());
+            let device = pointing::id_for(&event.device());
+            state.compositor.handle_pinch_begin(device, event.fingers(), event.time());
         }
         InputEvent::GesturePinchUpdate { event } => {
+            let device = pointing::id_for(&event.device());
             state.compositor.handle_pinch_update(
+                device,
                 event.delta_x(),
                 event.delta_y(),
                 event.scale(),
@@ -145,13 +153,16 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             );
         }
         InputEvent::GesturePinchEnd { event } => {
-            state.compositor.handle_pinch_end(event.cancelled(), event.time());
+            let device = pointing::id_for(&event.device());
+            state.compositor.handle_pinch_end(device, event.cancelled(), event.time());
         }
         InputEvent::GestureHoldBegin { event } => {
-            state.compositor.handle_hold_begin(event.fingers(), event.time());
+            let device = pointing::id_for(&event.device());
+            state.compositor.handle_hold_begin(device, event.fingers(), event.time());
         }
         InputEvent::GestureHoldEnd { event } => {
-            state.compositor.handle_hold_end(event.cancelled(), event.time());
+            let device = pointing::id_for(&event.device());
+            state.compositor.handle_hold_end(device, event.cancelled(), event.time());
         }
         _ => {}
     }
