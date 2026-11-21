@@ -122,12 +122,6 @@ pub(super) fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io:
                 "DRM device {node} has no usable GBM allocator"
             )));
         }
-        if !state.vulkan_backends.contains_key(&node) {
-            return Err(io::Error::other(format!(
-                "DRM device {node} has no compatible Vulkan backend"
-            )));
-        }
-
         register_device_notifier(state, node)?;
         initialize_drm_surfaces(state, node)?;
         refresh_device_outputs(state, node)
@@ -160,12 +154,9 @@ pub(super) fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io:
 }
 
 pub(super) fn initialize_drm_surfaces(state: &mut WaylandState, node: DrmNode) -> io::Result<()> {
-    if !super::super::gbm_lifecycle::graphics_dependencies_ready(
-        state.gbm_devices.contains(node),
-        state.vulkan_backends.contains_key(&node),
-    ) {
+    if !super::super::gbm_lifecycle::output_presentation_ready(state.gbm_devices.contains(node)) {
         return Err(io::Error::other(format!(
-            "DRM device {node} has no usable GBM presentation device or Vulkan rendering backend"
+            "DRM device {node} has no usable GBM presentation device"
         )));
     }
 
