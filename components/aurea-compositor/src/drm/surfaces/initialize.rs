@@ -13,6 +13,7 @@ use crate::drm::{
     cpu_presentation_backend::CpuPresentationBackend,
     device::DrmDevice,
     discovery::discover_connected_outputs,
+    gbm_framebuffer_pool::GbmCpuFramebufferPool,
     output::DrmOutputDescriptor,
     presentation_backend::DrmPresentationBackend,
     surfaces::{
