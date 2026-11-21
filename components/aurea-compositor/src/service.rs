@@ -9,7 +9,7 @@ use std::io;
 
 use aurea_desktop_api::{
     CompositorFactory, CompositorService, ShutdownSignal, display::DisplayColorController,
-    keyboard::KeyboardLayoutId,
+    keyboard::KeyboardLayoutId, desktop_interaction::DesktopInteractionSender,
 };
 
 use crate::WaylandServer;
@@ -55,9 +55,10 @@ impl CompositorFactory for WaylandCompositorFactory {
     fn create(
         &self,
         display_color: DisplayColorController,
+        interactions: DesktopInteractionSender,
     ) -> io::Result<Box<dyn CompositorService>> {
         let mut server =
-            WaylandServer::new_with_primary_drm(&self.socket_name, &self.seat, display_color)?;
+            WaylandServer::new_with_primary_drm(&self.socket_name, &self.seat, display_color, interactions)?;
         if let Some(layout) = self.keyboard_layout.as_ref() {
             if let Err(error) = server.set_keyboard_layout(layout) {
                 eprintln!(
