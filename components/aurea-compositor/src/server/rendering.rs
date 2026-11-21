@@ -144,6 +144,11 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                     })?;
             }
             PresentationPath::Compatibility => {
+                let warmth_percent = display_color.adjustment().warmth_percent();
+                let mut display_color_manager = vulkan
+                    .display_color_manager()
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
                 let mut surface_pipeline_cache = vulkan
                     .surface_pipeline_cache()
                     .lock()
@@ -154,6 +159,8 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                     output,
                     vulkan,
                     &mut surface_pipeline_cache,
+                    &mut display_color_manager,
+                    warmth_percent,
                 );
                 compositor
                     .render_output(&mut backend, output_id)
