@@ -83,6 +83,12 @@ impl AureaCompositor {
                     }
                 }
 
+                // Rollback restores the previous desktop topology. Refresh
+                // pointer focus and repaint surviving outputs even when the
+                // attempted reconciliation is rejected.
+                self.refresh_pointer_focus_at_current_location();
+                self.request_all_output_frames();
+
                 return Err(OutputReconciliationError {
                     output_id: *id,
                     source,
