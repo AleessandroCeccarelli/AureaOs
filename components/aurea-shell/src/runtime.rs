@@ -5,7 +5,9 @@
 //
 // Shell runtime management.
 
-use std::sync::mpsc::Receiver;
+use std::{collections::VecDeque, sync::mpsc::{Receiver, RecvTimeoutError}, time::Duration};
+
+use aurea_desktop_api::desktop_interaction::{DesktopInteraction, DesktopInteractionReceiver};
 
 use aurea_desktop_api::display::{DisplayColorAdjustment, DisplayColorController};
 
@@ -22,6 +24,7 @@ pub struct ShellRuntime {
     session: DesktopSession,
     desktop: DesktopState,
     display_color: DisplayColorController,
+    pending_desktop_interactions: VecDeque<DesktopInteraction>,
 }
 
 impl ShellRuntime {
@@ -37,6 +40,7 @@ impl ShellRuntime {
             session: DesktopSession::new(),
             desktop: DesktopState::default(),
             display_color,
+            pending_desktop_interactions: VecDeque::new(),
         }
     }
 
@@ -75,15 +79,29 @@ impl ShellRuntime {
     }
 
     /// Runs the event loop until shutdown is requested or the channel closes.
-    pub fn run_event_loop(&mut self, receiver: Receiver<ShellEvent>) -> Result<(), ShellError> {
+    pub fn run_event_loop(
+        &mut self,
+        receiver: Receiver<ShellEvent>,
+        interactions: DesktopInteractionReceiver,
+    ) -> Result<(), ShellError> {
         while self.state() == ShellState::Running {
-            match receiver.recv() {
+            match receiver.recv_timeout(Duration::from_millis(50)) {
                 Ok(event) => self.handle_event(event)?,
-                Err(_) => self.stop()?,
+                Err(RecvTimeoutError::Timeout) => {}
+                Err(RecvTimeoutError::Disconnected) => self.stop()?,
+            }
+
+            while let Ok(interaction) = interactions.try_recv() {
+                self.pending_desktop_interactions.push_back(interaction);
             }
         }
 
         Ok(())
+    }
+
+    /// Retrieves the next semantic desktop action received from the compositor.
+    pub fn take_desktop_interaction(&mut self) -> Option<DesktopInteraction> {
+        self.pending_desktop_interactions.pop_front()
     }
 
     /// Dispatches an event and executes the resulting runtime command.
