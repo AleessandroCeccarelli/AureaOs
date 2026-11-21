@@ -39,20 +39,22 @@ impl AureaCompositor {
                     let previous = (current + crate::window_manager::WindowManager::WORKSPACE_COUNT - 1)
                         % crate::window_manager::WindowManager::WORKSPACE_COUNT;
                     self.switch_workspace(previous);
-                    DesktopInteraction::PreviousWorkspace
+                    None
                 }
                 crate::input::interaction::PointingInteraction::NextWorkspace => {
                     let current = self.active_workspace();
                     let next = (current + 1) % crate::window_manager::WindowManager::WORKSPACE_COUNT;
                     self.switch_workspace(next);
-                    DesktopInteraction::NextWorkspace
+                    None
                 }
-                crate::input::interaction::PointingInteraction::Overview => DesktopInteraction::ShowOverview,
-                crate::input::interaction::PointingInteraction::ContextMenu => DesktopInteraction::ShowContextMenu,
+                crate::input::interaction::PointingInteraction::Overview => Some(DesktopInteraction::ShowOverview),
+                crate::input::interaction::PointingInteraction::ContextMenu => Some(DesktopInteraction::ShowContextMenu),
             };
-            if self.desktop_interactions.send(desktop_interaction).is_err() {
-                eprintln!("AureaOS: shell interaction receiver is no longer available");
-                break;
+            if let Some(desktop_interaction) = desktop_interaction {
+                if self.desktop_interactions.send(desktop_interaction).is_err() {
+                    tracing::debug!("Shell interaction receiver is no longer available");
+                    break;
+                }
             }
         }
     }
