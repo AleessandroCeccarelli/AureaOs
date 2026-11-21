@@ -5,7 +5,7 @@
 
 //! Desktop composition of the native compositor and first visible client.
 
-use std::io;
+use std::{io, os::unix::process::ExitStatusExt};
 
 use aurea_compositor::service::{DEFAULT_WAYLAND_DISPLAY_NAME, WaylandCompositorFactory};
 use aurea_desktop_api::{
@@ -76,8 +76,10 @@ impl DesktopCompositorService {
     /// Stops and reaps the client before the compositor session is released.
     fn stop_welcome_client(&mut self) {
         match self.welcome_client.stop() {
-            Ok(Some(status)) if !status.success() => {
-                eprintln!("Aurea Desktop: Welcome client exited with status {status}");
+            Ok(Some(status))
+                if !status.success() && status.signal() != Some(libc::SIGTERM) =>
+            {
+                eprintln!("Aurea Desktop: Welcome client exited unexpectedly with status {status}");
             }
             Ok(_) => {}
             Err(error) => {
