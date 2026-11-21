@@ -112,10 +112,13 @@ impl Dispatch<XdgSurface, ()> for WelcomeWindow {
         qh: &QueueHandle<Self>,
     ) {
         if let xdg_surface::Event::Configure { serial } = event {
+            eprintln!("Aurea Welcome: received xdg_surface configure serial={serial}");
             proxy.ack_configure(serial);
             if let Err(error) = state.draw(qh) {
                 eprintln!("Aurea Welcome: cannot draw initial surface: {error}");
                 state.closed = true;
+            } else {
+                eprintln!("Aurea Welcome: initial SHM frame submitted");
             }
         }
     }
@@ -132,9 +135,13 @@ impl Dispatch<XdgToplevel, ()> for WelcomeWindow {
     ) {
         match event {
             xdg_toplevel::Event::Configure { width, height, .. } => {
+                eprintln!("Aurea Welcome: toplevel configured size={}x{}", width, height);
                 state.configured_size = Some((width, height));
             }
-            xdg_toplevel::Event::Close => state.closed = true,
+            xdg_toplevel::Event::Close => {
+                eprintln!("Aurea Welcome: received xdg_toplevel close");
+                state.closed = true;
+            },
             _ => {}
         }
     }
