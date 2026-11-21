@@ -7,6 +7,8 @@
 
 use std::io;
 
+use aurea_desktop_api::input::InputDeviceProvider;
+
 use smithay::{
     backend::{
         input::{
@@ -21,6 +23,11 @@ use smithay::{
 };
 
 use crate::{drm::session::DrmSession, input::pointing};
+
+/// Converts libinput microsecond timestamps to wrapping Wayland millisecond timestamps.
+fn wayland_time(microseconds: u64) -> u32 {
+    (microseconds / 1_000) as u32
+}
 
 use super::state::WaylandState;
 
@@ -211,7 +218,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             state.compositor.handle_keyboard_input(
                 event.key_code(),
                 event.state(),
-                event.time().millis(),
+                wayland_time(event.time()),
             );
         }
         InputEvent::PointerMotion { event } => {
@@ -227,7 +234,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             state.compositor.handle_pointer_motion(
                 delta,
                 unaccelerated_delta,
-                event.time().millis(),
+                wayland_time(event.time()),
             );
         }
         InputEvent::PointerButton { event } => {
@@ -237,7 +244,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                 pointing::id_for(&event.device()),
                 event.button_code(),
                 event.state(),
-                event.time().millis(),
+                wayland_time(event.time()),
             );
         }
         InputEvent::PointerAxis { event } => {
@@ -251,7 +258,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                 event.source(),
                 event.relative_direction(Axis::Horizontal),
                 event.relative_direction(Axis::Vertical),
-                event.time().millis(),
+                wayland_time(event.time()),
             );
         }
         InputEvent::GestureSwipeBegin { event } => {
@@ -260,7 +267,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let device = pointing::id_for(&input_device);
             state
                 .compositor
-                .handle_swipe_begin(device, event.fingers(), event.time());
+                .handle_swipe_begin(device, event.fingers(), wayland_time(event.time()));
         }
         InputEvent::GestureSwipeUpdate { event } => {
             let mut input_device = event.device();
@@ -270,7 +277,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                 device,
                 event.delta_x(),
                 event.delta_y(),
-                event.time().millis(),
+                wayland_time(event.time()),
             );
         }
         InputEvent::GestureSwipeEnd { event } => {
@@ -279,7 +286,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let device = pointing::id_for(&input_device);
             state
                 .compositor
-                .handle_swipe_end(device, event.cancelled(), event.time());
+                .handle_swipe_end(device, event.cancelled(), wayland_time(event.time()));
         }
         InputEvent::GesturePinchBegin { event } => {
             let mut input_device = event.device();
@@ -287,7 +294,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let device = pointing::id_for(&input_device);
             state
                 .compositor
-                .handle_pinch_begin(device, event.fingers(), event.time());
+                .handle_pinch_begin(device, event.fingers(), wayland_time(event.time()));
         }
         InputEvent::GesturePinchUpdate { event } => {
             let mut input_device = event.device();
@@ -308,7 +315,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let device = pointing::id_for(&input_device);
             state
                 .compositor
-                .handle_pinch_end(device, event.cancelled(), event.time());
+                .handle_pinch_end(device, event.cancelled(), wayland_time(event.time()));
         }
         InputEvent::GestureHoldBegin { event } => {
             let mut input_device = event.device();
@@ -316,7 +323,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let device = pointing::id_for(&input_device);
             state
                 .compositor
-                .handle_hold_begin(device, event.fingers(), event.time());
+                .handle_hold_begin(device, event.fingers(), wayland_time(event.time()));
         }
         InputEvent::GestureHoldEnd { event } => {
             let mut input_device = event.device();
@@ -324,7 +331,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let device = pointing::id_for(&input_device);
             state
                 .compositor
-                .handle_hold_end(device, event.cancelled(), event.time());
+                .handle_hold_end(device, event.cancelled(), wayland_time(event.time()));
         }
         InputEvent::TouchDown { event } => {
             let device = pointing::id_for(&event.device());
@@ -334,7 +341,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                     event.slot(),
                     event.x_transformed(width),
                     event.y_transformed(height),
-                    event.time().millis(),
+                    wayland_time(event.time()),
                 );
             }
         }
@@ -346,7 +353,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                     event.slot(),
                     event.x_transformed(width),
                     event.y_transformed(height),
-                    event.time().millis(),
+                    wayland_time(event.time()),
                 );
             }
         }
@@ -354,13 +361,13 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let device = pointing::id_for(&event.device());
             state
                 .compositor
-                .handle_touch_up(device, event.slot(), event.time().millis());
+                .handle_touch_up(device, event.slot(), wayland_time(event.time()));
         }
         InputEvent::TouchCancel { event } => {
             let device = pointing::id_for(&event.device());
             state
                 .compositor
-                .handle_touch_cancel(device, event.time().millis());
+                .handle_touch_cancel(device, wayland_time(event.time()));
         }
         InputEvent::TouchFrame { .. } => {
             state.compositor.handle_touch_frame();
