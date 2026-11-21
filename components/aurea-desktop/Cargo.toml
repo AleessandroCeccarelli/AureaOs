@@ -18,3 +18,4 @@ aurea-compositor = { path = "../aurea-compositor", features = ["drm", "vulkan"] 
 wayland-client = "0.31"
 wayland-protocols = { version = "0.32", features = ["client"] }
 memmap2 = "0.9"
+libc = "0.2"
