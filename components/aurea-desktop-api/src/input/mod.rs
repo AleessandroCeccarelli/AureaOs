@@ -10,6 +10,7 @@ mod device;
 mod extension;
 pub mod keyboard;
 pub mod pointer;
+pub mod touchpad;
 
 pub use action::InputAction;
 pub use device::{
