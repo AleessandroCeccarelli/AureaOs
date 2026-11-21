@@ -115,8 +115,9 @@ impl ShellRuntime {
     /// so its panels and workspace indicators remain synchronized.
     pub fn handle_desktop_interaction(&mut self, interaction: DesktopInteraction) {
         match interaction {
-            DesktopInteraction::PreviousWorkspace => self.desktop.workspaces.previous(),
-            DesktopInteraction::NextWorkspace => self.desktop.workspaces.next(),
+            DesktopInteraction::WorkspaceChanged { index } => {
+                self.desktop.workspaces.switch_to(index);
+            }
             DesktopInteraction::ShowOverview => {
                 self.desktop.panels.show(DesktopPanel::Overview);
             }
