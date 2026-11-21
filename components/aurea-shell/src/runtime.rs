@@ -18,6 +18,9 @@ use crate::event::ShellEvent;
 use crate::session::{DesktopSession, SessionState};
 use crate::state::{ShellLifecycle, ShellState};
 
+/// Maximum number of semantic interactions retained for the shell consumer.
+const MAX_PENDING_DESKTOP_INTERACTIONS: usize = 32;
+
 /// Owns the runtime and desktop session lifecycles.
 pub struct ShellRuntime {
     lifecycle: ShellLifecycle,
@@ -98,6 +101,9 @@ impl ShellRuntime {
             }
 
             while let Ok(interaction) = interactions.try_recv() {
+                if self.pending_desktop_interactions.len() == MAX_PENDING_DESKTOP_INTERACTIONS {
+                    self.pending_desktop_interactions.pop_front();
+                }
                 self.pending_desktop_interactions.push_back(interaction);
             }
         }
