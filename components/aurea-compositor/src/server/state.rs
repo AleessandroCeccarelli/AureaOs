@@ -10,7 +10,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use aurea_desktop_api::display::DisplayColorController;
+use aurea_desktop_api::{display::DisplayColorController, input::{InputDeviceId, TouchpadSettings}};
 
 #[cfg(feature = "drm")]
 use std::{collections::HashMap, path::PathBuf};
@@ -46,6 +46,9 @@ pub(super) struct WaylandState {
 
     /// Shared shell-owned output color policy, sampled by the render path.
     pub(super) display_color: DisplayColorController,
+
+    /// Last touchpad profile applied to each live libinput device (IDs only; no device handles).
+    pub(super) applied_touchpad_settings: HashMap<InputDeviceId, TouchpadSettings>,
 
     #[cfg(feature = "drm")]
     pub(super) drm_session: Option<DrmSession>,
