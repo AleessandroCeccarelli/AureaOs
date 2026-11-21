@@ -13,15 +13,13 @@ use smithay::{
         },
         libinput::LibinputInputBackend,
     },
-    input::tablet::{
-        TabletDescriptor, TabletSeatTrait,
-        tool::{
+    input::tablet::tool::{
             AxisFrame, ButtonEvent, DownEvent, MotionEvent, ProximityInEvent, ProximityOutEvent,
             UpEvent,
         },
-    },
     reexports::wayland_server::protocol::wl_surface::WlSurface,
     utils::{Point, SERIAL_COUNTER},
+    wayland::tablet_manager::{TabletDescriptor, TabletSeatTrait},
 };
 
 use super::AureaCompositor;
