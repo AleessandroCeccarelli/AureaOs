@@ -297,12 +297,38 @@ impl GpuManager {
         &self,
         output_device_path: &Path,
     ) -> Option<&GpuDevice> {
+        self.selected_render_device_for_output_if(output_device_path, |_| true)
+    }
+
+    /// Selects only a GPU whose runtime renderer is actually initialized.
+    ///
+    /// Discovery and policy metadata alone never make a GPU render-capable.
+    /// The caller supplies the live backend check, allowing hotplug and
+    /// initialization failures to be reflected without duplicating ownership.
+    pub fn selected_render_device_for_output_if<F>(
+        &self,
+        output_device_path: &Path,
+        mut renderer_ready: F,
+    ) -> Option<&GpuDevice>
+    where
+        F: FnMut(&GpuDevice) -> bool,
+    {
+        let eligible = |device: &&GpuDevice| device.is_available();
+
         self.preferred_render_device()
-            .filter(|device| device.is_available())
-            .or_else(|| self.primary_device().filter(|device| device.is_available()))
+            .filter(|device| eligible(device) && renderer_ready(device))
+            .or_else(|| {
+                self.primary_device()
+                    .filter(|device| eligible(device) && renderer_ready(device))
+            })
             .or_else(|| {
                 self.get_device(output_device_path)
-                    .filter(|device| device.is_available())
+                    .filter(|device| eligible(device) && renderer_ready(device))
+            })
+            .or_else(|| {
+                self.devices
+                    .values()
+                    .find(|device| eligible(device) && renderer_ready(device))
             })
     }
 
