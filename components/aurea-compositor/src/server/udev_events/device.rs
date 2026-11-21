@@ -11,7 +11,7 @@ use smithay::backend::drm::DrmNode;
 
 use crate::{
     drm::device::DrmDevice,
-    gpu::{discover_gpu_selection_metadata, GpuSelectionMetadata},
+    gpu::{GpuSelectionMetadata, discover_gpu_selection_metadata},
     renderer::RenderPreference,
     vulkan::{VulkanBackend, VulkanDeviceType},
 };
@@ -62,7 +62,10 @@ pub(super) fn add_device(state: &mut WaylandState, node: DrmNode, path: PathBuf)
                 }
             }
             Err(error) => {
-                eprintln!("AureaOS: GPU selection hints unavailable for {}: {error}", path.display());
+                eprintln!(
+                    "AureaOS: GPU selection hints unavailable for {}: {error}",
+                    path.display()
+                );
             }
         }
 
@@ -171,8 +174,10 @@ pub(super) fn initialize_vulkan_backend(state: &mut WaylandState, node: DrmNode)
 
     match VulkanBackend::new_for_drm_node(node, RenderPreference::Automatic) {
         Ok(backend) => {
-            let hardware_rendering =
-                !matches!(backend.selected_device_info().device_type, VulkanDeviceType::Cpu);
+            let hardware_rendering = !matches!(
+                backend.selected_device_info().device_type,
+                VulkanDeviceType::Cpu
+            );
             state.vulkan_backends.insert(node, backend);
 
             if let Some((_, path)) = state

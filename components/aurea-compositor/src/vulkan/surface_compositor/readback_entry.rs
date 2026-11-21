@@ -11,7 +11,7 @@ use super::super::{
 };
 use crate::{render::RenderScene, renderer::RenderTarget};
 
-use super::{render_frame, VulkanSurfaceCompositionError};
+use super::{VulkanSurfaceCompositionError, render_frame};
 
 /// Composes the same Wayland scene as the direct path, then copies RGBA8 pixels
 /// to host-visible memory instead of transferring image ownership to KMS.
@@ -31,7 +31,14 @@ pub(crate) fn render_and_readback(
     readback: &VulkanReadbackBuffer<'_>,
 ) -> Result<(), VulkanSurfaceCompositionError> {
     render_frame(
-        device, view, target, scene, surface_cache, previous_image_state,
-        display_color, Some(readback), || {},
+        device,
+        view,
+        target,
+        scene,
+        surface_cache,
+        previous_image_state,
+        display_color,
+        Some(readback),
+        || {},
     )
 }

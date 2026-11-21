@@ -92,7 +92,11 @@ impl fmt::Display for GpuManagerError {
                 write!(formatter, "Invalid GPU device path: {}", path.display())
             }
             Self::DeviceAlreadyRegistered(path) => {
-                write!(formatter, "GPU device is already registered: {}", path.display())
+                write!(
+                    formatter,
+                    "GPU device is already registered: {}",
+                    path.display()
+                )
             }
             Self::UnknownDevice(path) => {
                 write!(formatter, "Unknown GPU device: {}", path.display())
@@ -173,7 +177,9 @@ impl GpuManager {
         path: &Path,
         metadata: GpuSelectionMetadata,
     ) -> Result<(), GpuManagerError> {
-        let device = self.devices.get_mut(path)
+        let device = self
+            .devices
+            .get_mut(path)
             .ok_or_else(|| GpuManagerError::UnknownDevice(path.to_path_buf()))?;
         device.selection = metadata;
         Ok(())
@@ -199,32 +205,32 @@ impl GpuManager {
             .or_else(|| {
                 [true, false].into_iter().find_map(|hardware_only| {
                     self.devices
-                    .values()
-                    .find(|device| {
-                        device.is_available()
-                            && (!hardware_only || device.selection.hardware_rendering)
-                            && device.selection.has_builtin_panel
-                    })
-                    .or_else(|| {
-                        self.devices.values().find(|device| {
+                        .values()
+                        .find(|device| {
                             device.is_available()
                                 && (!hardware_only || device.selection.hardware_rendering)
-                                && device.selection.is_platform_device
+                                && device.selection.has_builtin_panel
                         })
-                    })
-                    .or_else(|| {
-                        self.devices.values().find(|device| {
-                            device.is_available()
-                                && (!hardware_only || device.selection.hardware_rendering)
-                                && device.selection.is_boot_vga
+                        .or_else(|| {
+                            self.devices.values().find(|device| {
+                                device.is_available()
+                                    && (!hardware_only || device.selection.hardware_rendering)
+                                    && device.selection.is_platform_device
+                            })
                         })
-                    })
-                    .or_else(|| {
-                        self.devices.values().find(|device| {
-                            device.is_available()
-                                && (!hardware_only || device.selection.hardware_rendering)
+                        .or_else(|| {
+                            self.devices.values().find(|device| {
+                                device.is_available()
+                                    && (!hardware_only || device.selection.hardware_rendering)
+                                    && device.selection.is_boot_vga
+                            })
                         })
-                    })
+                        .or_else(|| {
+                            self.devices.values().find(|device| {
+                                device.is_available()
+                                    && (!hardware_only || device.selection.hardware_rendering)
+                            })
+                        })
                 })
             })?;
 
@@ -244,7 +250,9 @@ impl GpuManager {
 
     /// Returns the configured primary GPU, if registered.
     pub fn primary_device(&self) -> Option<&GpuDevice> {
-        self.primary_device.as_ref().and_then(|path| self.devices.get(path))
+        self.primary_device
+            .as_ref()
+            .and_then(|path| self.devices.get(path))
     }
 
     /// Sets an explicit preferred rendering GPU.
@@ -267,7 +275,9 @@ impl GpuManager {
 
     /// Returns the explicitly preferred rendering GPU, if configured.
     pub fn preferred_render_device(&self) -> Option<&GpuDevice> {
-        self.preferred_render_device.as_ref().and_then(|path| self.devices.get(path))
+        self.preferred_render_device
+            .as_ref()
+            .and_then(|path| self.devices.get(path))
     }
 
     /// Selects an available rendering GPU.
@@ -290,7 +300,10 @@ impl GpuManager {
         self.preferred_render_device()
             .filter(|device| device.is_available())
             .or_else(|| self.primary_device().filter(|device| device.is_available()))
-            .or_else(|| self.get_device(output_device_path).filter(|device| device.is_available()))
+            .or_else(|| {
+                self.get_device(output_device_path)
+                    .filter(|device| device.is_available())
+            })
     }
 
     /// Returns a registered GPU by its DRM path.

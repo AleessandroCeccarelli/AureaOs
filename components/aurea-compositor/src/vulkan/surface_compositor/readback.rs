@@ -8,9 +8,8 @@
 use smithay::reexports::ash::vk;
 
 use super::{
-    BACKGROUND_COLOR, VulkanClearPass, VulkanCommandBuffer, VulkanImageState,
-    VulkanImageView, VulkanLogicalDevice, VulkanReadbackBuffer,
-    VulkanSurfaceCompositionError,
+    BACKGROUND_COLOR, VulkanClearPass, VulkanCommandBuffer, VulkanImageState, VulkanImageView,
+    VulkanLogicalDevice, VulkanReadbackBuffer, VulkanSurfaceCompositionError,
 };
 
 /// Clears an empty scene and copies its RGBA8 result into host-visible memory.

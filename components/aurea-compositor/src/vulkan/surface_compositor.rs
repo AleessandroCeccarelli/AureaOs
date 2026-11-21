@@ -6,15 +6,15 @@
 //! SHM surface composition into a Vulkan DRM scanout image.
 
 mod error;
-mod release;
 mod readback;
 mod readback_entry;
+mod release;
 mod visible_surfaces;
 
 pub(crate) use error::VulkanSurfaceCompositionError;
-use release::{clear_and_release, clear_display_and_release};
 use readback::clear_and_readback;
 pub(crate) use readback_entry::render_and_readback;
+use release::{clear_and_release, clear_display_and_release};
 use visible_surfaces::visible_surfaces;
 
 use std::sync::Arc;
@@ -62,11 +62,17 @@ pub(crate) fn render_and_release(
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
     render_frame(
-        device, view, target, scene, surface_cache, previous_image_state,
-        display_color, None, on_submitted,
+        device,
+        view,
+        target,
+        scene,
+        surface_cache,
+        previous_image_state,
+        display_color,
+        None,
+        on_submitted,
     )
 }
-
 
 pub(super) fn render_frame(
     device: &VulkanLogicalDevice,
@@ -151,15 +157,19 @@ pub(super) fn render_frame(
                     "Readback clear with display-color pass is not supported yet".into(),
                 ));
             }
-            return clear_and_readback(
-                device, view, previous_image_state, readback,
-            );
+            return clear_and_readback(device, view, previous_image_state, readback);
         }
         return match display_color {
             Some((pass, warmth, intermediate_view, intermediate_state)) => {
                 clear_display_and_release(
-                    device, view, previous_image_state, pass, warmth,
-                    intermediate_view, intermediate_state, on_submitted,
+                    device,
+                    view,
+                    previous_image_state,
+                    pass,
+                    warmth,
+                    intermediate_view,
+                    intermediate_state,
+                    on_submitted,
                 )
             }
             None => clear_and_release(device, view, previous_image_state, on_submitted),

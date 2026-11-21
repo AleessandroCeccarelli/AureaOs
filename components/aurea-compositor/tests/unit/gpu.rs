@@ -1,7 +1,9 @@
 use crate::gpu::*;
 use std::path::PathBuf;
 
-fn path(value: &str) -> PathBuf { PathBuf::from(value) }
+fn path(value: &str) -> PathBuf {
+    PathBuf::from(value)
+}
 
 #[test]
 fn manager_starts_empty() {
@@ -85,7 +87,9 @@ fn unavailable_preferred_device_falls_back_to_primary() {
     manager.register_device(preferred.clone()).unwrap();
     manager.set_primary_device(&primary).unwrap();
     manager.set_preferred_render_device(&preferred).unwrap();
-    manager.set_device_availability(&preferred, GpuAvailability::Unavailable).unwrap();
+    manager
+        .set_device_availability(&preferred, GpuAvailability::Unavailable)
+        .unwrap();
     assert_eq!(manager.selected_render_device().unwrap().path(), primary);
 }
 
@@ -104,7 +108,13 @@ fn output_gpu_is_used_when_no_preference_or_primary_exists() {
     let output = path("/dev/dri/card1");
     manager.register_device(path("/dev/dri/card0")).unwrap();
     manager.register_device(output.clone()).unwrap();
-    assert_eq!(manager.selected_render_device_for_output(&output).unwrap().path(), output);
+    assert_eq!(
+        manager
+            .selected_render_device_for_output(&output)
+            .unwrap()
+            .path(),
+        output
+    );
 }
 
 #[test]
@@ -115,7 +125,13 @@ fn preferred_gpu_overrides_output_gpu_for_output_selection() {
     manager.register_device(output.clone()).unwrap();
     manager.register_device(preferred.clone()).unwrap();
     manager.set_preferred_render_device(&preferred).unwrap();
-    assert_eq!(manager.selected_render_device_for_output(&output).unwrap().path(), preferred);
+    assert_eq!(
+        manager
+            .selected_render_device_for_output(&output)
+            .unwrap()
+            .path(),
+        preferred
+    );
 }
 
 #[test]
@@ -161,13 +177,30 @@ fn primary_policy_prefers_explicit_hardware_device() {
     let preferred = path("/dev/dri/card1");
     manager.register_device(panel.clone()).unwrap();
     manager.register_device(preferred.clone()).unwrap();
-    manager.set_selection_metadata(&panel, GpuSelectionMetadata {
-        hardware_rendering: true, has_builtin_panel: true, ..Default::default()
-    }).unwrap();
-    manager.set_selection_metadata(&preferred, GpuSelectionMetadata {
-        hardware_rendering: true, preferred_primary: true, ..Default::default()
-    }).unwrap();
-    assert_eq!(manager.select_primary_by_policy().unwrap().path(), preferred);
+    manager
+        .set_selection_metadata(
+            &panel,
+            GpuSelectionMetadata {
+                hardware_rendering: true,
+                has_builtin_panel: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    manager
+        .set_selection_metadata(
+            &preferred,
+            GpuSelectionMetadata {
+                hardware_rendering: true,
+                preferred_primary: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        manager.select_primary_by_policy().unwrap().path(),
+        preferred
+    );
 }
 
 #[test]
@@ -177,12 +210,26 @@ fn primary_policy_prefers_builtin_panel_before_platform_and_boot_vga() {
     let panel = path("/dev/dri/card1");
     manager.register_device(platform.clone()).unwrap();
     manager.register_device(panel.clone()).unwrap();
-    manager.set_selection_metadata(&platform, GpuSelectionMetadata {
-        hardware_rendering: true, is_platform_device: true, ..Default::default()
-    }).unwrap();
-    manager.set_selection_metadata(&panel, GpuSelectionMetadata {
-        hardware_rendering: true, has_builtin_panel: true, ..Default::default()
-    }).unwrap();
+    manager
+        .set_selection_metadata(
+            &platform,
+            GpuSelectionMetadata {
+                hardware_rendering: true,
+                is_platform_device: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    manager
+        .set_selection_metadata(
+            &panel,
+            GpuSelectionMetadata {
+                hardware_rendering: true,
+                has_builtin_panel: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
     assert_eq!(manager.select_primary_by_policy().unwrap().path(), panel);
 }
 
@@ -193,15 +240,27 @@ fn primary_policy_prefers_hardware_renderer_before_software_panel_candidate() {
     let hardware = path("/dev/dri/card1");
     manager.register_device(software.clone()).unwrap();
     manager.register_device(hardware.clone()).unwrap();
-    manager.set_selection_metadata(&software, GpuSelectionMetadata {
-        has_builtin_panel: true, ..Default::default()
-    }).unwrap();
-    manager.set_selection_metadata(&hardware, GpuSelectionMetadata {
-        hardware_rendering: true, is_boot_vga: true, ..Default::default()
-    }).unwrap();
+    manager
+        .set_selection_metadata(
+            &software,
+            GpuSelectionMetadata {
+                has_builtin_panel: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    manager
+        .set_selection_metadata(
+            &hardware,
+            GpuSelectionMetadata {
+                hardware_rendering: true,
+                is_boot_vga: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
     assert_eq!(manager.select_primary_by_policy().unwrap().path(), hardware);
 }
-
 
 #[test]
 fn primary_policy_honors_explicit_preference_without_hardware_renderer() {
@@ -210,15 +269,25 @@ fn primary_policy_honors_explicit_preference_without_hardware_renderer() {
     let hardware = path("/dev/dri/card1");
     manager.register_device(preferred.clone()).unwrap();
     manager.register_device(hardware.clone()).unwrap();
-    manager.set_selection_metadata(&preferred, GpuSelectionMetadata {
-        preferred_primary: true,
-        ..Default::default()
-    }).unwrap();
-    manager.set_selection_metadata(&hardware, GpuSelectionMetadata {
-        hardware_rendering: true,
-        has_builtin_panel: true,
-        ..Default::default()
-    }).unwrap();
+    manager
+        .set_selection_metadata(
+            &preferred,
+            GpuSelectionMetadata {
+                preferred_primary: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    manager
+        .set_selection_metadata(
+            &hardware,
+            GpuSelectionMetadata {
+                hardware_rendering: true,
+                has_builtin_panel: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
 
     assert_eq!(
         manager.select_primary_by_policy().unwrap().path(),
@@ -233,12 +302,31 @@ fn primary_policy_ignores_unavailable_devices() {
     let available = path("/dev/dri/card1");
     manager.register_device(unavailable.clone()).unwrap();
     manager.register_device(available.clone()).unwrap();
-    manager.set_selection_metadata(&unavailable, GpuSelectionMetadata {
-        preferred_primary: true, hardware_rendering: true, ..Default::default()
-    }).unwrap();
-    manager.set_device_availability(&unavailable, GpuAvailability::Unavailable).unwrap();
-    manager.set_selection_metadata(&available, GpuSelectionMetadata {
-        hardware_rendering: true, is_boot_vga: true, ..Default::default()
-    }).unwrap();
-    assert_eq!(manager.select_primary_by_policy().unwrap().path(), available);
+    manager
+        .set_selection_metadata(
+            &unavailable,
+            GpuSelectionMetadata {
+                preferred_primary: true,
+                hardware_rendering: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    manager
+        .set_device_availability(&unavailable, GpuAvailability::Unavailable)
+        .unwrap();
+    manager
+        .set_selection_metadata(
+            &available,
+            GpuSelectionMetadata {
+                hardware_rendering: true,
+                is_boot_vga: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        manager.select_primary_by_policy().unwrap().path(),
+        available
+    );
 }

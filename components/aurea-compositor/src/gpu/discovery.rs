@@ -5,11 +5,7 @@
 
 //! Reads GPU selection hints from Linux sysfs and the udev database.
 
-use std::{
-    fs,
-    io,
-    path::Path,
-};
+use std::{fs, io, path::Path};
 
 use super::GpuSelectionMetadata;
 
@@ -17,9 +13,7 @@ use super::GpuSelectionMetadata;
 ///
 /// Missing sysfs or udev attributes are treated as absent hints: discovery
 /// must remain non-fatal on kernels and systems exposing partial metadata.
-pub fn discover_gpu_selection_metadata(
-    device_path: &Path,
-) -> io::Result<GpuSelectionMetadata> {
+pub fn discover_gpu_selection_metadata(device_path: &Path) -> io::Result<GpuSelectionMetadata> {
     discover_gpu_selection_metadata_from(
         device_path,
         Path::new("/sys"),
@@ -48,8 +42,8 @@ fn discover_gpu_selection_metadata_from(
         .map(|path| path.to_string_lossy().contains("/bus/platform"))
         .unwrap_or(false);
 
-    let is_boot_vga = read_trimmed(&device_sysfs.join("boot_vga"))
-        .is_some_and(|value| value == "1");
+    let is_boot_vga =
+        read_trimmed(&device_sysfs.join("boot_vga")).is_some_and(|value| value == "1");
 
     let has_builtin_panel = fs::read_dir(sysfs_root.join("class/drm"))
         .ok()
@@ -59,7 +53,9 @@ fn discover_gpu_selection_metadata_from(
         .filter(|entry| {
             let name = entry.file_name().to_string_lossy().into_owned();
             name.starts_with(&format!("{}-", card_name.to_string_lossy()))
-                && ["eDP-", "LVDS-", "DSI-"].iter().any(|kind| name.contains(kind))
+                && ["eDP-", "LVDS-", "DSI-"]
+                    .iter()
+                    .any(|kind| name.contains(kind))
         })
         .any(|entry| read_trimmed(&entry.path().join("status")).as_deref() == Some("connected"));
 
@@ -89,7 +85,9 @@ fn read_udev_preferred_primary(udev_data_root: &Path, device_number: &str) -> bo
 }
 
 fn read_trimmed(path: &Path) -> Option<String> {
-    fs::read_to_string(path).ok().map(|value| value.trim().to_owned())
+    fs::read_to_string(path)
+        .ok()
+        .map(|value| value.trim().to_owned())
 }
 
 #[cfg(test)]

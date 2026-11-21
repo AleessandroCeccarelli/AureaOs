@@ -17,8 +17,8 @@ use crate::{
     render::RenderScene,
     renderer::{RenderBackend, RenderTarget},
     vulkan::{
-        surface_compositor, VulkanBackend, VulkanImageAllocator, VulkanImageRequest,
-        VulkanImageState, VulkanImageView, VulkanReadbackBuffer,
+        VulkanBackend, VulkanImageAllocator, VulkanImageRequest, VulkanImageState, VulkanImageView,
+        VulkanReadbackBuffer, surface_compositor,
     },
 };
 
@@ -126,14 +126,11 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
         let view = VulkanImageView::color(&image).map_err(|error| {
             VulkanCpuScanoutError(format!("Vulkan output image view failed: {error}"))
         })?;
-        let readback = VulkanReadbackBuffer::new(
-            self.vulkan.device(),
-            target.width(),
-            target.height(),
-        )
-        .map_err(|error| {
-            VulkanCpuScanoutError(format!("Vulkan readback allocation failed: {error}"))
-        })?;
+        let readback =
+            VulkanReadbackBuffer::new(self.vulkan.device(), target.width(), target.height())
+                .map_err(|error| {
+                    VulkanCpuScanoutError(format!("Vulkan readback allocation failed: {error}"))
+                })?;
 
         surface_compositor::render_and_readback(
             self.vulkan.device(),
