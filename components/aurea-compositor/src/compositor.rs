@@ -13,10 +13,7 @@ use aurea_desktop_api::{
 
 use smithay::{
     backend::input::Keycode,
-    input::{
-        Seat, SeatHandler, SeatState, pointer::CursorImageStatus, tablet::TabletSeatHandler,
-        touch::TouchHandle,
-    },
+    input::{Seat, SeatHandler, SeatState, pointer::CursorImageStatus, touch::TouchHandle},
     output::Output,
     reexports::wayland_server::{
         DisplayHandle,
@@ -24,7 +21,7 @@ use smithay::{
     },
     wayland::{
         compositor::CompositorState, shell::xdg::XdgShellState, shm::ShmState,
-        tablet_manager::TabletManagerState,
+        tablet_manager::{TabletManagerState, TabletSeatHandler},
     },
 };
 
