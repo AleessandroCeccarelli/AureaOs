@@ -20,16 +20,12 @@ use crate::{
     renderer::RenderTarget,
 };
 
-use super::VulkanSurfaceCompositionError;
-
 /// Resolves the cursor rectangle, clipping and texture transform for an output.
 pub(super) fn native_cursor_geometry(
     scene: &RenderScene<'_>,
     target: &RenderTarget,
-) -> Result<Option<(SurfaceGeometry, SurfaceScissor, u32)>, VulkanSurfaceCompositionError> {
-    let Some(location) = scene.native_cursor_location() else {
-        return Ok(None);
-    };
+) -> Option<(SurfaceGeometry, SurfaceScissor, u32)> {
+    let location = scene.native_cursor_location()?;
     let scale = scene.native_cursor_scale();
     let scaled_width =
         (crate::render::cursor::DEFAULT_CURSOR_WIDTH as f64 * scale).round() as u32;
@@ -55,22 +51,17 @@ pub(super) fn native_cursor_geometry(
             target.scale(),
         )
     }
-    .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+    ?;
     let geometry = transform_geometry_for_output(
         geometry,
         target.width(),
         target.height(),
         target.transform(),
-    )
-    .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
-    let Some(scissor) = geometry.scissor(target.width(), target.height()) else {
-        return Ok(None);
-    };
+    )?;
+    let scissor = geometry.scissor(target.width(), target.height())?;
     let texture_transform = surface_transform_index(
-        compose_surface_transforms(Transform::Normal, target.transform())
-            .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
-    )
-    .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+        compose_surface_transforms(Transform::Normal, target.transform())?,
+    )?;
 
-    Ok(Some((geometry, scissor, texture_transform)))
+    Some((geometry, scissor, texture_transform))
 }
