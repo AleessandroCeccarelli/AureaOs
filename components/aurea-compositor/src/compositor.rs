@@ -83,6 +83,8 @@ pub struct AureaCompositor {
     _pointer_gestures_state: smithay::wayland::pointer_gestures::PointerGesturesState,
     _tablet_manager_state: TabletManagerState,
     pointing_devices: PointingDeviceService,
+    pointer_device_settings: HashMap<aurea_desktop_api::input::InputDeviceId, PointerSettings>,
+    touchpad_device_settings: HashMap<aurea_desktop_api::input::InputDeviceId, aurea_desktop_api::input::TouchpadSettings>,
     touchscreen_outputs: TouchscreenOutputMap,
     touchscreen_calibrations: TouchscreenCalibrationMap,
     touchscreen_slots: TouchscreenSlotMap,
@@ -147,6 +149,8 @@ impl AureaCompositor {
             _pointer_gestures_state: pointer_gestures_state,
             _tablet_manager_state: tablet_manager_state,
             pointing_devices: PointingDeviceService::new(),
+            pointer_device_settings: HashMap::new(),
+            touchpad_device_settings: HashMap::new(),
             touchscreen_outputs: TouchscreenOutputMap::new(),
             touchscreen_calibrations: TouchscreenCalibrationMap::default(),
             touchscreen_slots: TouchscreenSlotMap::new(),
@@ -301,14 +305,58 @@ impl AureaCompositor {
         self.interaction_engine.set_profile(profile);
     }
 
-    /// Returns the active pointer preferences.
+    /// Returns the default pointer preferences for devices without an override.
     pub fn pointer_settings(&self) -> PointerSettings {
         self.pointer_settings
     }
 
-    /// Updates validated pointer preferences.
+    /// Returns preferences for one physical pointer.
+    pub fn pointer_settings_for(
+        &self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> PointerSettings {
+        self.pointer_device_settings.get(&device).copied().unwrap_or(self.pointer_settings)
+    }
+
+    /// Updates the default pointer preferences.
     pub fn set_pointer_settings(&mut self, settings: PointerSettings) {
         self.pointer_settings = settings;
+    }
+
+    /// Sets a per-device pointer profile for a connected mouse or touchpad.
+    pub fn set_pointer_device_settings(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+        settings: PointerSettings,
+    ) -> bool {
+        if !self.pointing_devices.device(device).is_some_and(|descriptor| {
+            matches!(descriptor.kind, aurea_desktop_api::input::InputDeviceKind::Mouse | aurea_desktop_api::input::InputDeviceKind::Touchpad)
+        }) {
+            return false;
+        }
+        self.pointer_device_settings.insert(device, settings);
+        true
+    }
+
+    /// Returns touchpad preferences for one device, falling back to defaults.
+    pub fn touchpad_settings_for(
+        &self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> aurea_desktop_api::input::TouchpadSettings {
+        self.touchpad_device_settings.get(&device).copied().unwrap_or_default()
+    }
+
+    /// Sets touchpad preferences for one connected touchpad.
+    pub fn set_touchpad_device_settings(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+        settings: aurea_desktop_api::input::TouchpadSettings,
+    ) -> bool {
+        if !self.pointing_devices.device(device).is_some_and(|descriptor| descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchpad) {
+            return false;
+        }
+        self.touchpad_device_settings.insert(device, settings);
+        true
     }
 
     /// Returns the output manager.
@@ -363,6 +411,8 @@ impl AureaCompositor {
         self.touchscreen_outputs.remove_device(device);
         self.touchscreen_calibrations.remove_device(device);
         self.touchscreen_slots.remove_device(device);
+        self.pointer_device_settings.remove(&device);
+        self.touchpad_device_settings.remove(&device);
     }
 
     /// Releases tracker entries for destroyed Wayland surfaces.
