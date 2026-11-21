@@ -210,10 +210,14 @@ impl AureaCompositor {
         output: OutputId,
     ) -> bool {
         if !self
-            .output_manager
-            .registry()
-            .get(output)
-            .is_some_and(|display| display.is_enabled())
+            .pointing_devices
+            .device(device)
+            .is_some_and(|descriptor| descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchscreen)
+            || !self
+                .output_manager
+                .registry()
+                .get(output)
+                .is_some_and(|display| display.is_enabled())
         {
             return false;
         }
