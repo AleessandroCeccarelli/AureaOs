@@ -68,7 +68,10 @@ impl AureaCompositor {
         let output = self.touchscreen_output(device)?;
         let bounds = self.output_manager.logical_bounds(output).ok()??;
         let size = bounds.size();
-        (size.width > 0 && size.height > 0).then_some((size.width, size.height))
+        let width = i32::try_from(size.width).ok()?;
+        let height = i32::try_from(size.height).ok()?;
+
+        (width > 0 && height > 0).then_some((width, height))
     }
 
     /// Starts a contact from one physical touchscreen.
