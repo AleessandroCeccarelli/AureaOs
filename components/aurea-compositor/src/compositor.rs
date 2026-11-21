@@ -289,7 +289,7 @@ impl AureaCompositor {
         surface_output_reconciliation::reconcile(self);
     }
 
-    /// Releases tracker entries for destroyed Wayland surfaces.
+    /// Clears gesture and touchscreen routing state for a disconnected device.
     pub fn remove_pointing_device_state(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
         self.interaction_engine.remove_device(device);
         self.touchscreen_outputs.remove_device(device);
