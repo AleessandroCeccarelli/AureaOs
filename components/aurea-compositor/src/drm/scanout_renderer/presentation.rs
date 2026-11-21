@@ -11,10 +11,7 @@ use smithay::{
 };
 
 use crate::{
-    drm::{
-        presentation::DrmFramebufferId,
-        presentation_backend::DrmPresentationBackend,
-    },
+    drm::{presentation::DrmFramebufferId, presentation_backend::DrmPresentationBackend},
     render::RenderScene,
     renderer::RenderTarget,
     vulkan::{
@@ -144,4 +141,3 @@ pub(super) fn render_and_present(
         .submit_after_gpu_completion(surface, framebuffer, &[plane_state])
         .map_err(|error| VulkanScanoutError::new(error.to_string()))
 }
-

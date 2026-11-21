@@ -331,7 +331,6 @@ fn primary_policy_ignores_unavailable_devices() {
     );
 }
 
-
 #[test]
 fn output_selection_prefers_ready_hardware_over_preferred_software_renderer() {
     let mut manager = GpuManager::new();

@@ -53,7 +53,8 @@ impl VulkanDeviceInfo {
     pub(super) fn from_device(device: &PhysicalDevice, has_graphics_queue: bool) -> Self {
         let external_memory = VulkanExternalMemoryCapabilities::from_device(device);
         let has_dmabuf_export_extensions = external_memory.supports_dmabuf_export;
-        let rendering_error = VulkanContext::rendering_compatibility_error(device, has_graphics_queue);
+        let rendering_error =
+            VulkanContext::rendering_compatibility_error(device, has_graphics_queue);
 
         Self {
             name: device.name().to_owned(),
