@@ -5,6 +5,8 @@
 
 //! Coordinated pointing-device services.
 
+mod discovery;
 mod registry;
 
 pub use registry::PointingDeviceService;
+pub(super) use discovery::describe;
