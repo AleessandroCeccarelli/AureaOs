@@ -82,21 +82,31 @@ impl<'device, T: std::os::fd::AsFd> GbmCpuUploadAllocator<'device, T> {
         Self { device }
     }
 
-    /// Allocates a WRITE|SCANOUT ABGR8888 buffer after checking driver support.
+    /// Allocates a WRITE|SCANOUT buffer in a format supported by the KMS plane.
     pub(crate) fn allocate(
         &self,
         width: u32,
         height: u32,
+        plane_formats: &[Fourcc],
     ) -> Result<GbmCpuUploadBuffer, GbmCpuUploadAllocationError> {
         if width == 0 || height == 0 {
             return Err(GbmCpuUploadAllocationError::InvalidDimensions);
         }
 
-        let format = Fourcc::Abgr8888;
         let usage = GbmBufferFlags::WRITE | GbmBufferFlags::SCANOUT;
-        if !self.device.is_format_supported(format, usage) {
-            return Err(GbmCpuUploadAllocationError::UnsupportedFormatUsage { format });
-        }
+        let format = [Fourcc::Xrgb8888, Fourcc::Argb8888, Fourcc::Abgr8888]
+            .into_iter()
+            .find(|format| {
+                plane_formats.contains(format) && self.device.is_format_supported(*format, usage)
+            })
+            .ok_or_else(|| {
+                let format = plane_formats
+                    .iter()
+                    .copied()
+                    .find(|format| matches!(format, Fourcc::Xrgb8888 | Fourcc::Argb8888 | Fourcc::Abgr8888))
+                    .unwrap_or(Fourcc::Xrgb8888);
+                GbmCpuUploadAllocationError::UnsupportedFormatUsage { format }
+            })?;
 
         let buffer_object = self
             .device
