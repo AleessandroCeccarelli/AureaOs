@@ -47,6 +47,7 @@ mod pointer_bounds;
 mod pointer_button;
 mod pointer_gestures;
 mod pointer_placement;
+mod pointer_settings;
 mod rendering;
 mod surface_output_reconciliation;
 mod surface_output_tracking;
@@ -301,50 +302,6 @@ impl AureaCompositor {
     /// Replaces the default desktop gesture bindings.
     pub fn set_gesture_profile(&mut self, profile: GestureProfile) {
         self.interaction_engine.set_profile(profile);
-    }
-
-    /// Returns the default pointer preferences for devices without an override.
-    pub fn pointer_settings(&self) -> PointerSettings {
-        self.pointer_settings
-    }
-
-    /// Returns preferences for one physical pointer.
-    pub fn pointer_settings_for(
-        &self,
-        device: aurea_desktop_api::input::InputDeviceId,
-    ) -> PointerSettings {
-        self.pointing_settings.pointer(device, self.pointer_settings)
-    }
-
-    /// Updates the default pointer preferences.
-    pub fn set_pointer_settings(&mut self, settings: PointerSettings) {
-        self.pointer_settings = settings;
-    }
-
-    /// Sets a per-device pointer profile for a connected mouse or touchpad.
-    pub fn set_pointer_device_settings(
-        &mut self,
-        device: aurea_desktop_api::input::InputDeviceId,
-        settings: PointerSettings,
-    ) -> bool {
-        self.pointing_settings.set_pointer(&self.pointing_devices, device, settings)
-    }
-
-    /// Returns touchpad preferences for one device, falling back to defaults.
-    pub fn touchpad_settings_for(
-        &self,
-        device: aurea_desktop_api::input::InputDeviceId,
-    ) -> aurea_desktop_api::input::TouchpadSettings {
-        self.pointing_settings.touchpad(device)
-    }
-
-    /// Sets touchpad preferences for one connected touchpad.
-    pub fn set_touchpad_device_settings(
-        &mut self,
-        device: aurea_desktop_api::input::InputDeviceId,
-        settings: aurea_desktop_api::input::TouchpadSettings,
-    ) -> bool {
-        self.pointing_settings.set_touchpad(&self.pointing_devices, device, settings)
     }
 
     /// Returns the output manager.
