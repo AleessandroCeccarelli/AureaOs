@@ -8,6 +8,7 @@
 use std::{collections::VecDeque, sync::mpsc::{Receiver, RecvTimeoutError}, time::Duration};
 
 use aurea_desktop_api::desktop_interaction::{DesktopInteraction, DesktopInteractionReceiver};
+use aurea_desktop_api::input::{touchpad_settings_channel, InputDeviceId, TouchpadSettings, TouchpadSettingsController};
 
 use aurea_desktop_api::display::{DisplayColorAdjustment, DisplayColorController};
 
@@ -27,6 +28,7 @@ pub struct ShellRuntime {
     session: DesktopSession,
     desktop: DesktopState,
     display_color: DisplayColorController,
+    touchpad_settings: TouchpadSettingsController,
     pending_desktop_interactions: VecDeque<DesktopInteraction>,
 }
 
@@ -38,11 +40,21 @@ impl ShellRuntime {
 
     /// Creates a runtime connected to the compositor's shared display policy.
     pub fn with_display_color(display_color: DisplayColorController) -> Self {
+        let (touchpad_settings, _receiver) = touchpad_settings_channel();
+        Self::with_controllers(display_color, touchpad_settings)
+    }
+
+    /// Creates a runtime with shared display and touchpad policy channels.
+    pub fn with_controllers(
+        display_color: DisplayColorController,
+        touchpad_settings: TouchpadSettingsController,
+    ) -> Self {
         Self {
             lifecycle: ShellLifecycle::new(),
             session: DesktopSession::new(),
             desktop: DesktopState::default(),
             display_color,
+            touchpad_settings,
             pending_desktop_interactions: VecDeque::new(),
         }
     }
@@ -60,6 +72,15 @@ impl ShellRuntime {
     pub fn set_night_light(&mut self, state: NightLightState, schedule_active: bool) {
         self.desktop.night_light = state;
         self.update_night_light(schedule_active);
+    }
+
+    /// Requests a live profile update for one connected touchpad.
+    pub fn set_touchpad_settings(
+        &self,
+        device: InputDeviceId,
+        settings: TouchpadSettings,
+    ) -> bool {
+        self.touchpad_settings.set(device, settings).is_ok()
     }
 
     /// Returns the latest effective display adjustment.
