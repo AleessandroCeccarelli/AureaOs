@@ -12,7 +12,7 @@ use smithay::{
 };
 
 use super::AureaCompositor;
-use crate::output::OutputId;
+use crate::{input::pointing::touchscreen_transform::transform_touch_coordinates, output::OutputId};
 
 impl AureaCompositor {
     /// Converts normalized device coordinates into global logical coordinates.
@@ -33,13 +33,21 @@ impl AureaCompositor {
         let bounds = self.output_manager.logical_bounds(output).ok()??;
         let origin = bounds.origin();
         let size = bounds.size();
+        let transform = self.output_manager.registry().get(output)?.transform();
 
-        if size.width <= 0 || size.height <= 0 {
+        if size.width == 0 || size.height == 0 {
             return None;
         }
 
-        let local_x = x.clamp(0.0, f64::from(size.width - 1));
-        let local_y = y.clamp(0.0, f64::from(size.height - 1));
+        let (transformed_x, transformed_y) = transform_touch_coordinates(
+            transform,
+            x,
+            y,
+            f64::from(size.width),
+            f64::from(size.height),
+        )?;
+        let local_x = transformed_x.clamp(0.0, f64::from(size.width - 1));
+        let local_y = transformed_y.clamp(0.0, f64::from(size.height - 1));
 
         Some(Point::from((
             f64::from(origin.x) + local_x,
