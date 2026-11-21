@@ -16,39 +16,33 @@ use crate::state::ShellState;
 
 
 #[test]
-fn desktop_workspace_interactions_update_shell_state_and_remain_available() {
+fn compositor_workspace_updates_are_mirrored_exactly_by_shell() {
     use aurea_desktop_api::desktop_interaction::DesktopInteraction;
 
     let mut runtime = ShellRuntime::new();
 
-    runtime.handle_desktop_interaction(DesktopInteraction::NextWorkspace);
-    assert_eq!(runtime.desktop_state().workspaces.active(), 1);
+    runtime.handle_desktop_interaction(DesktopInteraction::WorkspaceChanged { index: 2 });
+    assert_eq!(runtime.desktop_state().workspaces.active(), 2);
     assert_eq!(
         runtime.take_desktop_interaction(),
-        Some(DesktopInteraction::NextWorkspace)
+        Some(DesktopInteraction::WorkspaceChanged { index: 2 })
     );
 
-    runtime.handle_desktop_interaction(DesktopInteraction::PreviousWorkspace);
+    runtime.handle_desktop_interaction(DesktopInteraction::WorkspaceChanged { index: 0 });
     assert_eq!(runtime.desktop_state().workspaces.active(), 0);
-    assert_eq!(
-        runtime.take_desktop_interaction(),
-        Some(DesktopInteraction::PreviousWorkspace)
-    );
 }
 
 #[test]
-fn previous_workspace_interaction_wraps_to_last_workspace() {
+fn shell_ignores_invalid_compositor_workspace_index() {
     use aurea_desktop_api::desktop_interaction::DesktopInteraction;
     use crate::desktop::WORKSPACE_COUNT;
 
     let mut runtime = ShellRuntime::new();
+    runtime.handle_desktop_interaction(DesktopInteraction::WorkspaceChanged {
+        index: WORKSPACE_COUNT,
+    });
 
-    runtime.handle_desktop_interaction(DesktopInteraction::PreviousWorkspace);
-
-    assert_eq!(
-        runtime.desktop_state().workspaces.active(),
-        WORKSPACE_COUNT - 1
-    );
+    assert_eq!(runtime.desktop_state().workspaces.active(), 0);
 }
 
 #[test]
