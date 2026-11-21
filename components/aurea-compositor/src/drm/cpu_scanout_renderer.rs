@@ -101,6 +101,17 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
                 VulkanCpuScanoutError("GBM device is unavailable for CPU presentation".into())
             })?;
 
+        let drm_fd = self.drm_device.fd();
+        let (surface, pool, presenter) = self.output.cpu_parts_mut();
+        if surface.is_legacy() {
+            return Err(VulkanCpuScanoutError(
+                "CPU compatibility presentation currently requires atomic KMS".into(),
+            ));
+        }
+        if pool.pending().is_some() {
+            return Ok(());
+        }
+
         let image = VulkanImageAllocator::new(self.vulkan.device())
             .allocate(VulkanImageRequest::render_target(
                 target.width(),
@@ -140,17 +151,6 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
         let pixels = readback.read_rgba8().map_err(|error| {
             VulkanCpuScanoutError(format!("Vulkan output readback failed: {error}"))
         })?;
-
-        let drm_fd = self.drm_device.fd();
-        let (surface, pool, presenter) = self.output.cpu_parts_mut();
-        if surface.is_legacy() {
-            return Err(VulkanCpuScanoutError(
-                "CPU compatibility presentation currently requires atomic KMS".into(),
-            ));
-        }
-        if pool.pending().is_some() {
-            return Ok(());
-        }
 
         let candidate = pool
             .allocate(gbm, drm_fd, target.width(), target.height())
