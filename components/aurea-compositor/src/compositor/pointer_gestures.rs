@@ -118,7 +118,7 @@ impl AureaCompositor {
         &mut self,
         device: aurea_desktop_api::input::InputDeviceId,
         fingers: u32,
-        time: u64,
+        time: u32,
     ) {
         if !self
             .pointer_gesture_owner
@@ -178,7 +178,7 @@ impl AureaCompositor {
         &mut self,
         device: aurea_desktop_api::input::InputDeviceId,
         cancelled: bool,
-        time: u64,
+        time: u32,
     ) {
         if !self
             .pointer_gesture_owner
@@ -207,7 +207,7 @@ impl AureaCompositor {
         &mut self,
         device: aurea_desktop_api::input::InputDeviceId,
         fingers: u32,
-        time: u64,
+        time: u32,
     ) {
         if !self
             .pointer_gesture_owner
@@ -238,7 +238,7 @@ impl AureaCompositor {
         delta_y: f64,
         scale: f64,
         rotation: f64,
-        time: u64,
+        time: u32,
     ) {
         if !delta_x.is_finite()
             || !delta_y.is_finite()
@@ -275,7 +275,7 @@ impl AureaCompositor {
         &mut self,
         device: aurea_desktop_api::input::InputDeviceId,
         cancelled: bool,
-        time: u64,
+        time: u32,
     ) {
         if !self
             .pointer_gesture_owner
@@ -304,7 +304,7 @@ impl AureaCompositor {
         &mut self,
         device: aurea_desktop_api::input::InputDeviceId,
         fingers: u32,
-        time: u64,
+        time: u32,
     ) {
         if !self
             .pointer_gesture_owner
@@ -332,7 +332,7 @@ impl AureaCompositor {
         &mut self,
         device: aurea_desktop_api::input::InputDeviceId,
         cancelled: bool,
-        time: u64,
+        time: u32,
     ) {
         if !self
             .pointer_gesture_owner
