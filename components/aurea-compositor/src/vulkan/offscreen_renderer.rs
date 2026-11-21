@@ -106,13 +106,18 @@ impl<'device> VulkanOffscreenRenderer<'device> {
             commands.handle(),
             &view,
             VulkanImageState::Undefined,
-            VulkanImageState::TransferSource,
+            VulkanImageState::General,
             clear_color,
         )
         .map_err(VulkanOffscreenError::ClearPass)?;
 
         readback
-            .record_copy_rgba8(commands.handle(), &view)
+            .record_transition_and_copy_rgba8(
+                self.device,
+                commands.handle(),
+                &view,
+                VulkanImageState::General,
+            )
             .map_err(VulkanOffscreenError::Readback)?;
 
         commands.end().map_err(VulkanOffscreenError::Command)?;
@@ -177,7 +182,7 @@ impl<'device> VulkanOffscreenRenderer<'device> {
             &view,
             &pipeline,
             VulkanImageState::Undefined,
-            VulkanImageState::TransferSource,
+            VulkanImageState::General,
             VulkanColorLoad::Clear([0.0, 0.0, 0.0, 1.0]),
             3,
             1,
@@ -185,7 +190,12 @@ impl<'device> VulkanOffscreenRenderer<'device> {
         .map_err(VulkanOffscreenError::DrawPass)?;
 
         readback
-            .record_copy_rgba8(commands.handle(), &view)
+            .record_transition_and_copy_rgba8(
+                self.device,
+                commands.handle(),
+                &view,
+                VulkanImageState::General,
+            )
             .map_err(VulkanOffscreenError::Readback)?;
 
         commands.end().map_err(VulkanOffscreenError::Command)?;
