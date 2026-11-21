@@ -18,6 +18,10 @@ use super::{mouse, tablet, touchscreen, touchpad};
 /// Touchpads are identified through libinput's touchpad-specific configuration
 /// capabilities, not by guessing from the product name. Tablet tools take
 /// precedence over pointer and touch capabilities.
+pub(super) fn id_for(device: &Device) -> InputDeviceId {
+    InputDeviceId(stable_device_id(device.sysname()))
+}
+
 pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
     let pointer = device.has_capability(DeviceCapability::Pointer);
     let touch = device.has_capability(DeviceCapability::Touch);
@@ -46,7 +50,7 @@ pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
     }
 
     Some(InputDeviceDescriptor {
-        id: InputDeviceId(stable_device_id(device.sysname())),
+        id: id_for(device),
         name: device.name().to_string(),
         vendor_id: nonzero_id(device.id_vendor()),
         product_id: nonzero_id(device.id_product()),
