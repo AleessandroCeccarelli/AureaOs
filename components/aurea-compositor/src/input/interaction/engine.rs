@@ -3,9 +3,11 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Stateful coordinator for normalized pointing gestures.
+//! Per-device coordinator for normalized pointing gestures.
 
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
+
+use aurea_desktop_api::input::InputDeviceId;
 
 use super::{GestureProfile, PointingGesture, PointingInteraction};
 
@@ -18,12 +20,12 @@ enum ActiveGesture {
 
 /// Resolves provider gestures and queues semantic desktop intents.
 ///
-/// Providers interpret hardware events; this engine applies desktop policy.
-/// Wayland delivery remains a separate compositor responsibility.
+/// Active sequences are isolated by stable device identity, so events from
+/// multiple touchpads cannot overwrite one another.
 #[derive(Debug, Clone, Default)]
 pub struct InteractionEngine {
     profile: GestureProfile,
-    active: Option<ActiveGesture>,
+    active: HashMap<InputDeviceId, ActiveGesture>,
     pending: VecDeque<PointingInteraction>,
 }
 
@@ -43,61 +45,56 @@ impl InteractionEngine {
         &self.profile
     }
 
-    /// Starts a normalized swipe sequence.
-    pub fn begin_swipe(&mut self, fingers: u32) {
-        self.active = Some(ActiveGesture::Swipe {
+    /// Starts a swipe sequence for one physical device.
+    pub fn begin_swipe(&mut self, device: InputDeviceId, fingers: u32) {
+        self.active.insert(device, ActiveGesture::Swipe {
             fingers,
             delta_x: 0.0,
             delta_y: 0.0,
         });
     }
 
-    /// Adds a finite movement sample to the active swipe sequence.
-    pub fn update_swipe(&mut self, delta_x: f64, delta_y: f64) {
+    /// Adds a finite movement sample to that device's active swipe.
+    pub fn update_swipe(&mut self, device: InputDeviceId, delta_x: f64, delta_y: f64) {
         if !delta_x.is_finite() || !delta_y.is_finite() {
             return;
         }
-        if let Some(ActiveGesture::Swipe {
-            delta_x: total_x,
-            delta_y: total_y,
-            ..
-        }) = self.active.as_mut()
+        if let Some(ActiveGesture::Swipe { delta_x: total_x, delta_y: total_y, .. }) =
+            self.active.get_mut(&device)
         {
             *total_x += delta_x;
             *total_y += delta_y;
         }
     }
 
-    /// Completes or discards the active swipe sequence.
-    pub fn end_swipe(&mut self, cancelled: bool) {
-        let Some(ActiveGesture::Swipe {
-            fingers,
-            delta_x,
-            delta_y,
-        }) = self.active.take()
+    /// Completes or discards one device's swipe sequence.
+    pub fn end_swipe(&mut self, device: InputDeviceId, cancelled: bool) {
+        let Some(ActiveGesture::Swipe { fingers, delta_x, delta_y }) =
+            self.active.remove(&device)
         else {
             return;
         };
         if !cancelled {
-            self.resolve_and_queue(PointingGesture::Swipe {
-                fingers,
-                delta_x,
-                delta_y,
-            });
+            self.resolve_and_queue(PointingGesture::Swipe { fingers, delta_x, delta_y });
         }
     }
 
-    /// Starts a normalized pinch sequence.
-    pub fn begin_pinch(&mut self, fingers: u32) {
-        self.active = Some(ActiveGesture::Pinch {
+    /// Starts a pinch sequence for one physical device.
+    pub fn begin_pinch(&mut self, device: InputDeviceId, fingers: u32) {
+        self.active.insert(device, ActiveGesture::Pinch {
             fingers,
             scale: 1.0,
             rotation: 0.0,
         });
     }
 
-    /// Updates scale and rotation for the active pinch sequence.
-    pub fn update_pinch(&mut self, scale: f64, rotation: f64) {
+    /// Updates scale and rotation for that device's active pinch.
+    pub fn update_pinch(
+        &mut self,
+        device: InputDeviceId,
+        scale: f64,
+        rotation: f64,
+    ) {
         if !scale.is_finite() || !rotation.is_finite() {
             return;
         }
@@ -105,45 +102,43 @@ impl InteractionEngine {
             scale: total_scale,
             rotation: total_rotation,
             ..
-        }) = self.active.as_mut()
+        }) = self.active.get_mut(&device)
         {
             *total_scale = scale;
             *total_rotation += rotation;
         }
     }
 
-    /// Completes or discards the active pinch sequence.
-    pub fn end_pinch(&mut self, cancelled: bool) {
-        let Some(ActiveGesture::Pinch {
-            fingers,
-            scale,
-            rotation,
-        }) = self.active.take()
+    /// Completes or discards one device's pinch sequence.
+    pub fn end_pinch(&mut self, device: InputDeviceId, cancelled: bool) {
+        let Some(ActiveGesture::Pinch { fingers, scale, rotation }) =
+            self.active.remove(&device)
         else {
             return;
         };
         if !cancelled {
-            self.resolve_and_queue(PointingGesture::Pinch {
-                fingers,
-                scale,
-                rotation,
-            });
+            self.resolve_and_queue(PointingGesture::Pinch { fingers, scale, rotation });
         }
     }
 
-    /// Starts a hold sequence after the provider's hold threshold is reached.
-    pub fn begin_hold(&mut self, fingers: u32) {
-        self.active = Some(ActiveGesture::Hold { fingers });
+    /// Starts a hold sequence for one physical device.
+    pub fn begin_hold(&mut self, device: InputDeviceId, fingers: u32) {
+        self.active.insert(device, ActiveGesture::Hold { fingers });
     }
 
-    /// Completes or discards the active hold sequence.
-    pub fn end_hold(&mut self, cancelled: bool) {
-        let Some(ActiveGesture::Hold { fingers }) = self.active.take() else {
+    /// Completes or discards one device's hold sequence.
+    pub fn end_hold(&mut self, device: InputDeviceId, cancelled: bool) {
+        let Some(ActiveGesture::Hold { fingers }) = self.active.remove(&device) else {
             return;
         };
         if !cancelled {
             self.resolve_and_queue(PointingGesture::Hold { fingers });
         }
+    }
+
+    /// Clears all active sequences when a device disconnects.
+    pub fn remove_device(&mut self, device: InputDeviceId) {
+        self.active.remove(&device);
     }
 
     /// Returns and removes the next pending desktop interaction.
@@ -170,9 +165,10 @@ mod tests {
     #[test]
     fn completed_three_finger_swipe_queues_workspace_action() {
         let mut engine = InteractionEngine::new();
-        engine.begin_swipe(3);
-        engine.update_swipe(-80.0, 2.0);
-        engine.end_swipe(false);
+        let device = InputDeviceId(1);
+        engine.begin_swipe(device, 3);
+        engine.update_swipe(device, -80.0, 2.0);
+        engine.end_swipe(device, false);
 
         assert_eq!(
             engine.take_pending_interaction(),
@@ -182,11 +178,34 @@ mod tests {
     }
 
     #[test]
+    fn simultaneous_devices_keep_independent_swipe_sequences() {
+        let mut engine = InteractionEngine::new();
+        let first = InputDeviceId(1);
+        let second = InputDeviceId(2);
+        engine.begin_swipe(first, 3);
+        engine.begin_swipe(second, 3);
+        engine.update_swipe(first, -80.0, 0.0);
+        engine.update_swipe(second, 80.0, 0.0);
+        engine.end_swipe(first, false);
+        engine.end_swipe(second, false);
+
+        assert_eq!(
+            engine.take_pending_interaction(),
+            Some(PointingInteraction::NextWorkspace)
+        );
+        assert_eq!(
+            engine.take_pending_interaction(),
+            Some(PointingInteraction::PreviousWorkspace)
+        );
+    }
+
+    #[test]
     fn cancelled_swipe_does_not_queue_action() {
         let mut engine = InteractionEngine::new();
-        engine.begin_swipe(3);
-        engine.update_swipe(-100.0, 0.0);
-        engine.end_swipe(true);
+        let device = InputDeviceId(3);
+        engine.begin_swipe(device, 3);
+        engine.update_swipe(device, -100.0, 0.0);
+        engine.end_swipe(device, true);
 
         assert_eq!(engine.take_pending_interaction(), None);
     }
@@ -194,9 +213,10 @@ mod tests {
     #[test]
     fn completed_pinch_queues_overview_action() {
         let mut engine = InteractionEngine::new();
-        engine.begin_pinch(4);
-        engine.update_pinch(0.8, 0.0);
-        engine.end_pinch(false);
+        let device = InputDeviceId(4);
+        engine.begin_pinch(device, 4);
+        engine.update_pinch(device, 0.8, 0.0);
+        engine.end_pinch(device, false);
 
         assert_eq!(
             engine.take_pending_interaction(),
