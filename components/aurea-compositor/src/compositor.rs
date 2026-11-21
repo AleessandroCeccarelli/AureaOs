@@ -71,6 +71,7 @@ pub struct AureaCompositor {
     surface_output_tracker: SurfaceOutputTracker,
     cursor_image: CursorImageStatus,
     pointer_settings: PointerSettings,
+    _pointer_gestures_state: smithay::wayland::pointer_gestures::PointerGesturesState,
     pointing_devices: PointingDeviceService,
     interaction_engine: InteractionEngine,
     pointer_shake: PointerShakeDetector,
@@ -101,6 +102,8 @@ impl AureaCompositor {
         let shm_state = ShmState::new::<Self>(display, vec![Format::Argb8888, Format::Xrgb8888]);
         let xdg_shell_state = XdgShellState::new::<Self>(display);
         let fractional_scale_manager_state = fractional_scale::create_manager(display);
+        let pointer_gestures_state =
+            smithay::wayland::pointer_gestures::PointerGesturesState::new::<Self>(display);
         let mut seat_state = SeatState::new();
         let seat = seat_state.new_wl_seat(display, "seat0");
 
@@ -119,6 +122,7 @@ impl AureaCompositor {
             surface_output_tracker: SurfaceOutputTracker::new(),
             cursor_image: CursorImageStatus::default_named(),
             pointer_settings: PointerSettings::default(),
+            _pointer_gestures_state: pointer_gestures_state,
             pointing_devices: PointingDeviceService::new(),
             interaction_engine: InteractionEngine::new(),
             pointer_shake: PointerShakeDetector::default(),
