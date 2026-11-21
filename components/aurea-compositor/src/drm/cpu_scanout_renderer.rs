@@ -16,7 +16,10 @@ use crate::{
     drm::{device::DrmDevice, gbm::GbmDeviceManager, surfaces::ManagedDrmSurface},
     render::RenderScene,
     renderer::{RenderBackend, RenderTarget},
-    vulkan::{VulkanBackend, VulkanOffscreenRenderer},
+    vulkan::{
+        surface_compositor, VulkanBackend, VulkanImageAllocator, VulkanImageRequest,
+        VulkanImageState, VulkanImageView, VulkanReadbackBuffer,
+    },
 };
 
 /// Errors returned by the Vulkan readback compatibility presenter.
@@ -34,13 +37,14 @@ impl Error for VulkanCpuScanoutError {}
 /// Presents Vulkan-rendered pixels through a CPU-writable GBM buffer.
 ///
 /// This deliberately avoids DMA-BUF export and foreign queue-family ownership.
-/// The first milestone clears the output to a stable Aurea blue; scene
-/// composition is connected after the physical presentation path is verified.
+/// Composes the SHM-backed Wayland scene in Vulkan, reads RGBA8 pixels back,
+/// and uploads them into a CPU-writable GBM framebuffer.
 pub(crate) struct VulkanCpuOutputBackend<'a> {
     drm_device: &'a DrmDevice,
     gbm_devices: &'a GbmDeviceManager,
     output: &'a mut ManagedDrmSurface,
     vulkan: &'a VulkanBackend,
+    surface_cache: &'a mut crate::vulkan::VulkanSurfacePipelineCache,
 }
 
 impl<'a> VulkanCpuOutputBackend<'a> {
@@ -49,12 +53,14 @@ impl<'a> VulkanCpuOutputBackend<'a> {
         gbm_devices: &'a GbmDeviceManager,
         output: &'a mut ManagedDrmSurface,
         vulkan: &'a VulkanBackend,
+        surface_cache: &'a mut crate::vulkan::VulkanSurfacePipelineCache,
     ) -> Self {
         Self {
             drm_device,
             gbm_devices,
             output,
             vulkan,
+            surface_cache,
         }
     }
 }
@@ -65,7 +71,7 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
     fn render_frame(
         &mut self,
         target: &RenderTarget,
-        _scene: &RenderScene<'_>,
+        scene: &RenderScene<'_>,
     ) -> Result<(), Self::Error> {
         if target.output_id() != self.output.output_id() {
             return Err(VulkanCpuScanoutError(
@@ -95,11 +101,45 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
                 VulkanCpuScanoutError("GBM device is unavailable for CPU presentation".into())
             })?;
 
-        let pixels = VulkanOffscreenRenderer::new(self.vulkan.device())
-            .render_clear(target.width(), target.height(), [0.02, 0.12, 0.32, 1.0])
+        let image = VulkanImageAllocator::new(self.vulkan.device())
+            .allocate(VulkanImageRequest::render_target(
+                target.width(),
+                target.height(),
+                smithay::reexports::ash::vk::Format::R8G8B8A8_UNORM,
+                smithay::reexports::ash::vk::ImageUsageFlags::COLOR_ATTACHMENT
+                    | smithay::reexports::ash::vk::ImageUsageFlags::TRANSFER_SRC,
+            ))
             .map_err(|error| {
-                VulkanCpuScanoutError(format!("Vulkan offscreen render failed: {error}"))
+                VulkanCpuScanoutError(format!("Vulkan output image allocation failed: {error}"))
             })?;
+        let view = VulkanImageView::color(&image).map_err(|error| {
+            VulkanCpuScanoutError(format!("Vulkan output image view failed: {error}"))
+        })?;
+        let readback = VulkanReadbackBuffer::new(
+            self.vulkan.device(),
+            target.width(),
+            target.height(),
+        )
+        .map_err(|error| {
+            VulkanCpuScanoutError(format!("Vulkan readback allocation failed: {error}"))
+        })?;
+
+        surface_compositor::render_and_readback(
+            self.vulkan.device(),
+            &view,
+            target,
+            scene,
+            self.surface_cache,
+            VulkanImageState::Undefined,
+            None,
+            &readback,
+        )
+        .map_err(|error| {
+            VulkanCpuScanoutError(format!("Vulkan scene composition failed: {error}"))
+        })?;
+        let pixels = readback.read_rgba8().map_err(|error| {
+            VulkanCpuScanoutError(format!("Vulkan output readback failed: {error}"))
+        })?;
 
         let drm_fd = self.drm_device.fd();
         let (surface, pool, presenter) = self.output.cpu_parts_mut();
