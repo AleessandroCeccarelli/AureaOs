@@ -59,7 +59,9 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
 
     match event {
         InputEvent::DeviceAdded { mut device } => {
-            if let Some(report) = pointing::configure_touchpad(&mut device) {
+            let device_id = pointing::id_for(&device);
+            let touchpad_settings = state.compositor.touchpad_settings_for(device_id);
+            if let Some(report) = pointing::configure_touchpad(&mut device, touchpad_settings) {
                 tracing::info!(?report, "Applied supported touchpad defaults");
             }
 
@@ -108,10 +110,8 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let unaccelerated_delta = event.delta_unaccel();
 
             let mut device = event.device();
-            crate::input::pointer_acceleration::apply(
-                &mut device,
-                state.compositor.pointer_settings(),
-            );
+            let settings = state.compositor.pointer_settings_for(pointing::id_for(&device));
+            crate::input::pointer_acceleration::apply(&mut device, settings);
             state.compositor.handle_pointer_motion(
                 delta,
                 unaccelerated_delta,
