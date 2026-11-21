@@ -28,6 +28,7 @@ use crate::{
         pointing::{
             PointingDeviceService, PointingDeviceSettings, TouchscreenCalibration, TouchscreenCalibrationError,
             TouchscreenCalibrationMap, TouchscreenOutputMap, TouchscreenSlotMap,
+            TabletOutputMap,
         },
     },
     output::{OutputId, manager::OutputManager},
@@ -52,6 +53,7 @@ mod rendering;
 mod surface_output_reconciliation;
 mod surface_output_tracking;
 mod tablet;
+mod tablet_output_mapping;
 mod touchscreen;
 pub(crate) mod window_placement;
 mod workspace;
@@ -87,6 +89,7 @@ pub struct AureaCompositor {
     pointing_devices: PointingDeviceService,
     pointing_settings: PointingDeviceSettings,
     touchscreen_outputs: TouchscreenOutputMap,
+    tablet_outputs: TabletOutputMap,
     touchscreen_calibrations: TouchscreenCalibrationMap,
     touchscreen_slots: TouchscreenSlotMap,
     interaction_engine: InteractionEngine,
@@ -152,6 +155,7 @@ impl AureaCompositor {
             pointing_devices: PointingDeviceService::new(),
             pointing_settings: PointingDeviceSettings::default(),
             touchscreen_outputs: TouchscreenOutputMap::new(),
+            tablet_outputs: TabletOutputMap::new(),
             touchscreen_calibrations: TouchscreenCalibrationMap::default(),
             touchscreen_slots: TouchscreenSlotMap::new(),
             interaction_engine: InteractionEngine::new(),
@@ -339,6 +343,7 @@ impl AureaCompositor {
     pub fn forget_output_membership(&mut self, output_id: OutputId) {
         self.surface_output_tracker.remove_output(output_id);
         self.touchscreen_outputs.remove_output(output_id);
+        self.tablet_outputs.remove_output(output_id);
     }
 
     /// Reconciles mapped surfaces against enabled outputs and updates client scale.
@@ -355,6 +360,7 @@ impl AureaCompositor {
         self.release_pointer_buttons_for_device(device, time);
         self.interaction_engine.remove_device(device);
         self.touchscreen_outputs.remove_device(device);
+        self.tablet_outputs.remove_device(device);
         self.touchscreen_calibrations.remove_device(device);
         self.touchscreen_slots.remove_device(device);
         self.pointing_settings.remove(device);
