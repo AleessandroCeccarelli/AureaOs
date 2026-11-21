@@ -8,7 +8,7 @@
 use std::{
     fs,
     io,
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use super::GpuSelectionMetadata;
