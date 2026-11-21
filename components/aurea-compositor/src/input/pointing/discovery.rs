@@ -3,28 +3,29 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Translate backend device metadata into AureaOS pointing-device descriptors.
+//! Translate libinput device metadata into AureaOS pointing-device descriptors.
 
 use aurea_desktop_api::input::{
     InputDeviceCapabilities, InputDeviceDescriptor, InputDeviceId, InputDeviceKind,
     StandardInputCapability,
 };
-use smithay::backend::input::{Device, DeviceCapability};
+use smithay::reexports::input::{Device, DeviceCapability};
 
 /// Builds a public descriptor for a supported pointing device.
 ///
-/// Classification is capability-based. A device exposing both pointer and
-/// touch capabilities is treated as a touchpad; touch-only devices are
-/// treated as touchscreens. Tablet tools take precedence over both.
-pub(super) fn describe<D: Device>(device: &D) -> Option<InputDeviceDescriptor> {
+/// Touchpads are identified through libinput's touchpad-specific configuration
+/// capabilities, not by guessing from the product name. Tablet tools take
+/// precedence over pointer and touch capabilities.
+pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
     let pointer = device.has_capability(DeviceCapability::Pointer);
     let touch = device.has_capability(DeviceCapability::Touch);
     let tablet_tool = device.has_capability(DeviceCapability::TabletTool);
     let tablet_pad = device.has_capability(DeviceCapability::TabletPad);
+    let touchpad = device.config_tap_finger_count() > 0 || device.config_dwt_is_available();
 
     let kind = if tablet_tool || tablet_pad {
         InputDeviceKind::Tablet
-    } else if pointer && touch {
+    } else if touchpad {
         InputDeviceKind::Touchpad
     } else if touch {
         InputDeviceKind::Touchscreen
@@ -46,17 +47,12 @@ pub(super) fn describe<D: Device>(device: &D) -> Option<InputDeviceDescriptor> {
         capabilities.push(StandardInputCapability::Gestures);
     }
 
-    let (vendor_id, product_id) = device
-        .usb_id()
-        .map(|(product, vendor)| (Some(vendor as u16), Some(product as u16)))
-        .unwrap_or((None, None));
-
     Some(InputDeviceDescriptor {
-        id: InputDeviceId(stable_device_id(&device.id())),
+        id: InputDeviceId(stable_device_id(device.sysname())),
+        name: device.name().to_string(),
+        vendor_id: Some(device.id_vendor() as u16),
+        product_id: Some(device.id_product() as u16),
         kind,
-        name: device.name(),
-        vendor_id,
-        product_id,
         capabilities: InputDeviceCapabilities::new(capabilities),
     })
 }
