@@ -172,7 +172,7 @@ impl AureaCompositor {
         if let Some(axis) = Self::tablet_axis_frame(&event) {
             tool.axis(self, axis);
         }
-        if event.x_has_changed() || event.y_has_changed() {
+        if event.delta_x() != 0.0 || event.delta_y() != 0.0 {
             tool.motion(
                 self,
                 self.tablet_focus(location),
