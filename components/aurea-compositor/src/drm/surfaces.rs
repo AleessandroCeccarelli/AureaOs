@@ -302,7 +302,6 @@ impl Drop for DrmSurfaceManager {
     }
 }
 
-/// Runs a cleanup operation for every item and collects all failures.
 /// Clears map values and retains entries whose cleanup failed.
 fn clear_and_retain<K, V, E>(
     entries: &mut HashMap<K, V>,
