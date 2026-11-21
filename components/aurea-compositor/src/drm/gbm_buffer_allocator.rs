@@ -70,8 +70,8 @@ impl Error for GbmCpuUploadAllocationError {}
 
 /// Allocates only buffers that can be written by the CPU and scanned out by KMS.
 ///
-/// The allocator deliberately requests the single format currently supported
-/// by the RGBA8 readback writer. Other DRM formats need explicit conversion.
+/// The allocator intersects the primary plane's advertised formats with GBM
+/// WRITE|SCANOUT support, preferring common XRGB/ARGB layouts.
 pub(crate) struct GbmCpuUploadAllocator<'device, T: std::os::fd::AsFd> {
     device: &'device GbmDevice<T>,
 }
