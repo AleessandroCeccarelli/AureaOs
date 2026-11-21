@@ -9,7 +9,7 @@ use std::{error::Error, fmt};
 
 use smithay::backend::allocator::{
     Fourcc,
-    gbm::{BufferObjectFlags, GbmBuffer, GbmDevice},
+    gbm::{GbmBuffer, GbmBufferFlags, GbmDevice},
 };
 
 use crate::drm::gbm_buffer_writer::GbmCpuUploadBuffer;
@@ -93,7 +93,7 @@ impl<'device, T: std::os::fd::AsFd> GbmCpuUploadAllocator<'device, T> {
         }
 
         let format = Fourcc::Abgr8888;
-        let usage = BufferObjectFlags::WRITE | BufferObjectFlags::SCANOUT;
+        let usage = GbmBufferFlags::WRITE | GbmBufferFlags::SCANOUT;
         if !self.device.is_format_supported(format, usage) {
             return Err(GbmCpuUploadAllocationError::UnsupportedFormatUsage { format });
         }
