@@ -5,7 +5,7 @@
 
 //! Compositor API for per-device tablet calibration.
 
-use aurea_desktop_api::input::{InputDeviceId, InputDeviceKind};
+use aurea_desktop_api::input::{InputDeviceId, InputDeviceKind, InputDeviceProvider};
 
 use crate::input::pointing::{
     TabletAspectMode, TabletCalibration, TabletCalibrationError, TabletRotation,
