@@ -7,6 +7,7 @@
 
 pub mod connector_identity;
 pub(crate) mod cpu_presentation_backend;
+pub(crate) mod cpu_scanout_renderer;
 pub mod device;
 pub mod device_manager;
 pub mod discovery;
