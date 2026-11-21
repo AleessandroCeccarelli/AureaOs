@@ -74,11 +74,10 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                     .get(&rendering_node)
                     .map(|backend| backend.supports_direct_presentation())
                     .unwrap_or(false),
-            // The current CPU readback presenter is a diagnostic clear-only
-            // path; it does not yet composite the Wayland scene. Do not advertise
-            // it as a usable cross-GPU compatibility route.
-            compatibility: rendering_node == presentation_node
-                && gbm_devices.contains(presentation_node)
+            // The compatibility backend now composes the Wayland scene on the
+            // selected Vulkan GPU, reads it back to host memory and uploads it
+            // into the presentation GPU's GBM framebuffer.
+            compatibility: gbm_devices.contains(presentation_node)
                 && vulkan_backends.contains_key(&rendering_node),
         }];
         let selected_path = PresentationSelector::select(
@@ -145,7 +144,17 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                     })?;
             }
             PresentationPath::Compatibility => {
-                let mut backend = VulkanCpuOutputBackend::new(device, gbm_devices, output, vulkan);
+                let mut surface_pipeline_cache = vulkan
+                    .surface_pipeline_cache()
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                let mut backend = VulkanCpuOutputBackend::new(
+                    device,
+                    gbm_devices,
+                    output,
+                    vulkan,
+                    &mut surface_pipeline_cache,
+                );
                 compositor
                     .render_output(&mut backend, output_id)
                     .map_err(|error| {
