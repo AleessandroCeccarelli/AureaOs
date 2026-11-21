@@ -200,6 +200,35 @@ impl<'device> VulkanReadbackBuffer<'device> {
         Ok(())
     }
 
+    /// Records the image transition and copy required for an RGBA8 readback.
+    ///
+    /// The caller supplies the image's actual previous state. The image must
+    /// have TRANSFER_SRC usage; after this call it remains in TRANSFER_SRC_OPTIMAL.
+    /// The caller must submit and wait before mapping the buffer.
+    pub fn record_transition_and_copy_rgba8(
+        &self,
+        device: &VulkanLogicalDevice,
+        command_buffer: vk::CommandBuffer,
+        view: &super::VulkanImageView<'_, '_>,
+        previous_state: super::VulkanImageState,
+    ) -> Result<(), VulkanReadbackError> {
+        if view.format() != vk::Format::R8G8B8A8_UNORM {
+            return Err(VulkanReadbackError::UnsupportedImageFormat);
+        }
+        if !view.usage().contains(vk::ImageUsageFlags::TRANSFER_SRC) {
+            return Err(VulkanReadbackError::MissingTransferSourceUsage);
+        }
+
+        super::VulkanImageTransition::record_color(
+            device,
+            command_buffer,
+            view.image_handle(),
+            previous_state,
+            super::VulkanImageState::TransferSource,
+        );
+        self.record_copy_rgba8(command_buffer, view)
+    }
+
     /// Maps completed GPU output and returns tightly packed RGBA bytes.
     ///
     /// The caller must wait for the submission that wrote this buffer before
