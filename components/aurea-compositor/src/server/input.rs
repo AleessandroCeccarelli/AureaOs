@@ -306,7 +306,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                 event.delta_y(),
                 event.scale(),
                 event.rotation(),
-                event.time(),
+                wayland_time(event.time()),
             );
         }
         InputEvent::GesturePinchEnd { event } => {
