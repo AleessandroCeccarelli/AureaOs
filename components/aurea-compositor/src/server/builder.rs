@@ -22,6 +22,9 @@ use smithay::backend::drm::DrmEvent;
 #[cfg(feature = "drm")]
 use crate::drm::{DrmSession, device::DrmDevice};
 
+#[cfg(feature = "drm")]
+use crate::input::pointing::AppliedTouchpadSettings;
+
 use crate::AureaCompositor;
 
 use super::{
@@ -70,7 +73,7 @@ pub(super) fn build(
         error: None,
         display_color,
         #[cfg(feature = "drm")]
-        applied_touchpad_settings: std::collections::HashMap::new(),
+        applied_touchpad_settings: AppliedTouchpadSettings::default(),
 
         #[cfg(feature = "drm")]
         drm_session,
