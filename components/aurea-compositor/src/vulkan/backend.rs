@@ -75,7 +75,7 @@ impl VulkanBackend {
             .select_device_for_drm_node(node, preference)
             .ok_or_else(|| {
                 VulkanInitError::new(
-                    "No Vulkan device matching the DRM node supports graphics rendering, DMA-BUF export and foreign queue-family ownership",
+                    "No graphics-capable Vulkan device matches the DRM node",
                 )
             })?;
         let physical_device_index = context
@@ -85,7 +85,7 @@ impl VulkanBackend {
             .ok_or_else(|| {
                 VulkanInitError::new("Selected Vulkan device is not owned by its context")
             })?;
-        Self::from_selected_device(context, physical_device_index, true)
+        Self::from_selected_device(context, physical_device_index, false)
     }
 
     fn from_selected_device(
