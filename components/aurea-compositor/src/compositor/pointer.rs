@@ -21,6 +21,13 @@ impl AureaCompositor {
             let _pointer: PointerHandle<Self> = self.seat.add_pointer();
         }
 
+        if self.seat.get_pointer().is_none() {
+            return Err(io::Error::other(
+                "Smithay did not retain the Wayland seat pointer capability",
+            ));
+        }
+
+        tracing::info!("AureaOS Wayland pointer capability initialized");
         Ok(())
     }
 
