@@ -86,6 +86,30 @@ impl VulkanBackend {
         Self::from_selected_device(context, physical_device_index, false)
     }
 
+    /// Initializes a Vulkan CPU renderer for host-readback presentation.
+    ///
+    /// The selected CPU device must expose AureaOS's Vulkan 1.3 rendering
+    /// features. This backend does not claim DMA-BUF or direct KMS support.
+    #[cfg(feature = "drm")]
+    pub fn new_software_fallback() -> Result<Self, VulkanInitError> {
+        let context = Arc::new(VulkanContext::new()?);
+        let physical_device = context
+            .select_software_device()
+            .ok_or_else(|| {
+                VulkanInitError::new(
+                    "No Vulkan CPU device supports AureaOS's required rendering features",
+                )
+            })?;
+        let physical_device_index = context
+            .physical_devices()
+            .iter()
+            .position(|candidate| std::ptr::eq(candidate, physical_device))
+            .ok_or_else(|| {
+                VulkanInitError::new("Selected Vulkan CPU device is not owned by its context")
+            })?;
+        Self::from_selected_device(context, physical_device_index, false)
+    }
+
     fn from_selected_device(
         context: Arc<VulkanContext>,
         physical_device_index: usize,
