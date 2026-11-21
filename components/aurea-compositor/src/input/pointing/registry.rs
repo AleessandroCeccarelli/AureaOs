@@ -173,6 +173,49 @@ mod tests {
     }
 
     #[test]
+    fn reconnecting_same_device_publishes_updated_capabilities() {
+        let service = PointingDeviceService::new();
+        let events = service.subscribe();
+        let original = descriptor(8, InputDeviceKind::Mouse);
+        let updated = InputDeviceDescriptor {
+            capabilities: InputDeviceCapabilities::new([
+                StandardInputCapability::PointerMotion,
+                StandardInputCapability::PointerButtons,
+                StandardInputCapability::PointerMiddleButton,
+            ]),
+            ..original.clone()
+        };
+
+        assert!(service.connect(original.clone()));
+        assert_eq!(events.recv().unwrap(), InputDeviceEvent::Connected(original));
+        assert!(service.connect(updated.clone()));
+        assert_eq!(
+            events.recv().unwrap(),
+            InputDeviceEvent::CapabilitiesChanged(updated.clone())
+        );
+        assert_eq!(service.device(InputDeviceId(8)), Some(updated));
+        assert_eq!(service.device_count(), 1);
+    }
+
+    #[test]
+    fn disconnecting_unknown_device_does_not_change_registry() {
+        let service = PointingDeviceService::new();
+        assert!(!service.disconnect(InputDeviceId(404)));
+        assert_eq!(service.device_count(), 0);
+    }
+
+    #[test]
+    fn dropped_subscribers_are_pruned_on_next_event() {
+        let service = PointingDeviceService::new();
+        let receiver = service.subscribe();
+        drop(receiver);
+
+        assert!(service.connect(descriptor(9, InputDeviceKind::Mouse)));
+        let state = service.state.lock().unwrap();
+        assert!(state.subscribers.is_empty());
+    }
+
+    #[test]
     fn service_publishes_connection_and_disconnection_events() {
         let service = PointingDeviceService::new();
         let events = service.subscribe();
