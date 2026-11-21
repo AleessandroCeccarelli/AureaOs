@@ -185,6 +185,22 @@ mod tests {
     }
 
     #[test]
+    fn preserve_mode_crops_the_longer_device_axis() {
+        let profile = TabletCalibration::new(
+            [0.0, 0.0, 1.0, 1.0],
+            TabletRotation::Deg0,
+            TabletAspectMode::Preserve,
+            2.0,
+        ).unwrap();
+
+        // A 2:1 tablet mapped to a 1:1 output uses the centered middle half.
+        assert_eq!(profile.apply(0.0, 0.5, 1.0), Some((0.0, 0.5)));
+        assert_eq!(profile.apply(0.25, 0.5, 1.0), Some((0.0, 0.5)));
+        assert_eq!(profile.apply(0.5, 0.5, 1.0), Some((0.5, 0.5)));
+        assert_eq!(profile.apply(0.75, 0.5, 1.0), Some((1.0, 0.5)));
+    }
+
+    #[test]
     fn rejects_invalid_areas_and_ratios() {
         assert_eq!(
             TabletCalibration::new([0.8, 0.0, 0.4, 1.0], TabletRotation::Deg0, TabletAspectMode::Stretch, 1.0),
