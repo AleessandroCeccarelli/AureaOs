@@ -40,7 +40,7 @@ pub struct GpuSelectionMetadata {
     pub is_platform_device: bool,
     /// The firmware identifies this device as the boot VGA device.
     pub is_boot_vga: bool,
-    /// Vulkan reports a usable hardware renderer for this GPU.
+    /// Vulkan reports a usable non-CPU renderer for this GPU.
     pub hardware_rendering: bool,
 }
 
@@ -159,7 +159,9 @@ impl GpuManager {
         path: &Path,
         availability: GpuAvailability,
     ) -> Result<(), GpuManagerError> {
-        let device = self.devices.get_mut(path)
+        let device = self
+            .devices
+            .get_mut(path)
             .ok_or_else(|| GpuManagerError::UnknownDevice(path.to_path_buf()))?;
         device.availability = availability;
         Ok(())
@@ -189,28 +191,41 @@ impl GpuManager {
     pub fn select_primary_by_policy(&mut self) -> Option<&GpuDevice> {
         // Mutter's explicit udev preference takes precedence even when the
         // selected device needs the software-rendering pass.
-        let selected = self.devices.values().find(|device| {
-            device.is_available() && device.selection.preferred_primary
-        }).or_else(|| {
-            [true, false].into_iter().find_map(|hardware_only| {
-                self.devices.values().find(|device| {
-                    device.is_available()
-                        && (!hardware_only || device.selection.hardware_rendering)
-                        && device.selection.has_builtin_panel
-                }).or_else(|| self.devices.values().find(|device| {
-                    device.is_available()
-                        && (!hardware_only || device.selection.hardware_rendering)
-                        && device.selection.is_platform_device
-                })).or_else(|| self.devices.values().find(|device| {
-                    device.is_available()
-                        && (!hardware_only || device.selection.hardware_rendering)
-                        && device.selection.is_boot_vga
-                })).or_else(|| self.devices.values().find(|device| {
-                    device.is_available()
-                        && (!hardware_only || device.selection.hardware_rendering)
-                }))
-            })
-        })?;
+        let selected = self
+            .devices
+            .values()
+            .find(|device| device.is_available() && device.selection.preferred_primary)
+            .or_else(|| {
+                [true, false].into_iter().find_map(|hardware_only| {
+                self.devices
+                    .values()
+                    .find(|device| {
+                        device.is_available()
+                            && (!hardware_only || device.selection.hardware_rendering)
+                            && device.selection.has_builtin_panel
+                    })
+                    .or_else(|| {
+                        self.devices.values().find(|device| {
+                            device.is_available()
+                                && (!hardware_only || device.selection.hardware_rendering)
+                                && device.selection.is_platform_device
+                        })
+                    })
+                    .or_else(|| {
+                        self.devices.values().find(|device| {
+                            device.is_available()
+                                && (!hardware_only || device.selection.hardware_rendering)
+                                && device.selection.is_boot_vga
+                        })
+                    })
+                    .or_else(|| {
+                        self.devices.values().find(|device| {
+                            device.is_available()
+                                && (!hardware_only || device.selection.hardware_rendering)
+                        })
+                    })
+                })
+            })?;
 
         self.primary_device = Some(selected.path.clone());
         self.primary_device()
