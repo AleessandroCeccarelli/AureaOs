@@ -31,4 +31,10 @@ mod udev_events;
 #[cfg(feature = "drm")]
 mod rendering;
 
+#[cfg(feature = "drm")]
+mod output_lifecycle;
+
+#[cfg(feature = "drm")]
+mod vulkan_lifecycle;
+
 pub use event_loop::WaylandServer;
