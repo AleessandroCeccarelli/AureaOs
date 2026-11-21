@@ -173,11 +173,17 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
                     "Vulkan display-color intermediate view failed: {error}"
                 ))
             })?;
-        let effective_display = display_pass
-            .zip(intermediate_view.as_ref())
-            .map(|(pass, intermediate)| {
-                (pass, self.warmth_percent, intermediate, VulkanImageState::Undefined)
-            });
+        let effective_display =
+            display_pass
+                .zip(intermediate_view.as_ref())
+                .map(|(pass, intermediate)| {
+                    (
+                        pass,
+                        self.warmth_percent,
+                        intermediate,
+                        VulkanImageState::Undefined,
+                    )
+                });
 
         surface_compositor::render_and_readback(
             self.vulkan.device(),

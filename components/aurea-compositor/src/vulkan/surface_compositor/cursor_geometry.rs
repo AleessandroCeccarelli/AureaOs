@@ -27,8 +27,7 @@ pub(super) fn native_cursor_geometry(
 ) -> Option<(SurfaceGeometry, SurfaceScissor, u32)> {
     let location = scene.native_cursor_location()?;
     let scale = scene.native_cursor_scale();
-    let scaled_width =
-        (crate::render::cursor::DEFAULT_CURSOR_WIDTH as f64 * scale).round() as u32;
+    let scaled_width = (crate::render::cursor::DEFAULT_CURSOR_WIDTH as f64 * scale).round() as u32;
     let scaled_height =
         (crate::render::cursor::DEFAULT_CURSOR_HEIGHT as f64 * scale).round() as u32;
     let scaled_location = scaled_cursor_origin(location, scale).into();
@@ -58,9 +57,10 @@ pub(super) fn native_cursor_geometry(
         target.transform(),
     )?;
     let scissor = geometry.scissor(target.width(), target.height())?;
-    let texture_transform = surface_transform_index(
-        compose_surface_transforms(Transform::Normal, target.transform())?,
-    )?;
+    let texture_transform = surface_transform_index(compose_surface_transforms(
+        Transform::Normal,
+        target.transform(),
+    )?)?;
 
     Some((geometry, scissor, texture_transform))
 }
