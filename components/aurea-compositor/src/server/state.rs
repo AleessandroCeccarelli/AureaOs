@@ -10,7 +10,10 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use aurea_desktop_api::{display::DisplayColorController, input::TouchpadSettingsCommand};
+use aurea_desktop_api::display::DisplayColorController;
+#[cfg(feature = "drm")]
+use aurea_desktop_api::input::TouchpadSettingsCommand;
+#[cfg(feature = "drm")]
 use std::sync::mpsc::Receiver;
 
 #[cfg(feature = "drm")]
@@ -50,6 +53,7 @@ pub(super) struct WaylandState {
 
     /// Shared shell-owned output color policy, sampled by the render path.
     pub(super) display_color: DisplayColorController,
+    #[cfg(feature = "drm")]
     pub(super) touchpad_settings_receiver: Receiver<TouchpadSettingsCommand>,
 
     /// Last successfully applied touchpad profile for each connected device.
