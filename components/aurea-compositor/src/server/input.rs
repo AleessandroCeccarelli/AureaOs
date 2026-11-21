@@ -83,7 +83,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             state.compositor.handle_keyboard_input(
                 event.key_code(),
                 event.state(),
-                event.time() as u32,
+                event.time().millis(),
             );
         }
         InputEvent::PointerMotion { event } => {
