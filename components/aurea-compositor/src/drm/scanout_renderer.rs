@@ -14,13 +14,13 @@ use smithay::backend::allocator::Fourcc;
 use crate::{
     drm::{
         DrmPrimaryPlaneFormatCapabilities, device::DrmDevice, gbm::GbmDeviceManager,
-        presentation::DrmFramebufferId, surfaces::ManagedDrmSurface,
+        surfaces::ManagedDrmSurface,
     },
     render::RenderScene,
     renderer::{RenderBackend, RenderTarget},
     vulkan::{
-        DrmVulkanCompatibility, VulkanBackend, VulkanDisplayColorManager, VulkanDrmFramePool,
-        VulkanDrmScanoutFrame, VulkanExternalMemoryCapabilities, VulkanFormatCapabilities,
+        DrmVulkanCompatibility, VulkanBackend, VulkanDisplayColorManager, VulkanDrmScanoutFrame,
+        VulkanExternalMemoryCapabilities, VulkanFormatCapabilities, VulkanImageState,
         VulkanSurfacePipelineCache,
     },
 };
