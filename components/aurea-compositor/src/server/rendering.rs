@@ -5,7 +5,9 @@
 
 //! Dispatches requested output frames to the DRM/Vulkan scanout backend.
 
-use std::{io, path::PathBuf};
+use std::{io, path::PathBuf, sync::atomic::{AtomicU64, Ordering}};
+
+static RENDERED_OUTPUT_FRAMES: AtomicU64 = AtomicU64::new(0);
 
 use crate::{
     drm::{
@@ -132,6 +134,16 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
             )));
         };
 
+        let path_name = if matches!(&selected_path, PresentationPath::DirectVulkan) {
+            "direct-vulkan"
+        } else {
+            "cpu-compatibility"
+        };
+        eprintln!(
+            "AureaOS render: pending output={} render_gpu={} presentation_gpu={} path={}",
+            output_id, rendering_node, presentation_node, path_name
+        );
+
         match selected_path {
             PresentationPath::DirectVulkan => {
                 if output.presentation().pending().is_some() {
@@ -230,6 +242,14 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                         ))
                     })?;
             }
+        }
+
+        let frame_count = RENDERED_OUTPUT_FRAMES.fetch_add(1, Ordering::Relaxed) + 1;
+        if frame_count <= 4 || frame_count % 120 == 0 {
+            eprintln!(
+                "AureaOS render: render_output completed count={} output={} path={}",
+                frame_count, output_id, path_name
+            );
         }
     }
 
