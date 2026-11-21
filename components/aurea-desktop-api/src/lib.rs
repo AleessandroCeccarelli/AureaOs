@@ -76,5 +76,6 @@ pub trait CompositorFactory: Send + Sync + 'static {
         &self,
         display_color: DisplayColorController,
         interactions: DesktopInteractionSender,
+        touchpad_settings: std::sync::mpsc::Receiver<input::TouchpadSettingsCommand>,
     ) -> io::Result<Box<dyn CompositorService>>;
 }
