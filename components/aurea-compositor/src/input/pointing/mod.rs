@@ -13,4 +13,4 @@ mod touchscreen;
 mod touchpad;
 
 pub use registry::PointingDeviceService;
-pub(super) use discovery::describe;
+pub(super) use discovery::{describe, id_for};
