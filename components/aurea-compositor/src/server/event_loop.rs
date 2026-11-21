@@ -40,7 +40,6 @@ impl WaylandServer {
     pub fn new_with_display_color(
         socket_name: &str,
         display_color: DisplayColorController,
-        interactions: DesktopInteractionSender,
     ) -> io::Result<Self> {
         let (interactions, _receiver) = desktop_interaction_channel();
         #[cfg(feature = "drm")]
@@ -74,6 +73,7 @@ impl WaylandServer {
         socket_name: &str,
         seat: &str,
         display_color: DisplayColorController,
+        interactions: DesktopInteractionSender,
     ) -> io::Result<Self> {
         let mut drm_session = session::create_session()?;
         let drm_device = session::open_primary_device(&mut drm_session, seat)?;
