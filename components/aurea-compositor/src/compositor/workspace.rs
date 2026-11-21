@@ -7,6 +7,8 @@
 
 use smithay::reexports::wayland_server::protocol::wl_surface::WlSurface;
 
+use aurea_desktop_api::desktop_interaction::DesktopInteraction;
+
 use super::AureaCompositor;
 
 impl AureaCompositor {
@@ -27,6 +29,11 @@ impl AureaCompositor {
         self.focus_surface(self.window_manager.active_workspace_surface());
         self.refresh_pointer_focus_at_current_location();
         self.request_all_output_frames();
+        if let Ok(index) = u8::try_from(self.window_manager.active_workspace()) {
+            if self.desktop_interactions.send(DesktopInteraction::WorkspaceChanged { index }).is_err() {
+                tracing::debug!("Shell workspace receiver is no longer available");
+            }
+        }
 
         true
     }
