@@ -146,6 +146,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             }
         }
         InputEvent::DeviceRemoved { device } => {
+            state.compositor.remove_tablet_device(&device);
             // Removal must not depend on rediscovering capabilities: libinput
             // may already have withdrawn some metadata by the time this event
             // is delivered. The sysname-derived ID is sufficient to clean up
