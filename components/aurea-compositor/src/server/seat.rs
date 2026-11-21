@@ -3,9 +3,10 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Wayland seat protocol delegation.
+//! Wayland seat and pointer-gesture protocol delegation.
 
 use crate::AureaCompositor;
-use smithay::delegate_seat;
+use smithay::{delegate_pointer_gestures, delegate_seat};
 
 delegate_seat!(AureaCompositor);
+delegate_pointer_gestures!(AureaCompositor);
