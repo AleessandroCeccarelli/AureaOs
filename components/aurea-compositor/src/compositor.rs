@@ -26,7 +26,7 @@ use crate::{
         cursor_animation::CursorLocateAnimation, interaction::{GestureProfile, InteractionEngine},
         pointer_settings::PointerSettings, pointer_shake::PointerShakeDetector,
         pointing::{
-            PointingDeviceService, TouchscreenCalibration, TouchscreenCalibrationError,
+            PointingDeviceService, PointingDeviceSettings, TouchscreenCalibration, TouchscreenCalibrationError,
             TouchscreenCalibrationMap, TouchscreenOutputMap, TouchscreenSlotMap,
         },
     },
@@ -83,8 +83,7 @@ pub struct AureaCompositor {
     _pointer_gestures_state: smithay::wayland::pointer_gestures::PointerGesturesState,
     _tablet_manager_state: TabletManagerState,
     pointing_devices: PointingDeviceService,
-    pointer_device_settings: HashMap<aurea_desktop_api::input::InputDeviceId, PointerSettings>,
-    touchpad_device_settings: HashMap<aurea_desktop_api::input::InputDeviceId, aurea_desktop_api::input::TouchpadSettings>,
+    pointing_settings: PointingDeviceSettings,
     touchscreen_outputs: TouchscreenOutputMap,
     touchscreen_calibrations: TouchscreenCalibrationMap,
     touchscreen_slots: TouchscreenSlotMap,
@@ -149,8 +148,7 @@ impl AureaCompositor {
             _pointer_gestures_state: pointer_gestures_state,
             _tablet_manager_state: tablet_manager_state,
             pointing_devices: PointingDeviceService::new(),
-            pointer_device_settings: HashMap::new(),
-            touchpad_device_settings: HashMap::new(),
+            pointing_settings: PointingDeviceSettings::default(),
             touchscreen_outputs: TouchscreenOutputMap::new(),
             touchscreen_calibrations: TouchscreenCalibrationMap::default(),
             touchscreen_slots: TouchscreenSlotMap::new(),
@@ -315,7 +313,7 @@ impl AureaCompositor {
         &self,
         device: aurea_desktop_api::input::InputDeviceId,
     ) -> PointerSettings {
-        self.pointer_device_settings.get(&device).copied().unwrap_or(self.pointer_settings)
+        self.pointing_settings.pointer(device, self.pointer_settings)
     }
 
     /// Updates the default pointer preferences.
@@ -329,13 +327,7 @@ impl AureaCompositor {
         device: aurea_desktop_api::input::InputDeviceId,
         settings: PointerSettings,
     ) -> bool {
-        if !self.pointing_devices.device(device).is_some_and(|descriptor| {
-            matches!(descriptor.kind, aurea_desktop_api::input::InputDeviceKind::Mouse | aurea_desktop_api::input::InputDeviceKind::Touchpad)
-        }) {
-            return false;
-        }
-        self.pointer_device_settings.insert(device, settings);
-        true
+        self.pointing_settings.set_pointer(&self.pointing_devices, device, settings)
     }
 
     /// Returns touchpad preferences for one device, falling back to defaults.
@@ -343,7 +335,7 @@ impl AureaCompositor {
         &self,
         device: aurea_desktop_api::input::InputDeviceId,
     ) -> aurea_desktop_api::input::TouchpadSettings {
-        self.touchpad_device_settings.get(&device).copied().unwrap_or_default()
+        self.pointing_settings.touchpad(device)
     }
 
     /// Sets touchpad preferences for one connected touchpad.
@@ -352,11 +344,7 @@ impl AureaCompositor {
         device: aurea_desktop_api::input::InputDeviceId,
         settings: aurea_desktop_api::input::TouchpadSettings,
     ) -> bool {
-        if !self.pointing_devices.device(device).is_some_and(|descriptor| descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchpad) {
-            return false;
-        }
-        self.touchpad_device_settings.insert(device, settings);
-        true
+        self.pointing_settings.set_touchpad(&self.pointing_devices, device, settings)
     }
 
     /// Returns the output manager.
@@ -411,8 +399,7 @@ impl AureaCompositor {
         self.touchscreen_outputs.remove_device(device);
         self.touchscreen_calibrations.remove_device(device);
         self.touchscreen_slots.remove_device(device);
-        self.pointer_device_settings.remove(&device);
-        self.touchpad_device_settings.remove(&device);
+        self.pointing_settings.remove(device);
     }
 
     /// Releases tracker entries for destroyed Wayland surfaces.
