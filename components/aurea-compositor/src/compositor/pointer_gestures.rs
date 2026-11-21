@@ -158,7 +158,7 @@ impl AureaCompositor {
 
     /// Sends a touchpad hold-begin event to the focused Wayland client.
     pub fn handle_hold_begin(&mut self, fingers: u32, time: smithay::backend::input::InputTime) {
-        self.interaction_engine.hold(fingers);
+        self.interaction_engine.begin_hold(fingers);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -179,6 +179,7 @@ impl AureaCompositor {
         cancelled: bool,
         time: smithay::backend::input::InputTime,
     ) {
+        self.interaction_engine.end_hold(cancelled);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
