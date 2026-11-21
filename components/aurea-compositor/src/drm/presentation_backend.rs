@@ -37,6 +37,11 @@ pub enum DrmPresentationBackendError {
     KmsOperation(String),
     /// The lifecycle tracker rejected an invalid transition.
     Lifecycle(DrmOutputFrameError),
+    /// A failed KMS operation could not roll back its lifecycle transaction.
+    Recovery {
+        operation: String,
+        lifecycle: DrmOutputFrameError,
+    },
 }
 
 impl fmt::Display for DrmPresentationBackendError {
@@ -57,6 +62,13 @@ impl fmt::Display for DrmPresentationBackendError {
             Self::Lifecycle(error) => {
                 write!(formatter, "Invalid KMS presentation lifecycle: {error}")
             }
+            Self::Recovery {
+                operation,
+                lifecycle,
+            } => write!(
+                formatter,
+                "{operation}; DRM presentation lifecycle recovery failed: {lifecycle}"
+            ),
         }
     }
 }
@@ -195,12 +207,29 @@ impl DrmPresentationBackend {
         self.frames.begin_presentation(candidate)?;
 
         if let Err(error) = surface.test_state(planes.iter().cloned(), requires_modeset) {
-            let _ = self.frames.presentation_test_failed();
-            return Err(DrmPresentationBackendError::KmsOperation(error.to_string()));
+            let operation = format!("Atomic TEST_ONLY rejected the Vulkan framebuffer: {error}");
+            return match self.frames.presentation_test_failed() {
+                Ok(_) => Err(DrmPresentationBackendError::KmsOperation(operation)),
+                Err(lifecycle) => Err(DrmPresentationBackendError::Recovery {
+                    operation,
+                    lifecycle,
+                }),
+            };
         }
 
         self.frames.presentation_test_passed()?;
-        self.frames.validate_commit_ready(require_in_fence)?;
+        if let Err(error) = self.frames.validate_commit_ready(require_in_fence) {
+            let operation = format!(
+                "KMS commit preconditions failed after TEST_ONLY validation: {error}"
+            );
+            return match self.frames.presentation_commit_failed() {
+                Ok(_) => Err(DrmPresentationBackendError::Lifecycle(error)),
+                Err(lifecycle) => Err(DrmPresentationBackendError::Recovery {
+                    operation,
+                    lifecycle,
+                }),
+            };
+        }
 
         let submission = if requires_modeset {
             surface.commit(planes.iter().cloned(), true)
@@ -209,8 +238,14 @@ impl DrmPresentationBackend {
         };
 
         if let Err(error) = submission {
-            let _ = self.frames.presentation_commit_failed();
-            return Err(DrmPresentationBackendError::KmsOperation(error.to_string()));
+            let operation = format!("KMS rejected the Vulkan framebuffer commit: {error}");
+            return match self.frames.presentation_commit_failed() {
+                Ok(_) => Err(DrmPresentationBackendError::KmsOperation(operation)),
+                Err(lifecycle) => Err(DrmPresentationBackendError::Recovery {
+                    operation,
+                    lifecycle,
+                }),
+            };
         }
 
         self.frames.presentation_commit_accepted(require_in_fence)?;
