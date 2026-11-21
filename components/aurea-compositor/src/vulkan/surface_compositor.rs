@@ -7,10 +7,12 @@
 
 mod error;
 mod release;
+mod readback;
 mod visible_surfaces;
 
 pub(crate) use error::VulkanSurfaceCompositionError;
 use release::{clear_and_release, clear_display_and_release};
+use readback::clear_and_readback;
 use visible_surfaces::visible_surfaces;
 
 use std::sync::Arc;
@@ -32,7 +34,7 @@ use crate::{
 use super::{
     VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanDrawPass,
     VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanLogicalDevice,
-    VulkanSurfacePipelineCache, VulkanTextureBinding,
+    VulkanReadbackBuffer, VulkanSurfacePipelineCache, VulkanTextureBinding,
 };
 
 pub(super) const BACKGROUND_COLOR: [f32; 4] = [0.08, 0.18, 0.32, 1.0];
@@ -55,6 +57,51 @@ pub(crate) fn render_and_release(
         &VulkanImageView<'_, '_>,
         VulkanImageState,
     )>,
+    on_submitted: impl FnOnce(),
+) -> Result<(), VulkanSurfaceCompositionError> {
+    render_frame(
+        device, view, target, scene, surface_cache, previous_image_state,
+        display_color, None, on_submitted,
+    )
+}
+
+/// Composes the same Wayland scene as the direct path, then copies RGBA8 pixels
+/// to host-visible memory instead of transferring image ownership to KMS.
+pub(crate) fn render_and_readback(
+    device: &VulkanLogicalDevice,
+    view: &VulkanImageView<'_, '_>,
+    target: &RenderTarget,
+    scene: &RenderScene<'_>,
+    surface_cache: &mut VulkanSurfacePipelineCache,
+    previous_image_state: VulkanImageState,
+    display_color: Option<(
+        &VulkanDisplayColorPass<'_>,
+        u8,
+        &VulkanImageView<'_, '_>,
+        VulkanImageState,
+    )>,
+    readback: &VulkanReadbackBuffer<'_>,
+) -> Result<(), VulkanSurfaceCompositionError> {
+    render_frame(
+        device, view, target, scene, surface_cache, previous_image_state,
+        display_color, Some(readback), || {},
+    )
+}
+
+fn render_frame(
+    device: &VulkanLogicalDevice,
+    view: &VulkanImageView<'_, '_>,
+    target: &RenderTarget,
+    scene: &RenderScene<'_>,
+    surface_cache: &mut VulkanSurfacePipelineCache,
+    previous_image_state: VulkanImageState,
+    display_color: Option<(
+        &VulkanDisplayColorPass<'_>,
+        u8,
+        &VulkanImageView<'_, '_>,
+        VulkanImageState,
+    )>,
+    readback: Option<&VulkanReadbackBuffer<'_>>,
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let active_surface_ids = scene.surface_ids();
@@ -118,17 +165,21 @@ pub(crate) fn render_and_release(
         surface_cache
             .complete_surface_texture_uploads()
             .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+        if let Some(readback) = readback {
+            if display_color.is_some() {
+                return Err(VulkanSurfaceCompositionError::Command(
+                    "Readback clear with display-color pass is not supported yet".into(),
+                ));
+            }
+            return clear_and_readback(
+                device, view, previous_image_state, readback,
+            );
+        }
         return match display_color {
             Some((pass, warmth, intermediate_view, intermediate_state)) => {
                 clear_display_and_release(
-                    device,
-                    view,
-                    previous_image_state,
-                    pass,
-                    warmth,
-                    intermediate_view,
-                    intermediate_state,
-                    on_submitted,
+                    device, view, previous_image_state, pass, warmth,
+                    intermediate_view, intermediate_state, on_submitted,
                 )
             }
             None => clear_and_release(device, view, previous_image_state, on_submitted),
@@ -339,13 +390,24 @@ pub(crate) fn render_and_release(
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
 
-    VulkanImageTransition::record_release_to_foreign(
-        device,
-        command_buffer.handle(),
-        view.image_handle(),
-        VulkanImageState::General,
-    )
-    .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+    if let Some(readback) = readback {
+        readback
+            .record_transition_and_copy_rgba8(
+                device,
+                command_buffer.handle(),
+                view,
+                VulkanImageState::General,
+            )
+            .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+    } else {
+        VulkanImageTransition::record_release_to_foreign(
+            device,
+            command_buffer.handle(),
+            view.image_handle(),
+            VulkanImageState::General,
+        )
+        .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+    }
 
     command_buffer
         .end()
