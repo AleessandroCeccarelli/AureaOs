@@ -120,6 +120,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
         }
         InputEvent::PointerButton { event } => {
             state.compositor.handle_pointer_button(
+                pointing::id_for(&event.device()),
                 event.button_code(),
                 event.state(),
                 event.time().millis(),
