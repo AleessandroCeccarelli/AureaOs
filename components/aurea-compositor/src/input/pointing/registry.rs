@@ -78,6 +78,14 @@ impl PointingDeviceService {
         true
     }
 
+    /// Reports whether at least one device of the requested kind is connected.
+    pub fn has_kind(&self, kind: InputDeviceKind) -> bool {
+        self.state
+            .lock()
+            .map(|state| state.devices.values().any(|device| device.kind == kind))
+            .unwrap_or(false)
+    }
+
     /// Returns the number of currently registered pointing devices.
     pub fn device_count(&self) -> usize {
         self.state
