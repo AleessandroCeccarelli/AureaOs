@@ -41,12 +41,32 @@ pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
     if pointer {
         capabilities.push(StandardInputCapability::PointerMotion);
         capabilities.push(StandardInputCapability::PointerButtons);
+
+        if device.pointer_has_button(0x112).unwrap_or(false) {
+            capabilities.push(StandardInputCapability::PointerMiddleButton);
+        }
+        if device.pointer_has_button(0x113).unwrap_or(false)
+            || device.pointer_has_button(0x114).unwrap_or(false)
+        {
+            capabilities.push(StandardInputCapability::PointerSideButtons);
+        }
     }
     if touch {
         capabilities.push(StandardInputCapability::Touch);
     }
     if device.has_capability(DeviceCapability::Gesture) {
         capabilities.push(StandardInputCapability::Gestures);
+    }
+    if device.has_capability(DeviceCapability::TabletPad) {
+        if device.tablet_pad_number_of_buttons() > 0 {
+            capabilities.push(StandardInputCapability::TabletPadButtons);
+        }
+        if device.tablet_pad_number_of_rings() > 0 {
+            capabilities.push(StandardInputCapability::TabletPadRings);
+        }
+        if device.tablet_pad_number_of_strips() > 0 {
+            capabilities.push(StandardInputCapability::TabletPadStrips);
+        }
     }
 
     Some(InputDeviceDescriptor {
