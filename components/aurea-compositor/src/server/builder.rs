@@ -306,7 +306,7 @@ pub(super) fn build(
         let output_manager = state.compositor.output_manager();
         if output_manager.active_output_count() == 0 {
             return Err(io::Error::other(
-                "No usable display output was initialized: check DRM/KMS, GBM, Vulkan compatibility, and connected monitors",
+                "No usable display output was initialized: check DRM/KMS, GBM, Vulkan rendering support, and connected monitors",
             ));
         }
 
