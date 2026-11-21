@@ -7,6 +7,8 @@
 
 use std::collections::{BTreeMap, HashSet};
 
+use aurea_desktop_api::input::InputDeviceProvider;
+
 use smithay::{
     backend::input::Keycode,
     input::{Seat, SeatHandler, SeatState, pointer::CursorImageStatus, tablet::TabletSeatHandler, touch::TouchHandle},
