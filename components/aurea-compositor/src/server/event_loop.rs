@@ -11,7 +11,8 @@ use std::{
     time::Duration,
 };
 
-use aurea_desktop_api::{display::DisplayColorController, keyboard::KeyboardLayoutId, desktop_interaction::{DesktopInteractionSender, desktop_interaction_channel}};
+use aurea_desktop_api::{display::DisplayColorController, keyboard::KeyboardLayoutId, desktop_interaction::{DesktopInteractionSender, desktop_interaction_channel}, input::{TouchpadSettingsCommand, touchpad_settings_channel}};
+use std::sync::mpsc::Receiver;
 use smithay::reexports::calloop::EventLoop;
 
 #[cfg(feature = "drm")]
@@ -42,11 +43,12 @@ impl WaylandServer {
         display_color: DisplayColorController,
     ) -> io::Result<Self> {
         let (interactions, _receiver) = desktop_interaction_channel();
+        let (_touchpad_controller, touchpad_settings) = touchpad_settings_channel();
         #[cfg(feature = "drm")]
-        let parts = super::builder::build(socket_name, None, None, display_color, interactions);
+        let parts = super::builder::build(socket_name, None, None, display_color, interactions, touchpad_settings);
 
         #[cfg(not(feature = "drm"))]
-        let parts = super::builder::build(socket_name, display_color, interactions);
+        let parts = super::builder::build(socket_name, display_color, interactions, touchpad_settings);
 
         let (event_loop, state) = parts?;
 
@@ -58,12 +60,14 @@ impl WaylandServer {
     pub fn new_with_drm(socket_name: &str) -> io::Result<Self> {
         let drm_session = session::create_session()?;
         let (interactions, _receiver) = desktop_interaction_channel();
+        let (_touchpad_controller, touchpad_settings) = touchpad_settings_channel();
         Self::build(
             socket_name,
             Some(drm_session),
             None,
             DisplayColorController::new(),
             interactions,
+            touchpad_settings,
         )
     }
 
@@ -74,6 +78,7 @@ impl WaylandServer {
         seat: &str,
         display_color: DisplayColorController,
         interactions: DesktopInteractionSender,
+        touchpad_settings: Receiver<TouchpadSettingsCommand>,
     ) -> io::Result<Self> {
         let mut drm_session = session::create_session()?;
         let drm_device = session::open_primary_device(&mut drm_session, seat)?;
@@ -84,6 +89,7 @@ impl WaylandServer {
             Some(drm_device),
             display_color,
             interactions,
+            touchpad_settings,
         )
     }
 
@@ -94,12 +100,14 @@ impl WaylandServer {
         let drm_device = session::open_device(&mut drm_session, device_path)?;
 
         let (interactions, _receiver) = desktop_interaction_channel();
+        let (_touchpad_controller, touchpad_settings) = touchpad_settings_channel();
         Self::build(
             socket_name,
             Some(drm_session),
             Some(drm_device),
             DisplayColorController::new(),
             interactions,
+            touchpad_settings,
         )
     }
 
@@ -116,9 +124,10 @@ impl WaylandServer {
         drm_device: Option<DrmDevice>,
         display_color: DisplayColorController,
         interactions: DesktopInteractionSender,
+        touchpad_settings: Receiver<TouchpadSettingsCommand>,
     ) -> io::Result<Self> {
         let (event_loop, state) =
-            super::builder::build(socket_name, drm_session, drm_device, display_color, interactions)?;
+            super::builder::build(socket_name, drm_session, drm_device, display_color, interactions, touchpad_settings)?;
 
         Ok(Self { event_loop, state })
     }
