@@ -32,12 +32,12 @@ fn refresh_touchpad_settings(
 ) {
     let id = pointing::id_for(device);
     let settings = state.compositor.touchpad_settings_for(id);
-    if state.applied_touchpad_settings.get(&id) == Some(&settings) {
+    if !state.applied_touchpad_settings.needs_apply(id, settings) {
         return;
     }
     if let Some(report) = pointing::configure_touchpad(device, settings) {
         tracing::info!(device_id = id.0, ?report, "Updated touchpad preferences");
-        state.applied_touchpad_settings.insert(id, settings);
+        state.applied_touchpad_settings.mark_applied(id, settings);
     }
 }
 
@@ -79,7 +79,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let touchpad_settings = state.compositor.touchpad_settings_for(device_id);
             if let Some(report) = pointing::configure_touchpad(&mut device, touchpad_settings) {
                 tracing::info!(?report, "Applied supported touchpad defaults");
-                state.applied_touchpad_settings.insert(device_id, touchpad_settings);
+                state.applied_touchpad_settings.mark_applied(device_id, touchpad_settings);
             }
 
             if let Some(descriptor) = pointing::describe(&device) {
@@ -111,7 +111,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                 tracing::debug!(id = id.0, "Unregistered input device removed");
             }
 
-            state.applied_touchpad_settings.remove(&id);
+            state.applied_touchpad_settings.remove(id);
             state.compositor.pointing_devices().disconnect(id);
             state.compositor.clear_pointing_device_state(id);
             state.compositor.sync_touchscreen_capability();
