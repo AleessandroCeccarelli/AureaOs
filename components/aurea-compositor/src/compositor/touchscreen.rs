@@ -39,12 +39,24 @@ impl AureaCompositor {
             return None;
         }
 
+        let swaps_dimensions = matches!(
+            transform,
+            smithay::utils::Transform::_90
+                | smithay::utils::Transform::_270
+                | smithay::utils::Transform::Flipped90
+                | smithay::utils::Transform::Flipped270
+        );
+        let (source_width, source_height) = if swaps_dimensions {
+            (size.height, size.width)
+        } else {
+            (size.width, size.height)
+        };
         let (transformed_x, transformed_y) = transform_touch_coordinates(
             transform,
             x,
             y,
-            f64::from(size.width),
-            f64::from(size.height),
+            f64::from(source_width),
+            f64::from(source_height),
         )?;
         let local_x = transformed_x.clamp(0.0, f64::from(size.width - 1));
         let local_y = transformed_y.clamp(0.0, f64::from(size.height - 1));
@@ -76,8 +88,21 @@ impl AureaCompositor {
         let output = self.touchscreen_output(device)?;
         let bounds = self.output_manager.logical_bounds(output).ok()??;
         let size = bounds.size();
-        let width = i32::try_from(size.width).ok()?;
-        let height = i32::try_from(size.height).ok()?;
+        let transform = self.output_manager.registry().get(output)?.transform();
+        let swaps_dimensions = matches!(
+            transform,
+            smithay::utils::Transform::_90
+                | smithay::utils::Transform::_270
+                | smithay::utils::Transform::Flipped90
+                | smithay::utils::Transform::Flipped270
+        );
+        let (source_width, source_height) = if swaps_dimensions {
+            (size.height, size.width)
+        } else {
+            (size.width, size.height)
+        };
+        let width = i32::try_from(source_width).ok()?;
+        let height = i32::try_from(source_height).ok()?;
 
         (width > 0 && height > 0).then_some((width, height))
     }
