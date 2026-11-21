@@ -27,6 +27,8 @@ impl OutputGeometry {
             || !height.is_finite()
             || width < 1.0
             || height < 1.0
+            || !(x + width - 1.0).is_finite()
+            || !(y + height - 1.0).is_finite()
         {
             return None;
         }
@@ -169,5 +171,7 @@ mod tests {
     fn rejects_invalid_output_geometry() {
         assert!(OutputGeometry::new(0.0, 0.0, 0.0, 100.0).is_none());
         assert!(OutputGeometry::new(0.0, 0.0, f64::NAN, 100.0).is_none());
+        assert!(OutputGeometry::new(f64::MAX, 0.0, f64::MAX, 100.0).is_none());
+        assert!(OutputGeometry::new(0.0, f64::MAX, 100.0, f64::MAX).is_none());
     }
 }
