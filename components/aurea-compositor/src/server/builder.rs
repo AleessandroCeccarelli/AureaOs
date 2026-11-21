@@ -5,7 +5,7 @@
 
 //! Wayland server construction and backend initialization.
 
-use aurea_desktop_api::display::DisplayColorController;
+use aurea_desktop_api::{display::DisplayColorController, desktop_interaction::DesktopInteractionSender};
 
 use std::{
     io,
@@ -40,12 +40,13 @@ pub(super) fn build(
     #[cfg(feature = "drm")] drm_session: Option<DrmSession>,
     #[cfg(feature = "drm")] drm_device: Option<DrmDevice>,
     display_color: DisplayColorController,
+    desktop_interactions: DesktopInteractionSender,
 ) -> io::Result<(EventLoop<'static, WaylandState>, WaylandState)> {
     let event_loop = EventLoop::<WaylandState>::try_new().map_err(io::Error::other)?;
 
     let display = Display::<AureaCompositor>::new().map_err(io::Error::other)?;
     let display_handle = display.handle();
-    let compositor = AureaCompositor::new(&display_handle);
+    let compositor = AureaCompositor::new(&display_handle, desktop_interactions);
 
     #[cfg(feature = "drm")]
     let session_active = drm_session
