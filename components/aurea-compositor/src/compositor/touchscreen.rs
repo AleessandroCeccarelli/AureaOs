@@ -60,6 +60,17 @@ impl AureaCompositor {
         })
     }
 
+    /// Returns the logical pixel extent used to transform a device's absolute coordinates.
+    pub fn touchscreen_extent(
+        &self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> Option<(i32, i32)> {
+        let output = self.touchscreen_output(device)?;
+        let bounds = self.output_manager.logical_bounds(output).ok()??;
+        let size = bounds.size();
+        (size.width > 0 && size.height > 0).then_some((size.width, size.height))
+    }
+
     /// Starts a contact from one physical touchscreen.
     pub fn handle_touch_down(
         &mut self,
@@ -117,7 +128,6 @@ impl AureaCompositor {
             self.touchscreen_focus(location),
             &MotionEvent { slot, location, time },
         );
-        touch.frame(self);
         self.request_all_output_frames();
     }
 
@@ -143,7 +153,6 @@ impl AureaCompositor {
                 time,
             },
         );
-        touch.frame(self);
         self.request_all_output_frames();
     }
 
