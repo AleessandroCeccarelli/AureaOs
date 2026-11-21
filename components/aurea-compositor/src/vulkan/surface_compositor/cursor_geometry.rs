@@ -50,8 +50,7 @@ pub(super) fn native_cursor_geometry(
             target.logical_origin(),
             target.scale(),
         )
-    }
-    ?;
+    }?;
     let geometry = transform_geometry_for_output(
         geometry,
         target.width(),
