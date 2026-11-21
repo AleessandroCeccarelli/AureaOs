@@ -316,6 +316,10 @@ impl AureaCompositor {
 
     /// Clears gesture and touchscreen routing state for a disconnected device.
     pub fn remove_pointing_device_state(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
+        let time = smithay::utils::Clock::<smithay::utils::Monotonic>::new()
+            .now()
+            .as_millis() as u32;
+        self.handle_touch_cancel(device, time);
         self.interaction_engine.remove_device(device);
         self.touchscreen_outputs.remove_device(device);
         self.touchscreen_slots.remove_device(device);
