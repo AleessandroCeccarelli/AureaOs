@@ -202,8 +202,14 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
             VulkanCpuScanoutError(format!("Vulkan output readback failed: {error}"))
         })?;
 
+        let plane_formats = surface
+            .plane_info()
+            .formats
+            .iter()
+            .map(|format| format.code)
+            .collect::<Vec<_>>();
         let candidate = pool
-            .allocate(gbm, drm_fd, target.width(), target.height())
+            .allocate(gbm, drm_fd, target.width(), target.height(), &plane_formats)
             .map_err(|error| {
                 VulkanCpuScanoutError(format!("GBM framebuffer allocation failed: {error}"))
             })?;
