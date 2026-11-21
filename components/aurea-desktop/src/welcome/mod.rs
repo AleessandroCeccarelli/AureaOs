@@ -49,10 +49,13 @@ impl WelcomeWindow {
 }
 
 pub fn run() -> io::Result<()> {
+    eprintln!("Aurea Welcome: starting Wayland client");
     let connection = Connection::connect_to_env()
         .map_err(|error| io::Error::other(format!("cannot connect to Wayland: {error}")))?;
+    eprintln!("Aurea Welcome: connected to Wayland display {:?}", std::env::var("WAYLAND_DISPLAY").unwrap_or_else(|_| "unset".to_owned()));
     let (globals, mut queue) = registry_queue_init::<WelcomeWindow>(&connection)
         .map_err(|error| io::Error::other(format!("Wayland registry failed: {error}")))?;
+    eprintln!("Aurea Welcome: Wayland registry initialized");
     let qh = queue.handle();
 
     let compositor = globals
@@ -72,6 +75,7 @@ pub fn run() -> io::Result<()> {
     toplevel.set_app_id("org.aureaos.Welcome".to_owned());
     toplevel.set_min_size(560, 360);
     surface.commit();
+    eprintln!("Aurea Welcome: XDG toplevel committed; waiting for configure");
 
     let mut state = WelcomeWindow::new(shm, surface);
 
@@ -87,5 +91,6 @@ pub fn run() -> io::Result<()> {
             .map_err(|error| io::Error::other(format!("Wayland dispatch failed: {error}")))?;
     }
 
+    eprintln!("Aurea Welcome: compositor requested window close");
     Ok(())
 }
