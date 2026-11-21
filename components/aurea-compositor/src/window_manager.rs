@@ -218,11 +218,18 @@ impl WindowManager {
             .count()
     }
 
-    /// Returns the alive, mapped toplevels for rendering.
+    /// Returns the alive, mapped toplevels on the active workspace.
+    ///
+    /// Windows on inactive workspaces remain managed but are excluded from
+    /// operations that select a visible window, such as initial placement.
     pub fn mapped_toplevels(&self) -> impl Iterator<Item = &ToplevelSurface> {
         self.toplevels
             .iter()
-            .filter(|toplevel| toplevel.surface.alive() && toplevel.mapped)
+            .filter(|toplevel| {
+                toplevel.surface.alive()
+                    && toplevel.mapped
+                    && toplevel.workspace == self.active_workspace
+            })
             .map(|toplevel| &toplevel.surface)
     }
 
