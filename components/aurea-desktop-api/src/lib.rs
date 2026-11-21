@@ -26,6 +26,7 @@ use std::sync::{
 };
 
 use display::DisplayColorController;
+use desktop_interaction::DesktopInteractionSender;
 
 /// Shared shutdown signal used to coordinate desktop components.
 #[derive(Clone, Default)]
@@ -74,5 +75,6 @@ pub trait CompositorFactory: Send + Sync + 'static {
     fn create(
         &self,
         display_color: DisplayColorController,
+        interactions: DesktopInteractionSender,
     ) -> io::Result<Box<dyn CompositorService>>;
 }
