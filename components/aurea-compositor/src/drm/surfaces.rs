@@ -93,6 +93,7 @@ pub struct ManagedDrmSurface {
     frame_pool: VulkanDrmFramePool,
     cpu_frame_pool: GbmCpuFramebufferPool,
     cpu_presentation: CpuPresentationBackend,
+    direct_scanout_disabled: bool,
 }
 
 impl ManagedDrmSurface {
@@ -120,6 +121,17 @@ impl ManagedDrmSurface {
     pub fn frame_pool_mut(&mut self) -> &mut VulkanDrmFramePool {
         &mut self.frame_pool
     }
+    /// Permanently disables direct Vulkan scanout for this output after a
+    /// connector-specific allocation failure; compatibility presentation remains available.
+    pub(crate) fn disable_direct_scanout(&mut self) {
+        self.direct_scanout_disabled = true;
+    }
+
+    /// Returns whether direct Vulkan scanout has been disabled for this output.
+    pub(crate) fn direct_scanout_disabled(&self) -> bool {
+        self.direct_scanout_disabled
+    }
+
     /// Returns whether a CPU-uploaded framebuffer is awaiting its KMS page flip.
     pub(crate) fn cpu_presentation_pending(&self) -> bool {
         self.cpu_frame_pool.pending().is_some()
