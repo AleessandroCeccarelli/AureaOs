@@ -12,6 +12,7 @@ mod mouse;
 mod registry;
 mod tablet;
 mod tablet_outputs;
+mod tablet_calibration;
 mod touchscreen;
 mod touchscreen_calibration;
 pub mod touchscreen_transform;
@@ -41,3 +42,8 @@ pub(super) fn configure_touchpad(
 
     touchpad_settings::apply(device, settings)
 }
+
+pub use tablet_calibration::{
+    TabletAspectMode, TabletCalibration, TabletCalibrationError, TabletCalibrationMap,
+    TabletRotation,
+};
