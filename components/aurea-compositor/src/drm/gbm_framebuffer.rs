@@ -8,7 +8,7 @@
 use std::{error::Error, fmt};
 
 use smithay::{
-    backend::{allocator::Modifier, drm::DrmDeviceFd},
+    backend::drm::DrmDeviceFd,
     reexports::drm::{
         buffer::PlanarBuffer,
         control::{Device, FbCmd2Flags, framebuffer},
@@ -64,10 +64,6 @@ impl StrictGbmFramebuffer {
         &self.handle
     }
 
-    /// Returns the exact format registered with KMS.
-    pub(crate) fn format(&self) -> Format {
-        self.format
-    }
 }
 
 impl AsRef<framebuffer::Handle> for StrictGbmFramebuffer {
