@@ -12,8 +12,8 @@ mod welcome_process;
 
 use std::ffi::OsStr;
 
-use aurea_shell::{app, config::ShellConfig};
 use aurea_desktop::keyboard_layout_store::KeyboardLayoutStore;
+use aurea_shell::{app, config::ShellConfig};
 
 fn main() {
     if std::env::args_os().nth(1).as_deref() == Some(OsStr::new("--welcome-client")) {

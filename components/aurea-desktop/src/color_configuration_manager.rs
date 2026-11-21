@@ -283,4 +283,3 @@ impl DisplayColorConfigurationManager for DesktopColorConfigurationManager {
             .collect()
     }
 }
-

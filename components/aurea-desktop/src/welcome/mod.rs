@@ -20,7 +20,8 @@ pub(super) const HEIGHT: usize = 440;
 use std::io;
 
 use wayland_client::{
-    Connection, globals::registry_queue_init,
+    Connection,
+    globals::registry_queue_init,
     protocol::{wl_compositor::WlCompositor, wl_shm::WlShm, wl_surface::WlSurface},
 };
 use wayland_protocols::xdg::shell::client::xdg_wm_base::XdgWmBase;
