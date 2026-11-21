@@ -114,10 +114,8 @@ impl AureaCompositor {
         })
     }
 
-    fn apply_tablet_axes<E>(
-        tool: &smithay::wayland::tablet_manager::TabletToolHandle,
-        event: &E,
-    ) where
+    fn apply_tablet_axes<E>(tool: &smithay::wayland::tablet_manager::TabletToolHandle, event: &E)
+    where
         E: TabletToolEvent<LibinputInputBackend>,
     {
         if event.pressure_has_changed() {
@@ -181,13 +179,7 @@ impl AureaCompositor {
                 };
                 Self::apply_tablet_axes(&tool, &event);
                 if let Some(focus) = self.tablet_focus(location) {
-                    tool.proximity_in(
-                        location,
-                        focus,
-                        &tablet,
-                        SERIAL_COUNTER.next_serial(),
-                        time,
-                    );
+                    tool.proximity_in(location, focus, &tablet, SERIAL_COUNTER.next_serial(), time);
                 }
             }
             smithay::backend::input::ProximityState::Out => {
