@@ -6,7 +6,6 @@
 use crate::AureaCompositor;
 use aurea_desktop_api::desktop_interaction::desktop_interaction_channel;
 use smithay::reexports::wayland_server::Display;
-use aurea_desktop_api::desktop_interaction::desktop_interaction_channel;
 
 #[test]
 fn compositor_initializes_wayland_shared_memory_state() {
