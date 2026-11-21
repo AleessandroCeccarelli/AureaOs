@@ -17,9 +17,26 @@ use std::{
 pub enum GpuAvailability {
     /// The device is available for use.
     Available,
-
     /// The device is temporarily unavailable.
     Unavailable,
+}
+
+/// Hardware and administrator selection hints used by the primary-GPU policy.
+///
+/// These values are discovery metadata, not proof that a Vulkan renderer can
+/// use the device. The caller must still validate the Vulkan device separately.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct GpuSelectionMetadata {
+    /// The device was explicitly marked as the preferred primary by system policy.
+    pub preferred_primary: bool,
+    /// A connected built-in panel (eDP, LVDS or DSI) is attached to this GPU.
+    pub has_builtin_panel: bool,
+    /// The DRM device is backed by a platform device rather than a PCI device.
+    pub is_platform_device: bool,
+    /// The firmware identifies this device as the boot VGA device.
+    pub is_boot_vga: bool,
+    /// Vulkan reports a usable hardware renderer for this GPU.
+    pub hardware_rendering: bool,
 }
 
 /// Metadata tracked for a discovered GPU.
@@ -27,6 +44,7 @@ pub enum GpuAvailability {
 pub struct GpuDevice {
     path: PathBuf,
     availability: GpuAvailability,
+    selection: GpuSelectionMetadata,
 }
 
 impl GpuDevice {
@@ -44,6 +62,11 @@ impl GpuDevice {
     pub fn is_available(&self) -> bool {
         self.availability == GpuAvailability::Available
     }
+
+    /// Returns the selection hints discovered for this GPU.
+    pub fn selection_metadata(&self) -> GpuSelectionMetadata {
+        self.selection
+    }
 }
 
 /// Errors returned by the GPU manager.
@@ -51,10 +74,8 @@ impl GpuDevice {
 pub enum GpuManagerError {
     /// The supplied device path is not absolute.
     InvalidDevicePath(PathBuf),
-
     /// The device is already registered.
     DeviceAlreadyRegistered(PathBuf),
-
     /// The requested device is not registered.
     UnknownDevice(PathBuf),
 }
@@ -66,11 +87,7 @@ impl fmt::Display for GpuManagerError {
                 write!(formatter, "Invalid GPU device path: {}", path.display())
             }
             Self::DeviceAlreadyRegistered(path) => {
-                write!(
-                    formatter,
-                    "GPU device is already registered: {}",
-                    path.display()
-                )
+                write!(formatter, "GPU device is already registered: {}", path.display())
             }
             Self::UnknownDevice(path) => {
                 write!(formatter, "Unknown GPU device: {}", path.display())
@@ -99,16 +116,11 @@ impl GpuManager {
     }
 
     /// Registers a discovered DRM device.
-    ///
-    /// New devices are initially considered available.
-    /// Duplicate paths are rejected.
     pub fn register_device(&mut self, path: impl Into<PathBuf>) -> Result<(), GpuManagerError> {
         let path = path.into();
-
         if !path.is_absolute() {
             return Err(GpuManagerError::InvalidDevicePath(path));
         }
-
         if self.devices.contains_key(&path) {
             return Err(GpuManagerError::DeviceAlreadyRegistered(path));
         }
@@ -118,27 +130,21 @@ impl GpuManager {
             GpuDevice {
                 path,
                 availability: GpuAvailability::Available,
+                selection: GpuSelectionMetadata::default(),
             },
         );
-
         Ok(())
     }
 
-    /// Removes a GPU from the inventory.
-    ///
-    /// Any primary or preferred selection referring to this device is cleared.
-    /// Returns the removed device when it was registered.
+    /// Removes a GPU from the inventory and clears selections referring to it.
     pub fn remove_device(&mut self, path: &Path) -> Option<GpuDevice> {
         let removed = self.devices.remove(path)?;
-
         if self.primary_device.as_deref() == Some(path) {
             self.primary_device = None;
         }
-
         if self.preferred_render_device.as_deref() == Some(path) {
             self.preferred_render_device = None;
         }
-
         Some(removed)
     }
 
@@ -148,34 +154,74 @@ impl GpuManager {
         path: &Path,
         availability: GpuAvailability,
     ) -> Result<(), GpuManagerError> {
-        let device = self
-            .devices
-            .get_mut(path)
+        let device = self.devices.get_mut(path)
             .ok_or_else(|| GpuManagerError::UnknownDevice(path.to_path_buf()))?;
-
         device.availability = availability;
-
         Ok(())
     }
 
-    /// Sets the primary GPU.
+    /// Updates policy metadata after DRM, sysfs, udev and Vulkan discovery.
+    pub fn set_selection_metadata(
+        &mut self,
+        path: &Path,
+        metadata: GpuSelectionMetadata,
+    ) -> Result<(), GpuManagerError> {
+        let device = self.devices.get_mut(path)
+            .ok_or_else(|| GpuManagerError::UnknownDevice(path.to_path_buf()))?;
+        device.selection = metadata;
+        Ok(())
+    }
+
+    /// Chooses a primary GPU using the same priority classes as Mutter.
+    ///
+    /// Hardware-rendering-capable candidates are considered before software
+    /// candidates. Within each class: explicit preference, built-in panel,
+    /// platform device, boot VGA, then any remaining device. Ties are stable
+    /// because the inventory is ordered by DRM path.
+    ///
+    /// This only chooses the compositor's primary GPU. Each output continues
+    /// to be owned and presented by its actual DRM device.
+    pub fn select_primary_by_policy(&mut self) -> Option<&GpuDevice> {
+        let selected = [true, false].into_iter().find_map(|hardware_only| {
+            self.devices.values().find(|device| {
+                device.is_available()
+                    && (!hardware_only || device.selection.hardware_rendering)
+                    && device.selection.preferred_primary
+            }).or_else(|| self.devices.values().find(|device| {
+                device.is_available()
+                    && (!hardware_only || device.selection.hardware_rendering)
+                    && device.selection.has_builtin_panel
+            })).or_else(|| self.devices.values().find(|device| {
+                device.is_available()
+                    && (!hardware_only || device.selection.hardware_rendering)
+                    && device.selection.is_platform_device
+            })).or_else(|| self.devices.values().find(|device| {
+                device.is_available()
+                    && (!hardware_only || device.selection.hardware_rendering)
+                    && device.selection.is_boot_vga
+            })).or_else(|| self.devices.values().find(|device| {
+                device.is_available()
+                    && (!hardware_only || device.selection.hardware_rendering)
+            }))
+        })?;
+
+        self.primary_device = Some(selected.path.clone());
+        self.primary_device()
+    }
+
+    /// Sets the primary GPU explicitly.
     pub fn set_primary_device(&mut self, path: impl AsRef<Path>) -> Result<(), GpuManagerError> {
         let path = path.as_ref();
-
         if !self.devices.contains_key(path) {
             return Err(GpuManagerError::UnknownDevice(path.to_path_buf()));
         }
-
         self.primary_device = Some(path.to_path_buf());
-
         Ok(())
     }
 
     /// Returns the configured primary GPU, if registered.
     pub fn primary_device(&self) -> Option<&GpuDevice> {
-        self.primary_device
-            .as_ref()
-            .and_then(|path| self.devices.get(path))
+        self.primary_device.as_ref().and_then(|path| self.devices.get(path))
     }
 
     /// Sets an explicit preferred rendering GPU.
@@ -184,13 +230,10 @@ impl GpuManager {
         path: impl AsRef<Path>,
     ) -> Result<(), GpuManagerError> {
         let path = path.as_ref();
-
         if !self.devices.contains_key(path) {
             return Err(GpuManagerError::UnknownDevice(path.to_path_buf()));
         }
-
         self.preferred_render_device = Some(path.to_path_buf());
-
         Ok(())
     }
 
@@ -201,19 +244,10 @@ impl GpuManager {
 
     /// Returns the explicitly preferred rendering GPU, if configured.
     pub fn preferred_render_device(&self) -> Option<&GpuDevice> {
-        self.preferred_render_device
-            .as_ref()
-            .and_then(|path| self.devices.get(path))
+        self.preferred_render_device.as_ref().and_then(|path| self.devices.get(path))
     }
 
     /// Selects an available rendering GPU.
-    ///
-    /// Selection order:
-    /// 1. Explicit preferred GPU, when available.
-    /// 2. Primary GPU, when available.
-    /// 3. First available registered GPU.
-    ///
-    /// This is a deterministic fallback policy, not a performance benchmark.
     pub fn selected_render_device(&self) -> Option<&GpuDevice> {
         self.preferred_render_device()
             .filter(|device| device.is_available())
@@ -222,14 +256,6 @@ impl GpuManager {
     }
 
     /// Selects a rendering GPU for one output without choosing an unrelated device.
-    ///
-    /// Selection order:
-    /// 1. Explicit preferred GPU, when available.
-    /// 2. Primary GPU, when available.
-    /// 3. The GPU driving this output, when available.
-    ///
-    /// Unlike selected_render_device, this method never falls back to an
-    /// arbitrary inventory entry that may not be able to present this output.
     pub fn selected_render_device_for_output(
         &self,
         output_device_path: &Path,
@@ -237,10 +263,7 @@ impl GpuManager {
         self.preferred_render_device()
             .filter(|device| device.is_available())
             .or_else(|| self.primary_device().filter(|device| device.is_available()))
-            .or_else(|| {
-                self.get_device(output_device_path)
-                    .filter(|device| device.is_available())
-            })
+            .or_else(|| self.get_device(output_device_path).filter(|device| device.is_available()))
     }
 
     /// Returns a registered GPU by its DRM path.
