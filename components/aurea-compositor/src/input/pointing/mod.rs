@@ -12,6 +12,7 @@ mod tablet;
 mod touchscreen;
 mod touchscreen_slots;
 mod touchpad;
+mod touchpad_settings;
 
 pub use registry::PointingDeviceService;
 pub use touchscreen::TouchscreenOutputMap;
