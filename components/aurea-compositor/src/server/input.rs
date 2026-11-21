@@ -105,7 +105,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             state.compositor.handle_pointer_button(
                 event.button_code(),
                 event.state(),
-                event.time() as u32,
+                event.time().millis(),
             );
         }
         InputEvent::PointerAxis { event } => {
@@ -117,7 +117,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                 event.source(),
                 event.relative_direction(Axis::Horizontal),
                 event.relative_direction(Axis::Vertical),
-                event.time() as u32,
+                event.time().millis(),
             );
         }
         InputEvent::GestureSwipeBegin { event } => {
