@@ -18,11 +18,8 @@ pub(super) fn initialize_outputs(state: &mut WaylandState) -> io::Result<()> {
         .collect::<Vec<_>>();
 
     for node in nodes {
-        if !super::gbm_lifecycle::graphics_dependencies_ready(
-            state.gbm_devices.contains(node),
-            state.vulkan_backends.contains_key(&node),
-        ) {
-            eprintln!("AureaOS: skipping outputs for {node}: GBM or Vulkan backend is unavailable");
+        if !super::gbm_lifecycle::output_presentation_ready(state.gbm_devices.contains(node)) {
+            eprintln!("AureaOS: skipping outputs for {node}: GBM presentation is unavailable");
             continue;
         }
 
