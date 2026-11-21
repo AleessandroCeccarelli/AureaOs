@@ -6,7 +6,11 @@
 //! Coordinated pointing-device services.
 
 mod discovery;
+mod mouse;
 mod registry;
+mod tablet;
+mod touchscreen;
+mod touchpad;
 
 pub use registry::PointingDeviceService;
 pub(super) use discovery::describe;
