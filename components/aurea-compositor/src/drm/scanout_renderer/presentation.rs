@@ -5,8 +5,6 @@
 
 //! Vulkan frame composition, ownership release and atomic KMS submission.
 
-use std::sync::Arc;
-
 use smithay::{
     backend::drm::{DrmSurface, PlaneConfig, PlaneState},
     utils::{Buffer, Physical, Rectangle, Size, Transform},
