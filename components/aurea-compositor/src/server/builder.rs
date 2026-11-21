@@ -69,6 +69,7 @@ pub(super) fn build(
         disconnected_clients: Arc::new(Mutex::new(Vec::new())),
         error: None,
         display_color,
+        applied_touchpad_settings: std::collections::HashMap::new(),
 
         #[cfg(feature = "drm")]
         drm_session,
