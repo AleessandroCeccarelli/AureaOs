@@ -15,7 +15,7 @@ use std::{
 
 use aurea_desktop_api::input::{
     InputDeviceDescriptor, InputDeviceEvent, InputDeviceId, InputDeviceKind,
-    InputDeviceProvider, TouchpadApplyReport, InputDeviceKind,
+    InputDeviceProvider, TouchpadApplyReport,
 };
 
 #[derive(Default)]
@@ -218,6 +218,59 @@ mod tests {
         );
         assert_eq!(service.device(InputDeviceId(8)), Some(updated));
         assert_eq!(service.device_count(), 1);
+    }
+
+    #[test]
+    fn touchpad_report_is_available_only_for_registered_touchpads() {
+        let service = PointingDeviceService::new();
+        let id = InputDeviceId(21);
+        let report = TouchpadApplyReport {
+            tap_to_click: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            two_finger_scroll: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+        };
+
+        assert!(!service.set_touchpad_report(id, report));
+        assert!(service.connect(descriptor(21, InputDeviceKind::Touchpad)));
+        assert!(service.set_touchpad_report(id, report));
+        assert_eq!(service.touchpad_report(id), Some(report));
+    }
+
+    #[test]
+    fn disconnect_removes_touchpad_configuration_report() {
+        let service = PointingDeviceService::new();
+        let id = InputDeviceId(22);
+        let report = TouchpadApplyReport {
+            tap_to_click: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            two_finger_scroll: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+        };
+
+        service.connect(descriptor(22, InputDeviceKind::Touchpad));
+        assert!(service.set_touchpad_report(id, report));
+        assert!(service.disconnect(id));
+        assert_eq!(service.touchpad_report(id), None);
+    }
+
+    #[test]
+    fn mouse_cannot_receive_touchpad_configuration_report() {
+        let service = PointingDeviceService::new();
+        let id = InputDeviceId(23);
+        let report = TouchpadApplyReport {
+            tap_to_click: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            two_finger_scroll: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        };
+
+        service.connect(descriptor(23, InputDeviceKind::Mouse));
+        assert!(!service.set_touchpad_report(id, report));
+        assert_eq!(service.touchpad_report(id), None);
     }
 
     #[test]
