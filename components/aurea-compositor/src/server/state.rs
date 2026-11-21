@@ -13,10 +13,10 @@ use std::{
 use aurea_desktop_api::display::DisplayColorController;
 
 #[cfg(feature = "drm")]
-use aurea_desktop_api::input::{InputDeviceId, TouchpadSettings};
+use crate::input::pointing::AppliedTouchpadSettings;
 
 #[cfg(feature = "drm")]
-use std::{collections::HashMap, path::PathBuf};
+use std::path::PathBuf;
 
 #[cfg(feature = "drm")]
 use smithay::backend::drm::DrmNode;
@@ -52,7 +52,7 @@ pub(super) struct WaylandState {
 
     /// Last touchpad profile applied to each live libinput device (IDs only; no device handles).
     #[cfg(feature = "drm")]
-    pub(super) applied_touchpad_settings: HashMap<InputDeviceId, TouchpadSettings>,
+    pub(super) applied_touchpad_settings: AppliedTouchpadSettings,
 
     #[cfg(feature = "drm")]
     pub(super) drm_session: Option<DrmSession>,
