@@ -162,6 +162,10 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                 device.has_capability(smithay::reexports::input::DeviceCapability::TabletTool),
                 device.has_capability(smithay::reexports::input::DeviceCapability::TabletPad),
             );
+            eprintln!(
+                "AureaOS input: touchpad indicators tap_fingers={} disable_while_typing_available={}",
+                device.config_tap_finger_count(), device.config_dwt_is_available()
+            );
             let touchpad_settings = state.compositor.touchpad_settings_for(device_id);
             let touchpad_report = pointing::configure_touchpad(&mut device, touchpad_settings);
             if let Some(report) = touchpad_report {
@@ -266,6 +270,11 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             );
         }
         InputEvent::PointerButton { event } => {
+            let device_name = event.device().name().to_owned();
+            eprintln!(
+                "AureaOS input: pointer button device={:?} code={} state={:?}",
+                device_name, event.button_code(), event.state()
+            );
             let mut device = event.device();
             refresh_touchpad_settings(state, &mut device);
             state.compositor.handle_pointer_button(
@@ -276,6 +285,11 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             );
         }
         InputEvent::PointerAxis { event } => {
+            let device_name = event.device().name().to_owned();
+            eprintln!(
+                "AureaOS input: pointer axis device={:?} horizontal={:.3} vertical={:.3} source={:?}",
+                device_name, event.amount(Axis::Horizontal), event.amount(Axis::Vertical), event.source()
+            );
             let mut device = event.device();
             refresh_touchpad_settings(state, &mut device);
             state.compositor.handle_pointer_axis(
