@@ -33,6 +33,11 @@ pub(super) fn register_input_backend(
         .udev_assign_seat(&session.seat())
         .map_err(|_| io::Error::other("Failed to assign libinput to the active seat"))?;
 
+    eprintln!(
+        "AureaOS input: libinput assigned to seat {}",
+        session.seat()
+    );
+
     let backend = LibinputInputBackend::new(context);
     loop_handle
         .insert_source(backend, |event, _, state| {
@@ -58,14 +63,21 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             );
         }
         InputEvent::PointerMotion { event } => {
+            let delta = event.delta();
+            let unaccelerated_delta = event.delta_unaccel();
+            eprintln!(
+                "AureaOS input: relative pointer motion dx={:.3} dy={:.3}",
+                delta.x, delta.y
+            );
+
             let mut device = event.device();
             crate::input::pointer_acceleration::apply(
                 &mut device,
                 state.compositor.pointer_settings(),
             );
             state.compositor.handle_pointer_motion(
-                event.delta(),
-                event.delta_unaccel(),
+                delta,
+                unaccelerated_delta,
                 event.time() as u32,
             );
         }
