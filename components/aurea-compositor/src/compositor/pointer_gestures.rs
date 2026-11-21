@@ -19,10 +19,6 @@ use super::AureaCompositor;
 impl AureaCompositor {
     /// Drops any unfinished gesture sequence owned by a disconnected device.
     pub fn clear_pointing_device_state(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
-        let time = smithay::utils::Clock::<smithay::utils::Monotonic>::new()
-            .now()
-            .as_millis() as u32;
-        self.handle_touch_cancel(device, time);
         self.remove_pointing_device_state(device);
     }
 
