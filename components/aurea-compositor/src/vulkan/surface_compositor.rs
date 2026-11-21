@@ -86,7 +86,7 @@ pub(super) fn render_frame(
     let active_surface_ids = scene.surface_ids();
     let snapshots = scene.shm_snapshots();
     let visible = visible_surfaces(snapshots, target)?;
-    let cursor = native_cursor_geometry(scene, target)?;
+    let cursor = native_cursor_geometry(scene, target);
     let texture_requests = visible
         .iter()
         .map(|surface| {
