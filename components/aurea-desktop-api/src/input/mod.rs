@@ -11,6 +11,7 @@ mod extension;
 pub mod keyboard;
 pub mod pointer;
 pub mod touchpad;
+mod touchpad_controller;
 
 pub use action::InputAction;
 pub use device::{
@@ -19,6 +20,9 @@ pub use device::{
 };
 pub use extension::{ExtensionCapability, ExtensionPermission, PeripheralExtensionDescriptor};
 pub use touchpad::{TouchpadApplyReport, TouchpadSettingStatus, TouchpadSettings};
+pub use touchpad_controller::{
+    TouchpadSettingsCommand, TouchpadSettingsController, touchpad_settings_channel,
+};
 pub use pointer::{
     PointerAccelerationProfile, PointerButton, PointerSettings, PointerSettingsError,
     PointerSettingsProvider,
