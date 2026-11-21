@@ -55,7 +55,11 @@ pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
     })
 }
 
-fn nonzero_id(value: u32) -> Option<u16> {\n    (value != 0).then_some(value as u16)\n}\n\nfn stable_device_id(value: &str) -> u64 {
+fn nonzero_id(value: u32) -> Option<u16> {
+    (value != 0).then_some(value as u16)
+}
+
+fn stable_device_id(value: &str) -> u64 {
     // FNV-1a: deterministic across runs, unlike DefaultHasher.
     value.bytes().fold(0xcbf29ce484222325, |hash, byte| {
         (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3)
