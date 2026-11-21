@@ -12,7 +12,7 @@ mod release;
 mod visible_surfaces;
 
 pub(crate) use error::VulkanSurfaceCompositionError;
-use readback::clear_and_readback;
+use readback::{clear_and_readback, clear_display_and_readback};
 pub(crate) use readback_entry::render_and_readback;
 use release::{clear_and_release, clear_display_and_release};
 use visible_surfaces::visible_surfaces;
@@ -152,12 +152,21 @@ pub(super) fn render_frame(
             .complete_surface_texture_uploads()
             .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
         if let Some(readback) = readback {
-            if display_color.is_some() {
-                return Err(VulkanSurfaceCompositionError::Command(
-                    "Readback clear with display-color pass is not supported yet".into(),
-                ));
-            }
-            return clear_and_readback(device, view, previous_image_state, readback);
+            return match display_color {
+                Some((pass, warmth, intermediate_view, intermediate_state)) => {
+                    clear_display_and_readback(
+                        device,
+                        view,
+                        previous_image_state,
+                        pass,
+                        warmth,
+                        intermediate_view,
+                        intermediate_state,
+                        readback,
+                    )
+                }
+                None => clear_and_readback(device, view, previous_image_state, readback),
+            };
         }
         return match display_color {
             Some((pass, warmth, intermediate_view, intermediate_state)) => {
