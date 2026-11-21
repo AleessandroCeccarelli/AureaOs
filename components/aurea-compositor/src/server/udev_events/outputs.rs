@@ -84,6 +84,9 @@ pub(in crate::server) fn refresh_device_outputs(
         .publish_output_reconciliation(&display, before, &changes)
         .map_err(io::Error::other)?;
     state.compositor.center_pointer_on_primary_output();
+    // Like Smithay Anvil, schedule an initial frame as soon as a hotplugged
+    // output has been published and its native KMS surface is ready.
+    state.compositor.request_all_output_frames();
     Ok(())
 }
 
