@@ -5,7 +5,11 @@
 
 //! Dispatches requested output frames to the DRM/Vulkan scanout backend.
 
-use std::{io, path::PathBuf, sync::atomic::{AtomicU64, Ordering}};
+use std::{
+    io,
+    path::PathBuf,
+    sync::atomic::{AtomicU64, Ordering},
+};
 
 static RENDERED_OUTPUT_FRAMES: AtomicU64 = AtomicU64::new(0);
 

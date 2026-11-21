@@ -5,7 +5,10 @@
 
 //! libinput backend registration and input event routing.
 
-use std::{io, sync::atomic::{AtomicU64, Ordering}};
+use std::{
+    io,
+    sync::atomic::{AtomicU64, Ordering},
+};
 
 use aurea_desktop_api::input::InputDeviceProvider;
 
@@ -155,7 +158,9 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let device_id = pointing::id_for(&device);
             eprintln!(
                 "AureaOS input: device added name={:?} sysname={:?} id={} pointer={} touch={} gesture={} tablet_tool={} tablet_pad={}",
-                device.name(), device.sysname(), device_id.0,
+                device.name(),
+                device.sysname(),
+                device_id.0,
                 device.has_capability(smithay::reexports::input::DeviceCapability::Pointer),
                 device.has_capability(smithay::reexports::input::DeviceCapability::Touch),
                 device.has_capability(smithay::reexports::input::DeviceCapability::Gesture),
@@ -164,7 +169,8 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             );
             eprintln!(
                 "AureaOS input: touchpad indicators tap_fingers={} disable_while_typing_available={}",
-                device.config_tap_finger_count(), device.config_dwt_is_available()
+                device.config_tap_finger_count(),
+                device.config_dwt_is_available()
             );
             let touchpad_settings = state.compositor.touchpad_settings_for(device_id);
             let touchpad_report = pointing::configure_touchpad(&mut device, touchpad_settings);
@@ -210,7 +216,8 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
         InputEvent::DeviceRemoved { device } => {
             eprintln!(
                 "AureaOS input: device removed name={:?} sysname={:?}",
-                device.name(), device.sysname()
+                device.name(),
+                device.sysname()
             );
             if device.has_capability(smithay::reexports::input::DeviceCapability::TabletTool) {
                 state.compositor.remove_tablet_device(&device);
@@ -252,7 +259,11 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                 let device = event.device();
                 eprintln!(
                     "AureaOS input: pointer motion count={} device={:?} sysname={:?} delta=({:.3},{:.3})",
-                    count, device.name(), device.sysname(), delta.x, delta.y
+                    count,
+                    device.name(),
+                    device.sysname(),
+                    delta.x,
+                    delta.y
                 );
             }
             let unaccelerated_delta = event.delta_unaccel();
@@ -273,7 +284,9 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let device_name = event.device().name().to_owned();
             eprintln!(
                 "AureaOS input: pointer button device={:?} code={} state={:?}",
-                device_name, event.button_code(), event.state()
+                device_name,
+                event.button_code(),
+                event.state()
             );
             let mut device = event.device();
             refresh_touchpad_settings(state, &mut device);
@@ -287,8 +300,11 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
         InputEvent::PointerAxis { event } => {
             let device_name = event.device().name().to_owned();
             eprintln!(
-                "AureaOS input: pointer axis device={:?} horizontal={:.3} vertical={:.3} source={:?}",
-                device_name, event.amount(Axis::Horizontal), event.amount(Axis::Vertical), event.source()
+                "AureaOS input: pointer axis device={:?} horizontal={:?} vertical={:?} source={:?}",
+                device_name,
+                event.amount(Axis::Horizontal),
+                event.amount(Axis::Vertical),
+                event.source()
             );
             let mut device = event.device();
             refresh_touchpad_settings(state, &mut device);

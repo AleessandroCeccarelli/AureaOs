@@ -135,13 +135,16 @@ impl Dispatch<XdgToplevel, ()> for WelcomeWindow {
     ) {
         match event {
             xdg_toplevel::Event::Configure { width, height, .. } => {
-                eprintln!("Aurea Welcome: toplevel configured size={}x{}", width, height);
+                eprintln!(
+                    "Aurea Welcome: toplevel configured size={}x{}",
+                    width, height
+                );
                 state.configured_size = Some((width, height));
             }
             xdg_toplevel::Event::Close => {
                 eprintln!("Aurea Welcome: received xdg_toplevel close");
                 state.closed = true;
-            },
+            }
             _ => {}
         }
     }

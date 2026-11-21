@@ -52,7 +52,10 @@ pub fn run() -> io::Result<()> {
     eprintln!("Aurea Welcome: starting Wayland client");
     let connection = Connection::connect_to_env()
         .map_err(|error| io::Error::other(format!("cannot connect to Wayland: {error}")))?;
-    eprintln!("Aurea Welcome: connected to Wayland display {:?}", std::env::var("WAYLAND_DISPLAY").unwrap_or_else(|_| "unset".to_owned()));
+    eprintln!(
+        "Aurea Welcome: connected to Wayland display {:?}",
+        std::env::var("WAYLAND_DISPLAY").unwrap_or_else(|_| "unset".to_owned())
+    );
     let (globals, mut queue) = registry_queue_init::<WelcomeWindow>(&connection)
         .map_err(|error| io::Error::other(format!("Wayland registry failed: {error}")))?;
     eprintln!("Aurea Welcome: Wayland registry initialized");

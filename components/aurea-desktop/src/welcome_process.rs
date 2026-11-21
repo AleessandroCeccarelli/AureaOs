@@ -55,9 +55,7 @@ impl WelcomeClientProcess {
             Ok(None) => {
                 // Give the client a chance to handle SIGTERM and release its
                 // Wayland resources before using an unconditional SIGKILL.
-                let signal_result = unsafe {
-                    libc::kill(child.id() as libc::pid_t, libc::SIGTERM)
-                };
+                let signal_result = unsafe { libc::kill(child.id() as libc::pid_t, libc::SIGTERM) };
                 let signal_error = (signal_result != 0).then(io::Error::last_os_error);
                 let deadline = Instant::now() + GRACEFUL_STOP_TIMEOUT;
 
@@ -86,7 +84,9 @@ impl WelcomeClientProcess {
                             .unwrap_or_default();
                         Err(io::Error::new(
                             wait_error.kind(),
-                            format!("{detail}cannot reap Welcome client ({wait_error}){kill_detail}"),
+                            format!(
+                                "{detail}cannot reap Welcome client ({wait_error}){kill_detail}"
+                            ),
                         ))
                     }
                 }

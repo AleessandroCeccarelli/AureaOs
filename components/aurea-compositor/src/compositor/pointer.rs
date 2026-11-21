@@ -5,7 +5,10 @@
 
 //! Pointer capability initialization and relative motion routing.
 
-use std::{io, sync::atomic::{AtomicU64, Ordering}};
+use std::{
+    io,
+    sync::atomic::{AtomicU64, Ordering},
+};
 
 static POINTER_POSITION_LOG_COUNT: AtomicU64 = AtomicU64::new(0);
 
