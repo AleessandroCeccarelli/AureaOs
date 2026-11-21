@@ -5,7 +5,7 @@
 
 //! Core Wayland compositor state and module coordination.
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use aurea_desktop_api::{input::InputDeviceProvider, desktop_interaction::DesktopInteractionSender};
 
@@ -79,6 +79,7 @@ pub struct AureaCompositor {
     surface_output_tracker: SurfaceOutputTracker,
     cursor_image: CursorImageStatus,
     pointer_settings: PointerSettings,
+    pressed_pointer_buttons: HashMap<aurea_desktop_api::input::InputDeviceId, HashSet<u32>>,
     _pointer_gestures_state: smithay::wayland::pointer_gestures::PointerGesturesState,
     _tablet_manager_state: TabletManagerState,
     pointing_devices: PointingDeviceService,
@@ -142,6 +143,7 @@ impl AureaCompositor {
             surface_output_tracker: SurfaceOutputTracker::new(),
             cursor_image: CursorImageStatus::default_named(),
             pointer_settings: PointerSettings::default(),
+            pressed_pointer_buttons: HashMap::new(),
             _pointer_gestures_state: pointer_gestures_state,
             _tablet_manager_state: tablet_manager_state,
             pointing_devices: PointingDeviceService::new(),
