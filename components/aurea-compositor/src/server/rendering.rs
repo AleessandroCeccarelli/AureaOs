@@ -63,21 +63,31 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                 ))
             })?;
 
-        // Direct Vulkan scanout requires the same DRM device and the full
-        // DMA-BUF/foreign-ownership capability set. The compatibility route
-        // composes on the render GPU and uploads host-readback pixels via GBM/KMS.
+        // Both current presentation backends require atomic KMS. Check this
+        // before routing so legacy surfaces are rejected during capability
+        // selection, rather than failing after a frame has been requested.
+        let supports_atomic_kms = drm_surfaces
+            .get(&presentation_node)
+            .and_then(|manager| manager.get(output_id))
+            .map(|output| !output.surface().is_legacy())
+            .unwrap_or(false);
+
+        // Direct Vulkan scanout additionally requires the same DRM device and
+        // the full DMA-BUF/foreign-ownership capability set. The compatibility
+        // route composes on the render GPU and uploads host-readback pixels via GBM/KMS.
         let support = [PresentationBackendSupport {
             rendering_gpu: rendering_node,
             presentation_gpu: presentation_node,
-            direct_vulkan: rendering_node == presentation_node
+            direct_vulkan: supports_atomic_kms
+                && rendering_node == presentation_node
                 && vulkan_backends
                     .get(&rendering_node)
                     .map(|backend| backend.supports_direct_presentation())
                     .unwrap_or(false),
-            // The compatibility backend now composes the Wayland scene on the
-            // selected Vulkan GPU, reads it back to host memory and uploads it
-            // into the presentation GPU's GBM framebuffer.
-            compatibility: gbm_devices.contains(presentation_node)
+            // The compatibility backend requires atomic KMS, GBM on the
+            // presentation GPU, and Vulkan on the selected rendering GPU.
+            compatibility: supports_atomic_kms
+                && gbm_devices.contains(presentation_node)
                 && vulkan_backends.contains_key(&rendering_node),
         }];
         let selected_path = PresentationSelector::select(
