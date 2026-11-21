@@ -21,8 +21,9 @@ use smithay::{
 use crate::{
     frame::FrameScheduler,
     input::{
-        cursor_animation::CursorLocateAnimation, pointer_settings::PointerSettings,
-        pointer_shake::PointerShakeDetector, pointing::PointingDeviceService,
+        cursor_animation::CursorLocateAnimation, interaction::InteractionEngine,
+        pointer_settings::PointerSettings, pointer_shake::PointerShakeDetector,
+        pointing::PointingDeviceService,
     },
     output::{OutputId, manager::OutputManager},
     window_manager::WindowManager,
@@ -71,6 +72,7 @@ pub struct AureaCompositor {
     cursor_image: CursorImageStatus,
     pointer_settings: PointerSettings,
     pointing_devices: PointingDeviceService,
+    interaction_engine: InteractionEngine,
     pointer_shake: PointerShakeDetector,
     cursor_locate_animation: CursorLocateAnimation,
 }
@@ -118,6 +120,7 @@ impl AureaCompositor {
             cursor_image: CursorImageStatus::default_named(),
             pointer_settings: PointerSettings::default(),
             pointing_devices: PointingDeviceService::new(),
+            interaction_engine: InteractionEngine::new(),
             pointer_shake: PointerShakeDetector::default(),
             cursor_locate_animation: CursorLocateAnimation::default(),
         }
@@ -163,6 +166,11 @@ impl AureaCompositor {
     /// Returns the seat-wide registry of connected pointing devices.
     pub fn pointing_devices(&self) -> &PointingDeviceService {
         &self.pointing_devices
+    }
+
+    /// Returns the shared desktop interaction engine.
+    pub fn interaction_engine(&self) -> &InteractionEngine {
+        &self.interaction_engine
     }
 
     /// Returns the active pointer preferences.
