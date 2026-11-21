@@ -37,7 +37,9 @@ fn refresh_touchpad_settings(
     }
     if let Some(report) = pointing::configure_touchpad(device, settings) {
         tracing::info!(device_id = id.0, ?report, "Updated touchpad preferences");
-        state.applied_touchpad_settings.mark_applied(id, settings);
+        if !report.has_failures() {
+            state.applied_touchpad_settings.mark_applied(id, settings);
+        }
     }
 }
 
@@ -79,7 +81,9 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let touchpad_settings = state.compositor.touchpad_settings_for(device_id);
             if let Some(report) = pointing::configure_touchpad(&mut device, touchpad_settings) {
                 tracing::info!(?report, "Applied supported touchpad defaults");
-                state.applied_touchpad_settings.mark_applied(device_id, touchpad_settings);
+                if !report.has_failures() {
+                    state.applied_touchpad_settings.mark_applied(device_id, touchpad_settings);
+                }
             }
 
             if let Some(descriptor) = pointing::describe(&device) {
