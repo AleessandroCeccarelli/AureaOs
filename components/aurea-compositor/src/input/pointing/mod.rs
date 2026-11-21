@@ -13,4 +13,5 @@ mod touchscreen;
 mod touchpad;
 
 pub use registry::PointingDeviceService;
+pub use touchscreen::TouchscreenOutputMap;
 pub(super) use discovery::{describe, id_for};
