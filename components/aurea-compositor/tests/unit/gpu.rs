@@ -330,3 +330,56 @@ fn primary_policy_ignores_unavailable_devices() {
         available
     );
 }
+
+
+#[test]
+fn output_selection_prefers_ready_hardware_over_preferred_software_renderer() {
+    let mut manager = GpuManager::new();
+    let software = path("/dev/dri/card0");
+    let hardware = path("/dev/dri/card1");
+    manager.register_device(software.clone()).unwrap();
+    manager.register_device(hardware.clone()).unwrap();
+    manager.set_preferred_render_device(&software).unwrap();
+    manager
+        .set_selection_metadata(
+            &hardware,
+            GpuSelectionMetadata {
+                hardware_rendering: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+    let selected = manager
+        .selected_render_device_for_output_if(&software, |device| {
+            device.path() == software || device.path() == hardware
+        })
+        .unwrap();
+
+    assert_eq!(selected.path(), hardware);
+}
+
+#[test]
+fn output_selection_uses_software_only_when_no_hardware_renderer_is_ready() {
+    let mut manager = GpuManager::new();
+    let software = path("/dev/dri/card0");
+    let hardware = path("/dev/dri/card1");
+    manager.register_device(software.clone()).unwrap();
+    manager.register_device(hardware.clone()).unwrap();
+    manager.set_preferred_render_device(&software).unwrap();
+    manager
+        .set_selection_metadata(
+            &hardware,
+            GpuSelectionMetadata {
+                hardware_rendering: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+    let selected = manager
+        .selected_render_device_for_output_if(&software, |device| device.path() == software)
+        .unwrap();
+
+    assert_eq!(selected.path(), software);
+}
