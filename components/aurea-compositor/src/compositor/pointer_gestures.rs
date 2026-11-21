@@ -25,8 +25,8 @@ impl AureaCompositor {
     }
 
     /// Sends a touchpad swipe-begin event to the focused Wayland client.
-    pub fn handle_swipe_begin(&mut self, fingers: u32, time: smithay::backend::input::InputTime) {
-        self.interaction_engine.begin_swipe(fingers);
+    pub fn handle_swipe_begin(&mut self, device: aurea_desktop_api::input::InputDeviceId, fingers: u32, time: smithay::backend::input::InputTime) {
+        self.interaction_engine.begin_swipe(device, fingers);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -44,6 +44,7 @@ impl AureaCompositor {
     /// Sends a touchpad swipe update to the focused Wayland client.
     pub fn handle_swipe_update(
         &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
         delta_x: f64,
         delta_y: f64,
         time: u32,
@@ -51,7 +52,7 @@ impl AureaCompositor {
         if !delta_x.is_finite() || !delta_y.is_finite() {
             return;
         }
-        self.interaction_engine.update_swipe(delta_x, delta_y);
+        self.interaction_engine.update_swipe(device, delta_x, delta_y);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -68,10 +69,11 @@ impl AureaCompositor {
     /// Sends a touchpad swipe-end event to the focused Wayland client.
     pub fn handle_swipe_end(
         &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
         cancelled: bool,
         time: smithay::backend::input::InputTime,
     ) {
-        self.interaction_engine.end_swipe(cancelled);
+        self.interaction_engine.end_swipe(device, cancelled);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -87,8 +89,8 @@ impl AureaCompositor {
     }
 
     /// Sends a touchpad pinch-begin event to the focused Wayland client.
-    pub fn handle_pinch_begin(&mut self, fingers: u32, time: smithay::backend::input::InputTime) {
-        self.interaction_engine.begin_pinch(fingers);
+    pub fn handle_pinch_begin(&mut self, device: aurea_desktop_api::input::InputDeviceId, fingers: u32, time: smithay::backend::input::InputTime) {
+        self.interaction_engine.begin_pinch(device, fingers);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -106,6 +108,7 @@ impl AureaCompositor {
     /// Sends a touchpad pinch update to the focused Wayland client.
     pub fn handle_pinch_update(
         &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
         delta_x: f64,
         delta_y: f64,
         scale: f64,
@@ -119,7 +122,7 @@ impl AureaCompositor {
         {
             return;
         }
-        self.interaction_engine.update_pinch(scale, rotation);
+        self.interaction_engine.update_pinch(device, scale, rotation);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -138,10 +141,11 @@ impl AureaCompositor {
     /// Sends a touchpad pinch-end event to the focused Wayland client.
     pub fn handle_pinch_end(
         &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
         cancelled: bool,
         time: smithay::backend::input::InputTime,
     ) {
-        self.interaction_engine.end_pinch(cancelled);
+        self.interaction_engine.end_pinch(device, cancelled);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -157,8 +161,8 @@ impl AureaCompositor {
     }
 
     /// Sends a touchpad hold-begin event to the focused Wayland client.
-    pub fn handle_hold_begin(&mut self, fingers: u32, time: smithay::backend::input::InputTime) {
-        self.interaction_engine.begin_hold(fingers);
+    pub fn handle_hold_begin(&mut self, device: aurea_desktop_api::input::InputDeviceId, fingers: u32, time: smithay::backend::input::InputTime) {
+        self.interaction_engine.begin_hold(device, fingers);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -176,10 +180,11 @@ impl AureaCompositor {
     /// Sends a touchpad hold-end event to the focused Wayland client.
     pub fn handle_hold_end(
         &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
         cancelled: bool,
         time: smithay::backend::input::InputTime,
     ) {
-        self.interaction_engine.end_hold(cancelled);
+        self.interaction_engine.end_hold(device, cancelled);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
