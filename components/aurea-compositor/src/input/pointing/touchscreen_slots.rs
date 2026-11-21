@@ -43,6 +43,14 @@ impl TouchscreenSlotMap {
         Some(TouchSlot::from(Some(id)))
     }
 
+    /// Returns the seat slot for an already active physical contact.
+    pub fn get(&self, device: InputDeviceId, slot: TouchSlot) -> Option<TouchSlot> {
+        self.active
+            .get(&(device, slot))
+            .copied()
+            .map(|id| TouchSlot::from(Some(id)))
+    }
+
     /// Releases one touch point after its up event.
     pub fn release(&mut self, device: InputDeviceId, slot: TouchSlot) -> Option<TouchSlot> {
         self.active
