@@ -120,7 +120,9 @@ mod tests {
     fn affine_profile_applies_scale_and_offset() {
         let calibration = TouchscreenCalibration::new([0.5, 0.0, 0.1, 0.0, 0.5, 0.2]).unwrap();
 
-        assert_eq!(calibration.apply(0.4, 0.6), Some((0.3, 0.5)));
+        let (mapped_x, mapped_y) = calibration.apply(0.4, 0.6).unwrap();
+        assert!((mapped_x - 0.3).abs() < 1.0e-12);
+        assert!((mapped_y - 0.5).abs() < 1.0e-12);
     }
 
     #[test]
