@@ -10,6 +10,7 @@ mod mouse;
 mod registry;
 mod tablet;
 mod touchscreen;
+mod touchscreen_calibration;
 pub mod touchscreen_transform;
 mod touchscreen_slots;
 mod touchpad;
@@ -17,6 +18,9 @@ mod touchpad_settings;
 
 pub use registry::PointingDeviceService;
 pub use touchscreen::TouchscreenOutputMap;
+pub use touchscreen_calibration::{
+    TouchscreenCalibration, TouchscreenCalibrationError, TouchscreenCalibrationMap,
+};
 pub use touchscreen_slots::TouchscreenSlotMap;
 pub(super) use discovery::{describe, id_for};
 
