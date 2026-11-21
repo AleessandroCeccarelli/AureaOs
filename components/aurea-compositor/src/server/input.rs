@@ -5,7 +5,7 @@
 
 //! libinput backend registration and input event routing.
 
-use std::io;
+use std::{io, sync::atomic::{AtomicU64, Ordering}};
 
 use aurea_desktop_api::input::InputDeviceProvider;
 
@@ -30,6 +30,8 @@ fn wayland_time(microseconds: u64) -> u32 {
 }
 
 use super::state::WaylandState;
+
+static POINTER_MOTION_EVENTS: AtomicU64 = AtomicU64::new(0);
 
 /// Applies changed preferences without retaining libinput device handles.
 fn refresh_touchpad_settings(
@@ -127,7 +129,7 @@ pub(super) fn register_input_backend(
         .map_err(|_| io::Error::other("Failed to assign libinput to the active seat"))?;
 
     eprintln!(
-        "AureaOS input: libinput assigned to seat {}",
+        "AureaOS input: libinput context created and assigned to seat {}",
         session.seat()
     );
 
@@ -137,6 +139,7 @@ pub(super) fn register_input_backend(
             dispatch_input_event(event, state)
         })
         .map_err(|error| io::Error::other(error.to_string()))?;
+    eprintln!("AureaOS input: libinput backend registered in Calloop event loop");
     Ok(())
 }
 
@@ -150,6 +153,15 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
     match event {
         InputEvent::DeviceAdded { mut device } => {
             let device_id = pointing::id_for(&device);
+            eprintln!(
+                "AureaOS input: device added name={:?} sysname={:?} id={} pointer={} touch={} gesture={} tablet_tool={} tablet_pad={}",
+                device.name(), device.sysname(), device_id.0,
+                device.has_capability(smithay::reexports::input::DeviceCapability::Pointer),
+                device.has_capability(smithay::reexports::input::DeviceCapability::Touch),
+                device.has_capability(smithay::reexports::input::DeviceCapability::Gesture),
+                device.has_capability(smithay::reexports::input::DeviceCapability::TabletTool),
+                device.has_capability(smithay::reexports::input::DeviceCapability::TabletPad),
+            );
             let touchpad_settings = state.compositor.touchpad_settings_for(device_id);
             let touchpad_report = pointing::configure_touchpad(&mut device, touchpad_settings);
             if let Some(report) = touchpad_report {
@@ -166,6 +178,10 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             }
 
             if let Some(descriptor) = pointing::describe(&device) {
+                eprintln!(
+                    "AureaOS input: pointing device classified kind={:?} name={:?} id={}",
+                    descriptor.kind, descriptor.name, descriptor.id.0
+                );
                 tracing::info!(
                     device = %descriptor.name,
                     kind = ?descriptor.kind,
@@ -188,6 +204,10 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             }
         }
         InputEvent::DeviceRemoved { device } => {
+            eprintln!(
+                "AureaOS input: device removed name={:?} sysname={:?}",
+                device.name(), device.sysname()
+            );
             if device.has_capability(smithay::reexports::input::DeviceCapability::TabletTool) {
                 state.compositor.remove_tablet_device(&device);
             }
@@ -223,6 +243,14 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
         }
         InputEvent::PointerMotion { event } => {
             let delta = event.delta();
+            let count = POINTER_MOTION_EVENTS.fetch_add(1, Ordering::Relaxed) + 1;
+            if count == 1 || count % 120 == 0 {
+                let device = event.device();
+                eprintln!(
+                    "AureaOS input: pointer motion count={} device={:?} sysname={:?} delta=({:.3},{:.3})",
+                    count, device.name(), device.sysname(), delta.x, delta.y
+                );
+            }
             let unaccelerated_delta = event.delta_unaccel();
 
             let mut device = event.device();
