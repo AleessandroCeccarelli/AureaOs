@@ -89,6 +89,10 @@ impl PointingDeviceService {
             return false;
         }
         state.touchpad_reports.insert(id, report);
+        publish(
+            &mut state,
+            InputDeviceEvent::TouchpadConfigurationChanged(id, report),
+        );
         true
     }
 
