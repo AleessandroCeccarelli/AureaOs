@@ -21,8 +21,6 @@ use super::{mouse, tablet, touchscreen, touchpad};
 pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
     let pointer = device.has_capability(DeviceCapability::Pointer);
     let touch = device.has_capability(DeviceCapability::Touch);
-    let tablet_tool = device.has_capability(DeviceCapability::TabletTool);
-    let tablet_pad = device.has_capability(DeviceCapability::TabletPad);
     let kind = if tablet::supports(device) {
         InputDeviceKind::Tablet
     } else if touchpad::supports(device) {
@@ -50,14 +48,14 @@ pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
     Some(InputDeviceDescriptor {
         id: InputDeviceId(stable_device_id(device.sysname())),
         name: device.name().to_string(),
-        vendor_id: Some(device.id_vendor() as u16),
-        product_id: Some(device.id_product() as u16),
+        vendor_id: nonzero_id(device.id_vendor()),
+        product_id: nonzero_id(device.id_product()),
         kind,
         capabilities: InputDeviceCapabilities::new(capabilities),
     })
 }
 
-fn stable_device_id(value: &str) -> u64 {
+fn nonzero_id(value: u32) -> Option<u16> {\n    (value != 0).then_some(value as u16)\n}\n\nfn stable_device_id(value: &str) -> u64 {
     // FNV-1a: deterministic across runs, unlike DefaultHasher.
     value.bytes().fold(0xcbf29ce484222325, |hash, byte| {
         (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3)
