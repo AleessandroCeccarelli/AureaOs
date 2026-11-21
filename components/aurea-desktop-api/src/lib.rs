@@ -11,6 +11,7 @@
 pub mod appearance;
 pub mod calendar;
 pub mod display;
+pub mod desktop_interaction;
 pub mod hardware_monitor;
 pub mod input;
 pub mod keyboard;
