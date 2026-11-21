@@ -47,11 +47,16 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
             )));
         };
         let render_path: PathBuf = gpu_manager
-            .selected_render_device_for_output(device.device_path())
+            .selected_render_device_for_output_if(device.device_path(), |candidate| {
+                drm_device_registry
+                    .node_for_path(candidate.path())
+                    .map(|node| vulkan_backends.contains_key(&node))
+                    .unwrap_or(false)
+            })
             .map(|selected| selected.path().to_path_buf())
             .ok_or_else(|| {
                 io::Error::other(format!(
-                    "AureaOS: no available rendering GPU can be selected for output {output_id}"
+                    "AureaOS: no available GPU has an initialized Vulkan renderer for output {output_id}"
                 ))
             })?;
         let rendering_node = drm_device_registry
