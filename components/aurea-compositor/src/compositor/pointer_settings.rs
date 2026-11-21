@@ -5,7 +5,7 @@
 
 //! Public access to global and per-device pointer preferences.
 
-use aurea_desktop_api::input::{InputDeviceId, PointerSettings, TouchpadSettings};
+use aurea_desktop_api::input::PointerSettings;
 
 use super::AureaCompositor;
 
