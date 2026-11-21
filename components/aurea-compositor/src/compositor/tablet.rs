@@ -28,6 +28,15 @@ use smithay::{
 use super::AureaCompositor;
 
 impl AureaCompositor {
+    /// Drops the advertised tablet when its physical libinput device disappears.
+    pub fn remove_tablet_device(&mut self, device: &smithay::reexports::input::Device) {
+        let tablet_seat = self.seat.tablet_seat();
+        tablet_seat.remove_tablet(&TabletDescriptor::from(device));
+        if tablet_seat.count_tablets() == 0 {
+            tablet_seat.clear_tools();
+        }
+    }
+
     fn tablet_location<E>(&self, event: &E) -> Option<Point<f64, smithay::utils::Logical>>
     where
         E: AbsolutePositionEvent<LibinputInputBackend>,
