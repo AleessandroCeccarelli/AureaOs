@@ -33,6 +33,10 @@ pub struct VulkanDeviceInfo {
     pub device_type: VulkanDeviceType,
     pub has_graphics_queue: bool,
 
+    /// Why the device cannot satisfy AureaOS's minimum Vulkan rendering feature plan.
+    /// None means Vulkan 1.3 dynamic rendering and synchronization2 are available.
+    pub rendering_feature_error: Option<String>,
+
     /// Whether the device exposes all extensions required by Smithay's
     /// Vulkan DMA-BUF allocator.
     ///
@@ -44,6 +48,7 @@ impl VulkanDeviceInfo {
     pub(super) fn from_device(device: &PhysicalDevice, has_graphics_queue: bool) -> Self {
         let external_memory = VulkanExternalMemoryCapabilities::from_device(device);
         let has_dmabuf_export_extensions = external_memory.supports_dmabuf_export;
+        let rendering_feature_error = VulkanRenderingFeaturePlan::from_device(device).err();
 
         Self {
             name: device.name().to_owned(),
@@ -51,6 +56,7 @@ impl VulkanDeviceInfo {
             driver: format!("{:?}", device.driver()),
             device_type: VulkanContext::classify_device(device),
             has_graphics_queue,
+            rendering_feature_error,
             has_dmabuf_export_extensions,
         }
     }
