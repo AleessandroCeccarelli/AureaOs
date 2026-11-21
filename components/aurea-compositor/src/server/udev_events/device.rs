@@ -55,7 +55,10 @@ pub(super) fn add_device(state: &mut WaylandState, node: DrmNode, path: PathBuf)
         match discover_gpu_selection_metadata(&path) {
             Ok(metadata) => {
                 if let Err(error) = state.gpu_manager.set_selection_metadata(&path, metadata) {
-                    eprintln!("AureaOS: unable to store GPU selection metadata for {}: {error}", path.display());
+                    eprintln!(
+                        "AureaOS: unable to store GPU selection metadata for {}: {error}",
+                        path.display()
+                    );
                 }
             }
             Err(error) => {
@@ -172,13 +175,20 @@ pub(super) fn initialize_vulkan_backend(state: &mut WaylandState, node: DrmNode)
                 !matches!(backend.selected_device_info().device_type, VulkanDeviceType::Cpu);
             state.vulkan_backends.insert(node, backend);
 
-            if let Some((_, path)) = state.udev_device_ids.iter().find(|(known, _)| *known == node) {
+            if let Some((_, path)) = state
+                .udev_device_ids
+                .iter()
+                .find(|(known, _)| *known == node)
+            {
                 let path = path.clone();
                 if let Some(device) = state.gpu_manager.get_device(&path) {
                     let mut metadata: GpuSelectionMetadata = device.selection_metadata();
                     metadata.hardware_rendering = hardware_rendering;
                     if let Err(error) = state.gpu_manager.set_selection_metadata(&path, metadata) {
-                        eprintln!("AureaOS: unable to update Vulkan GPU capability for {}: {error}", path.display());
+                        eprintln!(
+                            "AureaOS: unable to update Vulkan GPU capability for {}: {error}",
+                            path.display()
+                        );
                     }
                 }
             }
