@@ -100,7 +100,7 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
                 "CPU compatibility presentation currently requires atomic KMS".into(),
             ));
         }
-        if presenter_has_pending(surface, presenter) {
+        if pool.pending().is_some() {
             return Ok(());
         }
 
@@ -147,9 +147,3 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
     }
 }
 
-fn presenter_has_pending(
-    _surface: &smithay::backend::drm::DrmSurface,
-    _presenter: &crate::drm::cpu_presentation_backend::CpuPresentationBackend,
-) -> bool {
-    false
-}
