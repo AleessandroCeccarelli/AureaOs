@@ -5,6 +5,11 @@
 
 //! GPU inventory and device selection management.
 
+#[path = "gpu/discovery.rs"]
+mod discovery;
+
+pub use discovery::discover_gpu_selection_metadata;
+
 use std::{
     collections::BTreeMap,
     error::Error,
