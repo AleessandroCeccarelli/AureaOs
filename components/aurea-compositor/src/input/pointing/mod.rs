@@ -10,8 +10,10 @@ mod mouse;
 mod registry;
 mod tablet;
 mod touchscreen;
+mod touchscreen_slots;
 mod touchpad;
 
 pub use registry::PointingDeviceService;
 pub use touchscreen::TouchscreenOutputMap;
+pub use touchscreen_slots::TouchscreenSlotMap;
 pub(super) use discovery::{describe, id_for};
