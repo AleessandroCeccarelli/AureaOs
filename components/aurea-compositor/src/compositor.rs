@@ -45,6 +45,7 @@ mod pointer_placement;
 mod rendering;
 mod surface_output_reconciliation;
 mod surface_output_tracking;
+mod touchscreen;
 pub(crate) mod window_placement;
 mod workspace;
 
