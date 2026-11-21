@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use smithay::{
     backend::input::Keycode,
-    input::{Seat, SeatHandler, SeatState, pointer::CursorImageStatus, tablet::TabletSeatHandler},
+    input::{Seat, SeatHandler, SeatState, pointer::CursorImageStatus, tablet::TabletSeatHandler, touch::TouchHandle},
     output::Output,
     reexports::wayland_server::{
         DisplayHandle,
@@ -23,7 +23,7 @@ use crate::{
     input::{
         cursor_animation::CursorLocateAnimation, interaction::{GestureProfile, InteractionEngine},
         pointer_settings::PointerSettings, pointer_shake::PointerShakeDetector,
-        pointing::{PointingDeviceService, TouchscreenOutputMap},
+        pointing::{PointingDeviceService, TouchscreenOutputMap, TouchscreenSlotMap},
     },
     output::{OutputId, manager::OutputManager},
     window_manager::WindowManager,
@@ -64,6 +64,7 @@ pub struct AureaCompositor {
         smithay::wayland::fractional_scale::FractionalScaleManagerState,
     seat_state: SeatState<Self>,
     seat: Seat<Self>,
+    touch: Option<TouchHandle<Self>>,
     consumed_shortcut_keys: HashSet<Keycode>,
     window_manager: WindowManager,
     output_manager: OutputManager,
@@ -76,6 +77,7 @@ pub struct AureaCompositor {
     _tablet_manager_state: TabletManagerState,
     pointing_devices: PointingDeviceService,
     touchscreen_outputs: TouchscreenOutputMap,
+    touchscreen_slots: TouchscreenSlotMap,
     interaction_engine: InteractionEngine,
     pointer_shake: PointerShakeDetector,
     cursor_locate_animation: CursorLocateAnimation,
@@ -122,6 +124,7 @@ impl AureaCompositor {
             _fractional_scale_manager_state: fractional_scale_manager_state,
             seat_state,
             seat,
+            touch: None,
             consumed_shortcut_keys: HashSet::new(),
             window_manager: WindowManager::new(),
             output_manager: OutputManager::new(),
@@ -134,6 +137,7 @@ impl AureaCompositor {
             _tablet_manager_state: tablet_manager_state,
             pointing_devices: PointingDeviceService::new(),
             touchscreen_outputs: TouchscreenOutputMap::new(),
+            touchscreen_slots: TouchscreenSlotMap::new(),
             interaction_engine: InteractionEngine::new(),
             pointer_shake: PointerShakeDetector::default(),
             cursor_locate_animation: CursorLocateAnimation::default(),
@@ -180,6 +184,20 @@ impl AureaCompositor {
     /// Returns the seat-wide registry of connected pointing devices.
     pub fn pointing_devices(&self) -> &PointingDeviceService {
         &self.pointing_devices
+    }
+
+    /// Initializes the Wayland touch capability when a touchscreen is present.
+    pub fn sync_touchscreen_capability(&mut self) {
+        let connected = self
+            .pointing_devices
+            .has_kind(aurea_desktop_api::input::InputDeviceKind::Touchscreen);
+
+        if connected && self.touch.is_none() {
+            self.touch = Some(self.seat.add_touch());
+        } else if !connected && self.touch.is_some() {
+            self.seat.remove_touch();
+            self.touch = None;
+        }
     }
 
     /// Assigns a touchscreen to an enabled physical display.
@@ -293,6 +311,7 @@ impl AureaCompositor {
     pub fn remove_pointing_device_state(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
         self.interaction_engine.remove_device(device);
         self.touchscreen_outputs.remove_device(device);
+        self.touchscreen_slots.remove_device(device);
     }
 
     /// Releases tracker entries for destroyed Wayland surfaces.
