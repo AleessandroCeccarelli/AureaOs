@@ -130,7 +130,6 @@ chmod 600 "$RUN_DIR/system-snapshot.txt"
 cd "$ROOT_DIR"
 export RUST_BACKTRACE=full
 export RUST_LIB_BACKTRACE=1
-export RUST_LOG="${RUST_LOG:-info,smithay=info,calloop=info}"
 
 printf '\n[1/2] Building Aurea Desktop...\n'
 cargo build --locked -p aurea-desktop --bins
