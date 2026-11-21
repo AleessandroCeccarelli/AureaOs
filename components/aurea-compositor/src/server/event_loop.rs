@@ -161,6 +161,7 @@ impl WaylandServer {
     /// KMS outputs are explicitly disabled before their GBM/Vulkan resources
     /// are released, both on normal shutdown and when the event loop fails.
     pub fn run(&mut self, shutdown: &AtomicBool) -> io::Result<()> {
+        eprintln!("AureaOS compositor: entering Calloop event loop; shutdown_requested={}", shutdown.load(Ordering::Acquire));
         #[cfg(feature = "drm")]
         self.state.compositor.request_all_output_frames();
 
@@ -214,6 +215,12 @@ impl WaylandServer {
 
         #[cfg(not(feature = "drm"))]
         let cleanup_result: io::Result<()> = Ok(());
+
+        if run_result.is_ok() {
+            eprintln!("AureaOS compositor: event loop stopped cleanly; DRM/GBM/Vulkan cleanup completed={}", cleanup_result.is_ok());
+        } else if let Err(error) = &run_result {
+            eprintln!("AureaOS compositor: event loop failed: {error}");
+        }
 
         match (run_result, cleanup_result) {
             (Err(primary), Err(cleanup)) => {
