@@ -20,7 +20,9 @@ use smithay::{
         protocol::{wl_shm::Format, wl_surface::WlSurface},
     },
     wayland::{
-        compositor::CompositorState, shell::xdg::XdgShellState, shm::ShmState,
+        compositor::CompositorState,
+        shell::xdg::XdgShellState,
+        shm::ShmState,
         tablet_manager::{TabletManagerState, TabletSeatHandler},
     },
 };
