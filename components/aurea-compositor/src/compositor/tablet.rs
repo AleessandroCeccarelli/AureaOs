@@ -109,14 +109,18 @@ impl AureaCompositor {
         let tool_descriptor = event.tool();
         let tablet_descriptor = TabletDescriptor::from(&event.device());
         let tablet_seat = self.seat.tablet_seat();
-        let tool = tablet_seat.add_tool(&tool_descriptor);
 
         match event.proximity_state() {
             smithay::reexports::input::event::tablet_tool::ProximityState::In => {
                 let Some(location) = self.tablet_location(&event) else {
                     return;
                 };
-                let tablet = tablet_seat.add_tablet(&tablet_descriptor);
+                let tablet = tablet_seat
+                    .get_tablet(&tablet_descriptor)
+                    .unwrap_or_else(|| tablet_seat.add_tablet(&tablet_descriptor));
+                let tool = tablet_seat
+                    .get_tool(&tool_descriptor)
+                    .unwrap_or_else(|| tablet_seat.add_tool(&tool_descriptor));
                 let proximity = ProximityInEvent {
                     location,
                     axis: Self::tablet_axis_frame(&event),
@@ -127,6 +131,9 @@ impl AureaCompositor {
                 tool.frame(self, event.time());
             }
             smithay::reexports::input::event::tablet_tool::ProximityState::Out => {
+                let Some(tool) = tablet_seat.get_tool(&tool_descriptor) else {
+                    return;
+                };
                 tool.proximity_out(
                     self,
                     &ProximityOutEvent {
@@ -156,15 +163,17 @@ impl AureaCompositor {
         if let Some(axis) = Self::tablet_axis_frame(&event) {
             tool.axis(self, axis);
         }
-        tool.motion(
-            self,
-            self.tablet_focus(location),
-            &MotionEvent {
-                location,
-                serial: SERIAL_COUNTER.next_serial(),
-                time: event.time(),
-            },
-        );
+        if event.x_has_changed() || event.y_has_changed() {
+            tool.motion(
+                self,
+                self.tablet_focus(location),
+                &MotionEvent {
+                    location,
+                    serial: SERIAL_COUNTER.next_serial(),
+                    time: event.time(),
+                },
+            );
+        }
         tool.frame(self, event.time());
         self.request_all_output_frames();
     }
