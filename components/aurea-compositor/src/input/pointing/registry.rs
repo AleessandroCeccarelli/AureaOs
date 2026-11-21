@@ -15,12 +15,13 @@ use std::{
 
 use aurea_desktop_api::input::{
     InputDeviceDescriptor, InputDeviceEvent, InputDeviceId, InputDeviceKind,
-    InputDeviceProvider,
+    InputDeviceProvider, TouchpadApplyReport, InputDeviceKind,
 };
 
 #[derive(Default)]
 struct RegistryState {
     devices: HashMap<InputDeviceId, InputDeviceDescriptor>,
+    touchpad_reports: HashMap<InputDeviceId, TouchpadApplyReport>,
     subscribers: Vec<Sender<InputDeviceEvent>>,
 }
 
@@ -70,12 +71,30 @@ impl PointingDeviceService {
             return false;
         };
 
+        state.touchpad_reports.remove(&id);
         if state.devices.remove(&id).is_none() {
             return false;
         }
 
         publish(&mut state, InputDeviceEvent::Disconnected(id));
         true
+    }
+
+    /// Stores the latest configuration outcome for one registered touchpad.
+    pub fn set_touchpad_report(&self, id: InputDeviceId, report: TouchpadApplyReport) -> bool {
+        let Ok(mut state) = self.state.lock() else {
+            return false;
+        };
+        if !state.devices.get(&id).is_some_and(|device| device.kind == InputDeviceKind::Touchpad) {
+            return false;
+        }
+        state.touchpad_reports.insert(id, report);
+        true
+    }
+
+    /// Returns the latest configuration outcome for one registered touchpad.
+    pub fn touchpad_report(&self, id: InputDeviceId) -> Option<TouchpadApplyReport> {
+        self.state.lock().ok()?.touchpad_reports.get(&id).copied()
     }
 
     /// Reports whether at least one device of the requested kind is connected.
@@ -108,6 +127,10 @@ impl InputDeviceProvider for PointingDeviceService {
             .lock()
             .ok()
             .and_then(|state| state.devices.get(&id).cloned())
+    }
+
+    fn touchpad_report(&self, id: InputDeviceId) -> Option<TouchpadApplyReport> {
+        PointingDeviceService::touchpad_report(self, id)
     }
 
     fn subscribe(&self) -> Receiver<InputDeviceEvent> {
