@@ -77,7 +77,8 @@ impl DesktopCompositorService {
     fn stop_welcome_client(&mut self) {
         match self.welcome_client.stop() {
             Ok(Some(status))
-                if !status.success() && status.signal() != Some(libc::SIGTERM) =>
+                if !status.success()
+                    && !matches!(status.signal(), Some(libc::SIGTERM | libc::SIGINT)) =>
             {
                 eprintln!("Aurea Desktop: Welcome client exited unexpectedly with status {status}");
             }
