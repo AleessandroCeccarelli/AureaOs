@@ -79,6 +79,11 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
             rendering_gpu: rendering_node,
             presentation_gpu: presentation_node,
             direct_vulkan: supports_atomic_kms
+                && drm_surfaces
+                    .get(&presentation_node)
+                    .and_then(|manager| manager.get(output_id))
+                    .map(|output| !output.direct_scanout_disabled())
+                    .unwrap_or(false)
                 && rendering_node == presentation_node
                 && vulkan_backends
                     .get(&rendering_node)
@@ -149,6 +154,12 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                 drop(backend);
 
                 if let Err(error) = direct_result {
+                    if output.presentation().pending().is_some() {
+                        return Err(io::Error::other(format!(
+                            "AureaOS: direct Vulkan presentation for output {output_id} failed after KMS submission; refusing an unsafe CPU retry: {error}"
+                        )));
+                    }
+                    output.disable_direct_scanout();
                     // Extension support alone does not guarantee that this
                     // connector accepts a Vulkan scanout format/modifier.
                     // Retry through host readback + GBM upload instead of
