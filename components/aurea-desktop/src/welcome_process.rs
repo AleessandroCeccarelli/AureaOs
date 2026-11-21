@@ -5,10 +5,16 @@
 
 //! Process ownership and teardown for the first desktop client.
 
-use std::io;
-use std::process::{Child, Command, ExitStatus, Stdio};
+use std::{
+    io,
+    process::{Child, Command, ExitStatus, Stdio},
+    thread,
+    time::{Duration, Instant},
+};
 
 const WELCOME_CLIENT_ARGUMENT: &str = "--welcome-client";
+const GRACEFUL_STOP_TIMEOUT: Duration = Duration::from_secs(2);
+const STOP_POLL_INTERVAL: Duration = Duration::from_millis(20);
 
 /// Owns the Welcome client and guarantees that it is reaped on teardown.
 pub(super) struct WelcomeClientProcess {
@@ -47,20 +53,37 @@ impl WelcomeClientProcess {
         match child.try_wait() {
             Ok(Some(status)) => Ok(Some(status)),
             Ok(None) => {
-                let kill_result = child.kill();
-                let wait_result = child.wait();
+                // Give the client a chance to handle SIGTERM and release its
+                // Wayland resources before using an unconditional SIGKILL.
+                let signal_result = unsafe {
+                    libc::kill(child.id() as libc::pid_t, libc::SIGTERM)
+                };
+                let signal_error = (signal_result != 0).then(io::Error::last_os_error);
+                let deadline = Instant::now() + GRACEFUL_STOP_TIMEOUT;
 
-                match wait_result {
+                while Instant::now() < deadline {
+                    if let Some(status) = child.try_wait()? {
+                        return Ok(Some(status));
+                    }
+                    thread::sleep(STOP_POLL_INTERVAL);
+                }
+
+                let kill_result = child.kill();
+                match child.wait() {
                     Ok(status) => Ok(Some(status)),
-                    Err(wait_error) => match kill_result {
-                        Ok(()) => Err(wait_error),
-                        Err(kill_error) => Err(io::Error::new(
+                    Err(wait_error) => {
+                        let detail = signal_error
+                            .map(|error| format!("SIGTERM failed: {error}; "))
+                            .unwrap_or_default();
+                        let kill_detail = kill_result
+                            .err()
+                            .map(|error| format!("; SIGKILL failed: {error}"))
+                            .unwrap_or_default();
+                        Err(io::Error::new(
                             wait_error.kind(),
-                            format!(
-                                "cannot reap Welcome client ({wait_error}); termination also failed ({kill_error})"
-                            ),
-                        )),
-                    },
+                            format!("{detail}cannot reap Welcome client ({wait_error}){kill_detail}"),
+                        ))
+                    }
                 }
             }
             Err(error) => {
