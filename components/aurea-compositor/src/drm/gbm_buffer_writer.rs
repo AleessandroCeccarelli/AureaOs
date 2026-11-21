@@ -75,9 +75,8 @@ impl GbmCpuUploadBuffer {
 
     /// Copies tightly packed RGBA8 pixels into the GBM buffer.
     ///
-    /// DRM_FORMAT_ABGR8888 is used because its byte order in memory on
-    /// little-endian systems is R, G, B, A. Other formats require an explicit
-    /// conversion and are deliberately rejected.
+    /// Converts RGBA readback pixels to the selected DRM format's byte order.
+    /// XRGB receives an opaque alpha byte; ARGB and ABGR preserve source alpha.
     pub(crate) fn write_rgba8(
         &mut self,
         pixels: &[u8],
