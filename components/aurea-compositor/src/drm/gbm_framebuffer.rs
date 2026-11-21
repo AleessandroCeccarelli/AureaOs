@@ -15,7 +15,7 @@ use smithay::{
     },
 };
 
-use super::{gbm_buffer_writer::GbmCpuUploadBuffer, presentation::DrmFramebufferId};
+use super::gbm_buffer_writer::GbmCpuUploadBuffer;
 
 /// Failure while registering a GBM allocation with the DRM device.
 #[derive(Debug)]
