@@ -25,7 +25,7 @@ use crate::{
     input::{
         cursor_animation::CursorLocateAnimation, interaction::{GestureProfile, InteractionEngine},
         pointer_settings::PointerSettings, pointer_shake::PointerShakeDetector,
-        pointing::{PointingDeviceService, TouchscreenOutputMap, TouchscreenSlotMap},
+        pointing::{\n            PointingDeviceService, TouchscreenCalibration, TouchscreenCalibrationError,\n            TouchscreenCalibrationMap, TouchscreenOutputMap, TouchscreenSlotMap,\n        },
     },
     output::{OutputId, manager::OutputManager},
     window_manager::WindowManager,
@@ -79,7 +79,7 @@ pub struct AureaCompositor {
     _pointer_gestures_state: smithay::wayland::pointer_gestures::PointerGesturesState,
     _tablet_manager_state: TabletManagerState,
     pointing_devices: PointingDeviceService,
-    touchscreen_outputs: TouchscreenOutputMap,
+    touchscreen_outputs: TouchscreenOutputMap,\n    touchscreen_calibrations: TouchscreenCalibrationMap,
     touchscreen_slots: TouchscreenSlotMap,
     interaction_engine: InteractionEngine,
     desktop_interactions: DesktopInteractionSender,
@@ -140,7 +140,7 @@ impl AureaCompositor {
             _pointer_gestures_state: pointer_gestures_state,
             _tablet_manager_state: tablet_manager_state,
             pointing_devices: PointingDeviceService::new(),
-            touchscreen_outputs: TouchscreenOutputMap::new(),
+            touchscreen_outputs: TouchscreenOutputMap::new(),\n            touchscreen_calibrations: TouchscreenCalibrationMap::default(),
             touchscreen_slots: TouchscreenSlotMap::new(),
             interaction_engine: InteractionEngine::new(),
             desktop_interactions,
@@ -228,6 +228,33 @@ impl AureaCompositor {
 
         self.touchscreen_outputs.assign(device, output);
         true
+    }
+
+    /// Sets an affine calibration profile for a connected touchscreen.
+    ///
+    /// Profiles are session-scoped and keyed by the compositor's device ID.
+    pub fn set_touchscreen_calibration(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+        coefficients: [f64; 6],
+    ) -> Result<(), TouchscreenCalibrationError> {
+        if !self.pointing_devices.device(device).is_some_and(|descriptor| {
+            descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchscreen
+        }) {
+            return Err(TouchscreenCalibrationError::UnknownDevice);
+        }
+
+        let calibration = TouchscreenCalibration::new(coefficients)?;
+        self.touchscreen_calibrations.set(device, calibration);
+        Ok(())
+    }
+
+    /// Resets one touchscreen to the identity calibration.
+    pub fn reset_touchscreen_calibration(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> bool {
+        self.touchscreen_calibrations.remove_device(device)
     }
 
     /// Removes an explicit touchscreen-to-display assignment.
@@ -323,7 +350,7 @@ impl AureaCompositor {
             .as_millis() as u32;
         self.handle_touch_cancel(device, time);
         self.interaction_engine.remove_device(device);
-        self.touchscreen_outputs.remove_device(device);
+        self.touchscreen_outputs.remove_device(device);\n        self.touchscreen_calibrations.remove_device(device);
         self.touchscreen_slots.remove_device(device);
     }
 
