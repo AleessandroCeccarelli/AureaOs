@@ -13,6 +13,7 @@ use super::{GestureProfile, PointingGesture, PointingInteraction};
 enum ActiveGesture {
     Swipe { fingers: u32, delta_x: f64, delta_y: f64 },
     Pinch { fingers: u32, scale: f64, rotation: f64 },
+    Hold { fingers: u32 },
 }
 
 /// Resolves provider gestures and queues semantic desktop intents.
@@ -130,9 +131,19 @@ impl InteractionEngine {
         }
     }
 
-    /// Queues the semantic intent produced by a completed hold gesture.
-    pub fn hold(&mut self, fingers: u32) {
-        self.resolve_and_queue(PointingGesture::Hold { fingers });
+    /// Starts a hold sequence after the provider's hold threshold is reached.
+    pub fn begin_hold(&mut self, fingers: u32) {
+        self.active = Some(ActiveGesture::Hold { fingers });
+    }
+
+    /// Completes or discards the active hold sequence.
+    pub fn end_hold(&mut self, cancelled: bool) {
+        let Some(ActiveGesture::Hold { fingers }) = self.active.take() else {
+            return;
+        };
+        if !cancelled {
+            self.resolve_and_queue(PointingGesture::Hold { fingers });
+        }
     }
 
     /// Returns and removes the next pending desktop interaction.
