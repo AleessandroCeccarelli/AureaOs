@@ -218,8 +218,24 @@ pub(super) fn build(
                 Ok(backend) => {
                     state.vulkan_backends.insert(node, backend);
                 }
-                Err(error) => {
-                    eprintln!("AureaOS: Vulkan backend unavailable for DRM device {node}: {error}");
+                Err(hardware_error) => {
+                    eprintln!(
+                        "AureaOS: DRM-matched Vulkan renderer unavailable for {node}: {hardware_error}"
+                    );
+
+                    match VulkanBackend::new_software_fallback() {
+                        Ok(backend) => {
+                            eprintln!(
+                                "AureaOS: using Vulkan CPU rendering with GBM/KMS presentation on {node}"
+                            );
+                            state.vulkan_backends.insert(node, backend);
+                        }
+                        Err(software_error) => {
+                            eprintln!(
+                                "AureaOS: Vulkan software fallback unavailable for {node}: {software_error}"
+                            );
+                        }
+                    }
                 }
             }
         }
