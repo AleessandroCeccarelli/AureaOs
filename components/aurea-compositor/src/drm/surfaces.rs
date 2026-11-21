@@ -121,6 +121,10 @@ impl ManagedDrmSurface {
     pub fn frame_pool_mut(&mut self) -> &mut VulkanDrmFramePool {
         &mut self.frame_pool
     }
+    /// Returns whether a CPU-uploaded framebuffer is awaiting its KMS page flip.
+    pub(crate) fn cpu_presentation_pending(&self) -> bool {
+        self.cpu_frame_pool.pending().is_some()
+    }
     /// Borrows the native surface and CPU-upload presentation resources.
     pub(crate) fn cpu_parts_mut(
         &mut self,
