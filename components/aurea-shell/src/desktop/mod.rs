@@ -8,10 +8,12 @@
 mod dock;
 mod launcher;
 mod night_light;
+mod panels;
 mod workspace;
 
 pub use dock::{DockMode, DockState};
 pub use launcher::LauncherState;
+pub use panels::{DesktopPanel, DesktopPanelState};
 pub use night_light::{
     NightLightMode, NightLightSchedule, NightLightScheduleError, NightLightState,
 };
@@ -31,6 +33,7 @@ pub struct DesktopState {
     pub dock: DockState,
     pub launcher: LauncherState,
     pub workspaces: WorkspaceManager,
+    pub panels: DesktopPanelState,
     pub theme: DesktopTheme,
     pub night_light: NightLightState,
 }
