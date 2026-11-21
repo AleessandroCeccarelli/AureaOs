@@ -10,7 +10,7 @@ use std::io;
 use smithay::{
     backend::{
         input::{
-            Axis, Device, Event, InputEvent, KeyboardKeyEvent, PointerAxisEvent,
+            Axis, Event, InputEvent, KeyboardKeyEvent, PointerAxisEvent,
             PointerButtonEvent, PointerMotionEvent,
         },
         libinput::{LibinputInputBackend, LibinputSessionInterface},
