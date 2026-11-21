@@ -20,11 +20,7 @@ use smithay::reexports::wayland_server::Display;
 use smithay::backend::drm::DrmEvent;
 
 #[cfg(feature = "drm")]
-use crate::{
-    drm::{DrmSession, device::DrmDevice},
-    renderer::RenderPreference,
-    vulkan::VulkanBackend,
-};
+use crate::drm::{DrmSession, device::DrmDevice};
 
 use crate::AureaCompositor;
 
@@ -200,159 +196,13 @@ pub(super) fn build(
     #[cfg(feature = "drm")]
     super::gbm_lifecycle::initialize_gbm_devices(&mut state);
 
-    // Initialize one Vulkan backend for each opened DRM device.
-    //
-    // A GPU without a compatible Vulkan physical device is skipped.
-    // Its failure must not prevent other devices or the Wayland server
-    // from starting.
+    // Initialize a DRM-matched Vulkan renderer, with a CPU fallback.
     #[cfg(feature = "drm")]
-    {
-        let nodes = state
-            .drm_devices
-            .iter()
-            .map(|(node, _)| *node)
-            .collect::<Vec<_>>();
+    super::vulkan_lifecycle::initialize_vulkan_backends(&mut state);
 
-        for node in nodes {
-            match VulkanBackend::new_for_drm_node(node, RenderPreference::Automatic) {
-                Ok(backend) => {
-                    state.vulkan_backends.insert(node, backend);
-                }
-                Err(hardware_error) => {
-                    eprintln!(
-                        "AureaOS: DRM-matched Vulkan renderer unavailable for {node}: {hardware_error}"
-                    );
-
-                    match VulkanBackend::new_software_fallback() {
-                        Ok(backend) => {
-                            eprintln!(
-                                "AureaOS: using Vulkan CPU rendering with GBM/KMS presentation on {node}"
-                            );
-                            state.vulkan_backends.insert(node, backend);
-                        }
-                        Err(software_error) => {
-                            eprintln!(
-                                "AureaOS: Vulkan software fallback unavailable for {node}: {software_error}"
-                            );
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Register outputs only after every required rendering dependency and
-    // the native KMS surfaces have been initialized. This prevents publishing
-    // logical outputs that cannot be scanned out.
+    // Publish only outputs with retained native KMS presentation surfaces.
     #[cfg(feature = "drm")]
-    {
-        let nodes = state
-            .drm_devices
-            .iter()
-            .map(|(node, _)| *node)
-            .collect::<Vec<_>>();
-
-        for node in nodes {
-            if !super::gbm_lifecycle::graphics_dependencies_ready(
-                state.gbm_devices.contains(node),
-                state.vulkan_backends.contains_key(&node),
-            ) {
-                eprintln!(
-                    "AureaOS: skipping outputs for {node}: GBM or Vulkan backend is unavailable"
-                );
-                continue;
-            }
-
-            let manager = {
-                let Some(device) = state.drm_devices.get_mut(node) else {
-                    continue;
-                };
-
-                match crate::drm::surfaces::DrmSurfaceManager::initialize(device) {
-                    Ok(manager) => manager,
-                    Err(failure) => {
-                        let (partial_manager, cause) = failure.into_parts();
-                        eprintln!(
-                            "AureaOS: KMS surfaces unavailable for DRM device {node}: {cause}"
-                        );
-                        // Preserve any surfaces already created before a later
-                        // connector failed. Teardown must retain their KMS owners.
-                        state.drm_surfaces.insert(node, partial_manager);
-                        continue;
-                    }
-                }
-            };
-
-            let output_result = {
-                let Some(device) = state.drm_devices.get(node) else {
-                    continue;
-                };
-                crate::drm::outputs::initialize_drm_outputs(
-                    device,
-                    state.compositor.output_manager(),
-                )
-            };
-
-            match output_result {
-                Ok(0) => {
-                    eprintln!(
-                        "AureaOS: DRM device {node} has no connected, usable display connectors"
-                    );
-                    state.drm_surfaces.insert(node, manager);
-                }
-                Ok(_) => {
-                    state.drm_surfaces.insert(node, manager);
-                }
-                Err(error) => {
-                    eprintln!(
-                        "AureaOS: logical outputs unavailable for DRM device {node}: {error}"
-                    );
-                    // Keep ownership of the native surfaces even when logical
-                    // output registration fails; shutdown must still clear them.
-                    state.drm_surfaces.insert(node, manager);
-                }
-            }
-        }
-    }
-
-    // An active native DRM session must expose at least one usable output.
-    // Otherwise the Welcome client can connect, but no frame can reach a monitor.
-    #[cfg(feature = "drm")]
-    if state.drm_session.is_some() && state.session_active {
-        let output_manager = state.compositor.output_manager();
-        if output_manager.active_output_count() == 0 {
-            return Err(io::Error::other(
-                "No usable display output was initialized: check DRM/KMS, GBM, Vulkan rendering support, and connected monitors",
-            ));
-        }
-
-        // A logical Wayland output is useful only when its matching native KMS
-        // surface is retained by a DRM surface manager. Without this invariant,
-        // the output could be advertised but never receive a physical frame.
-        let unbacked_outputs = output_manager
-            .registry()
-            .iter()
-            .filter(|output| output.is_enabled())
-            .filter(|output| {
-                !state
-                    .drm_surfaces
-                    .values()
-                    .any(|surfaces| surfaces.get(output.id()).is_some())
-            })
-            .map(|output| output.id())
-            .collect::<Vec<_>>();
-
-        if !unbacked_outputs.is_empty() {
-            return Err(io::Error::other(format!(
-                "Enabled Wayland outputs have no native DRM/KMS surface: {}",
-                unbacked_outputs
-                    .iter()
-                    .map(ToString::to_string)
-                    .collect::<Vec<_>>()
-                    .join(", ")
-            )));
-        }
-    }
+    super::output_lifecycle::initialize_outputs(&mut state)?;
 
     // Publish registered outputs as Wayland globals.
     state
