@@ -53,12 +53,14 @@ mod pointer;
 mod pointer_axis;
 mod pointer_bounds;
 mod pointer_button;
+#[cfg(feature = "drm")]
 mod pointer_gestures;
 mod pointer_placement;
 mod pointer_settings;
 mod rendering;
 mod surface_output_reconciliation;
 mod surface_output_tracking;
+#[cfg(feature = "drm")]
 mod tablet;
 mod tablet_calibration;
 mod tablet_output_mapping;
@@ -102,6 +104,7 @@ pub struct AureaCompositor {
     touchscreen_calibrations: TouchscreenCalibrationMap,
     touchscreen_slots: TouchscreenSlotMap,
     interaction_engine: InteractionEngine,
+    #[cfg(feature = "drm")]
     pointer_gesture_owner: pointer_gestures::PointerGestureOwner,
     desktop_interactions: DesktopInteractionSender,
     pointer_shake: PointerShakeDetector,
@@ -169,6 +172,7 @@ impl AureaCompositor {
             touchscreen_calibrations: TouchscreenCalibrationMap::default(),
             touchscreen_slots: TouchscreenSlotMap::new(),
             interaction_engine: InteractionEngine::new(),
+            #[cfg(feature = "drm")]
             pointer_gesture_owner: pointer_gestures::PointerGestureOwner::default(),
             desktop_interactions,
             pointer_shake: PointerShakeDetector::default(),
