@@ -45,6 +45,23 @@ impl AureaCompositor {
         self.pointing_settings.touchpad(device)
     }
 
+    /// Returns the latest hardware configuration report for one touchpad.
+    pub fn touchpad_configuration_report(
+        &self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> Option<aurea_desktop_api::input::TouchpadApplyReport> {
+        self.pointing_devices.touchpad_report(device)
+    }
+
+    /// Records a touchpad configuration report for trusted settings clients.
+    pub fn record_touchpad_configuration(
+        &self,
+        device: aurea_desktop_api::input::InputDeviceId,
+        report: aurea_desktop_api::input::TouchpadApplyReport,
+    ) -> bool {
+        self.pointing_devices.set_touchpad_report(device, report)
+    }
+
     /// Sets touchpad preferences for one connected touchpad.
     pub fn set_touchpad_device_settings(
         &mut self,
