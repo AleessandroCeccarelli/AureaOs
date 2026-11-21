@@ -28,7 +28,7 @@ use crate::{
         pointing::{
             PointingDeviceService, PointingDeviceSettings, TouchscreenCalibration, TouchscreenCalibrationError,
             TouchscreenCalibrationMap, TouchscreenOutputMap, TouchscreenSlotMap,
-            TabletOutputMap, TabletCalibration, TabletCalibrationError, TabletCalibrationMap,
+            TabletOutputMap, TabletCalibrationMap,
         },
     },
     output::{OutputId, manager::OutputManager},
@@ -54,6 +54,7 @@ mod surface_output_reconciliation;
 mod surface_output_tracking;
 mod tablet;
 mod tablet_output_mapping;
+mod tablet_calibration;
 mod touchscreen;
 pub(crate) mod window_placement;
 mod workspace;
@@ -299,44 +300,6 @@ impl AureaCompositor {
             .map(|output| output.id());
 
         self.touchscreen_outputs.resolve(device, enabled)
-    }
-
-    /// Sets a validated calibration profile for a connected pen tablet.
-    pub fn set_tablet_calibration(
-        &mut self,
-        device: aurea_desktop_api::input::InputDeviceId,
-        active_area: [f64; 4],
-        rotation: crate::input::pointing::TabletRotation,
-        aspect_mode: crate::input::pointing::TabletAspectMode,
-        device_aspect_ratio: f64,
-    ) -> Result<(), TabletCalibrationError> {
-        if !self.pointing_devices.device(device).is_some_and(|descriptor| {
-            descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Tablet
-        }) {
-            return Err(TabletCalibrationError::UnknownDevice);
-        }
-
-        let profile = TabletCalibration::new(
-            active_area, rotation, aspect_mode, device_aspect_ratio,
-        )?;
-        self.tablet_calibrations.set(device, profile);
-        Ok(())
-    }
-
-    /// Restores identity mapping for one connected tablet.
-    pub fn reset_tablet_calibration(
-        &mut self,
-        device: aurea_desktop_api::input::InputDeviceId,
-    ) -> bool {
-        self.tablet_calibrations.remove_device(device)
-    }
-
-    /// Returns the configured tablet calibration, or identity by default.
-    pub(crate) fn tablet_calibration(
-        &self,
-        device: aurea_desktop_api::input::InputDeviceId,
-    ) -> TabletCalibration {
-        self.tablet_calibrations.get(device)
     }
 
     /// Returns the shared desktop interaction engine.
