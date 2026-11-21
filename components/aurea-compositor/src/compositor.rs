@@ -7,7 +7,7 @@
 
 use std::collections::{BTreeMap, HashSet};
 
-use aurea_desktop_api::input::InputDeviceProvider;
+use aurea_desktop_api::{input::InputDeviceProvider, desktop_interaction::DesktopInteractionSender};
 
 use smithay::{
     backend::input::Keycode,
@@ -82,6 +82,7 @@ pub struct AureaCompositor {
     touchscreen_outputs: TouchscreenOutputMap,
     touchscreen_slots: TouchscreenSlotMap,
     interaction_engine: InteractionEngine,
+    desktop_interactions: DesktopInteractionSender,
     pointer_shake: PointerShakeDetector,
     cursor_locate_animation: CursorLocateAnimation,
 }
@@ -107,7 +108,7 @@ impl SeatHandler for AureaCompositor {
 
 impl AureaCompositor {
     /// Creates the compositor protocol states and managers.
-    pub fn new(display: &DisplayHandle) -> Self {
+    pub fn new(display: &DisplayHandle, desktop_interactions: DesktopInteractionSender) -> Self {
         let compositor_state = CompositorState::new::<Self>(display);
         // Welcome and application clients use the two mandatory Wayland SHM formats.
         // Advertising no formats prevents clients from creating their first buffer.
@@ -142,6 +143,7 @@ impl AureaCompositor {
             touchscreen_outputs: TouchscreenOutputMap::new(),
             touchscreen_slots: TouchscreenSlotMap::new(),
             interaction_engine: InteractionEngine::new(),
+            desktop_interactions,
             pointer_shake: PointerShakeDetector::default(),
             cursor_locate_animation: CursorLocateAnimation::default(),
         }
