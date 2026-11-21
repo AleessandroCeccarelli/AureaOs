@@ -78,6 +78,7 @@ pub use rendering::CompositorRenderError;
 /// Core state owned by the AureaOS compositor.
 pub struct AureaCompositor {
     compositor_state: CompositorState,
+    display_handle: DisplayHandle,
     shm_state: ShmState,
     xdg_shell_state: XdgShellState,
     _fractional_scale_manager_state:
@@ -111,9 +112,7 @@ pub struct AureaCompositor {
     cursor_locate_animation: CursorLocateAnimation,
 }
 
-impl TabletSeatHandler for AureaCompositor {
-    type ToolFocus = WlSurface;
-}
+impl TabletSeatHandler for AureaCompositor {}
 
 impl SeatHandler for AureaCompositor {
     type KeyboardFocus = WlSurface;
@@ -147,6 +146,7 @@ impl AureaCompositor {
 
         Self {
             compositor_state,
+            display_handle: display.clone(),
             shm_state,
             xdg_shell_state,
             _fractional_scale_manager_state: fractional_scale_manager_state,
