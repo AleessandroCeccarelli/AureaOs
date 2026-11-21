@@ -101,14 +101,29 @@ impl ShellRuntime {
             }
 
             while let Ok(interaction) = interactions.try_recv() {
-                if self.pending_desktop_interactions.len() == MAX_PENDING_DESKTOP_INTERACTIONS {
-                    self.pending_desktop_interactions.pop_front();
-                }
-                self.pending_desktop_interactions.push_back(interaction);
+                self.handle_desktop_interaction(interaction);
             }
         }
 
         Ok(())
+    }
+
+    /// Applies shell-owned state changes and retains presentation actions.
+    ///
+    /// Workspace visibility is switched by the compositor at the same time
+    /// the semantic event is published. The shell mirrors the selected index
+    /// so its panels and workspace indicators remain synchronized.
+    pub fn handle_desktop_interaction(&mut self, interaction: DesktopInteraction) {
+        match interaction {
+            DesktopInteraction::PreviousWorkspace => self.desktop.workspaces.previous(),
+            DesktopInteraction::NextWorkspace => self.desktop.workspaces.next(),
+            DesktopInteraction::ShowOverview | DesktopInteraction::ShowContextMenu => {}
+        }
+
+        if self.pending_desktop_interactions.len() == MAX_PENDING_DESKTOP_INTERACTIONS {
+            self.pending_desktop_interactions.pop_front();
+        }
+        self.pending_desktop_interactions.push_back(interaction);
     }
 
     /// Retrieves the next semantic desktop action received from the compositor.
