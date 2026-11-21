@@ -11,7 +11,7 @@ use aurea_desktop_api::desktop_interaction::{DesktopInteraction, DesktopInteract
 
 use aurea_desktop_api::display::{DisplayColorAdjustment, DisplayColorController};
 
-use crate::desktop::{DesktopState, NightLightState};
+use crate::desktop::{DesktopPanel, DesktopState, NightLightState};
 use crate::dispatcher::{self, RuntimeCommand};
 use crate::error::ShellError;
 use crate::event::ShellEvent;
@@ -117,7 +117,12 @@ impl ShellRuntime {
         match interaction {
             DesktopInteraction::PreviousWorkspace => self.desktop.workspaces.previous(),
             DesktopInteraction::NextWorkspace => self.desktop.workspaces.next(),
-            DesktopInteraction::ShowOverview | DesktopInteraction::ShowContextMenu => {}
+            DesktopInteraction::ShowOverview => {
+                self.desktop.panels.show(DesktopPanel::Overview);
+            }
+            DesktopInteraction::ShowContextMenu => {
+                self.desktop.panels.show(DesktopPanel::ContextMenu);
+            }
         }
 
         if self.pending_desktop_interactions.len() == MAX_PENDING_DESKTOP_INTERACTIONS {
@@ -171,6 +176,11 @@ impl ShellRuntime {
     /// Call update_night_light after changing Night Light preferences.
     pub fn desktop_state_mut(&mut self) -> &mut DesktopState {
         &mut self.desktop
+    }
+
+    /// Closes any transient desktop surface currently requested.
+    pub fn dismiss_desktop_panel(&mut self) {
+        self.desktop.panels.close();
     }
 
     /// Returns the current runtime state.
