@@ -23,7 +23,7 @@ use crate::{
     input::{
         cursor_animation::CursorLocateAnimation, interaction::{GestureProfile, InteractionEngine},
         pointer_settings::PointerSettings, pointer_shake::PointerShakeDetector,
-        pointing::PointingDeviceService,
+        pointing::{PointingDeviceService, TouchscreenOutputMap},
     },
     output::{OutputId, manager::OutputManager},
     window_manager::WindowManager,
@@ -75,6 +75,7 @@ pub struct AureaCompositor {
     _pointer_gestures_state: smithay::wayland::pointer_gestures::PointerGesturesState,
     _tablet_manager_state: TabletManagerState,
     pointing_devices: PointingDeviceService,
+    touchscreen_outputs: TouchscreenOutputMap,
     interaction_engine: InteractionEngine,
     pointer_shake: PointerShakeDetector,
     cursor_locate_animation: CursorLocateAnimation,
@@ -132,6 +133,7 @@ impl AureaCompositor {
             _pointer_gestures_state: pointer_gestures_state,
             _tablet_manager_state: tablet_manager_state,
             pointing_devices: PointingDeviceService::new(),
+            touchscreen_outputs: TouchscreenOutputMap::new(),
             interaction_engine: InteractionEngine::new(),
             pointer_shake: PointerShakeDetector::default(),
             cursor_locate_animation: CursorLocateAnimation::default(),
@@ -178,6 +180,52 @@ impl AureaCompositor {
     /// Returns the seat-wide registry of connected pointing devices.
     pub fn pointing_devices(&self) -> &PointingDeviceService {
         &self.pointing_devices
+    }
+
+    /// Assigns a touchscreen to an enabled physical display.
+    ///
+    /// Returns false when the target output is missing or disabled.
+    pub fn assign_touchscreen_output(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+        output: OutputId,
+    ) -> bool {
+        if !self
+            .output_manager
+            .registry()
+            .get(output)
+            .is_some_and(|display| display.is_enabled())
+        {
+            return false;
+        }
+
+        self.touchscreen_outputs.assign(device, output);
+        true
+    }
+
+    /// Removes an explicit touchscreen-to-display assignment.
+    pub fn unassign_touchscreen_output(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> bool {
+        self.touchscreen_outputs.unassign(device)
+    }
+
+    /// Resolves a touchscreen against the currently enabled displays.
+    ///
+    /// Automatic routing is intentionally limited to single-monitor systems.
+    pub fn touchscreen_output(
+        &self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> Option<OutputId> {
+        let enabled = self
+            .output_manager
+            .registry()
+            .iter()
+            .filter(|output| output.is_enabled())
+            .map(|output| output.id());
+
+        self.touchscreen_outputs.resolve(device, enabled)
     }
 
     /// Returns the shared desktop interaction engine.
@@ -233,11 +281,18 @@ impl AureaCompositor {
     /// Sends leave events for an output that has been disabled or removed.
     pub fn forget_output_membership(&mut self, output_id: OutputId) {
         self.surface_output_tracker.remove_output(output_id);
+        self.touchscreen_outputs.remove_output(output_id);
     }
 
     /// Reconciles mapped surfaces against enabled outputs and updates client scale.
     pub(crate) fn reconcile_surface_outputs(&mut self) {
         surface_output_reconciliation::reconcile(self);
+    }
+
+    /// Releases tracker entries for destroyed Wayland surfaces.
+    pub fn remove_pointing_device_state(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
+        self.interaction_engine.remove_device(device);
+        self.touchscreen_outputs.remove_device(device);
     }
 
     /// Releases tracker entries for destroyed Wayland surfaces.
