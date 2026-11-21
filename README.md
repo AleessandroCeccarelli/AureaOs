@@ -152,6 +152,7 @@ The main documentation files are:
 - [Documentazione in italiano](docs/it/README.md) — visione, filosofia, scelte tecnologiche, roadmap, interoperabilità e diario di bordo tradotti in italiano.
 - [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md) — authoritative inventory of first-party apps, tools, desktop components, services, and shared design resources.
 - [Initial architecture](docs/architecture/INITIAL-ARCHITECTURE.md) — system layers and open decisions.
+- [Minimum hardware requirements](docs/architecture/HARDWARE-REQUIREMENTS.md) — the vendor-neutral Roma 1.0 CPU, memory, Vulkan, DRM/KMS, and GBM support floor.
 - [Debian base](docs/architecture/DEBIAN-BASE.md) — current bootstrap implementation and limitations.
 - [Debian package manifests](debian/packages/README.md) — package groups and profile status.
 - [External Services Register](docs/architecture/EXTERNAL-SERVICES.md) — hosting platforms, package sources, and planned external integrations.
