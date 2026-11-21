@@ -9,7 +9,10 @@ use std::{error::Error, fmt};
 
 use smithay::{
     backend::{allocator::{Format, Modifier}, drm::DrmDeviceFd},
-    reexports::drm::control::{Device, FbCmd2Flags, framebuffer},
+    reexports::drm::{
+        buffer::PlanarBuffer,
+        control::{Device, FbCmd2Flags, framebuffer},
+    },
 };
 
 use super::{gbm_buffer_writer::GbmCpuUploadBuffer, presentation::DrmFramebufferId};
@@ -40,7 +43,7 @@ impl StrictGbmFramebuffer {
         buffer: &GbmCpuUploadBuffer,
     ) -> Result<Self, GbmFramebufferRegistrationError> {
         let gbm = buffer.gbm_buffer();
-        let modifier = gbm.modifier();
+        let modifier = PlanarBuffer::modifier(gbm);
         let flags = if modifier.is_some() {
             FbCmd2Flags::MODIFIERS
         } else {
