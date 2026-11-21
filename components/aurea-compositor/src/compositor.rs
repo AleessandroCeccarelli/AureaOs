@@ -358,6 +358,7 @@ impl AureaCompositor {
             .now()
             .as_millis() as u32;
         self.handle_touch_cancel(device, time);
+        self.release_pointer_buttons_for_device(device, time);
         self.interaction_engine.remove_device(device);
         self.touchscreen_outputs.remove_device(device);
         self.touchscreen_calibrations.remove_device(device);
