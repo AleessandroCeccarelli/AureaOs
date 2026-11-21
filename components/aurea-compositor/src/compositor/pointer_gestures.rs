@@ -279,3 +279,59 @@ impl AureaCompositor {
         pointer.frame(self);
     }
 }
+
+
+#[cfg(test)]
+mod owner_tests {
+    use super::{PointerGestureKind, PointerGestureOwner};
+    use aurea_desktop_api::input::InputDeviceId;
+
+    #[test]
+    fn only_one_device_owns_the_wayland_gesture_stream() {
+        let mut owner = PointerGestureOwner::default();
+        let first = InputDeviceId(1);
+        let second = InputDeviceId(2);
+
+        assert!(owner.begin(first, PointerGestureKind::Swipe));
+        assert!(!owner.begin(second, PointerGestureKind::Swipe));
+        assert!(!owner.owns(second, PointerGestureKind::Swipe));
+        assert!(owner.owns(first, PointerGestureKind::Swipe));
+    }
+
+    #[test]
+    fn different_gesture_kind_cannot_interrupt_active_sequence() {
+        let mut owner = PointerGestureOwner::default();
+        let device = InputDeviceId(3);
+
+        assert!(owner.begin(device, PointerGestureKind::Swipe));
+        assert!(!owner.begin(device, PointerGestureKind::Pinch));
+        assert!(!owner.end(device, PointerGestureKind::Pinch));
+        assert!(owner.owns(device, PointerGestureKind::Swipe));
+    }
+
+    #[test]
+    fn disconnecting_owner_releases_stream_for_another_device() {
+        let mut owner = PointerGestureOwner::default();
+        let removed = InputDeviceId(4);
+        let retained = InputDeviceId(5);
+
+        assert!(owner.begin(removed, PointerGestureKind::Hold));
+        owner.remove_device(removed);
+
+        assert!(owner.begin(retained, PointerGestureKind::Pinch));
+        assert!(owner.owns(retained, PointerGestureKind::Pinch));
+    }
+
+    #[test]
+    fn ending_non_owner_does_not_release_active_sequence() {
+        let mut owner = PointerGestureOwner::default();
+        let first = InputDeviceId(6);
+        let second = InputDeviceId(7);
+
+        assert!(owner.begin(first, PointerGestureKind::Swipe));
+        assert!(!owner.end(second, PointerGestureKind::Swipe));
+        assert!(owner.owns(first, PointerGestureKind::Swipe));
+        assert!(owner.end(first, PointerGestureKind::Swipe));
+        assert!(!owner.owns(first, PointerGestureKind::Swipe));
+    }
+}
