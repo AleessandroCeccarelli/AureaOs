@@ -10,6 +10,7 @@ mod mouse;
 mod registry;
 mod tablet;
 mod touchscreen;
+pub mod touchscreen_transform;
 mod touchscreen_slots;
 mod touchpad;
 mod touchpad_settings;
