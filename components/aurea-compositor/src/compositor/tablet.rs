@@ -119,8 +119,8 @@ impl AureaCompositor {
         let tablet_descriptor = TabletDescriptor::from(&event.device());
         let tablet_seat = self.seat.tablet_seat();
 
-        match event.proximity_state() {
-            smithay::reexports::input::event::tablet_tool::ProximityState::In => {
+        match event.state() {
+            smithay::backend::input::ProximityState::In => {
                 let Some(location) = self.tablet_location(&event) else {
                     return;
                 };
@@ -139,7 +139,7 @@ impl AureaCompositor {
                 tool.proximity_in(self, self.tablet_focus(location), tablet, &proximity);
                 tool.frame(self, event.time());
             }
-            smithay::reexports::input::event::tablet_tool::ProximityState::Out => {
+            smithay::backend::input::ProximityState::Out => {
                 let Some(tool) = tablet_seat.get_tool(&tool_descriptor) else {
                     return;
                 };
@@ -225,10 +225,7 @@ impl AureaCompositor {
             return;
         };
 
-        let state = match event.button_state() {
-            smithay::reexports::input::event::tablet_tool::ButtonState::Pressed => ButtonState::Pressed,
-            smithay::reexports::input::event::tablet_tool::ButtonState::Released => ButtonState::Released,
-        };
+        let state = event.button_state();
         let time = event.time();
         tool.button(
             self,
