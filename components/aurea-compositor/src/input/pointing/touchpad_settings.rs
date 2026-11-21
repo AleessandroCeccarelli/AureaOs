@@ -41,12 +41,14 @@ pub(super) fn apply(
         TouchpadSettingStatus::Unsupported
     };
 
-    let two_finger_scroll = if device.config_scroll_methods().contains(&ScrollMethod::TwoFinger) {
-        if settings.two_finger_scroll() {
-            status(device.config_scroll_set_method(ScrollMethod::TwoFinger))
-        } else {
-            TouchpadSettingStatus::Unsupported
-        }
+    let scroll_methods = device.config_scroll_methods();
+    let requested_scroll_method = if settings.two_finger_scroll() {
+        ScrollMethod::TwoFinger
+    } else {
+        ScrollMethod::NoScroll
+    };
+    let two_finger_scroll = if scroll_methods.contains(&requested_scroll_method) {
+        status(device.config_scroll_set_method(requested_scroll_method))
     } else {
         TouchpadSettingStatus::Unsupported
     };
