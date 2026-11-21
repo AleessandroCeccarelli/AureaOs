@@ -18,3 +18,14 @@ pub use registry::PointingDeviceService;
 pub use touchscreen::TouchscreenOutputMap;
 pub use touchscreen_slots::TouchscreenSlotMap;
 pub(super) use discovery::{describe, id_for};
+
+/// Applies AureaOS defaults to a newly connected touchpad.
+pub(super) fn configure_touchpad(
+    device: &mut smithay::reexports::input::Device,
+) -> Option<aurea_desktop_api::input::TouchpadApplyReport> {
+    if !touchpad::supports(device) {
+        return None;
+    }
+
+    touchpad_settings::apply(device, aurea_desktop_api::input::TouchpadSettings::default())
+}
