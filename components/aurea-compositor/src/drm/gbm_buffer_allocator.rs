@@ -94,41 +94,62 @@ impl<'device, T: std::os::fd::AsFd> GbmCpuUploadAllocator<'device, T> {
         }
 
         let usage = GbmBufferFlags::WRITE | GbmBufferFlags::SCANOUT;
-        let format = [Fourcc::Xrgb8888, Fourcc::Argb8888, Fourcc::Abgr8888]
-            .into_iter()
-            .find(|format| {
-                plane_formats.contains(format) && self.device.is_format_supported(*format, usage)
-            })
-            .ok_or_else(|| {
-                let format = plane_formats
-                    .iter()
-                    .copied()
-                    .find(|format| matches!(format, Fourcc::Xrgb8888 | Fourcc::Argb8888 | Fourcc::Abgr8888))
-                    .unwrap_or(Fourcc::Xrgb8888);
-                GbmCpuUploadAllocationError::UnsupportedFormatUsage { format }
-            })?;
+        let mut supported_format = None;
+        let mut last_allocation_error = None;
 
-        let buffer_object = self
-            .device
-            .create_buffer_object::<()>(width, height, format, usage)
-            .map_err(|error| GbmCpuUploadAllocationError::Allocation(error.to_string()))?;
-        let buffer = GbmBuffer::from_bo(buffer_object, false);
+        for format in [Fourcc::Xrgb8888, Fourcc::Argb8888, Fourcc::Abgr8888] {
+            if !plane_formats.contains(&format) || !self.device.is_format_supported(format, usage)
+            {
+                continue;
+            }
 
-        if buffer.format() != format {
-            return Err(GbmCpuUploadAllocationError::UnexpectedBufferFormat {
-                expected: format,
-                actual: buffer.format(),
-            });
+            supported_format = Some(format);
+            let buffer_object = match self
+                .device
+                .create_buffer_object::<()>(width, height, format, usage)
+            {
+                Ok(buffer_object) => buffer_object,
+                Err(error) => {
+                    last_allocation_error = Some(error.to_string());
+                    continue;
+                }
+            };
+            let buffer = GbmBuffer::from_bo(buffer_object, false);
+
+            if buffer.format() != format {
+                return Err(GbmCpuUploadAllocationError::UnexpectedBufferFormat {
+                    expected: format,
+                    actual: buffer.format(),
+                });
+            }
+            if buffer.width() != width || buffer.height() != height {
+                return Err(GbmCpuUploadAllocationError::UnexpectedBufferDimensions {
+                    expected_width: width,
+                    expected_height: height,
+                    actual_width: buffer.width(),
+                    actual_height: buffer.height(),
+                });
+            }
+
+            return Ok(GbmCpuUploadBuffer::from_write_allocated(buffer));
         }
-        if buffer.width() != width || buffer.height() != height {
-            return Err(GbmCpuUploadAllocationError::UnexpectedBufferDimensions {
-                expected_width: width,
-                expected_height: height,
-                actual_width: buffer.width(),
-                actual_height: buffer.height(),
-            });
+
+        if let Some(message) = last_allocation_error {
+            return Err(GbmCpuUploadAllocationError::Allocation(message));
         }
 
-        Ok(GbmCpuUploadBuffer::from_write_allocated(buffer))
+        let format = supported_format.unwrap_or_else(|| {
+            plane_formats
+                .iter()
+                .copied()
+                .find(|format| {
+                    matches!(
+                        format,
+                        Fourcc::Xrgb8888 | Fourcc::Argb8888 | Fourcc::Abgr8888
+                    )
+                })
+                .unwrap_or(Fourcc::Xrgb8888)
+        });
+        Err(GbmCpuUploadAllocationError::UnsupportedFormatUsage { format })
     }
 }
