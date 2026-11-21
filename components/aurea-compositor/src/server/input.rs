@@ -44,6 +44,46 @@ fn refresh_touchpad_settings(
     }
 }
 
+
+/// Drains shell requests and applies them to retained live libinput devices.
+pub(super) fn apply_pending_touchpad_settings(state: &mut WaylandState) {
+    loop {
+        let command = match state.touchpad_settings_receiver.try_recv() {
+            Ok(command) => command,
+            Err(std::sync::mpsc::TryRecvError::Empty)
+            | Err(std::sync::mpsc::TryRecvError::Disconnected) => break,
+        };
+
+        let Some(descriptor) = state.compositor.pointing_devices().device(command.device) else {
+            tracing::debug!(device_id = command.device.0, "Ignoring touchpad settings for an unknown device");
+            continue;
+        };
+        if descriptor.kind != aurea_desktop_api::input::InputDeviceKind::Touchpad {
+            tracing::debug!(device_id = command.device.0, "Ignoring touchpad settings for a non-touchpad device");
+            continue;
+        }
+        if !state.compositor.set_touchpad_device_settings(command.device, command.settings) {
+            tracing::warn!(device_id = command.device.0, "Touchpad settings profile was rejected");
+            continue;
+        }
+
+        let Some(device) = state.touchpad_devices.get_mut(&command.device) else {
+            tracing::warn!(device_id = command.device.0, "Touchpad has no live libinput handle");
+            continue;
+        };
+        let Some(report) = pointing::configure_touchpad(device, command.settings) else {
+            tracing::warn!(device_id = command.device.0, "Live touchpad configuration is unavailable");
+            continue;
+        };
+
+        state.compositor.record_touchpad_configuration(command.device, report);
+        if !report.has_failures() {
+            state.applied_touchpad_settings.mark_applied(command.device, command.settings);
+        }
+        tracing::info!(device_id = command.device.0, ?report, "Applied live touchpad settings request");
+    }
+}
+
 /// Registers the seat's libinput source with Calloop.
 pub(super) fn register_input_backend(
     loop_handle: &LoopHandle<'_, WaylandState>,
@@ -95,7 +135,10 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                     id = descriptor.id.0,
                     "Pointing device connected"
                 );
-                state.compositor.pointing_devices().connect(descriptor);
+                state.compositor.pointing_devices().connect(descriptor.clone());
+                if descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchpad {
+                    state.touchpad_devices.insert(device_id, device.clone());
+                }
                 if let Some(report) = touchpad_report {
                     state.compositor.record_touchpad_configuration(device_id, report);
                 }
@@ -121,6 +164,7 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             }
 
             state.applied_touchpad_settings.remove(id);
+            state.touchpad_devices.remove(&id);
             state.compositor.pointing_devices().disconnect(id);
             state.compositor.clear_pointing_device_state(id);
             state.compositor.sync_touchscreen_capability();
