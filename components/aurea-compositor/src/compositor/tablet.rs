@@ -97,16 +97,9 @@ impl AureaCompositor {
         let profile = self.tablet_calibration(device_id);
         let output_aspect = f64::from(width) / f64::from(height);
         let (x, y) = profile.apply(raw_x, raw_y, output_aspect)?;
-        let (mapped_width, mapped_height) = match profile.rotation() {
-            crate::input::pointing::TabletRotation::Deg90
-            | crate::input::pointing::TabletRotation::Deg270 => (height, width),
-            crate::input::pointing::TabletRotation::Deg0
-            | crate::input::pointing::TabletRotation::Deg180 => (width, height),
-        };
-
         Some(Point::from((
-            origin.x as f64 + x * f64::from(mapped_width - 1),
-            origin.y as f64 + y * f64::from(mapped_height - 1),
+            origin.x as f64 + x * f64::from(width - 1),
+            origin.y as f64 + y * f64::from(height - 1),
         )))
     }
 
