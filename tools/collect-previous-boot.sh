@@ -58,8 +58,11 @@ collect_journal() {
     if journalctl "$@" --no-pager --output=short-precise > "$output_file" 2>&1 &&
         [[ -s "$output_file" ]] &&
         ! grep -Eiq 'no journal files were opened|permission denied|insufficient permissions' "$output_file"; then
+        # Network/kernel journals may contain BSSIDs or hardware MAC addresses.
+        # Redact them before the report is committed or shared.
+        sed -E -i 's/([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}/[redacted-mac]/gI' "$output_file"
         chmod 600 "$output_file"
-        printf 'Collected %s\n' "$output_file"
+        printf 'Collected %s (MAC addresses redacted)\n' "$output_file"
         return 0
     fi
 
@@ -71,8 +74,9 @@ collect_journal() {
         if sudo -n journalctl "$@" --no-pager --output=short-precise > "$output_file" 2>&1 &&
             [[ -s "$output_file" ]] &&
             ! grep -Eiq 'no journal files were opened|permission denied|insufficient permissions' "$output_file"; then
+            sed -E -i 's/([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}/[redacted-mac]/gI' "$output_file"
             chmod 600 "$output_file"
-            printf 'Collected %s (with elevated journal access)\n' "$output_file"
+            printf 'Collected %s with elevated journal access (MAC addresses redacted)\n' "$output_file"
             return 0
         fi
     fi
