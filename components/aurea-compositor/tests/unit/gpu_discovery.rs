@@ -1,5 +1,9 @@
 use super::*;
-use std::{fs, path::Path, time::{SystemTime, UNIX_EPOCH}};
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 struct TestTree(PathBuf);
 
@@ -34,7 +38,8 @@ fn discovers_builtin_panel_and_boot_vga() {
         Path::new("/dev/dri/card0"),
         &tree.0.join("sys"),
         &tree.0.join("udev"),
-    ).unwrap();
+    )
+    .unwrap();
     assert!(metadata.has_builtin_panel);
     assert!(metadata.is_boot_vga);
     assert!(!metadata.preferred_primary);
@@ -49,7 +54,8 @@ fn discovers_udev_preferred_primary_tag() {
         Path::new("/dev/dri/card1"),
         &tree.0.join("sys"),
         &tree.0.join("udev"),
-    ).unwrap();
+    )
+    .unwrap();
     assert!(metadata.preferred_primary);
 }
 
@@ -61,7 +67,8 @@ fn missing_sysfs_hints_are_non_fatal() {
         Path::new("/dev/dri/card2"),
         &tree.0.join("sys"),
         &tree.0.join("udev"),
-    ).unwrap();
+    )
+    .unwrap();
     assert_eq!(metadata, GpuSelectionMetadata::default());
 }
 
