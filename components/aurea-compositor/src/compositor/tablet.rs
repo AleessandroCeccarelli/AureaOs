@@ -26,6 +26,7 @@ use smithay::{
 };
 
 use super::AureaCompositor;
+use crate::{input::pointing::{id_for, TabletOutputTarget}, output::OutputId};
 
 impl AureaCompositor {
     /// Drops the advertised tablet when its physical libinput device disappears.
@@ -37,28 +38,66 @@ impl AureaCompositor {
         }
     }
 
-    fn tablet_location<E>(&self, event: &E) -> Option<Point<f64, smithay::utils::Logical>>
-    where
-        E: AbsolutePositionEvent<LibinputInputBackend>,
-    {
-        let output = self.output_manager.registry().iter()
-            .find(|output| output.is_enabled())?;
-        let bounds = self.output_manager.logical_bounds(output.id()).ok()??;
-        let origin = bounds.origin();
-        let size = bounds.size();
+    fn tablet_area(
+        &self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> Option<(Point<i64, smithay::utils::Logical>, i32, i32)> {
+        let target = self.tablet_output_target(device)?;
+        let outputs = self.output_manager.registry().iter()
+            .filter(|output| output.is_enabled())
+            .filter(|output| match target {
+                TabletOutputTarget::All => true,
+                TabletOutputTarget::Output(id) => output.id() == id,
+            });
 
-        if size.width <= 0 || size.height <= 0 {
+        let mut min_x = i64::MAX;
+        let mut min_y = i64::MAX;
+        let mut max_x = i64::MIN;
+        let mut max_y = i64::MIN;
+        let mut found = false;
+
+        for output in outputs {
+            let bounds = self.output_manager.logical_bounds(output.id()).ok()??;
+            let origin = bounds.origin();
+            let size = bounds.size();
+            let right = origin.x.checked_add(i64::from(size.width))?;
+            let bottom = origin.y.checked_add(i64::from(size.height))?;
+
+            min_x = min_x.min(origin.x);
+            min_y = min_y.min(origin.y);
+            max_x = max_x.max(right);
+            max_y = max_y.max(bottom);
+            found = true;
+        }
+
+        if !found {
             return None;
         }
 
-        let x = event.x_transformed(size.width)
-            .clamp(0.0, f64::from(size.width - 1));
-        let y = event.y_transformed(size.height)
-            .clamp(0.0, f64::from(size.height - 1));
+        let width = i32::try_from(max_x.checked_sub(min_x)?).ok()?;
+        let height = i32::try_from(max_y.checked_sub(min_y)?).ok()?;
+        if width <= 0 || height <= 0 {
+            return None;
+        }
+
+        Some((Point::from((min_x, min_y)), width, height))
+    }
+
+    fn tablet_location<E>(
+        &self,
+        event: &E,
+    ) -> Option<Point<f64, smithay::utils::Logical>>
+    where
+        E: AbsolutePositionEvent<LibinputInputBackend> + Event<LibinputInputBackend>,
+    {
+        let device_id = id_for(&event.device());
+        let (origin, width, height) = self.tablet_area(device_id)?;
+        let x = event.x_transformed(width).clamp(0.0, f64::from(width - 1));
+        let y = event.y_transformed(height).clamp(0.0, f64::from(height - 1));
 
         Some(Point::from((
-            f64::from(origin.x) + x,
-            f64::from(origin.y) + y,
+            origin.x as f64 + x,
+            origin.y as f64 + y,
         )))
     }
 
