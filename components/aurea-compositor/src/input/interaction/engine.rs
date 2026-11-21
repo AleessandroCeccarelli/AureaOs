@@ -11,6 +11,9 @@ use aurea_desktop_api::input::InputDeviceId;
 
 use super::{GestureProfile, PointingGesture, PointingInteraction};
 
+/// Maximum number of completed interactions waiting for the compositor.
+const MAX_PENDING_INTERACTIONS: usize = 64;
+
 #[derive(Debug, Clone, Copy)]
 enum ActiveGesture {
     Swipe { fingers: u32, delta_x: f64, delta_y: f64 },
@@ -26,7 +29,7 @@ enum ActiveGesture {
 pub struct InteractionEngine {
     profile: GestureProfile,
     active: HashMap<InputDeviceId, ActiveGesture>,
-    pending: VecDeque<PointingInteraction>,
+    pending: VecDeque<(InputDeviceId, PointingInteraction)>,
 }
 
 impl InteractionEngine {
@@ -70,12 +73,13 @@ impl InteractionEngine {
     /// Completes or discards one device's swipe sequence.
     pub fn end_swipe(&mut self, device: InputDeviceId, cancelled: bool) {
         let Some(ActiveGesture::Swipe { fingers, delta_x, delta_y }) =
-            self.active.remove(&device)
+            self.active.get(&device).copied()
         else {
             return;
         };
+        self.active.remove(&device);
         if !cancelled {
-            self.resolve_and_queue(PointingGesture::Swipe { fingers, delta_x, delta_y });
+            self.resolve_and_queue(device, PointingGesture::Swipe { fingers, delta_x, delta_y });
         }
     }
 
@@ -112,12 +116,13 @@ impl InteractionEngine {
     /// Completes or discards one device's pinch sequence.
     pub fn end_pinch(&mut self, device: InputDeviceId, cancelled: bool) {
         let Some(ActiveGesture::Pinch { fingers, scale, rotation }) =
-            self.active.remove(&device)
+            self.active.get(&device).copied()
         else {
             return;
         };
+        self.active.remove(&device);
         if !cancelled {
-            self.resolve_and_queue(PointingGesture::Pinch { fingers, scale, rotation });
+            self.resolve_and_queue(device, PointingGesture::Pinch { fingers, scale, rotation });
         }
     }
 
@@ -128,22 +133,24 @@ impl InteractionEngine {
 
     /// Completes or discards one device's hold sequence.
     pub fn end_hold(&mut self, device: InputDeviceId, cancelled: bool) {
-        let Some(ActiveGesture::Hold { fingers }) = self.active.remove(&device) else {
+        let Some(ActiveGesture::Hold { fingers }) = self.active.get(&device).copied() else {
             return;
         };
+        self.active.remove(&device);
         if !cancelled {
-            self.resolve_and_queue(PointingGesture::Hold { fingers });
+            self.resolve_and_queue(device, PointingGesture::Hold { fingers });
         }
     }
 
     /// Clears all active sequences when a device disconnects.
     pub fn remove_device(&mut self, device: InputDeviceId) {
         self.active.remove(&device);
+        self.pending.retain(|(source, _)| *source != device);
     }
 
     /// Returns and removes the next pending desktop interaction.
     pub fn take_pending_interaction(&mut self) -> Option<PointingInteraction> {
-        self.pending.pop_front()
+        self.pending.pop_front().map(|(_, interaction)| interaction)
     }
 
     /// Converts a standalone normalized gesture into a desktop intent.
@@ -151,9 +158,12 @@ impl InteractionEngine {
         self.profile.resolve(gesture)
     }
 
-    fn resolve_and_queue(&mut self, gesture: PointingGesture) {
+    fn resolve_and_queue(&mut self, device: InputDeviceId, gesture: PointingGesture) {
         if let Some(interaction) = self.resolve(gesture) {
-            self.pending.push_back(interaction);
+            if self.pending.len() == MAX_PENDING_INTERACTIONS {
+                self.pending.pop_front();
+            }
+            self.pending.push_back((device, interaction));
         }
     }
 }
@@ -207,6 +217,57 @@ mod tests {
         engine.update_swipe(device, -100.0, 0.0);
         engine.end_swipe(device, true);
 
+        assert_eq!(engine.take_pending_interaction(), None);
+    }
+
+    #[test]
+    fn ending_a_different_gesture_kind_does_not_discard_active_sequence() {
+        let mut engine = InteractionEngine::new();
+        let device = InputDeviceId(5);
+        engine.begin_swipe(device, 3);
+        engine.update_swipe(device, -80.0, 0.0);
+
+        engine.end_pinch(device, false);
+        engine.end_swipe(device, false);
+
+        assert_eq!(
+            engine.take_pending_interaction(),
+            Some(PointingInteraction::NextWorkspace)
+        );
+    }
+
+    #[test]
+    fn disconnect_removes_completed_but_not_yet_dispatched_actions() {
+        let mut engine = InteractionEngine::new();
+        let device = InputDeviceId(6);
+        engine.begin_swipe(device, 3);
+        engine.update_swipe(device, -80.0, 0.0);
+        engine.end_swipe(device, false);
+
+        engine.remove_device(device);
+
+        assert_eq!(engine.take_pending_interaction(), None);
+    }
+
+    #[test]
+    fn disconnecting_one_device_preserves_other_device_actions() {
+        let mut engine = InteractionEngine::new();
+        let removed = InputDeviceId(7);
+        let retained = InputDeviceId(8);
+
+        engine.begin_swipe(removed, 3);
+        engine.update_swipe(removed, -80.0, 0.0);
+        engine.end_swipe(removed, false);
+        engine.begin_swipe(retained, 3);
+        engine.update_swipe(retained, 80.0, 0.0);
+        engine.end_swipe(retained, false);
+
+        engine.remove_device(removed);
+
+        assert_eq!(
+            engine.take_pending_interaction(),
+            Some(PointingInteraction::PreviousWorkspace)
+        );
         assert_eq!(engine.take_pending_interaction(), None);
     }
 
