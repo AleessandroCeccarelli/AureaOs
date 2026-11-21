@@ -147,7 +147,7 @@ fn run_with_shutdown_handler(
         ));
     }
 
-    let runtime_result = runtime.run_event_loop(receiver, interaction_receiver);
+    let runtime_result = runtime.run_event_loop_with_interactions(receiver, interaction_receiver);
 
     // Always request compositor shutdown before joining its thread.
     shutdown.request_shutdown();
