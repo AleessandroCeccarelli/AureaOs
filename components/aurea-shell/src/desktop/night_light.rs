@@ -6,7 +6,7 @@
 //! Shell-facing compatibility adapter for Aurea Lumen preferences.
 
 use aurea_desktop_api::{
-    appearance::lumen::{LumenMode, LumenPreferences, LumenSchedule},
+    appearance::lumen::{LumenMode, LumenPreferences},
     display::DisplayColorAdjustment,
 };
 
