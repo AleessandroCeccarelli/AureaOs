@@ -181,9 +181,10 @@ impl GpuManager {
 
     /// Chooses a primary GPU using the same priority classes as Mutter.
     ///
-    /// Hardware-rendering-capable candidates are considered before software
-    /// candidates. Within each class: explicit preference, built-in panel,
-    /// platform device, boot VGA, then any remaining device. Ties are stable
+    /// The explicit udev preference wins first. Other hardware-rendering
+    /// candidates precede software candidates; within each class the order is
+    /// built-in panel, platform device, boot VGA, then any remaining device.
+    /// Ties are stable
     /// because the inventory is ordered by DRM path.
     ///
     /// This only chooses the compositor's primary GPU. Each output continues
@@ -197,7 +198,7 @@ impl GpuManager {
             .find(|device| device.is_available() && device.selection.preferred_primary)
             .or_else(|| {
                 [true, false].into_iter().find_map(|hardware_only| {
-                self.devices
+                    self.devices
                     .values()
                     .find(|device| {
                         device.is_available()
