@@ -22,7 +22,7 @@ pub(crate) fn id_for(device: &Device) -> InputDeviceId {
     InputDeviceId(stable_device_id(device.sysname()))
 }
 
-pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
+pub(crate) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
     let pointer = device.has_capability(DeviceCapability::Pointer);
     let touch = device.has_capability(DeviceCapability::Touch);
     let kind = if tablet::supports(device) {
