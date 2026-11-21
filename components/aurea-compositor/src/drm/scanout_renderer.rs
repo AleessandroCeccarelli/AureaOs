@@ -21,6 +21,7 @@ use crate::{
     vulkan::{
         DrmVulkanCompatibility, VulkanBackend, VulkanDisplayColorManager, VulkanDrmFramePool,
         VulkanDrmScanoutFrame, VulkanExternalMemoryCapabilities, VulkanFormatCapabilities,
+        VulkanSurfacePipelineCache,
     },
 };
 
