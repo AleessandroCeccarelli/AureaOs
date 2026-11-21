@@ -121,6 +121,16 @@ impl ManagedDrmSurface {
     pub fn frame_pool_mut(&mut self) -> &mut VulkanDrmFramePool {
         &mut self.frame_pool
     }
+    /// Borrows the native surface and CPU-upload presentation resources.
+    pub(crate) fn cpu_parts_mut(
+        &mut self,
+    ) -> (
+        &DrmSurface,
+        &mut GbmCpuFramebufferPool,
+        &mut CpuPresentationBackend,
+    ) {
+        (&self.surface, &mut self.cpu_frame_pool, &mut self.cpu_presentation)
+    }
     /// Borrows the KMS surface and its mutable scanout ownership resources.
     pub fn scanout_parts_mut(
         &mut self,
