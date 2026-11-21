@@ -24,13 +24,6 @@ impl AureaCompositor {
         self.remove_pointing_device_state(device);
     }
 
-    /// Retrieves the next semantic pointing interaction for the desktop shell.
-    pub fn take_pending_pointing_interaction(
-        &mut self,
-    ) -> Option<crate::input::interaction::PointingInteraction> {
-        self.interaction_engine.take_pending_interaction()
-    }
-
     fn publish_completed_interactions(&mut self) {
         while let Some(interaction) = self.interaction_engine.take_pending_interaction() {
             let desktop_interaction = match interaction {
