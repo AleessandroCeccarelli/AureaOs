@@ -40,6 +40,7 @@ mod pointer;
 mod pointer_axis;
 mod pointer_bounds;
 mod pointer_button;
+mod pointer_gestures;
 mod pointer_placement;
 mod rendering;
 mod surface_output_reconciliation;
