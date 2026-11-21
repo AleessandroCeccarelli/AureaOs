@@ -14,6 +14,61 @@ use crate::event_bus::EventBus;
 use crate::session::SessionState;
 use crate::state::ShellState;
 
+
+#[test]
+fn desktop_workspace_interactions_update_shell_state_and_remain_available() {
+    use aurea_desktop_api::desktop_interaction::DesktopInteraction;
+
+    let mut runtime = ShellRuntime::new();
+
+    runtime.handle_desktop_interaction(DesktopInteraction::NextWorkspace);
+    assert_eq!(runtime.desktop_state().workspaces.active(), 1);
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::NextWorkspace)
+    );
+
+    runtime.handle_desktop_interaction(DesktopInteraction::PreviousWorkspace);
+    assert_eq!(runtime.desktop_state().workspaces.active(), 0);
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::PreviousWorkspace)
+    );
+}
+
+#[test]
+fn previous_workspace_interaction_wraps_to_last_workspace() {
+    use aurea_desktop_api::desktop_interaction::DesktopInteraction;
+    use crate::desktop::WORKSPACE_COUNT;
+
+    let mut runtime = ShellRuntime::new();
+
+    runtime.handle_desktop_interaction(DesktopInteraction::PreviousWorkspace);
+
+    assert_eq!(
+        runtime.desktop_state().workspaces.active(),
+        WORKSPACE_COUNT - 1
+    );
+}
+
+#[test]
+fn overview_and_context_menu_interactions_are_preserved_for_presentation() {
+    use aurea_desktop_api::desktop_interaction::DesktopInteraction;
+
+    let mut runtime = ShellRuntime::new();
+    runtime.handle_desktop_interaction(DesktopInteraction::ShowOverview);
+    runtime.handle_desktop_interaction(DesktopInteraction::ShowContextMenu);
+
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::ShowOverview)
+    );
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::ShowContextMenu)
+    );
+}
+
 #[test]
 fn runtime_starts_in_created_state() {
     let runtime = ShellRuntime::new();
