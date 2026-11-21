@@ -110,9 +110,8 @@ impl ShellRuntime {
 
     /// Applies shell-owned state changes and retains presentation actions.
     ///
-    /// Workspace visibility is switched by the compositor at the same time
-    /// the semantic event is published. The shell mirrors the selected index
-    /// so its panels and workspace indicators remain synchronized.
+    /// Workspace changes arrive with the compositor's authoritative index,
+    /// regardless of whether a gesture or keyboard shortcut initiated them.
     pub fn handle_desktop_interaction(&mut self, interaction: DesktopInteraction) {
         match interaction {
             DesktopInteraction::WorkspaceChanged { index } => {
