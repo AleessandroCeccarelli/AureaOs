@@ -11,6 +11,7 @@ mod device_settings;
 mod mouse;
 mod registry;
 mod tablet;
+mod tablet_outputs;
 mod touchscreen;
 mod touchscreen_calibration;
 pub mod touchscreen_transform;
@@ -26,6 +27,7 @@ pub use touchscreen_calibration::{
     TouchscreenCalibration, TouchscreenCalibrationError, TouchscreenCalibrationMap,
 };
 pub use touchscreen_slots::TouchscreenSlotMap;
+pub use tablet_outputs::{TabletOutputMap, TabletOutputTarget};
 pub(super) use discovery::{describe, id_for};
 
 /// Applies AureaOS defaults to a newly connected touchpad.
