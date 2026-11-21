@@ -154,6 +154,11 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                     })?;
             }
             PresentationPath::Compatibility => {
+                // Keep the compositor's frame pending until the CPU-upload
+                // framebuffer is released by its KMS page-flip event.
+                if output.cpu_presentation_pending() {
+                    continue;
+                }
                 let warmth_percent = display_color.adjustment().warmth_percent();
                 let mut display_color_manager = vulkan
                     .display_color_manager()
