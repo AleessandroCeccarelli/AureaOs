@@ -272,6 +272,25 @@ mod tests {
     }
 
     #[test]
+    fn pending_interaction_queue_is_bounded() {
+        let mut engine = InteractionEngine::new();
+        let device = InputDeviceId(9);
+
+        for _ in 0..(MAX_PENDING_INTERACTIONS + 1) {
+            engine.begin_swipe(device, 3);
+            engine.update_swipe(device, -80.0, 0.0);
+            engine.end_swipe(device, false);
+        }
+
+        let mut received = 0;
+        while engine.take_pending_interaction().is_some() {
+            received += 1;
+        }
+
+        assert_eq!(received, MAX_PENDING_INTERACTIONS);
+    }
+
+    #[test]
     fn completed_pinch_queues_overview_action() {
         let mut engine = InteractionEngine::new();
         let device = InputDeviceId(4);
