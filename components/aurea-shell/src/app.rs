@@ -9,7 +9,7 @@ use std::panic::{self, AssertUnwindSafe};
 use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
 
-use aurea_desktop_api::{CompositorFactory, ShutdownSignal, display::DisplayColorController, desktop_interaction::desktop_interaction_channel};
+use aurea_desktop_api::{CompositorFactory, ShutdownSignal, display::DisplayColorController, desktop_interaction::desktop_interaction_channel, input::touchpad_settings_channel};
 
 use crate::config::ShellConfig;
 use crate::error::ShellError;
@@ -52,7 +52,8 @@ fn run_with_shutdown_handler(
     register_shutdown_handler: impl FnOnce(Box<dyn FnMut() + Send + 'static>) -> bool,
 ) -> Result<(), ShellError> {
     let display_color = DisplayColorController::new();
-    let mut runtime = ShellRuntime::with_display_color(display_color.clone());
+    let (touchpad_settings, touchpad_receiver) = touchpad_settings_channel();
+    let mut runtime = ShellRuntime::with_controllers(display_color.clone(), touchpad_settings);
     let (event_bus, receiver) = EventBus::new();
     let (interaction_sender, interaction_receiver) = desktop_interaction_channel();
 
@@ -65,7 +66,7 @@ fn run_with_shutdown_handler(
 
     let compositor_thread = thread::spawn(move || {
         // Create the compositor inside its owning thread.
-        let mut compositor = compositor_factory.create(display_color, interaction_sender)?;
+        let mut compositor = compositor_factory.create(display_color, interaction_sender, touchpad_receiver)?;
 
         // Report readiness only after successful initialization.
         ready_sender
