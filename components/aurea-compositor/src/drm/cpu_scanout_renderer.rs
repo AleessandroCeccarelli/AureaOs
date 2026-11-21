@@ -17,8 +17,8 @@ use crate::{
     render::RenderScene,
     renderer::{RenderBackend, RenderTarget},
     vulkan::{
-        VulkanBackend, VulkanImageAllocator, VulkanImageRequest, VulkanImageState, VulkanImageView,
-        VulkanReadbackBuffer, surface_compositor,
+        VulkanBackend, VulkanDisplayColorManager, VulkanImageAllocator, VulkanImageRequest,
+        VulkanImageState, VulkanImageView, VulkanReadbackBuffer, surface_compositor,
     },
 };
 
@@ -45,6 +45,8 @@ pub(crate) struct VulkanCpuOutputBackend<'a> {
     output: &'a mut ManagedDrmSurface,
     vulkan: &'a VulkanBackend,
     surface_cache: &'a mut crate::vulkan::VulkanSurfacePipelineCache,
+    display_color: &'a mut VulkanDisplayColorManager,
+    warmth_percent: u8,
 }
 
 impl<'a> VulkanCpuOutputBackend<'a> {
@@ -54,6 +56,8 @@ impl<'a> VulkanCpuOutputBackend<'a> {
         output: &'a mut ManagedDrmSurface,
         vulkan: &'a VulkanBackend,
         surface_cache: &'a mut crate::vulkan::VulkanSurfacePipelineCache,
+        display_color: &'a mut VulkanDisplayColorManager,
+        warmth_percent: u8,
     ) -> Self {
         Self {
             drm_device,
@@ -61,6 +65,8 @@ impl<'a> VulkanCpuOutputBackend<'a> {
             output,
             vulkan,
             surface_cache,
+            display_color,
+            warmth_percent,
         }
     }
 }
@@ -132,6 +138,47 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
                     VulkanCpuScanoutError(format!("Vulkan readback allocation failed: {error}"))
                 })?;
 
+        let display_pass = if self.warmth_percent > 0 {
+            self.display_color
+                .pass_for_format(smithay::reexports::ash::vk::Format::R8G8B8A8_UNORM)
+                .ok()
+        } else {
+            None
+        };
+        let intermediate = if display_pass.is_some() {
+            Some(
+                VulkanImageAllocator::new(self.vulkan.device())
+                    .allocate(VulkanImageRequest::render_target(
+                        target.width(),
+                        target.height(),
+                        smithay::reexports::ash::vk::Format::R8G8B8A8_UNORM,
+                        smithay::reexports::ash::vk::ImageUsageFlags::COLOR_ATTACHMENT
+                            | smithay::reexports::ash::vk::ImageUsageFlags::SAMPLED,
+                    ))
+                    .map_err(|error| {
+                        VulkanCpuScanoutError(format!(
+                            "Vulkan display-color intermediate allocation failed: {error}"
+                        ))
+                    })?,
+            )
+        } else {
+            None
+        };
+        let intermediate_view = intermediate
+            .as_ref()
+            .map(VulkanImageView::color)
+            .transpose()
+            .map_err(|error| {
+                VulkanCpuScanoutError(format!(
+                    "Vulkan display-color intermediate view failed: {error}"
+                ))
+            })?;
+        let effective_display = display_pass
+            .zip(intermediate_view.as_ref())
+            .map(|(pass, intermediate)| {
+                (pass, self.warmth_percent, intermediate, VulkanImageState::Undefined)
+            });
+
         surface_compositor::render_and_readback(
             self.vulkan.device(),
             &view,
@@ -139,7 +186,7 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
             scene,
             self.surface_cache,
             VulkanImageState::Undefined,
-            None,
+            effective_display,
             &readback,
         )
         .map_err(|error| {
