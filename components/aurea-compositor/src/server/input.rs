@@ -14,7 +14,7 @@ use smithay::{
             GesturePinchUpdateEvent as BackendPinchUpdateEvent,
             GestureSwipeUpdateEvent as BackendSwipeUpdateEvent, InputEvent,
             AbsolutePositionEvent, KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent,
-            PointerMotionEvent, TouchCancelEvent, TouchDownEvent, TouchEvent, TouchMotionEvent, TouchUpEvent,
+            PointerMotionEvent, TouchEvent,
         },
         libinput::{LibinputInputBackend, LibinputSessionInterface},
     },
