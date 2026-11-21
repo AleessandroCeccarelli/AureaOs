@@ -14,7 +14,10 @@ use smithay::{
             GesturePinchUpdateEvent as BackendPinchUpdateEvent,
             GestureSwipeUpdateEvent as BackendSwipeUpdateEvent, InputEvent,
             AbsolutePositionEvent, KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent,
-            PointerMotionEvent, TouchEvent,
+            PointerMotionEvent, TabletToolAxisEvent as BackendTabletToolAxisEvent,
+            TabletToolButtonEvent as BackendTabletToolButtonEvent,
+            TabletToolProximityEvent as BackendTabletToolProximityEvent,
+            TabletToolTipEvent as BackendTabletToolTipEvent, TouchEvent,
         },
         libinput::{LibinputInputBackend, LibinputSessionInterface},
     },
@@ -312,6 +315,18 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
         }
         InputEvent::TouchFrame { .. } => {
             state.compositor.handle_touch_frame();
+        }
+        InputEvent::TabletToolProximity { event } => {
+            state.compositor.handle_tablet_proximity(event);
+        }
+        InputEvent::TabletToolAxis { event } => {
+            state.compositor.handle_tablet_axis(event);
+        }
+        InputEvent::TabletToolTip { event } => {
+            state.compositor.handle_tablet_tip(event);
+        }
+        InputEvent::TabletToolButton { event } => {
+            state.compositor.handle_tablet_button(event);
         }
         _ => {}
     }
