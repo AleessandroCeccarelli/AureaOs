@@ -8,7 +8,10 @@
 use std::{io, path::PathBuf};
 
 use crate::{
-    drm::scanout_renderer::VulkanOutputScanoutBackend,
+    drm::{
+        cpu_scanout_renderer::VulkanCpuOutputBackend,
+        scanout_renderer::VulkanOutputScanoutBackend,
+    },
     presentation_selector::{
         NoCompatiblePresentationPath, PresentationBackendSupport, PresentationPath,
         PresentationSelector,
@@ -72,7 +75,8 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                     .get(&rendering_node)
                     .map(|backend| backend.supports_direct_presentation())
                     .unwrap_or(false),
-            compatibility: false,
+            compatibility: gbm_devices.contains(presentation_node)
+                && vulkan_backends.contains_key(&rendering_node),
         }];
         let selected_path = PresentationSelector::select(
             &rendering_node,
@@ -85,12 +89,6 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
             ))
         })?;
 
-        let PresentationPath::DirectVulkan = selected_path else {
-            return Err(io::Error::other(
-                "AureaOS: selected presentation path has no initialized backend",
-            ));
-        };
-
         if !gbm_devices.contains(presentation_node) {
             return Err(io::Error::other(format!(
                 "AureaOS: GBM is unavailable for DRM device {presentation_node} while output {output_id} had a pending frame"
@@ -98,7 +96,7 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
         }
         let Some(vulkan) = vulkan_backends.get(&rendering_node) else {
             return Err(io::Error::other(format!(
-                "AureaOS: Vulkan backend is unavailable for rendering device {rendering_node} while output {output_id} had a pending frame"
+                "AureaOS: Vulkan rendering backend is unavailable for {rendering_node}"
             )));
         };
         let Some(surface_manager) = drm_surfaces.get_mut(&presentation_node) else {
@@ -111,35 +109,46 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                 "AureaOS: DRM surface disappeared for output {output_id}"
             )));
         };
-        if output.presentation().pending().is_some() {
-            continue;
-        }
 
-        let warmth_percent = display_color.adjustment().warmth_percent();
-        let mut display_color_manager = vulkan
-            .display_color_manager()
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let mut surface_pipeline_cache = vulkan
-            .surface_pipeline_cache()
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let mut backend = VulkanOutputScanoutBackend::new(
-            device,
-            gbm_devices,
-            output,
-            vulkan,
-            &mut display_color_manager,
-            &mut surface_pipeline_cache,
-            warmth_percent,
-        );
-        compositor
-            .render_output(&mut backend, output_id)
-            .map_err(|error| {
-                io::Error::other(format!(
-                    "AureaOS: output {output_id} rendering or presentation failed: {error}"
-                ))
-            })?;
+        match selected_path {
+            PresentationPath::DirectVulkan => {
+                if output.presentation().pending().is_some() {
+                    continue;
+                }
+                let warmth_percent = display_color.adjustment().warmth_percent();
+                let mut display_color_manager = vulkan
+                    .display_color_manager()
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                let mut surface_pipeline_cache = vulkan
+                    .surface_pipeline_cache()
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                let mut backend = VulkanOutputScanoutBackend::new(
+                    device,
+                    gbm_devices,
+                    output,
+                    vulkan,
+                    &mut display_color_manager,
+                    &mut surface_pipeline_cache,
+                    warmth_percent,
+                );
+                compositor.render_output(&mut backend, output_id).map_err(|error| {
+                    io::Error::other(format!(
+                        "AureaOS: direct Vulkan output {output_id} failed: {error}"
+                    ))
+                })?;
+            }
+            PresentationPath::Compatibility => {
+                let mut backend =
+                    VulkanCpuOutputBackend::new(device, gbm_devices, output, vulkan);
+                compositor.render_output(&mut backend, output_id).map_err(|error| {
+                    io::Error::other(format!(
+                        "AureaOS: CPU compatibility output {output_id} failed: {error}"
+                    ))
+                })?;
+            }
+        }
     }
 
     Ok(())
