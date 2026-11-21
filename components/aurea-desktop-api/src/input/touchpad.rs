@@ -44,11 +44,21 @@ impl TouchpadSettings {
         }
     }
 
-    pub const fn tap_to_click(self) -> bool { self.tap_to_click }
-    pub const fn two_finger_scroll(self) -> bool { self.two_finger_scroll }
-    pub const fn natural_scrolling(self) -> bool { self.natural_scrolling }
-    pub const fn disable_while_typing(self) -> bool { self.disable_while_typing }
-    pub const fn tap_and_drag(self) -> bool { self.tap_and_drag }
+    pub const fn tap_to_click(self) -> bool {
+        self.tap_to_click
+    }
+    pub const fn two_finger_scroll(self) -> bool {
+        self.two_finger_scroll
+    }
+    pub const fn natural_scrolling(self) -> bool {
+        self.natural_scrolling
+    }
+    pub const fn disable_while_typing(self) -> bool {
+        self.disable_while_typing
+    }
+    pub const fn tap_and_drag(self) -> bool {
+        self.tap_and_drag
+    }
 }
 
 /// Outcome of applying one setting to one physical touchpad.

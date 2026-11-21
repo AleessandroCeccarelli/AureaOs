@@ -5,7 +5,10 @@
 
 //! Wayland server construction and backend initialization.
 
-use aurea_desktop_api::{display::DisplayColorController, desktop_interaction::DesktopInteractionSender, input::TouchpadSettingsCommand};
+use aurea_desktop_api::{
+    desktop_interaction::DesktopInteractionSender, display::DisplayColorController,
+    input::TouchpadSettingsCommand,
+};
 use std::sync::mpsc::Receiver;
 
 use std::{

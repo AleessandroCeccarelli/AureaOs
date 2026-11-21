@@ -11,9 +11,14 @@ use std::{
     time::Duration,
 };
 
-use aurea_desktop_api::{display::DisplayColorController, keyboard::KeyboardLayoutId, desktop_interaction::{DesktopInteractionSender, desktop_interaction_channel}, input::{TouchpadSettingsCommand, touchpad_settings_channel}};
-use std::sync::mpsc::Receiver;
+use aurea_desktop_api::{
+    desktop_interaction::{DesktopInteractionSender, desktop_interaction_channel},
+    display::DisplayColorController,
+    input::{TouchpadSettingsCommand, touchpad_settings_channel},
+    keyboard::KeyboardLayoutId,
+};
 use smithay::reexports::calloop::EventLoop;
+use std::sync::mpsc::Receiver;
 
 #[cfg(feature = "drm")]
 use crate::drm::{DrmSession, device::DrmDevice};
@@ -45,10 +50,18 @@ impl WaylandServer {
         let (interactions, _receiver) = desktop_interaction_channel();
         let (_touchpad_controller, touchpad_settings) = touchpad_settings_channel();
         #[cfg(feature = "drm")]
-        let parts = super::builder::build(socket_name, None, None, display_color, interactions, touchpad_settings);
+        let parts = super::builder::build(
+            socket_name,
+            None,
+            None,
+            display_color,
+            interactions,
+            touchpad_settings,
+        );
 
         #[cfg(not(feature = "drm"))]
-        let parts = super::builder::build(socket_name, display_color, interactions, touchpad_settings);
+        let parts =
+            super::builder::build(socket_name, display_color, interactions, touchpad_settings);
 
         let (event_loop, state) = parts?;
 
@@ -126,8 +139,14 @@ impl WaylandServer {
         interactions: DesktopInteractionSender,
         touchpad_settings: Receiver<TouchpadSettingsCommand>,
     ) -> io::Result<Self> {
-        let (event_loop, state) =
-            super::builder::build(socket_name, drm_session, drm_device, display_color, interactions, touchpad_settings)?;
+        let (event_loop, state) = super::builder::build(
+            socket_name,
+            drm_session,
+            drm_device,
+            display_color,
+            interactions,
+            touchpad_settings,
+        )?;
 
         Ok(Self { event_loop, state })
     }

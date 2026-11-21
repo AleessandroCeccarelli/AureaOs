@@ -6,30 +6,30 @@
 //! Coordinated pointing-device services.
 
 mod applied_settings;
-mod discovery;
 mod device_settings;
+mod discovery;
 mod mouse;
 mod registry;
 mod tablet;
-mod tablet_outputs;
 mod tablet_calibration;
-mod touchscreen;
-mod touchscreen_calibration;
-pub mod touchscreen_transform;
-mod touchscreen_slots;
+mod tablet_outputs;
 mod touchpad;
 mod touchpad_settings;
+mod touchscreen;
+mod touchscreen_calibration;
+mod touchscreen_slots;
+pub mod touchscreen_transform;
 
-pub use registry::PointingDeviceService;
 pub use applied_settings::AppliedTouchpadSettings;
 pub use device_settings::PointingDeviceSettings;
+pub(crate) use discovery::{describe, id_for};
+pub use registry::PointingDeviceService;
+pub use tablet_outputs::{TabletOutputMap, TabletOutputTarget};
 pub use touchscreen::TouchscreenOutputMap;
 pub use touchscreen_calibration::{
     TouchscreenCalibration, TouchscreenCalibrationError, TouchscreenCalibrationMap,
 };
 pub use touchscreen_slots::TouchscreenSlotMap;
-pub use tablet_outputs::{TabletOutputMap, TabletOutputTarget};
-pub(crate) use discovery::{describe, id_for};
 
 /// Applies AureaOS defaults to a newly connected touchpad.
 pub(super) fn configure_touchpad(

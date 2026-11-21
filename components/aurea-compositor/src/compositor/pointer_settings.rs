@@ -20,7 +20,8 @@ impl AureaCompositor {
         &self,
         device: aurea_desktop_api::input::InputDeviceId,
     ) -> PointerSettings {
-        self.pointing_settings.pointer(device, self.pointer_settings)
+        self.pointing_settings
+            .pointer(device, self.pointer_settings)
     }
 
     /// Updates the default pointer preferences.
@@ -34,7 +35,8 @@ impl AureaCompositor {
         device: aurea_desktop_api::input::InputDeviceId,
         settings: PointerSettings,
     ) -> bool {
-        self.pointing_settings.set_pointer(&self.pointing_devices, device, settings)
+        self.pointing_settings
+            .set_pointer(&self.pointing_devices, device, settings)
     }
 
     /// Returns touchpad preferences for one device, falling back to defaults.
@@ -68,6 +70,7 @@ impl AureaCompositor {
         device: aurea_desktop_api::input::InputDeviceId,
         settings: aurea_desktop_api::input::TouchpadSettings,
     ) -> bool {
-        self.pointing_settings.set_touchpad(&self.pointing_devices, device, settings)
+        self.pointing_settings
+            .set_touchpad(&self.pointing_devices, device, settings)
     }
 }

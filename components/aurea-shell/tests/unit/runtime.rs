@@ -14,7 +14,6 @@ use crate::event_bus::EventBus;
 use crate::session::SessionState;
 use crate::state::ShellState;
 
-
 #[test]
 fn compositor_workspace_updates_are_mirrored_exactly_by_shell() {
     use aurea_desktop_api::desktop_interaction::DesktopInteraction;
@@ -34,8 +33,8 @@ fn compositor_workspace_updates_are_mirrored_exactly_by_shell() {
 
 #[test]
 fn shell_ignores_invalid_compositor_workspace_index() {
-    use aurea_desktop_api::desktop_interaction::DesktopInteraction;
     use crate::desktop::WORKSPACE_COUNT;
+    use aurea_desktop_api::desktop_interaction::DesktopInteraction;
 
     let mut runtime = ShellRuntime::new();
     runtime.handle_desktop_interaction(DesktopInteraction::WorkspaceChanged {
@@ -291,8 +290,8 @@ fn runtime_respects_scheduled_night_light_activation() {
 
 #[test]
 fn runtime_event_loop_receives_compositor_interactions() {
-    use aurea_desktop_api::desktop_interaction::desktop_interaction_channel;
     use aurea_desktop_api::desktop_interaction::DesktopInteraction;
+    use aurea_desktop_api::desktop_interaction::desktop_interaction_channel;
 
     let (event_bus, event_receiver) = EventBus::new();
     let (interaction_sender, interaction_receiver) = desktop_interaction_channel();
@@ -325,4 +324,3 @@ fn runtime_event_loop_receives_compositor_interactions() {
         Some(DesktopInteraction::ShowOverview)
     );
 }
-

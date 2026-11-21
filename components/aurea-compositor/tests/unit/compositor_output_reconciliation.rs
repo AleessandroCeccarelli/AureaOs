@@ -8,8 +8,8 @@ use aurea_compositor::{
     output::{DisplayOutput, OutputMode, manager::OutputReconciliation},
 };
 
-use smithay::reexports::wayland_server::Display;
 use aurea_desktop_api::desktop_interaction::desktop_interaction_channel;
+use smithay::reexports::wayland_server::Display;
 
 #[test]
 fn removed_output_unpublishes_its_wayland_global() {

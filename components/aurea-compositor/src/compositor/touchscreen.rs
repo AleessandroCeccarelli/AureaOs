@@ -12,7 +12,9 @@ use smithay::{
 };
 
 use super::AureaCompositor;
-use crate::{input::pointing::touchscreen_transform::transform_touch_coordinates, output::OutputId};
+use crate::{
+    input::pointing::touchscreen_transform::transform_touch_coordinates, output::OutputId,
+};
 
 impl AureaCompositor {
     /// Converts normalized device coordinates into global logical coordinates.
@@ -81,7 +83,10 @@ impl AureaCompositor {
     fn touchscreen_focus(
         &self,
         location: Point<f64, smithay::utils::Logical>,
-    ) -> Option<(smithay::reexports::wayland_server::protocol::wl_surface::WlSurface, Point<f64, smithay::utils::Logical>)> {
+    ) -> Option<(
+        smithay::reexports::wayland_server::protocol::wl_surface::WlSurface,
+        Point<f64, smithay::utils::Logical>,
+    )> {
         let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
         scene.surface_under(location).map(|(surface, origin, _)| {
             (
@@ -173,7 +178,11 @@ impl AureaCompositor {
         touch.motion(
             self,
             self.touchscreen_focus(location),
-            &MotionEvent { slot, location, time },
+            &MotionEvent {
+                slot,
+                location,
+                time,
+            },
         );
         self.request_all_output_frames();
     }

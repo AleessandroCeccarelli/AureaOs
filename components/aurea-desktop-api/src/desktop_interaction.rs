@@ -23,7 +23,10 @@ pub struct DesktopInteractionSender {
 
 impl DesktopInteractionSender {
     /// Sends one completed desktop interaction.
-    pub fn send(&self, interaction: DesktopInteraction) -> Result<(), SendError<DesktopInteraction>> {
+    pub fn send(
+        &self,
+        interaction: DesktopInteraction,
+    ) -> Result<(), SendError<DesktopInteraction>> {
         self.sender.send(interaction)
     }
 }
@@ -56,10 +59,15 @@ mod tests {
     #[test]
     fn channel_delivers_interactions_in_order() {
         let (sender, receiver) = desktop_interaction_channel();
-        sender.send(DesktopInteraction::WorkspaceChanged { index: 1 }).unwrap();
+        sender
+            .send(DesktopInteraction::WorkspaceChanged { index: 1 })
+            .unwrap();
         sender.send(DesktopInteraction::ShowOverview).unwrap();
 
-        assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::WorkspaceChanged { index: 1 }));
+        assert_eq!(
+            receiver.try_recv(),
+            Ok(DesktopInteraction::WorkspaceChanged { index: 1 })
+        );
         assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::ShowOverview));
         assert_eq!(receiver.try_recv(), Err(TryRecvError::Empty));
     }

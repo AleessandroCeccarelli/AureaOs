@@ -5,12 +5,12 @@
 
 //! Applies per-device touchpad preferences through libinput.
 
-use aurea_desktop_api::input::{
-    TouchpadApplyReport, TouchpadSettingStatus, TouchpadSettings,
-};
+use aurea_desktop_api::input::{TouchpadApplyReport, TouchpadSettingStatus, TouchpadSettings};
 use smithay::reexports::input::{Device, DeviceCapability, ScrollMethod};
 
-fn status(result: Result<(), smithay::reexports::input::DeviceConfigError>) -> TouchpadSettingStatus {
+fn status(
+    result: Result<(), smithay::reexports::input::DeviceConfigError>,
+) -> TouchpadSettingStatus {
     match result {
         Ok(()) => TouchpadSettingStatus::Applied,
         Err(smithay::reexports::input::DeviceConfigError::Unsupported) => {

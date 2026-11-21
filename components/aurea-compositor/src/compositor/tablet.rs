@@ -8,17 +8,16 @@
 use smithay::{
     backend::{
         input::{
-            AbsolutePositionEvent, Event, TabletToolAxisEvent,
-            TabletToolButtonEvent, TabletToolEvent, TabletToolProximityEvent,
-            TabletToolTipEvent,
+            AbsolutePositionEvent, Event, TabletToolAxisEvent, TabletToolButtonEvent,
+            TabletToolEvent, TabletToolProximityEvent, TabletToolTipEvent,
         },
         libinput::LibinputInputBackend,
     },
     input::tablet::{
         TabletDescriptor, TabletSeatTrait,
         tool::{
-            AxisFrame, ButtonEvent, DownEvent, MotionEvent, ProximityInEvent,
-            ProximityOutEvent, UpEvent,
+            AxisFrame, ButtonEvent, DownEvent, MotionEvent, ProximityInEvent, ProximityOutEvent,
+            UpEvent,
         },
     },
     reexports::wayland_server::protocol::wl_surface::WlSurface,
@@ -26,7 +25,7 @@ use smithay::{
 };
 
 use super::AureaCompositor;
-use crate::input::pointing::{id_for, TabletOutputTarget};
+use crate::input::pointing::{TabletOutputTarget, id_for};
 
 impl AureaCompositor {
     /// Drops the advertised tablet when its physical libinput device disappears.
@@ -43,7 +42,10 @@ impl AureaCompositor {
         device: aurea_desktop_api::input::InputDeviceId,
     ) -> Option<(Point<i64, smithay::utils::Logical>, i32, i32)> {
         let target = self.tablet_output_target(device)?;
-        let outputs = self.output_manager.registry().iter()
+        let outputs = self
+            .output_manager
+            .registry()
+            .iter()
             .filter(|output| output.is_enabled())
             .filter(|output| match target {
                 TabletOutputTarget::All => true,
@@ -83,10 +85,7 @@ impl AureaCompositor {
         Some((Point::from((min_x, min_y)), width, height))
     }
 
-    fn tablet_location<E>(
-        &self,
-        event: &E,
-    ) -> Option<Point<f64, smithay::utils::Logical>>
+    fn tablet_location<E>(&self, event: &E) -> Option<Point<f64, smithay::utils::Logical>>
     where
         E: AbsolutePositionEvent<LibinputInputBackend> + Event<LibinputInputBackend>,
     {

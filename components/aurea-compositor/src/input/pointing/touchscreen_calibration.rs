@@ -37,8 +37,7 @@ impl TouchscreenCalibration {
             return Err(TouchscreenCalibrationError::NonFiniteCoefficient);
         }
 
-        let determinant =
-            coefficients[0] * coefficients[4] - coefficients[1] * coefficients[3];
+        let determinant = coefficients[0] * coefficients[4] - coefficients[1] * coefficients[3];
         if !determinant.is_finite() || determinant.abs() < 1.0e-8 {
             return Err(TouchscreenCalibrationError::SingularTransform);
         }
@@ -84,11 +83,7 @@ pub struct TouchscreenCalibrationMap {
 
 impl TouchscreenCalibrationMap {
     /// Stores a validated profile for one device.
-    pub fn set(
-        &mut self,
-        device: InputDeviceId,
-        calibration: TouchscreenCalibration,
-    ) {
+    pub fn set(&mut self, device: InputDeviceId, calibration: TouchscreenCalibration) {
         self.profiles.insert(device, calibration);
     }
 
@@ -123,24 +118,21 @@ mod tests {
 
     #[test]
     fn affine_profile_applies_scale_and_offset() {
-        let calibration =
-            TouchscreenCalibration::new([0.5, 0.0, 0.1, 0.0, 0.5, 0.2]).unwrap();
+        let calibration = TouchscreenCalibration::new([0.5, 0.0, 0.1, 0.0, 0.5, 0.2]).unwrap();
 
         assert_eq!(calibration.apply(0.4, 0.6), Some((0.3, 0.5)));
     }
 
     #[test]
     fn affine_profile_can_correct_axis_inversion() {
-        let calibration =
-            TouchscreenCalibration::new([-1.0, 0.0, 1.0, 0.0, 1.0, 0.0]).unwrap();
+        let calibration = TouchscreenCalibration::new([-1.0, 0.0, 1.0, 0.0, 1.0, 0.0]).unwrap();
 
         assert_eq!(calibration.apply(0.2, 0.7), Some((0.8, 0.7)));
     }
 
     #[test]
     fn mapped_coordinates_are_clamped_to_panel_bounds() {
-        let calibration =
-            TouchscreenCalibration::new([1.0, 0.0, 0.4, 0.0, 1.0, -0.3]).unwrap();
+        let calibration = TouchscreenCalibration::new([1.0, 0.0, 0.4, 0.0, 1.0, -0.3]).unwrap();
 
         assert_eq!(calibration.apply(0.9, 0.1), Some((1.0, 0.0)));
     }
@@ -173,8 +165,7 @@ mod tests {
     #[test]
     fn profiles_are_independent_and_default_to_identity() {
         let mut profiles = TouchscreenCalibrationMap::default();
-        let offset =
-            TouchscreenCalibration::new([1.0, 0.0, 0.1, 0.0, 1.0, 0.0]).unwrap();
+        let offset = TouchscreenCalibration::new([1.0, 0.0, 0.1, 0.0, 1.0, 0.0]).unwrap();
 
         profiles.set(FIRST, offset);
         assert_eq!(profiles.get(FIRST), offset);
@@ -192,6 +183,9 @@ mod tests {
 
         assert!(profiles.remove_device(FIRST));
         assert!(!profiles.remove_device(FIRST));
-        assert_eq!(profiles.get(SECOND).coefficients(), [1.0, 0.0, 0.1, 0.0, 1.0, 0.0]);
+        assert_eq!(
+            profiles.get(SECOND).coefficients(),
+            [1.0, 0.0, 0.1, 0.0, 1.0, 0.0]
+        );
     }
 }

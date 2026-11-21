@@ -61,7 +61,8 @@ pub(super) struct WaylandState {
     pub(super) applied_touchpad_settings: AppliedTouchpadSettings,
     /// Live libinput handles retained only while their devices remain connected.
     #[cfg(feature = "drm")]
-    pub(super) touchpad_devices: HashMap<aurea_desktop_api::input::InputDeviceId, smithay::reexports::input::Device>,
+    pub(super) touchpad_devices:
+        HashMap<aurea_desktop_api::input::InputDeviceId, smithay::reexports::input::Device>,
 
     #[cfg(feature = "drm")]
     pub(super) drm_session: Option<DrmSession>,

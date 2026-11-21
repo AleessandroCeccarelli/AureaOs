@@ -5,10 +5,16 @@
 //
 // Shell runtime management.
 
-use std::{collections::VecDeque, sync::mpsc::{Receiver, RecvTimeoutError}, time::Duration};
+use std::{
+    collections::VecDeque,
+    sync::mpsc::{Receiver, RecvTimeoutError},
+    time::Duration,
+};
 
 use aurea_desktop_api::desktop_interaction::{DesktopInteraction, DesktopInteractionReceiver};
-use aurea_desktop_api::input::{touchpad_settings_channel, InputDeviceId, TouchpadSettings, TouchpadSettingsController};
+use aurea_desktop_api::input::{
+    InputDeviceId, TouchpadSettings, TouchpadSettingsController, touchpad_settings_channel,
+};
 
 use aurea_desktop_api::display::{DisplayColorAdjustment, DisplayColorController};
 
@@ -75,11 +81,7 @@ impl ShellRuntime {
     }
 
     /// Requests a live profile update for one connected touchpad.
-    pub fn set_touchpad_settings(
-        &self,
-        device: InputDeviceId,
-        settings: TouchpadSettings,
-    ) -> bool {
+    pub fn set_touchpad_settings(&self, device: InputDeviceId, settings: TouchpadSettings) -> bool {
         self.touchpad_settings.set(device, settings).is_ok()
     }
 
@@ -104,7 +106,8 @@ impl ShellRuntime {
 
     /// Runs the event loop until shutdown is requested or the channel closes.
     pub fn run_event_loop(&mut self, receiver: Receiver<ShellEvent>) -> Result<(), ShellError> {
-        let (_sender, interactions) = aurea_desktop_api::desktop_interaction::desktop_interaction_channel();
+        let (_sender, interactions) =
+            aurea_desktop_api::desktop_interaction::desktop_interaction_channel();
         self.run_event_loop_with_interactions(receiver, interactions)
     }
 

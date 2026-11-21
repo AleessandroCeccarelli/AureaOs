@@ -28,11 +28,7 @@ impl TouchscreenSlotMap {
     }
 
     /// Returns the existing seat slot or allocates a new one.
-    pub fn acquire(
-        &mut self,
-        device: InputDeviceId,
-        slot: TouchSlot,
-    ) -> Option<TouchSlot> {
+    pub fn acquire(&mut self, device: InputDeviceId, slot: TouchSlot) -> Option<TouchSlot> {
         if let Some(id) = self.active.get(&(device, slot)) {
             return Some(TouchSlot::from(Some(*id)));
         }

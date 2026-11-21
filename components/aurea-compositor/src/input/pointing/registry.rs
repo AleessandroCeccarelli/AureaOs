@@ -8,14 +8,14 @@
 use std::{
     collections::HashMap,
     sync::{
-        mpsc::{self, Receiver, Sender},
         Mutex,
+        mpsc::{self, Receiver, Sender},
     },
 };
 
 use aurea_desktop_api::input::{
-    InputDeviceDescriptor, InputDeviceEvent, InputDeviceId, InputDeviceKind,
-    InputDeviceProvider, TouchpadApplyReport,
+    InputDeviceDescriptor, InputDeviceEvent, InputDeviceId, InputDeviceKind, InputDeviceProvider,
+    TouchpadApplyReport,
 };
 
 #[derive(Default)]
@@ -85,7 +85,11 @@ impl PointingDeviceService {
         let Ok(mut state) = self.state.lock() else {
             return false;
         };
-        if !state.devices.get(&id).is_some_and(|device| device.kind == InputDeviceKind::Touchpad) {
+        if !state
+            .devices
+            .get(&id)
+            .is_some_and(|device| device.kind == InputDeviceKind::Touchpad)
+        {
             return false;
         }
         state.touchpad_reports.insert(id, report);
@@ -174,9 +178,7 @@ mod tests {
             name: format!("Test device {id}"),
             vendor_id: None,
             product_id: None,
-            capabilities: InputDeviceCapabilities::new([
-                StandardInputCapability::PointerMotion,
-            ]),
+            capabilities: InputDeviceCapabilities::new([StandardInputCapability::PointerMotion]),
         }
     }
 
@@ -214,7 +216,10 @@ mod tests {
         };
 
         assert!(service.connect(original.clone()));
-        assert_eq!(events.recv().unwrap(), InputDeviceEvent::Connected(original));
+        assert_eq!(
+            events.recv().unwrap(),
+            InputDeviceEvent::Connected(original)
+        );
         assert!(service.connect(updated.clone()));
         assert_eq!(
             events.recv().unwrap(),

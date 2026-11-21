@@ -10,8 +10,8 @@
 
 pub mod appearance;
 pub mod calendar;
-pub mod display;
 pub mod desktop_interaction;
+pub mod display;
 pub mod hardware_monitor;
 pub mod input;
 pub mod keyboard;
@@ -25,8 +25,8 @@ use std::sync::{
     atomic::{AtomicBool, Ordering},
 };
 
-use display::DisplayColorController;
 use desktop_interaction::DesktopInteractionSender;
+use display::DisplayColorController;
 
 /// Shared shutdown signal used to coordinate desktop components.
 #[derive(Clone, Default)]

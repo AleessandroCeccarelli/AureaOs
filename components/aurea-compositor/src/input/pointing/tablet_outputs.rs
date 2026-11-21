@@ -69,9 +69,9 @@ impl TabletOutputMap {
         }
 
         match self.assignments.get(&device).copied() {
-            Some(TabletOutputTarget::Output(output)) => {
-                outputs.contains(&output).then_some(TabletOutputTarget::Output(output))
-            }
+            Some(TabletOutputTarget::Output(output)) => outputs
+                .contains(&output)
+                .then_some(TabletOutputTarget::Output(output)),
             Some(TabletOutputTarget::All) | None => Some(TabletOutputTarget::All),
         }
     }
@@ -88,7 +88,10 @@ mod tests {
     #[test]
     fn defaults_to_all_enabled_outputs() {
         let map = TabletOutputMap::new();
-        assert_eq!(map.resolve(DEVICE, [FIRST, SECOND]), Some(TabletOutputTarget::All));
+        assert_eq!(
+            map.resolve(DEVICE, [FIRST, SECOND]),
+            Some(TabletOutputTarget::All)
+        );
     }
 
     #[test]
@@ -124,12 +127,18 @@ mod tests {
         map.assign(DEVICE, TabletOutputTarget::Output(SECOND));
 
         assert!(map.unassign(DEVICE));
-        assert_eq!(map.resolve(DEVICE, [FIRST, SECOND]), Some(TabletOutputTarget::All));
+        assert_eq!(
+            map.resolve(DEVICE, [FIRST, SECOND]),
+            Some(TabletOutputTarget::All)
+        );
         assert!(!map.unassign(DEVICE));
 
         map.assign(DEVICE, TabletOutputTarget::Output(SECOND));
         map.remove_device(DEVICE);
-        assert_eq!(map.resolve(DEVICE, [FIRST, SECOND]), Some(TabletOutputTarget::All));
+        assert_eq!(
+            map.resolve(DEVICE, [FIRST, SECOND]),
+            Some(TabletOutputTarget::All)
+        );
     }
 
     #[test]

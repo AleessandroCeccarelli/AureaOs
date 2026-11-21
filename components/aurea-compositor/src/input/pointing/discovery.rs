@@ -11,7 +11,7 @@ use aurea_desktop_api::input::{
 };
 use smithay::reexports::input::{Device, DeviceCapability};
 
-use super::{mouse, tablet, touchscreen, touchpad};
+use super::{mouse, tablet, touchpad, touchscreen};
 
 /// Builds a public descriptor for a supported pointing device.
 ///
@@ -79,13 +79,10 @@ pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
     })
 }
 
-
 /// Checks Linux auxiliary and navigation button codes without assuming a layout.
 fn has_pointer_side_buttons(mut supports: impl FnMut(u32) -> bool) -> bool {
     // BTN_SIDE, BTN_EXTRA, BTN_FORWARD, BTN_BACK.
-    [0x113, 0x114, 0x115, 0x116]
-        .into_iter()
-        .any(&mut supports)
+    [0x113, 0x114, 0x115, 0x116].into_iter().any(&mut supports)
 }
 
 fn nonzero_id(value: u32) -> Option<u16> {

@@ -5,8 +5,8 @@
 
 //! Pointer button delivery and click-to-focus policy.
 
-use smithay::{backend::input::ButtonState, input::pointer::ButtonEvent, utils::SERIAL_COUNTER};
 use aurea_desktop_api::input::InputDeviceId;
+use smithay::{backend::input::ButtonState, input::pointer::ButtonEvent, utils::SERIAL_COUNTER};
 
 use super::AureaCompositor;
 
@@ -14,10 +14,19 @@ const BTN_LEFT: u32 = 0x110;
 
 impl AureaCompositor {
     /// Sends a physical button event and focuses/raises the clicked toplevel.
-    pub fn handle_pointer_button(&mut self, device: InputDeviceId, button: u32, state: ButtonState, time: u32) {
+    pub fn handle_pointer_button(
+        &mut self,
+        device: InputDeviceId,
+        button: u32,
+        state: ButtonState,
+        time: u32,
+    ) {
         match state {
             ButtonState::Pressed => {
-                self.pressed_pointer_buttons.entry(device).or_default().insert(button);
+                self.pressed_pointer_buttons
+                    .entry(device)
+                    .or_default()
+                    .insert(button);
             }
             ButtonState::Released => {
                 if let Some(buttons) = self.pressed_pointer_buttons.get_mut(&device) {

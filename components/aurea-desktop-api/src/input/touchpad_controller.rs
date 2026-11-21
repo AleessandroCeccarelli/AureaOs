@@ -29,7 +29,8 @@ impl TouchpadSettingsController {
         device: InputDeviceId,
         settings: TouchpadSettings,
     ) -> Result<(), SendError<TouchpadSettingsCommand>> {
-        self.sender.send(TouchpadSettingsCommand { device, settings })
+        self.sender
+            .send(TouchpadSettingsCommand { device, settings })
     }
 }
 

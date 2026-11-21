@@ -30,7 +30,10 @@ impl PointingDeviceSettings {
         settings: PointerSettings,
     ) -> bool {
         if !provider.device(id).is_some_and(|device| {
-            matches!(device.kind, InputDeviceKind::Mouse | InputDeviceKind::Touchpad)
+            matches!(
+                device.kind,
+                InputDeviceKind::Mouse | InputDeviceKind::Touchpad
+            )
         }) {
             return false;
         }
@@ -48,7 +51,10 @@ impl PointingDeviceSettings {
         id: InputDeviceId,
         settings: TouchpadSettings,
     ) -> bool {
-        if !provider.device(id).is_some_and(|device| device.kind == InputDeviceKind::Touchpad) {
+        if !provider
+            .device(id)
+            .is_some_and(|device| device.kind == InputDeviceKind::Touchpad)
+        {
             return false;
         }
         self.touchpads.insert(id, settings);
@@ -73,7 +79,9 @@ mod tests {
     struct Devices(Vec<InputDeviceDescriptor>);
 
     impl InputDeviceProvider for Devices {
-        fn devices(&self) -> Vec<InputDeviceDescriptor> { self.0.clone() }
+        fn devices(&self) -> Vec<InputDeviceDescriptor> {
+            self.0.clone()
+        }
         fn device(&self, id: InputDeviceId) -> Option<InputDeviceDescriptor> {
             self.0.iter().find(|device| device.id == id).cloned()
         }
@@ -103,9 +111,18 @@ mod tests {
         let mut settings = PointingDeviceSettings::default();
         let mouse = PointerSettings::new(PointerAccelerationProfile::Flat, 0.7, false).unwrap();
         assert!(settings.set_pointer(&devices, InputDeviceId(1), mouse));
-        assert_eq!(settings.pointer(InputDeviceId(1), PointerSettings::default()), mouse);
-        assert_eq!(settings.pointer(InputDeviceId(2), PointerSettings::default()), PointerSettings::default());
-        assert_eq!(settings.touchpad(InputDeviceId(2)), TouchpadSettings::default());
+        assert_eq!(
+            settings.pointer(InputDeviceId(1), PointerSettings::default()),
+            mouse
+        );
+        assert_eq!(
+            settings.pointer(InputDeviceId(2), PointerSettings::default()),
+            PointerSettings::default()
+        );
+        assert_eq!(
+            settings.touchpad(InputDeviceId(2)),
+            TouchpadSettings::default()
+        );
     }
 
     #[test]
@@ -121,9 +138,19 @@ mod tests {
         let mut settings = PointingDeviceSettings::default();
         let pointer = PointerSettings::new(PointerAccelerationProfile::Flat, 0.5, true).unwrap();
         assert!(settings.set_pointer(&devices, InputDeviceId(4), pointer));
-        assert!(settings.set_touchpad(&devices, InputDeviceId(4), TouchpadSettings::new(false, false, true, false, false)));
+        assert!(settings.set_touchpad(
+            &devices,
+            InputDeviceId(4),
+            TouchpadSettings::new(false, false, true, false, false)
+        ));
         settings.remove(InputDeviceId(4));
-        assert_eq!(settings.pointer(InputDeviceId(4), PointerSettings::default()), PointerSettings::default());
-        assert_eq!(settings.touchpad(InputDeviceId(4)), TouchpadSettings::default());
+        assert_eq!(
+            settings.pointer(InputDeviceId(4), PointerSettings::default()),
+            PointerSettings::default()
+        );
+        assert_eq!(
+            settings.touchpad(InputDeviceId(4)),
+            TouchpadSettings::default()
+        );
     }
 }

@@ -16,9 +16,19 @@ const MAX_PENDING_INTERACTIONS: usize = 64;
 
 #[derive(Debug, Clone, Copy)]
 enum ActiveGesture {
-    Swipe { fingers: u32, delta_x: f64, delta_y: f64 },
-    Pinch { fingers: u32, scale: f64, rotation: f64 },
-    Hold { fingers: u32 },
+    Swipe {
+        fingers: u32,
+        delta_x: f64,
+        delta_y: f64,
+    },
+    Pinch {
+        fingers: u32,
+        scale: f64,
+        rotation: f64,
+    },
+    Hold {
+        fingers: u32,
+    },
 }
 
 /// Resolves provider gestures and queues semantic desktop intents.
@@ -50,11 +60,14 @@ impl InteractionEngine {
 
     /// Starts a swipe sequence for one physical device.
     pub fn begin_swipe(&mut self, device: InputDeviceId, fingers: u32) {
-        self.active.insert(device, ActiveGesture::Swipe {
-            fingers,
-            delta_x: 0.0,
-            delta_y: 0.0,
-        });
+        self.active.insert(
+            device,
+            ActiveGesture::Swipe {
+                fingers,
+                delta_x: 0.0,
+                delta_y: 0.0,
+            },
+        );
     }
 
     /// Adds a finite movement sample to that device's active swipe.
@@ -62,8 +75,11 @@ impl InteractionEngine {
         if !delta_x.is_finite() || !delta_y.is_finite() {
             return;
         }
-        if let Some(ActiveGesture::Swipe { delta_x: total_x, delta_y: total_y, .. }) =
-            self.active.get_mut(&device)
+        if let Some(ActiveGesture::Swipe {
+            delta_x: total_x,
+            delta_y: total_y,
+            ..
+        }) = self.active.get_mut(&device)
         {
             *total_x += delta_x;
             *total_y += delta_y;
@@ -72,33 +88,41 @@ impl InteractionEngine {
 
     /// Completes or discards one device's swipe sequence.
     pub fn end_swipe(&mut self, device: InputDeviceId, cancelled: bool) {
-        let Some(ActiveGesture::Swipe { fingers, delta_x, delta_y }) =
-            self.active.get(&device).copied()
+        let Some(ActiveGesture::Swipe {
+            fingers,
+            delta_x,
+            delta_y,
+        }) = self.active.get(&device).copied()
         else {
             return;
         };
         self.active.remove(&device);
         if !cancelled {
-            self.resolve_and_queue(device, PointingGesture::Swipe { fingers, delta_x, delta_y });
+            self.resolve_and_queue(
+                device,
+                PointingGesture::Swipe {
+                    fingers,
+                    delta_x,
+                    delta_y,
+                },
+            );
         }
     }
 
     /// Starts a pinch sequence for one physical device.
     pub fn begin_pinch(&mut self, device: InputDeviceId, fingers: u32) {
-        self.active.insert(device, ActiveGesture::Pinch {
-            fingers,
-            scale: 1.0,
-            rotation: 0.0,
-        });
+        self.active.insert(
+            device,
+            ActiveGesture::Pinch {
+                fingers,
+                scale: 1.0,
+                rotation: 0.0,
+            },
+        );
     }
 
     /// Updates scale and rotation for that device's active pinch.
-    pub fn update_pinch(
-        &mut self,
-        device: InputDeviceId,
-        scale: f64,
-        rotation: f64,
-    ) {
+    pub fn update_pinch(&mut self, device: InputDeviceId, scale: f64, rotation: f64) {
         if !scale.is_finite() || !rotation.is_finite() {
             return;
         }
@@ -115,14 +139,24 @@ impl InteractionEngine {
 
     /// Completes or discards one device's pinch sequence.
     pub fn end_pinch(&mut self, device: InputDeviceId, cancelled: bool) {
-        let Some(ActiveGesture::Pinch { fingers, scale, rotation }) =
-            self.active.get(&device).copied()
+        let Some(ActiveGesture::Pinch {
+            fingers,
+            scale,
+            rotation,
+        }) = self.active.get(&device).copied()
         else {
             return;
         };
         self.active.remove(&device);
         if !cancelled {
-            self.resolve_and_queue(device, PointingGesture::Pinch { fingers, scale, rotation });
+            self.resolve_and_queue(
+                device,
+                PointingGesture::Pinch {
+                    fingers,
+                    scale,
+                    rotation,
+                },
+            );
         }
     }
 

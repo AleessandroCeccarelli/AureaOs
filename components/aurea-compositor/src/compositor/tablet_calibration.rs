@@ -23,15 +23,16 @@ impl AureaCompositor {
         aspect_mode: TabletAspectMode,
         device_aspect_ratio: f64,
     ) -> Result<(), TabletCalibrationError> {
-        if !self.pointing_devices.device(device).is_some_and(|descriptor| {
-            descriptor.kind == InputDeviceKind::Tablet
-        }) {
+        if !self
+            .pointing_devices
+            .device(device)
+            .is_some_and(|descriptor| descriptor.kind == InputDeviceKind::Tablet)
+        {
             return Err(TabletCalibrationError::UnknownDevice);
         }
 
-        let profile = TabletCalibration::new(
-            active_area, rotation, aspect_mode, device_aspect_ratio,
-        )?;
+        let profile =
+            TabletCalibration::new(active_area, rotation, aspect_mode, device_aspect_ratio)?;
         self.tablet_calibrations.set(device, profile);
         Ok(())
     }

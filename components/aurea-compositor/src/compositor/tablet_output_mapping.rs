@@ -49,10 +49,7 @@ impl AureaCompositor {
     }
 
     /// Resolves a tablet against the enabled desktop outputs.
-    pub fn tablet_output_target(
-        &self,
-        device: InputDeviceId,
-    ) -> Option<TabletOutputTarget> {
+    pub fn tablet_output_target(&self, device: InputDeviceId) -> Option<TabletOutputTarget> {
         let enabled = self
             .output_manager
             .registry()

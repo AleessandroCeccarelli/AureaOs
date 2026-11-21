@@ -7,28 +7,38 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use aurea_desktop_api::{input::InputDeviceProvider, desktop_interaction::DesktopInteractionSender};
+use aurea_desktop_api::{
+    desktop_interaction::DesktopInteractionSender, input::InputDeviceProvider,
+};
 
 use smithay::{
     backend::input::Keycode,
-    input::{Seat, SeatHandler, SeatState, pointer::CursorImageStatus, tablet::TabletSeatHandler, touch::TouchHandle},
+    input::{
+        Seat, SeatHandler, SeatState, pointer::CursorImageStatus, tablet::TabletSeatHandler,
+        touch::TouchHandle,
+    },
     output::Output,
     reexports::wayland_server::{
         DisplayHandle,
         protocol::{wl_shm::Format, wl_surface::WlSurface},
     },
-    wayland::{compositor::CompositorState, shell::xdg::XdgShellState, shm::ShmState, tablet_manager::TabletManagerState},
+    wayland::{
+        compositor::CompositorState, shell::xdg::XdgShellState, shm::ShmState,
+        tablet_manager::TabletManagerState,
+    },
 };
 
 use crate::{
     frame::FrameScheduler,
     input::{
-        cursor_animation::CursorLocateAnimation, interaction::{GestureProfile, InteractionEngine},
-        pointer_settings::PointerSettings, pointer_shake::PointerShakeDetector,
+        cursor_animation::CursorLocateAnimation,
+        interaction::{GestureProfile, InteractionEngine},
+        pointer_settings::PointerSettings,
+        pointer_shake::PointerShakeDetector,
         pointing::{
-            PointingDeviceService, PointingDeviceSettings, TouchscreenCalibration, TouchscreenCalibrationError,
-            TouchscreenCalibrationMap, TouchscreenOutputMap, TouchscreenSlotMap,
-            TabletOutputMap, TabletCalibrationMap,
+            PointingDeviceService, PointingDeviceSettings, TabletCalibrationMap, TabletOutputMap,
+            TouchscreenCalibration, TouchscreenCalibrationError, TouchscreenCalibrationMap,
+            TouchscreenOutputMap, TouchscreenSlotMap,
         },
     },
     output::{OutputId, manager::OutputManager},
@@ -53,8 +63,8 @@ mod rendering;
 mod surface_output_reconciliation;
 mod surface_output_tracking;
 mod tablet;
-mod tablet_output_mapping;
 mod tablet_calibration;
+mod tablet_output_mapping;
 mod touchscreen;
 pub(crate) mod window_placement;
 mod workspace;
@@ -236,7 +246,9 @@ impl AureaCompositor {
         if !self
             .pointing_devices
             .device(device)
-            .is_some_and(|descriptor| descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchscreen)
+            .is_some_and(|descriptor| {
+                descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchscreen
+            })
             || !self
                 .output_manager
                 .registry()
@@ -258,9 +270,13 @@ impl AureaCompositor {
         device: aurea_desktop_api::input::InputDeviceId,
         coefficients: [f64; 6],
     ) -> Result<(), TouchscreenCalibrationError> {
-        if !self.pointing_devices.device(device).is_some_and(|descriptor| {
-            descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchscreen
-        }) {
+        if !self
+            .pointing_devices
+            .device(device)
+            .is_some_and(|descriptor| {
+                descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchscreen
+            })
+        {
             return Err(TouchscreenCalibrationError::UnknownDevice);
         }
 
@@ -355,7 +371,10 @@ impl AureaCompositor {
     }
 
     /// Clears gesture and touchscreen routing state for a disconnected device.
-    pub fn remove_pointing_device_state(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
+    pub fn remove_pointing_device_state(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) {
         let time = smithay::utils::Clock::<smithay::utils::Monotonic>::new()
             .now()
             .as_millis() as u32;

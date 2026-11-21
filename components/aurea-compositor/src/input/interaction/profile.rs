@@ -38,17 +38,17 @@ impl Default for GestureProfile {
 
 impl GestureProfile {
     /// Resolves a completed gesture into a desktop-level semantic action.
-    pub fn resolve(
-        &self,
-        gesture: PointingGesture,
-    ) -> Option<PointingInteraction> {
+    pub fn resolve(&self, gesture: PointingGesture) -> Option<PointingInteraction> {
         match gesture {
-            PointingGesture::Swipe { fingers, delta_x, delta_y }
-                if fingers == self.workspace_swipe_fingers
-                    && delta_x.is_finite()
-                    && delta_y.is_finite()
-                    && delta_x.abs() >= self.horizontal_threshold
-                    && delta_x.abs() > delta_y.abs() =>
+            PointingGesture::Swipe {
+                fingers,
+                delta_x,
+                delta_y,
+            } if fingers == self.workspace_swipe_fingers
+                && delta_x.is_finite()
+                && delta_y.is_finite()
+                && delta_x.abs() >= self.horizontal_threshold
+                && delta_x.abs() > delta_y.abs() =>
             {
                 if delta_x.is_sign_negative() {
                     Some(PointingInteraction::NextWorkspace)
@@ -63,9 +63,7 @@ impl GestureProfile {
             {
                 Some(PointingInteraction::Overview)
             }
-            PointingGesture::Hold { fingers }
-                if fingers == self.context_hold_fingers =>
-            {
+            PointingGesture::Hold { fingers } if fingers == self.context_hold_fingers => {
                 Some(PointingInteraction::ContextMenu)
             }
             _ => None,
@@ -82,13 +80,17 @@ mod tests {
         let profile = GestureProfile::default();
         assert_eq!(
             profile.resolve(PointingGesture::Swipe {
-                fingers: 3, delta_x: -60.0, delta_y: 2.0,
+                fingers: 3,
+                delta_x: -60.0,
+                delta_y: 2.0,
             }),
             Some(PointingInteraction::NextWorkspace)
         );
         assert_eq!(
             profile.resolve(PointingGesture::Swipe {
-                fingers: 3, delta_x: 60.0, delta_y: 2.0,
+                fingers: 3,
+                delta_x: 60.0,
+                delta_y: 2.0,
             }),
             Some(PointingInteraction::PreviousWorkspace)
         );
@@ -99,13 +101,17 @@ mod tests {
         let profile = GestureProfile::default();
         assert_eq!(
             profile.resolve(PointingGesture::Swipe {
-                fingers: 3, delta_x: 10.0, delta_y: 80.0,
+                fingers: 3,
+                delta_x: 10.0,
+                delta_y: 80.0,
             }),
             None
         );
         assert_eq!(
             profile.resolve(PointingGesture::Swipe {
-                fingers: 3, delta_x: 20.0, delta_y: 1.0,
+                fingers: 3,
+                delta_x: 20.0,
+                delta_y: 1.0,
             }),
             None
         );
@@ -116,7 +122,9 @@ mod tests {
         let profile = GestureProfile::default();
         assert_eq!(
             profile.resolve(PointingGesture::Pinch {
-                fingers: 4, scale: 0.8, rotation: 0.0,
+                fingers: 4,
+                scale: 0.8,
+                rotation: 0.0,
             }),
             Some(PointingInteraction::Overview)
         );
@@ -131,7 +139,9 @@ mod tests {
         let profile = GestureProfile::default();
         assert_eq!(
             profile.resolve(PointingGesture::Swipe {
-                fingers: 3, delta_x: f64::NAN, delta_y: 0.0,
+                fingers: 3,
+                delta_x: f64::NAN,
+                delta_y: 0.0,
             }),
             None
         );

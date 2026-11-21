@@ -10,11 +10,10 @@ use std::io;
 use smithay::{
     backend::{
         input::{
-            Axis, Event, GestureBeginEvent, GestureEndEvent,
+            AbsolutePositionEvent, Axis, Event, GestureBeginEvent, GestureEndEvent,
             GesturePinchUpdateEvent as BackendPinchUpdateEvent,
-            GestureSwipeUpdateEvent as BackendSwipeUpdateEvent, InputEvent,
-            AbsolutePositionEvent, KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent,
-            PointerMotionEvent, TouchEvent,
+            GestureSwipeUpdateEvent as BackendSwipeUpdateEvent, InputEvent, KeyboardKeyEvent,
+            PointerAxisEvent, PointerButtonEvent, PointerMotionEvent, TouchEvent,
         },
         libinput::{LibinputInputBackend, LibinputSessionInterface},
     },
@@ -44,7 +43,6 @@ fn refresh_touchpad_settings(
     }
 }
 
-
 /// Drains shell requests and applies them to retained live libinput devices.
 pub(super) fn apply_pending_touchpad_settings(state: &mut WaylandState) {
     loop {
@@ -55,32 +53,58 @@ pub(super) fn apply_pending_touchpad_settings(state: &mut WaylandState) {
         };
 
         let Some(descriptor) = state.compositor.pointing_devices().device(command.device) else {
-            tracing::debug!(device_id = command.device.0, "Ignoring touchpad settings for an unknown device");
+            tracing::debug!(
+                device_id = command.device.0,
+                "Ignoring touchpad settings for an unknown device"
+            );
             continue;
         };
         if descriptor.kind != aurea_desktop_api::input::InputDeviceKind::Touchpad {
-            tracing::debug!(device_id = command.device.0, "Ignoring touchpad settings for a non-touchpad device");
+            tracing::debug!(
+                device_id = command.device.0,
+                "Ignoring touchpad settings for a non-touchpad device"
+            );
             continue;
         }
-        if !state.compositor.set_touchpad_device_settings(command.device, command.settings) {
-            tracing::warn!(device_id = command.device.0, "Touchpad settings profile was rejected");
+        if !state
+            .compositor
+            .set_touchpad_device_settings(command.device, command.settings)
+        {
+            tracing::warn!(
+                device_id = command.device.0,
+                "Touchpad settings profile was rejected"
+            );
             continue;
         }
 
         let Some(device) = state.touchpad_devices.get_mut(&command.device) else {
-            tracing::warn!(device_id = command.device.0, "Touchpad has no live libinput handle");
+            tracing::warn!(
+                device_id = command.device.0,
+                "Touchpad has no live libinput handle"
+            );
             continue;
         };
         let Some(report) = pointing::configure_touchpad(device, command.settings) else {
-            tracing::warn!(device_id = command.device.0, "Live touchpad configuration is unavailable");
+            tracing::warn!(
+                device_id = command.device.0,
+                "Live touchpad configuration is unavailable"
+            );
             continue;
         };
 
-        state.compositor.record_touchpad_configuration(command.device, report);
+        state
+            .compositor
+            .record_touchpad_configuration(command.device, report);
         if !report.has_failures() {
-            state.applied_touchpad_settings.mark_applied(command.device, command.settings);
+            state
+                .applied_touchpad_settings
+                .mark_applied(command.device, command.settings);
         }
-        tracing::info!(device_id = command.device.0, ?report, "Applied live touchpad settings request");
+        tracing::info!(
+            device_id = command.device.0,
+            ?report,
+            "Applied live touchpad settings request"
+        );
     }
 }
 
@@ -122,9 +146,15 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let touchpad_settings = state.compositor.touchpad_settings_for(device_id);
             let touchpad_report = pointing::configure_touchpad(&mut device, touchpad_settings);
             if let Some(report) = touchpad_report {
-                tracing::info!(device_id = device_id.0, ?report, "Applied supported touchpad defaults");
+                tracing::info!(
+                    device_id = device_id.0,
+                    ?report,
+                    "Applied supported touchpad defaults"
+                );
                 if !report.has_failures() {
-                    state.applied_touchpad_settings.mark_applied(device_id, touchpad_settings);
+                    state
+                        .applied_touchpad_settings
+                        .mark_applied(device_id, touchpad_settings);
                 }
             }
 
@@ -135,12 +165,17 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                     id = descriptor.id.0,
                     "Pointing device connected"
                 );
-                state.compositor.pointing_devices().connect(descriptor.clone());
+                state
+                    .compositor
+                    .pointing_devices()
+                    .connect(descriptor.clone());
                 if descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchpad {
                     state.touchpad_devices.insert(device_id, device.clone());
                 }
                 if let Some(report) = touchpad_report {
-                    state.compositor.record_touchpad_configuration(device_id, report);
+                    state
+                        .compositor
+                        .record_touchpad_configuration(device_id, report);
                 }
                 state.compositor.sync_touchscreen_capability();
             }
@@ -185,7 +220,9 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
 
             let mut device = event.device();
             refresh_touchpad_settings(state, &mut device);
-            let settings = state.compositor.pointer_settings_for(pointing::id_for(&device));
+            let settings = state
+                .compositor
+                .pointer_settings_for(pointing::id_for(&device));
             crate::input::pointer_acceleration::apply(&mut device, settings);
             state.compositor.handle_pointer_motion(
                 delta,
@@ -221,7 +258,9 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let mut input_device = event.device();
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
-            state.compositor.handle_swipe_begin(device, event.fingers(), event.time());
+            state
+                .compositor
+                .handle_swipe_begin(device, event.fingers(), event.time());
         }
         InputEvent::GestureSwipeUpdate { event } => {
             let mut input_device = event.device();
@@ -238,13 +277,17 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let mut input_device = event.device();
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
-            state.compositor.handle_swipe_end(device, event.cancelled(), event.time());
+            state
+                .compositor
+                .handle_swipe_end(device, event.cancelled(), event.time());
         }
         InputEvent::GesturePinchBegin { event } => {
             let mut input_device = event.device();
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
-            state.compositor.handle_pinch_begin(device, event.fingers(), event.time());
+            state
+                .compositor
+                .handle_pinch_begin(device, event.fingers(), event.time());
         }
         InputEvent::GesturePinchUpdate { event } => {
             let mut input_device = event.device();
@@ -263,19 +306,25 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
             let mut input_device = event.device();
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
-            state.compositor.handle_pinch_end(device, event.cancelled(), event.time());
+            state
+                .compositor
+                .handle_pinch_end(device, event.cancelled(), event.time());
         }
         InputEvent::GestureHoldBegin { event } => {
             let mut input_device = event.device();
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
-            state.compositor.handle_hold_begin(device, event.fingers(), event.time());
+            state
+                .compositor
+                .handle_hold_begin(device, event.fingers(), event.time());
         }
         InputEvent::GestureHoldEnd { event } => {
             let mut input_device = event.device();
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
-            state.compositor.handle_hold_end(device, event.cancelled(), event.time());
+            state
+                .compositor
+                .handle_hold_end(device, event.cancelled(), event.time());
         }
         InputEvent::TouchDown { event } => {
             let device = pointing::id_for(&event.device());
@@ -303,15 +352,15 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
         }
         InputEvent::TouchUp { event } => {
             let device = pointing::id_for(&event.device());
-            state.compositor.handle_touch_up(
-                device,
-                event.slot(),
-                event.time().millis(),
-            );
+            state
+                .compositor
+                .handle_touch_up(device, event.slot(), event.time().millis());
         }
         InputEvent::TouchCancel { event } => {
             let device = pointing::id_for(&event.device());
-            state.compositor.handle_touch_cancel(device, event.time().millis());
+            state
+                .compositor
+                .handle_touch_cancel(device, event.time().millis());
         }
         InputEvent::TouchFrame { .. } => {
             state.compositor.handle_touch_frame();

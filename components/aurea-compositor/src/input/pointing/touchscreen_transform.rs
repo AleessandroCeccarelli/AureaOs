@@ -15,8 +15,12 @@ pub fn transform_touch_coordinates(
     width: f64,
     height: f64,
 ) -> Option<(f64, f64)> {
-    if !x.is_finite() || !y.is_finite() || !width.is_finite() || !height.is_finite()
-        || width <= 0.0 || height <= 0.0
+    if !x.is_finite()
+        || !y.is_finite()
+        || !width.is_finite()
+        || !height.is_finite()
+        || width <= 0.0
+        || height <= 0.0
     {
         return None;
     }
@@ -38,7 +42,11 @@ pub fn transform_touch_coordinates(
         transform,
         Transform::_90 | Transform::_270 | Transform::Flipped90 | Transform::Flipped270
     );
-    let (target_width, target_height) = if swaps_dimensions { (height, width) } else { (width, height) };
+    let (target_width, target_height) = if swaps_dimensions {
+        (height, width)
+    } else {
+        (width, height)
+    };
     Some((
         (u * target_width).clamp(0.0, target_width),
         (v * target_height).clamp(0.0, target_height),
@@ -55,7 +63,10 @@ mod tests {
 
     #[test]
     fn normal_orientation_preserves_coordinates() {
-        assert_eq!(transform_touch_coordinates(Transform::Normal, 20.0, 15.0, WIDTH, HEIGHT), Some((20.0, 15.0)));
+        assert_eq!(
+            transform_touch_coordinates(Transform::Normal, 20.0, 15.0, WIDTH, HEIGHT),
+            Some((20.0, 15.0))
+        );
     }
 
     #[test]
@@ -71,24 +82,43 @@ mod tests {
             (Transform::Flipped270, (60.0, 100.0)),
         ];
         for (transform, expected) in cases {
-            assert_eq!(transform_touch_coordinates(transform, 0.0, 0.0, WIDTH, HEIGHT), Some(expected), "{transform:?}");
+            assert_eq!(
+                transform_touch_coordinates(transform, 0.0, 0.0, WIDTH, HEIGHT),
+                Some(expected),
+                "{transform:?}"
+            );
         }
     }
 
     #[test]
     fn quarter_turns_swap_output_extents() {
-        assert_eq!(transform_touch_coordinates(Transform::_90, 100.0, 60.0, WIDTH, HEIGHT), Some((0.0, 100.0)));
-        assert_eq!(transform_touch_coordinates(Transform::_270, 100.0, 60.0, WIDTH, HEIGHT), Some((60.0, 0.0)));
+        assert_eq!(
+            transform_touch_coordinates(Transform::_90, 100.0, 60.0, WIDTH, HEIGHT),
+            Some((0.0, 100.0))
+        );
+        assert_eq!(
+            transform_touch_coordinates(Transform::_270, 100.0, 60.0, WIDTH, HEIGHT),
+            Some((60.0, 0.0))
+        );
     }
 
     #[test]
     fn rejects_non_finite_and_empty_geometry() {
-        assert_eq!(transform_touch_coordinates(Transform::Normal, f64::NAN, 0.0, WIDTH, HEIGHT), None);
-        assert_eq!(transform_touch_coordinates(Transform::Normal, 0.0, 0.0, 0.0, HEIGHT), None);
+        assert_eq!(
+            transform_touch_coordinates(Transform::Normal, f64::NAN, 0.0, WIDTH, HEIGHT),
+            None
+        );
+        assert_eq!(
+            transform_touch_coordinates(Transform::Normal, 0.0, 0.0, 0.0, HEIGHT),
+            None
+        );
     }
 
     #[test]
     fn clamps_out_of_range_device_coordinates() {
-        assert_eq!(transform_touch_coordinates(Transform::Normal, 150.0, -10.0, WIDTH, HEIGHT), Some((100.0, 0.0)));
+        assert_eq!(
+            transform_touch_coordinates(Transform::Normal, 150.0, -10.0, WIDTH, HEIGHT),
+            Some((100.0, 0.0))
+        );
     }
 }

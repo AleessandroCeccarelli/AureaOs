@@ -57,15 +57,17 @@ impl TabletCalibration {
         aspect_mode: TabletAspectMode,
         device_aspect_ratio: f64,
     ) -> Result<Self, TabletCalibrationError> {
-        if !active_area.iter().all(|value| value.is_finite())
-            || !device_aspect_ratio.is_finite()
-        {
+        if !active_area.iter().all(|value| value.is_finite()) || !device_aspect_ratio.is_finite() {
             return Err(TabletCalibrationError::NonFiniteValue);
         }
 
         let [x, y, width, height] = active_area;
-        if x < 0.0 || y < 0.0 || width <= 0.0 || height <= 0.0
-            || x + width > 1.0 || y + height > 1.0
+        if x < 0.0
+            || y < 0.0
+            || width <= 0.0
+            || height <= 0.0
+            || x + width > 1.0
+            || y + height > 1.0
         {
             return Err(TabletCalibrationError::ActiveAreaOutOfBounds);
         }
@@ -73,18 +75,33 @@ impl TabletCalibration {
             return Err(TabletCalibrationError::InvalidDeviceAspectRatio);
         }
 
-        Ok(Self { active_area, rotation, aspect_mode, device_aspect_ratio })
+        Ok(Self {
+            active_area,
+            rotation,
+            aspect_mode,
+            device_aspect_ratio,
+        })
     }
 
-    pub fn active_area(self) -> [f64; 4] { self.active_area }
-    pub fn rotation(self) -> TabletRotation { self.rotation }
-    pub fn aspect_mode(self) -> TabletAspectMode { self.aspect_mode }
-    pub fn device_aspect_ratio(self) -> f64 { self.device_aspect_ratio }
+    pub fn active_area(self) -> [f64; 4] {
+        self.active_area
+    }
+    pub fn rotation(self) -> TabletRotation {
+        self.rotation
+    }
+    pub fn aspect_mode(self) -> TabletAspectMode {
+        self.aspect_mode
+    }
+    pub fn device_aspect_ratio(self) -> f64 {
+        self.device_aspect_ratio
+    }
 
     /// Converts normalized device coordinates into normalized output coordinates.
     pub fn apply(self, x: f64, y: f64, output_aspect_ratio: f64) -> Option<(f64, f64)> {
-        if !x.is_finite() || !y.is_finite()
-            || !output_aspect_ratio.is_finite() || output_aspect_ratio <= 0.0
+        if !x.is_finite()
+            || !y.is_finite()
+            || !output_aspect_ratio.is_finite()
+            || output_aspect_ratio <= 0.0
         {
             return None;
         }
@@ -155,15 +172,21 @@ mod tests {
 
     #[test]
     fn identity_preserves_coordinates() {
-        assert_eq!(TabletCalibration::IDENTITY.apply(0.2, 0.7, 16.0 / 9.0), Some((0.2, 0.7)));
+        assert_eq!(
+            TabletCalibration::IDENTITY.apply(0.2, 0.7, 16.0 / 9.0),
+            Some((0.2, 0.7))
+        );
     }
 
     #[test]
     fn active_area_is_scaled_to_full_output() {
         let profile = TabletCalibration::new(
-            [0.25, 0.2, 0.5, 0.6], TabletRotation::Deg0,
-            TabletAspectMode::Stretch, 1.0,
-        ).unwrap();
+            [0.25, 0.2, 0.5, 0.6],
+            TabletRotation::Deg0,
+            TabletAspectMode::Stretch,
+            1.0,
+        )
+        .unwrap();
         assert_eq!(profile.apply(0.5, 0.5, 1.0), Some((0.5, 0.5)));
         assert_eq!(profile.apply(0.25, 0.2, 1.0), Some((0.0, 0.0)));
     }
@@ -178,8 +201,12 @@ mod tests {
         ];
         for (rotation, expected) in cases {
             let profile = TabletCalibration::new(
-                [0.0, 0.0, 1.0, 1.0], rotation, TabletAspectMode::Stretch, 1.0,
-            ).unwrap();
+                [0.0, 0.0, 1.0, 1.0],
+                rotation,
+                TabletAspectMode::Stretch,
+                1.0,
+            )
+            .unwrap();
             assert_eq!(profile.apply(0.2, 0.3, 1.0), Some(expected));
         }
     }
@@ -191,7 +218,8 @@ mod tests {
             TabletRotation::Deg0,
             TabletAspectMode::Preserve,
             2.0,
-        ).unwrap();
+        )
+        .unwrap();
 
         // A 2:1 tablet mapped to a 1:1 output uses the centered middle half.
         assert_eq!(profile.apply(0.0, 0.5, 1.0), Some((0.0, 0.5)));
@@ -203,15 +231,30 @@ mod tests {
     #[test]
     fn rejects_invalid_areas_and_ratios() {
         assert_eq!(
-            TabletCalibration::new([0.8, 0.0, 0.4, 1.0], TabletRotation::Deg0, TabletAspectMode::Stretch, 1.0),
+            TabletCalibration::new(
+                [0.8, 0.0, 0.4, 1.0],
+                TabletRotation::Deg0,
+                TabletAspectMode::Stretch,
+                1.0
+            ),
             Err(TabletCalibrationError::ActiveAreaOutOfBounds)
         );
         assert_eq!(
-            TabletCalibration::new([0.0, 0.0, 1.0, 1.0], TabletRotation::Deg0, TabletAspectMode::Stretch, 0.0),
+            TabletCalibration::new(
+                [0.0, 0.0, 1.0, 1.0],
+                TabletRotation::Deg0,
+                TabletAspectMode::Stretch,
+                0.0
+            ),
             Err(TabletCalibrationError::InvalidDeviceAspectRatio)
         );
         assert_eq!(
-            TabletCalibration::new([f64::NAN, 0.0, 1.0, 1.0], TabletRotation::Deg0, TabletAspectMode::Stretch, 1.0),
+            TabletCalibration::new(
+                [f64::NAN, 0.0, 1.0, 1.0],
+                TabletRotation::Deg0,
+                TabletAspectMode::Stretch,
+                1.0
+            ),
             Err(TabletCalibrationError::NonFiniteValue)
         );
     }
@@ -220,9 +263,12 @@ mod tests {
     fn profiles_are_independent_and_removed_with_device() {
         let mut map = TabletCalibrationMap::default();
         let profile = TabletCalibration::new(
-            [0.1, 0.1, 0.8, 0.8], TabletRotation::Deg180,
-            TabletAspectMode::Preserve, 1.5,
-        ).unwrap();
+            [0.1, 0.1, 0.8, 0.8],
+            TabletRotation::Deg180,
+            TabletAspectMode::Preserve,
+            1.5,
+        )
+        .unwrap();
         map.set(DEVICE, profile);
         assert_eq!(map.get(DEVICE), profile);
         assert!(map.remove_device(DEVICE));
@@ -232,6 +278,9 @@ mod tests {
     #[test]
     fn rejects_non_finite_runtime_coordinates() {
         assert_eq!(TabletCalibration::IDENTITY.apply(f64::NAN, 0.0, 1.0), None);
-        assert_eq!(TabletCalibration::IDENTITY.apply(0.0, 0.0, f64::INFINITY), None);
+        assert_eq!(
+            TabletCalibration::IDENTITY.apply(0.0, 0.0, f64::INFINITY),
+            None
+        );
     }
 }

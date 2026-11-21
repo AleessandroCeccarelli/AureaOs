@@ -19,11 +19,11 @@ pub use device::{
     InputDeviceKind, InputDeviceProvider, StandardInputCapability,
 };
 pub use extension::{ExtensionCapability, ExtensionPermission, PeripheralExtensionDescriptor};
-pub use touchpad::{TouchpadApplyReport, TouchpadSettingStatus, TouchpadSettings};
-pub use touchpad_controller::{
-    TouchpadSettingsCommand, TouchpadSettingsController, touchpad_settings_channel,
-};
 pub use pointer::{
     PointerAccelerationProfile, PointerButton, PointerSettings, PointerSettingsError,
     PointerSettingsProvider,
+};
+pub use touchpad::{TouchpadApplyReport, TouchpadSettingStatus, TouchpadSettings};
+pub use touchpad_controller::{
+    TouchpadSettingsCommand, TouchpadSettingsController, touchpad_settings_channel,
 };

@@ -13,10 +13,10 @@ mod workspace;
 
 pub use dock::{DockMode, DockState};
 pub use launcher::LauncherState;
-pub use panels::{DesktopPanel, DesktopPanelState};
 pub use night_light::{
     NightLightMode, NightLightSchedule, NightLightScheduleError, NightLightState,
 };
+pub use panels::{DesktopPanel, DesktopPanelState};
 pub use workspace::{WORKSPACE_COUNT, WorkspaceId, WorkspaceManager};
 
 /// Desktop appearance preference.
