@@ -59,6 +59,7 @@ name = "aurea-desktop"
 version = "0.1.0"
 dependencies = [
  "aurea-compositor",
+ "libc",
  "aurea-desktop-api",
  "aurea-shell",
  "memmap2",
