@@ -17,8 +17,16 @@ use smithay::{
 use super::AureaCompositor;
 
 impl AureaCompositor {
+    /// Retrieves the next semantic pointing interaction for the desktop shell.
+    pub fn take_pending_pointing_interaction(
+        &mut self,
+    ) -> Option<crate::input::interaction::PointingInteraction> {
+        self.interaction_engine.take_pending_interaction()
+    }
+
     /// Sends a touchpad swipe-begin event to the focused Wayland client.
     pub fn handle_swipe_begin(&mut self, fingers: u32, time: smithay::backend::input::InputTime) {
+        self.interaction_engine.begin_swipe(fingers);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -43,6 +51,7 @@ impl AureaCompositor {
         if !delta_x.is_finite() || !delta_y.is_finite() {
             return;
         }
+        self.interaction_engine.update_swipe(delta_x, delta_y);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -62,6 +71,7 @@ impl AureaCompositor {
         cancelled: bool,
         time: smithay::backend::input::InputTime,
     ) {
+        self.interaction_engine.end_swipe(cancelled);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -78,6 +88,7 @@ impl AureaCompositor {
 
     /// Sends a touchpad pinch-begin event to the focused Wayland client.
     pub fn handle_pinch_begin(&mut self, fingers: u32, time: smithay::backend::input::InputTime) {
+        self.interaction_engine.begin_pinch(fingers);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -108,6 +119,7 @@ impl AureaCompositor {
         {
             return;
         }
+        self.interaction_engine.update_pinch(scale, rotation);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -129,6 +141,7 @@ impl AureaCompositor {
         cancelled: bool,
         time: smithay::backend::input::InputTime,
     ) {
+        self.interaction_engine.end_pinch(cancelled);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
@@ -145,6 +158,7 @@ impl AureaCompositor {
 
     /// Sends a touchpad hold-begin event to the focused Wayland client.
     pub fn handle_hold_begin(&mut self, fingers: u32, time: smithay::backend::input::InputTime) {
+        self.interaction_engine.hold(fingers);
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
