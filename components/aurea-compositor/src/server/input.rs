@@ -10,8 +10,10 @@ use std::io;
 use smithay::{
     backend::{
         input::{
-            Axis, Event, InputEvent, KeyboardKeyEvent, PointerAxisEvent,
-            PointerButtonEvent, PointerMotionEvent,
+            Axis, Event, GestureBeginEvent, GestureEndEvent,
+            GesturePinchUpdateEvent as BackendPinchUpdateEvent,
+            GestureSwipeUpdateEvent as BackendSwipeUpdateEvent, InputEvent,
+            KeyboardKeyEvent, PointerAxisEvent, PointerButtonEvent, PointerMotionEvent,
         },
         libinput::{LibinputInputBackend, LibinputSessionInterface},
     },
@@ -116,6 +118,40 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
                 event.relative_direction(Axis::Vertical),
                 event.time() as u32,
             );
+        }
+        InputEvent::GestureSwipeBegin { event } => {
+            state.compositor.handle_swipe_begin(event.fingers(), event.time());
+        }
+        InputEvent::GestureSwipeUpdate { event } => {
+            state.compositor.handle_swipe_update(
+                event.delta_x(),
+                event.delta_y(),
+                event.time().as_millis(),
+            );
+        }
+        InputEvent::GestureSwipeEnd { event } => {
+            state.compositor.handle_swipe_end(event.cancelled(), event.time());
+        }
+        InputEvent::GesturePinchBegin { event } => {
+            state.compositor.handle_pinch_begin(event.fingers(), event.time());
+        }
+        InputEvent::GesturePinchUpdate { event } => {
+            state.compositor.handle_pinch_update(
+                event.delta_x(),
+                event.delta_y(),
+                event.scale(),
+                event.rotation(),
+                event.time(),
+            );
+        }
+        InputEvent::GesturePinchEnd { event } => {
+            state.compositor.handle_pinch_end(event.cancelled(), event.time());
+        }
+        InputEvent::GestureHoldBegin { event } => {
+            state.compositor.handle_hold_begin(event.fingers(), event.time());
+        }
+        InputEvent::GestureHoldEnd { event } => {
+            state.compositor.handle_hold_end(event.cancelled(), event.time());
         }
         _ => {}
     }
