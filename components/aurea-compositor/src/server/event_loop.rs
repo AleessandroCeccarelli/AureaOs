@@ -11,7 +11,7 @@ use std::{
     time::Duration,
 };
 
-use aurea_desktop_api::{display::DisplayColorController, keyboard::KeyboardLayoutId};
+use aurea_desktop_api::{display::DisplayColorController, keyboard::KeyboardLayoutId, desktop_interaction::{DesktopInteractionSender, desktop_interaction_channel}};
 use smithay::reexports::calloop::EventLoop;
 
 #[cfg(feature = "drm")]
@@ -40,12 +40,14 @@ impl WaylandServer {
     pub fn new_with_display_color(
         socket_name: &str,
         display_color: DisplayColorController,
+        interactions: DesktopInteractionSender,
     ) -> io::Result<Self> {
+        let (interactions, _receiver) = desktop_interaction_channel();
         #[cfg(feature = "drm")]
-        let parts = super::builder::build(socket_name, None, None, display_color);
+        let parts = super::builder::build(socket_name, None, None, display_color, interactions);
 
         #[cfg(not(feature = "drm"))]
-        let parts = super::builder::build(socket_name, display_color);
+        let parts = super::builder::build(socket_name, display_color, interactions);
 
         let (event_loop, state) = parts?;
 
@@ -56,11 +58,13 @@ impl WaylandServer {
     #[cfg(feature = "drm")]
     pub fn new_with_drm(socket_name: &str) -> io::Result<Self> {
         let drm_session = session::create_session()?;
+        let (interactions, _receiver) = desktop_interaction_channel();
         Self::build(
             socket_name,
             Some(drm_session),
             None,
             DisplayColorController::new(),
+            interactions,
         )
     }
 
@@ -79,6 +83,7 @@ impl WaylandServer {
             Some(drm_session),
             Some(drm_device),
             display_color,
+            interactions,
         )
     }
 
@@ -88,11 +93,13 @@ impl WaylandServer {
         let mut drm_session = session::create_session()?;
         let drm_device = session::open_device(&mut drm_session, device_path)?;
 
+        let (interactions, _receiver) = desktop_interaction_channel();
         Self::build(
             socket_name,
             Some(drm_session),
             Some(drm_device),
             DisplayColorController::new(),
+            interactions,
         )
     }
 
@@ -108,9 +115,10 @@ impl WaylandServer {
         drm_session: Option<DrmSession>,
         drm_device: Option<DrmDevice>,
         display_color: DisplayColorController,
+        interactions: DesktopInteractionSender,
     ) -> io::Result<Self> {
         let (event_loop, state) =
-            super::builder::build(socket_name, drm_session, drm_device, display_color)?;
+            super::builder::build(socket_name, drm_session, drm_device, display_color, interactions)?;
 
         Ok(Self { event_loop, state })
     }
