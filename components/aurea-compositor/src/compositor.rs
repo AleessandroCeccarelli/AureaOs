@@ -25,7 +25,10 @@ use crate::{
     input::{
         cursor_animation::CursorLocateAnimation, interaction::{GestureProfile, InteractionEngine},
         pointer_settings::PointerSettings, pointer_shake::PointerShakeDetector,
-        pointing::{\n            PointingDeviceService, TouchscreenCalibration, TouchscreenCalibrationError,\n            TouchscreenCalibrationMap, TouchscreenOutputMap, TouchscreenSlotMap,\n        },
+        pointing::{
+            PointingDeviceService, TouchscreenCalibration, TouchscreenCalibrationError,
+            TouchscreenCalibrationMap, TouchscreenOutputMap, TouchscreenSlotMap,
+        },
     },
     output::{OutputId, manager::OutputManager},
     window_manager::WindowManager,
@@ -79,7 +82,8 @@ pub struct AureaCompositor {
     _pointer_gestures_state: smithay::wayland::pointer_gestures::PointerGesturesState,
     _tablet_manager_state: TabletManagerState,
     pointing_devices: PointingDeviceService,
-    touchscreen_outputs: TouchscreenOutputMap,\n    touchscreen_calibrations: TouchscreenCalibrationMap,
+    touchscreen_outputs: TouchscreenOutputMap,
+    touchscreen_calibrations: TouchscreenCalibrationMap,
     touchscreen_slots: TouchscreenSlotMap,
     interaction_engine: InteractionEngine,
     desktop_interactions: DesktopInteractionSender,
@@ -140,7 +144,8 @@ impl AureaCompositor {
             _pointer_gestures_state: pointer_gestures_state,
             _tablet_manager_state: tablet_manager_state,
             pointing_devices: PointingDeviceService::new(),
-            touchscreen_outputs: TouchscreenOutputMap::new(),\n            touchscreen_calibrations: TouchscreenCalibrationMap::default(),
+            touchscreen_outputs: TouchscreenOutputMap::new(),
+            touchscreen_calibrations: TouchscreenCalibrationMap::default(),
             touchscreen_slots: TouchscreenSlotMap::new(),
             interaction_engine: InteractionEngine::new(),
             desktop_interactions,
@@ -350,7 +355,8 @@ impl AureaCompositor {
             .as_millis() as u32;
         self.handle_touch_cancel(device, time);
         self.interaction_engine.remove_device(device);
-        self.touchscreen_outputs.remove_device(device);\n        self.touchscreen_calibrations.remove_device(device);
+        self.touchscreen_outputs.remove_device(device);
+        self.touchscreen_calibrations.remove_device(device);
         self.touchscreen_slots.remove_device(device);
     }
 
