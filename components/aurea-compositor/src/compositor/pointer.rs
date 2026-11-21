@@ -5,7 +5,9 @@
 
 //! Pointer capability initialization and relative motion routing.
 
-use std::io;
+use std::{io, sync::atomic::{AtomicU64, Ordering}};
+
+static POINTER_POSITION_LOG_COUNT: AtomicU64 = AtomicU64::new(0);
 
 use smithay::{
     input::pointer::{MotionEvent, PointerHandle},
@@ -105,6 +107,14 @@ impl AureaCompositor {
             },
         );
         pointer.frame(self);
+        let count = POINTER_POSITION_LOG_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
+        if count == 1 || count % 120 == 0 {
+            let actual = pointer.current_location();
+            eprintln!(
+                "AureaOS pointer: motion={} requested=({:.2},{:.2}) applied=({:.2},{:.2})",
+                count, requested.x, requested.y, actual.x, actual.y
+            );
+        }
         self.request_all_output_frames();
     }
 }
