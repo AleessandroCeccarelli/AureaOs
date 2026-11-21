@@ -16,7 +16,7 @@ use aurea_desktop_api::display::DisplayColorController;
 use crate::input::pointing::AppliedTouchpadSettings;
 
 #[cfg(feature = "drm")]
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 #[cfg(feature = "drm")]
 use smithay::backend::drm::DrmNode;
