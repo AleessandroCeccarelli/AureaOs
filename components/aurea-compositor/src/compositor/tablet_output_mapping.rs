@@ -5,7 +5,7 @@
 
 //! Public tablet-to-display assignment API.
 
-use aurea_desktop_api::input::{InputDeviceId, InputDeviceKind};
+use aurea_desktop_api::input::{InputDeviceId, InputDeviceKind, InputDeviceProvider};
 
 use crate::{input::pointing::TabletOutputTarget, output::OutputId};
 
