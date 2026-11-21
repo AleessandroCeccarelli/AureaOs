@@ -89,7 +89,7 @@ impl GbmCpuFramebufferPool {
         let allocator = GbmCpuUploadAllocator::new(gbm);
         let buffer = allocator.allocate(width, height)
             .map_err(GbmCpuFramebufferPoolError::Allocation)?;
-        let framebuffer = GbmCpuUploadFramebuffer::register(id, drm, buffer)
+        let framebuffer = GbmCpuUploadFramebuffer::register(drm, buffer)
             .map_err(GbmCpuFramebufferPoolError::Registration)?;
 
         self.buffers.insert(id, framebuffer);
