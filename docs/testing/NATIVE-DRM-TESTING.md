@@ -35,7 +35,7 @@ monitor.
 6. Start from a text TTY after ending the XFCE graphical session. Do not launch
    this native DRM test from inside the active graphical desktop.
 
-## Bounded test launch
+## Interactive native test launch
 
 From the repository root, run:
 
@@ -43,24 +43,32 @@ From the repository root, run:
 bash tools/run-aurea-native-test.sh
 ```
 
-The default test window is 45 seconds. The launcher first attempts to recover
-any unfinished diagnostic sessions from the previous boot, then builds the
-desktop binaries with the committed lockfile and starts the native DRM/Vulkan
-desktop. Each session gets a private report directory under
+The launcher is interactive by default: it does not impose a 45-second deadline.
+Aurea Welcome remains alive for the lifetime of the compositor session. Press
+Ctrl+C in the launching TTY to request graceful shutdown. The launcher first
+attempts to recover unfinished diagnostic sessions from the previous boot, then
+builds the desktop binaries with the committed lockfile and starts the native
+DRM/Vulkan desktop. Each session gets a private report directory under
 `diagnostics/runs/`; the launcher captures stdout/stderr and a hardware,
 driver, and Vulkan summary snapshot.
 The desktop composition root starts and owns its Welcome Wayland client itself;
-the launcher deliberately does not start a second client. The client connects
+the launcher deliberately does not start a second client. The log records
+Welcome connection, XDG configure, and first SHM frame submission, plus libinput
+device add/remove metadata and rate-limited pointer motion/position samples.
+The hardware snapshot includes the kernel input-device inventory, libinput device
+inventory when available, seat status, input device nodes, DRM/GPU drivers, and
+Vulkan summary. The client connects
 to the compositor's `wayland-0` socket. The launcher enables Rust backtraces,
 stores output under `$XDG_STATE_HOME/aureaos/logs` (or
-`~/.local/state/aureaos/logs`), and sends SIGINT at the deadline. It allows
-10 seconds for graceful shutdown before sending SIGKILL. On normal exit it
+`~/.local/state/aureaos/logs`), and waits for an interactive shutdown by default. With AUREA_TEST_TIMEOUT set,
+it sends SIGINT at the deadline and allows 30 seconds for graceful shutdown before
+sending SIGKILL. On normal exit it
 collects only the current boot's kernel journal and Aurea Desktop process
 journal entries, the persistent Aurea Desktop log entries for that session,
 and Aurea Desktop coredump metadata when available. It does not export the
 machine-wide system journal or copy core dump contents.
 
-A different bounded duration can be selected without editing the script:
+An optional bounded run can be requested without editing the script:
 
 ```bash
 AUREA_TEST_TIMEOUT=90 bash tools/run-aurea-native-test.sh
