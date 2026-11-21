@@ -17,6 +17,11 @@ use smithay::{
 use super::AureaCompositor;
 
 impl AureaCompositor {
+    /// Drops any unfinished gesture sequence owned by a disconnected device.
+    pub fn clear_pointing_device_state(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
+        self.interaction_engine.remove_device(device);
+    }
+
     /// Retrieves the next semantic pointing interaction for the desktop shell.
     pub fn take_pending_pointing_interaction(
         &mut self,
