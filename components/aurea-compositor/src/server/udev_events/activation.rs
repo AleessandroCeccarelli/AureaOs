@@ -7,8 +7,9 @@
 
 use std::collections::HashSet;
 
+use crate::server::vulkan_lifecycle::initialize_vulkan_backend;
+
 use super::{
-    super::super::vulkan_lifecycle::initialize_vulkan_backend,
     super::state::WaylandState,
     device::{initialize_drm_surfaces, open_and_integrate},
     outputs::{refresh_device_outputs, remove_device_outputs, restore_before_publish},
