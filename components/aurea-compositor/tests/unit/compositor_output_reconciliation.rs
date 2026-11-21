@@ -9,12 +9,14 @@ use aurea_compositor::{
 };
 
 use smithay::reexports::wayland_server::Display;
+use aurea_desktop_api::desktop_interaction::desktop_interaction_channel;
 
 #[test]
 fn removed_output_unpublishes_its_wayland_global() {
     let display = Display::<AureaCompositor>::new().unwrap();
     let display_handle = display.handle();
-    let mut compositor = AureaCompositor::new(&display_handle);
+    let (interactions, _receiver) = desktop_interaction_channel();
+    let mut compositor = AureaCompositor::new(&display_handle, interactions);
 
     let output_id = (4_u128 << 32) | 1;
     let initial_mode = OutputMode::new(1920, 1080, 60_000).unwrap();
