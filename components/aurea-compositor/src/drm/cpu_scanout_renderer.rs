@@ -144,7 +144,7 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
                 transform: Transform::Normal,
                 alpha: 1.0,
                 damage_clips: None,
-                fb: &framebuffer,
+                fb: framebuffer,
                 fence: None,
             }),
         }];
