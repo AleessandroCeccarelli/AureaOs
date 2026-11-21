@@ -115,7 +115,7 @@ mod tests {
         mapping.assign(DEVICE, SECOND_OUTPUT);
         mapping.remove_output(SECOND_OUTPUT);
 
-        assert_eq!(mapping.resolve(DEVICE, [FIRST_OUTPUT]), None);
+        assert_eq!(mapping.resolve(DEVICE, [FIRST_OUTPUT, SECOND_OUTPUT]), None);
 
         mapping.assign(DEVICE, FIRST_OUTPUT);
         mapping.remove_device(DEVICE);
