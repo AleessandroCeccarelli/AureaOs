@@ -22,7 +22,7 @@ use crate::{
     frame::FrameScheduler,
     input::{
         cursor_animation::CursorLocateAnimation, pointer_settings::PointerSettings,
-        pointer_shake::PointerShakeDetector,
+        pointer_shake::PointerShakeDetector, pointing::PointingDeviceService,
     },
     output::{OutputId, manager::OutputManager},
     window_manager::WindowManager,
@@ -70,6 +70,7 @@ pub struct AureaCompositor {
     surface_output_tracker: SurfaceOutputTracker,
     cursor_image: CursorImageStatus,
     pointer_settings: PointerSettings,
+    pointing_devices: PointingDeviceService,
     pointer_shake: PointerShakeDetector,
     cursor_locate_animation: CursorLocateAnimation,
 }
@@ -116,6 +117,7 @@ impl AureaCompositor {
             surface_output_tracker: SurfaceOutputTracker::new(),
             cursor_image: CursorImageStatus::default_named(),
             pointer_settings: PointerSettings::default(),
+            pointing_devices: PointingDeviceService::new(),
             pointer_shake: PointerShakeDetector::default(),
             cursor_locate_animation: CursorLocateAnimation::default(),
         }
@@ -156,6 +158,11 @@ impl AureaCompositor {
     pub fn cursor_animation_active(&self) -> bool {
         self.cursor_locate_animation
             .is_active(std::time::Instant::now())
+    }
+
+    /// Returns the seat-wide registry of connected pointing devices.
+    pub fn pointing_devices(&self) -> &PointingDeviceService {
+        &self.pointing_devices
     }
 
     /// Returns the active pointer preferences.
