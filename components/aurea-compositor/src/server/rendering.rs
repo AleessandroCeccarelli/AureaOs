@@ -64,8 +64,8 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
             })?;
 
         // Direct Vulkan scanout requires the same DRM device and the full
-        // DMA-BUF/foreign-ownership capability set. The compatibility path
-        // can cross GPU boundaries because pixels are copied through host memory.
+        // DMA-BUF/foreign-ownership capability set. Cross-GPU host readback is
+        // deliberately not advertised until this backend composites the scene.
         let support = [PresentationBackendSupport {
             rendering_gpu: rendering_node,
             presentation_gpu: presentation_node,
