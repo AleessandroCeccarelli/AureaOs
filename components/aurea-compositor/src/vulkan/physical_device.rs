@@ -33,9 +33,9 @@ pub struct VulkanDeviceInfo {
     pub device_type: VulkanDeviceType,
     pub has_graphics_queue: bool,
 
-    /// Why the device cannot satisfy AureaOS's minimum Vulkan rendering feature plan.
-    /// None means Vulkan 1.3 dynamic rendering and synchronization2 are available.
-    pub rendering_feature_error: Option<String>,
+    /// Why the device cannot satisfy AureaOS's minimum rendering requirements.
+    /// This includes a missing graphics queue or required Vulkan 1.3 features.
+    pub rendering_error: Option<String>,
 
     /// Whether the device exposes all extensions required by Smithay's
     /// Vulkan DMA-BUF allocator.
@@ -45,10 +45,15 @@ pub struct VulkanDeviceInfo {
 }
 
 impl VulkanDeviceInfo {
+    /// Returns true when this GPU meets AureaOS's minimum Vulkan rendering requirements.
+    pub fn supports_minimum_rendering(&self) -> bool {
+        self.has_graphics_queue && self.rendering_error.is_none()
+    }
+
     pub(super) fn from_device(device: &PhysicalDevice, has_graphics_queue: bool) -> Self {
         let external_memory = VulkanExternalMemoryCapabilities::from_device(device);
         let has_dmabuf_export_extensions = external_memory.supports_dmabuf_export;
-        let rendering_feature_error = VulkanRenderingFeaturePlan::from_device(device).err();
+        let rendering_error = VulkanContext::rendering_compatibility_error(device, has_graphics_queue);
 
         Self {
             name: device.name().to_owned(),
@@ -56,13 +61,24 @@ impl VulkanDeviceInfo {
             driver: format!("{:?}", device.driver()),
             device_type: VulkanContext::classify_device(device),
             has_graphics_queue,
-            rendering_feature_error,
+            rendering_error,
             has_dmabuf_export_extensions,
         }
     }
 }
 
 impl VulkanContext {
+    fn rendering_compatibility_error(
+        device: &PhysicalDevice,
+        has_graphics_queue: bool,
+    ) -> Option<String> {
+        if !has_graphics_queue {
+            return Some("No graphics-capable queue family is available".to_owned());
+        }
+
+        VulkanRenderingFeaturePlan::from_device(device).err()
+    }
+
     /// Returns summaries of all discovered physical devices.
     pub fn device_info(&self) -> Vec<VulkanDeviceInfo> {
         self.physical_devices
@@ -94,7 +110,7 @@ impl VulkanContext {
             .iter()
             .filter(|device| {
                 self.graphics_queue_family(device).is_some()
-                    && VulkanRenderingFeaturePlan::from_device(device).is_ok()
+                    && Self::rendering_compatibility_error(device, true).is_none()
             })
             .find(|device| {
                 preferred_type
@@ -104,7 +120,7 @@ impl VulkanContext {
             .or_else(|| {
                 self.physical_devices.iter().find(|device| {
                     self.graphics_queue_family(device).is_some()
-                        && VulkanRenderingFeaturePlan::from_device(device).is_ok()
+                        && Self::rendering_compatibility_error(device, true).is_none()
                 })
             })
     }
@@ -118,7 +134,7 @@ impl VulkanContext {
         self.physical_devices.iter().find(|device| {
             Self::classify_device(device) == VulkanDeviceType::Cpu
                 && self.graphics_queue_family(device).is_some()
-                && VulkanRenderingFeaturePlan::from_device(device).is_ok()
+                && Self::rendering_compatibility_error(device, true).is_none()
         })
     }
 
