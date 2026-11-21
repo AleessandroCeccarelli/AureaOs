@@ -8,7 +8,7 @@
 use std::{error::Error, fmt};
 
 use smithay::{
-    backend::{allocator::{Format, Modifier}, drm::DrmDeviceFd},
+    backend::{allocator::Modifier, drm::DrmDeviceFd},
     reexports::drm::{
         buffer::PlanarBuffer,
         control::{Device, FbCmd2Flags, framebuffer},
@@ -32,7 +32,6 @@ impl Error for GbmFramebufferRegistrationError {}
 /// Owns a KMS framebuffer handle and the DRM descriptor needed to destroy it.
 pub(crate) struct StrictGbmFramebuffer {
     handle: framebuffer::Handle,
-    format: Format,
     drm: DrmDeviceFd,
 }
 
@@ -56,10 +55,6 @@ impl StrictGbmFramebuffer {
 
         Ok(Self {
             handle,
-            format: Format {
-                code: gbm.format(),
-                modifier: modifier.unwrap_or(Modifier::Invalid),
-            },
             drm: drm.clone(),
         })
     }
@@ -99,13 +94,11 @@ impl Drop for StrictGbmFramebuffer {
 pub(crate) struct GbmCpuUploadFramebuffer {
     framebuffer: StrictGbmFramebuffer,
     buffer: GbmCpuUploadBuffer,
-    id: DrmFramebufferId,
 }
 
 impl GbmCpuUploadFramebuffer {
     /// Registers the allocation and retains both resources in one owner.
     pub(crate) fn register(
-        id: DrmFramebufferId,
         drm: &DrmDeviceFd,
         buffer: GbmCpuUploadBuffer,
     ) -> Result<Self, GbmFramebufferRegistrationError> {
@@ -114,23 +107,12 @@ impl GbmCpuUploadFramebuffer {
         Ok(Self {
             framebuffer,
             buffer,
-            id,
         })
-    }
-
-    /// Returns the compositor identity used by the per-output lifecycle.
-    pub(crate) fn id(&self) -> DrmFramebufferId {
-        self.id
     }
 
     /// Borrows the strict KMS framebuffer.
     pub(crate) fn framebuffer(&self) -> &StrictGbmFramebuffer {
         &self.framebuffer
-    }
-
-    /// Borrows the CPU-upload allocation without transferring ownership.
-    pub(crate) fn buffer(&self) -> &GbmCpuUploadBuffer {
-        &self.buffer
     }
 
     /// Mutably borrows the CPU-upload allocation before KMS submission.
