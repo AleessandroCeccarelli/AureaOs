@@ -7,10 +7,7 @@
 
 use std::collections::HashSet;
 
-use smithay::{
-    backend::drm::DrmNode,
-    reexports::drm::control::{Device as DrmControlDevice, connector},
-};
+use smithay::reexports::drm::control::{Device as DrmControlDevice, connector};
 
 use crate::drm::{
     device::DrmDevice,
@@ -21,8 +18,7 @@ use crate::drm::{
     surfaces::{DrmSurfaceInitFailure, DrmSurfaceManager, DrmSurfaceManagerError, ManagedDrmSurface},
 };
 
-use super::super::output::OutputId;
-use super::super::vulkan::VulkanDrmFramePool;
+use crate::vulkan::VulkanDrmFramePool;
 
 impl DrmSurfaceManager {
     /// Discovers outputs and creates one KMS surface for each usable connector.
