@@ -83,6 +83,7 @@ impl CompositorFactory for RuntimeFailureFactory {
         &self,
         _display_color: DisplayColorController,
         _interactions: DesktopInteractionSender,
+    _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(RuntimeFailureService {
             observed_shutdown: Arc::clone(&self.observed_shutdown),
@@ -107,6 +108,7 @@ impl CompositorFactory for RuntimePanicFactory {
         &self,
         _display_color: DisplayColorController,
         _interactions: DesktopInteractionSender,
+    _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(RuntimePanicService))
     }
@@ -134,6 +136,7 @@ impl CompositorFactory for SuccessfulFactory {
         &self,
         _display_color: DisplayColorController,
         _interactions: DesktopInteractionSender,
+    _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(SuccessfulService {
             started: Arc::clone(&self.started),
@@ -172,6 +175,7 @@ impl CompositorFactory for ShutdownAwareFactory {
         &self,
         _display_color: DisplayColorController,
         _interactions: DesktopInteractionSender,
+    _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(ShutdownAwareService {
             started: Arc::clone(&self.started),
