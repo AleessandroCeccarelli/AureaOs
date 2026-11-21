@@ -62,10 +62,15 @@ impl WelcomeClientProcess {
                 let deadline = Instant::now() + GRACEFUL_STOP_TIMEOUT;
 
                 while Instant::now() < deadline {
-                    if let Some(status) = child.try_wait()? {
-                        return Ok(Some(status));
+                    match child.try_wait() {
+                        Ok(Some(status)) => return Ok(Some(status)),
+                        Ok(None) => thread::sleep(STOP_POLL_INTERVAL),
+                        Err(error) => {
+                            let _ = child.kill();
+                            let _ = child.wait();
+                            return Err(error);
+                        }
                     }
-                    thread::sleep(STOP_POLL_INTERVAL);
                 }
 
                 let kill_result = child.kill();
