@@ -145,13 +145,42 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                     &mut surface_pipeline_cache,
                     warmth_percent,
                 );
-                compositor
-                    .render_output(&mut backend, output_id)
-                    .map_err(|error| {
-                        io::Error::other(format!(
-                            "AureaOS: direct Vulkan output {output_id} failed: {error}"
-                        ))
-                    })?;
+                let direct_result = compositor.render_output(&mut backend, output_id);
+                drop(backend);
+
+                if let Err(error) = direct_result {
+                    // Extension support alone does not guarantee that this
+                    // connector accepts a Vulkan scanout format/modifier.
+                    // Retry through host readback + GBM upload instead of
+                    // terminating the entire Wayland session.
+                    eprintln!(
+                        "AureaOS: direct Vulkan presentation failed for output {output_id}: {error}; retrying with CPU-upload compatibility"
+                    );
+                    compositor
+                        .request_output_frame(output_id)
+                        .map_err(io::Error::other)?;
+
+                    if output.cpu_presentation_pending() {
+                        continue;
+                    }
+
+                    let mut compatibility_backend = VulkanCpuOutputBackend::new(
+                        device,
+                        gbm_devices,
+                        output,
+                        vulkan,
+                        &mut surface_pipeline_cache,
+                        &mut display_color_manager,
+                        warmth_percent,
+                    );
+                    compositor
+                        .render_output(&mut compatibility_backend, output_id)
+                        .map_err(|error| {
+                            io::Error::other(format!(
+                                "AureaOS: direct Vulkan and CPU compatibility presentation both failed for output {output_id}: {error}"
+                            ))
+                        })?;
+                }
             }
             PresentationPath::Compatibility => {
                 // Keep the compositor's frame pending until the CPU-upload
