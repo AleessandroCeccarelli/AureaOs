@@ -96,6 +96,12 @@ impl AureaCompositor {
             self.frame_scheduler.remove_output(*output_id);
         }
 
+        // A successful hot-plug, unplug, or mode change alters the visible
+        // desktop even when pointer recentering is skipped (for example while
+        // a client owns an active pointer grab).
+        self.refresh_pointer_focus_at_current_location();
+        self.request_all_output_frames();
+
         Ok(())
     }
 }
