@@ -18,9 +18,14 @@ use crate::drm::gbm_buffer_writer::GbmCpuUploadBuffer;
 #[derive(Debug)]
 pub(crate) enum GbmCpuUploadAllocationError {
     InvalidDimensions,
-    UnsupportedFormatUsage { format: Fourcc },
+    UnsupportedFormatUsage {
+        format: Fourcc,
+    },
     Allocation(String),
-    UnexpectedBufferFormat { expected: Fourcc, actual: Fourcc },
+    UnexpectedBufferFormat {
+        expected: Fourcc,
+        actual: Fourcc,
+    },
     UnexpectedBufferDimensions {
         expected_width: u32,
         expected_height: u32,
@@ -40,12 +45,14 @@ impl fmt::Display for GbmCpuUploadAllocationError {
                 "GBM device does not support {format:?} with WRITE and SCANOUT usage"
             ),
             Self::Allocation(message) => {
-                write!(formatter, "GBM CPU-upload buffer allocation failed: {message}")
+                write!(
+                    formatter,
+                    "GBM CPU-upload buffer allocation failed: {message}"
+                )
             }
-            Self::UnexpectedBufferFormat { expected, actual } => write!(
-                formatter,
-                "GBM allocated {actual:?}, expected {expected:?}"
-            ),
+            Self::UnexpectedBufferFormat { expected, actual } => {
+                write!(formatter, "GBM allocated {actual:?}, expected {expected:?}")
+            }
             Self::UnexpectedBufferDimensions {
                 expected_width,
                 expected_height,

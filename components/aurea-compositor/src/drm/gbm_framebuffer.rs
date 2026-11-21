@@ -63,7 +63,6 @@ impl StrictGbmFramebuffer {
     pub(crate) fn handle(&self) -> &framebuffer::Handle {
         &self.handle
     }
-
 }
 
 impl AsRef<framebuffer::Handle> for StrictGbmFramebuffer {

@@ -9,8 +9,7 @@ use std::{io, path::PathBuf};
 
 use crate::{
     drm::{
-        cpu_scanout_renderer::VulkanCpuOutputBackend,
-        scanout_renderer::VulkanOutputScanoutBackend,
+        cpu_scanout_renderer::VulkanCpuOutputBackend, scanout_renderer::VulkanOutputScanoutBackend,
     },
     presentation_selector::{
         NoCompatiblePresentationPath, PresentationBackendSupport, PresentationPath,
@@ -133,20 +132,23 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                     &mut surface_pipeline_cache,
                     warmth_percent,
                 );
-                compositor.render_output(&mut backend, output_id).map_err(|error| {
-                    io::Error::other(format!(
-                        "AureaOS: direct Vulkan output {output_id} failed: {error}"
-                    ))
-                })?;
+                compositor
+                    .render_output(&mut backend, output_id)
+                    .map_err(|error| {
+                        io::Error::other(format!(
+                            "AureaOS: direct Vulkan output {output_id} failed: {error}"
+                        ))
+                    })?;
             }
             PresentationPath::Compatibility => {
-                let mut backend =
-                    VulkanCpuOutputBackend::new(device, gbm_devices, output, vulkan);
-                compositor.render_output(&mut backend, output_id).map_err(|error| {
-                    io::Error::other(format!(
-                        "AureaOS: CPU compatibility output {output_id} failed: {error}"
-                    ))
-                })?;
+                let mut backend = VulkanCpuOutputBackend::new(device, gbm_devices, output, vulkan);
+                compositor
+                    .render_output(&mut backend, output_id)
+                    .map_err(|error| {
+                        io::Error::other(format!(
+                            "AureaOS: CPU compatibility output {output_id} failed: {error}"
+                        ))
+                    })?;
             }
         }
     }

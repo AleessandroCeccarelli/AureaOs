@@ -34,9 +34,8 @@ pub struct NoCompatiblePresentationPath;
 
 impl fmt::Display for NoCompatiblePresentationPath {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(
-            "No presentation backend supports the selected rendering and output GPUs",
-        )
+        formatter
+            .write_str("No presentation backend supports the selected rendering and output GPUs")
     }
 }
 
@@ -60,8 +59,7 @@ impl PresentationSelector {
         let pair_support = support
             .iter()
             .find(|entry| {
-                &entry.rendering_gpu == rendering_gpu
-                    && &entry.presentation_gpu == presentation_gpu
+                &entry.rendering_gpu == rendering_gpu && &entry.presentation_gpu == presentation_gpu
             })
             .ok_or(NoCompatiblePresentationPath)?;
 

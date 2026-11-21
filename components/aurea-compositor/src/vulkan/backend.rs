@@ -74,9 +74,7 @@ impl VulkanBackend {
         let physical_device = context
             .select_device_for_drm_node(node, preference)
             .ok_or_else(|| {
-                VulkanInitError::new(
-                    "No graphics-capable Vulkan device matches the DRM node",
-                )
+                VulkanInitError::new("No graphics-capable Vulkan device matches the DRM node")
             })?;
         let physical_device_index = context
             .physical_devices()

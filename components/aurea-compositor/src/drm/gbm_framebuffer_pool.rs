@@ -34,8 +34,12 @@ pub(crate) enum GbmCpuFramebufferPoolError {
 impl fmt::Display for GbmCpuFramebufferPoolError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::IdentifierExhausted => formatter.write_str("GBM framebuffer identifiers exhausted"),
-            Self::UnknownFramebuffer(id) => write!(formatter, "Unknown GBM framebuffer {}", id.value()),
+            Self::IdentifierExhausted => {
+                formatter.write_str("GBM framebuffer identifiers exhausted")
+            }
+            Self::UnknownFramebuffer(id) => {
+                write!(formatter, "Unknown GBM framebuffer {}", id.value())
+            }
             Self::FramebufferStillInUse(id) => write!(
                 formatter,
                 "GBM framebuffer {} is active, pending or in a KMS transaction",
@@ -83,11 +87,14 @@ impl GbmCpuFramebufferPool {
         height: u32,
     ) -> Result<DrmFramebufferId, GbmCpuFramebufferPoolError> {
         let id = DrmFramebufferId::new(self.next_id);
-        let next_id = self.next_id.checked_add(1)
+        let next_id = self
+            .next_id
+            .checked_add(1)
             .ok_or(GbmCpuFramebufferPoolError::IdentifierExhausted)?;
 
         let allocator = GbmCpuUploadAllocator::new(gbm);
-        let buffer = allocator.allocate(width, height)
+        let buffer = allocator
+            .allocate(width, height)
             .map_err(GbmCpuFramebufferPoolError::Allocation)?;
         let framebuffer = GbmCpuUploadFramebuffer::register(drm, buffer)
             .map_err(GbmCpuFramebufferPoolError::Registration)?;
@@ -108,9 +115,13 @@ impl GbmCpuFramebufferPool {
         if self.is_in_use(id) {
             return Err(GbmCpuFramebufferPoolError::FramebufferStillInUse(id));
         }
-        let buffer = self.buffers.get_mut(&id)
+        let buffer = self
+            .buffers
+            .get_mut(&id)
             .ok_or(GbmCpuFramebufferPoolError::UnknownFramebuffer(id))?;
-        buffer.buffer_mut().write_rgba8(pixels, width, height)
+        buffer
+            .buffer_mut()
+            .write_rgba8(pixels, width, height)
             .map_err(GbmCpuFramebufferPoolError::Write)
     }
 
@@ -119,35 +130,49 @@ impl GbmCpuFramebufferPool {
         &self,
         id: DrmFramebufferId,
     ) -> Result<&framebuffer::Handle, GbmCpuFramebufferPoolError> {
-        self.buffers.get(&id)
+        self.buffers
+            .get(&id)
             .map(|buffer| buffer.framebuffer().handle())
             .ok_or(GbmCpuFramebufferPoolError::UnknownFramebuffer(id))
     }
 
     /// Begins atomic TEST_ONLY validation for a candidate.
-    pub(crate) fn begin_test(&mut self, id: DrmFramebufferId) -> Result<(), GbmCpuFramebufferPoolError> {
+    pub(crate) fn begin_test(
+        &mut self,
+        id: DrmFramebufferId,
+    ) -> Result<(), GbmCpuFramebufferPoolError> {
         self.ensure_registered(id)?;
-        self.lifecycle.begin_test(id).map_err(GbmCpuFramebufferPoolError::Presentation)
+        self.lifecycle
+            .begin_test(id)
+            .map_err(GbmCpuFramebufferPoolError::Presentation)
     }
 
     /// Records successful atomic TEST_ONLY validation.
     pub(crate) fn test_passed(&mut self) -> Result<(), GbmCpuFramebufferPoolError> {
-        self.lifecycle.test_passed().map_err(GbmCpuFramebufferPoolError::Presentation)
+        self.lifecycle
+            .test_passed()
+            .map_err(GbmCpuFramebufferPoolError::Presentation)
     }
 
     /// Cancels a rejected TEST_ONLY request.
     pub(crate) fn test_failed(&mut self) -> Result<DrmFramebufferId, GbmCpuFramebufferPoolError> {
-        self.lifecycle.test_failed().map_err(GbmCpuFramebufferPoolError::Presentation)
+        self.lifecycle
+            .test_failed()
+            .map_err(GbmCpuFramebufferPoolError::Presentation)
     }
 
     /// Records an accepted non-blocking KMS commit.
     pub(crate) fn commit_accepted(&mut self) -> Result<(), GbmCpuFramebufferPoolError> {
-        self.lifecycle.commit_accepted().map_err(GbmCpuFramebufferPoolError::Presentation)
+        self.lifecycle
+            .commit_accepted()
+            .map_err(GbmCpuFramebufferPoolError::Presentation)
     }
 
     /// Cancels a rejected KMS commit.
     pub(crate) fn commit_failed(&mut self) -> Result<DrmFramebufferId, GbmCpuFramebufferPoolError> {
-        self.lifecycle.commit_failed().map_err(GbmCpuFramebufferPoolError::Presentation)
+        self.lifecycle
+            .commit_failed()
+            .map_err(GbmCpuFramebufferPoolError::Presentation)
     }
 
     /// Completes a page flip and returns the framebuffer released by KMS.
@@ -155,7 +180,9 @@ impl GbmCpuFramebufferPool {
         &mut self,
         displayed: DrmFramebufferId,
     ) -> Result<Option<DrmFramebufferId>, GbmCpuFramebufferPoolError> {
-        self.lifecycle.page_flip_complete(displayed).map_err(GbmCpuFramebufferPoolError::Presentation)
+        self.lifecycle
+            .page_flip_complete(displayed)
+            .map_err(GbmCpuFramebufferPoolError::Presentation)
     }
 
     /// Returns the framebuffer awaiting its page-flip event.
@@ -171,13 +198,15 @@ impl GbmCpuFramebufferPool {
         if self.is_in_use(id) {
             return Err(GbmCpuFramebufferPoolError::FramebufferStillInUse(id));
         }
-        self.buffers.remove(&id)
+        self.buffers
+            .remove(&id)
             .map(|_| ())
             .ok_or(GbmCpuFramebufferPoolError::UnknownFramebuffer(id))
     }
 
     fn ensure_registered(&self, id: DrmFramebufferId) -> Result<(), GbmCpuFramebufferPoolError> {
-        self.buffers.contains_key(&id)
+        self.buffers
+            .contains_key(&id)
             .then_some(())
             .ok_or(GbmCpuFramebufferPoolError::UnknownFramebuffer(id))
     }

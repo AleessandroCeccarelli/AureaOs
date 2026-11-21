@@ -219,9 +219,8 @@ impl DrmPresentationBackend {
 
         self.frames.presentation_test_passed()?;
         if let Err(error) = self.frames.validate_commit_ready(require_in_fence) {
-            let operation = format!(
-                "KMS commit preconditions failed after TEST_ONLY validation: {error}"
-            );
+            let operation =
+                format!("KMS commit preconditions failed after TEST_ONLY validation: {error}");
             return match self.frames.presentation_commit_failed() {
                 Ok(_) => Err(DrmPresentationBackendError::Lifecycle(error)),
                 Err(lifecycle) => Err(DrmPresentationBackendError::Recovery {

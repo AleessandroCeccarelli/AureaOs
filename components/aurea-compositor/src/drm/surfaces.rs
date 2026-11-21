@@ -18,11 +18,11 @@ use smithay::{
 
 use crate::{
     drm::{
+        cpu_presentation_backend::{CpuPresentationBackend, CpuPresentationError},
         device::DrmDevice,
         discovery::discover_connected_outputs,
-        cpu_presentation_backend::{CpuPresentationBackend, CpuPresentationError},
-        output::DrmOutputDescriptor,
         gbm_framebuffer_pool::{GbmCpuFramebufferPool, GbmCpuFramebufferPoolError},
+        output::DrmOutputDescriptor,
         presentation_backend::{DrmPresentationBackend, DrmPresentationBackendError},
     },
     output::OutputId,
@@ -129,7 +129,11 @@ impl ManagedDrmSurface {
         &mut GbmCpuFramebufferPool,
         &mut CpuPresentationBackend,
     ) {
-        (&self.surface, &mut self.cpu_frame_pool, &mut self.cpu_presentation)
+        (
+            &self.surface,
+            &mut self.cpu_frame_pool,
+            &mut self.cpu_presentation,
+        )
     }
     /// Borrows the KMS surface and its mutable scanout ownership resources.
     pub fn scanout_parts_mut(
@@ -350,7 +354,9 @@ impl DrmSurfaceManager {
         let Some(output) = self.surfaces.get_mut(&output_id) else {
             return Ok(None);
         };
-        output.cpu_presentation.on_vblank(node, crtc, &mut output.cpu_frame_pool)
+        output
+            .cpu_presentation
+            .on_vblank(node, crtc, &mut output.cpu_frame_pool)
     }
 
     /// Retires a CPU framebuffer after its page flip released KMS ownership.

@@ -34,15 +34,15 @@ pub enum CpuPresentationError {
 impl fmt::Display for CpuPresentationError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::LegacySurfaceUnsupported => formatter.write_str(
-                "CPU presentation requires atomic DRM TEST_ONLY support",
-            ),
+            Self::LegacySurfaceUnsupported => {
+                formatter.write_str("CPU presentation requires atomic DRM TEST_ONLY support")
+            }
             Self::CandidateFramebufferNotConfigured => formatter.write_str(
                 "The configured primary plane does not reference the submitted CPU framebuffer",
             ),
-            Self::UnexpectedCrtc => formatter.write_str(
-                "DRM event does not belong to this presentation surface",
-            ),
+            Self::UnexpectedCrtc => {
+                formatter.write_str("DRM event does not belong to this presentation surface")
+            }
             Self::KmsOperation(message) => write!(formatter, "KMS presentation failed: {message}"),
             Self::Lifecycle(error) => {
                 write!(formatter, "CPU framebuffer lifecycle failed: {error}")

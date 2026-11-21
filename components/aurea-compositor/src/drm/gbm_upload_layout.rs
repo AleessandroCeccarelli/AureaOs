@@ -24,7 +24,9 @@ impl fmt::Display for GbmUploadLayoutError {
             Self::SourceSizeOverflow => "GBM upload source size overflow",
             Self::DestinationSizeOverflow => "GBM upload destination size overflow",
             Self::SourceLengthMismatch => "RGBA8 source length does not match its dimensions",
-            Self::DestinationStrideTooSmall => "GBM destination stride is smaller than one RGBA8 row",
+            Self::DestinationStrideTooSmall => {
+                "GBM destination stride is smaller than one RGBA8 row"
+            }
         };
         formatter.write_str(message)
     }

@@ -13,11 +13,7 @@ use smithay::{
 };
 
 use crate::{
-    drm::{
-        device::DrmDevice,
-        gbm::GbmDeviceManager,
-        surfaces::ManagedDrmSurface,
-    },
+    drm::{device::DrmDevice, gbm::GbmDeviceManager, surfaces::ManagedDrmSurface},
     render::RenderScene,
     renderer::{RenderBackend, RenderTarget},
     vulkan::{VulkanBackend, VulkanOffscreenRenderer},
@@ -90,15 +86,20 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
             return Err(VulkanCpuScanoutError("DRM device is inactive".into()));
         }
 
-        let gbm = self.gbm_devices.get(self.drm_device.node().map_err(|e| {
-            VulkanCpuScanoutError(format!("Unable to identify DRM device: {e}"))
-        })?).ok_or_else(|| {
-            VulkanCpuScanoutError("GBM device is unavailable for CPU presentation".into())
-        })?;
+        let gbm = self
+            .gbm_devices
+            .get(self.drm_device.node().map_err(|e| {
+                VulkanCpuScanoutError(format!("Unable to identify DRM device: {e}"))
+            })?)
+            .ok_or_else(|| {
+                VulkanCpuScanoutError("GBM device is unavailable for CPU presentation".into())
+            })?;
 
         let pixels = VulkanOffscreenRenderer::new(self.vulkan.device())
             .render_clear(target.width(), target.height(), [0.02, 0.12, 0.32, 1.0])
-            .map_err(|error| VulkanCpuScanoutError(format!("Vulkan offscreen render failed: {error}")))?;
+            .map_err(|error| {
+                VulkanCpuScanoutError(format!("Vulkan offscreen render failed: {error}"))
+            })?;
 
         let drm_fd = self.drm_device.fd();
         let (surface, pool, presenter) = self.output.cpu_parts_mut();
@@ -111,18 +112,25 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
             return Ok(());
         }
 
-        let candidate = pool.allocate(gbm, drm_fd, target.width(), target.height())
-            .map_err(|error| VulkanCpuScanoutError(format!("GBM framebuffer allocation failed: {error}")))?;
+        let candidate = pool
+            .allocate(gbm, drm_fd, target.width(), target.height())
+            .map_err(|error| {
+                VulkanCpuScanoutError(format!("GBM framebuffer allocation failed: {error}"))
+            })?;
         if let Err(error) = pool.write_rgba8(candidate, &pixels, target.width(), target.height()) {
             let _ = pool.retire(candidate);
-            return Err(VulkanCpuScanoutError(format!("GBM pixel upload failed: {error}")));
+            return Err(VulkanCpuScanoutError(format!(
+                "GBM pixel upload failed: {error}"
+            )));
         }
 
         let framebuffer = match pool.framebuffer(candidate) {
             Ok(framebuffer) => framebuffer.clone(),
             Err(error) => {
                 let _ = pool.retire(candidate);
-                return Err(VulkanCpuScanoutError(format!("GBM framebuffer lookup failed: {error}")));
+                return Err(VulkanCpuScanoutError(format!(
+                    "GBM framebuffer lookup failed: {error}"
+                )));
             }
         };
 
@@ -143,10 +151,11 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
 
         if let Err(error) = presenter.submit_after_upload(surface, pool, candidate, &planes) {
             let _ = pool.retire(candidate);
-            return Err(VulkanCpuScanoutError(format!("CPU KMS presentation failed: {error}")));
+            return Err(VulkanCpuScanoutError(format!(
+                "CPU KMS presentation failed: {error}"
+            )));
         }
 
         Ok(())
     }
 }
-
