@@ -187,19 +187,43 @@ fn primary_policy_prefers_builtin_panel_before_platform_and_boot_vga() {
 }
 
 #[test]
-fn primary_policy_prefers_hardware_renderer_before_software_candidate() {
+fn primary_policy_prefers_hardware_renderer_before_software_panel_candidate() {
     let mut manager = GpuManager::new();
     let software = path("/dev/dri/card0");
     let hardware = path("/dev/dri/card1");
     manager.register_device(software.clone()).unwrap();
     manager.register_device(hardware.clone()).unwrap();
     manager.set_selection_metadata(&software, GpuSelectionMetadata {
-        preferred_primary: true, ..Default::default()
+        has_builtin_panel: true, ..Default::default()
     }).unwrap();
     manager.set_selection_metadata(&hardware, GpuSelectionMetadata {
         hardware_rendering: true, is_boot_vga: true, ..Default::default()
     }).unwrap();
     assert_eq!(manager.select_primary_by_policy().unwrap().path(), hardware);
+}
+
+
+#[test]
+fn primary_policy_honors_explicit_preference_without_hardware_renderer() {
+    let mut manager = GpuManager::new();
+    let preferred = path("/dev/dri/card0");
+    let hardware = path("/dev/dri/card1");
+    manager.register_device(preferred.clone()).unwrap();
+    manager.register_device(hardware.clone()).unwrap();
+    manager.set_selection_metadata(&preferred, GpuSelectionMetadata {
+        preferred_primary: true,
+        ..Default::default()
+    }).unwrap();
+    manager.set_selection_metadata(&hardware, GpuSelectionMetadata {
+        hardware_rendering: true,
+        has_builtin_panel: true,
+        ..Default::default()
+    }).unwrap();
+
+    assert_eq!(
+        manager.select_primary_by_policy().unwrap().path(),
+        preferred
+    );
 }
 
 #[test]
