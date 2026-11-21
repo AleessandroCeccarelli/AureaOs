@@ -38,8 +38,8 @@ impl AureaCompositor {
             return None;
         }
 
-        let local_x = x.clamp(0.0, f64::from(size.width));
-        let local_y = y.clamp(0.0, f64::from(size.height));
+        let local_x = x.clamp(0.0, f64::from(size.width - 1));
+        let local_y = y.clamp(0.0, f64::from(size.height - 1));
 
         Some(Point::from((
             f64::from(origin.x) + local_x,
