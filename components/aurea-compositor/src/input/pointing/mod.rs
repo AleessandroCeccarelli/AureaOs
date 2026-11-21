@@ -5,6 +5,7 @@
 
 //! Coordinated pointing-device services.
 
+mod applied_settings;
 mod discovery;
 mod device_settings;
 mod mouse;
@@ -18,6 +19,7 @@ mod touchpad;
 mod touchpad_settings;
 
 pub use registry::PointingDeviceService;
+pub use applied_settings::AppliedTouchpadSettings;
 pub use device_settings::PointingDeviceSettings;
 pub use touchscreen::TouchscreenOutputMap;
 pub use touchscreen_calibration::{
