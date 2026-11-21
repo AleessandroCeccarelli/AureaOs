@@ -35,6 +35,7 @@ vulkan = ["smithay/backend_vulkan"]
 
 [dependencies]
 aurea-desktop-api = { path = "../aurea-desktop-api" }
+tracing = "0.1"
 
 [dependencies.smithay]
 version = "0.7"
