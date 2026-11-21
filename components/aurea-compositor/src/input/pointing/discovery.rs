@@ -11,6 +11,8 @@ use aurea_desktop_api::input::{
 };
 use smithay::reexports::input::{Device, DeviceCapability};
 
+use super::{mouse, tablet, touchscreen, touchpad};
+
 /// Builds a public descriptor for a supported pointing device.
 ///
 /// Touchpads are identified through libinput's touchpad-specific configuration
@@ -21,15 +23,13 @@ pub(super) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
     let touch = device.has_capability(DeviceCapability::Touch);
     let tablet_tool = device.has_capability(DeviceCapability::TabletTool);
     let tablet_pad = device.has_capability(DeviceCapability::TabletPad);
-    let touchpad = device.config_tap_finger_count() > 0 || device.config_dwt_is_available();
-
-    let kind = if tablet_tool || tablet_pad {
+    let kind = if tablet::supports(device) {
         InputDeviceKind::Tablet
-    } else if touchpad {
+    } else if touchpad::supports(device) {
         InputDeviceKind::Touchpad
-    } else if touch {
+    } else if touchscreen::supports(device) {
         InputDeviceKind::Touchscreen
-    } else if pointer {
+    } else if mouse::supports(device) {
         InputDeviceKind::Mouse
     } else {
         return None;
