@@ -58,7 +58,11 @@ fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut Way
     }
 
     match event {
-        InputEvent::DeviceAdded { device } => {
+        InputEvent::DeviceAdded { mut device } => {
+            if let Some(report) = pointing::configure_touchpad(&mut device) {
+                tracing::info!(?report, "Applied supported touchpad defaults");
+            }
+
             if let Some(descriptor) = pointing::describe(&device) {
                 tracing::info!(
                     device = %descriptor.name,
