@@ -163,7 +163,16 @@ impl WaylandServer {
     pub fn run(&mut self, shutdown: &AtomicBool) -> io::Result<()> {
         eprintln!("AureaOS compositor: entering Calloop event loop; shutdown_requested={}", shutdown.load(Ordering::Acquire));
         #[cfg(feature = "drm")]
-        self.state.compositor.request_all_output_frames();
+        {
+            eprintln!(
+                "AureaOS compositor: session_active={} discovered_drm_devices={} output_surface_managers={} vulkan_backends={}",
+                self.state.session_active,
+                self.state.udev_device_ids.len(),
+                self.state.drm_surfaces.len(),
+                self.state.vulkan_backends.len()
+            );
+            self.state.compositor.request_all_output_frames();
+        }
 
         let run_result = (|| {
             while !shutdown.load(Ordering::Acquire) {
