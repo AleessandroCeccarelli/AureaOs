@@ -288,3 +288,41 @@ fn runtime_respects_scheduled_night_light_activation() {
     runtime.update_night_light(true);
     assert_eq!(compositor_view.adjustment().warmth_percent(), 50);
 }
+
+#[test]
+fn runtime_event_loop_receives_compositor_interactions() {
+    use aurea_desktop_api::desktop_interaction::desktop_interaction_channel;
+    use aurea_desktop_api::desktop_interaction::DesktopInteraction;
+
+    let (event_bus, event_receiver) = EventBus::new();
+    let (interaction_sender, interaction_receiver) = desktop_interaction_channel();
+    let mut runtime = ShellRuntime::new();
+
+    runtime.start().unwrap();
+    interaction_sender
+        .send(DesktopInteraction::WorkspaceChanged { index: 3 })
+        .unwrap();
+    interaction_sender
+        .send(DesktopInteraction::ShowOverview)
+        .unwrap();
+    event_bus.publish(ShellEvent::ShutdownRequested).unwrap();
+
+    runtime
+        .run_event_loop_with_interactions(event_receiver, interaction_receiver)
+        .unwrap();
+
+    assert_eq!(runtime.desktop_state().workspaces.active(), 3);
+    assert_eq!(
+        runtime.desktop_state().panels.active(),
+        Some(crate::desktop::DesktopPanel::Overview)
+    );
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::WorkspaceChanged { index: 3 })
+    );
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::ShowOverview)
+    );
+}
+
