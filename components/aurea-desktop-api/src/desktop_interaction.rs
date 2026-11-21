@@ -10,8 +10,7 @@ use std::sync::mpsc::{self, Receiver, SendError, Sender, TryRecvError};
 /// A desktop-level intent resolved from a physical input gesture.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DesktopInteraction {
-    PreviousWorkspace,
-    NextWorkspace,
+    WorkspaceChanged { index: u8 },
     ShowOverview,
     ShowContextMenu,
 }
@@ -57,10 +56,10 @@ mod tests {
     #[test]
     fn channel_delivers_interactions_in_order() {
         let (sender, receiver) = desktop_interaction_channel();
-        sender.send(DesktopInteraction::NextWorkspace).unwrap();
+        sender.send(DesktopInteraction::WorkspaceChanged { index: 1 }).unwrap();
         sender.send(DesktopInteraction::ShowOverview).unwrap();
 
-        assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::NextWorkspace));
+        assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::WorkspaceChanged { index: 1 }));
         assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::ShowOverview));
         assert_eq!(receiver.try_recv(), Err(TryRecvError::Empty));
     }
