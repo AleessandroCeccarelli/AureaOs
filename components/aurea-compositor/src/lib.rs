@@ -28,6 +28,8 @@ pub mod service;
 pub mod vulkan;
 
 pub use compositor::AureaCompositor;
-pub use gpu::{GpuAvailability, GpuDevice, GpuManager, GpuManagerError};
+pub use gpu::{
+    GpuAvailability, GpuDevice, GpuManager, GpuManagerError, GpuSelectionMetadata,
+};
 pub use renderer::{RenderBackend, RenderPreference};
 pub use server::WaylandServer;
