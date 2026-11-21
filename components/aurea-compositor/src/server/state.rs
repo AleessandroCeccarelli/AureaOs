@@ -52,7 +52,7 @@ pub(super) struct WaylandState {
     pub(super) display_color: DisplayColorController,
     pub(super) touchpad_settings_receiver: Receiver<TouchpadSettingsCommand>,
 
-    /// Last touchpad profile applied to each live libinput device (IDs only; no device handles).
+    /// Last successfully applied touchpad profile for each connected device.
     #[cfg(feature = "drm")]
     pub(super) applied_touchpad_settings: AppliedTouchpadSettings,
     /// Live libinput handles retained only while their devices remain connected.
