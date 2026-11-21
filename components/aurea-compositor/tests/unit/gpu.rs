@@ -108,14 +108,31 @@ fn output_gpu_is_used_when_no_preference_or_primary_exists() {
 }
 
 #[test]
-fn preferred_gpu_overrides_output_gpu_for_output_selection() {
+fn global_render_preference_does_not_route_an_output_across_gpus() {
     let mut manager = GpuManager::new();
     let output = path("/dev/dri/card0");
     let preferred = path("/dev/dri/card1");
     manager.register_device(output.clone()).unwrap();
     manager.register_device(preferred.clone()).unwrap();
     manager.set_preferred_render_device(&preferred).unwrap();
-    assert_eq!(manager.selected_render_device_for_output(&output).unwrap().path(), preferred);
+
+    assert_eq!(
+        manager.selected_render_device_for_output(&output).unwrap().path(),
+        output
+    );
+}
+
+#[test]
+fn unavailable_output_gpu_is_not_replaced_by_an_unverified_gpu() {
+    let mut manager = GpuManager::new();
+    let output = path("/dev/dri/card0");
+    let preferred = path("/dev/dri/card1");
+    manager.register_device(output.clone()).unwrap();
+    manager.register_device(preferred.clone()).unwrap();
+    manager.set_primary_device(&preferred).unwrap();
+    manager.set_device_availability(&output, GpuAvailability::Unavailable).unwrap();
+
+    assert!(manager.selected_render_device_for_output(&output).is_none());
 }
 
 #[test]
