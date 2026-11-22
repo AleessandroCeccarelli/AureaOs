@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Minimal native AureaOS live-test runtime and in-image Rust build toolchain.
+# Minimal native AureaOS live-test runtime and temporary build dependencies.
 live-boot
 live-config
 systemd-sysv
@@ -28,7 +28,6 @@ libxkbcommon-dev
 libwayland-dev
 build-essential
 pkg-config
-rustc
-cargo
+curl
 glslang-tools
 ca-certificates
