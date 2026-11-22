@@ -8,6 +8,7 @@ OUTPUT_DIR="${OUTPUT_DIR:-$HOME/Documenti}"
 BUILD_PARENT="${BUILD_PARENT:-${TMPDIR:-/var/tmp}/aureaos-podman-build}"
 readonly BUILD_DIR="$BUILD_PARENT/build"
 readonly IMAGE="docker.io/library/debian:trixie-slim"
+RESUME="${RESUME:-0}"
 
 usage() {
     cat <<'USAGE'
@@ -16,12 +17,16 @@ Build the AureaOS Debian Live ISO inside a disposable Debian Trixie Podman conta
 Usage:
   bash tools/iso/build-live-iso-podman.sh
 
+Resume a failed build:
+  RESUME=1 BUILD_PARENT=/path/to/previous-build bash tools/iso/build-live-iso-podman.sh
+
 Environment overrides:
   OUTPUT_DIR   Destination directory (default: ~/Documenti)
   BUILD_PARENT Parent for temporary build data (default: /var/tmp/aureaos-podman-build)
+  RESUME       Set to 1 to continue an existing failed build directory
 
 The repository is mounted read-only. ISO output and temporary build data stay
-outside the repository. A failed build preserves its build directory for diagnosis.
+outside the repository. Failed builds preserve their workspace and caches.
 USAGE
 }
 
@@ -38,6 +43,11 @@ for command_name in podman git realpath; do
         exit 1
     }
 done
+
+[[ "$RESUME" == 0 || "$RESUME" == 1 ]] || {
+    echo "RESUME must be 0 or 1." >&2
+    exit 2
+}
 
 [[ -f "$REPO_ROOT/.git/HEAD" || -f "$REPO_ROOT/.git" ]] || {
     echo "A Git working tree is required: $REPO_ROOT" >&2
@@ -64,18 +74,29 @@ case "$BUILD_PARENT/" in
     "$REPO_ROOT/"*) echo "Build directory must be outside the repository." >&2; exit 2 ;;
 esac
 
-if [[ -e "$BUILD_DIR" || -L "$BUILD_DIR" ]]; then
+if [[ "$RESUME" == 1 ]]; then
+    [[ -d "$BUILD_DIR/config" ]] || {
+        echo "Cannot resume: existing build workspace not found at $BUILD_DIR" >&2
+        exit 1
+    }
+elif [[ -e "$BUILD_DIR" || -L "$BUILD_DIR" ]]; then
     echo "Build directory already exists: $BUILD_DIR" >&2
-    echo "Existing data will not be removed. Inspect it or choose another BUILD_PARENT." >&2
+    echo "Set RESUME=1 to continue it, or choose another BUILD_PARENT." >&2
     exit 1
 fi
 
 echo "Repository: $REPO_ROOT"
 echo "ISO destination: $OUTPUT_DIR/AureaOS.iso"
 echo "Temporary build: $BUILD_DIR"
+if [[ "$RESUME" == 1 ]]; then
+    echo "Mode: resume existing live-build workspace (chroot and caches preserved)"
+else
+    echo "Mode: fresh build"
+fi
 echo "Starting rootful Podman; the container needs mount/chroot privileges for live-build."
 
 sudo podman run --rm --privileged --security-opt label=disable \
+    --env "RESUME=$RESUME" \
     --volume "$REPO_ROOT:/workspace:ro" \
     --volume "$OUTPUT_DIR:/output:rw" \
     --volume "$BUILD_PARENT:/build-parent:rw" \
@@ -86,7 +107,11 @@ sudo podman run --rm --privileged --security-opt label=disable \
         apt-get update
         apt-get install -y live-build git tar sudo ca-certificates xorriso
         git config --global --add safe.directory /workspace
-        bash tools/iso/build-live-iso.sh --output-dir /output --build-dir /build-parent/build
+        BUILD_ARGS=(--output-dir /output --build-dir /build-parent/build)
+        if [[ "$RESUME" == 1 ]]; then
+            BUILD_ARGS+=(--resume)
+        fi
+        bash tools/iso/build-live-iso.sh "${BUILD_ARGS[@]}"
     '
 
 echo
