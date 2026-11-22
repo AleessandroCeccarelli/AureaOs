@@ -1,0 +1,40 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+set -eu
+
+GRUB_CONFIG=binary/boot/grub/grub.cfg
+LIVE_ENTRY='Live system (amd64)'
+
+if [ ! -f "$GRUB_CONFIG" ]; then
+    echo "Expected GRUB configuration was not generated: $GRUB_CONFIG" >&2
+    exit 1
+fi
+
+if ! grep -Fq "menuentry \"$LIVE_ENTRY\"" "$GRUB_CONFIG"; then
+    echo "Could not find the expected Debian Live GRUB entry." >&2
+    exit 1
+fi
+
+sed -i \
+    -e 's/Live system (amd64 fail-safe mode)/AureaOS (recovery mode)/g' \
+    -e 's/Live system (amd64)/AureaOS/g' \
+    "$GRUB_CONFIG"
+
+if grep -Fq "Live system (amd64)" "$GRUB_CONFIG"; then
+    echo "A Debian Live menu label remains in the GRUB configuration." >&2
+    exit 1
+fi
+
+if grep -q '^set timeout=' "$GRUB_CONFIG"; then
+    sed -i 's/^set timeout=.*/set timeout=5/' "$GRUB_CONFIG"
+else
+    echo "GRUB timeout setting was not found; refusing an unverified boot menu." >&2
+    exit 1
+fi
+
+if grep -q '^set default=' "$GRUB_CONFIG"; then
+    sed -i 's/^set default=.*/set default=0/' "$GRUB_CONFIG"
+else
+    echo "GRUB default entry setting was not found; refusing an unverified boot menu." >&2
+    exit 1
+fi
