@@ -410,6 +410,7 @@ mod owner_tests {
         assert!(owner.end(first, PointerGestureKind::Swipe));
         assert!(!owner.owns(first, PointerGestureKind::Swipe));
     }
+
     #[test]
     fn completed_three_finger_swipe_reaches_shell_as_workspace_change() {
         use aurea_desktop_api::desktop_interaction::{
@@ -453,5 +454,4 @@ mod owner_tests {
         assert_eq!(compositor.active_workspace(), 0);
         assert_eq!(receiver.try_recv(), Err(TryRecvError::Empty));
     }
-
 }
