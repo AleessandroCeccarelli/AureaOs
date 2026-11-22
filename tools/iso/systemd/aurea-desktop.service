@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # AureaOS native graphical session.
-# The PAM login session lets libseat use systemd-logind without a display manager.
+# PAM registers the session with logind so libseat can broker device access.
 
 [Unit]
 Description=AureaOS Native Desktop Session
@@ -17,7 +17,7 @@ Type=simple
 User=aurea
 PAMName=login
 TTYPath=/dev/tty1
-StandardInput=tty
+StandardInput=tty-force
 StandardOutput=journal
 StandardError=journal
 TTYReset=yes
