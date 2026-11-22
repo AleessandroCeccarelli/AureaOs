@@ -36,7 +36,7 @@ while (($#)); do
     esac
 done
 
-for command_name in lb git tar sudo sha256sum; do
+for command_name in lb git tar sudo sha256sum realpath; do
     command -v "$command_name" >/dev/null 2>&1 || {
         echo "Required build command not found: $command_name" >&2
         exit 1
@@ -67,14 +67,24 @@ if [[ "$BUILD_ROOT" != /* || "$OUTPUT_DIR" != /* ]]; then
     exit 2
 fi
 
-mkdir -p -- "$OUTPUT_DIR"
-OUTPUT_DIR="$(cd -- "$OUTPUT_DIR" && pwd -P)"
+# Resolve paths before creating anything, including through existing symlinks.
+OUTPUT_DIR="$(realpath -m -- "$OUTPUT_DIR")"
+BUILD_ROOT="$(realpath -m -- "$BUILD_ROOT")"
+
 case "$OUTPUT_DIR/" in
     "$REPO_ROOT/"*)
         echo "Output directory must be outside the Git repository: $OUTPUT_DIR" >&2
         exit 2
         ;;
 esac
+case "$BUILD_ROOT/" in
+    "$REPO_ROOT/"*)
+        echo "Build directory must be outside the Git repository: $BUILD_ROOT" >&2
+        exit 2
+        ;;
+esac
+
+mkdir -p -- "$OUTPUT_DIR"
 
 if [[ -e "$BUILD_ROOT" || -L "$BUILD_ROOT" ]]; then
     echo "Build directory already exists: $BUILD_ROOT" >&2
@@ -82,13 +92,6 @@ if [[ -e "$BUILD_ROOT" || -L "$BUILD_ROOT" ]]; then
     exit 1
 fi
 mkdir -p -- "$BUILD_ROOT"
-BUILD_ROOT="$(cd -- "$BUILD_ROOT" && pwd -P)"
-case "$BUILD_ROOT/" in
-    "$REPO_ROOT/"*)
-        echo "Build directory must be outside the Git repository: $BUILD_ROOT" >&2
-        exit 2
-        ;;
-esac
 CONFIG_DIR="$BUILD_ROOT/config"
 SOURCE_DIR="$CONFIG_DIR/config/includes.chroot/usr/src/aureaos"
 
