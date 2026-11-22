@@ -1,0 +1,15 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Run AureaOS and expose a recovery shell only if the desktop exits.
+
+if /usr/local/bin/aurea-desktop; then
+    status=0
+else
+    status=$?
+fi
+
+message="AureaOS desktop exited with status ${status}. Recovery shell started on tty1."
+logger --tag aurea-live-session -- "$message" || true
+printf '\n%s\n' "$message" > /dev/tty1 2>/dev/null || true
+
+exec /bin/bash --noprofile --norc </dev/tty1 >/dev/tty1 2>&1
