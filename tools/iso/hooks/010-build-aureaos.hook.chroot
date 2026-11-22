@@ -3,9 +3,16 @@
 set -eu
 
 SOURCE=/usr/src/aureaos
+SYSTEMD_SOURCE=/usr/src/aureaos/tools/iso/systemd/aurea-desktop.service
+SESSION_SOURCE=/usr/src/aureaos/tools/iso/scripts/aurea-live-session
 
 if [ ! -f "$SOURCE/Cargo.toml" ] || [ ! -f "$SOURCE/Cargo.lock" ]; then
     echo "AureaOS source tree or Cargo.lock is missing." >&2
+    exit 1
+fi
+
+if [ ! -f "$SYSTEMD_SOURCE" ] || [ ! -f "$SESSION_SOURCE" ]; then
+    echo "AureaOS Live session integration files are missing." >&2
     exit 1
 fi
 
@@ -16,37 +23,18 @@ export CARGO_HTTP_TIMEOUT=120
 cd "$SOURCE"
 cargo build --release --locked --package aurea-desktop --bin aurea-desktop
 install -D -m 0755 target/release/aurea-desktop /usr/local/bin/aurea-desktop
+install -D -m 0644 "$SYSTEMD_SOURCE" /etc/systemd/system/aurea-desktop.service
+install -D -m 0755 "$SESSION_SOURCE" /usr/local/bin/aurea-live-session
 
-getent group render >/dev/null 2>&1 || groupadd --system render
-getent group video >/dev/null 2>&1 || groupadd --system video
-getent group input >/dev/null 2>&1 || groupadd --system input
 if ! id aurea >/dev/null 2>&1; then
-    useradd --create-home --shell /bin/bash --groups video,input,render aurea
+    useradd --create-home --shell /bin/bash aurea
 fi
 
-install -d -m 0755 /etc/systemd/system/getty@tty1.service.d
-cat > /etc/systemd/system/getty@tty1.service.d/autologin.conf <<'EOF'
-[Service]
-ExecStart=
-ExecStart=-/sbin/agetty --autologin aurea --noclear %I $TERM
-EOF
-
-cat > /usr/local/bin/aurea-live-session <<'EOF'
-#!/bin/bash
-/usr/local/bin/aurea-desktop
-status=$?
-printf '\nAureaOS desktop exited with status %s. A recovery shell is available.\n' "$status"
-exec /bin/bash --noprofile --norc
-EOF
-chmod 0755 /usr/local/bin/aurea-live-session
-
-cat > /home/aurea/.bash_profile <<'EOF'
-if [[ "$(tty 2>/dev/null)" == "/dev/tty1" ]]; then
-    exec /usr/local/bin/aurea-live-session
-fi
-EOF
-chown aurea:aurea /home/aurea/.bash_profile
-chmod 0644 /home/aurea/.bash_profile
+# PAM creates a logind session on tty1; libseat then brokers DRM and input
+# device access without running the compositor as root or granting broad groups.
+systemctl --root=/ mask getty@.service
+systemctl --root=/ enable aurea-desktop.service
+systemctl --root=/ set-default multi-user.target
 
 # Remove the temporary compiler and headers; retain only runtime libraries.
 DEBIAN_FRONTEND=noninteractive apt-get purge -y -- \
