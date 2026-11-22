@@ -410,4 +410,48 @@ mod owner_tests {
         assert!(owner.end(first, PointerGestureKind::Swipe));
         assert!(!owner.owns(first, PointerGestureKind::Swipe));
     }
+    #[test]
+    fn completed_three_finger_swipe_reaches_shell_as_workspace_change() {
+        use aurea_desktop_api::desktop_interaction::{
+            DesktopInteraction, desktop_interaction_channel,
+        };
+        use smithay::reexports::wayland_server::Display;
+
+        let display = Display::<super::AureaCompositor>::new()
+            .expect("Wayland display should initialize for the gesture integration test");
+        let (sender, receiver) = desktop_interaction_channel();
+        let mut compositor = super::AureaCompositor::new(&display.handle(), sender);
+        let device = InputDeviceId(42);
+
+        compositor.handle_swipe_begin(device, 3, 10);
+        compositor.handle_swipe_update(device, -80.0, 0.0, 11);
+        compositor.handle_swipe_end(device, false, 12);
+
+        assert_eq!(compositor.active_workspace(), 1);
+        assert_eq!(
+            receiver.try_recv(),
+            Ok(DesktopInteraction::WorkspaceChanged { index: 1 })
+        );
+    }
+
+    #[test]
+    fn cancelled_three_finger_swipe_does_not_reach_shell() {
+        use aurea_desktop_api::desktop_interaction::desktop_interaction_channel;
+        use smithay::reexports::wayland_server::Display;
+        use std::sync::mpsc::TryRecvError;
+
+        let display = Display::<super::AureaCompositor>::new()
+            .expect("Wayland display should initialize for the cancelled gesture test");
+        let (sender, receiver) = desktop_interaction_channel();
+        let mut compositor = super::AureaCompositor::new(&display.handle(), sender);
+        let device = InputDeviceId(43);
+
+        compositor.handle_swipe_begin(device, 3, 20);
+        compositor.handle_swipe_update(device, -100.0, 0.0, 21);
+        compositor.handle_swipe_end(device, true, 22);
+
+        assert_eq!(compositor.active_workspace(), 0);
+        assert_eq!(receiver.try_recv(), Err(TryRecvError::Empty));
+    }
+
 }
