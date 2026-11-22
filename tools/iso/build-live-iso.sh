@@ -17,8 +17,9 @@ Usage:
 
 By default, the ISO and checksum are saved in ~/Documenti as
 AureaOS.iso and AureaOS.iso.sha256. Build files stay outside the repository.
-The script builds an amd64 Debian 13 (Trixie) hybrid ISO and never writes
-to USB devices or modifies the host operating system.
+The amd64 ISO boots with GRUB 2 on BIOS and UEFI systems, selects AureaOS
+automatically after five seconds, and starts the native desktop session.
+The script never writes to USB devices or modifies the host operating system.
 USAGE
 }
 
@@ -45,7 +46,19 @@ done
 [[ -f "$REPO_ROOT/Cargo.lock" ]] || { echo "Cargo.lock is missing." >&2; exit 1; }
 [[ -f "$SCRIPT_DIR/package-lists/aureaos.list.chroot" ]] || { echo "Live package list is missing." >&2; exit 1; }
 [[ -f "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" ]] || {
-    echo "The chroot build hook is missing: tools/iso/hooks/010-build-aureaos.hook.chroot" >&2
+    echo "The chroot build hook is missing." >&2
+    exit 1
+}
+[[ -f "$SCRIPT_DIR/hooks/020-brand-boot-menu.hook.binary" ]] || {
+    echo "The GRUB branding hook is missing." >&2
+    exit 1
+}
+[[ -f "$SCRIPT_DIR/systemd/aurea-desktop.service" ]] || {
+    echo "The AureaOS systemd session unit is missing." >&2
+    exit 1
+}
+[[ -f "$SCRIPT_DIR/scripts/aurea-live-session" ]] || {
+    echo "The AureaOS recovery launcher is missing." >&2
     exit 1
 }
 
@@ -94,10 +107,12 @@ trap cleanup EXIT
 mkdir -p "$CONFIG_DIR/config/package-lists" "$CONFIG_DIR/config/hooks/live" "$SOURCE_DIR"
 cp "$SCRIPT_DIR/package-lists/aureaos.list.chroot" "$CONFIG_DIR/config/package-lists/aureaos.list.chroot"
 cp "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" "$CONFIG_DIR/config/hooks/live/010-build-aureaos.hook.chroot"
+cp "$SCRIPT_DIR/hooks/020-brand-boot-menu.hook.binary" "$CONFIG_DIR/config/hooks/live/020-brand-boot-menu.hook.binary"
 chmod 0755 "$CONFIG_DIR/config/hooks/live/010-build-aureaos.hook.chroot"
+chmod 0755 "$CONFIG_DIR/config/hooks/live/020-brand-boot-menu.hook.binary"
 
 echo "Preparing the exact committed AureaOS source from HEAD..."
-git -C "$REPO_ROOT" archive --format=tar HEAD Cargo.toml Cargo.lock components |
+git -C "$REPO_ROOT" archive --format=tar HEAD Cargo.toml Cargo.lock components tools/iso/systemd tools/iso/scripts |
     tar -xf - -C "$SOURCE_DIR"
 
 cd "$CONFIG_DIR"
@@ -106,7 +121,7 @@ lb config \
     --distribution trixie \
     --architectures amd64 \
     --binary-image iso-hybrid \
-    --bootloaders "syslinux grub-efi" \
+    --bootloaders "grub-pc grub-efi" \
     --archive-areas "main contrib non-free non-free-firmware" \
     --firmware-chroot true \
     --firmware-binary true \
@@ -114,6 +129,8 @@ lb config \
     --linux-flavours amd64 \
     --debian-installer none \
     --apt-recommends false \
+    --bootappend-live "boot=live components quiet loglevel=3 systemd.show_status=false nocomponents=user-setup nottyautologin" \
+    --bootappend-live-failsafe "boot=live components nomodeset loglevel=7" \
     --iso-application "AureaOS Native Blue Test" \
     --iso-volume "AUREAOS_BLUE_TEST" \
     --image-name "$IMAGE_NAME"
