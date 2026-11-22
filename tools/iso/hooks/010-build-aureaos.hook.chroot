@@ -23,13 +23,21 @@ if [ ! -f /usr/lib/x86_64-linux-gnu/security/pam_systemd.so ]; then
 fi
 
 export CARGO_HOME=/var/cache/aureaos-cargo
+export RUSTUP_HOME=/var/cache/aureaos-rustup
 export CARGO_NET_RETRY=3
 export CARGO_HTTP_TIMEOUT=120
 export CARGO_BUILD_JOBS=1
 export CARGO_INCREMENTAL=0
 
-cd "$SOURCE"
-cargo build --release --locked --package aurea-desktop --bin aurea-desktop
+# Debian Trixie's packaged Rust compiler is older than the MSRV of some
+# locked AureaOS dependencies. Use the official stable toolchain only here.
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
+    sh -s -- -y --profile minimal --default-toolchain stable --no-modify-path
+export PATH="$CARGO_HOME/bin:$PATH"
+
+rustc +stable --version
+cargo +stable build --release --locked --package aurea-desktop --bin aurea-desktop
+
 install -D -m 0755 target/release/aurea-desktop /usr/local/bin/aurea-desktop
 install -D -m 0644 "$SYSTEMD_SOURCE" /etc/systemd/system/aurea-desktop.service
 install -D -m 0644 "$PAM_SOURCE" /etc/pam.d/aurea-desktop
@@ -47,10 +55,10 @@ systemctl --root=/ set-default multi-user.target
 
 # Remove the temporary compiler and headers; retain only runtime libraries.
 DEBIAN_FRONTEND=noninteractive apt-get purge -y -- \
-    rustc cargo build-essential pkg-config glslang-tools \
+    curl build-essential pkg-config glslang-tools \
     libvulkan-dev libudev-dev libinput-dev libseat-dev libgbm-dev \
     libdrm-dev libxkbcommon-dev libwayland-dev
 DEBIAN_FRONTEND=noninteractive apt-get autoremove -y --purge
 
-# Keep build sources and Cargo caches out of the booted live system.
-rm -rf "$SOURCE" "$CARGO_HOME"
+# Keep build sources, Rust toolchains and Cargo caches out of the live system.
+rm -rf "$SOURCE" "$CARGO_HOME" "$RUSTUP_HOME"
