@@ -247,3 +247,15 @@ The mechanisms for the AureaOS system update channel and the complete store inte
 8. Modular architecture and clear ownership between system components.
 9. Consistent and accessible design across first-party applications.
 10. Honest reporting of implementation status, limitations, and licensing.
+
+
+## Operational update — 2026-11-22
+
+The immediate agreed priority is AureaOS desktop development. ISO generation work is paused until the Fedora investigation session planned for Friday, 27 November 2026. Do not start new ISO builds or modify ISO scripts during desktop sessions unless explicitly requested.
+
+The first Debian Trixie Live image was generated and verified as an ISO containing BIOS/UEFI boot structures, but the first real Ventoy boot on the Lenovo laptop stopped in initramfs:
+`can't open '/scripts/live': No such file or directory`, followed by an init kernel panic. The image is therefore not currently considered a bootable Live system.
+
+Friday's work must begin by inspecting the existing ISO's initramfs read-only. Only after identifying the cause should the pipeline be changed. The fix must also preserve the workspace and caches after successful builds and validate initramfs contents, not merely the existence of an ISO file.
+
+See the [development log](docs/development/DEVELOPMENT-LOG.md) for the chronology and Git references.
