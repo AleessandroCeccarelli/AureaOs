@@ -6,6 +6,7 @@ systemd-sysv
 udev
 dbus
 linux-image-amd64
+initramfs-tools
 firmware-amd-graphics
 libvulkan1
 mesa-vulkan-drivers

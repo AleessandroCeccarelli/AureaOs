@@ -59,12 +59,12 @@ systemctl --root=/ mask getty@.service
 systemctl --root=/ enable aurea-desktop.service
 systemctl --root=/ set-default multi-user.target
 
-# Remove the temporary compiler and headers; retain only runtime libraries.
+# Remove only explicitly listed build tools and development headers.
+# Do not run autoremove: runtime dependencies must remain in the live image.
 DEBIAN_FRONTEND=noninteractive apt-get purge -y -- \
     curl build-essential pkg-config glslang-tools \
     libvulkan-dev libudev-dev libinput-dev libseat-dev libgbm-dev \
     libdrm-dev libxkbcommon-dev libwayland-dev
-DEBIAN_FRONTEND=noninteractive apt-get autoremove -y --purge
 
 # Keep build sources, Rust toolchains and Cargo caches out of the live system.
 rm -rf "$SOURCE" "$CARGO_HOME" "$RUSTUP_HOME"

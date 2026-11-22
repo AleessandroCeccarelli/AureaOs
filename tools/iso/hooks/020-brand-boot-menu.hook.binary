@@ -1,37 +1,64 @@
+
+
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-or-later
 set -eu
 
-GRUB_CONFIG=binary/boot/grub/grub.cfg
 LIVE_ENTRY='Live system (amd64)'
+BRANDED_ENTRY='AureaOS'
 
-if [ ! -f "$GRUB_CONFIG" ]; then
-    echo "Expected GRUB configuration was not generated: $GRUB_CONFIG" >&2
+# live-build può eseguire l'hook dalla root del workspace
+# oppure direttamente dalla directory binary.
+if [ -f "binary/boot/grub/grub.cfg" ]; then
+    GRUB_DIR="binary/boot/grub"
+elif [ -f "boot/grub/grub.cfg" ]; then
+    GRUB_DIR="boot/grub"
+else
+    echo "GRUB configuration not found in the expected locations." >&2
     exit 1
 fi
 
+GRUB_CONFIG="$GRUB_DIR/grub.cfg"
+GRUB_GLOBAL_CONFIG="$GRUB_DIR/config.cfg"
+
+if [ ! -f "$GRUB_GLOBAL_CONFIG" ]; then
+    echo "GRUB global configuration is missing: $GRUB_GLOBAL_CONFIG" >&2
+    exit 1
+fi
+
+# Verify the Debian Live entry before changing anything.
 if ! grep -Fq "menuentry \"$LIVE_ENTRY\"" "$GRUB_CONFIG"; then
     echo "Could not find the expected Debian Live GRUB entry." >&2
     exit 1
 fi
 
-sed -i 's/Live system (amd64)/AureaOS/g' "$GRUB_CONFIG"
+# Apply AureaOS branding.
+sed -i "s/$LIVE_ENTRY/$BRANDED_ENTRY/g" "$GRUB_CONFIG"
 
-if grep -Fq "Live system (amd64)" "$GRUB_CONFIG"; then
-    echo "A Debian Live menu label remains in the GRUB configuration." >&2
+if grep -Fq "$LIVE_ENTRY" "$GRUB_CONFIG"; then
+    echo "A Debian Live menu label remains in GRUB configuration." >&2
     exit 1
 fi
 
-if grep -Eq '^[[:space:]]*set timeout=' "$GRUB_CONFIG"; then
-    sed -i -E 's/^[[:space:]]*set timeout=.*/set timeout=5/' "$GRUB_CONFIG"
+# Set the default entry in the global configuration.
+if grep -Eq '^[[:space:]]*set default=' "$GRUB_GLOBAL_CONFIG"; then
+    sed -i -E 's/^[[:space:]]*set default=.*/set default=0/' \
+        "$GRUB_GLOBAL_CONFIG"
 else
-    echo "GRUB timeout setting was not found; refusing an unverified boot menu." >&2
-    exit 1
+    printf '\nset default=0\n' >> "$GRUB_GLOBAL_CONFIG"
 fi
 
-if grep -Eq '^[[:space:]]*set default=' "$GRUB_CONFIG"; then
-    sed -i -E 's/^[[:space:]]*set default=.*/set default=0/' "$GRUB_CONFIG"
+# Configure a five-second boot menu timeout.
+if grep -Eq '^[[:space:]]*set timeout=' "$GRUB_GLOBAL_CONFIG"; then
+    sed -i -E 's/^[[:space:]]*set timeout=.*/set timeout=5/' \
+        "$GRUB_GLOBAL_CONFIG"
 else
-    echo "GRUB default entry setting was not found; refusing an unverified boot menu." >&2
-    exit 1
+    printf '\nset timeout=5\n' >> "$GRUB_GLOBAL_CONFIG"
 fi
+
+# Final validation.
+grep -Fq "menuentry \"$BRANDED_ENTRY\"" "$GRUB_CONFIG"
+grep -Eq '^[[:space:]]*set default=0$' "$GRUB_GLOBAL_CONFIG"
+grep -Eq '^[[:space:]]*set timeout=5$' "$GRUB_GLOBAL_CONFIG"
+
+echo "AureaOS GRUB configuration successfully branded."
