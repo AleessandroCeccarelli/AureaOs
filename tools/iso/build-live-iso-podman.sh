@@ -32,7 +32,7 @@ if (($#)); then
     case "$1" in --help|-h) usage; exit 0 ;; *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;; esac
 fi
 
-for command_name in podman git realpath; do
+for command_name in podman git realpath flock; do
     command -v "$command_name" >/dev/null 2>&1 || {
         echo "Required host command not found: $command_name" >&2
         exit 1
@@ -60,6 +60,14 @@ fi
 OUTPUT_DIR="$(realpath -m -- "$OUTPUT_DIR")"
 BUILD_PARENT="$(realpath -m -- "$BUILD_PARENT")"
 mkdir -p -- "$OUTPUT_DIR" "$BUILD_PARENT"
+
+# Serialize access to this persistent workspace. A second container must
+# never enter live-build while the first one is mounting or changing chroot.
+exec 9>"$BUILD_PARENT/.aureaos-live-build.lock"
+if ! flock -n 9; then
+    echo "Another AureaOS ISO build is already using: $BUILD_PARENT" >&2
+    exit 1
+fi
 
 case "$OUTPUT_DIR/" in "$REPO_ROOT/"*) echo "Output directory must be outside the repository." >&2; exit 2 ;; esac
 case "$BUILD_PARENT/" in "$REPO_ROOT/"*) echo "Build directory must be outside the repository." >&2; exit 2 ;; esac
