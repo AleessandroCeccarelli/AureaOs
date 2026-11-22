@@ -120,6 +120,19 @@ if "$RESUME"; then
         exit 1
     }
     echo "Resuming Debian Live workspace: $BUILD_ROOT"
+
+    # The previous Podman container may have been interrupted while live-build
+    # held its workspace lock. The wrapper serializes all managed builds with
+    # flock before reaching this point, so a leftover lock is stale here.
+    if [[ -e "$BUILD_ROOT/.lock" ]]; then
+        if [[ ! -f "$BUILD_ROOT/.lock" || -L "$BUILD_ROOT/.lock" ]]; then
+            echo "Unexpected live-build lock path; refusing unsafe recovery." >&2
+            exit 1
+        fi
+        echo "Removing stale live-build workspace lock from the interrupted run."
+        rm -f -- "$BUILD_ROOT/.lock"
+    fi
+
     refresh_inputs
 
     # If the previous chroot hook failed, live-build may consider the include
