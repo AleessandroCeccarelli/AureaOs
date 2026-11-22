@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 # AureaOS native graphical session.
-# PAM registers the session with logind so libseat can broker device access.
+# The dedicated PAM service registers this Wayland session with logind.
 
 [Unit]
 Description=AureaOS Native Desktop Session
@@ -15,7 +15,7 @@ ConditionFileIsExecutable=/usr/local/bin/aurea-live-session
 [Service]
 Type=simple
 User=aurea
-PAMName=login
+PAMName=aurea-desktop
 TTYPath=/dev/tty1
 StandardInput=tty-force
 StandardOutput=journal
@@ -27,6 +27,11 @@ UtmpIdentifier=tty1
 UtmpMode=user
 Environment=RUST_BACKTRACE=1
 Environment=LIBSEAT_BACKEND=logind
+Environment=XDG_SESSION_TYPE=wayland
+Environment=XDG_SESSION_CLASS=user
+Environment=XDG_SESSION_DESKTOP=AureaOS
+Environment=XDG_SEAT=seat0
+Environment=XDG_VTNR=1
 ExecStart=/usr/local/bin/aurea-live-session
 KillMode=control-group
 TimeoutStopSec=10
