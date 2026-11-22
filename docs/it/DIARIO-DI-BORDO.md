@@ -75,3 +75,94 @@ Per ogni nuova voce utilizzare questa struttura:
 - **Prossime attività**
 
 Non registrare come completate attività che sono soltanto intenzioni.
+
+
+## 22 novembre 2026 — Prima generazione ISO e primo avvio reale
+
+### Contesto e decisione operativa
+
+La giornata è stata dedicata alla prima generazione completa dell'immagine Live Debian Trixie e alla sua prova reale tramite Ventoy. L'utente ha confermato che il flusso abituale è copiare il file ISO nella partizione dati Ventoy e selezionarlo dal menu di avvio: non va proposta la preparazione di una nuova chiavetta.
+
+La generazione della ISO ha richiesto numerosi interventi sul layout live-build, sul recupero del workspace e sulla gestione dei lock. L'esito positivo della build non è stato sufficiente a dimostrare che il sistema Live fosse avviabile.
+
+### Interventi e riferimenti Git
+
+Commit pubblicati su `main` nella sessione:
+- `47fd5ed7` — sincronizzazione delle modifiche locali del repository.
+- `6bfc72c7` — test d'integrazione per verificare che i gesti touchpad raggiungano la shell desktop.
+- `ad524e94` — sistemazione della formattazione dei test d'integrazione dei gesti.
+- `f38bd6ac` — serializzazione dell'accesso al workspace live-build persistente tramite lock.
+- `63c4bed8` — recupero del lock live-build obsoleto durante la ripresa di una build interrotta.
+
+File ISO principali coinvolti:
+- `tools/iso/build-live-iso.sh`
+- `tools/iso/build-live-iso-podman.sh`
+- `tools/iso/hooks/010-build-aureaos.hook.chroot`
+- `tools/iso/hooks/020-brand-boot-menu.hook.binary`
+- `tools/iso/package-lists/aureaos.list.chroot`
+
+Il workspace live-build era stato inizialmente creato con una struttura annidata non canonica (`config/config`). Lo script è stato aggiornato per migrare in modo prudente il vecchio workspace al layout Debian standard, preservando chroot, marker di fase e cache quando possibile. Il wrapper Podman ora serializza l'accesso al workspace con `flock`; lo script interno controlla e rimuove un lock residuo solo nel percorso di resume e solo se è un file regolare non symlink.
+
+### Esito della generazione
+
+Il log di build fornito dall'utente il 22 novembre riporta:
+- recupero del problema `lb chroot_devpts`;
+- kernel e initramfs generati;
+- esecuzione riuscita dell'hook di personalizzazione GRUB;
+- creazione dell'immagine tramite `xorriso`;
+- messaggio finale `P: Build completed successfully`.
+
+Artefatti indicati:
+- `~/Documenti/AureaOS.iso`
+- `~/Documenti/AureaOS.iso.sha256`
+- SHA-256: `1d929c0f99b665f1307191d9502f5c094a25452e32dd28615309feb8350c0704`
+
+Controlli eseguiti su Fedora:
+- ISO di circa 350 MB.
+- `sha256sum -c` ha restituito `AureaOS.iso: OK`.
+- `file` ha riconosciuto ISO 9660 con settore di boot DOS/MBR e volume `AUREAOS_BLUE_TEST`.
+- Dopo installazione di `xorriso`, il report El Torito ha rilevato GRUB BIOS (`/boot/grub/grub_eltorito`), immagine EFI (`/boot/grub/efi.img`), MBR protettivo e GPT.
+
+Questi controlli provano la creazione e la presenza delle strutture di boot nell'immagine; non provano il corretto avvio del sistema Live.
+
+### Primo avvio tramite Ventoy: problema bloccante
+
+Sul portatile Lenovo, Ventoy ha caricato GRUB e il kernel Debian `6.12.117+deb13-amd64`. Il boot si è poi interrotto prima dell'avvio del desktop.
+
+Messaggi fotografati:
+```
+init: line 249: can't open '/scripts/live': No such file or directory
+Kernel panic - not syncing: Attempted to kill init: exitcode=0x00000200
+```
+
+Conclusione verificata: durante l'esecuzione di init manca il percorso `/scripts/live` nell'ambiente initramfs. Il kernel panic è conseguenza del fallimento del processo init. Non è stato dimostrato un problema GPU, Vulkan o Smithay: il sistema non ha ancora raggiunto quella fase. La causa precisa deve essere determinata ispezionando l'initramfs e il contenuto del chroot.
+
+### Rilievi sullo script da correggere
+
+L'ispezione dei file su `main` ha evidenziato un punto importante: `build-live-iso.sh` rimuove automaticamente l'intero `BUILD_ROOT` quando `lb build` termina con codice zero. Questo elimina anche workspace e cache dopo una build riuscita, vanificando il riutilizzo incrementale. La pulizia dovrà diventare esplicita e opzionale, non automatica.
+
+Inoltre il controllo finale attuale verifica essenzialmente che esista una ISO non vuota e che live-build termini con successo. Non controlla che l'initramfs contenga davvero `/scripts/live`, gli hook di live-boot, il kernel previsto o parametri GRUB coerenti. Una build non dovrà più essere dichiarata valida solo in base all'esistenza del file ISO.
+
+### Decisioni e priorità concordate
+
+- Da lunedì 23 novembre il lavoro torna esclusivamente alla costruzione del desktop AureaOS su GitHub.
+- Nessuna build ISO e nessun intervento sugli script ISO durante le sessioni desktop, salvo richiesta esplicita.
+- Venerdì 27 novembre si riprende la verifica ISO su Fedora, prima ispezionando l'immagine già prodotta e l'initramfs, senza ricompilare alla cieca.
+- La prova continua tramite Ventoy, copiando direttamente la ISO nella sua partizione dati.
+- Le modifiche restano su `main`; non eseguire build/test Rust remoti. L'utente eseguirà `cargo fmt`, controlli e test su Fedora quando concordato.
+- Mantenere modularità rigorosa: un file, una responsabilità; script di build suddivisi in moduli piccoli e coordinatore limitato.
+
+### Prossime attività
+
+**Lavoro desktop (da lunedì):** proseguire lo sviluppo del desktop e delle sue funzionalità, senza riaprire il filone ISO.
+
+**Sessione ISO di venerdì:**
+1. Montare la ISO esistente in sola lettura e individuare kernel/initramfs.
+2. Ispezionare il contenuto initramfs per `scripts/live`, hook e moduli live-boot.
+3. Se necessario, ispezionare chroot/workspace; non presumere che il workspace sia conservato, perché il cleanup attuale lo elimina dopo il successo.
+4. Verificare pacchetti `live-boot`, `live-config`, hook initramfs-tools, parametri kernel `boot=live` e voci GRUB.
+5. Solo dopo aver identificato la causa, correggere in modo mirato la pipeline.
+6. Rendere persistente il workspace dopo il successo e introdurre pulizia esplicita.
+7. Aggiungere validazione pre-ISO e post-ISO, inclusa verifica effettiva dell'initramfs, mantenendo log diagnostici completi.
+
+Non registrare il desktop come completato né l'ISO come avviabile: il primo boot reale ha dimostrato il contrario.
