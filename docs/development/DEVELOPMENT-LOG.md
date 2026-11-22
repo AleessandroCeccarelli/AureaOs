@@ -260,3 +260,94 @@ These are experimental API contracts and documentation only. No daemon, NTP sync
 After reviewing Debian 13 documentation, selected `systemd-timesyncd` as the initial network time synchronization backend and added it to `debian/packages/base.list`. Debian documents it as the default client-side synchronization service; chrony remains a possible future alternative only if AureaOS develops requirements that justify it. The architecture specifies using `systemd-timedated` over D-Bus for privileged time/time-zone/RTC configuration rather than launching privileged shell commands from the UI. The installed `tzdata` package remains the source of updateable time-zone rules.
 
 This package-manifest change has not yet been validated by a fresh Debian bootstrap.
+
+
+## 2026-11-22 — First ISO generation and first real boot
+
+### Context and operational decision
+
+The day was spent producing the first complete Debian Trixie Live image and testing it on real hardware through Ventoy. The user confirmed the established workflow: copy the ISO into Ventoy's data partition and select it from the boot menu. Do not ask the user to prepare or reformat another USB drive.
+
+The ISO build completed, but a successful image-generation process did not prove that the Live system could boot.
+
+### Changes and Git references
+
+Commits published to `main` during the session:
+- `47fd5ed7` — synchronized local repository changes.
+- `6bfc72c7` — integration tests for touchpad gestures reaching the desktop shell.
+- `ad524e94` — formatting cleanup for gesture integration tests.
+- `f38bd6ac` — serialize access to the persistent live-build workspace.
+- `63c4bed8` — recover a stale live-build lock when resuming an interrupted build.
+
+Relevant ISO files:
+- `tools/iso/build-live-iso.sh`
+- `tools/iso/build-live-iso-podman.sh`
+- `tools/iso/hooks/010-build-aureaos.hook.chroot`
+- `tools/iso/hooks/020-brand-boot-menu.hook.binary`
+- `tools/iso/package-lists/aureaos.list.chroot`
+
+The previous workspace used a nested, non-canonical `config/config` layout. The build script was updated to cautiously migrate the old workspace to Debian's standard layout while preserving chroot, stage markers, and caches when possible. The Podman wrapper now serializes workspace access with `flock`; the inner script only removes a stale lock during resume and only when it is a regular non-symlink file.
+
+### Build result
+
+The user's build log dated 22 November reports:
+- recovery from the `lb chroot_devpts` issue;
+- kernel and initramfs generation;
+- successful execution of the GRUB branding hook;
+- ISO creation through `xorriso`;
+- final message `P: Build completed successfully`.
+
+Reported artifacts:
+- `~/Documenti/AureaOS.iso`
+- `~/Documenti/AureaOS.iso.sha256`
+- SHA-256: `1d929c0f99b665f1307191d9502f5c094a25452e32dd28615309feb8350c0704`
+
+Fedora checks:
+- ISO size approximately 350 MB.
+- `sha256sum -c` returned `AureaOS.iso: OK`.
+- `file` recognized ISO 9660 with a DOS/MBR boot sector and volume `AUREAOS_BLUE_TEST`.
+- After installing `xorriso`, El Torito reporting detected GRUB BIOS (`/boot/grub/grub_eltorito`), EFI image (`/boot/grub/efi.img`), protective MBR, and GPT.
+
+These checks establish image creation and boot structures, not a successful Live boot.
+
+### First Ventoy boot: blocking failure
+
+On the Lenovo laptop, Ventoy loaded GRUB and the Debian kernel `6.12.117+deb13-amd64`. Boot then stopped before the desktop started.
+
+Messages captured in the user's photograph:
+```
+init: line 249: can't open '/scripts/live': No such file or directory
+Kernel panic - not syncing: Attempted to kill init: exitcode=0x00000200
+```
+
+Verified conclusion: when init runs, `/scripts/live` is missing from the initramfs environment. The kernel panic follows the init failure. No GPU, Vulkan, or Smithay issue has been established; the system has not reached those stages. The exact cause must be found by inspecting the initramfs and chroot contents.
+
+### Build-script findings
+
+Reviewing the current files on `main` revealed that `build-live-iso.sh` automatically removes the entire `BUILD_ROOT` when `lb build` exits successfully. This also removes the workspace and caches after a successful build, defeating incremental reuse. Cleanup must become explicit and optional, not automatic.
+
+The current final validation mainly checks that a non-empty ISO exists and that live-build exits successfully. It does not verify that the initramfs actually contains `/scripts/live`, the live-boot hooks, the expected kernel, or coherent GRUB parameters. A build must not be considered valid solely because an ISO file exists.
+
+### Agreed decisions and priorities
+
+- Starting Monday, 23 November, work returns exclusively to the AureaOS desktop on GitHub.
+- No ISO builds and no ISO-script work during desktop sessions unless explicitly requested.
+- Resume ISO investigation on Fedora on Friday, 27 November, starting with inspection of the existing image and initramfs; do not rebuild blindly.
+- Continue using Ventoy by copying the ISO directly into its data partition.
+- Keep changes on `main`; do not run remote Rust builds/tests. The user will run `cargo fmt`, checks, and tests on Fedora when agreed.
+- Preserve strict modularity: one file, one responsibility; split build-script responsibilities into small modules with a small coordinator.
+
+### Next actions
+
+**Desktop work (from Monday):** continue desktop implementation and features; do not reopen the ISO workstream.
+
+**Friday ISO session:**
+1. Mount the existing ISO read-only and locate its kernel/initramfs.
+2. Inspect the initramfs for `scripts/live`, live-boot hooks, and modules.
+3. Inspect the chroot/workspace if needed; do not assume the workspace survived, because current cleanup removes it after success.
+4. Verify `live-boot`, `live-config`, initramfs-tools hooks, kernel `boot=live` parameters, and GRUB entries.
+5. Identify the cause before making a targeted pipeline change.
+6. Preserve the workspace after success and make cleanup explicit.
+7. Add pre-image and post-image validation, including actual initramfs inspection, while retaining complete diagnostic logs.
+
+Do not report the desktop as complete or the ISO as bootable: the first real boot disproved the latter.
