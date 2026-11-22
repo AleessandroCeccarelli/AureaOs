@@ -184,3 +184,10 @@ Original AureaOS project work is currently distributed under **GPL-3.0-or-later*
 AureaOS product ownership and visual identity are separate from software licensing. Describing the desktop, Store, or applications as AureaOS-owned or first-party does not mean that their source code is closed or exempt from the current project license. Third-party components retain their own licenses and notices.
 
 The project is not adopting a proprietary or dual-licensing model at this stage. Any future change to the licensing or distribution model is an open strategic decision and must be reviewed separately, with attention to copyright ownership, contributor permissions, and applicable license obligations.
+
+
+## Current engineering checkpoint — 22 November 2026
+
+The first Debian Trixie Live ISO has been generated and its SHA-256 and BIOS/UEFI boot structures have been checked. However, its first real boot through Ventoy on the Lenovo test laptop failed before the desktop started: initramfs reported that `/scripts/live` could not be opened, followed by an init kernel panic. The image must not be described as a successfully bootable Live system yet.
+
+The immediate development priority is the AureaOS desktop. ISO work is intentionally paused until the next Fedora validation session. See the [Italian development diary](docs/it/DIARIO-DI-BORDO.md), the [English development log](docs/development/DEVELOPMENT-LOG.md), and the [internal ISO handoff](tools/iso/INTERNAL-ASSISTANT-HANDOFF.md).
