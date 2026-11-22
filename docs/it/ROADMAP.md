@@ -226,3 +226,15 @@ Il canale di aggiornamento del sistema AureaOS e l’integrazione completa del n
 8. Architettura modulare e responsabilità chiare tra componenti di sistema.
 9. Design coerente e accessibile nelle applicazioni sviluppate dal progetto.
 10. Comunicazione onesta di stato, limitazioni e licenze.
+
+
+## Aggiornamento operativo — 22 novembre 2026
+
+La priorità immediata concordata è la costruzione del desktop AureaOS. Il lavoro sulla generazione ISO è sospeso fino alla sessione di verifica su Fedora prevista per venerdì 27 novembre 2026. Non avviare nuove build ISO né modificare gli script ISO durante le sessioni desktop, salvo richiesta esplicita.
+
+La prima immagine Live Debian Trixie è stata generata e verificata come file ISO con strutture di avvio BIOS/UEFI, ma il primo avvio reale tramite Ventoy sul portatile Lenovo si è fermato nell'initramfs:
+`can't open '/scripts/live': No such file or directory`, seguito da kernel panic di init. Pertanto l'immagine non è attualmente considerata avviabile come sistema Live.
+
+Venerdì la verifica ripartirà dall'ispezione read-only dell'initramfs della ISO già esistente. Solo dopo aver individuato la causa si interverrà sulla pipeline. La correzione dovrà anche preservare workspace e cache dopo una build riuscita e introdurre controlli sul contenuto dell'initramfs, non soltanto sull'esistenza del file ISO.
+
+Il dettaglio cronologico e i riferimenti Git sono nel [Diario di bordo](docs/it/DIARIO-DI-BORDO.md).
