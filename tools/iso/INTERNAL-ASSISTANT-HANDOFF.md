@@ -202,3 +202,14 @@ Default:
 3. Venerdì iniziare dall'ispezione dell'ISO già generata e dell'initramfs, senza rebuild immediato.
 4. Dopo diagnosi, progettare un refactor piccolo e verificabile dello script; non riscrivere tutto alla cieca.
 5. Prima di ogni modifica ISO, riaprire i file attuali su main perché possono essere cambiati nel frattempo.
+
+
+## DOCUMENTATION SYNC — 2026-11-22
+
+The repository's public project records were updated after the first real ISO boot:
+- `docs/it/DIARIO-DI-BORDO.md`: Italian chronological entry for 22 November.
+- `docs/development/DEVELOPMENT-LOG.md`: matching English engineering entry.
+- `ROADMAP.md` and `docs/it/ROADMAP.md`: current desktop-first priority and deferred ISO investigation.
+- `README.md`: corrected statement of ISO validation status.
+
+Operational priority remains unchanged: desktop work first from 23 November; no ISO work until Friday 27 November unless the user explicitly changes the plan. On Friday inspect the existing initramfs before rebuilding.
