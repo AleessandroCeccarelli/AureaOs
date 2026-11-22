@@ -48,5 +48,12 @@ EOF
 chown aurea:aurea /home/aurea/.bash_profile
 chmod 0644 /home/aurea/.bash_profile
 
+# Remove the temporary compiler and headers; retain only runtime libraries.
+DEBIAN_FRONTEND=noninteractive apt-get purge -y -- \
+    rustc cargo build-essential pkg-config glslang-tools \
+    libvulkan-dev libudev-dev libinput-dev libseat-dev libgbm-dev \
+    libdrm-dev libxkbcommon-dev libwayland-dev
+DEBIAN_FRONTEND=noninteractive apt-get autoremove -y --purge
+
 # Keep build sources and Cargo caches out of the booted live system.
 rm -rf "$SOURCE" "$CARGO_HOME"
