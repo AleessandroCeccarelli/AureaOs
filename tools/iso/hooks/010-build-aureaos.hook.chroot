@@ -25,6 +25,8 @@ fi
 export CARGO_HOME=/var/cache/aureaos-cargo
 export CARGO_NET_RETRY=3
 export CARGO_HTTP_TIMEOUT=120
+export CARGO_BUILD_JOBS=1
+export CARGO_INCREMENTAL=0
 
 cd "$SOURCE"
 cargo build --release --locked --package aurea-desktop --bin aurea-desktop
