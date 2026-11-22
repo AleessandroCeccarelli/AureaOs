@@ -72,6 +72,22 @@ case "$OUTPUT_DIR/" in "$REPO_ROOT/"*) echo "Output directory must be outside th
 case "$BUILD_ROOT/" in "$REPO_ROOT/"*) echo "Build directory must be outside the Git repository." >&2; exit 2 ;; esac
 
 mkdir -p -- "$OUTPUT_DIR"
+
+# Migrate the previous wrapper's nested workspace (BUILD_ROOT/config) in place.
+# Keep the complete chroot, .build stage markers, package cache and diagnostics.
+if "$RESUME" && [[ -d "$BUILD_ROOT/config/config" && -d "$BUILD_ROOT/config/chroot" && ! -d "$BUILD_ROOT/chroot" ]]; then
+    LEGACY_ROOT="$BUILD_ROOT/config"
+    MIGRATION_ROOT="${BUILD_ROOT}.workspace-migration"
+    if [[ -n "$(find "$BUILD_ROOT" -mindepth 1 -maxdepth 1 ! -name config -print -quit)" || -e "$MIGRATION_ROOT" ]]; then
+        echo "Legacy workspace has unexpected sibling data; refusing automatic migration." >&2
+        exit 1
+    fi
+    echo "Migrating the previous nested workspace to Debian's standard layout..."
+    mv -- "$LEGACY_ROOT" "$MIGRATION_ROOT"
+    rmdir -- "$BUILD_ROOT"
+    mv -- "$MIGRATION_ROOT" "$BUILD_ROOT"
+fi
+
 CONFIG_DIR="$BUILD_ROOT/config"
 SOURCE_DIR="$CONFIG_DIR/includes.chroot/usr/src/aureaos"
 
