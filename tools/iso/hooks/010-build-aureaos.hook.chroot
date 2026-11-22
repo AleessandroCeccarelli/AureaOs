@@ -36,9 +36,15 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
 export PATH="$CARGO_HOME/bin:$PATH"
 
 rustc +stable --version
-cargo +stable build --release --locked --package aurea-desktop --bin aurea-desktop
+# live-build executes chroot hooks from /, so always anchor Cargo to the
+# extracted workspace instead of relying on the hook's current directory.
+cargo +stable build \
+    --manifest-path "$SOURCE/Cargo.toml" \
+    --release --locked \
+    --package aurea-desktop \
+    --bin aurea-desktop
 
-install -D -m 0755 target/release/aurea-desktop /usr/local/bin/aurea-desktop
+install -D -m 0755 "$SOURCE/target/release/aurea-desktop" /usr/local/bin/aurea-desktop
 install -D -m 0644 "$SYSTEMD_SOURCE" /etc/systemd/system/aurea-desktop.service
 install -D -m 0644 "$PAM_SOURCE" /etc/pam.d/aurea-desktop
 install -D -m 0755 "$SESSION_SOURCE" /usr/local/bin/aurea-live-session
