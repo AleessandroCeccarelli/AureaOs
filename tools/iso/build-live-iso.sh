@@ -4,9 +4,9 @@ set -Eeuo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 readonly REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd -P)"
-readonly OUTPUT_DIR="${OUTPUT_DIR:-$REPO_ROOT/dist/iso}"
+OUTPUT_DIR="${OUTPUT_DIR:-$REPO_ROOT/dist/iso}"
 readonly IMAGE_NAME="aureaos-blue-test"
-readonly BUILD_ROOT="${BUILD_ROOT:-${TMPDIR:-/var/tmp}/aureaos-live-build}"
+BUILD_ROOT="${BUILD_ROOT:-${TMPDIR:-/var/tmp}/aureaos-live-build}"
 
 usage() {
     cat <<'USAGE'
@@ -42,7 +42,7 @@ done
 
 [[ -f "$REPO_ROOT/Cargo.lock" ]] || { echo "Cargo.lock is missing." >&2; exit 1; }
 [[ -f "$SCRIPT_DIR/package-lists/aureaos.list.chroot" ]] || { echo "Live package list is missing." >&2; exit 1; }
-[[ -x "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" ]] || {
+[[ -f "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" ]] || {
     echo "The chroot hook must be executable in Git: tools/iso/hooks/010-build-aureaos.hook.chroot" >&2
     exit 1
 }
