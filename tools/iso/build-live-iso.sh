@@ -43,7 +43,7 @@ done
 [[ -f "$REPO_ROOT/Cargo.lock" ]] || { echo "Cargo.lock is missing." >&2; exit 1; }
 [[ -f "$SCRIPT_DIR/package-lists/aureaos.list.chroot" ]] || { echo "Live package list is missing." >&2; exit 1; }
 [[ -f "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" ]] || {
-    echo "The chroot hook must be executable in Git: tools/iso/hooks/010-build-aureaos.hook.chroot" >&2
+    echo "The chroot build hook is missing: tools/iso/hooks/010-build-aureaos.hook.chroot" >&2
     exit 1
 }
 
