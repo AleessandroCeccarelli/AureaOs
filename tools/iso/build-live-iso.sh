@@ -129,8 +129,8 @@ lb config \
     --linux-flavours amd64 \
     --debian-installer none \
     --apt-recommends false \
-    --bootappend-live "boot=live components quiet loglevel=3 systemd.show_status=false nocomponents=user-setup nottyautologin" \
-    --bootappend-live-failsafe "boot=live components nomodeset loglevel=7" \
+    --bootappend-live "boot=live components quiet loglevel=3 systemd.show_status=false live-config.nocomponents=user-setup live-config.nottyautologin" \
+    --bootappend-live-failsafe "none" \
     --iso-application "AureaOS Native Blue Test" \
     --iso-volume "AUREAOS_BLUE_TEST" \
     --image-name "$IMAGE_NAME"
