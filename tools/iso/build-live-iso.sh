@@ -4,8 +4,8 @@ set -Eeuo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 readonly REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd -P)"
-OUTPUT_DIR="${OUTPUT_DIR:-$REPO_ROOT/dist/iso}"
-readonly IMAGE_NAME="aureaos-blue-test"
+OUTPUT_DIR="${OUTPUT_DIR:-$HOME/Documenti}"
+readonly IMAGE_NAME="AureaOS"
 BUILD_ROOT="${BUILD_ROOT:-${TMPDIR:-/var/tmp}/aureaos-live-build}"
 
 usage() {
@@ -53,6 +53,14 @@ if [[ "$BUILD_ROOT" != /* || "$OUTPUT_DIR" != /* ]]; then
 fi
 
 mkdir -p -- "$OUTPUT_DIR"
+OUTPUT_DIR="$(cd -- "$OUTPUT_DIR" && pwd -P)"
+case "$OUTPUT_DIR/" in
+    "$REPO_ROOT/"*)
+        echo "Output directory must be outside the Git repository: $OUTPUT_DIR" >&2
+        exit 2
+        ;;
+esac
+
 if [[ -e "$BUILD_ROOT" || -L "$BUILD_ROOT" ]]; then
     echo "Build directory already exists: $BUILD_ROOT" >&2
     echo "Choose a new path with --build-dir; existing data will not be removed." >&2
@@ -60,13 +68,21 @@ if [[ -e "$BUILD_ROOT" || -L "$BUILD_ROOT" ]]; then
 fi
 mkdir -p -- "$BUILD_ROOT"
 BUILD_ROOT="$(cd -- "$BUILD_ROOT" && pwd -P)"
+case "$BUILD_ROOT/" in
+    "$REPO_ROOT/"*)
+        echo "Build directory must be outside the Git repository: $BUILD_ROOT" >&2
+        exit 2
+        ;;
+esac
 CONFIG_DIR="$BUILD_ROOT/config"
 SOURCE_DIR="$CONFIG_DIR/config/includes.chroot/usr/src/aureaos"
 
 cleanup() {
     local status=$?
     if ((status == 0)); then
-        rm -rf -- "$BUILD_ROOT"
+        sudo rm -rf -- "$BUILD_ROOT" || {
+            echo "Warning: unable to remove temporary build directory: $BUILD_ROOT" >&2
+        }
     else
         echo "Build failed; preserving diagnostics and partial build at: $BUILD_ROOT" >&2
     fi
@@ -110,11 +126,11 @@ if [[ -z "$ISO_PATH" || ! -s "$ISO_PATH" ]]; then
     exit 1
 fi
 
-DESTINATION="$OUTPUT_DIR/$(basename "$ISO_PATH")"
+DESTINATION="$OUTPUT_DIR/AureaOS.iso"
 install -m 0644 "$ISO_PATH" "$DESTINATION"
 (
     cd "$OUTPUT_DIR"
-    sha256sum "$(basename "$DESTINATION")" > "$(basename "$DESTINATION").sha256"
+    sha256sum AureaOS.iso > AureaOS.iso.sha256
 )
 
 echo
