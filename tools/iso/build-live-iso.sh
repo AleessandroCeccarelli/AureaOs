@@ -4,21 +4,24 @@ set -Eeuo pipefail
 
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 readonly REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd -P)"
-OUTPUT_DIR="${OUTPUT_DIR:-$HOME/Documenti}"
 readonly IMAGE_NAME="AureaOS"
+
+OUTPUT_DIR="${OUTPUT_DIR:-$HOME/Documenti}"
 BUILD_ROOT="${BUILD_ROOT:-${TMPDIR:-/var/tmp}/aureaos-live-build}"
 RESUME=false
 
 usage() {
     cat <<'USAGE'
-Build the minimal AureaOS Debian Live ISO.
+Build the AureaOS Debian Trixie Live ISO.
 
 Usage:
   bash tools/iso/build-live-iso.sh [--output-dir PATH] [--build-dir PATH] [--resume]
 
-Use --resume with an existing failed build directory to continue from its
-preserved live-build workspace. The existing chroot, downloaded packages,
-Rust toolchain and Cargo cache are retained.
+The build directory is the live-build workspace root. Its configuration is
+stored in BUILD_ROOT/config, following the Debian Live Manual layout.
+
+A failed build is preserved. Use --resume with the same build directory to
+continue without discarding downloaded packages or the partial chroot.
 USAGE
 }
 
@@ -36,35 +39,26 @@ while (($#)); do
     esac
 done
 
-for command_name in lb git tar sudo sha256sum realpath; do
+for command_name in lb git tar sudo sha256sum realpath find install; do
     command -v "$command_name" >/dev/null 2>&1 || {
         echo "Required build command not found: $command_name" >&2
         exit 1
     }
 done
 
-[[ -f "$REPO_ROOT/Cargo.lock" ]] || { echo "Cargo.lock is missing." >&2; exit 1; }
-[[ -f "$SCRIPT_DIR/package-lists/aureaos.list.chroot" ]] || { echo "Live package list is missing." >&2; exit 1; }
-[[ -f "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" ]] || {
-    echo "The chroot build hook is missing." >&2
+[[ -f "$REPO_ROOT/Cargo.lock" && -f "$REPO_ROOT/Cargo.toml" ]] || {
+    echo "AureaOS Cargo workspace is incomplete." >&2
     exit 1
 }
-[[ -f "$SCRIPT_DIR/hooks/020-brand-boot-menu.hook.binary" ]] || {
-    echo "The GRUB branding hook is missing." >&2
-    exit 1
-}
-[[ -f "$SCRIPT_DIR/systemd/aurea-desktop.service" ]] || {
-    echo "The AureaOS systemd session unit is missing." >&2
-    exit 1
-}
-[[ -f "$SCRIPT_DIR/pam/aurea-desktop" ]] || {
-    echo "The AureaOS PAM session profile is missing." >&2
-    exit 1
-}
-[[ -f "$SCRIPT_DIR/scripts/aurea-live-session" ]] || {
-    echo "The AureaOS recovery launcher is missing." >&2
-    exit 1
-}
+for required in \
+    "$SCRIPT_DIR/package-lists/aureaos.list.chroot" \
+    "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" \
+    "$SCRIPT_DIR/hooks/020-brand-boot-menu.hook.binary" \
+    "$SCRIPT_DIR/systemd/aurea-desktop.service" \
+    "$SCRIPT_DIR/pam/aurea-desktop" \
+    "$SCRIPT_DIR/scripts/aurea-live-session"; do
+    [[ -f "$required" ]] || { echo "Required ISO input is missing: $required" >&2; exit 1; }
+done
 
 if [[ "$BUILD_ROOT" != /* || "$OUTPUT_DIR" != /* ]]; then
     echo "Build and output paths must be absolute." >&2
@@ -74,52 +68,62 @@ fi
 OUTPUT_DIR="$(realpath -m -- "$OUTPUT_DIR")"
 BUILD_ROOT="$(realpath -m -- "$BUILD_ROOT")"
 
-case "$OUTPUT_DIR/" in
-    "$REPO_ROOT/"*) echo "Output directory must be outside the Git repository: $OUTPUT_DIR" >&2; exit 2 ;;
-esac
-case "$BUILD_ROOT/" in
-    "$REPO_ROOT/"*) echo "Build directory must be outside the Git repository: $BUILD_ROOT" >&2; exit 2 ;;
-esac
+case "$OUTPUT_DIR/" in "$REPO_ROOT/"*) echo "Output directory must be outside the Git repository." >&2; exit 2 ;; esac
+case "$BUILD_ROOT/" in "$REPO_ROOT/"*) echo "Build directory must be outside the Git repository." >&2; exit 2 ;; esac
 
 mkdir -p -- "$OUTPUT_DIR"
 CONFIG_DIR="$BUILD_ROOT/config"
+SOURCE_DIR="$CONFIG_DIR/includes.chroot/usr/src/aureaos"
+
+refresh_inputs() {
+    mkdir -p "$CONFIG_DIR/package-lists" "$CONFIG_DIR/hooks/live" "$SOURCE_DIR"
+
+    install -m 0644 "$SCRIPT_DIR/package-lists/aureaos.list.chroot" \
+        "$CONFIG_DIR/package-lists/aureaos.list.chroot"
+    install -m 0755 "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" \
+        "$CONFIG_DIR/hooks/live/010-build-aureaos.hook.chroot"
+    install -m 0755 "$SCRIPT_DIR/hooks/020-brand-boot-menu.hook.binary" \
+        "$CONFIG_DIR/hooks/live/020-brand-boot-menu.hook.binary"
+
+    # Replace only the staged source snapshot, never the live-build chroot.
+    rm -rf -- "$SOURCE_DIR"
+    mkdir -p -- "$SOURCE_DIR"
+    git -C "$REPO_ROOT" archive --format=tar HEAD \
+        Cargo.toml Cargo.lock components tools/iso/pam tools/iso/systemd tools/iso/scripts |
+        tar -xf - -C "$SOURCE_DIR"
+
+    [[ -s "$SOURCE_DIR/Cargo.toml" && -s "$SOURCE_DIR/Cargo.lock" ]] || {
+        echo "The staged AureaOS source snapshot is incomplete." >&2
+        return 1
+    }
+}
 
 if "$RESUME"; then
     [[ -d "$CONFIG_DIR" ]] || {
-        echo "Cannot resume: live-build workspace not found at $CONFIG_DIR" >&2
+        echo "Cannot resume: Debian Live configuration not found at $CONFIG_DIR" >&2
         exit 1
     }
-    [[ -d "$CONFIG_DIR/config/hooks/live" ]] || {
-        echo "Cannot resume: live-build hook directory is missing." >&2
-        exit 1
-    }
-    echo "Resuming preserved live-build workspace: $BUILD_ROOT"
-    echo "Refreshing build hooks from the current Git checkout..."
-    cp "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" "$CONFIG_DIR/config/hooks/live/010-build-aureaos.hook.chroot"
-    cp "$SCRIPT_DIR/hooks/020-brand-boot-menu.hook.binary" "$CONFIG_DIR/config/hooks/live/020-brand-boot-menu.hook.binary"
-    chmod 0755 "$CONFIG_DIR/config/hooks/live/010-build-aureaos.hook.chroot"
-    chmod 0755 "$CONFIG_DIR/config/hooks/live/020-brand-boot-menu.hook.binary"
+    echo "Resuming Debian Live workspace: $BUILD_ROOT"
+    refresh_inputs
+
+    # If the previous chroot hook failed, live-build may consider the include
+    # stage complete and skip it. Re-run that exact Debian stage before hooks.
+    # Do not do this after chroot_hooks completed: the hook removes build sources.
+    if [[ -d "$BUILD_ROOT/chroot" && ! -f "$BUILD_ROOT/.build/chroot_hooks" ]]; then
+        echo "Refreshing chroot includes before retrying incomplete hooks..."
+        (cd "$BUILD_ROOT" && sudo lb chroot_includes_after_packages --force)
+    fi
 else
     if [[ -e "$BUILD_ROOT" || -L "$BUILD_ROOT" ]]; then
         echo "Build directory already exists: $BUILD_ROOT" >&2
-        echo "Use --resume to continue it, or choose another path. Existing data will not be removed." >&2
+        echo "Use --resume to continue it, or choose another path. Existing data is preserved." >&2
         exit 1
     fi
 
     mkdir -p -- "$BUILD_ROOT"
-    SOURCE_DIR="$CONFIG_DIR/config/includes.chroot/usr/src/aureaos"
-    mkdir -p "$CONFIG_DIR/config/package-lists" "$CONFIG_DIR/config/hooks/live" "$SOURCE_DIR"
-    cp "$SCRIPT_DIR/package-lists/aureaos.list.chroot" "$CONFIG_DIR/config/package-lists/aureaos.list.chroot"
-    cp "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" "$CONFIG_DIR/config/hooks/live/010-build-aureaos.hook.chroot"
-    cp "$SCRIPT_DIR/hooks/020-brand-boot-menu.hook.binary" "$CONFIG_DIR/config/hooks/live/020-brand-boot-menu.hook.binary"
-    chmod 0755 "$CONFIG_DIR/config/hooks/live/010-build-aureaos.hook.chroot"
-    chmod 0755 "$CONFIG_DIR/config/hooks/live/020-brand-boot-menu.hook.binary"
+    cd "$BUILD_ROOT"
 
-    echo "Preparing the exact committed AureaOS source from HEAD..."
-    git -C "$REPO_ROOT" archive --format=tar HEAD Cargo.toml Cargo.lock components tools/iso/pam tools/iso/systemd tools/iso/scripts |
-        tar -xf - -C "$SOURCE_DIR"
-
-    cd "$CONFIG_DIR"
+    # Canonical Debian Live Build layout: workspace/config/{package-lists,hooks,...}
     lb config \
         --mode debian \
         --distribution trixie \
@@ -138,28 +142,40 @@ else
         --iso-application "AureaOS Native Blue Test" \
         --iso-volume "AUREAOS_BLUE_TEST" \
         --image-name "$IMAGE_NAME"
+
+    refresh_inputs
 fi
 
 cleanup() {
     local status=$?
     if ((status == 0)); then
         sudo rm -rf -- "$BUILD_ROOT" || {
-            echo "Warning: unable to remove temporary build directory: $BUILD_ROOT" >&2
+            echo "Warning: unable to remove successful build workspace: $BUILD_ROOT" >&2
         }
     else
-        echo "Build failed; preserving diagnostics and partial build at: $BUILD_ROOT" >&2
+        echo "Build failed; preserving workspace and diagnostics: $BUILD_ROOT" >&2
     fi
 }
 trap cleanup EXIT
 
-cd "$CONFIG_DIR"
-echo "Building Debian Live ISO..."
+# Refuse to enter the expensive build if the standard Debian layout is broken.
+[[ -s "$CONFIG_DIR/includes.chroot/usr/src/aureaos/Cargo.toml" ]] || {
+    echo "Staged source missing from config/includes.chroot." >&2
+    exit 1
+}
+[[ -x "$CONFIG_DIR/hooks/live/010-build-aureaos.hook.chroot" ]] || {
+    echo "AureaOS chroot hook is missing or not executable." >&2
+    exit 1
+}
+
+cd "$BUILD_ROOT"
+echo "Building Debian Trixie amd64 Live ISO..."
 sudo lb build
 
-ISO_PATH="$(find "$CONFIG_DIR" -maxdepth 1 -type f -name '*.iso' -print -quit)"
+ISO_PATH="$(find "$BUILD_ROOT" -maxdepth 1 -type f -name '*.iso' -print -quit)"
 if [[ -z "$ISO_PATH" || ! -s "$ISO_PATH" ]]; then
-    echo "No non-empty ISO image was produced." >&2
-    find "$CONFIG_DIR" -maxdepth 2 -type f -name '*.iso' -print >&2
+    echo "Live Build completed without producing a non-empty ISO." >&2
+    find "$BUILD_ROOT" -maxdepth 3 -type f -name '*.iso' -print >&2
     exit 1
 fi
 
