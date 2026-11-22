@@ -4,6 +4,7 @@ set -eu
 
 SOURCE=/usr/src/aureaos
 SYSTEMD_SOURCE=/usr/src/aureaos/tools/iso/systemd/aurea-desktop.service
+PAM_SOURCE=/usr/src/aureaos/tools/iso/pam/aurea-desktop
 SESSION_SOURCE=/usr/src/aureaos/tools/iso/scripts/aurea-live-session
 
 if [ ! -f "$SOURCE/Cargo.toml" ] || [ ! -f "$SOURCE/Cargo.lock" ]; then
@@ -11,8 +12,13 @@ if [ ! -f "$SOURCE/Cargo.toml" ] || [ ! -f "$SOURCE/Cargo.lock" ]; then
     exit 1
 fi
 
-if [ ! -f "$SYSTEMD_SOURCE" ] || [ ! -f "$SESSION_SOURCE" ]; then
+if [ ! -f "$SYSTEMD_SOURCE" ] || [ ! -f "$PAM_SOURCE" ] || [ ! -f "$SESSION_SOURCE" ]; then
     echo "AureaOS Live session integration files are missing." >&2
+    exit 1
+fi
+
+if [ ! -f /usr/lib/x86_64-linux-gnu/security/pam_systemd.so ]; then
+    echo "Debian systemd PAM module is missing; cannot register the AureaOS logind session." >&2
     exit 1
 fi
 
@@ -24,14 +30,15 @@ cd "$SOURCE"
 cargo build --release --locked --package aurea-desktop --bin aurea-desktop
 install -D -m 0755 target/release/aurea-desktop /usr/local/bin/aurea-desktop
 install -D -m 0644 "$SYSTEMD_SOURCE" /etc/systemd/system/aurea-desktop.service
+install -D -m 0644 "$PAM_SOURCE" /etc/pam.d/aurea-desktop
 install -D -m 0755 "$SESSION_SOURCE" /usr/local/bin/aurea-live-session
 
 if ! id aurea >/dev/null 2>&1; then
     useradd --create-home --shell /bin/bash aurea
 fi
 
-# PAM creates a logind session on tty1; libseat then brokers DRM and input
-# device access without running the compositor as root or granting broad groups.
+# The dedicated PAM service calls pam_systemd directly. Explicit session
+# metadata associates the unprivileged compositor with seat0 on tty1.
 systemctl --root=/ mask getty@.service
 systemctl --root=/ enable aurea-desktop.service
 systemctl --root=/ set-default multi-user.target
