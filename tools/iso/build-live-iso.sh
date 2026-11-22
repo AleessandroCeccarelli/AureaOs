@@ -57,6 +57,10 @@ done
     echo "The AureaOS systemd session unit is missing." >&2
     exit 1
 }
+[[ -f "$SCRIPT_DIR/pam/aurea-desktop" ]] || {
+    echo "The AureaOS PAM session profile is missing." >&2
+    exit 1
+}
 [[ -f "$SCRIPT_DIR/scripts/aurea-live-session" ]] || {
     echo "The AureaOS recovery launcher is missing." >&2
     exit 1
@@ -115,7 +119,7 @@ chmod 0755 "$CONFIG_DIR/config/hooks/live/010-build-aureaos.hook.chroot"
 chmod 0755 "$CONFIG_DIR/config/hooks/live/020-brand-boot-menu.hook.binary"
 
 echo "Preparing the exact committed AureaOS source from HEAD..."
-git -C "$REPO_ROOT" archive --format=tar HEAD Cargo.toml Cargo.lock components tools/iso/systemd tools/iso/scripts |
+git -C "$REPO_ROOT" archive --format=tar HEAD Cargo.toml Cargo.lock components tools/iso/pam tools/iso/systemd tools/iso/scripts |
     tar -xf - -C "$SOURCE_DIR"
 
 cd "$CONFIG_DIR"
