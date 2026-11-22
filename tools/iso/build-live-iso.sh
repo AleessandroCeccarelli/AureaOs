@@ -103,9 +103,9 @@ lb config \
 echo "Building Debian Live ISO. This can take a while on the first run..."
 sudo lb build
 
-ISO_PATH="$CONFIG_DIR/$IMAGE_NAME-amd64.hybrid.iso"
-if [[ ! -s "$ISO_PATH" ]]; then
-    echo "Expected ISO was not produced: $ISO_PATH" >&2
+ISO_PATH="$(find "$CONFIG_DIR" -maxdepth 1 -type f -name '*.iso' -print -quit)"
+if [[ -z "$ISO_PATH" || ! -s "$ISO_PATH" ]]; then
+    echo "No non-empty ISO image was produced." >&2
     find "$CONFIG_DIR" -maxdepth 2 -type f -name '*.iso' -print >&2
     exit 1
 fi
