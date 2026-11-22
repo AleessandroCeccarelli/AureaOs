@@ -3,6 +3,8 @@
 live-boot
 live-config
 systemd-sysv
+udev
+dbus
 linux-image-amd64
 firmware-amd-graphics
 libvulkan1
