@@ -15,8 +15,10 @@ Build the minimal AureaOS Debian Live ISO.
 Usage:
   bash tools/iso/build-live-iso.sh [--output-dir PATH] [--build-dir PATH]
 
-The script builds an amd64 Debian 13 (Trixie) hybrid ISO. It does not write
-to USB devices or modify the host operating system.
+By default, the ISO and checksum are saved in ~/Documenti as
+AureaOS.iso and AureaOS.iso.sha256. Build files stay outside the repository.
+The script builds an amd64 Debian 13 (Trixie) hybrid ISO and never writes
+to USB devices or modifies the host operating system.
 USAGE
 }
 
