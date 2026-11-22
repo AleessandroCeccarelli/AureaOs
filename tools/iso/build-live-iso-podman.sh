@@ -84,7 +84,7 @@ sudo podman run --rm --privileged --security-opt label=disable \
         set -Eeuo pipefail
         export DEBIAN_FRONTEND=noninteractive
         apt-get update
-        apt-get install -y --no-install-recommends live-build git tar sudo ca-certificates
+        apt-get install -y live-build git tar sudo ca-certificates xorriso
         git config --global --add safe.directory /workspace
         bash tools/iso/build-live-iso.sh --output-dir /output --build-dir /build-parent/build
     '
