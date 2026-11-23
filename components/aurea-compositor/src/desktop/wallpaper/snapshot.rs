@@ -8,7 +8,7 @@
 use super::WallpaperAsset;
 
 /// Borrowed, frame-safe wallpaper source data.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WallpaperSnapshot {
     asset: WallpaperAsset,
 }
