@@ -5,8 +5,6 @@
 
 //! Validated metadata for an embedded desktop wallpaper.
 
-/// The default wallpaper is embedded in the compositor binary so the desktop
-/// does not depend on the current working directory or a mounted data volume.
 const DEFAULT_WALLPAPER_BYTES: &[u8] = include_bytes!(
     concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -14,13 +12,11 @@ const DEFAULT_WALLPAPER_BYTES: &[u8] = include_bytes!(
     )
 );
 
-/// Supported wallpaper container format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WallpaperFormat {
     Jpeg,
 }
 
-/// Pixel dimensions read from the JPEG frame header.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WallpaperDimensions {
     width: u16,
@@ -37,8 +33,7 @@ impl WallpaperDimensions {
     }
 }
 
-/// An embedded wallpaper whose JPEG frame dimensions have been validated.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WallpaperAsset {
     id: &'static str,
     format: WallpaperFormat,
@@ -66,6 +61,7 @@ impl WallpaperAsset {
         self.format
     }
 
+    /// Returns the original compressed JPEG bytes embedded in the compositor.
     pub const fn bytes(self) -> &'static [u8] {
         self.bytes
     }
@@ -83,6 +79,9 @@ fn jpeg_dimensions(bytes: &[u8]) -> Option<WallpaperDimensions> {
 
     let mut offset = 2usize;
     while offset < bytes.len() {
+        if bytes.get(offset) != Some(&0xFF) {
+            return None;
+        }
         while bytes.get(offset) == Some(&0xFF) {
             offset = offset.checked_add(1)?;
         }
@@ -90,7 +89,6 @@ fn jpeg_dimensions(bytes: &[u8]) -> Option<WallpaperDimensions> {
         let marker = *bytes.get(offset)?;
         offset = offset.checked_add(1)?;
 
-        // Standalone markers do not carry a segment length.
         if marker == 0xD9 || marker == 0xDA {
             return None;
         }
@@ -98,42 +96,39 @@ fn jpeg_dimensions(bytes: &[u8]) -> Option<WallpaperDimensions> {
             continue;
         }
 
-        if bytes.get(offset) != Some(&0x00) && marker != 0x00 {
-            let segment_length = usize::from(u16::from_be_bytes([
-                *bytes.get(offset)?,
-                *bytes.get(offset.checked_add(1)?)?,
-            ]));
-            if segment_length < 2 {
-                return None;
-            }
-
-            let segment_start = offset.checked_add(2)?;
-            let segment_end = offset.checked_add(segment_length)?;
-            if segment_end > bytes.len() {
-                return None;
-            }
-
-            // Baseline, progressive and the other DCT SOF markers.
-            if matches!(marker, 0xC0..=0xC3 | 0xC5..=0xC7 | 0xC9..=0xCB | 0xCD..=0xCF) {
-                if segment_length < 8 {
-                    return None;
-                }
-                let height = u16::from_be_bytes([
-                    *bytes.get(segment_start.checked_add(1)?)?,
-                    *bytes.get(segment_start.checked_add(2)?)?,
-                ]);
-                let width = u16::from_be_bytes([
-                    *bytes.get(segment_start.checked_add(3)?)?,
-                    *bytes.get(segment_start.checked_add(4)?)?,
-                ]);
-                if width == 0 || height == 0 {
-                    return None;
-                }
-                return Some(WallpaperDimensions { width, height });
-            }
-
-            offset = segment_end;
+        let segment_length = usize::from(u16::from_be_bytes([
+            *bytes.get(offset)?,
+            *bytes.get(offset.checked_add(1)?)?,
+        ]));
+        if segment_length < 2 {
+            return None;
         }
+
+        let segment_start = offset.checked_add(2)?;
+        let segment_end = offset.checked_add(segment_length)?;
+        if segment_end > bytes.len() {
+            return None;
+        }
+
+        if matches!(marker, 0xC0..=0xC3 | 0xC5..=0xC7 | 0xC9..=0xCB | 0xCD..=0xCF) {
+            if segment_length < 8 {
+                return None;
+            }
+            let height = u16::from_be_bytes([
+                *bytes.get(segment_start.checked_add(1)?)?,
+                *bytes.get(segment_start.checked_add(2)?)?,
+            ]);
+            let width = u16::from_be_bytes([
+                *bytes.get(segment_start.checked_add(3)?)?,
+                *bytes.get(segment_start.checked_add(4)?)?,
+            ]);
+            if width == 0 || height == 0 {
+                return None;
+            }
+            return Some(WallpaperDimensions { width, height });
+        }
+
+        offset = segment_end;
     }
 
     None
