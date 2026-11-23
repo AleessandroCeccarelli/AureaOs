@@ -307,3 +307,74 @@ Non creare subito nuovi file o API prima di aver completato l'audit dei percorsi
 - Nessun test o build è stato eseguito in questa sessione.
 - Non dichiarare il desktop funzionante finché non esiste una prova su Fedora/hardware o un test di rendering appropriato.
 - Alla prossima ripresa: leggere prima questo handoff, verificare HEAD, poi continuare l'audit dei file rendering Vulkan e wiring Shell/runtime. Non ripartire dal puntatore.
+
+
+## DECISIONE ARCHITETTURALE — DESKTOP MODULARE E DESKTOP MANAGER (2026-11-23)
+
+L'utente richiede una base desktop costruita in modo esplicito e modulare: cartelle per responsabilità, file piccoli e un manager centrale. Il lavoro deve iniziare dal desktop vuoto, senza Dock, Launcher o puntatore come obiettivi della fase.
+
+### Evidenze dal codice attuale (ricontrollate su main dopo il commit 6b5690b)
+
+- `components/aurea-compositor/src/vulkan/surface_compositor.rs` contiene già il percorso di composizione SHM Vulkan. Per una scena senza superfici visibili e senza cursore chiama funzioni di clear/release o clear/readback.
+- `components/aurea-compositor/src/vulkan/surface_compositor/readback.rs` e `release.rs` usano il colore `BACKGROUND_COLOR` definito in `surface_compositor.rs`, attualmente blu fisso `[0.08, 0.18, 0.32, 1.0]`. Quindi esiste già un fallback grafico uniforme per il frame vuoto; non equivale ancora a un wallpaper o a un desktop configurabile.
+- `components/aurea-compositor/src/vulkan/clear_pass.rs` esegue il clear dell'immagine Vulkan, ma non possiede policy desktop.
+- `components/aurea-compositor/src/compositor/rendering.rs` costruisce `RenderScene` per ogni output e la passa al backend.
+- `components/aurea-compositor/src/render.rs` contiene la scena con finestre e cursore, ma non una rappresentazione esplicita della superficie desktop.
+- `RenderTarget` riutilizza già dimensioni fisiche, scala, trasformazione e origine logica dell'output; non creare un secondo output manager.
+- `components/aurea-shell/src/desktop/mod.rs` espone già `DesktopState` con Dock, Launcher, workspaces, pannelli, tema e Night Light. È stato progettato per stato/presentazione Shell, non per possedere risorse Vulkan.
+- I token canonici per la superficie desktop si trovano in `aurea-human-interfaces/design-system/tokens/index.css`: light `#edf4ff`, dark `#0d1320`.
+
+### Confini di responsabilità decisi per evitare duplicazioni
+
+- **DesktopManager (compositor):** unico proprietario della policy della superficie desktop renderizzata: tema effettivo del fondo, sorgente del background, fallback e snapshot immutabile da consegnare alla scena di rendering. Non gestisce finestre, input, output discovery, Dock o Launcher.
+- **Desktop Surface:** rappresentazione logica della superficie che sta sotto tutte le finestre e copre l'intera area logica del desktop; il primo backend usa un colore opaco, successivamente una texture wallpaper.
+- **Background:** scelta e risoluzione della sorgente (inizialmente tema/colore; in seguito wallpaper). Il caricamento/decodifica delle immagini non va inserito nel manager.
+- **Theme:** valori semantici coerenti con i token AureaOS; non duplicare i token nelle UI. Per il primo clear Vulkan usare i valori desktop light/dark ricavati dai token.
+- **RenderScene:** contiene uno snapshot del desktop per il frame. La scena è costruita una volta per frame e riutilizzata per ogni output, con geometria locale calcolata dal RenderTarget esistente.
+- **Vulkan surface compositor:** consuma lo snapshot e disegna prima il desktop, poi superfici applicative e infine il cursore. Il clear pass resta un'operazione Vulkan generica, senza conoscere il tema.
+- **Shell DesktopState:** continua a possedere stato di launcher/dock/workspace/pannelli e preferenze utente. Non deve possedere immagini Vulkan né duplicare il DesktopManager del compositor. Il ponte tra preferenze Shell e policy compositor sarà definito tramite aurea-desktop-api dopo la prima superficie funzionante.
+
+### Struttura di cartelle prevista (da implementare gradualmente)
+
+```text
+components/aurea-compositor/src/desktop/
+  mod.rs
+  manager.rs          # coordina lo stato desktop renderizzato
+  surface.rs          # descrizione della superficie desktop
+  background.rs       # sorgente e fallback dello sfondo
+  theme.rs            # risoluzione dei token tema per il compositor
+  snapshot.rs         # dati immutabili per un frame/output
+
+components/aurea-compositor/src/render/
+  ...                 # RenderScene riceve lo snapshot desktop
+
+components/aurea-compositor/src/vulkan/
+  surface_compositor/
+    ...               # consuma lo snapshot: desktop, finestre, cursore
+
+components/aurea-shell/src/desktop/
+  mod.rs
+  ...                 # stato e presentazione Shell già esistenti
+  manager.rs          # valutare solo quando serve un coordinatore Shell distinto
+```
+
+Non creare tutti questi file in anticipo. Aggiungere un file solo quando ha una responsabilità reale e un chiamante reale. Evitare di creare un secondo `DesktopManager` nella Shell finché non c'è una necessità dimostrata.
+
+### Sequenza implementativa approvata
+
+1. Completare il tracciamento dei punti di costruzione scena e delle due vie Vulkan (DMA-BUF/KMS e CPU readback), verificando che entrambe consumino la stessa descrizione desktop.
+2. Introdurre il modello desktop minimo e il DesktopManager nel compositor, con fallback opaco e tema chiaro predefinito. Non alterare il clear pass generico.
+3. Aggiungere lo snapshot desktop alla RenderScene e disegnare la superficie prima delle finestre in entrambe le vie di presentazione.
+4. Aggiungere test puri per tema, fallback, validazione colore e snapshot; l'utente esegue cargo fmt/check/test su Fedora.
+5. Solo dopo il primo desktop vuoto stabile: introdurre wallpaper (decodifica separata, cache/upload Vulkan separati, policy di scaling separata).
+6. Poi integrare preferenze Shell, tema effettivo e gestione multi-monitor. Riutilizzare RenderTarget e OutputManager.
+7. Puntatore, Dock e Launcher rimangono rinviati fino a desktop base verificato.
+
+### Stato implementazione dopo questa decisione
+
+- La struttura `components/aurea-compositor/src/desktop/` NON è ancora stata creata.
+- Nessun file Rust è stato modificato in questa sessione.
+- Non è stato eseguito alcun test/build Rust.
+- La modifica al colore fisso non va fatta isolatamente: prima va passato un modello/snapshot desktop comune attraverso RenderScene e entrambe le vie Vulkan, così non si ottengono comportamenti diversi tra presentazione DMA-BUF e CPU readback.
+- HEAD verificato: `6b5690bf7551bc0aaf2971b89aba7973605cb34f`.
+- Prossima azione: ispezionare la seconda metà del percorso Vulkan di presentazione e verificare ogni chiamata alle funzioni clear/readback/release; poi implementare il primo vertical slice piccolo e coerente.
