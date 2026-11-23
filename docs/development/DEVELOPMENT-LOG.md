@@ -596,3 +596,12 @@ Updated all six SVGs, the family README and the icon inventory. Fides v5 folder 
 **Verification:** no SVG renderer or real-size visual inspection was run. The new direction has been translated into vector source, but still requires rendering and optical refinement before final approval. No runtime integration or automatic state selection has been implemented.
 
 **Next:** render all six SVGs over light and dark wallpapers, verify translucent readability, refine the opening and protruding contents, then connect theme and actual Trash state in the shell.
+
+
+## 2026-11-23 — Desktop Trash SVG structure fix
+
+After the founder checked the GitHub preview, a malformed XML structure was found in all six Trash SVGs: an SVG group was left unclosed and the clipping group was duplicated. GitHub consequently displayed “Error rendering embedded code — Invalid image source”.
+
+Regenerated all six Light/Dark × Empty/Half/Full assets with a simplified, balanced SVG group structure. Contents sit behind the translucent front wall; protruding pieces remain above the rim. Fix published in commit cf515c2.
+
+**Still required:** reopen GitHub Preview and visually inspect all six assets on a real device. Do not claim visual approval until that preview has been checked.
