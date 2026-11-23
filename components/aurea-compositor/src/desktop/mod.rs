@@ -10,9 +10,11 @@ mod manager;
 mod snapshot;
 mod surface;
 mod theme;
+mod wallpaper;
 
 pub use background::DesktopBackground;
 pub use manager::DesktopManager;
 pub use snapshot::DesktopSnapshot;
 pub use surface::DesktopSurface;
 pub use theme::DesktopTheme;
+pub use wallpaper::{WallpaperAsset, WallpaperDimensions, WallpaperFormat, WallpaperManager, WallpaperSnapshot};
