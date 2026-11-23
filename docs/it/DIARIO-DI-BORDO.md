@@ -193,3 +193,36 @@ Sono stati aggiunti test unitari per tema, background e DesktopManager. Non sono
 Wallpaper, decodifica immagini, upload texture Vulkan, scaling/crop e persistenza non sono ancora implementati. Il puntatore, Dock e Launcher restano rinviati.
 
 Commit principali: `542f918`, `2826f2d`, `e0fb92e`.
+
+
+## 23 novembre 2026 — Primo livello del WallpaperManager
+
+È iniziata l'implementazione del wallpaper selezionato, `aureaos-midnight-flow.jpg`, senza limitarsi a documentare l'architettura.
+
+### Codice aggiunto
+
+Creato `components/aurea-compositor/src/desktop/wallpaper/` con moduli separati:
+- `asset.rs`: incorpora l'asset JPEG nel binario e verifica i marker SOF e le dimensioni dell'immagine.
+- `manager.rs`: possiede la selezione del wallpaper e produce snapshot immutabili.
+- `snapshot.rs`: espone l'asset selezionato al singolo frame.
+- `mod.rs`: esporta il sottosistema.
+
+Il `DesktopManager` ora possiede il `WallpaperManager`; il `DesktopSnapshot` e la `RenderScene` trasportano il riferimento all'asset. Il fallback colore rimane disponibile quando non è selezionato un wallpaper.
+
+### Stato reale
+
+Questo passaggio incorpora e rende disponibile il JPEG alla scena, ma non lo mostra ancora sul monitor. Non sono ancora presenti:
+- decodifica JPEG in RGBA8;
+- texture Vulkan dedicata e upload;
+- pass di disegno del wallpaper;
+- scaling/crop e clipping per monitor.
+
+Il Cargo.lock non è stato alterato e non è stata introdotta una dipendenza di decoding senza poterla risolvere e verificare su Fedora.
+
+### Verifiche
+
+Nessun `cargo fmt`, `cargo check`, test o build è stato eseguito. La verifica resta da fare su Fedora. Nessun lavoro ISO è stato eseguito.
+
+### Prossimo passo
+
+Verificare prima la compilazione su Fedora; poi scegliere una libreria JPEG, aggiornare Cargo.lock, implementare la decodifica isolata e collegare il buffer RGBA al sistema di upload Vulkan già esistente.
