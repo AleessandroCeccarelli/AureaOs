@@ -140,7 +140,7 @@ mod tests {
     fn rejects_dimension_arithmetic_overflow() {
         assert_eq!(
             WallpaperPixels::required_byte_len(u32::MAX, u32::MAX).unwrap_err(),
-            WallpaperPixelsError::MemoryLimitExceeded
+            WallpaperPixelsError::DimensionsOverflow
         );
     }
 }
