@@ -106,11 +106,14 @@ impl TrashService {
         home: impl AsRef<Path>,
         full_threshold: usize,
     ) -> Result<Self, TrashError> {
-        let root = home.as_ref().join(".local/share/Trash");
+        let home = fs::canonicalize(home.as_ref())?;
+        let root = home.join(".local/share/Trash");
         let files_dir = root.join("files");
         let info_dir = root.join("info");
         fs::create_dir_all(&files_dir)?;
         fs::create_dir_all(&info_dir)?;
+        let files_dir = fs::canonicalize(files_dir)?;
+        let info_dir = fs::canonicalize(info_dir)?;
         Ok(Self {
             files_dir,
             info_dir,
@@ -159,6 +162,9 @@ impl TrashService {
             }
             let info = fs::read_to_string(&info_path)?;
             let original_path = read_original_path(&info).ok_or(TrashError::InvalidMetadata)?;
+            if !original_path.is_absolute() {
+                return Err(TrashError::InvalidMetadata);
+            }
             entries.push(TrashEntry {
                 name,
                 stored_path,
