@@ -28,6 +28,7 @@ use smithay::{
 };
 
 use crate::{
+    desktop::DesktopManager,
     frame::FrameScheduler,
     input::{
         cursor_animation::CursorLocateAnimation,
@@ -90,6 +91,7 @@ pub struct AureaCompositor {
     touch: Option<TouchHandle<Self>>,
     consumed_shortcut_keys: HashSet<Keycode>,
     window_manager: WindowManager,
+    desktop_manager: DesktopManager,
     output_manager: OutputManager,
     frame_scheduler: FrameScheduler,
     wayland_outputs: BTreeMap<OutputId, Output>,
@@ -157,6 +159,7 @@ impl AureaCompositor {
             touch: None,
             consumed_shortcut_keys: HashSet::new(),
             window_manager: WindowManager::new(),
+            desktop_manager: DesktopManager::default(),
             output_manager: OutputManager::new(),
             frame_scheduler: FrameScheduler::new(),
             wayland_outputs: BTreeMap::new(),
@@ -195,6 +198,16 @@ impl AureaCompositor {
     /// Returns the XDG shell protocol state.
     pub fn xdg_shell_state(&mut self) -> &mut XdgShellState {
         &mut self.xdg_shell_state
+    }
+
+    /// Returns the compositor-owned desktop manager.
+    pub fn desktop_manager(&self) -> &DesktopManager {
+        &self.desktop_manager
+    }
+
+    /// Returns mutable access to desktop appearance policy.
+    pub fn desktop_manager_mut(&mut self) -> &mut DesktopManager {
+        &mut self.desktop_manager
     }
 
     /// Returns the window manager.

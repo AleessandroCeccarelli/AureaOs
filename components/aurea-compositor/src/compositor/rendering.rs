@@ -75,7 +75,9 @@ impl AureaCompositor {
             .seat
             .get_pointer()
             .map(|pointer| pointer.current_location());
-        RenderScene::from_window_manager(&self.window_manager).with_cursor(
+        RenderScene::from_window_manager(&self.window_manager)
+            .with_desktop(self.desktop_manager.snapshot())
+            .with_cursor(
             &self.cursor_image,
             pointer_location,
             self.cursor_locate_scale(),

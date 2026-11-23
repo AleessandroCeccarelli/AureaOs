@@ -22,6 +22,7 @@ pub(super) fn clear_display_and_release(
     intermediate_view: &VulkanImageView<'_, '_>,
     previous_intermediate_state: VulkanImageState,
     on_submitted: impl FnOnce(),
+    background_color: [f32; 4],
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let binding = pass
         .bind_source(intermediate_view)
@@ -37,8 +38,7 @@ pub(super) fn clear_display_and_release(
         intermediate_view,
         previous_intermediate_state,
         VulkanImageState::General,
-        BACKGROUND_COLOR,
-    )
+        )
     .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     pass.record(
         device,
@@ -87,7 +87,7 @@ pub(super) fn clear_and_release(
         view,
         previous_image_state,
         VulkanImageState::General,
-        BACKGROUND_COLOR,
+        background_color,
     )
     .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     VulkanImageTransition::record_release_to_foreign(

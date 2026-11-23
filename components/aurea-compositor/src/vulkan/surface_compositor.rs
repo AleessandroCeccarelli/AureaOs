@@ -32,7 +32,6 @@ use super::{
     VulkanReadbackBuffer, VulkanSurfacePipelineCache, VulkanTextureBinding,
 };
 
-pub(super) const BACKGROUND_COLOR: [f32; 4] = [0.08, 0.18, 0.32, 1.0];
 pub(super) const MAX_COMPOSITED_SURFACES: usize = 128;
 pub(super) const MAX_COMPOSITED_SHM_BYTES: usize = 256 * 1024 * 1024;
 
@@ -83,6 +82,7 @@ pub(super) fn render_frame(
     readback: Option<&VulkanReadbackBuffer<'_>>,
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
+    let background_color = scene.desktop().surface().background_color();
     let active_surface_ids = scene.surface_ids();
     let snapshots = scene.shm_snapshots();
     let visible = visible_surfaces(snapshots, target)?;
@@ -118,9 +118,10 @@ pub(super) fn render_frame(
                         intermediate_view,
                         intermediate_state,
                         readback,
+                        background_color,
                     )
                 }
-                None => clear_and_readback(device, view, previous_image_state, readback),
+                None => clear_and_readback(device, view, previous_image_state, readback, background_color),
             };
         }
         return match display_color {
@@ -134,9 +135,10 @@ pub(super) fn render_frame(
                     intermediate_view,
                     intermediate_state,
                     on_submitted,
+                    background_color,
                 )
             }
-            None => clear_and_release(device, view, previous_image_state, on_submitted),
+            None => clear_and_release(device, view, previous_image_state, on_submitted, background_color),
         };
     }
     // Finish asynchronous texture uploads before borrowing cache-owned GPU resources.
@@ -243,7 +245,7 @@ pub(super) fn render_frame(
         composition_view,
         composition_previous_state,
         VulkanImageState::General,
-        BACKGROUND_COLOR,
+        background_color,
     )
     .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
 
