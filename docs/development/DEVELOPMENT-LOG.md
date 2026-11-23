@@ -419,3 +419,26 @@ The Vulkan wallpaper draw pass remains intentionally pending. The current scene 
 Commits: `7b15482`, `84b3f00`, `e1a1fdb`, `0be01da`, `2120f43`, `ce0509f`.
 
 No Cargo formatting, compilation, or tests were run remotely. Fedora remains the validation environment.
+
+
+## 23 November 2026 — Animated and dynamic wallpaper product decision
+
+The wallpaper system now has a dedicated architecture specification at `docs/design/WALLPAPER-SYSTEM.md`.
+
+The selected `aureaos-midnight-flow.jpg` remains the default wallpaper. Animated support is an expansion of the wallpaper engine, not a replacement of the chosen visual identity.
+
+Planned capabilities:
+- looping video or animated-image wallpapers;
+- time-of-day dynamic collections (dawn/day/sunset/night);
+- per-monitor assignment, shared wallpaper, and panoramic Span mode;
+- muted audio by default;
+- decoding outside the compositor render thread;
+- pause when fully obscured, output disabled, session locked, or system suspended;
+- bounded resolution, frame rate, queue depth, and memory;
+- static fallback, reduced-motion preference, and power-saving policy.
+
+The media backend is intentionally undecided. GStreamer and FFmpeg are candidates for a later comparison covering maintenance, Fedora/target distribution packaging, codec licensing, Rust APIs, hardware decode, and software fallback. Do not add a dependency or edit Cargo.lock before this review.
+
+Implementation order remains: finish the static JPEG Vulkan path first; add PNG/BMP and Tile/Span; then define timestamped animation frames and deterministic playback state; finally integrate a media backend and power/session policy.
+
+This is a product decision and documented plan, not an implemented feature. No Cargo build or tests were run.
