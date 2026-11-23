@@ -378,3 +378,70 @@ Non creare tutti questi file in anticipo. Aggiungere un file solo quando ha una 
 - La modifica al colore fisso non va fatta isolatamente: prima va passato un modello/snapshot desktop comune attraverso RenderScene e entrambe le vie Vulkan, così non si ottengono comportamenti diversi tra presentazione DMA-BUF e CPU readback.
 - HEAD verificato: `6b5690bf7551bc0aaf2971b89aba7973605cb34f`.
 - Prossima azione: ispezionare la seconda metà del percorso Vulkan di presentazione e verificare ogni chiamata alle funzioni clear/readback/release; poi implementare il primo vertical slice piccolo e coerente.
+
+
+## IMPLEMENTAZIONE DESKTOP — 2026-11-23 (PRIMO VERTICAL SLICE)
+
+### Commit effettivi su main
+
+- `542f9182d5e36975d1f5b0eefbb1ab8c0cd67041` — `feat(desktop): add desktop manager and themed Vulkan base surface`
+- `2826f2d588e18138dcd433e1b8b0e9a035f13e63` — `fix(desktop): pass selected surface color through Vulkan clear paths`
+- `e0fb92e214aaafe5957e04eb8e4b0e3d1764917b` — `fix(desktop): pass selected surface color through Vulkan release paths`
+
+HEAD verificato dopo gli interventi: `e0fb92e214aaafe5957e04eb8e4b0e3d1764917b`.
+
+### Codice creato/modificato
+
+Nuova cartella `components/aurea-compositor/src/desktop/`:
+- `mod.rs`: esportazioni del sottosistema desktop.
+- `manager.rs`: DesktopManager, unico proprietario della policy di tema/background e produttore dello snapshot frame.
+- `theme.rs`: temi Light/Dark e colori desktop coerenti con i token AureaOS.
+- `background.rs`: sorgente ThemeDefault o SolidColor, validazione dei canali e opacità garantita.
+- `surface.rs`: descrizione immutabile della superficie desktop.
+- `snapshot.rs`: snapshot immutabile della superficie per frame.
+
+Integrazioni:
+- `src/lib.rs`: esportato il modulo desktop.
+- `src/compositor.rs`: AureaCompositor possiede DesktopManager e offre accesso controllato.
+- `src/compositor/rendering.rs`: ogni RenderScene riceve lo snapshot corrente del DesktopManager.
+- `src/render.rs`: RenderScene conserva DesktopSnapshot.
+- `src/vulkan/surface_compositor.rs`: il colore desktop della scena è usato sia per frame vuoti sia per scene con superfici.
+- `src/vulkan/surface_compositor/readback.rs`: colore propagato alle vie readback, incluse le varianti con display color.
+- `src/vulkan/surface_compositor/release.rs`: colore propagato alle vie di rilascio scanout KMS, incluse le varianti con display color.
+
+### Comportamento introdotto
+
+- Il desktop ha ora un modello di stato dedicato nel compositor, separato dalla Shell.
+- Default: superficie opaca Light basata sul token `#edf4ff`.
+- Tema Dark: superficie opaca basata sul token `#0d1320`.
+- È possibile configurare un colore RGBA personalizzato; input non finiti o fuori intervallo vengono rifiutati e il canale alpha è normalizzato a 1.0.
+- Il manager produce un DesktopSnapshot immutabile per il frame.
+- Il Vulkan surface compositor usa lo stesso colore per il percorso normale, empty scene, readback e release-to-KMS. Il clear pass generico non conosce i temi.
+- Il puntatore/Dock/Launcher non sono stati oggetto di questo intervento.
+- Wallpaper image loading, texture upload, scaling/crop e persistenza NON sono ancora implementati.
+- Non è ancora stata eseguita una prova su Fedora/hardware.
+
+### Test aggiunti ma non eseguiti
+
+Test unitari in `desktop/theme.rs`, `desktop/background.rs` e `desktop/manager.rs` coprono:
+- token Light/Dark opachi e distinti;
+- risoluzione del background tema;
+- rifiuto di canali NaN/fuori intervallo;
+- normalizzazione alpha;
+- default Light;
+- cambio tema;
+- colore personalizzato indipendente dal tema e ritorno al background tema.
+
+L'utente deve eseguire su Fedora `cargo fmt --all`, `cargo check -p aurea-compositor --features drm` e i test mirati/workspace secondo i tempi concordati. Nessun test/build è stato eseguito da ChatGPT.
+
+### Stato e prossime azioni
+
+Il primo vertical slice del desktop è stato scritto e pubblicato, ma NON è dichiarato compilante o funzionante finché Fedora non lo verifica. Prima del successivo sviluppo:
+1. L'utente esegue format/check/test su Fedora e condivide l'output.
+2. Correggere ogni errore reale prima di estendere il sistema.
+3. Dopo esito positivo, implementare il caricamento wallpaper separando decoder, cache CPU, upload Vulkan e policy di scaling.
+4. Integrare preferenze Shell solo tramite un contratto API chiaro; evitare duplicazione di DesktopManager.
+5. Poi completare geometria per-output/multi-monitor e verificare il desktop visibile senza finestre.
+6. Puntatore, Dock e Launcher restano fuori dalla priorità immediata.
+
+Non affermare che AureaOS mostra già un desktop funzionante: è stato implementato il primo livello di policy e propagazione del colore di sfondo nel renderer, da validare su Fedora.
