@@ -6,7 +6,7 @@ Owns original AureaOS application, system, launcher and Fides folder artwork. Th
 
 ## Structure
 
-- `source/system/` — launcher and system identity artwork, plus preserved legacy system marks.
+- `source/system/` — launcher, system identity and desktop system artwork.
 - `source/applications/` — first-party application icon masters.
 - `source/folders/` — original Fides folder/location artwork, including approved v5.
 - `generated/` — reserved for validated exports and runtime packages.
@@ -20,6 +20,7 @@ Brand presentation artwork belongs in `../brand/`; generic third-party symbols b
 
 - `source/system/aureaos-launcher-icon.svg` — complete launcher tile.
 - `source/system/aureaos-launcher-symbol.svg` — matching transparent launcher symbol.
+- `source/system/trash/` — six transparent desktop Trash states: empty, half-full and full for Light and Dark themes.
 - `aureaos-icon.svg` and `aureaos-symbol.svg` — preserved legacy AureaOS emblem artwork; do not silently replace these with the launcher variants.
 - `aurea-ai-orb.svg`, `file-manager.svg` and `wallet.svg` — retained legacy/system artwork. Their future relationship to the application icon library must be reviewed separately.
 

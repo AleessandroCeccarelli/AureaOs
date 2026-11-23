@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title id="title">AureaOS dark Trash — Full</title>
+<desc id="desc">Transparent desktop trash can icon in the AureaOS folder-artwork style, full state.</desc>
+<defs>
+  <linearGradient id="body" x1="120" y1="190" x2="390" y2="430" gradientUnits="userSpaceOnUse"><stop stop-color="#D8E7F0"/><stop offset="1" stop-color="#8EADBF"/></linearGradient>
+  <linearGradient id="rim" x1="140" y1="175" x2="372" y2="215" gradientUnits="userSpaceOnUse"><stop stop-color="#718DA0"/><stop offset="1" stop-color="#536777"/></linearGradient>
+  <linearGradient id="lid" x1="140" y1="125" x2="370" y2="170" gradientUnits="userSpaceOnUse"><stop stop-color="#D8E7F0"/><stop offset="1" stop-color="#8EADBF"/></linearGradient>
+  <linearGradient id="contents" x1="180" y1="250" x2="330" y2="380" gradientUnits="userSpaceOnUse"><stop stop-color="#4D9FD9"/><stop offset="1" stop-color="#65B9F4"/></linearGradient>
+  <filter id="shadow" x="-30%" y="-25%" width="160%" height="170%"><feGaussianBlur in="SourceAlpha" stdDeviation="8"/><feOffset dy="9"/><feComponentTransfer><feFuncA type="linear" slope=".24"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <clipPath id="binClip"><path d="M164 211H348L329 412Q327 431 308 431H204Q185 431 183 412Z"/></clipPath>
+</defs>
+<g filter="url(#shadow)">
+  <path d="M164 211H348L329 412Q327 431 308 431H204Q185 431 183 412Z" fill="url(#body)" stroke="#718DA0" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M177 229H335L319 405Q318 414 307 414H205Q194 414 193 405Z" fill="#607D91" opacity=".16"/>
+  <path d="M160 250Q195 224 226 245T287 239T352 247L337 390H175Z" fill="url(#contents)" clip-path="url(#binClip)"/><path d="M178 264l37-25 28 24-24 25zM248 257l34-24 27 25-24 24zM307 267l32-20 19 24-23 22z" fill="#FFFFFF" opacity=".92" clip-path="url(#binClip)"/>
+  <path d="M183 231L197 400" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="7" stroke-linecap="round"/>
+  <path d="M315 237L302 407" stroke="#718DA0" stroke-opacity=".45" stroke-width="6" stroke-linecap="round"/>
+  <path d="M205 257V386M256 257V386M307 257V386" stroke="#7897AA" stroke-width="10" stroke-linecap="round" opacity=".92"/>
+  <path d="M145 190Q145 178 158 178H354Q367 178 367 190V204Q367 216 354 216H158Q145 216 145 204Z" fill="url(#rim)" stroke="#718DA0" stroke-width="6"/>
+  <path d="M134 159Q134 146 148 146H364Q378 146 378 159V171Q378 184 364 184H148Q134 184 134 171Z" fill="url(#lid)" stroke="#718DA0" stroke-width="7"/>
+  <path d="M225 129Q225 116 238 116H274Q287 116 287 129V146H225Z" fill="url(#lid)" stroke="#718DA0" stroke-width="7"/>
+  <path d="M151 158H360" stroke="#FFFFFF" stroke-opacity=".72" stroke-width="5" stroke-linecap="round"/>
+</g>
+</svg>

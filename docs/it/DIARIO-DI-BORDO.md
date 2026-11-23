@@ -349,3 +349,39 @@ La specifica architetturale è in docs/architecture/DESKTOP-ITEMS-AND-STACKS.md.
 Sono stati aggiunti test unitari mirati, ma in questa sessione non sono stati eseguiti comandi Cargo. Non si dichiara quindi la compilazione verificata. Persistenza, scansione e monitoraggio del filesystem, integrazione MIME, interfaccia shell, drag-and-drop, menu contestuale, apertura/espansione delle pile e rendering compositor restano da implementare.
 
 La CI precedente (run 45256450916 sul commit 99714264) aveva build/test workspace e audit dipendenze superati, ma il job di formattazione Rust fallito su file wallpaper/Vulkan preesistenti. Le differenze di formattazione individuate sono state corrette nello stesso aggiornamento; la nuova CI dovrà confermare il risultato.
+
+
+## 23 novembre 2026 — Icone dedicate del Cestino desktop
+
+### Ambito e scelta grafica
+
+Le icone `light-trash.svg` e `dark-trash.svg` già presenti nella famiglia cartelle Fides v5 rappresentano una cartella/posizione Cestino, non un bidone autonomo. Sono state lasciate invariate. È stata creata una famiglia separata di simboli del Cestino desktop, coerente con il linguaggio dimensionale AureaOS: palette blu-grigia, riflessi morbidi, bordi e ombreggiatura.
+
+### Asset sorgente aggiunti
+
+Nella cartella `aurea-human-interfaces/icons/source/system/trash/`:
+
+- `light/trash-empty.svg`
+- `light/trash-half.svg`
+- `light/trash-full.svg`
+- `dark/trash-empty.svg`
+- `dark/trash-half.svg`
+- `dark/trash-full.svg`
+
+Tutti e sei gli SVG hanno canvas trasparente 512 × 512 e condividono la stessa geometria del bidone. Il tema Light/Dark modifica la palette per mantenere il contrasto; lo stato Vuoto/Metà/Pieno modifica soltanto il contenuto visibile.
+
+È stato aggiunto un README dedicato e aggiornato l'inventario della libreria icone. Lo sprite delle cartelle Fides e le sue icone Cestino esistenti non sono stati modificati.
+
+### Verifiche e limiti
+
+- Il markup SVG dei sei asset è stato creato e registrato come sorgente modificabile.
+- In questa modifica non sono stati eseguiti rendering SVG locale, controllo visivo alle diverse dimensioni, integrazione nella shell o selezione runtime dello stato.
+- Le icone non implementano comportamento del Cestino, conteggio file, ripristino, eliminazione definitiva o rendering desktop.
+- La scelta tra Vuoto/Metà/Pieno dovrà dipendere dallo stato reale del Cestino, indipendentemente dal tema attivo.
+
+### Prossime attività
+
+1. Ispezionare i sei asset alle dimensioni logiche previste e rifinire l'allineamento ottico se necessario.
+2. Collegare il tema attivo alla variante Light/Dark.
+3. Collegare Vuoto/Metà/Pieno allo stato effettivo del Cestino.
+4. Inserire l'elemento Cestino nella scena della shell e collegare separatamente apertura e menu contestuale.

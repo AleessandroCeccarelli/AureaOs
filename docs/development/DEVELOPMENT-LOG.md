@@ -502,3 +502,39 @@ Architecture rules and explicit implementation boundaries are documented in docs
 Focused unit tests were added for identifier validation, extension extraction, default Trash-only state, duplicate IDs, Trash protection, optional grouping, category/extension grouping and item exclusions. No Cargo command was executed in this session; these tests are added but not yet run. Persistence, filesystem discovery/watchers, MIME database integration, shell presentation, drag-and-drop, context menus, stack expansion and compositor rendering remain future work.
 
 The latest CI run inspected before this change (45256450916, commit 99714264) had successful workspace build/tests and dependency audit, but Rust formatting failed in existing wallpaper/Vulkan files. Those formatting-only differences are corrected in this commit; the new Rust files must be checked by the next CI run.
+
+
+## 2026-11-23 — Desktop Trash icon artwork
+
+### Scope and visual decision
+
+The existing `light-trash.svg` and `dark-trash.svg` under the Fides v5 folder family are folder/location illustrations, not standalone trash-can artwork. They remain unchanged. A separate desktop Trash symbol family has been added, following the established AureaOS dimensional style, blue-grey palette, soft highlights and shadow treatment.
+
+### Source assets added
+
+Under `aurea-human-interfaces/icons/source/system/trash/`:
+
+- `light/trash-empty.svg`
+- `light/trash-half.svg`
+- `light/trash-full.svg`
+- `dark/trash-empty.svg`
+- `dark/trash-half.svg`
+- `dark/trash-full.svg`
+
+All six use a transparent 512 × 512 SVG canvas and share the same can geometry. Light/Dark changes the palette for theme contrast; Empty/Half/Full changes only the visible contents.
+
+Added a dedicated README for the desktop Trash artwork and updated the icon-library inventory. The Fides folder sprite and its existing trash-folder symbols were not modified.
+
+### Verification and limitations
+
+- Source SVG markup was authored for all six variants and stored as editable masters.
+- No local SVG renderer, export-size visual inspection, shell integration or runtime state selection was run in this change.
+- The icons do not implement Trash behavior, file counting, restore, permanent deletion or desktop rendering.
+- The state-to-icon mapping must be driven by the actual Trash contents model, independently of the active theme.
+
+### Next actions
+
+1. Inspect the six assets at the documented logical sizes and refine optical alignment if needed.
+2. Connect theme selection to the Light/Dark artwork.
+3. Connect Empty/Half/Full selection to the actual Trash state.
+4. Add the desktop Trash item to the shell scene and wire open/context-menu behavior separately.
