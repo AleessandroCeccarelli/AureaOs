@@ -605,3 +605,23 @@ After the founder checked the GitHub preview, a malformed XML structure was foun
 Regenerated all six Light/Dark × Empty/Half/Full assets with a simplified, balanced SVG group structure. Contents sit behind the translucent front wall; protruding pieces remain above the rim. Fix published in commit cf515c2.
 
 **Still required:** reopen GitHub Preview and visually inspect all six assets on a real device. Do not claim visual approval until that preview has been checked.
+
+ 
+## 2026-11-23 — Embed desktop Trash SVG assets in Aurea Shell
+
+The six approved assets (Light/Dark × Empty/Half/Full) are now embedded at compile time in Aurea Shell via `include_bytes!`, without new dependencies and without maintaining a second copy of the SVG masters.
+
+### New modules
+- `components/aurea-shell/src/desktop/trash.rs`: semantic `TrashContentsState` enum (Empty, PartiallyFull, Full), defaulting to Empty.
+- `components/aurea-shell/src/desktop/trash_artwork.rs`: resolves the SVG resource solely from `DesktopTheme` and `TrashContentsState`.
+- `desktop/mod.rs`: `DesktopState` now owns the visual Trash state and exposes `trash_artwork_svg()` and `set_trash_contents()`.
+
+Unit tests were added for all six mappings, UTF-8/root SVG structure, Light/Dark distinction and Full-state selection.
+
+### Explicit boundaries
+This change embeds the assets in the shell binary and connects them to its presentation model, but **does not yet draw the icon on the desktop**: the inspected repository does not yet contain a desktop widget/renderer consuming these bytes. No filesystem Trash service is connected yet; therefore the state starts Empty and must be updated by the future service. Fill thresholds, monitoring, restore and permanent deletion remain unimplemented.
+
+**Verification:** no Cargo command, build or test was run in this phase. Tests have been added but remain to be executed on Fedora in the agreed test cycle.
+
+### Corrected visual specification
+An earlier historical entry describing wire mesh was an incorrect interpretation and is superseded: the approved design is an open, white satin/opal translucent basket, with contents visible through its walls. The six current SVGs, including the fuller Full state approved by the founder, are the canonical masters.

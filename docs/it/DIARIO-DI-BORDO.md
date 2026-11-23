@@ -452,3 +452,23 @@ Dopo il controllo del fondatore su GitHub, individuato un errore strutturale XML
 Rigenerati tutti e sei i file Light/Dark × Vuoto/A metà/Pieno con struttura SVG semplificata e gruppi bilanciati. Il contenuto è disposto dietro la parete frontale traslucida; gli elementi che sporgono restano sopra il bordo. Correzione pubblicata nel commit cf515c2.
 
 **Verifica ancora necessaria:** riaprire la Preview GitHub e controllare visivamente i sei file su dispositivo reale. Non dichiarare concluso il controllo grafico finché la Preview non è stata verificata.
+
+ 
+## 23 novembre 2026 — Integrazione risorse SVG del Cestino nella shell
+
+I sei asset approvati (Light/Dark × Vuoto/A metà/Pieno) sono ora incorporati a compile-time in Aurea Shell tramite `include_bytes!`, senza dipendenze aggiuntive e senza copiare gli SVG in una seconda cartella.
+
+### Nuovi moduli
+- `components/aurea-shell/src/desktop/trash.rs`: enum semantico `TrashContentsState` con Vuoto, A metà e Pieno; stato predefinito Vuoto.
+- `components/aurea-shell/src/desktop/trash_artwork.rs`: risoluzione esclusiva delle risorse SVG in base a `DesktopTheme` e `TrashContentsState`.
+- `desktop/mod.rs`: `DesktopState` ora possiede lo stato visuale del Cestino e fornisce `trash_artwork_svg()` e `set_trash_contents()`.
+
+Aggiunti test unitari per tutti e sei gli abbinamenti, validità UTF-8/struttura radice SVG, distinzione Light/Dark e selezione dello stato Pieno.
+
+### Confini dichiarati
+Questa modifica integra gli asset nel binario della shell e nel modello di presentazione, ma **non disegna ancora l'icona sul desktop**: nel repository esaminato non è ancora presente un widget/renderer desktop che consumi questi byte. Non è ancora collegato un servizio filesystem del Cestino; perciò lo stato parte da Vuoto e deve essere aggiornato dal futuro servizio. Soglie di riempimento, monitoraggio, ripristino e cancellazione definitiva restano da implementare.
+
+**Verifica:** nessun comando Cargo, build o test è stato eseguito in questa fase. I test sono stati aggiunti ma restano da eseguire su Fedora nel ciclo concordato.
+
+### Specifica visuale corretta
+La rete metallica descritta in una voce storica precedente era un'interpretazione errata e viene superata: la specifica approvata è il cestino bianco satinato/opalino traslucido, aperto, con contenuto visibile attraverso le pareti. I sei SVG correnti, incluso il Pieno più voluminoso approvato dal fondatore, sono i master canonici.

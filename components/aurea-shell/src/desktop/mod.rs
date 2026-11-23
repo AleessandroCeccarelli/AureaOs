@@ -9,6 +9,8 @@ mod dock;
 mod launcher;
 mod night_light;
 mod panels;
+mod trash;
+mod trash_artwork;
 mod workspace;
 
 pub use dock::{DockMode, DockState};
@@ -17,6 +19,7 @@ pub use night_light::{
     NightLightMode, NightLightSchedule, NightLightScheduleError, NightLightState,
 };
 pub use panels::{DesktopPanel, DesktopPanelState};
+pub use trash::TrashContentsState;
 pub use workspace::{WORKSPACE_COUNT, WorkspaceId, WorkspaceManager};
 
 /// Desktop appearance preference.
@@ -36,6 +39,7 @@ pub struct DesktopState {
     pub panels: DesktopPanelState,
     pub theme: DesktopTheme,
     pub night_light: NightLightState,
+    pub trash_contents: TrashContentsState,
 }
 
 impl DesktopState {
@@ -57,18 +61,32 @@ impl DesktopState {
             DesktopTheme::Dark => DesktopTheme::Light,
         };
     }
+
+    /// Selects the Trash artwork for the current theme and content state.
+    pub fn trash_artwork_svg(&self) -> &'static [u8] {
+        trash_artwork::svg(self.theme, self.trash_contents)
+    }
+
+    /// Updates the visual Trash state supplied by the Trash service.
+    pub fn set_trash_contents(&mut self, state: TrashContentsState) {
+        self.trash_contents = state;
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{DesktopState, DesktopTheme, NightLightMode};
+    use super::{DesktopState, DesktopTheme, NightLightMode, TrashContentsState};
 
     #[test]
-    fn default_desktop_starts_with_light_theme_and_closed_launcher() {
+    fn default_desktop_starts_with_light_theme_empty_trash_and_closed_launcher() {
         let state = DesktopState::default();
         assert_eq!(state.theme, DesktopTheme::Light);
+        assert_eq!(state.trash_contents, TrashContentsState::Empty);
         assert!(!state.launcher.is_open());
         assert!(!state.night_light.is_enabled());
+        assert!(std::str::from_utf8(state.trash_artwork_svg())
+            .unwrap()
+            .contains("trash-empty"));
     }
 
     #[test]
@@ -82,12 +100,21 @@ mod tests {
     }
 
     #[test]
-    fn theme_toggle_is_reversible() {
+    fn theme_toggle_selects_the_matching_trash_artwork() {
         let mut state = DesktopState::default();
+        let light = state.trash_artwork_svg();
         state.toggle_theme();
         assert_eq!(state.theme, DesktopTheme::Dark);
-        state.toggle_theme();
-        assert_eq!(state.theme, DesktopTheme::Light);
+        assert_ne!(state.trash_artwork_svg(), light);
+    }
+
+    #[test]
+    fn trash_state_selects_the_matching_artwork() {
+        let mut state = DesktopState::default();
+        state.set_trash_contents(TrashContentsState::Full);
+        assert!(std::str::from_utf8(state.trash_artwork_svg())
+            .unwrap()
+            .contains("overfilled pile"));
     }
 
     #[test]
