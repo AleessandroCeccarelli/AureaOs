@@ -1,0 +1,272 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
+# AureaOS ISO Factory
+
+**Stato:** procedura operativa e specifica obiettivo  
+**Ultima revisione:** 23 novembre 2026  
+**Repository:** `AleessandroCeccarelli/AureaOs`  
+**Branch principale:** `main`  
+**Piattaforma prevista:** Debian GNU/Linux 13 (Trixie), amd64
+
+Questo documento definisce il ciclo ricorrente che trasforma lo stato verificato del repository AureaOS in una nuova ISO Live. Distingue esplicitamente ciò che è già presente nel repository, ciò che deve ancora essere migliorato e ciò che va verificato su hardware reale. Il registro cronologico dettagliato rimane nel [diario di bordo](DIARIO-DI-BORDO.md).
+
+## 1. Scopo
+
+ISO Factory è la procedura stabile e ripetibile con cui produciamo una nuova ISO Live a partire dallo stato corrente e verificato di AureaOS.
+
+Il ciclo settimanale è il seguente:
+
+1. Durante la settimana sviluppiamo e pubblichiamo le modifiche su GitHub.
+2. Venerdì o sabato sincronizziamo Fedora con `origin/main`.
+3. Su Fedora eseguiamo formattazione, compilazione e test Rust.
+4. Generiamo la ISO da quello specifico stato locale del repository usando gli script mantenuti.
+5. Eseguiamo automaticamente i controlli sul contenuto di boot e sulla struttura ISO.
+6. Avviamo l'immagine su hardware fisico e registriamo il risultato.
+7. Conserviamo ISO, checksum, manifest di build, report di validazione e log.
+
+L'obiettivo è aggiornare il sistema ogni settimana senza riscrivere la procedura e senza perdere la storia delle immagini di prova precedenti.
+
+## 2. Regole operative non negoziabili
+
+- **Un'unica fonte di verità:** il sorgente previsto per la release è il commit esatto di `main` sincronizzato su Fedora e sottoposto ai controlli locali concordati.
+- **Nessuna riscrittura settimanale degli script:** gli script esistenti si migliorano quando emerge un difetto verificato o un nuovo requisito; non si crea ogni settimana una procedura usa-e-getta.
+- **Nessuna dichiarazione di successo non verificata:** la conclusione positiva di `live-build` o la presenza di un file ISO non dimostrano che il sistema Live si avvii.
+- **Conservazione delle prove:** le build fallite devono mantenere workspace e diagnostica. Anche dopo una build riuscita workspace e cache vanno conservati, salvo richiesta esplicita di pulizia.
+- **Nessuna perdita dello storico:** le immagini candidate precedenti e i relativi report devono restare identificabili tramite commit e ID di build.
+- **Fedora resta il riferimento per i controlli locali:** formattazione, compilazione e test Rust concordati vengono eseguiti sul computer Fedora. Una modifica su GitHub non dimostra che tali controlli siano passati.
+- **Modularità:** ogni script o modulo ha una sola responsabilità; il coordinatore deve restare contenuto e delegare i controlli a script specifici.
+- **Rispetto dell'architettura AureaOS:** Debian Trixie amd64; desktop Wayland-only, Vulkan-only e basato su Smithay. La pipeline non deve introdurre X11, XWayland, OpenGL, GNOME, KDE o XFCE come dipendenze del prodotto AureaOS.
+- Si lavora su `main`, salvo diversa richiesta esplicita. Non si eliminano modifiche locali non committate per forzare la sincronizzazione.
+
+## 3. Ciclo settimanale
+
+### Fase A — Sviluppo su GitHub (lunedì-venerdì)
+
+- Lavoriamo sul branch `main`.
+- Manteniamo commit circoscritti e messaggi descrittivi.
+- Aggiorniamo la documentazione tecnica e il diario quando cambiano decisioni, comportamento, limitazioni o risultati delle verifiche.
+- Durante le normali sessioni dedicate al desktop non generiamo una ISO ogni giorno.
+- Non consideriamo completata una funzionalità solo perché sono stati aggiunti API, file, specifiche o test: distinguiamo prototipo, implementazione, verifica automatica e verifica hardware.
+
+### Fase B — Sincronizzazione Fedora (venerdì o sabato)
+
+Dalla cartella locale del repository AureaOS su Fedora:
+
+```bash
+git status --short --branch
+git switch main
+git pull --ff-only origin main
+git status --short --branch
+git rev-parse HEAD
+git log -1 --oneline --decorate
+```
+
+Prima dei controlli devono essere vere queste condizioni:
+
+- Il branch corrente è `main`.
+- Il pull è terminato con fast-forward oppure ha confermato che il branch è già aggiornato.
+- Non ci sono modifiche locali inattese non committate.
+- L'ID completo del commit viene registrato per la verifica settimanale.
+
+Se il working tree contiene modifiche, ci fermiamo e le esaminiamo. Non eseguiamo automaticamente reset, clean o sovrascritture. Prima di proseguire, le modifiche devono essere risolte o conservate consapevolmente.
+
+### Fase C — Controlli qualità Rust su Fedora
+
+Eseguiamo i controlli in questo ordine:
+
+```bash
+cargo fmt --all -- --check
+cargo check --workspace
+cargo test --workspace
+```
+
+Aggiungiamo i controlli specifici delle funzionalità effettivamente coinvolte, ad esempio il controllo DRM del compositor quando pertinente:
+
+```bash
+cargo check -p aurea-compositor --features drm
+```
+
+Gli ulteriori comandi dipendono dall'implementazione corrente e dall'hardware supportato. Non dichiariamo superato un comando se non ne abbiamo osservato l'output e il codice di uscita. Registriamo con precisione errori, test ignorati e test saltati perché dipendenti dall'hardware.
+
+**Condizione di accesso alla build:** non iniziamo la produzione ISO se un controllo obbligatorio di formattazione, compilazione o test fallisce. Un'eventuale eccezione deve essere decisa esplicitamente e annotata nel manifest e nel diario.
+
+### Fase D — Generazione della ISO
+
+L'entry point mantenuto per Fedora è il wrapper Podman:
+
+```bash
+bash tools/iso/build-live-iso-podman.sh
+```
+
+Attualmente il wrapper:
+- utilizza un container Debian Trixie slim per l'ambiente live-build;
+- monta il repository in sola lettura;
+- usa una directory persistente per la build e un lock del workspace;
+- delega la generazione effettiva a `tools/iso/build-live-iso.sh`;
+- scrive per impostazione predefinita la candidata in `~/Documenti/AureaOS.iso` e crea il relativo file SHA-256.
+
+Per riprendere una build interrotta, il wrapper supporta attualmente il riutilizzo dello stesso workspace:
+
+```bash
+RESUME=1 BUILD_PARENT=/percorso/assoluto/a/aureaos-podman-build \
+  bash tools/iso/build-live-iso-podman.sh
+```
+
+Va utilizzato lo stesso build parent che contiene il workspace interrotto. Non si avvia una seconda build sullo stesso workspace e non si cancella una build fallita prima di averne esaminato log e causa.
+
+Lo script interno prepara il sorgente tramite `git archive HEAD`. Quindi compila il commit locale attualmente selezionato, non esegue automaticamente un fetch di GitHub. La sincronizzazione Fedora e i controlli della fase precedente garantiscono che quel commit locale corrisponda allo stato `main` che intendiamo verificare. Durante la build lo script non deve cambiare branch né eseguire pull silenziosi.
+
+### Fase E — Validazione automatica dell'immagine
+
+Nel repository sono già presenti due script specifici:
+
+- `tools/iso/tests/validate-chroot-boot.sh` — controlla nel chroot i pacchetti di boot richiesti e l'integrazione initramfs di live-boot, rigenera l'initramfs e verifica la presenza di `scripts/live`.
+- `tools/iso/tests/validate-live-image.sh` — controlla nel tree binary o nella ISO estratta kernel/initramfs, `scripts/live`, file GRUB, voce AureaOS, parametro `boot=live`, voce predefinita e timeout.
+
+L'hook di build richiama il validatore del chroot dopo l'installazione e la pulizia dei pacchetti. Il coordinatore controlla il payload binary e successivamente la ISO copiata.
+
+I livelli di validazione devono coprire almeno:
+
+1. Stato dei pacchetti nel chroot: `live-boot`, `live-boot-initramfs-tools`, `live-config`, `initramfs-tools` e il pacchetto kernel previsto.
+2. Presenza ed esecuzione dell'hook initramfs di live-boot e dello script di avvio anticipato.
+3. Generazione corretta dell'initramfs per il kernel installato.
+4. Presenza di `scripts/live` in ogni initramfs selezionato.
+5. File kernel e initramfs non vuoti e coerenti nel payload Live.
+6. Configurazione GRUB e relativo file globale incluso.
+7. Etichetta AureaOS, parametro `boot=live`, voce predefinita e timeout.
+8. Leggibilità della ISO e presenza del payload atteso dopo l'estrazione.
+9. Strutture di boot BIOS e UEFI, comprese le evidenze El Torito/EFI, con gli strumenti di ispezione ISO disponibili.
+10. Checksum SHA-256 e report di validazione leggibile anche da strumenti automatici.
+
+Un controllo non implementato o non eseguito deve risultare in sospeso, non essere considerato superato per supposizione.
+
+### Fase F — Verifica su hardware reale
+
+L'ispezione automatica non sostituisce un avvio reale. Copiamo la ISO candidata nella partizione dati Ventoy già esistente e la selezioniamo dal menu Ventoy. Questa procedura ordinaria non richiede di formattare o ricreare la chiavetta.
+
+Registriamo separatamente:
+
+- Ventoy ha caricato l'immagine?
+- GRUB ha mostrato la voce AureaOS?
+- Il kernel è stato caricato?
+- L'initramfs è terminato correttamente e ha trovato il filesystem Live?
+- systemd ha raggiunto il target previsto?
+- Il servizio di sessione AureaOS è partito?
+- Il compositor ha ottenuto il dispositivo DRM e il seat?
+- È stato rilevato e utilizzato un output video fisico?
+- La shell è apparsa ed è rimasta responsiva?
+- Tastiera, mouse, rotellina, touchpad e altre periferiche disponibili hanno funzionato?
+- Si sono verificati errori, blocchi, kernel panic o firmware mancanti?
+
+Quando noti, annotiamo macchina, firmware/modalità di boot, GPU e configurazione display. Non attribuiamo un errore initramfs iniziale a Vulkan, Smithay o GPU se i log dimostrano che l'esecuzione non è arrivata a quei livelli.
+
+### Fase G — Archiviazione e registrazione
+
+Ogni candidata deve essere riconducibile al sorgente e ai controlli che ha superato. L'insieme di artefatti previsto è:
+
+- Immagine ISO.
+- Checksum SHA-256.
+- Manifest di build (ad esempio `manifest.json`).
+- Report di validazione automatica.
+- Log completo della build e diagnostica degli errori.
+- Scheda dei test hardware.
+- ID completo del commit Git e branch.
+
+Identificativo consigliato:
+
+`AureaOS-AAAAMMGG-<commit-breve>.iso`
+
+Possiamo mantenere una copia di comodo con nome stabile `AureaOS.iso`, ma soltanto dopo il superamento dei controlli automatici obbligatori. La candidata con nome univoco e i suoi report vanno conservati anche se non viene promossa.
+
+Il manifest deve contenere almeno:
+
+- nome progetto e immagine;
+- ID build e data/ora con fuso orario o UTC;
+- remote Git, branch e ID completo del commit;
+- indicazione se il working tree era pulito;
+- release Debian e architettura;
+- metodo di build e identità dell'immagine container/builder;
+- versione kernel;
+- dimensione ISO e SHA-256;
+- ogni controllo di validazione con il relativo esito;
+- stato dei test hardware, descrizione macchina e note;
+- errori noti e deviazioni dalla procedura.
+
+**Significato di riproducibilità:** ogni immagine deve essere riconducibile in modo ripetibile a uno specifico commit e ai relativi input di build. Ottenere byte per byte la stessa ISO è un requisito più forte: non va promesso finché timestamp, snapshot dei repository pacchetti, versioni toolchain/container e tutti gli altri input variabili non saranno bloccati e verificati.
+
+## 4. Implementazione attuale e obiettivo
+
+Il repository dispone già di una base funzionante, ma ISO Factory non è ancora un sistema completo di gestione delle release.
+
+### Già presente nel repository al 23 novembre 2026
+
+- Configurazione live-build Debian Trixie amd64.
+- Wrapper Podman con container Debian Trixie.
+- Workspace live-build persistente e serializzazione dell'accesso tramite `flock`.
+- Procedura di ripresa di una build interrotta.
+- Hook chroot che compila e installa il binario desktop AureaOS e l'integrazione di sessione.
+- Lista pacchetti di boot che include `live-boot-initramfs-tools`.
+- Script di validazione del boot nel chroot.
+- Script di validazione del payload binary e della ISO.
+- Personalizzazione GRUB e controlli della sua configurazione.
+- Conservazione del workspace dopo il successo o il fallimento nello script interno attuale.
+- Generazione del file SHA-256.
+
+### Lavoro ancora necessario prima di definire ISO Factory pronta per le release
+
+- Ispezionare su Fedora l'initramfs della ISO che non ha superato il primo avvio, prima di eseguire una nuova build.
+- Determinare perché il boot reale ha segnalato che `/scripts/live` non era accessibile. La causa esatta non è ancora confermata.
+- Verificare le ipotesi del validatore rispetto all'immagine effettivamente generata e ai percorsi BIOS/UEFI.
+- Rendere atomica la pubblicazione: validare una candidata temporanea prima di sostituire la ISO stabile `AureaOS.iso`. Una validazione fallita non deve mai sovrascrivere l'ultima candidata conservata.
+- Conservare ISO storiche con nomi univoci, manifest, report e log, invece di mantenere un solo nome mutabile.
+- Generare un manifest con commit esatto e risultati effettivi dei controlli.
+- Conservare log completi con timestamp e un riepilogo finale sia per le build riuscite sia per quelle fallite.
+- Aggiungere controlli di pulizia espliciti e sicuri; non cancellare automaticamente workspace o artefatti storici utili per diagnosi e rollback.
+- Valutare caching/versionamento del container builder per evitare reinstallazioni superflue, senza compromettere aggiornamenti e tracciabilità.
+- Verificare il boot BIOS e UEFI e l'effettiva sessione Live su hardware fisico.
+
+Questi punti sono requisiti e attività future, non funzionalità che dichiariamo già completate.
+
+## 5. Problema di boot attualmente aperto
+
+La prima ISO generata era leggibile, aveva un checksum SHA-256 valido e conteneva le strutture BIOS/UEFI riportate dagli strumenti di ispezione. Al primo test reale tramite Ventoy, GRUB ha caricato il kernel Debian, ma init è fallito prima dell'avvio del desktop:
+
+```text
+init: line 249: can't open '/scripts/live': No such file or directory
+Kernel panic - not syncing: Attempted to kill init: exitcode=0x00000200
+```
+
+Il fatto accertato è che `/scripts/live` non era disponibile quando init ha provato a eseguirlo. Il kernel panic è seguito a quel fallimento. La causa non è ancora stata isolata. La prossima sessione ISO deve iniziare con l'ispezione in sola lettura dell'initramfs della ISO esistente e della relativa configurazione di boot, non con una ricompilazione alla cieca.
+
+Questo errore non dimostra un problema GPU, Vulkan o Smithay: il sistema non ha raggiunto l'avvio del compositor.
+
+## 6. Checklist per venerdì/sabato
+
+- [ ] Verificare che il repository sia su `main`.
+- [ ] Eseguire pull fast-forward da `origin/main`.
+- [ ] Verificare il working tree pulito e registrare il commit completo.
+- [ ] Eseguire `cargo fmt --all -- --check`.
+- [ ] Eseguire `cargo check --workspace`.
+- [ ] Eseguire `cargo test --workspace`.
+- [ ] Eseguire i controlli specifici delle funzionalità interessate.
+- [ ] Registrare risultati dei comandi ed eventuali eccezioni.
+- [ ] Finché il problema di boot è aperto, ispezionare prima l'initramfs esistente.
+- [ ] Eseguire l'entry point ISO Podman mantenuto solo dopo la diagnosi/decisione.
+- [ ] Verificare i report di validazione chroot e immagine.
+- [ ] Verificare checksum e strutture BIOS/UEFI.
+- [ ] Avviare tramite la configurazione Ventoy esistente su hardware reale.
+- [ ] Registrare risultati di boot, desktop e periferiche di input.
+- [ ] Conservare ISO, manifest, log e report.
+- [ ] Aggiornare entrambi i diari di sviluppo e questo documento quando cambiano fatti o decisioni.
+
+## 7. File correlati
+
+- `tools/iso/build-live-iso-podman.sh` — entry point Fedora/Podman.
+- `tools/iso/build-live-iso.sh` — coordinatore Debian live-build.
+- `tools/iso/package-lists/aureaos.list.chroot` — manifest dei pacchetti target.
+- `tools/iso/hooks/010-build-aureaos.hook.chroot` — build desktop e integrazione chroot.
+- `tools/iso/hooks/020-brand-boot-menu.hook.binary` — personalizzazione GRUB.
+- `tools/iso/tests/validate-chroot-boot.sh` — preflight boot nel chroot.
+- `tools/iso/tests/validate-live-image.sh` — validazione immagine e ISO.
+- [Diario di bordo](DIARIO-DI-BORDO.md).
+- [Promemoria interno per la continuità dell'assistente](../../tools/iso/INTERNAL-ASSISTANT-HANDOFF.md) — note operative interne, non specifica pubblica del prodotto.
