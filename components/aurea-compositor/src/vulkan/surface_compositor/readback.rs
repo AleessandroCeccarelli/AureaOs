@@ -8,9 +8,8 @@
 use smithay::reexports::ash::vk;
 
 use super::{
-    BACKGROUND_COLOR, VulkanClearPass, VulkanCommandBuffer, VulkanDisplayColorPass,
-    VulkanImageState, VulkanImageView, VulkanLogicalDevice, VulkanReadbackBuffer,
-    VulkanSurfaceCompositionError,
+    VulkanClearPass, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanImageState,
+    VulkanImageView, VulkanLogicalDevice, VulkanReadbackBuffer, VulkanSurfaceCompositionError,
 };
 
 /// Clears an empty scene, applies display warmth, and copies the final RGBA8 image.
@@ -39,7 +38,8 @@ pub(super) fn clear_display_and_readback(
         intermediate_view,
         previous_intermediate_state,
         VulkanImageState::General,
-        )
+        background_color,
+    )
     .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     pass.record(
         device,
@@ -78,6 +78,7 @@ pub(super) fn clear_and_readback(
     view: &VulkanImageView<'_, '_>,
     previous_state: VulkanImageState,
     readback: &VulkanReadbackBuffer<'_>,
+    background_color: [f32; 4],
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let mut command_buffer = VulkanCommandBuffer::new(device)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
