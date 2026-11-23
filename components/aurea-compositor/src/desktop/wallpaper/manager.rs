@@ -10,8 +10,8 @@ use super::{WallpaperAsset, WallpaperSnapshot};
 /// Owns wallpaper selection independently from Vulkan resource lifetimes.
 ///
 /// The initial asset is embedded in the compositor. JPEG pixel decoding and
-/// GPU texture creation are deliberately delegated to later pipeline stages.
-#[derive(Debug, Clone, Copy, Default)]
+/// GPU texture creation are separate pipeline stages.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WallpaperManager {
     selected: Option<WallpaperAsset>,
 }
@@ -24,17 +24,14 @@ impl WallpaperManager {
         }
     }
 
-    /// Returns the currently selected validated wallpaper, if available.
     pub const fn selected(&self) -> Option<WallpaperAsset> {
         self.selected
     }
 
-    /// Captures the selected wallpaper for an immutable render frame.
     pub fn snapshot(&self) -> Option<WallpaperSnapshot> {
         self.selected.map(WallpaperSnapshot::new)
     }
 
-    /// Replaces the current selection with a validated embedded asset.
     pub fn select(&mut self, asset: WallpaperAsset) {
         self.selected = Some(asset);
     }
@@ -42,6 +39,12 @@ impl WallpaperManager {
     /// Disables the wallpaper so the desktop theme color is used as fallback.
     pub fn clear_selection(&mut self) {
         self.selected = None;
+    }
+}
+
+impl Default for WallpaperManager {
+    fn default() -> Self {
+        Self::with_default_wallpaper()
     }
 }
 
@@ -59,7 +62,7 @@ mod tests {
 
     #[test]
     fn default_manager_selects_the_aureaos_wallpaper() {
-        let manager = WallpaperManager::with_default_wallpaper();
+        let manager = WallpaperManager::default();
         assert_eq!(
             manager.selected().map(|asset| asset.id()),
             Some("aureaos-midnight-flow")
@@ -68,7 +71,7 @@ mod tests {
 
     #[test]
     fn clearing_selection_enables_the_background_fallback() {
-        let mut manager = WallpaperManager::with_default_wallpaper();
+        let mut manager = WallpaperManager::default();
         manager.clear_selection();
         assert!(manager.snapshot().is_none());
     }
