@@ -106,22 +106,24 @@ fn centered_cover_crop(
     let output_ratio_cross = u64::from(output_width) * u64::from(source_height);
 
     if source_ratio_cross > output_ratio_cross {
-        let crop_width = ((u64::from(source_height) * u64::from(output_width))
-            / u64::from(output_height)) as u32;
+        let crop_width = (((u64::from(source_height) * u64::from(output_width))
+            / u64::from(output_height)) as u32)
+            .clamp(1, source_width);
         WallpaperPixelRect {
             x: i64::from((source_width - crop_width) / 2),
             y: 0,
-            width: crop_width.max(1),
+            width: crop_width,
             height: source_height,
         }
     } else {
-        let crop_height = ((u64::from(source_width) * u64::from(output_height))
-            / u64::from(output_width)) as u32;
+        let crop_height = (((u64::from(source_width) * u64::from(output_height))
+            / u64::from(output_width)) as u32)
+            .clamp(1, source_height);
         WallpaperPixelRect {
             x: 0,
             y: i64::from((source_height - crop_height) / 2),
             width: source_width,
-            height: crop_height.max(1),
+            height: crop_height,
         }
     }
 }
