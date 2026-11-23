@@ -51,9 +51,12 @@ impl<'a> RenderScene<'a> {
     /// Builds a scene from the window manager's currently mapped toplevels.
     pub fn from_window_manager(window_manager: &'a WindowManager) -> Self {
         Self {
-            desktop: DesktopSnapshot::new(crate::desktop::DesktopSurface::new(
-                crate::desktop::DesktopTheme::Light.desktop_color(),
-            )),
+            desktop: DesktopSnapshot::new(
+                crate::desktop::DesktopSurface::new(
+                    crate::desktop::DesktopTheme::Light.desktop_color(),
+                ),
+                None,
+            ),
             toplevels: window_manager
                 .mapped_toplevels_with_location()
                 .map(|(surface, location)| RenderToplevel { surface, location })
