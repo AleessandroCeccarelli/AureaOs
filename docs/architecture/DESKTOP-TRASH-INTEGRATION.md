@@ -1,38 +1,38 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-# Desktop Trash — Shell Integration
+# Desktop Trash — Integration Architecture
 
-## Scope
+## Canonical artwork
 
-Aurea Shell embeds the six approved SVG masters at compile time and exposes the selected asset through the platform-independent desktop state. The Fides folder/location artwork is separate and is not used for the desktop Trash.
+The six approved SVG masters are stored under `aurea-human-interfaces/icons/source/system/trash/`. Aurea Shell embeds these exact resources at compile time and resolves one by theme and visual state. No duplicate copies belong in component directories.
 
-## Asset matrix
+## Current shell resource bridge
 
-| Appearance | Empty | Partially full | Full |
-|---|---|---|---|
-| Light | `light/trash-empty.svg` | `light/trash-half.svg` | `light/trash-full.svg` |
-| Dark | `dark/trash-empty.svg` | `dark/trash-half.svg` | `dark/trash-full.svg` |
+- `aurea-shell/src/desktop/trash.rs`: visual state contract.
+- `aurea-shell/src/desktop/trash_artwork.rs`: embedded SVG lookup.
+- `aurea-shell/src/desktop/mod.rs`: desktop state exposes the selected SVG bytes.
 
-The artwork has a transparent canvas. Do not bake desktop wallpaper or a background tile into the icon.
+## Filesystem service
 
-## Ownership and responsibilities
+The first filesystem service lives in `aurea-desktop/src/trash/` and manages the per-user home Trash at `~/.local/share/Trash`:
+- `metadata.rs`: URL-style path encoding and .trashinfo parsing/writing.
+- `service.rs`: move, list, restore, permanent delete, empty, and snapshot.
+- `mod.rs`: public service API.
 
-- `desktop/trash.rs`: semantic content states only.
-- `desktop/trash_artwork.rs`: compile-time resource embedding and theme/state lookup only.
-- `desktop/mod.rs`: aggregate desktop presentation state and expose the selected SVG bytes.
-- `aurea-human-interfaces/icons/source/system/trash/`: canonical editable SVG masters.
+The service records original paths and deletion timestamps in freedesktop-style .trashinfo files. Restore refuses to overwrite an existing destination. Permanent deletion is an explicit method. The visual Full state defaults to 10 retained entries and can be configured through `with_full_threshold`.
 
-SVG bytes are static and owned by the shell binary. A presentation backend must decode and render them; this resource resolver does not itself draw pixels or open a desktop window.
+## Current limitations
 
-## State contract
+This is the home Trash implementation. Cross-filesystem Trash locations, automatic filesystem watching, asynchronous shell-to-service state propagation, and user confirmation UI are not yet integrated. A failed cross-device rename returns an I/O error without leaving an orphan metadata file.
 
-`TrashContentsState` has three states: Empty, PartiallyFull and Full. It defaults to Empty. The Trash service must update this state when its contents change by calling `DesktopState::set_trash_contents` (or the equivalent runtime state update).
+## Rendering boundary
 
-The exact count thresholds, file discovery, restore/delete operations, permanent-delete confirmation and filesystem monitoring belong to the future Trash service. They are intentionally not guessed or implemented by this artwork integration.
+The compositor's current render scene handles the desktop background, mapped Wayland surfaces and cursor. It does not yet contain a native desktop-icon render element or SVG rasterization path. The next rendering step must add an explicit icon element and a Vulkan-compatible texture upload/rasterization path; it must not create a fake application window.
 
-## Theme contract
+## Safety and verification
 
-`DesktopTheme` selects Light or Dark artwork. Changing the theme changes only the material palette; changing Trash contents changes only the depicted contents.
-
-## Validation status
-
-Unit tests are included for the six compile-time mappings, UTF-8 SVG structure, theme selection and state selection. They have **not** been executed as part of this change. No renderer integration or runtime filesystem watcher is claimed.
+- Restore never overwrites an existing destination.
+- The service only accepts absolute existing source paths.
+- Paths already inside the home Trash are rejected.
+- No permanent deletion occurs during a move operation.
+- Unit tests are included but have not been executed.
+- No Cargo formatting, build or test command was run during this change.

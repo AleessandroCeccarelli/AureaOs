@@ -8,3 +8,4 @@
 pub mod color_configuration_manager;
 pub mod display_color_assignment_store;
 pub mod keyboard_layout_store;
+pub mod trash;
