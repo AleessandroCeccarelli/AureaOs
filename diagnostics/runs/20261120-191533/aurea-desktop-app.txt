@@ -1,4 +1,0 @@
-1795198588 [INFO] Persistent diagnostics initialized
-1795198588 [INFO] Starting native desktop; log: /home/alessandro/.local/state/aureaos/logs/aurea-desktop.log
-1795198588 [INFO] Initializing shell and DRM/Vulkan compositor
-1795198590 [ERROR] Desktop stopped with an error: Wayland compositor error: No usable display output was initialized: check DRM/KMS, GBM, Vulkan compatibility, and connected monitors

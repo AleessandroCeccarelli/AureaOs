@@ -1,3 +1,0 @@
-1795262509 [INFO] Persistent diagnostics initialized
-1795262509 [INFO] Starting native desktop; log: /home/alessandro/.local/state/aureaos/logs/aurea-desktop.log
-1795262509 [INFO] Initializing shell and DRM/Vulkan compositor

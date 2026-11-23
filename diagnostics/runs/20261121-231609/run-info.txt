@@ -1,9 +1,0 @@
-run_id=20261121-231609
-started_at=2026-11-21T23:16:09+01:00
-started_epoch=1795299369
-kernel=Linux 7.3.4-200.fc44.x86_64 x86_64 GNU/Linux
-session_type=tty
-wayland_display_present=no
-display_present=no
-timeout_seconds=interactive
-git_head=63196256

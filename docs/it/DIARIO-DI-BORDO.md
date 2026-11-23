@@ -405,3 +405,20 @@ Sostituiti tutti e sei i file in `aurea-human-interfaces/icons/source/system/tra
 ### Verifiche e limiti
 
 Il sorgente SVG è stato aggiornato e registrato nel repository. Non è stato eseguito rendering grafico né controllo visivo alle diverse dimensioni; non si dichiara completata l'integrazione runtime nel desktop. La selezione dello stato dovrà ancora essere collegata al modello effettivo del Cestino.
+
+ 
+## 23 novembre 2026 — Cestino desktop riprogettato in rete metallica
+
+Su indicazione del fondatore e sulla base della fotografia fornita, il Cestino desktop passa dal bidone stilizzato a un cestino cilindrico realistico in rete metallica.
+
+- Corpo leggermente rastremato, bordo superiore arrotondato e apertura libera senza coperchio.
+- Trama metallica incrociata con trasparenza intenzionale: interno e contenuto devono intravedersi attraverso la rete, come nei riferimenti Windows/macOS.
+- Riflessi metallici, ombreggiatura laterale e anello inferiore di rinforzo.
+- Stessa geometria per Vuoto, A metà e Pieno; i tre stati differiscono per il contenuto.
+- Palette Light/Dark distinta, canvas trasparente.
+
+Aggiornati i sei SVG in aurea-human-interfaces/icons/source/system/trash/, il README dedicato e l'inventario generale. Le icone Cestino della famiglia cartelle Fides v5 restano intatte.
+
+**Limiti:** non è stato eseguito un renderer SVG né un controllo visivo alle dimensioni desktop. Non è stata implementata l'integrazione nella shell o la selezione automatica di tema/stato. Nessun comando Cargo è stato eseguito.
+
+**Prossimi passi:** rendering a 24, 32, 48, 64 e 128 px; controllo della leggibilità della rete e della visibilità dei fogli; collegamento al tema e allo stato reale del Cestino; integrazione nella scena desktop.

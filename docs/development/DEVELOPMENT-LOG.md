@@ -558,3 +558,20 @@ All six files under `aurea-human-interfaces/icons/source/system/trash/{light,dar
 ### Verification and limitations
 
 The SVG source was updated and committed. No graphical rendering or multi-size visual inspection was run, and no runtime desktop integration is claimed. The contents-state selection still needs to be connected to the actual Trash model.
+
+ 
+## 2026-11-23 — Desktop Trash redesigned as a translucent wire-mesh basket
+
+At the founder's request and using the supplied photograph as visual reference, the desktop Trash artwork now depicts a realistic cylindrical wire-mesh wastebasket instead of the previous stylized solid bin.
+
+- Slightly tapered body, rounded upper rim and permanently open top; no lid.
+- Crossed metallic mesh with intentional transparency so the interior and contents remain visible, as in the Windows/macOS visual references.
+- Metallic highlights, side shading and reinforced lower ring.
+- Identical geometry for Empty, Half and Full; only the contents change.
+- Separate Light/Dark metallic palettes and transparent canvas.
+
+Updated all six SVG masters under aurea-human-interfaces/icons/source/system/trash/, the family README and the general icon inventory. Fides v5 folder/location Trash artwork remains untouched.
+
+**Limitations:** no SVG renderer or desktop-size visual inspection was run. Shell integration and automatic theme/state selection are not implemented. No Cargo command was run.
+
+**Next:** render at 24, 32, 48, 64 and 128 px; inspect mesh legibility and paper visibility; connect theme and actual Trash state; integrate the symbol into the desktop scene.

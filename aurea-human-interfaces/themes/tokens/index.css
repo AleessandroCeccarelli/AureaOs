@@ -1,6 +1,0 @@
-/* SPDX-License-Identifier: GPL-3.0-or-later */
-
-/* Legacy entry point. Canonical tokens and accessibility overrides live in design-system/tokens/index.css. */
-@import url("../../design-system/tokens/index.css");
-@import url("../light/theme.css");
-@import url("../dark/theme.css");

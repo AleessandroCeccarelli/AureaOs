@@ -1,23 +1,28 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
-
 # AureaOS Desktop Trash Artwork
 
-Standalone desktop waste-bin symbols, separate from the Fides folder/location symbol named `trash` in the v5 folder sprite.
+Standalone desktop Trash artwork, separate from the Fides v5 folder/location symbol.
 
-## Visual states
+## Visual direction
+The desktop Trash depicts a real open cylindrical wire-mesh wastebasket:
+- Slightly tapered body with a rounded, rolled metallic rim and no lid.
+- Crossed metal mesh with deliberate transparency, so the interior and contents remain visible.
+- Subtle metallic highlights, side shading and a reinforced lower ring.
+- Identical silhouette and perspective in all states and themes.
+- Transparent canvas, without a background tile.
 
+## States
 | Theme | Empty | Partially full | Full |
 |---|---|---|---|
-| Light | `light/trash-empty.svg` | `light/trash-half.svg` | `light/trash-full.svg` |
-| Dark | `dark/trash-empty.svg` | `dark/trash-half.svg` | `dark/trash-full.svg` |
+| Light | light/trash-empty.svg | light/trash-half.svg | light/trash-full.svg |
+| Dark | dark/trash-empty.svg | dark/trash-half.svg | dark/trash-full.svg |
 
-The bin is always open and has no lid. Empty shows a visibly empty interior; Half shows crumpled paper inside the opening; Full shows discarded paper protruding above the rim. All variants share the same bin geometry and differ only in contents and theme palette.
+Empty shows the unobstructed interior. Half shows crumpled paper inside. Full shows paper rising above the rim. Contents are layered behind the front mesh. Light/Dark changes only the metallic palette; Empty/Half/Full changes only the contents.
 
 ## Technical contract
-
-- SVG source masters use a 512 × 512 viewBox and transparent canvas.
-- No lid, background tile or opaque canvas rectangle.
-- Light/Dark is selected from the active Aurea Appearance theme.
-- Empty/Half/Full is selected from the actual Trash contents state, independently of theme.
-- Keep editable masters in `source/`; generated exports belong in `generated/`.
-- Runtime selection, file discovery, state thresholds and rendering are not implemented by these artwork files.
+- 512 × 512 viewBox; transparent canvas.
+- Light/Dark follows Aurea Appearance.
+- Empty/Half/Full follows actual Trash contents, independently of theme.
+- Editable masters stay in source/; validated exports belong in generated/.
+- Runtime selection, file discovery, thresholds and rendering are not implemented here.
+- Validate at desktop icon sizes and over light/dark wallpapers before final approval.
