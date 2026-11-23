@@ -454,3 +454,60 @@ Non affermare che AureaOS mostra già un desktop funzionante: è stato implement
 - Le vie Vulkan sono state ricontrollate dopo la correzione: entrambe le varianti clear/readback e clear/release ricevono il colore desktop esplicitamente; nessun riferimento residuo al vecchio colore costante `BACKGROUND_COLOR` nei file readback/release verificati.
 - La cronologia pubblica è stata aggiornata in italiano e inglese.
 - Nessuna verifica Cargo è stata eseguita. La prossima azione pratica è far sincronizzare `main` su Fedora e ottenere `cargo fmt --all` + `cargo check -p aurea-compositor --features drm` prima di aggiungere wallpaper.
+
+
+## STATO OPERATIVO — 2026-11-23 — PRIMO MODULO WALLPAPER
+
+### Verifica prima dell'intervento
+
+- HEAD di partenza verificato tramite cronologia Git: `5486fef16c8834fa4e9197d2f61eda8e456a3f3e`.
+- Letto integralmente questo handoff prima di modificare il repository.
+- Confermata l'esistenza dell'asset selezionato:
+  `aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg`.
+- Il README della raccolta conferma che `aureaos-midnight-flow.jpg` è il wallpaper predefinito provvisorio scelto; il documento dichiara anche che il caricamento runtime non era ancora implementato.
+- Il workspace `aurea-compositor` non contieneva un decoder JPEG tra le dipendenze dichiarate o nel Cargo.lock. Non è stata aggiunta una dipendenza senza poter rigenerare e verificare il lockfile su Fedora.
+
+### Codice pubblicato su main
+
+Creato il sottosistema:
+`components/aurea-compositor/src/desktop/wallpaper/`
+
+- `mod.rs`: esportazioni del sottosistema.
+- `asset.rs`: asset JPEG predefinito incorporato nel binario con `include_bytes!`; parser limitato ai marker JPEG SOF per verificare intestazione e dimensioni senza decodificare i pixel.
+- `manager.rs`: selezione del wallpaper predefinito, snapshot immutabile, possibilità di cancellare la selezione e usare il fallback colore.
+- `snapshot.rs`: riferimento immutabile all'asset selezionato per il frame.
+
+Integrazione eseguita:
+- `desktop/mod.rs` esporta i tipi wallpaper.
+- `desktop/manager.rs` possiede `WallpaperManager` e include la selezione nel `DesktopSnapshot`.
+- `desktop/snapshot.rs` trasporta superficie e wallpaper opzionale.
+- `render.rs` mantiene il costruttore di fallback compatibile con il nuovo snapshot.
+- La scena del compositor riceve quindi i byte JPEG originali attraverso il DesktopManager e il RenderScene.
+
+### Limiti da non nascondere
+
+Questo è il primo livello di asset management, NON il wallpaper già disegnato a schermo:
+- il JPEG è incorporato nel binario e i suoi marker/dimensioni vengono verificati;
+- il dato compresso è disponibile nello snapshot della scena;
+- la decodifica JPEG in pixel RGBA non è ancora implementata;
+- la creazione/upload della texture Vulkan non è ancora implementata;
+- il rendering del wallpaper, il fit/crop per monitor e la cache GPU non sono ancora implementati;
+- il colore desktop continua a essere usato dal renderer Vulkan come sfondo effettivo.
+
+Non dichiarare il wallpaper visibile fino a quando decoder, texture upload, draw pass e percorsi empty/populated/readback/KMS sono integrati e verificati.
+
+### Verifiche
+
+- Nessun `cargo fmt`, `cargo check`, test o build è stato eseguito: restano responsabilità dell'utente su Fedora.
+- Nessuna modifica alla ISO o agli script ISO.
+- Il codice è stato scritto direttamente su `main`; i commit esatti sono nella cronologia Git successiva a `5486fef`.
+
+### Prossimo passo tecnico
+
+1. Su Fedora eseguire `cargo fmt --all -- --check` e `cargo check -p aurea-compositor --features drm`; correggere ogni errore prima di proseguire.
+2. Se il primo controllo passa, selezionare e bloccare una libreria Rust di decodifica JPEG compatibile con il progetto, aggiungendola al Cargo.toml e rigenerando Cargo.lock su Fedora (mai lasciare lockfile non aggiornato).
+3. Implementare un decoder isolato che converta JPEG in RGBA8 con limiti su dimensioni, overflow e memoria; testare input troncati e dimensioni non valide.
+4. Collegare i pixel decodificati al percorso upload Vulkan esistente (riusare le primitive di upload/immagine già presenti, senza duplicare allocatori).
+5. Aggiungere una texture wallpaper persistente e un pass di disegno sotto le superfici applicative; coprire sia scena vuota sia scena con finestre, readback e rilascio KMS.
+6. Implementare modalità di adattamento e clipping per ogni output usando il RenderTarget e l'origine logica esistenti.
+7. Aggiornare diario e questo handoff a ogni sessione, distinguendo sempre implementato, compilato, testato e validato su hardware.
