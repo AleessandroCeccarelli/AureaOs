@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Minimal native AureaOS live-test runtime and temporary build dependencies.
 live-boot
+live-boot-initramfs-tools
 live-config
 systemd-sysv
 udev
