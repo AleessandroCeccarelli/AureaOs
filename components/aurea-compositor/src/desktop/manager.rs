@@ -5,16 +5,19 @@
 
 //! Coordinates compositor-side desktop appearance and surface policy.
 
-use super::{DesktopBackground, DesktopSnapshot, DesktopSurface, DesktopTheme};
+use super::{
+    DesktopBackground, DesktopSnapshot, DesktopSurface, DesktopTheme, WallpaperManager,
+};
 
-/// Owns the desktop surface policy consumed by each render frame.
+/// Owns desktop appearance policy consumed by each render frame.
 ///
-/// Output discovery, window management, input, wallpaper decoding and Vulkan
-/// resource ownership remain outside this manager.
+/// Output discovery, window management, input and Vulkan resource ownership
+/// remain outside this manager.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub struct DesktopManager {
     theme: DesktopTheme,
     background: DesktopBackground,
+    wallpaper: WallpaperManager,
 }
 
 impl DesktopManager {
@@ -43,10 +46,23 @@ impl DesktopManager {
         self.background = DesktopBackground::ThemeDefault;
     }
 
-    /// Captures immutable desktop surface data for the next render frame.
+    /// Returns the wallpaper selection manager.
+    pub const fn wallpaper_manager(&self) -> &WallpaperManager {
+        &self.wallpaper
+    }
+
+    /// Returns mutable access to the wallpaper selection manager.
+    pub fn wallpaper_manager_mut(&mut self) -> &mut WallpaperManager {
+        &mut self.wallpaper
+    }
+
+    /// Captures immutable desktop and wallpaper data for the next render frame.
     pub fn snapshot(&self) -> DesktopSnapshot {
         let color = self.background.resolve(self.theme);
-        DesktopSnapshot::new(DesktopSurface::new(color))
+        DesktopSnapshot::new(
+            DesktopSurface::new(color),
+            self.wallpaper.snapshot(),
+        )
     }
 }
 
@@ -55,11 +71,15 @@ mod tests {
     use super::{DesktopBackground, DesktopManager, DesktopTheme};
 
     #[test]
-    fn default_manager_produces_light_desktop_surface() {
+    fn default_manager_produces_light_desktop_surface_and_selected_wallpaper() {
         let manager = DesktopManager::default();
         assert_eq!(
             manager.snapshot().surface().background_color(),
             DesktopTheme::Light.desktop_color()
+        );
+        assert_eq!(
+            manager.snapshot().wallpaper().map(|wallpaper| wallpaper.asset().id()),
+            Some("aureaos-midnight-flow")
         );
     }
 
