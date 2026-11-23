@@ -242,3 +242,36 @@ Risultati:
 Non è stato aggiunto un decoder JPEG perché non risulta una dipendenza decoder già disponibile nel Cargo.lock. Non va lasciato Cargo.toml e Cargo.lock incoerenti né va scritto un decoder JPEG proprietario. La scelta della dipendenza e la rigenerazione del lockfile saranno fatte con Cargo su Fedora.
 
 Nessun file Rust modificato in questa fase; nessun test o build eseguito. Il prossimo step è la verifica Fedora del codice wallpaper già pubblicato, poi decoder JPEG e cache/texture dedicate, quindi integrazione del draw pass in entrambe le condizioni: scena vuota e scena con finestre.
+
+
+## 23 novembre 2026 — Layout per monitor e buffer RGBA8
+
+La fase desktop prosegue con due moduli piccoli e indipendenti, preparatori alla visualizzazione reale del wallpaper.
+
+### Layout wallpaper per output
+
+Aggiunto `desktop/wallpaper/layout.rs`:
+- modalità Fill (crop centrato), Fit (immagine intera con margini), Stretch e Center (dimensione nativa);
+- rettangolo sorgente separato dal rettangolo destinazione;
+- coordinate locali in pixel fisici dell'output;
+- Center può oltrepassare i bordi del monitor: il renderer dovrà applicare lo scissor dell'output;
+- test unitari per i quattro comportamenti e input a dimensione zero.
+
+### Buffer immagine decodificata
+
+Aggiunto `desktop/wallpaper/pixels.rs`:
+- tipo posseduto `WallpaperPixels` per immagini RGBA8;
+- verifica lunghezza esatta del buffer;
+- controlli su dimensioni nulle e overflow;
+- limite massimo di 256 MiB per il buffer decodificato;
+- test unitari sui casi validi e non validi.
+
+I due moduli sono esportati dal sottosistema wallpaper.
+
+### Stato effettivo
+
+Questi moduli non visualizzano ancora il JPEG. Il draw Vulkan resta sospeso fino a quando non saranno disponibili decoder JPEG e texture wallpaper campionabile. È intenzionale: il ramo scena vuota non deve essere modificato con una chiamata di disegno priva di una texture valida.
+
+Commit: `7b15482`, `84b3f00`, `e1a1fdb`.
+
+Nessun comando Cargo è stato eseguito: formattazione, compilazione e test saranno verificati su Fedora. Il prossimo blocco è decoder JPEG + upload/cache Vulkan dedicata, quindi draw pass sia con scena vuota sia con finestre.
