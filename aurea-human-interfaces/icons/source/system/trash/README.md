@@ -2,21 +2,22 @@
 
 # AureaOS Desktop Trash Artwork
 
-Standalone, transparent trash-can symbols for the desktop. These are separate from the Fides folder/location symbol named `trash` in the v5 folder sprite.
+Standalone desktop waste-bin symbols, separate from the Fides folder/location symbol named `trash` in the v5 folder sprite.
 
-## Variants
+## Visual states
 
-| Theme | Empty | Partially filled | Full |
+| Theme | Empty | Partially full | Full |
 |---|---|---|---|
 | Light | `light/trash-empty.svg` | `light/trash-half.svg` | `light/trash-full.svg` |
 | Dark | `dark/trash-empty.svg` | `dark/trash-half.svg` | `dark/trash-full.svg` |
 
-All six assets share the same 512 × 512 geometry, proportions and silhouette. The light and dark variants use theme-adjusted edge and body palettes; the contents state is represented visually without changing the can design.
+The bin is always open and has no lid. Empty shows a visibly empty interior; Half shows crumpled paper inside the opening; Full shows discarded paper protruding above the rim. All variants share the same bin geometry and differ only in contents and theme palette.
 
 ## Technical contract
 
-- SVG source masters with a transparent canvas; no tile or background rectangle.
-- Use the matching theme variant selected by Aurea Appearance.
-- Select empty/half/full from the actual Trash contents state; do not infer the state from a theme.
-- Keep these masters in `source/`; generated exports belong in `generated/`.
-- Runtime selection, file-count thresholds and visual rendering are not implemented by these artwork files.
+- SVG source masters use a 512 × 512 viewBox and transparent canvas.
+- No lid, background tile or opaque canvas rectangle.
+- Light/Dark is selected from the active Aurea Appearance theme.
+- Empty/Half/Full is selected from the actual Trash contents state, independently of theme.
+- Keep editable masters in `source/`; generated exports belong in `generated/`.
+- Runtime selection, file discovery, state thresholds and rendering are not implemented by these artwork files.

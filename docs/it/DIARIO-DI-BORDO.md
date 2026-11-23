@@ -385,3 +385,23 @@ Tutti e sei gli SVG hanno canvas trasparente 512 × 512 e condividono la stessa 
 2. Collegare il tema attivo alla variante Light/Dark.
 3. Collegare Vuoto/Metà/Pieno allo stato effettivo del Cestino.
 4. Inserire l'elemento Cestino nella scena della shell e collegare separatamente apertura e menu contestuale.
+
+## 23 novembre 2026 — Revisione grafica delle icone del Cestino
+
+### Direzione visiva approvata
+
+Le prime bozze del Cestino autonomo avevano un coperchio e non rendevano abbastanza evidenti gli stati del contenuto. Sono state sostituite con un bidone aperto, senza coperchio, ispirato alla metafora desktop familiare di Windows.
+
+- Vuoto: apertura ben visibile e interno vuoto.
+- A metà: cartaccia accartocciata visibile dentro l'apertura.
+- Pieno: carta e rifiuti sporgono chiaramente oltre il bordo.
+- Le versioni Light e Dark mantengono la stessa geometria e adottano palette adatte al tema.
+- Tutti e sei gli SVG hanno sfondo trasparente.
+
+### File aggiornati
+
+Sostituiti tutti e sei i file in `aurea-human-interfaces/icons/source/system/trash/{light,dark}/`. Il README delle icone descrive ora il contratto grafico senza coperchio.
+
+### Verifiche e limiti
+
+Il sorgente SVG è stato aggiornato e registrato nel repository. Non è stato eseguito rendering grafico né controllo visivo alle diverse dimensioni; non si dichiara completata l'integrazione runtime nel desktop. La selezione dello stato dovrà ancora essere collegata al modello effettivo del Cestino.

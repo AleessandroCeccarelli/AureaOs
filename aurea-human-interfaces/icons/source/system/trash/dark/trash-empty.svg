@@ -1,25 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
 <title id="title">AureaOS dark Trash — Empty</title>
-<desc id="desc">Transparent desktop trash can icon in the AureaOS folder-artwork style, empty state.</desc>
+<desc id="desc">Open, lidless desktop waste bin in the AureaOS style, empty state, with a transparent background.</desc>
 <defs>
-  <linearGradient id="body" x1="120" y1="190" x2="390" y2="430" gradientUnits="userSpaceOnUse"><stop stop-color="#D8E7F0"/><stop offset="1" stop-color="#8EADBF"/></linearGradient>
-  <linearGradient id="rim" x1="140" y1="175" x2="372" y2="215" gradientUnits="userSpaceOnUse"><stop stop-color="#718DA0"/><stop offset="1" stop-color="#536777"/></linearGradient>
-  <linearGradient id="lid" x1="140" y1="125" x2="370" y2="170" gradientUnits="userSpaceOnUse"><stop stop-color="#D8E7F0"/><stop offset="1" stop-color="#8EADBF"/></linearGradient>
-  <linearGradient id="contents" x1="180" y1="250" x2="330" y2="380" gradientUnits="userSpaceOnUse"><stop stop-color="#4D9FD9"/><stop offset="1" stop-color="#65B9F4"/></linearGradient>
-  <filter id="shadow" x="-30%" y="-25%" width="160%" height="170%"><feGaussianBlur in="SourceAlpha" stdDeviation="8"/><feOffset dy="9"/><feComponentTransfer><feFuncA type="linear" slope=".24"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-  <clipPath id="binClip"><path d="M164 211H348L329 412Q327 431 308 431H204Q185 431 183 412Z"/></clipPath>
+ <linearGradient id="binBody" x1="150" y1="190" x2="365" y2="435" gradientUnits="userSpaceOnUse"><stop stop-color="#C8DCE8"/><stop offset="1" stop-color="#718FA3"/></linearGradient>
+ <linearGradient id="inner" x1="180" y1="160" x2="330" y2="250" gradientUnits="userSpaceOnUse"><stop stop-color="#344F63"/><stop offset="1" stop-color="#405C70"/></linearGradient>
+ <linearGradient id="rim" x1="145" y1="170" x2="370" y2="205" gradientUnits="userSpaceOnUse"><stop stop-color="#C8DCE8"/><stop offset="1" stop-color="#718FA3"/></linearGradient>
+ <filter id="shadow" x="-30%" y="-25%" width="160%" height="175%"><feGaussianBlur in="SourceAlpha" stdDeviation="8"/><feOffset dy="9"/><feComponentTransfer><feFuncA type="linear" slope=".23"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+ <clipPath id="opening"><ellipse cx="256" cy="184" rx="104" ry="29"/></clipPath>
 </defs>
 <g filter="url(#shadow)">
-  <path d="M164 211H348L329 412Q327 431 308 431H204Q185 431 183 412Z" fill="url(#body)" stroke="#718DA0" stroke-width="8" stroke-linejoin="round"/>
-  <path d="M177 229H335L319 405Q318 414 307 414H205Q194 414 193 405Z" fill="#607D91" opacity=".16"/>
-  
-  <path d="M183 231L197 400" stroke="#FFFFFF" stroke-opacity=".55" stroke-width="7" stroke-linecap="round"/>
-  <path d="M315 237L302 407" stroke="#718DA0" stroke-opacity=".45" stroke-width="6" stroke-linecap="round"/>
-  <path d="M205 257V386M256 257V386M307 257V386" stroke="#7897AA" stroke-width="10" stroke-linecap="round" opacity=".92"/>
-  <path d="M145 190Q145 178 158 178H354Q367 178 367 190V204Q367 216 354 216H158Q145 216 145 204Z" fill="url(#rim)" stroke="#718DA0" stroke-width="6"/>
-  <path d="M134 159Q134 146 148 146H364Q378 146 378 159V171Q378 184 364 184H148Q134 184 134 171Z" fill="url(#lid)" stroke="#718DA0" stroke-width="7"/>
-  <path d="M225 129Q225 116 238 116H274Q287 116 287 129V146H225Z" fill="url(#lid)" stroke="#718DA0" stroke-width="7"/>
-  <path d="M151 158H360" stroke="#FFFFFF" stroke-opacity=".72" stroke-width="5" stroke-linecap="round"/>
+ <!-- Rear wall and dark, open interior -->
+ <path d="M151 184Q151 155 178 155H334Q361 155 361 184L341 402Q338 431 309 431H203Q174 431 171 402Z" fill="url(#binBody)" stroke="#405C70" stroke-width="8" stroke-linejoin="round"/>
+ <ellipse cx="256" cy="184" rx="104" ry="29" fill="url(#inner)" stroke="#405C70" stroke-width="7"/>
+ <!-- Paper is visible inside the opening; on the full state it rises above the rim -->
+ <g></g>
+ <!-- Front body wall, leaving the opening visibly uncovered -->
+ <path d="M152 185Q256 224 360 185L341 402Q338 431 309 431H203Q174 431 171 402Z" fill="url(#binBody)" stroke="#405C70" stroke-width="8" stroke-linejoin="round"/>
+ <path d="M174 207Q256 237 338 207" fill="none" stroke="#F5FBFF" stroke-opacity=".52" stroke-width="6" stroke-linecap="round"/>
+ <path d="M190 236L204 399" stroke="#F5FBFF" stroke-opacity=".62" stroke-width="8" stroke-linecap="round"/>
+ <path d="M322 238L307 402" stroke="#405C70" stroke-opacity=".38" stroke-width="7" stroke-linecap="round"/>
+ <path d="M222 252L214 390M256 259V394M290 252L298 390" stroke="#405C70" stroke-opacity=".38" stroke-width="10" stroke-linecap="round"/>
+ <!-- Front lip: a simple open rim, never a lid -->
+ <path d="M145 184Q145 168 162 168H350Q367 168 367 184Q367 201 350 207Q256 237 162 207Q145 201 145 184Z" fill="url(#rim)" stroke="#405C70" stroke-width="7"/>
+ <path d="M160 180Q256 211 352 180" fill="none" stroke="#F5FBFF" stroke-opacity=".78" stroke-width="6" stroke-linecap="round"/>
 </g>
 </svg>

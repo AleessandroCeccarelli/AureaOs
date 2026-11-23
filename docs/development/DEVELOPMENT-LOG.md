@@ -538,3 +538,23 @@ Added a dedicated README for the desktop Trash artwork and updated the icon-libr
 2. Connect theme selection to the Light/Dark artwork.
 3. Connect Empty/Half/Full selection to the actual Trash state.
 4. Add the desktop Trash item to the shell scene and wire open/context-menu behavior separately.
+
+## 2026-11-23 — Desktop Trash artwork revised to an open-bin design
+
+### User-approved visual direction
+
+The first standalone Trash drafts incorrectly included a lid and did not make the contents states sufficiently clear. They have been replaced with an open, lidless waste bin inspired by the familiar Windows desktop metaphor.
+
+- Empty: clearly open and visibly empty.
+- Half: crumpled paper is visible inside the opening.
+- Full: discarded paper protrudes above the rim.
+- Light and Dark retain identical geometry and use theme-appropriate palettes.
+- All six SVGs have transparent backgrounds.
+
+### Files revised
+
+All six files under `aurea-human-interfaces/icons/source/system/trash/{light,dark}/` were replaced. The artwork README now documents the lidless visual contract.
+
+### Verification and limitations
+
+The SVG source was updated and committed. No graphical rendering or multi-size visual inspection was run, and no runtime desktop integration is claimed. The contents-state selection still needs to be connected to the actual Trash model.
