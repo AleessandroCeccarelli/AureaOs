@@ -422,3 +422,24 @@ Aggiornati i sei SVG in aurea-human-interfaces/icons/source/system/trash/, il RE
 **Limiti:** non è stato eseguito un renderer SVG né un controllo visivo alle dimensioni desktop. Non è stata implementata l'integrazione nella shell o la selezione automatica di tema/stato. Nessun comando Cargo è stato eseguito.
 
 **Prossimi passi:** rendering a 24, 32, 48, 64 e 128 px; controllo della leggibilità della rete e della visibilità dei fogli; collegamento al tema e allo stato reale del Cestino; integrazione nella scena desktop.
+
+ 
+## 23 novembre 2026 — Direzione definitiva del Cestino: materiale satinato traslucido
+
+Il fondatore ha fornito un riferimento visivo più preciso: due cestini bianchi, vuoto e pieno, su uno sfondo desktop. La richiesta corregge la precedente interpretazione in rete metallica: **la rete metallica viene scartata**.
+
+### Specifica approvata
+- Contenitore bianco satinato/opalino, con traslucenza morbida.
+- Corpo cilindrico leggermente svasato, base arrotondata e bordo superiore sottile.
+- Apertura superiore sempre libera, senza coperchio.
+- Interno e oggetti visibili attraverso le pareti, ma diffusi e leggermente sfumati dal materiale.
+- Nel caso pieno, fogli e piccoli oggetti devono emergere chiaramente dall'apertura.
+- Stessa sagoma, proporzioni e illuminazione per Vuoto, A metà e Pieno.
+- Light/Dark modifica solo il contrasto del materiale; gli stati modificano solo il contenuto.
+- SVG con sfondo trasparente: il wallpaper non appartiene all'icona.
+
+Aggiornati i sei SVG, il README della famiglia e l'inventario delle icone. Le icone cartella Fides v5 restano separate e inalterate.
+
+**Verifica:** non è stato eseguito un renderer SVG né un controllo visivo alle dimensioni reali. La nuova direzione è stata tradotta nei sorgenti vettoriali, ma richiede ancora rendering e rifinitura ottica prima dell'approvazione finale. Nessuna integrazione runtime o selezione automatica dello stato è stata implementata.
+
+**Prossimi passi:** renderizzare i sei SVG su wallpaper chiaro e scuro, verificare che la trasparenza sia percepibile senza perdere leggibilità, rifinire apertura e contenuto sporgente, quindi integrare tema e stato effettivo del Cestino nella shell.

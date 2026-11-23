@@ -575,3 +575,24 @@ Updated all six SVG masters under aurea-human-interfaces/icons/source/system/tra
 **Limitations:** no SVG renderer or desktop-size visual inspection was run. Shell integration and automatic theme/state selection are not implemented. No Cargo command was run.
 
 **Next:** render at 24, 32, 48, 64 and 128 px; inspect mesh legibility and paper visibility; connect theme and actual Trash state; integrate the symbol into the desktop scene.
+
+ 
+## 2026-11-23 — Desktop Trash approved direction: softly frosted translucent material
+
+The founder supplied a more precise visual reference showing an empty and a full white wastebasket against a desktop wallpaper. This corrects the previous wire-mesh interpretation: **wire mesh is rejected**.
+
+### Approved specification
+- White satin/opal translucent material with soft diffusion.
+- Gently tapered cylindrical body, rounded base and understated upper rim.
+- Permanently open top; no lid.
+- Interior and discarded objects remain perceptible through the walls, softly diffused by the material.
+- When full, paper and small objects clearly protrude above the opening.
+- Identical silhouette, proportions and lighting across Empty, Half and Full.
+- Light/Dark changes material contrast only; state changes contents only.
+- Transparent SVG canvas: wallpaper is not part of the icon.
+
+Updated all six SVGs, the family README and the icon inventory. Fides v5 folder artwork remains separate and unchanged.
+
+**Verification:** no SVG renderer or real-size visual inspection was run. The new direction has been translated into vector source, but still requires rendering and optical refinement before final approval. No runtime integration or automatic state selection has been implemented.
+
+**Next:** render all six SVGs over light and dark wallpapers, verify translucent readability, refine the opening and protruding contents, then connect theme and actual Trash state in the shell.

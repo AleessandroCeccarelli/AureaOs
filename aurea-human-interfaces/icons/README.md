@@ -15,7 +15,7 @@ Owns original AureaOS application, system, launcher and Fides folder artwork. Th
 ### Launcher and system artwork
 - source/system/aureaos-launcher-icon.svg — complete launcher tile.
 - source/system/aureaos-launcher-symbol.svg — matching transparent launcher symbol.
-- source/system/trash/ — six transparent desktop Trash states: empty, half-full and full for Light and Dark themes, depicting an open translucent metallic wire-mesh basket.
+- source/system/trash/ — six transparent desktop Trash states: empty, half-full and full for Light and Dark themes. The artwork depicts an open, softly frosted translucent white wastebasket; its interior and contents remain gently visible through the body.
 - aureaos-icon.svg and aureaos-symbol.svg — preserved legacy AureaOS emblem artwork; do not silently replace these with launcher variants.
 - aurea-ai-orb.svg, file-manager.svg and wallet.svg — retained legacy/system artwork; their future relationship to the application icon library must be reviewed separately.
 
