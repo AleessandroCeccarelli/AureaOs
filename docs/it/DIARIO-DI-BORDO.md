@@ -275,3 +275,34 @@ Questi moduli non visualizzano ancora il JPEG. Il draw Vulkan resta sospeso fino
 Commit: `7b15482`, `84b3f00`, `e1a1fdb`.
 
 Nessun comando Cargo è stato eseguito: formattazione, compilazione e test saranno verificati su Fedora. Il prossimo blocco è decoder JPEG + upload/cache Vulkan dedicata, quindi draw pass sia con scena vuota sia con finestre.
+
+
+## 23 novembre 2026 — Decisione: supporto agli sfondi animati e dinamici
+
+È stata accolta la richiesta di aggiungere ad AureaOS una funzione paragonabile agli sfondi animati/dinamici disponibili su macOS, oltre alle modalità classiche di Windows.
+
+Il wallpaper ufficiale già scelto, `aureaos-midnight-flow.jpg`, resta quello predefinito. La nuova funzione amplia il motore, non cambia la scelta grafica.
+
+La specifica completa è in `docs/design/WALLPAPER-SYSTEM.md`.
+
+### Funzioni previste
+
+- video o immagini animate in riproduzione continua;
+- raccolte dinamiche che cambiano in base all'orario (alba, giorno, tramonto, notte);
+- sfondo indipendente per ciascun monitor, condiviso su tutti o panoramico su più schermi;
+- audio disattivato per impostazione predefinita;
+- pausa quando lo sfondo è coperto, lo schermo è disabilitato, la sessione è bloccata o il sistema è sospeso;
+- limiti di memoria, risoluzione, frame rate e frame in coda;
+- fallback statico e preferenza per ridurre il movimento/risparmiare batteria.
+
+### Scelta architetturale
+
+Il decoder animato sarà separato dal render thread. Il compositor Vulkan riceverà frame RGBA con timestamp, senza occuparsi di decodificare video. La cache animata avrà identità e ciclo di vita propri, distinti dalle superfici Wayland.
+
+Non è ancora stato scelto il backend video: GStreamer e FFmpeg sono candidati da valutare per manutenzione, packaging, licenze/codec e supporto hardware/software. Nessuna dipendenza viene aggiunta prima di tale valutazione.
+
+### Ordine di lavoro
+
+Prima si completa il wallpaper statico JPEG con upload e draw Vulkan; poi si aggiungono PNG/BMP e Tile/Span; successivamente si realizza il contratto dei frame animati e si integra il backend video con le politiche di pausa/ripresa e risparmio energetico.
+
+La funzione animata è una decisione di prodotto e una specifica documentata: non è ancora implementata. Nessuna build o test è stato eseguito in questa fase.
