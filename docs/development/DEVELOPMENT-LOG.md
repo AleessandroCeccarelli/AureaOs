@@ -403,3 +403,19 @@ No decoder dependency was added because the compositor's current Cargo dependenc
 ### Verification
 
 No Cargo formatting, build, tests, ISO work, or hardware validation were run. Fedora validation remains pending.
+
+
+## 23 November 2026 — Per-output wallpaper layout and bounded RGBA pixels
+
+Added two focused modules under `components/aurea-compositor/src/desktop/wallpaper/`:
+
+- `layout.rs`: Fill, Fit, Stretch, and Center placement modes. Source crop and output-local destination rectangles are kept separate. Center may extend beyond output bounds and therefore requires output scissoring. Crop dimensions are clamped to the source image to handle extreme aspect ratios safely. Unit tests cover all modes and zero-sized inputs.
+- `pixels.rs`: owned RGBA8 pixel buffer with exact byte-length validation, zero-dimension and arithmetic-overflow checks, and a 256 MiB decoded-image budget. Unit tests cover valid and invalid buffers.
+
+The wallpaper module exports both APIs. These changes prepare the CPU-side image contract and per-output placement; they do not decode or display the JPEG yet.
+
+The Vulkan wallpaper draw pass remains intentionally pending. The current scene still carries compressed JPEG bytes, not a sampled GPU texture. The empty-scene branch cannot draw the image until a decoder, validated RGBA buffer, dedicated wallpaper upload/cache, and texture binding exist. Do not add a placeholder draw call or reuse the Wayland SHM cache with fabricated surface IDs.
+
+Commits: `7b15482`, `84b3f00`, `e1a1fdb`, `0be01da`, `2120f43`, `ce0509f`.
+
+No Cargo formatting, compilation, or tests were run remotely. Fedora remains the validation environment.
