@@ -306,3 +306,25 @@ Non è ancora stato scelto il backend video: GStreamer e FFmpeg sono candidati d
 Prima si completa il wallpaper statico JPEG con upload e draw Vulkan; poi si aggiungono PNG/BMP e Tile/Span; successivamente si realizza il contratto dei frame animati e si integra il backend video con le politiche di pausa/ripresa e risparmio energetico.
 
 La funzione animata è una decisione di prodotto e una specifica documentata: non è ancora implementata. Nessuna build o test è stato eseguito in questa fase.
+
+
+## 23 novembre 2026 — Primo codice per il supporto agli sfondi animati
+
+La decisione sugli sfondi animati passa dalla sola specifica a un primo contratto Rust integrato nel sottosistema wallpaper.
+
+### Codice aggiunto
+
+- `animation.rs`: definisce `WallpaperPlaybackPolicy`, ambiente di riproduzione, motivi di pausa, decisione Playing/Paused, frame RGBA con indice e timestamp, errori e trait `WallpaperFrameProvider`.
+- `WallpaperManager`: possiede la policy e la trasferisce agli snapshot.
+- `WallpaperSnapshot`: trasporta insieme asset selezionato e policy di riproduzione.
+- `wallpaper/mod.rs`: esporta le nuove API.
+
+La policy predefinita limita l'animazione a 30 fps, mantiene l'audio disattivato e prevede la pausa quando il wallpaper è coperto, l'output è disabilitato, la sessione è bloccata, il sistema è sospeso o è attivo il risparmio energetico. La preferenza reduced-motion disabilita l'avanzamento dell'animazione. Il limite configurabile è 1–60 fps.
+
+### Cosa non è ancora operativo
+
+Non è ancora presente un decoder GIF o video e non viene ancora disegnato alcun frame animato. Il trait definisce il confine tra decoder e desktop: il provider dovrà lavorare su un worker dedicato, mai sul render thread Vulkan.
+
+Prossimo ordine: test Fedora del codice appena pubblicato; completamento del percorso statico JPEG (decoder, upload, cache e draw Vulkan); quindi provider GIF/video, worker, coda limitata di frame e collegamento alle policy di pausa/ripresa.
+
+Nessun Cargo fmt/check/test o build è stato eseguito in questa fase.
