@@ -33,6 +33,34 @@ impl WallpaperPixelRect {
     pub const fn y(self) -> i64 { self.y }
     pub const fn width(self) -> u32 { self.width }
     pub const fn height(self) -> u32 { self.height }
+
+    /// Returns the portion of this rectangle visible inside `clip`.
+    ///
+    /// The returned rectangle uses the same coordinate space as the inputs.
+    /// `None` means the rectangles do not overlap.
+    pub fn intersection(self, clip: Self) -> Option<Self> {
+        let left = self.x.max(clip.x);
+        let top = self.y.max(clip.y);
+        let right = self
+            .x
+            .saturating_add(i64::from(self.width))
+            .min(clip.x.saturating_add(i64::from(clip.width)));
+        let bottom = self
+            .y
+            .saturating_add(i64::from(self.height))
+            .min(clip.y.saturating_add(i64::from(clip.height)));
+
+        if right <= left || bottom <= top {
+            return None;
+        }
+
+        Some(Self {
+            x: left,
+            y: top,
+            width: u32::try_from(right - left).ok()?,
+            height: u32::try_from(bottom - top).ok()?,
+        })
+    }
 }
 
 /// Source crop and destination placement for one output.
@@ -207,6 +235,50 @@ mod tests {
         assert_eq!(layout.destination().y(), -180);
         assert_eq!(layout.destination().width(), 2560);
         assert_eq!(layout.destination().height(), 1440);
+    }
+
+    #[test]
+    fn intersection_clips_a_centered_image_to_output_bounds() {
+        let centered = WallpaperLayout::calculate(
+            2560,
+            1440,
+            1920,
+            1080,
+            WallpaperFitMode::Center,
+        )
+        .unwrap()
+        .destination();
+        let output = super::WallpaperPixelRect {
+            x: 0,
+            y: 0,
+            width: 1920,
+            height: 1080,
+        };
+
+        let visible = centered.intersection(output).unwrap();
+
+        assert_eq!(visible.x(), 0);
+        assert_eq!(visible.y(), 0);
+        assert_eq!(visible.width(), 1920);
+        assert_eq!(visible.height(), 1080);
+    }
+
+    #[test]
+    fn intersection_returns_none_for_disjoint_rectangles() {
+        let first = super::WallpaperPixelRect {
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+        };
+        let second = super::WallpaperPixelRect {
+            x: 100,
+            y: 0,
+            width: 100,
+            height: 100,
+        };
+
+        assert!(first.intersection(second).is_none());
     }
 
     #[test]
