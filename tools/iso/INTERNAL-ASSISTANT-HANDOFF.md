@@ -617,3 +617,24 @@ Il draw pass Vulkan non è ancora stato inserito. Il motivo è concreto: la scen
 7. Solo dopo il wallpaper statico, estendere i formati PNG/BMP.
 
 Nessuna build, formattazione o test Rust è stato eseguito da remoto. I test presenti sono codice aggiunto, non risultati eseguiti.
+
+
+## DECISIONE PRODOTTO — SFONDI ANIMATI E DINAMICI (23-11-2026)
+
+L'utente vuole che AureaOS supporti anche sfondi animati, come esperienza aggiuntiva rispetto alla gestione classica di Windows e agli sfondi dinamici/animati di macOS. Il wallpaper già scelto, `aureaos-midnight-flow.jpg`, resta lo sfondo predefinito: non va sostituito.
+
+È stato creato `docs/design/WALLPAPER-SYSTEM.md` come specifica di riferimento. Punti vincolanti:
+
+- Due categorie: video/immagini animate in loop e raccolte dinamiche di immagini/scene che cambiano in base all'orario (es. alba/giorno/tramonto/notte).
+- Assegnazione per monitor, stessa immagine su tutti, e modalità panoramica Span su gruppo di monitor.
+- Audio disattivato per default; nessun suono inatteso.
+- Decodifica fuori dal render thread; il compositor riceve frame RGBA timestampati e pronti.
+- Sospendere decoding/frame production quando sfondo coperto, output disabilitato, sessione bloccata o sistema sospeso.
+- Ripresa secondo policy definita; frame statico di fallback in caso di errore.
+- Limiti su dimensioni, frame rate, frame queue e memoria; rispettare battery saver e preferenza reduced-motion.
+- Cache wallpaper separata dalle superfici Wayland; nessun ObjectId fittizio.
+- Backend video non ancora scelto. Valutare GStreamer o FFmpeg solo dopo audit manutenzione, packaging Fedora/distro, licenze/codec, API Rust e fallback software/hardware. Non aggiungere dipendenze o lockfile a caso.
+
+Ordine: prima wallpaper statico funzionante (JPEG decode + Vulkan upload/cache + draw); poi PNG/BMP e Tile/Span; poi interfaccia frame animato e clock deterministico; infine backend media e policy power/sessione/UI. Non saltare direttamente al video prima di avere un percorso statico affidabile.
+
+La specifica distingue implementato, non ancora verificato, e pianificato. Nessuna build o test Rust è stato eseguito.
