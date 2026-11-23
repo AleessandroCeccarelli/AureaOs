@@ -351,3 +351,30 @@ The current final validation mainly checks that a non-empty ISO exists and that 
 7. Add pre-image and post-image validation, including actual initramfs inspection, while retaining complete diagnostic logs.
 
 Do not report the desktop as complete or the ISO as bootable: the first real boot disproved the latter.
+
+
+## 23 November 2026 — First operational desktop core
+
+Implementation has started after the desktop-first architecture decision. The immediate goal is a real desktop base surface; Dock, Launcher, and pointer work remain deferred.
+
+### DesktopManager and base surface
+
+A modular compositor subsystem has been added under `components/aurea-compositor/src/desktop/`:
+- `manager.rs`: coordinates theme/background policy and produces an immutable per-frame snapshot;
+- `theme.rs`: Light/Dark desktop themes using AureaOS desktop tokens;
+- `background.rs`: theme-derived or validated custom solid background;
+- `surface.rs`: immutable desktop surface description;
+- `snapshot.rs`: desktop data captured for one frame;
+- `mod.rs`: module exports.
+
+The compositor now owns the DesktopManager. Each RenderScene receives its snapshot, and the Vulkan surface compositor consumes the selected color for both empty and populated scenes, including readback and KMS release paths. The Vulkan clear pass remains generic and contains no theme policy.
+
+The default surface uses the Light token `#edf4ff`; Dark uses `#0d1320`. Custom solid colors are validated and forced opaque.
+
+### Verification status
+
+Unit tests were added for themes, background validation, and DesktopManager behavior. No `cargo fmt`, `cargo check`, tests, or builds were run; Fedora validation remains with the user. The code is published but is not yet claimed to compile or work on hardware.
+
+Wallpaper decoding, Vulkan texture upload, scaling/cropping, and persistence are not implemented yet. Pointer, Dock, and Launcher work remains deferred.
+
+Main commits: `542f918`, `2826f2d`, `e0fb92e`.
