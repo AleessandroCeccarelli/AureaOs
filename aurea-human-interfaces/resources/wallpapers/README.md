@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS Roma Wallpaper Collection
+# AureaOS Wallpaper Collection
 
 Canonical source location for the current AureaOS desktop wallpaper collection.
 
@@ -11,6 +11,20 @@ Nine original AI-assisted wallpaper concepts are retained: three abstract color 
 - Documented export target: 3840 × 2160.
 - Provenance: generated specifically for AureaOS; no third-party photographs were incorporated.
 - Intended use: desktop and lock-screen background candidates.
+
+## Current default selection
+
+**Selected default wallpaper:** `aureaos-midnight-flow.jpg`
+
+Repository path: `aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg`
+
+GitHub preview: https://github.com/AleessandroCeccarelli/AureaOs/blob/main/aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg
+
+This is the provisional default for the AureaOS desktop. The dark midnight-blue abstract composition best supports the established AureaOS blue identity while keeping the desktop visually calm and providing contrast for windows, icons and the floating dock. It is a design selection, not yet confirmation that the compositor or shell loads it at runtime.
+
+The other wallpapers remain available as alternatives; selecting this default does not remove or rename any artwork.
+
+## Asset quality and future work
 
 The artwork was generated as a contact sheet and individual panels were cropped and upscaled. Fine detail may be softer than native 4K artwork. Validate actual dimensions and quality before release packaging.
 
