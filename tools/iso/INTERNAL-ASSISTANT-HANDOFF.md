@@ -213,3 +213,97 @@ The repository's public project records were updated after the first real ISO bo
 - `README.md`: corrected statement of ISO validation status.
 
 Operational priority remains unchanged: desktop work first from 23 November; no ISO work until Friday 27 November unless the user explicitly changes the plan. On Friday inspect the existing initramfs before rebuilding.
+
+
+## REGOLA PERMANENTE DI CONTINUITÀ — LETTURA OBBLIGATORIA
+
+Questo file è il riferimento operativo principale per l'assistente ChatGPT che lavora su AureaOS. Prima di QUALSIASI attività sul repository, in ogni nuova chat o ripresa di sessione:
+1. Aprire e leggere integralmente questo file dalla branch `main`.
+2. Verificare il commit HEAD e i file effettivi interessati direttamente su GitHub; questo handoff non sostituisce l'ispezione del codice corrente.
+3. Confrontare le istruzioni della chat attiva con le priorità e i vincoli qui registrati. L'istruzione più recente dell'utente prevale se cambia esplicitamente una decisione precedente.
+4. Non chiedere all'utente di ripetere informazioni già registrate.
+5. Prima di concludere una sessione, aggiornare questo file con decisioni, progressi effettivi, file/commit toccati, verifiche realmente eseguite, problemi aperti e prossima azione precisa.
+6. Non dichiarare completato, funzionante o testato ciò che è soltanto progettato, dedotto o non verificato.
+7. Aggiornare anche il diario pubblico quando si è prodotto un progresso tecnico o una decisione progettuale significativa; evitare duplicazioni inutili.
+
+L'assistente è responsabile della manutenzione di questo handoff. Non è un promemoria facoltativo e non va sostituito con una ricostruzione basata solo sulla memoria della chat.
+
+## STATO CORRENTE — 2026-11-23 — RIPARTENZA DAL DESKTOP
+
+### Stato repository verificato
+
+- Repository: `AleessandroCeccarelli/AureaOs`.
+- Branch di lavoro: `main`.
+- HEAD osservato durante la sessione: `798d181e0228940686cedeb9718fc4dbcd2d39b7`.
+- Commit HEAD: aggiornamento relativo allo sfondo predefinito provvisorio (verificato dalla cronologia Git nella sessione).
+- Nessuna modifica al codice è stata eseguita in questa sessione; è stata svolta un'ispezione documentale e di alcuni sorgenti.
+- Non sono stati eseguiti `cargo fmt`, `cargo check`, test, build Rust o build ISO.
+
+### Priorità utente ribadita
+
+La priorità immediata NON è rendere funzionante il puntatore. Prima bisogna costruire una base desktop reale e visibile, sulla quale in seguito integrare puntatore e interazioni.
+
+Per la fase corrente:
+- costruire il desktop di AureaOS partendo dalla superficie di lavoro di base;
+- Dock escluso temporaneamente;
+- Launcher escluso temporaneamente;
+- puntatore e relative funzionalità esclusi temporaneamente come obiettivo di implementazione;
+- nessuna build ISO fino alla data già concordata, salvo nuova richiesta esplicita;
+- lavorare su `main`;
+- nessuna build/test remoto: l'utente esegue i controlli Rust su Fedora quando concordato.
+
+### Ispezione sorgenti effettuata il 23 novembre
+
+File letti su `main`:
+
+- `components/aurea-compositor/src/render.rs` — blob `5f7fb6a7eee0a212f33afd238f12152f2476b559`.
+- `components/aurea-compositor/src/renderer.rs` — blob `016ccae1392e6dd4a59c9bf8bead7cb688651ea7`.
+- `components/aurea-compositor/src/compositor.rs` — blob `f3a77804393414df78d6919f5df48b68bf8940d2`.
+- `components/aurea-shell/src/desktop/dock.rs` — blob `6731b3d898fb27b9cbb9d510830757a1bf0027a9`.
+- `aurea-human-interfaces/DESKTOP-EXPERIENCE-SPEC.md` — specifica di prodotto letta integralmente.
+
+Risultati circoscritti e verificati:
+- `RenderScene` in `render.rs` raccoglie attualmente toplevel mappati e cursore; il metodo `render_elements` produce elementi Wayland delle finestre. Nel contenuto ispezionato non è presente un elemento dedicato alla superficie wallpaper/desktop.
+- `RenderTarget` in `renderer.rs` rappresenta output abilitati, modalità, scala, trasformazione e origine logica; è quindi una base esistente per il rendering per-monitor e coordinate locali.
+- `RenderBackend::render_frame` definisce l'interfaccia di rendering; il file è backend-independent.
+- `AureaCompositor` coordina già output manager, window manager, frame scheduler e percorso rendering, oltre ai servizi di input. Non aggiungere responsabilità desktop indiscriminatamente a questo file.
+- `dock.rs` contiene lo stato/policy della Dock; la Dock esiste come modulo ma è fuori ambito nella fase corrente.
+- La specifica `DESKTOP-EXPERIENCE-SPEC.md` descrive l'esperienza desktop completa (wallpaper, Dock, launcher, workspace, finestre, notifiche, quick settings), ma dichiara esplicitamente di essere una specifica e non una prova di implementazione.
+- La presenza di output manager e render target NON prova che un desktop di sfondo sia già visualizzato.
+- Non è ancora stata verificata in questa sessione l'intera implementazione del backend Vulkan, il caricamento runtime del wallpaper, la persistenza della preferenza wallpaper o la composizione effettiva di una superficie desktop vuota. Non affermare che questi elementi funzionino finché non ispezionati e testati.
+
+### Direzione architetturale concordata per il desktop di base
+
+Obiettivo iniziale: all'avvio della sessione, visualizzare una superficie desktop vuota e stabile anche quando non esistono finestre applicative, senza Dock, Launcher o puntatore come obiettivi della prima fase.
+
+Separazioni di responsabilità da rispettare:
+- stato/preferenze desktop nella Shell o API appropriata;
+- rappresentazione della superficie desktop e wallpaper nel percorso di composizione/rendering;
+- gestione output e coordinate per-monitor attraverso le strutture già esistenti;
+- rendering e presentazione tramite backend Vulkan esistente;
+- niente duplicazione di output manager, renderer o gestione finestre;
+- evitare mega-file: ogni nuova responsabilità in modulo piccolo, con test mirati.
+
+Non creare subito nuovi file o API prima di aver completato l'audit dei percorsi già presenti. In particolare, prima di implementare:
+1. leggere il modulo rendering del compositor e il backend Vulkan effettivo;
+2. leggere il wiring della Shell/sessione desktop e l'avvio del runtime;
+3. individuare dove viene costruita la scena per ogni output e dove avviene la presentazione;
+4. verificare come sono gestiti frame vuoti, clear color, formati texture e caricamento asset;
+5. definire il punto minimo di integrazione della desktop surface senza introdurre dipendenze circolari.
+
+### Sequenza di lavoro approvata
+
+1. Audit del percorso di rendering attuale, dal frame scheduler al backend Vulkan e presentazione output.
+2. Desktop surface minima: background/clear surface visibile anche senza finestre.
+3. Wallpaper: caricamento, fallback robusto, dimensionamento/crop e gestione per output.
+4. Collegamento dello stato tema chiaro/scuro alla palette e alla composizione effettiva.
+5. Verifica geometria e comportamento su più monitor, riutilizzando OutputManager e RenderTarget.
+6. Solo dopo che il desktop base è visibile e stabile: riprendere puntatore e interazioni.
+7. Dock e Launcher restano esplicitamente rinviati.
+
+### Regole per lo stato e i risultati
+
+- Stato attuale: architettura di rendering e gestione output esistenti; superficie wallpaper dedicata non individuata nel file RenderScene ispezionato; implementazione completa del desktop base NON ancora verificata.
+- Nessun test o build è stato eseguito in questa sessione.
+- Non dichiarare il desktop funzionante finché non esiste una prova su Fedora/hardware o un test di rendering appropriato.
+- Alla prossima ripresa: leggere prima questo handoff, verificare HEAD, poi continuare l'audit dei file rendering Vulkan e wiring Shell/runtime. Non ripartire dal puntatore.
