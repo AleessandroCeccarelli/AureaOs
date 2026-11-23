@@ -56,7 +56,9 @@ for required in \
     "$SCRIPT_DIR/hooks/020-brand-boot-menu.hook.binary" \
     "$SCRIPT_DIR/systemd/aurea-desktop.service" \
     "$SCRIPT_DIR/pam/aurea-desktop" \
-    "$SCRIPT_DIR/scripts/aurea-live-session"; do
+    "$SCRIPT_DIR/scripts/aurea-live-session" \
+    "$SCRIPT_DIR/tests/validate-chroot-boot.sh" \
+    "$SCRIPT_DIR/tests/validate-live-image.sh"; do
     [[ -f "$required" ]] || { echo "Required ISO input is missing: $required" >&2; exit 1; }
 done
 
@@ -90,9 +92,10 @@ fi
 
 CONFIG_DIR="$BUILD_ROOT/config"
 SOURCE_DIR="$CONFIG_DIR/includes.chroot/usr/src/aureaos"
+BOOT_TEST_DIR="$CONFIG_DIR/includes.chroot/usr/local/libexec/aureaos"
 
 refresh_inputs() {
-    mkdir -p "$CONFIG_DIR/package-lists" "$CONFIG_DIR/hooks/live" "$SOURCE_DIR"
+    mkdir -p "$CONFIG_DIR/package-lists" "$CONFIG_DIR/hooks/live" "$SOURCE_DIR" "$BOOT_TEST_DIR"
 
     install -m 0644 "$SCRIPT_DIR/package-lists/aureaos.list.chroot" \
         "$CONFIG_DIR/package-lists/aureaos.list.chroot"
@@ -178,9 +181,7 @@ fi
 cleanup() {
     local status=$?
     if ((status == 0)); then
-        sudo rm -rf -- "$BUILD_ROOT" || {
-            echo "Warning: unable to remove successful build workspace: $BUILD_ROOT" >&2
-        }
+        echo "Build workspace and caches preserved: $BUILD_ROOT"
     else
         echo "Build failed; preserving workspace and diagnostics: $BUILD_ROOT" >&2
     fi
@@ -201,6 +202,9 @@ cd "$BUILD_ROOT"
 echo "Building Debian Trixie amd64 Live ISO..."
 sudo lb build
 
+# Validate the files live-build staged before accepting or copying the ISO.
+bash "$SCRIPT_DIR/tests/validate-live-image.sh" --binary-dir "$BUILD_ROOT/binary"
+
 ISO_PATH="$(find "$BUILD_ROOT" -maxdepth 1 -type f -name '*.iso' -print -quit)"
 if [[ -z "$ISO_PATH" || ! -s "$ISO_PATH" ]]; then
     echo "Live Build completed without producing a non-empty ISO." >&2
@@ -210,6 +214,8 @@ fi
 
 DESTINATION="$OUTPUT_DIR/AureaOS.iso"
 install -m 0644 "$ISO_PATH" "$DESTINATION"
+# Re-open the actual ISO and validate its extracted boot payload, not only the workspace.
+bash "$SCRIPT_DIR/tests/validate-live-image.sh" --iso "$DESTINATION"
 (
     cd "$OUTPUT_DIR"
     sha256sum AureaOS.iso > AureaOS.iso.sha256
