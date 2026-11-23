@@ -577,3 +577,43 @@ Non dichiarare il wallpaper visibile fino a quando decoder, texture upload, draw
 - È stato svolto audit del percorso di texture upload e composizione; nessun file Rust è stato modificato in questa prosecuzione.
 - Nessun Cargo fmt/check/test/build è stato eseguito, in conformità alla regola di lasciare le verifiche Rust all'utente su Fedora.
 - Nessun lavoro ISO, Dock, Launcher o puntatore.
+
+
+## PROSECUZIONE DESKTOP — LAYOUT E PIXEL RGBA8 (23-11-2026)
+
+L'utente ha autorizzato esplicitamente la creazione e modifica dei file necessari. Il lavoro resta sul branch `main`, con priorità desktop e senza build ISO.
+
+### Codice aggiunto su main
+
+- `components/aurea-compositor/src/desktop/wallpaper/layout.rs`
+  - `WallpaperFitMode`: Fill, Fit, Stretch, Center.
+  - `WallpaperLayout`: separa rettangolo sorgente (crop in pixel immagine) e rettangolo destinazione (pixel fisici locali dell'output).
+  - Calcolo intero senza allocazioni; Center può produrre coordinate negative e richiede scissor dell'output.
+  - Test unitari per crop, contain, stretch, center e dimensioni nulle.
+- `components/aurea-compositor/src/desktop/wallpaper/pixels.rs`
+  - `WallpaperPixels`: buffer RGBA8 posseduto, pronto per l'upload Vulkan.
+  - Verifica dimensioni non nulle, overflow, lunghezza esatta e limite di memoria di 256 MiB.
+  - Test unitari per buffer valido, lunghezza errata, dimensioni nulle, limite memoria e overflow.
+- `wallpaper/mod.rs` esporta layout e pixel buffer.
+
+### Commit di questa fase
+
+- `7b15482` — aggiunto il buffer pixel wallpaper con limiti e test.
+- `84b3f00` — esportato il tipo WallpaperPixels.
+- `e1a1fdb` — corretto il test del caso di overflow dimensionale.
+
+### Limite tecnico da non mascherare
+
+Il draw pass Vulkan non è ancora stato inserito. Il motivo è concreto: la scena contiene ancora i byte JPEG compressi e non esiste ancora una texture Vulkan wallpaper. Il ramo scena vuota non può disegnare correttamente un'immagine senza decoder, buffer RGBA e texture campionabile. Non inserire una chiamata fittizia né riutilizzare la cache SHM tramite ObjectId inventati.
+
+### Prossimi passaggi
+
+1. Fedora: pull, fmt/check e test dei nuovi moduli.
+2. Aggiungere un decoder JPEG mantenuto e generare Cargo.lock con Cargo su Fedora.
+3. Convertire JPEG in WallpaperPixels con limiti di dimensione.
+4. Creare upload/texture wallpaper e cache dedicata, mantenendo vive le risorse fino al completamento GPU.
+5. Integrare il draw dopo il clear e prima delle superfici; il ramo scena vuota deve disegnare il wallpaper prima del readback/release.
+6. Verificare readback, display-color pass e rilascio KMS.
+7. Solo dopo il wallpaper statico, estendere i formati PNG/BMP.
+
+Nessuna build, formattazione o test Rust è stato eseguito da remoto. I test presenti sono codice aggiunto, non risultati eseguiti.
