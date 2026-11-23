@@ -121,7 +121,13 @@ pub(super) fn render_frame(
                         background_color,
                     )
                 }
-                None => clear_and_readback(device, view, previous_image_state, readback, background_color),
+                None => clear_and_readback(
+                    device,
+                    view,
+                    previous_image_state,
+                    readback,
+                    background_color,
+                ),
             };
         }
         return match display_color {
@@ -138,7 +144,13 @@ pub(super) fn render_frame(
                     background_color,
                 )
             }
-            None => clear_and_release(device, view, previous_image_state, on_submitted, background_color),
+            None => clear_and_release(
+                device,
+                view,
+                previous_image_state,
+                on_submitted,
+                background_color,
+            ),
         };
     }
     // Finish asynchronous texture uploads before borrowing cache-owned GPU resources.

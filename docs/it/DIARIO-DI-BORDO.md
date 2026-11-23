@@ -328,3 +328,24 @@ Non è ancora presente un decoder GIF o video e non viene ancora disegnato alcun
 Prossimo ordine: test Fedora del codice appena pubblicato; completamento del percorso statico JPEG (decoder, upload, cache e draw Vulkan); quindi provider GIF/video, worker, coda limitata di frame e collegamento alle policy di pausa/ripresa.
 
 Nessun Cargo fmt/check/test o build è stato eseguito in questa fase.
+
+
+## 23 novembre 2026 — Modello degli elementi desktop e pile visuali opzionali
+
+È stato aggiunto il primo modello dati condiviso per la scrivania, sotto components/aurea-desktop-api/src/desktop/:
+
+- item.rs descrive identificatori stabili, file, cartelle, applicazioni, Cestino e posizioni logiche.
+- preferences.rs gestisce la visibilità del Cestino, l'attivazione facoltativa delle pile e le esclusioni per singolo elemento.
+- stacks.rs crea gruppi visuali deterministici per categoria o estensione; una pila viene generata solo quando contiene almeno due file idonei.
+- manager.rs possiede la raccolta in memoria, rifiuta identificatori duplicati e impedisce la rimozione del Cestino di sistema.
+- mod.rs esporta i contratti senza introdurre dipendenze da Smithay, Wayland o Vulkan.
+
+Il desktop predefinito contiene esclusivamente il Cestino. Le pile sono disattivate inizialmente. Il raggruppamento è derivato e non modifica, sposta, rinomina o elimina i file originali.
+
+La specifica architetturale è in docs/architecture/DESKTOP-ITEMS-AND-STACKS.md.
+
+### Verifica e limiti
+
+Sono stati aggiunti test unitari mirati, ma in questa sessione non sono stati eseguiti comandi Cargo. Non si dichiara quindi la compilazione verificata. Persistenza, scansione e monitoraggio del filesystem, integrazione MIME, interfaccia shell, drag-and-drop, menu contestuale, apertura/espansione delle pile e rendering compositor restano da implementare.
+
+La CI precedente (run 45256450916 sul commit 99714264) aveva build/test workspace e audit dipendenze superati, ma il job di formattazione Rust fallito su file wallpaper/Vulkan preesistenti. Le differenze di formattazione individuate sono state corrette nello stesso aggiornamento; la nuova CI dovrà confermare il risultato.

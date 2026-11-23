@@ -8,9 +8,8 @@
 use smithay::reexports::ash::vk;
 
 use super::{
-    VulkanClearPass, VulkanCommandBuffer, VulkanDisplayColorPass,
-    VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanLogicalDevice,
-    VulkanSurfaceCompositionError,
+    VulkanClearPass, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanImageState,
+    VulkanImageTransition, VulkanImageView, VulkanLogicalDevice, VulkanSurfaceCompositionError,
 };
 
 pub(super) fn clear_display_and_release(

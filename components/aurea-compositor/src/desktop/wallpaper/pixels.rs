@@ -33,7 +33,10 @@ impl fmt::Display for WallpaperPixelsError {
             Self::ZeroDimensions => formatter.write_str("wallpaper dimensions must be non-zero"),
             Self::DimensionsOverflow => formatter.write_str("wallpaper pixel dimensions overflow"),
             Self::MemoryLimitExceeded => {
-                write!(formatter, "decoded wallpaper exceeds the {MAX_WALLPAPER_RGBA_BYTES}-byte memory limit")
+                write!(
+                    formatter,
+                    "decoded wallpaper exceeds the {MAX_WALLPAPER_RGBA_BYTES}-byte memory limit"
+                )
             }
             Self::InvalidByteLength => {
                 formatter.write_str("RGBA8 buffer length does not match wallpaper dimensions")
@@ -52,7 +55,11 @@ impl WallpaperPixels {
             return Err(WallpaperPixelsError::InvalidByteLength);
         }
 
-        Ok(Self { width, height, rgba8 })
+        Ok(Self {
+            width,
+            height,
+            rgba8,
+        })
     }
 
     /// Computes the exact RGBA8 allocation size with overflow and memory-limit checks.
@@ -99,7 +106,7 @@ impl WallpaperPixels {
 
 #[cfg(test)]
 mod tests {
-    use super::{WallpaperPixels, WallpaperPixelsError, MAX_WALLPAPER_RGBA_BYTES};
+    use super::{MAX_WALLPAPER_RGBA_BYTES, WallpaperPixels, WallpaperPixelsError};
 
     #[test]
     fn accepts_exact_rgba8_buffer() {

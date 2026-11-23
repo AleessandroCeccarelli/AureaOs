@@ -7,18 +7,18 @@
 
 mod animation;
 mod asset;
+mod layout;
 mod manager;
 mod pixels;
-mod layout;
 mod snapshot;
 
 pub use animation::{
-    WallpaperFrame, WallpaperFrameProvider, WallpaperPauseReason, WallpaperPlaybackDecision,
-    WallpaperPlaybackEnvironment, WallpaperPlaybackPolicy, WallpaperProviderError,
-    MAX_WALLPAPER_FRAME_RATE, MIN_WALLPAPER_FRAME_RATE,
+    MAX_WALLPAPER_FRAME_RATE, MIN_WALLPAPER_FRAME_RATE, WallpaperFrame, WallpaperFrameProvider,
+    WallpaperPauseReason, WallpaperPlaybackDecision, WallpaperPlaybackEnvironment,
+    WallpaperPlaybackPolicy, WallpaperProviderError,
 };
 pub use asset::{WallpaperAsset, WallpaperDimensions, WallpaperFormat};
-pub use manager::WallpaperManager;
 pub use layout::{WallpaperFitMode, WallpaperLayout, WallpaperPixelRect};
-pub use pixels::{WallpaperPixels, WallpaperPixelsError, MAX_WALLPAPER_RGBA_BYTES};
+pub use manager::WallpaperManager;
+pub use pixels::{MAX_WALLPAPER_RGBA_BYTES, WallpaperPixels, WallpaperPixelsError};
 pub use snapshot::WallpaperSnapshot;

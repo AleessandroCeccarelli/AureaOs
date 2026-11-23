@@ -19,7 +19,10 @@ impl WallpaperSnapshot {
         asset: WallpaperAsset,
         playback_policy: WallpaperPlaybackPolicy,
     ) -> Self {
-        Self { asset, playback_policy }
+        Self {
+            asset,
+            playback_policy,
+        }
     }
 
     pub const fn asset(self) -> WallpaperAsset {

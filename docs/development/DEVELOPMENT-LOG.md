@@ -479,3 +479,26 @@ Commit: `99714264f53e280c1ad820cac92de9106f5a9172`.
 ### Next step
 
 Continue a coherent block of desktop work before the next CI run, as agreed. On the next validation pass, run Rust formatting, workspace checks, and tests together. Fedora hardware validation remains necessary for actual monitor clipping and Vulkan presentation.
+
+
+## 2026-11-23 — Desktop item model and optional visual stacks
+
+### Scope and implementation
+
+Added the first technology-independent desktop item model under components/aurea-desktop-api/src/desktop/:
+
+- item.rs defines stable item identifiers, file/folder/application/Trash kinds, logical positions and file-extension extraction.
+- preferences.rs defines the Trash visibility preference, opt-in stack grouping and per-item exclusions.
+- stacks.rs derives deterministic visual groups by file category or extension. Only groups with at least two eligible files become stacks.
+- manager.rs owns the in-memory desktop entries, rejects duplicate IDs, protects the system Trash entry and exposes derived stacks.
+- mod.rs exports the desktop contracts; the API crate remains independent from compositor, shell and graphics backends.
+
+The default model contains only the Trash entry. Stack grouping is disabled by default. Creating or disabling a stack does not mutate source entries or their file URIs.
+
+Architecture rules and explicit implementation boundaries are documented in docs/architecture/DESKTOP-ITEMS-AND-STACKS.md.
+
+### Verification and limitations
+
+Focused unit tests were added for identifier validation, extension extraction, default Trash-only state, duplicate IDs, Trash protection, optional grouping, category/extension grouping and item exclusions. No Cargo command was executed in this session; these tests are added but not yet run. Persistence, filesystem discovery/watchers, MIME database integration, shell presentation, drag-and-drop, context menus, stack expansion and compositor rendering remain future work.
+
+The latest CI run inspected before this change (45256450916, commit 99714264) had successful workspace build/tests and dependency audit, but Rust formatting failed in existing wallpaper/Vulkan files. Those formatting-only differences are corrected in this commit; the new Rust files must be checked by the next CI run.
