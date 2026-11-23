@@ -86,7 +86,7 @@ mod tests {
         assert!(!state.night_light.is_enabled());
         assert!(std::str::from_utf8(state.trash_artwork_svg())
             .unwrap()
-            .contains("trash-empty"));
+            .contains("— empty"));
     }
 
     #[test]
