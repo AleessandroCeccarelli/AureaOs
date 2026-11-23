@@ -531,3 +531,49 @@ Non dichiarare il wallpaper visibile fino a quando decoder, texture upload, draw
   - `75643e9` — stato runtime nel README dei wallpaper.
 - Nessuna build o verifica Rust è stata eseguita. L'utente deve eseguire i controlli su Fedora.
 - Il wallpaper non è ancora disegnato: manca la decodifica pixel e il pass Vulkan. Il prossimo step non va saltato: prima verificare compilazione e test del livello asset appena aggiunto, poi implementare decoder e texture.
+
+
+## AUDIT TECNICO WALLPAPER — 2026-11-23 (PROSECUZIONE)
+
+### HEAD e stato verificati
+
+- Repository: `AleessandroCeccarelli/AureaOs`, branch `main`.
+- HEAD osservato dopo i commit del primo modulo wallpaper: `0d8421d2475c19bb01d2f556c2ef02f5370383f9`.
+- Riletto integralmente questo handoff prima di proseguire.
+- Riletti su `main` i moduli wallpaper, DesktopManager, DesktopSnapshot, RenderScene, Vulkan surface compositor, texture cache e upload.
+
+### Risultati dell'audit Vulkan
+
+- `vulkan/shm_texture.rs` implementa già una texture RGBA8 campionabile, usando `VulkanSharedImage`, `VulkanImageView`, `VulkanUploadBatch` e `VulkanPendingUpload`.
+- `vulkan/surface_texture_cache.rs` implementa una cache GPU limitata per superfici Wayland, indicizzata da `ObjectId` e revisione. Non va riutilizzata direttamente per il wallpaper: il wallpaper non è una superficie Wayland e ha un diverso ciclo di vita.
+- `vulkan/surface_compositor.rs::render_frame` effettua il clear usando `scene.desktop().surface().background_color()`, prepara le texture delle superfici e, se non ci sono superfici visibili né cursore, esegue il ramo clear/readback o clear/release e ritorna subito.
+- Nel percorso con superfici, il clear precede il ciclo che disegna le superfici; il wallpaper dovrà essere disegnato subito dopo il clear e prima del ciclo delle superfici.
+- Il ramo scena vuota deve essere modificato: se esiste un wallpaper, deve comunque registrare e presentare il draw pass; non può più ritornare dopo il solo clear.
+- La pipeline di composizione e il descriptor binding già supportano texture campionabili e regioni textured. Riutilizzare questi componenti.
+- `RenderTarget` resta la fonte della geometria/scala/origine per-output; il wallpaper va adattato al rettangolo locale dell'output, non renderizzato con coordinate globali grezze.
+- `VulkanShmTexture::submit_snapshots` accetta `ShmBufferSnapshot` e gestisce upload RGBA8 con risorse pending fino al completamento GPU. È una base riutilizzabile, ma l'asset wallpaper deve avere un adattatore/texture owner distinto e cache per asset/versione, non un ObjectId fittizio.
+
+### Decodifica JPEG e Cargo
+
+- Il Cargo.toml di `aurea-compositor` dichiara al momento soltanto `aurea-desktop-api`, `tracing` e Smithay.
+- Una ricerca del Cargo.lock e del codice del repository non ha trovato `jpeg-decoder`, `image` o un decoder JPEG già direttamente disponibile.
+- Non introdurre una dipendenza solo nel Cargo.toml lasciando Cargo.lock incoerente.
+- Non scrivere un decoder JPEG proprietario: sarebbe un rischio di correttezza e sicurezza non giustificato.
+- Il prossimo passo per la decodifica è scegliere una dipendenza Rust mantenuta, aggiungerla e generare/aggiornare Cargo.lock con Cargo su Fedora. Dopo il lockfile aggiornato, implementare un modulo decoder con limiti espliciti di dimensioni e byte, test su JPEG valido/troncato e dati non validi.
+
+### Prossima implementazione, dopo la verifica locale
+
+1. L'utente esegue su Fedora `cargo fmt --all -- --check` e `cargo check -p aurea-compositor --features drm` sul codice già pubblicato; correggere prima eventuali errori reali.
+2. Aggiungere il decoder JPEG e aggiornare Cargo.lock su Fedora.
+3. Creare un tipo CPU `WallpaperPixels` (dimensioni + RGBA8 con overflow check e limite memoria) distinto da `ShmBufferSnapshot`.
+4. Estendere o generalizzare il percorso di upload texture senza accoppiare il wallpaper agli identificatori Wayland; mantenere risorse pending fino al completamento GPU.
+5. Creare una cache wallpaper GPU dedicata, con invalidazione per asset e device e budget memoria.
+6. Integrare il binding wallpaper nel compositor: clear fallback, draw wallpaper, draw superfici, draw cursore; garantire il draw anche nel caso di scena vuota, e coprire readback e release/KMS.
+7. Aggiungere fit/crop/center per output, usando il RenderTarget e scissor locale.
+8. Aggiornare diario e handoff dopo il codice e distinguere chiaramente implementato, compilato, testato e validato su hardware.
+
+### Stato di questa prosecuzione
+
+- È stato svolto audit del percorso di texture upload e composizione; nessun file Rust è stato modificato in questa prosecuzione.
+- Nessun Cargo fmt/check/test/build è stato eseguito, in conformità alla regola di lasciare le verifiche Rust all'utente su Fedora.
+- Nessun lavoro ISO, Dock, Launcher o puntatore.
