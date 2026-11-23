@@ -638,3 +638,26 @@ L'utente vuole che AureaOS supporti anche sfondi animati, come esperienza aggiun
 Ordine: prima wallpaper statico funzionante (JPEG decode + Vulkan upload/cache + draw); poi PNG/BMP e Tile/Span; poi interfaccia frame animato e clock deterministico; infine backend media e policy power/sessione/UI. Non saltare direttamente al video prima di avere un percorso statico affidabile.
 
 La specifica distingue implementato, non ancora verificato, e pianificato. Nessuna build o test Rust è stato eseguito.
+
+
+## IMPLEMENTAZIONE — CONTRATTI ANIMAZIONE WALLPAPER (23-11-2026)
+
+Dopo la specifica di prodotto è stato aggiunto un primo livello di codice Rust, pubblicato su `main`.
+
+File:
+- `desktop/wallpaper/animation.rs`: policy di riproduzione, condizioni ambientali, decisioni Playing/Paused con motivo, frame RGBA timestampato, errore provider e trait backend-neutral `WallpaperFrameProvider`.
+- `manager.rs`: `WallpaperManager` possiede ora anche `WallpaperPlaybackPolicy` e la trasferisce negli snapshot.
+- `snapshot.rs`: `WallpaperSnapshot` include asset e policy.
+- `mod.rs`: esporta i contratti pubblici.
+
+Policy predefinita: 30 fps massimi, audio muto, pausa quando il wallpaper è coperto, output disabilitato, sessione bloccata, sistema sospeso o power saving attivo. Reduced motion forza la pausa. Il frame rate è limitato a 1–60 fps. Il provider produce frame RGBA8 con indice e presentation timestamp.
+
+IMPORTANTE: è un contratto e una policy integrata nel WallpaperManager, NON un decoder funzionante. Nessun decoder GIF/APNG/WebP/video è stato aggiunto; nessun frame viene ancora renderizzato. Il trait provider deve essere invocato solo da un worker, mai dal render thread Vulkan. Il prossimo ordine resta: validare questo codice su Fedora, completare decode/upload/cache/draw statico, poi implementare provider GIF/video e collegare worker e coda di frame.
+
+Commit:
+- `8eb57d1` — contratti animazione e policy.
+- `0734539` — policy integrata nel WallpaperManager.
+- `67a2bff` — policy negli snapshot.
+- `f650e00` — export API.
+
+Non è stato eseguito Cargo fmt/check/test o build remota. Nessuna verifica hardware.
