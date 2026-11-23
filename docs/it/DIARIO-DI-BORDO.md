@@ -166,3 +166,30 @@ Inoltre il controllo finale attuale verifica essenzialmente che esista una ISO n
 7. Aggiungere validazione pre-ISO e post-ISO, inclusa verifica effettiva dell'initramfs, mantenendo log diagnostici completi.
 
 Non registrare il desktop come completato né l'ISO come avviabile: il primo boot reale ha dimostrato il contrario.
+
+
+## 23 novembre 2026 — Primo nucleo operativo del Desktop
+
+Dopo aver definito l'architettura, è iniziata l'implementazione concreta del desktop. La priorità è costruire prima una superficie desktop reale; Dock, Launcher e lavoro sul puntatore restano temporaneamente esclusi.
+
+### DesktopManager e superficie base
+
+È stato introdotto in `components/aurea-compositor/src/desktop/` un primo sottosistema modulare:
+- `manager.rs`: coordina tema e sorgente dello sfondo e produce uno snapshot immutabile per il frame;
+- `theme.rs`: modalità Light/Dark con i token desktop AureaOS;
+- `background.rs`: background derivato dal tema o colore uniforme personalizzato, con validazione;
+- `surface.rs`: descrizione immutabile della superficie desktop;
+- `snapshot.rs`: dati desktop congelati per il singolo frame;
+- `mod.rs`: esportazioni del modulo.
+
+Il compositor ora possiede il DesktopManager. La scena di rendering riceve lo snapshot e il backend Vulkan utilizza il colore selezionato in entrambe le principali situazioni: scena vuota e scena con superfici, incluse le varianti readback e rilascio delle immagini verso KMS. Il clear pass Vulkan rimane generico e non contiene logica di tema.
+
+Il colore predefinito è il token Light `#edf4ff`; il token Dark è `#0d1320`. È inoltre predisposto un colore uniforme personalizzato, validato e sempre opaco.
+
+### Stato delle verifiche
+
+Sono stati aggiunti test unitari per tema, background e DesktopManager. Non sono stati eseguiti `cargo fmt`, `cargo check`, test o build: la verifica resta affidata a Fedora dell'utente. Il codice è quindi pubblicato ma non ancora dichiarato compilante o funzionante su hardware.
+
+Wallpaper, decodifica immagini, upload texture Vulkan, scaling/crop e persistenza non sono ancora implementati. Il puntatore, Dock e Launcher restano rinviati.
+
+Commit principali: `542f918`, `2826f2d`, `e0fb92e`.
