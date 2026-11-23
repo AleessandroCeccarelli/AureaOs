@@ -8,7 +8,7 @@
 use smithay::reexports::ash::vk;
 
 use super::{
-    BACKGROUND_COLOR, VulkanClearPass, VulkanCommandBuffer, VulkanDisplayColorPass,
+    VulkanClearPass, VulkanCommandBuffer, VulkanDisplayColorPass,
     VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanLogicalDevice,
     VulkanSurfaceCompositionError,
 };
@@ -38,7 +38,8 @@ pub(super) fn clear_display_and_release(
         intermediate_view,
         previous_intermediate_state,
         VulkanImageState::General,
-        )
+        background_color,
+    )
     .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     pass.record(
         device,
@@ -75,6 +76,7 @@ pub(super) fn clear_and_release(
     view: &VulkanImageView<'_, '_>,
     previous_image_state: VulkanImageState,
     on_submitted: impl FnOnce(),
+    background_color: [f32; 4],
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let mut command_buffer = VulkanCommandBuffer::new(device)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
