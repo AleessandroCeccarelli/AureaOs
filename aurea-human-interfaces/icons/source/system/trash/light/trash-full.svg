@@ -28,13 +28,21 @@
 <!-- Discarded contents: placed behind the translucent front wall; upper pieces remain above the rim. -->
 
  <g opacity="1">
-  <path d="M165 144l10-47 34-16 37 22-12 52-39 9z" fill="#FBF9F3" stroke="#C5C4C4" stroke-width="2.5"/>
-  <path d="M178 104l29 17 28-13M181 137l29-8" fill="none" stroke="#C4C2BE" stroke-width="3" stroke-linecap="round"/>
-  <path d="M225 140l22-49 34-8 32 23-20 48-42 9z" fill="#FDFCF8" stroke="#C5C4C4" stroke-width="2.5"/>
-  <path d="M250 100l27 17 28-9M251 132l29-9" fill="none" stroke="#C7C5C1" stroke-width="3" stroke-linecap="round"/>
-  <path d="M292 141l18-44 32-6 28 27-22 42-37 4z" fill="#91B5D0" stroke="#718EA8" stroke-width="2.5"/>
-  <path d="M313 106l23 14 27-8" fill="none" stroke="#6F8DA9" stroke-width="3"/>
-  <path d="M351 148l19-36 27-3 18 25-20 31-30 2z" fill="#E7CC91" stroke="#B9A16F" stroke-width="2.5"/>
+  <!-- A visibly overfilled pile: folded sheets, crumpled paper and colored packaging rise well above the rim. -->
+  <path d="M137 137L145 84Q148 70 162 75L204 94L218 145L180 163Z" fill="#F7F4ED" stroke="#BEBAB2" stroke-width="3"/>
+  <path d="M151 89L176 112L205 100M160 129L183 116L204 137" fill="none" stroke="#C7C2B9" stroke-width="4" stroke-linecap="round"/>
+  <path d="M176 144L192 64Q195 50 211 55L255 80L250 151L210 169Z" fill="#FFFDF8" stroke="#C4C0B9" stroke-width="3"/>
+  <path d="M201 65L221 96L250 79M202 126L224 110L247 132" fill="none" stroke="#C7C3BC" stroke-width="4" stroke-linecap="round"/>
+  <path d="M226 144L249 67Q254 51 269 59L310 87L293 158L255 170Z" fill="#F9F7F1" stroke="#C2BEB7" stroke-width="3"/>
+  <path d="M258 67L270 105L301 91M252 132L277 113L294 140" fill="none" stroke="#C9C4BC" stroke-width="4" stroke-linecap="round"/>
+  <path d="M285 147L309 77Q314 62 329 70L371 100L347 164L309 171Z" fill="#8FB5D1" stroke="#6E8DA8" stroke-width="3"/>
+  <path d="M318 78L334 112L363 101M309 143L336 122L352 145" fill="none" stroke="#6D8EAA" stroke-width="4" stroke-linecap="round"/>
+  <path d="M344 149L370 94Q377 81 390 91L420 119L390 166L357 171Z" fill="#E8CB8D" stroke="#B69B65" stroke-width="3"/>
+  <path d="M378 98L390 127L412 120M367 146L391 132" fill="none" stroke="#B69B65" stroke-width="4" stroke-linecap="round"/>
+  <path d="M159 154L170 119L197 110L217 132L201 166L173 173Z" fill="#D9DDE4" stroke="#AEB5C0" stroke-width="3"/>
+  <path d="M175 127L191 145L209 132" fill="none" stroke="#AAB2BE" stroke-width="4" stroke-linecap="round"/>
+  <path d="M244 155L263 117L287 112L307 136L289 169L258 177Z" fill="#FDFCF8" stroke="#C6C2BB" stroke-width="3"/>
+  <path d="M267 124L281 145L302 133" fill="none" stroke="#C7C3BC" stroke-width="4" stroke-linecap="round"/>
  </g>
 <!-- Softly diffused contents visible through the body -->
 <g clip-path="url(#insideBody)" opacity=".24" filter="url(#blur)">
