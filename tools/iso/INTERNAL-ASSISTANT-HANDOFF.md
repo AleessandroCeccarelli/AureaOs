@@ -5,7 +5,7 @@ Non è documentazione utente né una specifica del prodotto.
 Aggiornare questo file quando cambiano script, diagnosi o stato delle prove.
 -->
 
-Ultimo aggiornamento: 2026-11-22
+Ultimo aggiornamento: 2026-11-23
 Repository: AleessandroCeccarelli/AureaOs
 Branch di lavoro: main
 
@@ -445,3 +445,12 @@ Il primo vertical slice del desktop è stato scritto e pubblicato, ma NON è dic
 6. Puntatore, Dock e Launcher restano fuori dalla priorità immediata.
 
 Non affermare che AureaOS mostra già un desktop funzionante: è stato implementato il primo livello di policy e propagazione del colore di sfondo nel renderer, da validare su Fedora.
+
+
+### Ultimo controllo repository — 2026-11-23
+
+- HEAD corrente dopo sincronizzazione del diario: `3954457b621e166329ae8db26db3db2952100f73`.
+- Il primo nucleo desktop è stato pubblicato su main con i commit elencati sopra.
+- Le vie Vulkan sono state ricontrollate dopo la correzione: entrambe le varianti clear/readback e clear/release ricevono il colore desktop esplicitamente; nessun riferimento residuo al vecchio colore costante `BACKGROUND_COLOR` nei file readback/release verificati.
+- La cronologia pubblica è stata aggiornata in italiano e inglese.
+- Nessuna verifica Cargo è stata eseguita. La prossima azione pratica è far sincronizzare `main` su Fedora e ottenere `cargo fmt --all` + `cargo check -p aurea-compositor --features drm` prima di aggiungere wallpaper.
