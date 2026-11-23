@@ -226,3 +226,19 @@ Nessun `cargo fmt`, `cargo check`, test o build è stato eseguito. La verifica r
 ### Prossimo passo
 
 Verificare prima la compilazione su Fedora; poi scegliere una libreria JPEG, aggiornare Cargo.lock, implementare la decodifica isolata e collegare il buffer RGBA al sistema di upload Vulkan già esistente.
+
+
+## 23 novembre 2026 — Audit del percorso texture Vulkan per il wallpaper
+
+Proseguendo il lavoro sul wallpaper, è stato ispezionato il percorso Vulkan già usato per le superfici Wayland.
+
+Risultati:
+- Esiste già `VulkanShmTexture`, che carica pixel RGBA8 in una immagine Vulkan campionabile usando le primitive di upload condivise.
+- Esiste una cache GPU per le superfici Wayland, ma non è direttamente adatta al wallpaper: usa ID di oggetti Wayland e revisioni delle superfici. Il wallpaper richiede una cache con ciclo di vita e chiave propri.
+- `surface_compositor::render_frame` oggi pulisce il target con il colore desktop. Nel caso di scena vuota ritorna dopo il clear/readback o clear/release. Per visualizzare il wallpaper anche senza finestre, il draw del wallpaper deve avvenire prima di quel ritorno.
+- Nelle scene con finestre, il draw del wallpaper deve essere inserito dopo il clear e prima delle superfici applicative; il cursore resta in cima.
+- Il RenderTarget fornisce già geometria e scala dell'output: il fit/crop dovrà essere calcolato localmente per ogni monitor.
+
+Non è stato aggiunto un decoder JPEG perché non risulta una dipendenza decoder già disponibile nel Cargo.lock. Non va lasciato Cargo.toml e Cargo.lock incoerenti né va scritto un decoder JPEG proprietario. La scelta della dipendenza e la rigenerazione del lockfile saranno fatte con Cargo su Fedora.
+
+Nessun file Rust modificato in questa fase; nessun test o build eseguito. Il prossimo step è la verifica Fedora del codice wallpaper già pubblicato, poi decoder JPEG e cache/texture dedicate, quindi integrazione del draw pass in entrambe le condizioni: scena vuota e scena con finestre.
