@@ -511,3 +511,23 @@ Non dichiarare il wallpaper visibile fino a quando decoder, texture upload, draw
 5. Aggiungere una texture wallpaper persistente e un pass di disegno sotto le superfici applicative; coprire sia scena vuota sia scena con finestre, readback e rilascio KMS.
 6. Implementare modalità di adattamento e clipping per ogni output usando il RenderTarget e l'origine logica esistenti.
 7. Aggiornare diario e questo handoff a ogni sessione, distinguendo sempre implementato, compilato, testato e validato su hardware.
+
+
+### Chiusura sessione wallpaper — stato Git aggiornato
+
+- HEAD `main` verificato dopo gli interventi: `75643e93f49e0f531809e6fe1f150cbbdf465787`.
+- Commit di codice:
+  - `88020d7` — nuovo modulo wallpaper e manager.
+  - `3b8fe2b` — validazione JPEG e metadata.
+  - `bae72e5` — snapshot wallpaper confrontabile.
+  - `3b53c9a` — manager con default selezionato e fallback.
+  - `4f76412` — integrazione nel DesktopManager.
+  - `4441108` — snapshot desktop con wallpaper opzionale.
+  - `ce2b4e4` — trasporto dell'asset nella RenderScene.
+- Commit documentazione:
+  - `24540e6` — handoff aggiornato con stato e piano.
+  - `7d7a81b` — diario italiano.
+  - `d5f688a` — diario inglese.
+  - `75643e9` — stato runtime nel README dei wallpaper.
+- Nessuna build o verifica Rust è stata eseguita. L'utente deve eseguire i controlli su Fedora.
+- Il wallpaper non è ancora disegnato: manca la decodifica pixel e il pass Vulkan. Il prossimo step non va saltato: prima verificare compilazione e test del livello asset appena aggiunto, poi implementare decoder e texture.
