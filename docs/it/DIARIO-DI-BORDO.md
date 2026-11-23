@@ -443,3 +443,12 @@ Aggiornati i sei SVG, il README della famiglia e l'inventario delle icone. Le ic
 **Verifica:** non è stato eseguito un renderer SVG né un controllo visivo alle dimensioni reali. La nuova direzione è stata tradotta nei sorgenti vettoriali, ma richiede ancora rendering e rifinitura ottica prima dell'approvazione finale. Nessuna integrazione runtime o selezione automatica dello stato è stata implementata.
 
 **Prossimi passi:** renderizzare i sei SVG su wallpaper chiaro e scuro, verificare che la trasparenza sia percepibile senza perdere leggibilità, rifinire apertura e contenuto sporgente, quindi integrare tema e stato effettivo del Cestino nella shell.
+
+
+## 23 novembre 2026 — Correzione SVG Cestino
+
+Dopo il controllo del fondatore su GitHub, individuato un errore strutturale XML nei sei SVG del Cestino: un gruppo SVG risultava non chiuso correttamente e il gruppo di clipping era duplicato. GitHub mostrava quindi “Error rendering embedded code — Invalid image source”.
+
+Rigenerati tutti e sei i file Light/Dark × Vuoto/A metà/Pieno con struttura SVG semplificata e gruppi bilanciati. Il contenuto è disposto dietro la parete frontale traslucida; gli elementi che sporgono restano sopra il bordo. Correzione pubblicata nel commit cf515c2.
+
+**Verifica ancora necessaria:** riaprire la Preview GitHub e controllare visivamente i sei file su dispositivo reale. Non dichiarare concluso il controllo grafico finché la Preview non è stata verificata.
