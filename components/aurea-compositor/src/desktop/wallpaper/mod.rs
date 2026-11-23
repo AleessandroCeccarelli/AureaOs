@@ -7,8 +7,10 @@
 
 mod asset;
 mod manager;
+mod layout;
 mod snapshot;
 
 pub use asset::{WallpaperAsset, WallpaperDimensions, WallpaperFormat};
 pub use manager::WallpaperManager;
+pub use layout::{WallpaperFitMode, WallpaperLayout, WallpaperPixelRect};
 pub use snapshot::WallpaperSnapshot;
