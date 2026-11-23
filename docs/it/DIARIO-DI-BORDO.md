@@ -472,3 +472,17 @@ Questa modifica integra gli asset nel binario della shell e nel modello di prese
 
 ### Specifica visuale corretta
 La rete metallica descritta in una voce storica precedente era un'interpretazione errata e viene superata: la specifica approvata è il cestino bianco satinato/opalino traslucido, aperto, con contenuto visibile attraverso le pareti. I sei SVG correnti, incluso il Pieno più voluminoso approvato dal fondatore, sono i master canonici.
+
+
+## 23 novembre 2026 — Primo servizio filesystem del Cestino
+
+Aggiunto `components/aurea-desktop/src/trash/` senza nuove dipendenze:
+- `metadata.rs`: codifica/decodifica del percorso originale e formato .trashinfo.
+- `service.rs`: servizio per il Cestino home in `~/.local/share/Trash`, con spostamento, elenco, ripristino, eliminazione definitiva esplicita, svuotamento e snapshot.
+- `mod.rs`: API pubblica del servizio.
+
+Il ripristino non sovrascrive mai una destinazione esistente. Le voci richiedono sia il file in `files` sia il relativo .trashinfo. Il cestino rifiuta percorsi relativi e percorsi già interni al cestino. La soglia visuale Pieno è configurabile e predefinita a 10 elementi.
+
+Aggiunto in Aurea Shell `ShellRuntime::set_trash_contents` come punto di aggiornamento dello stato visuale ricevuto dal servizio.
+
+**Non ancora collegato:** il servizio non è ancora istanziato dal composition root, non c'è watcher filesystem né conferma UI; il renderer Vulkan non disegna ancora l'icona. Implementazione limitata per ora al cestino home: spostamenti cross-filesystem restituiscono errore senza lasciare metadati orfani. Test scritti ma non eseguiti; nessun comando Cargo lanciato.

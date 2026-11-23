@@ -36,3 +36,10 @@ The compositor's current render scene handles the desktop background, mapped Way
 - No permanent deletion occurs during a move operation.
 - Unit tests are included but have not been executed.
 - No Cargo formatting, build or test command was run during this change.
+
+
+## Filesystem service milestone
+
+The home Trash service is implemented in `components/aurea-desktop/src/trash/` with metadata encoding, move/list/restore/permanent-delete/empty operations, and a configurable visual threshold (default 10 items). The shell runtime exposes a setter for the service-derived visual state.
+
+Remaining work: instantiate and connect the service to shell runtime, add filesystem change notification and confirmation UI, implement desktop icon rasterization/texture upload and render it through the existing Vulkan scene path. Home Trash only is supported in this milestone; cross-filesystem Trash handling is pending. Tests are present but unexecuted.

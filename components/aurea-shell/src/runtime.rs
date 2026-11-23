@@ -190,6 +190,14 @@ impl ShellRuntime {
         self.lifecycle.stop()
     }
 
+    /// Updates the desktop Trash artwork state from the system Trash service.
+    ///
+    /// The caller owns filesystem monitoring and maps its service snapshot to
+    /// the shell's semantic Empty/PartiallyFull/Full state.
+    pub fn set_trash_contents(&mut self, state: crate::desktop::TrashContentsState) {
+        self.desktop.set_trash_contents(state);
+    }
+
     /// Returns the current desktop presentation state.
     pub fn desktop_state(&self) -> &DesktopState {
         &self.desktop

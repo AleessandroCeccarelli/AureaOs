@@ -625,3 +625,17 @@ This change embeds the assets in the shell binary and connects them to its prese
 
 ### Corrected visual specification
 An earlier historical entry describing wire mesh was an incorrect interpretation and is superseded: the approved design is an open, white satin/opal translucent basket, with contents visible through its walls. The six current SVGs, including the fuller Full state approved by the founder, are the canonical masters.
+
+
+## 2026-11-23 — First filesystem Trash service
+
+Added `components/aurea-desktop/src/trash/` with no new dependencies:
+- `metadata.rs`: original-path encoding/decoding and .trashinfo format.
+- `service.rs`: home Trash service at `~/.local/share/Trash`, supporting move, list, restore, explicit permanent deletion, empty, and snapshots.
+- `mod.rs`: public service API.
+
+Restore never overwrites an existing destination. Entries require both the file under `files` and matching .trashinfo metadata. Relative paths and paths already inside Trash are rejected. The visual Full threshold is configurable and defaults to 10 entries.
+
+Added `ShellRuntime::set_trash_contents` as the shell-side update point for semantic state supplied by the service.
+
+**Not wired yet:** the service is not instantiated by the composition root, no filesystem watcher or confirmation UI exists, and the Vulkan renderer does not yet draw the icon. This implementation currently targets the home Trash only: cross-filesystem moves return an error and remove the just-written metadata. Tests were added but not run; no Cargo command was launched.
