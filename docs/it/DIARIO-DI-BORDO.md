@@ -486,3 +486,30 @@ Il ripristino non sovrascrive mai una destinazione esistente. Le voci richiedono
 Aggiunto in Aurea Shell `ShellRuntime::set_trash_contents` come punto di aggiornamento dello stato visuale ricevuto dal servizio.
 
 **Non ancora collegato:** il servizio non è ancora istanziato dal composition root, non c'è watcher filesystem né conferma UI; il renderer Vulkan non disegna ancora l'icona. Implementazione limitata per ora al cestino home: spostamenti cross-filesystem restituiscono errore senza lasciare metadati orfani. Test scritti ma non eseguiti; nessun comando Cargo lanciato.
+
+
+## 23 novembre 2026 — Geometria logica e hit-testing degli elementi desktop
+
+La ripresa dello sviluppo si concentra sul passaggio dal modello dati a una superficie desktop realmente interattiva. L'ispezione di main ha confermato che DesktopManager conserva gli elementi e le loro posizioni, mentre RenderScene non contiene ancora elementi desktop nativi: al momento raccoglie superfici Wayland, cursore e snapshot dello sfondo.
+
+### Modifica implementata
+
+Aggiunto components/aurea-desktop-api/src/desktop/layout.rs, senza dipendenze esterne:
+- DesktopPoint: punto in coordinate logiche globali.
+- DesktopRect: area rettangolare con origine in alto a sinistra e dimensioni positive.
+- DesktopHitTest: ricerca dell'elemento sotto il puntatore, usando le posizioni logiche già memorizzate.
+- Le aree sono inclusive sul bordo superiore/sinistro ed esclusive su quello inferiore/destro.
+- In caso di sovrapposizione, l'ultimo elemento nell'ordine visuale fornito prevale.
+- Dimensioni nulle non producono hit.
+
+Il modulo è esportato dall'API condivisa. Aggiornato docs/architecture/DESKTOP-ITEMS-AND-STACKS.md per fissare il contratto e mantenere separati coordinate logiche e pixel fisici dei monitor.
+
+### Confini e verifiche
+
+Questo è un primo contratto geometrico condiviso, non ancora il collegamento al puntatore reale: non sono stati modificati compositor, renderer Vulkan o gestione eventi. Non disegna icone e non implementa selezione, drag, doppio clic o attivazione.
+
+Aggiunti test unitari per bordi, dimensioni nulle, sovrapposizione e coordinate logiche. I test non sono stati eseguiti: nessun comando Cargo, build o CI è stato avviato. La verifica resta programmata su Fedora secondo il flusso concordato.
+
+### Prossimo passo
+
+Introdurre uno snapshot desktop posseduto e immutabile, separato dall'attuale DesktopSnapshot Copy, che trasporti gli elementi dal modello condiviso al compositor senza trasferire responsabilità filesystem o dipendenze grafiche nell'API. Poi collegare hit-testing e input alla scena e soltanto dopo affrontare la rasterizzazione SVG e il rendering Vulkan delle icone.

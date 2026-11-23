@@ -6,11 +6,13 @@
 //! Technology-independent contracts for the user's desktop space.
 
 mod item;
+mod layout;
 mod manager;
 mod preferences;
 mod stacks;
 
 pub use item::{DesktopItem, DesktopItemId, DesktopItemKind, DesktopPosition};
+pub use layout::{DesktopHitTest, DesktopPoint, DesktopRect};
 pub use manager::{DesktopManager, DesktopManagerError};
 pub use preferences::{DesktopPreferences, StackGrouping};
 pub use stacks::{DesktopStack, DesktopStackCategory, DesktopStackId};
