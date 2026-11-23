@@ -1,0 +1,85 @@
+
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "AureaOS: Rust Format Check",
+      "type": "process",
+      "command": "cargo",
+      "args": ["fmt", "--all", "--", "--check"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "AureaOS: Check Workspace",
+      "type": "process",
+      "command": "cargo",
+      "args": ["check", "--workspace", "--locked"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$rustc",
+      "group": "build"
+    },
+    {
+      "label": "AureaOS: Check DRM and Vulkan",
+      "type": "process",
+      "command": "cargo",
+      "args": [
+        "check",
+        "-p",
+        "aurea-compositor",
+        "--features",
+        "drm",
+        "--locked"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$rustc"
+    },
+    {
+      "label": "AureaOS: Test Workspace",
+      "type": "process",
+      "command": "cargo",
+      "args": ["test", "--workspace", "--locked"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$rustc",
+      "group": "test"
+    },
+    {
+      "label": "AureaOS: Test DRM and Vulkan",
+      "type": "process",
+      "command": "cargo",
+      "args": [
+        "test",
+        "-p",
+        "aurea-compositor",
+        "--features",
+        "drm",
+        "--locked"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$rustc"
+    },
+    {
+      "label": "AureaOS: Compile Vulkan Shaders",
+      "type": "process",
+      "command": "bash",
+      "args": [
+        "tools/shaders/compile-vulkan-shaders.sh"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# AureaOS generated locales. Keep the system language in debian/config/locale.
+en_US.UTF-8 UTF-8

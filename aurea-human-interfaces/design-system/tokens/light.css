@@ -1,0 +1,3 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Compatibility entry point. Theme values live only in index.css. */
+@import url("./index.css");

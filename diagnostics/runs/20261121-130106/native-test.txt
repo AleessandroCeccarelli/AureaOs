@@ -1,0 +1,22 @@
+AureaOS native diagnostic session: 20261121-130106
+Report directory: /home/alessandro/Documenti/vscode/AureaOs/diagnostics/runs/20261121-130106
+Build revision: b5530d26
+Maximum runtime: 90 seconds
+
+[1/2] Building Aurea Desktop...
+   Compiling aurea-compositor v0.1.0 (/home/alessandro/Documenti/vscode/AureaOs/components/aurea-compositor)
+   Compiling aurea-desktop v0.1.0 (/home/alessandro/Documenti/vscode/AureaOs/components/aurea-desktop)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 36.05s
+
+[2/2] Starting the native DRM/Vulkan desktop...
+Starting Aurea Shell...
+tools/run-aurea-native-test.sh: riga 128: 40806 Ucciso                     timeout --signal=INT --kill-after=10s "${TIMEOUT_VALUE}s" ./target/debug/aurea-desktop
+WARNING: SIGKILL was required. Inspect the report before another run.
+Collecting --current-boot diagnostics for 20261121-130106
+Collected /home/alessandro/Documenti/vscode/AureaOs/diagnostics/runs/20261121-130106/current-boot-kernel.txt
+Collected /home/alessandro/Documenti/vscode/AureaOs/diagnostics/runs/20261121-130106/current-boot-aurea-desktop-journal.txt
+Collected application log entries from /home/alessandro/.local/state/aureaos/logs/aurea-desktop.log
+Collection finished: /home/alessandro/Documenti/vscode/AureaOs/diagnostics/runs/20261121-130106
+
+Diagnostic report ready: /home/alessandro/Documenti/vscode/AureaOs/diagnostics/runs/20261121-130106
+Diagnostic report ready for Git review and push.

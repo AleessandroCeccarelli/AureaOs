@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Minimal native AureaOS live-test runtime and temporary build dependencies.
+live-boot
+live-boot-initramfs-tools
+live-config
+systemd-sysv
+udev
+dbus
+linux-image-amd64
+initramfs-tools
+firmware-amd-graphics
+libvulkan1
+mesa-vulkan-drivers
+libdrm2
+libgbm1
+libinput10
+libseat1
+libudev1
+libxkbcommon0
+libwayland-client0
+libwayland-server0
+libpam-systemd
+libvulkan-dev
+libudev-dev
+libinput-dev
+libseat-dev
+libgbm-dev
+libdrm-dev
+libxkbcommon-dev
+libwayland-dev
+build-essential
+pkg-config
+curl
+glslang-tools
+ca-certificates

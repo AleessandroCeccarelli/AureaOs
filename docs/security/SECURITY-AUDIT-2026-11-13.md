@@ -1,0 +1,155 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
+# Security and Lifecycle Audit — 2026-11-13
+
+**Baseline revision:** `0ee00fbfa778cc75b0bd780dc2c847faa454c68a`  
+**Latest source/test remediation revision at this audit update:** `380ce1a1dbd0e6af5fa0b2fd9878dc2350814c1d` (DRM partial-initialization ownership and formatting correction; rootfs fixture tests are wired into the manual-only workflow).
+**Scope:** current Rust workspace, compositor DRM/KMS and Vulkan lifecycle, Debian bootstrap, rootfs permission audit.  
+**Status:** partial source audit with initial remediation commits; not a security certification and not a declaration that AureaOS is production-hardened.
+
+## Executive summary
+
+The current baseline contains several good defensive measures: Rust ownership for device handles, libseat-mediated DRM opening, Wayland socket-name validation, live-client and bounded Wayland-object limits, explicit KMS surface cleanup, a restrictive bootstrap umask, package-name validation, rejection of pre-existing and repository-local rootfs targets, and package configuration inside systemd-nspawn.
+
+The repository is still an early development system. The remaining gaps below must be addressed before describing the bootstrap or physical compositor path as hardened.
+
+## Findings
+
+### AUR-SEC-004 — Wayland surface resource exhaustion
+
+**Severity:** Medium (local denial of service)
+
+**Original exposure:** the server limited simultaneous Wayland clients to 64, but did not bound the number of `wl_surface` resources created by one client or by the compositor. A connected local client could create a large number of surfaces and consume compositor memory.
+
+**Source remediation (2026-11-13):** added `server/resource_limits.rs`, which enumerates all Wayland objects for every connected client after each display dispatch. A client is disconnected above 2048 objects; a global budget of 16384 objects is enforced by disconnecting the largest object owners until the total is back within budget. This counts uncommitted surfaces and other protocol objects, not only managed windows. Boundary tests cover per-client and global thresholds.
+
+**Residual scope:** the check runs after a dispatch batch, so a client can temporarily allocate objects during one batch before the next quota scan. The thresholds must be validated against normal AureaOS desktop workloads on Fedora; add a hostile-client flood test and consider request-batch limits if transient peaks prove excessive.
+
+
+
+### AUR-SEC-001 — Rootfs permission audit is incomplete
+
+**Severity:** High (hardening gap; no direct exploit demonstrated)
+
+`tools/security/audit-rootfs-permissions.sh` checks selected ownership/modes for critical paths, scans world-writable filesystem objects across the rootfs (on the rootfs filesystem, excluding symlink metadata), checks SUID/SGID filesystem objects against an explicit allowlist and exact modes, and scans file capabilities with `getcap`. It does not yet enforce a comprehensive ownership/mode policy for all of `/var`, `/home`, `/run`, service state, or every installed path, and its symlink policy is incomplete.
+
+**Remediation in progress (2026-11-13):** the audit scans world-writable non-symlink filesystem objects across the rootfs, including FIFOs and other special files, permits only sticky `1777` shared temporary directories (`/tmp`, `/var/tmp`, `/dev/shm`), rejects SUID/SGID paths outside an explicit initial Debian utility allowlist (including unexpected setgid directories), enforces exact numeric owner, group, and mode for each allowlisted privileged executable (including Debian's `sudo`, D-Bus and polkit authentication helpers, and shadow-group helpers), and fails closed if either filesystem traversal (`find`) is incomplete, if `getcap` is unavailable, if capabilities are reported, or if `getcap` exits unsuccessfully. The bootstrap checks for `getcap` before starting. The expanded allowlist now includes the expected Debian Trixie setuid/setgid helpers from the current package manifest (`sudo`, D-Bus, polkit, passwd and PAM dependencies); exact installed ownership and modes remain unverified until a completed rootfs is audited on Fedora. **Test coverage:** `tools/security/tests/test-audit-rootfs-permissions.sh` builds a disposable minimal rootfs fixture and checks valid permissions (including sticky `/tmp`, `/var/tmp`, and `/dev/shm`), accepted and rejected SUID modes and owners, exact allowlisted SGID-directory modes plus unapproved SGID-directory rejection, world-writable regular and special-file rejection, reported file-capability rejection, fail-closed behavior when `getcap` exits unsuccessfully, and fail-closed behavior when rootfs traversal fails. The fixture is intended for execution as root on the project's Fedora build machine; GitHub Actions workflows are configured as manual-only and are not part of this validation cycle. **Still required:** validate the allowlist against the final installed package profile and add broader service-state ownership/mode and symlink checks.
+
+### AUR-SEC-002 — systemd-nspawn capability policy is not a demonstrated minimum
+
+**Severity:** High (hardening gap; no container escape demonstrated)
+
+`tools/build/bootstrap-debian.sh` drops selected capabilities (`CAP_SYS_ADMIN`, `CAP_SYS_MODULE`, `CAP_SYS_RAWIO`, `CAP_SYS_BOOT`, `CAP_SYS_PTRACE`, `CAP_NET_ADMIN`, `CAP_NET_RAW`), including the `CAP_NET_ADMIN` that `--private-network` would otherwise add but does not establish or test a minimal explicit capability allowlist. The direct `systemd-nspawn` invocation previously had user namespacing disabled by default, which is unsafe for untrusted maintainer scripts. **Source change (2026-11-13):** the command now explicitly requests `--private-users=pick --private-users-ownership=map`, selecting a private UID/GID range while using an id-mapped mount instead of recursively changing on-disk ownership. This is intended to preserve rootfs numeric ownership and fail closed if id-mapped mounts are unavailable. This behavior has not yet been exercised on the Fedora host and is not considered verified.
+
+**Network remediation (2026-11-13):** `run_in_rootfs_private_network` now applies `--private-network` to debootstrap's second stage and to the actual package installation/maintainer-script phase. APT first updates indexes and downloads the complete package set in a network-enabled phase; installation then uses `--no-download` inside a private network namespace, so maintainer scripts cannot access the host network and missing archives fail closed. The host-side `debootstrap --foreign` phase and APT index/archive download phase still require network access; egress is not yet restricted at the network layer to Debian mirrors only.
+
+**Still unverified:** confirm support on the actual Fedora kernel/systemd/filesystem, verify the user-namespace mapping and rootfs ownership before/after nspawn, and run a disposable Debian Trixie bootstrap. The capability set is still a selective drop list, not a demonstrated minimum allowlist. Validate that the Debian package set configures successfully with networking disabled; any maintainer script that attempts network access will now fail by design.
+
+### AUR-SEC-003 — Bootstrap target path has a privileged-operation race window
+
+**Severity:** Medium (local race condition to investigate; exploitability depends on parent-directory control and timing)
+
+The script checks that the destination does not exist and later performs privileged operations beneath that path. The destination's parent is normally user-writable. The source does not currently demonstrate an atomic reservation of the destination or protection against replacement of the target path between validation and subsequent privileged operations.
+
+**Remediation in progress (2026-11-13):** the bootstrap no longer runs privileged debootstrap, APT, maintainer-script, audit, or nspawn operations against the user-selected final pathname. It creates a root-owned private staging parent inside the pinned destination directory (mode `0711`, no write permission for the invoking user), then creates the rootfs itself as a root-owned `0700` directory beneath it. Building in the destination directory ensures the final rename stays within the same filesystem and Btrfs subvolume, avoiding cross-subvolume failures from a global `/var/tmp` staging location. `create_staging_parent.py` opens the destination parent with `O_NOFOLLOW`, checks the expected device/inode, creates the staging entry with `mkdirat`, opens it with `O_NOFOLLOW`, and sets mode `0711` through the pinned directory descriptor rather than a path-based `chmod`. The script enters that directory and verifies its inode before any build operation. Publication is delegated to `publish_rootfs.py`: it opens the staging parent and destination parent as directory file descriptors with `O_NOFOLLOW`, verifies root ownership/modes and the expected destination-parent device/inode, then calls `renameat2(RENAME_NOREPLACE)` through libc. It has no check-then-rename fallback; if the kernel/filesystem cannot provide atomic no-replace semantics, publication fails and staging is preserved. After the rename it changes the final rootfs top-directory mode from private `0700` to standard `0755` through the already-open staging inode descriptor, never by following the user-controlled destination pathname. The root-only Python fixtures cover staging-parent identity/mode, inode-preserving publication, final `0755` mode, and existing directory/symlink collisions. These fixtures are retained for manual local execution; GitHub Actions workflows are manual-only and are not run as part of this development cycle.
+
+**Remaining limitations:** the root-only fixtures exercise staging creation and atomic publication primitives, not a full concurrent end-to-end bootstrap under adversarial scheduling. The final directory can be renamed by its owner after the post-publication identity check, and a completed Debian rootfs build has not yet been run with the new staging flow. Keep this finding open until a disposable end-to-end bootstrap and targeted race testing confirm the behavior on the supported Fedora environment.
+
+## AUR-SEC-005 — Unsound and unmaintained transitive math dependency
+
+**Severity:** Informational dependency risk; no patched upstream release is available.
+
+`Cargo.lock` resolves `cgmath 0.18.0` as a transitive dependency of `smithay 0.7.0`. The historical `cargo audit` run reported both [RUSTSEC-2026-0196](https://rustsec.org/advisories/RUSTSEC-2026-0196.html) (unmaintained crate) and [RUSTSEC-2026-0197](https://rustsec.org/advisories/RUSTSEC-2026-0197.html) (safe `Matrix2/3/4::swap_columns` calls with identical indices can cause undefined behavior). RustSec lists no patched `cgmath` release. The `cargo audit` job completed successfully, but these informational advisories were emitted and must not be mistaken for a clean dependency report.
+
+**Remediation:** do not suppress the advisories or force an unreviewed replacement into the lockfile. Evaluate a maintained Smithay release or a reviewed Smithay revision that removes `cgmath`, then audit the API and rendering changes before upgrading. Until then, retain this as an explicit transitive dependency risk; Fedora build/test validation does not by itself resolve the upstream soundness advisory.
+
+
+### AUR-DRM-001 — KMS clear failures are followed by dependent-resource release
+
+**Severity:** High (display-resource lifecycle risk; hardware failure scenario not reproduced)
+
+The original baseline cleared its surface and CRTC ownership maps even if one or more KMS clear operations failed, and then released GBM/Vulkan resources during session pause. That behavior could discard userspace ownership while the kernel might still be scanning out a framebuffer.
+
+**Initial remediation (2026-11-13):** `DrmSurfaceManager::clear` now removes only surfaces whose KMS clear succeeded and retains failed surfaces plus their CRTC ownership for retry. Session-pause and orderly shutdown paths now retain GBM/Vulkan dependencies whenever any surface clear fails. A hardware-independent unit test covers retention and successful retry. Partial initialization now returns its partially populated manager with the error, and `initialize_drm_surfaces()` stores it in `WaylandState` so already-created KMS surfaces remain owned when a later connector fails. The Udev hotplug integration rollback path now also attempts an explicit KMS clear before removing the surface manager; if that clear fails, it returns an error while retaining the surface manager, notifier, DRM device, GBM allocator, and Vulkan backend rather than dropping dependent resources. **Additional remediation (2026-11-13):** the confirmed Udev device-removal path now uses `DrmSurfaceManager::release_after_device_removal()` instead of issuing KMS disable ioctls against an unplugged device. This releases userspace scanout references only after the kernel has reported device removal, then removes the notifier, GBM allocator, Vulkan backend, and DRM device in dependency order. This avoids retaining a stale device identity indefinitely and permits a re-added GPU to be discovered again. Generic KMS clear failures during pause/reconfiguration still retain the manager; they have no dedicated retry/quarantine owner yet, and process termination still invokes best-effort `Drop`. **Still required:** define an explicit retry/quarantine owner for generic clear failures and terminal destruction, add integration fault-injection for multiple physical outputs, and prove the kernel release conditions.
+
+### AUR-DRM-002 — Graphics backend initialization is best-effort and can leave an output without a render path
+
+**Severity:** Medium (availability/consistency issue; not a privilege escalation)
+
+**Initial remediation (2026-11-13):** initial server construction now creates KMS surfaces only for devices with both GBM and Vulkan ready, and registers logical outputs only after KMS surface creation succeeds. If logical output registration itself fails, the created surface manager remains owned by server state for orderly cleanup rather than being dropped immediately. Udev device integration uses the same dependency gate; connector refresh initializes KMS surfaces before publishing the reconciled output set. If KMS recovery fails after pause or connector change, stale Wayland output globals are withdrawn. Existing surfaces are not replaced unless their KMS clear succeeds.
+
+The baseline initialized GBM and Vulkan independently and could register logical outputs before confirming that the complete render path existed. Pending frames were later cancelled when a dependency was missing.
+
+**Additional source correction (2026-11-13):** review of the deferred connector-change path found that it refreshed/published logical outputs before recreating KMS surfaces after session activation. The order is now reversed: native KMS surfaces are restored first, logical outputs are reconciled second, and stale globals are withdrawn if either step fails. This correction is awaiting Fedora runtime validation.
+
+**Still required:** add integration tests for multi-GPU hotplug and recovery, verify that failed output reconciliation cannot leave stale globals, and ensure retries republish outputs only after all prerequisites are restored.
+
+### AUR-VK-001 — Offscreen Vulkan validation is not physical KMS validation
+
+**Severity:** Release gate (not a code vulnerability)
+
+The offscreen triangle test validates Vulkan command execution and readback. It does not validate DRM atomic modesetting, DMA-BUF import/export interoperability on every target GPU, page-flip completion, session pause/resume, hot-unplug, or safe teardown under KMS errors.
+
+The source explicitly implements a clear-only scanout path; scene composition is not yet connected.
+
+**Required work:** add hardware-independent fault-injection tests for state transitions and resource ownership, then perform controlled physical-device tests on a recoverable test setup. Do not use the current developer laptop as a blind KMS test target.
+
+## Verified defensive measures
+
+- Confirmed Udev DRM device removal uses `DrmSurfaceManager::release_after_device_removal()` and performs no KMS disable ioctl after the kernel has reported removal; notifier, GBM, Vulkan, and DRM owners are then released in dependency order. Generic KMS clear failures during pause/reconfiguration still need an explicit quarantine/retry owner.
+
+- DRM device paths must be absolute and devices are opened through the active libseat session.
+- The opened DRM device identity is checked against the Udev identity before integration.
+- Wayland socket names are restricted to a basename with a bounded ASCII character set.
+- The Wayland server limits simultaneous live clients.
+- Vulkan device extension selection is based on advertised device support, and DRM-associated selection requires the DMA-BUF interop extension plan.
+- KMS surfaces have explicit clear logic and a best-effort Drop fallback.
+- Bootstrap uses `set -Eeuo pipefail`, `umask 077`, validates package manifest tokens, rejects an existing target and repository-local targets, builds inside a root-owned staging parent pinned by directory descriptors, and publishes with `renameat2(RENAME_NOREPLACE)`; runtime validation on Fedora is still pending.
+- Package configuration is run through systemd-nspawn rather than directly on the host.
+- Temporary `policy-rc.d` cleanup is registered on script exit.
+
+These are source-level observations, not proof against all runtime or kernel-level failures.
+
+## Verification record
+
+- Historical push-triggered workflow run `43487772104` (commit `40d5cf2`) did not validate the workspace: Rust formatting failed on two formatting-only differences in `drm/surfaces.rs` (now corrected in `380ce1a`), and bootstrap validation failed in the obsolete `mv --no-clobber` shell fixture (that fixture was removed and replaced with descriptor-based Python tests). All cargo build/test steps in that run were skipped.
+- The dependency-audit job in that historical run completed successfully but emitted `cgmath 0.18.0` advisories `RUSTSEC-2026-0196` and `RUSTSEC-2026-0197`; see AUR-SEC-005. No fixed upstream version was available.
+- Vulkan shader compilation and `spirv-val --target-env vulkan1.3` were reported passing in an earlier Fedora validation.
+- The ignored Vulkan offscreen triangle test was explicitly run and passed in an earlier Fedora validation.
+- Initial KMS cleanup-retention and retry unit coverage is hardware-independent and does not exercise the Smithay/kernel KMS operation. Partial initialization now also returns and retains the partially populated manager.
+- Startup and Udev hotplug paths gate output registration/publication on GBM, Vulkan, and KMS surface readiness; a pure readiness-gate unit test covers all four dependency combinations.
+- Rootfs capability scanning treats `getcap` execution errors as audit failures; world-writable and SUID/SGID traversals fail closed when `find` exits unsuccessfully.
+- The rootfs permission fixture passed in the historical GitHub Actions run `43485619945`. The new staging-parent and atomic-publication Python fixtures are wired into the manual-only workflow but have not been run in this cycle.
+- No post-remediation Fedora build/test run has been performed yet. The staging-parent, atomic-publication, and permission-audit fixtures are ready for execution on the Fedora machine. Both GitHub Actions workflows are manual-only and are not being run. The nspawn private-user/idmapped-mount option and corrected DRM session-activation ordering are awaiting Fedora validation.
+- No physical KMS/display test was performed during this audit.
+- Source review includes the baseline and remediation commits recorded in this report; the current `main` source revision at this update is `380ce1a1dbd0e6af5fa0b2fd9878dc2350814c1d`.
+- Source review includes the baseline and remediation commits recorded in this report; the current `main` revision at this update is `dbb73df853dac0711f7901b1058db71446dac638`.
+
+## Release gates
+
+1. Execute the rootfs staging-parent, atomic-publication, and permission-audit fixtures as root, then validate the allowlist against a disposable completed Debian rootfs on Fedora.
+2. Validate the protected staging and atomic `renameat2(RENAME_NOREPLACE)` publication flow with a disposable end-to-end Debian bootstrap on Fedora, including id-mapped private-user behavior, then add concurrent race testing.
+3. Test the nspawn sandbox with an explicit, measured capability and namespace policy.
+4. Complete KMS quarantine semantics for terminal destruction/device removal and add multi-output fault injection; hotplug rollback retention is only an intermediate mitigation.
+5. Make render readiness and degraded-output behavior explicit across startup and Udev hotplug.
+6. Run physical KMS validation only on a recoverable test setup, with a known-good VT/session recovery procedure.
+7. On the Fedora machine, re-run formatting, locked workspace checks, and all safe tests after the source changes; do not run the test workflows on GitHub.
+8. Resolve or explicitly accept the transitive `cgmath 0.18.0` advisories by reviewing a maintained Smithay replacement; do not silence RustSec findings without a code-level rationale.
+
+**Conclusion:** AureaOS has a promising defensive foundation, but the bootstrap and physical graphics lifecycle still have material hardening work outstanding. No claim of complete security should be made at this stage.
+
+
+## Follow-up verification — 2026-11-17
+
+GitHub Actions run [44056628316](https://github.com/AleessandroCeccarelli/AureaOs/actions/runs/44056628316), on Ubuntu 24.04 at commit `b7494271848213a6efdcfb1cf626773e861c08ae`, completed successfully. Workspace compilation, DRM-feature compilation, workspace tests, compositor DRM/Vulkan tests, shader compilation, bootstrap fixture checks, and the Mesa lavapipe offscreen smoke test passed.
+
+`cargo audit` also exited successfully, but reported the two already tracked allowed warnings for transitive `cgmath 0.18.0`: RUSTSEC-2026-0196 (unmaintained) and RUSTSEC-2026-0197 (unsound `swap_columns` behavior for identical indices). No patched upstream release is available. This result is **not** a clean dependency audit and does not close AUR-SEC-005; continue evaluating a maintained Smithay release or a reviewed revision that removes `cgmath`. No suppression or unreviewed lockfile override was introduced.
+
+
+## 2026-11-17 — Smithay dependency investigation
+
+- The locked crates.io release Smithay 0.7.0 still brings in `cgmath 0.18.0`, which triggers the tracked RustSec advisories AUR-SEC-005.
+- Upstream Smithay master has removed `cgmath` in favor of `glam` (upstream commit `812bd33259ff58810dadef6086d8385eeac1ca55`).
+- The current upstream master head (`33323a917af13676875c27fb7748ffdaea5f4c2f`) is substantially ahead of the released 0.7.0 API. A trial pin caused compositor API incompatibilities (Wayland dispatch/delegate changes, input time, output properties and DMA-BUF plane API), so the trial pin was not retained.
+- AureaOS remains on the released Smithay 0.7.0 for build stability. Do not suppress the advisories or force a lockfile-only override. Re-evaluate when Smithay publishes a compatible release containing the upstream `cgmath` removal; alternatively assess a narrowly scoped maintained patch only if the risk warrants the maintenance cost.
+- This is a dependency warning, not evidence that Smithay itself is unmaintained. Upstream repository activity was confirmed in November 2026.

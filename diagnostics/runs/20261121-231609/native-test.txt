@@ -1,0 +1,27 @@
+AureaOS native diagnostic session: 20261121-231609
+Report directory: /home/alessandro/Documenti/vscode/AureaOs/diagnostics/runs/20261121-231609
+Build revision: 63196256
+Runtime: interactive (press Ctrl+C to request graceful shutdown)
+
+[1/2] Building Aurea Desktop...
+   Compiling aurea-compositor v0.1.0 (/home/alessandro/Documenti/vscode/AureaOs/components/aurea-compositor)
+   Compiling aurea-desktop v0.1.0 (/home/alessandro/Documenti/vscode/AureaOs/components/aurea-desktop)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 39.40s
+
+[2/2] Starting the native DRM/Vulkan desktop...
+AureaOS input: libinput context created and assigned to seat seat0
+AureaOS input: libinput backend registered in Calloop event loop
+Starting Aurea Shell...
+AureaOS compositor: entering Calloop event loop; shutdown_requested=false
+AureaOS compositor: session_active=true discovered_drm_devices=1 output_surface_managers=1 vulkan_backends=1
+AureaOS render: pending output=248493922844741 render_gpu=card1 presentation_gpu=card1 path=cpu-compatibility
+Aurea Welcome: starting Wayland client
+Aurea Welcome: connected to Wayland display "wayland-0"
+AureaOS render: render_output completed count=1 output=248493922844741 path=cpu-compatibility
+Aurea Welcome: Wayland registry initialized
+Aurea Welcome: XDG toplevel committed; waiting for configure
+AureaOS render: pending output=Aurea Welcome: toplevel configured size=0x0
+Aurea Welcome: received xdg_surface configure serial=2
+248493922844741 render_gpu=card1 presentation_gpu=card1 path=cpu-compatibility
+Aurea Welcome: initial SHM frame submitted
+AureaOS render: render_output completed count=2 output=248493922844741 path=cpu-compatibility

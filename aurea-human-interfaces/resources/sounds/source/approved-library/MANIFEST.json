@@ -1,0 +1,94 @@
+{
+  "project": "AureaOS Original Sound Library",
+  "version": "0.1.0-review",
+  "license": "GPL-3.0-or-later",
+  "provenance": "Original procedural synthesis generated for AureaOS; no third-party recordings or samples used.",
+  "format": {
+    "codec": "Ogg Vorbis",
+    "sample_rate_hz": 48000,
+    "channels": 1
+  },
+  "processing": "Peak-normalized to -3 dBFS maximum; 8 ms fade-in and 35 ms fade-out; no source audio reused.",
+  "sounds": [
+    {
+      "file": "message-received.ogg",
+      "duration_seconds": 0.435,
+      "purpose": "message received"
+    },
+    {
+      "file": "notification-soft.ogg",
+      "duration_seconds": 0.49,
+      "purpose": "notification soft"
+    },
+    {
+      "file": "notification-bell.ogg",
+      "duration_seconds": 0.62,
+      "purpose": "notification bell"
+    },
+    {
+      "file": "notification-gentle.ogg",
+      "duration_seconds": 0.63,
+      "purpose": "notification gentle"
+    },
+    {
+      "file": "notification-subtle.ogg",
+      "duration_seconds": 0.18,
+      "purpose": "notification subtle"
+    },
+    {
+      "file": "notification-system.ogg",
+      "duration_seconds": 0.59,
+      "purpose": "notification system"
+    },
+    {
+      "file": "notification-ping.ogg",
+      "duration_seconds": 0.33,
+      "purpose": "notification ping"
+    },
+    {
+      "file": "action-confirmed.ogg",
+      "duration_seconds": 0.305,
+      "purpose": "action confirmed"
+    },
+    {
+      "file": "action-success.ogg",
+      "duration_seconds": 0.54,
+      "purpose": "action success"
+    },
+    {
+      "file": "warning-attention.ogg",
+      "duration_seconds": 0.86,
+      "purpose": "warning attention"
+    },
+    {
+      "file": "error-alert.ogg",
+      "duration_seconds": 0.505,
+      "purpose": "error alert"
+    },
+    {
+      "file": "ui-feedback.ogg",
+      "duration_seconds": 0.075,
+      "purpose": "ui feedback"
+    },
+    {
+      "file": "window-open.ogg",
+      "duration_seconds": 0.248,
+      "purpose": "window open"
+    },
+    {
+      "file": "window-close.ogg",
+      "duration_seconds": 0.268,
+      "purpose": "window close"
+    },
+    {
+      "file": "device-connected.ogg",
+      "duration_seconds": 0.355,
+      "purpose": "device connected"
+    },
+    {
+      "file": "device-disconnected.ogg",
+      "duration_seconds": 0.355,
+      "purpose": "device disconnected"
+    }
+  ]
+}

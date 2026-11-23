@@ -1,0 +1,261 @@
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+
+# AureaOS Roadmap
+
+This roadmap records the current implementation status and intended development priorities. It is a working plan, not a delivery schedule or a promise of release dates.
+
+AureaOS Roma 1.0 targets Debian GNU/Linux 13 (Trixie), `amd64` (x86-64).
+
+AureaOS uses Debian as its lower-level system foundation. The desktop environment, system experience, core applications, and product identity are developed and maintained by the AureaOS project.
+
+## Product Direction
+
+The first release focuses on delivering a complete and coherent AureaOS desktop experience without attempting to develop every application from scratch.
+
+The Roma 1.0 product direction includes:
+
+- An AureaOS-designed graphical desktop and Wayland session, developed and maintained as first-party project software.
+- AureaOS Human Interfaces and a consistent visual design system.
+- Aurea Wallet as a first-party system application and a core product pillar.
+- Fides, the AureaOS file manager.
+- Quaero, the global search experience.
+- Aurea Store, the official AureaOS application store.
+- Aurea Update for AureaOS system components.
+- Aurea Time for system backup and restore.
+- Essential system tools and graphical configuration workflows.
+
+Common application categories such as web browsers, email clients, and office suites will initially be covered by established third-party applications.
+
+Aurea Store will integrate with Flathub and Flatpak to discover, install, run, remove, and update compatible third-party applications in their sandbox environments.
+
+Developing first-party replacements for these application categories may be considered in future releases. It is not a requirement for Roma 1.0.
+
+## Current Status
+
+**Latest fully green GitHub Actions run (Ubuntu 24.04, 17 November 2026; commit `29bb966975312d7ca862fcf18a826b8caf477f41`):** Rust formatting, desktop client compilation, locked workspace compilation, DRM/Vulkan compositor compilation and tests, workspace tests, shader compilation, and the Mesa lavapipe offscreen triangle smoke test all passed. The RustSec audit completed with two explicitly allowed warnings for transitive `cgmath 0.18.0` (`RUSTSEC-2026-0196` unmaintained and `RUSTSEC-2026-0197` unsound); this is not a clean dependency report. This CI run does not validate physical DRM/KMS output or a bootable installation image. Subsequent small Vulkan warning-cleanup changes are being revalidated. See [the CI run](https://github.com/AleessandroCeccarelli/AureaOs/actions/runs/44090184494) and [Vulkan / DRM scanout status](docs/architecture/VULKAN-SCANOUT-STATUS.md).
+
+
+### Implemented in the Repository
+
+- Project vision, contribution guidance, technical direction, and initial architecture documentation.
+- Debian package manifests and a bootstrap script for a minimal, terminal-only Debian root filesystem.
+- AureaOS visual design resources, including design tokens, themes, icons, illustrations, and wallpapers.
+- A five-crate Rust workspace under `components/`: `aurea-desktop`, `aurea-shell`, `aurea-desktop-api`, `aurea-compositor`, and `aurea-capture`.
+- An initial `aurea-desktop` composition root that wires the desktop components together; this is not a finished desktop session or graphical interface.
+- Shared desktop contracts in `aurea-desktop-api`: technology-independent display modes, per-display capability/VRR profiles, logical layout and scale, automatic/manual refresh policy, transactional display-manager interface, display lifecycle events, display color policy, keyboard layout, pointer settings, input-device capability/lifecycle, vendor-extension metadata, and Aurea Appearance theme/accessibility contracts, Aurea Palette and Aurea Form identity, and Aurea Lumen environmental-adaptation preferences. These are component-level API foundations; application-facing IPC and concrete service providers remain planned.
+- Initial `aurea-capture` core with validated capture target metadata, screenshot/recording request types, audio-source selection modes, and a single-session lifecycle coordinator. It does not yet capture pixels or audio.
+- Shell session lifecycle coordination and shutdown handling through an event bus.
+- A Smithay-based Wayland server with initial XDG shell integration.
+- Initial Wayland seat and XKB keyboard support, with libinput event routing under the DRM feature.
+- Global Super + Ctrl + Left / Right workspace navigation shortcuts.
+- Initial toplevel surface tracking and window-management structures.
+- Initial four-workspace model with workspace switching and per-window assignment.
+- Render-scene filtering so only mapped windows on the active workspace are drawn.
+- Conversion of mapped XDG surface trees into Smithay render elements, with logical window positions and output scaling.
+- DRM device discovery and lifecycle management through Udev and libseat.
+- DRM device event integration with the compositor event loop.
+- Session pause and activation handling for DRM devices.
+- GPU inventory and rendering preference models.
+- DRM connector discovery and supported display mode reporting.
+- Stable output identity generation.
+- Output registration, removal, configuration, and logical layout management.
+- Output reconciliation when discovered display configurations change.
+- Publication and removal of registered outputs as Wayland output globals.
+- Initial Night Light preference and local schedule model in the shell, with validation and unit tests.
+- Shared lock-free display color controller connected from the shell runtime through the desktop API into Wayland server state.
+- Initial Vulkan Night Light output path: a per-device/per-format cached color pipeline, on-demand intermediate composition image, full-scene composition (including the background), final color pass, and fallback to direct scanout when the optional format/image path is unavailable. The source passes GitHub Actions workspace/DRM compilation, automated tests, shader compilation and the lavapipe offscreen smoke test; physical DRM/Vulkan validation is still pending. Aurea Lumen ambient-sensor and solar scheduling providers, automatic policy coordination, persistence, capability reporting and visible controls also remain pending.
+
+These components establish an initial desktop and graphics-device foundation. They do not yet constitute a usable graphical desktop or a complete graphics pipeline.
+
+The Debian bootstrap profile still needs package-resolution validation and does not produce a bootable installation image.
+
+### In Development / Validation
+
+- Keep the compositor warning-free as well as buildable; continue validating the complete shell and compositor workspace through compilation and automated tests.
+- Continue hardware-independent testing of output management and DRM lifecycle behavior.
+- Validate DRM device acquisition, output discovery, hotplug, and session handling on representative physical hardware.
+- Define and validate system identity, service defaults, storage layout, boot configuration, and security policy.
+- Validate the Debian 13 package profile and bootstrap process against the intended repositories.
+
+## Planned Development
+
+The planned desktop-services architecture is **local-first**: native services and permission-controlled application APIs should work without a cloud account. System-wide spellchecking/autocorrect, personal dictionaries and text substitutions are design goals, not current code. Optional future synchronization (contacts, mail, calendars, notes, settings) must not be a prerequisite for using the desktop. The Wayland-only/Vulkan-only target also requires a measured Flatpak application compatibility program; universal Flathub compatibility is not claimed.
+
+
+### 1. Desktop and Graphics Foundation
+
+- Complete, compile, and validate the existing Vulkan SHM composition and DRM/KMS physical frame presentation implementation.
+- Complete DRM/KMS mode setting and physical display configuration.
+- Complete pointer, touch, and gesture input handling, including touchpad workspace gestures.
+- Develop complete window management and desktop interactions.
+- Integrate compositor rendering, presentation, and output lifecycle responsibilities.
+- Validate the graphics pipeline on representative hardware.
+
+Vulkan is the selected and exclusive graphics rendering API for AureaOS. The current workspace and DRM/Vulkan feature compile in CI, and an offscreen lavapipe rendering test passes. End-to-end SHM scene composition and physical DRM/KMS output remain unverified.
+
+### 2. Display Intelligence
+
+- Implement the display capability provider and Display Manager behind the new shared `aurea-desktop-api` contracts, then develop Aurea Display Intelligence policy.
+- Implement fixed-refresh strategies and VRR support where the complete hardware and driver path allows it.
+- Integrate display policy with compositor presentation information and the DRM/KMS backend.
+- Provide Automatic — AureaOS and manual display configuration through Settings → Display & Video.
+- Implement safe fallbacks for unsupported or unavailable display capabilities.
+- Implement Night Light as a system-wide output color-temperature adjustment, with manual intensity, sunset-to-sunrise and custom local schedules.
+- Validate the initial Night Light Vulkan output stage on physical DRM/Vulkan hardware; it is now connected in source after complete scene composition, with an optional intermediate image and a direct-scanout fallback when the format path is unavailable.
+- Complete schedule activation, persistence, capability reporting and consume the shared shell-to-compositor display policy through the desktop API and Wayland server state.
+- Account for color-space/transfer-function handling, output formats, HDR behavior and accessibility preferences before enabling the filter by default.
+
+Night Light controls belong in Settings → Appearance and in the right-side Quick Settings panel. Sunset-to-sunrise scheduling requires a permission-aware location/timezone service; a custom local schedule must remain available without geolocation. The software adjustment is a display color-temperature approximation, not a claim of hardware spectral blue-light filtering.
+
+The architecture and responsibilities are documented in [Display Intelligence](docs/architecture/DISPLAY-INTELLIGENCE.md).
+
+### 3. Screen Capture and Recording
+
+- Integrate the capture coordinator with shell-owned user consent, source selection, and persistent recording state.
+- Define a narrow compositor frame-source contract without moving capture policy or media encoding into the compositor.
+- Implement the first screenshot path with bounded asynchronous Vulkan readback and PNG export.
+- Add XDG Screenshot and ScreenCast portal support for sandboxed clients, advertising only verified capabilities.
+- Add PipeWire system-audio and microphone adapters with separate permission grants.
+- Add GStreamer recording, timestamp synchronization, bounded buffering, and validated encoder/container selection.
+- Validate cancellation, revocation, lock-screen exclusion, output hotplug, resource limits, and failure recovery.
+
+The initial `aurea-capture` crate contains only request and session lifecycle coordination. The capture backend, shell UI, portal integration, audio/video pipelines and file output are not yet implemented. See [Screen Capture and Recording](docs/architecture/SCREEN-CAPTURE-AND-RECORDING.md).
+
+### 4. AureaOS Desktop Experience
+
+- Develop the graphical desktop shell.
+- Develop the shared AureaOS Human Interfaces library and reusable UI components.
+- Implement the window-management experience and desktop interactions.
+- Develop system settings and essential graphical configuration workflows.
+- Integrate notifications, keyboard navigation, accessibility, themes, and localization foundations.
+- Build the graphical installation experience.
+
+The desktop must provide a consistent AureaOS identity rather than relying on a third-party desktop environment.
+
+### 5. Core First-Party Applications
+
+Develop the applications that define the AureaOS product experience:
+
+- **Aurea Wallet:** define its functional scope, credential model, security architecture, and storage requirements before implementation.
+- **Fides:** develop the graphical file manager and common file-management workflows.
+- **Quaero:** develop global search for applications, files, folders, settings, and supported system actions.
+- **Aurea Store:** develop the official store interface and its Flathub/Flatpak integration.
+- **Aurea Update:** implement the update experience for AureaOS-specific system components.
+- **Aurea Time:** develop system backup and restore, including full-system recovery.
+- **System tools:** develop the planned printer management, scanner management, and resource monitoring interfaces.
+
+These applications must follow the shared AureaOS Human Interfaces contract and respect the separation between system responsibilities.
+
+### 6. Third-Party Application Integration
+
+- Integrate Flathub as an application source for Aurea Store.
+- Integrate Flatpak installation, execution, removal, and update workflows.
+- Present application information, provenance, permissions, and sandbox limitations clearly.
+- Provide selected third-party web browsers, email clients, office suites, and other useful desktop applications.
+- Keep third-party application updates separate from Debian and AureaOS system updates.
+
+Third-party applications are not AureaOS first-party products. Their use allows the project to focus on its own desktop, system integration, and core applications.
+
+### 7. System Foundation and Distribution
+
+- Complete and validate the minimal Debian 13 `amd64` foundation.
+- Define system identity, default services, storage layout, boot configuration, and security boundaries.
+- Validate the planned Btrfs installation layout.
+- Define separate update channels for Debian base packages and AureaOS system components.
+- Establish package signing, integrity validation, and safe update procedures.
+- Produce and validate a bootable development image.
+- Document supported hardware and installation requirements.
+
+### 8. Final Release Preparation
+
+- Validate the complete desktop session on representative physical hardware.
+- Test installation, first boot, user session, system updates, and recovery workflows.
+- Validate Aurea Store and third-party Flatpak application workflows.
+- Review security, permissions, accessibility, and localization.
+- Complete documentation and release criteria.
+- Produce and validate the AureaOS Roma 1.0 installation image.
+
+## Early-stage project status and evolving decisions\n\nAureaOS is an embryonic project. The roadmap records current direction and sequencing, not an immutable specification or a promise that every listed idea will ship unchanged. Product names, visual identity, palette values, geometry, APIs, features, architecture and technology choices may evolve as implementation, testing, hardware validation, accessibility review and community feedback provide evidence.\n\nDistinguish design proposals, experimental code, implemented API contracts, validated runtime features and release-ready capabilities. Documentation alone is not implementation evidence. Avoid declaring experimental API or design details stable until a compatibility and versioning policy is deliberately adopted.\n\n## System time and time-zone foundation
+
+- [x] Define the first technology-independent Desktop API contracts for Unix wall time, IANA-style zone identifiers, instant-specific UTC offsets, synchronization health and clock display preferences.
+- [x] Select systemd-timesyncd as the initial Debian synchronization backend and add it to the base package manifest; do not run competing NTP daemons.
+- [ ] Implement the system provider adapter and privileged, authorized time/time-zone configuration path.
+- [ ] Integrate the updateable IANA tz database and test daylight-saving transitions.
+- [ ] Add shell clock/date presentation and Settings controls for time zone, synchronization and 12/24-hour format.
+- [ ] Validate offline boot, RTC policy, suspend/resume and clock correction behavior.
+
+See [System Time and Time Zones](docs/architecture/SYSTEM-TIME-AND-TIMEZONES.md). The API contracts are experimental and do not mean that a working time service already exists.
+
+## Development Priorities
+
+The following order describes the current engineering priorities. Some workstreams may progress in parallel when their dependencies allow it.
+
+1. Continue validating the shell and compositor workspace, including automated tests.
+2. Implement a concrete Vulkan rendering backend and establish reliable physical frame presentation.
+3. Complete physical DRM/KMS mode setting and display configuration.
+4. Implement input handling and advance the compositor's window and surface lifecycle.
+5. Validate output discovery, hotplug, session changes, and display handling on physical hardware.
+6. Develop Aurea Display Intelligence on top of a reliable display pipeline, including the Night Light output stage and its safe capability fallback.
+7. Complete and validate the minimal Debian 13 `amd64` foundation.
+8. Define image, boot, installation, security, storage, and update boundaries.
+9. Build and test a bootable development image.
+10. Develop the shared GUI foundation and AureaOS desktop experience, including Settings and Quick Settings integration.
+11. Implement Aurea Capture incrementally, beginning with screenshot capture and then video/audio recording.
+12. Develop and integrate the Roma 1.0 first-party applications.
+13. Integrate Flathub and Flatpak through Aurea Store.
+14. Validate the complete product and define the Roma 1.0 release criteria.
+
+## Application and Component Status
+
+The [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md) is the authoritative inventory of first-party applications, desktop components, system tools, shared design resources, system subsystems, and selected third-party application categories.
+
+The catalog distinguishes implemented prototypes from planned components and exploratory concepts. Inclusion in the catalog does not imply that a component is complete or available to users.
+
+The Roma 1.0 product direction includes Aurea Desktop, AureaOS Human Interfaces, Aurea Wallet, Fides, Quaero, Aurea Store, Aurea Update, Aurea Time, and the system tools identified as planned for the first release.
+
+Their scope and implementation remain subject to development and validation. Inclusion in the Roma 1.0 direction is not a claim that the components are already implemented or complete.
+
+Aurea Display Intelligence remains a planned system subsystem. Its architecture and responsibilities are documented in [Display Intelligence](docs/architecture/DISPLAY-INTELLIGENCE.md). Initial DRM device and output lifecycle foundations exist in the compositor. Night Light's initial Vulkan processing path is connected in source but remains uncompiled and unvalidated on hardware; display mode setting, VRR control, adaptive refresh policy, schedule service/persistence, capability reporting and the user-facing settings interface remain incomplete.
+
+Sonus, Visio, and Explora remain candidates. Explora, if pursued, would be a possible future AureaOS first-party browser, not a Roma 1.0 requirement. See [Planned First-Party Applications](docs/product/PLANNED-APPLICATIONS.md) for their concept notes.
+
+System-level passkeys, Aurea AI/ChatGPT integration, and Aurea Media API remain exploratory or candidate concepts. They are not Roma 1.0 commitments.
+
+Third-party browsers, email clients, office suites, and other selected applications are intended to cover common application needs in Roma 1.0. They are separate from the AureaOS first-party application catalog.
+
+## Update Domains
+
+AureaOS distinguishes three independent update domains:
+
+1. **Debian base:** packages and security updates provided by the Debian foundation.
+2. **AureaOS system:** first-party desktop components, applications, services, and system-specific resources maintained by AureaOS.
+3. **Flatpak applications:** third-party applications installed and managed through Aurea Store using Flatpak and supported sources such as Flathub.
+
+Each domain requires clear ownership, integrity verification, and an update process appropriate to its responsibilities.
+
+The mechanisms for the AureaOS system update channel and the complete store integration are not yet implemented.
+
+## Guiding Priorities
+
+1. Reliability before feature count.
+2. A coherent and proprietary AureaOS desktop experience.
+3. Graphical workflows for everyday tasks.
+4. Aurea Wallet and the core system applications as first-release priorities.
+5. Clear boundaries between Debian, AureaOS components, and third-party applications.
+6. Secure application installation and transparent sandbox permissions.
+7. Hardware-aware behavior with safe fallbacks and respect for user preferences.
+8. Modular architecture and clear ownership between system components.
+9. Consistent and accessible design across first-party applications.
+10. Honest reporting of implementation status, limitations, and licensing.
+
+
+## Operational update — 2026-11-22
+
+The immediate agreed priority is AureaOS desktop development. ISO generation work is paused until the Fedora investigation session planned for Friday, 27 November 2026. Do not start new ISO builds or modify ISO scripts during desktop sessions unless explicitly requested.
+
+The first Debian Trixie Live image was generated and verified as an ISO containing BIOS/UEFI boot structures, but the first real Ventoy boot on the Lenovo laptop stopped in initramfs:
+`can't open '/scripts/live': No such file or directory`, followed by an init kernel panic. The image is therefore not currently considered a bootable Live system.
+
+Friday's work must begin by inspecting the existing ISO's initramfs read-only. Only after identifying the cause should the pipeline be changed. The fix must also preserve the workspace and caches after successful builds and validate initramfs contents, not merely the existence of an ISO file.
+
+See the [development log](docs/development/DEVELOPMENT-LOG.md) for the chronology and Git references.

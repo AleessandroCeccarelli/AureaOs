@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// AureaOS — Desktop API
+// Copyright (C) 2026 Alessandro Ceccarelli
+
+//! Technology-independent contracts for the user's desktop space.
+
+mod item;
+mod manager;
+mod preferences;
+mod stacks;
+
+pub use item::{DesktopItem, DesktopItemId, DesktopItemKind, DesktopPosition};
+pub use manager::{DesktopManager, DesktopManagerError};
+pub use preferences::{DesktopPreferences, StackGrouping};
+pub use stacks::{DesktopStack, DesktopStackCategory, DesktopStackId};

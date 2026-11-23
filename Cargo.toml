@@ -1,0 +1,16 @@
+
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# AureaOS
+# Copyright (C) 2026 Alessandro Ceccarelli
+
+[workspace]
+members = [
+    "components/aurea-capture",
+    "components/aurea-color",
+    "components/aurea-desktop-api",
+    "components/aurea-shell",
+    "components/aurea-compositor",
+    "components/aurea-desktop",
+]
+resolver = "3"

@@ -1,0 +1,296 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// AureaOS
+// Copyright (C) 2026 Alessandro Ceccarelli
+
+//! Vulkan SHM composition and DMA-BUF-backed DRM scanout.
+
+mod presentation;
+
+use std::{error::Error, fmt};
+
+use smithay::backend::allocator::Fourcc;
+
+use crate::{
+    drm::{
+        DrmPrimaryPlaneFormatCapabilities, device::DrmDevice, gbm::GbmDeviceManager,
+        surfaces::ManagedDrmSurface,
+    },
+    render::RenderScene,
+    renderer::{RenderBackend, RenderTarget},
+    vulkan::{
+        DrmVulkanCompatibility, VulkanBackend, VulkanDisplayColorManager, VulkanDrmScanoutFrame,
+        VulkanExternalMemoryCapabilities, VulkanFormatCapabilities, VulkanImageState,
+        VulkanSurfacePipelineCache,
+    },
+};
+
+/// Error returned by the initial Vulkan scanout path.
+#[derive(Debug)]
+pub(crate) struct VulkanScanoutError {
+    message: String,
+}
+
+impl VulkanScanoutError {
+    fn new(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+        }
+    }
+}
+
+impl fmt::Display for VulkanScanoutError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(&self.message)
+    }
+}
+
+impl Error for VulkanScanoutError {}
+
+/// Composites Wayland SHM surfaces into a Vulkan image and presents it through DRM/KMS.
+pub(crate) struct VulkanOutputScanoutBackend<'a> {
+    drm_device: &'a DrmDevice,
+    gbm_devices: &'a GbmDeviceManager,
+    output: &'a mut ManagedDrmSurface,
+    vulkan: &'a VulkanBackend,
+    display_color: &'a mut VulkanDisplayColorManager,
+    surface_cache: &'a mut VulkanSurfacePipelineCache,
+    warmth_percent: u8,
+}
+
+impl<'a> VulkanOutputScanoutBackend<'a> {
+    pub(crate) fn new(
+        drm_device: &'a DrmDevice,
+        gbm_devices: &'a GbmDeviceManager,
+        output: &'a mut ManagedDrmSurface,
+        vulkan: &'a VulkanBackend,
+        display_color: &'a mut VulkanDisplayColorManager,
+        surface_cache: &'a mut VulkanSurfacePipelineCache,
+        warmth_percent: u8,
+    ) -> Self {
+        Self {
+            drm_device,
+            gbm_devices,
+            output,
+            vulkan,
+            display_color,
+            surface_cache,
+            warmth_percent,
+        }
+    }
+}
+
+impl RenderBackend for VulkanOutputScanoutBackend<'_> {
+    type Error = VulkanScanoutError;
+
+    fn render_frame(
+        &mut self,
+        target: &RenderTarget,
+        scene: &RenderScene<'_>,
+    ) -> Result<(), Self::Error> {
+        if target.output_id() != self.output.output_id() {
+            return Err(VulkanScanoutError::new(
+                "Render target does not belong to the managed DRM surface",
+            ));
+        }
+        if target.width() == 0 || target.height() == 0 {
+            return Err(VulkanScanoutError::new(
+                "Cannot render a zero-sized DRM output",
+            ));
+        }
+        if !self.drm_device.is_active() {
+            return Err(VulkanScanoutError::new(
+                "Cannot render while the DRM device is inactive",
+            ));
+        }
+        if !self.vulkan.device().supports_foreign_queue_family() {
+            return Err(VulkanScanoutError::new(
+                "The selected Vulkan device does not support VK_EXT_queue_family_foreign",
+            ));
+        }
+
+        let (surface, frame_pool, presentation) = self.output.scanout_parts_mut();
+        if surface.is_legacy() {
+            return Err(VulkanScanoutError::new(
+                "The initial Vulkan scanout path requires atomic DRM/KMS",
+            ));
+        }
+
+        let plane = DrmPrimaryPlaneFormatCapabilities {
+            crtc_id: u32::from(surface.crtc()),
+            plane_id: u32::from(surface.plane()),
+            formats: surface.plane_info().formats.iter().copied().collect(),
+        };
+
+        let external_memory =
+            VulkanExternalMemoryCapabilities::from_device(self.vulkan.selected_physical_device());
+        if !external_memory.supports_dmabuf_export {
+            return Err(VulkanScanoutError::new(format!(
+                "Vulkan DMA-BUF export is unavailable; missing extensions: {}",
+                external_memory.missing_extensions.join(", ")
+            )));
+        }
+
+        let mut vulkan_formats = Vec::new();
+        for drm_format in &plane.formats {
+            if vulkan_formats
+                .iter()
+                .any(|capability: &VulkanFormatCapabilities| capability.format == drm_format.code)
+            {
+                continue;
+            }
+
+            let capabilities = VulkanFormatCapabilities::query(
+                self.vulkan.selected_physical_device(),
+                drm_format.code,
+            )
+            .map_err(VulkanScanoutError::new)?;
+            vulkan_formats.push(capabilities);
+        }
+
+        let compatibility =
+            DrmVulkanCompatibility::evaluate(&plane, &vulkan_formats, &external_memory);
+        // Prefer common scanout formats, but do not let one failed allocation
+        // prevent trying the other format/modifier combinations negotiated
+        // between Vulkan and the actual KMS primary plane.
+        let mut candidates = Vec::new();
+        for preferred in [Fourcc::Xrgb8888, Fourcc::Argb8888] {
+            if let Some(format) = compatibility
+                .formats()
+                .iter()
+                .find(|format| format.code == preferred)
+                .copied()
+            {
+                candidates.push(format);
+            }
+        }
+        for format in compatibility.formats().iter().copied() {
+            if !candidates
+                .iter()
+                .any(|candidate: &crate::vulkan::DrmVulkanFormat| {
+                    candidate.code == format.code && candidate.modifier == format.modifier
+                })
+            {
+                candidates.push(format);
+            }
+        }
+
+        if candidates.is_empty() {
+            return Err(VulkanScanoutError::new(format!(
+                "No Vulkan color-attachment format is shared with the primary DRM plane: {:?}",
+                compatibility.status()
+            )));
+        }
+
+        // Drop idle images from old modes/formats and keep the pool bounded.
+        frame_pool
+            .prune(
+                target.width(),
+                target.height(),
+                &candidates,
+                presentation.frame_coordinator_mut(),
+            )
+            .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
+
+        // Reuse an image only after both KMS and Vulkan ownership have
+        // returned to this process. This avoids allocating and exporting a
+        // fresh DMA-BUF for every page flip.
+        let reusable = frame_pool
+            .find_reusable(
+                target.width(),
+                target.height(),
+                &candidates,
+                presentation.frame_coordinator_mut(),
+            )
+            .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
+
+        let (framebuffer, previous_image_state) = if let Some(framebuffer) = reusable {
+            (framebuffer, VulkanImageState::General)
+        } else {
+            let mut allocation_errors = Vec::new();
+            let mut allocated_frame = None;
+            for candidate in candidates {
+                match VulkanDrmScanoutFrame::allocate(
+                    self.vulkan.shared_device(),
+                    self.drm_device,
+                    self.gbm_devices,
+                    target.width(),
+                    target.height(),
+                    candidate,
+                    smithay::reexports::ash::vk::ImageUsageFlags::COLOR_ATTACHMENT,
+                ) {
+                    Ok(frame) => {
+                        allocated_frame = Some(frame);
+                        break;
+                    }
+                    Err(error) => allocation_errors.push(format!(
+                        "{:?}/{:?}: {}",
+                        candidate.code, candidate.modifier, error
+                    )),
+                }
+            }
+
+            let frame = allocated_frame.ok_or_else(|| {
+                VulkanScanoutError::new(format!(
+                    "All negotiated Vulkan/KMS scanout allocations failed: {}",
+                    allocation_errors.join("; ")
+                ))
+            })?;
+
+            let framebuffer = frame_pool
+                .insert(frame, presentation.frame_coordinator_mut())
+                .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
+            (framebuffer, VulkanImageState::Undefined)
+        };
+
+        if let Err(error) = presentation::render_and_present(
+            surface,
+            frame_pool,
+            presentation,
+            framebuffer,
+            self.vulkan.device(),
+            target,
+            scene,
+            previous_image_state,
+            self.display_color,
+            self.surface_cache,
+            self.warmth_percent,
+            self.vulkan.shared_device(),
+        ) {
+            // This succeeds only if the queue rejected the command before acceptance.
+            // Accepted or uncertain submissions cannot be cancelled.
+            let _ = presentation
+                .frame_coordinator_mut()
+                .cancel_render(framebuffer);
+
+            let acquire_result = frame_pool
+                .acquire_after_foreign_release(framebuffer, presentation.frame_coordinator_mut());
+
+            let cleanup_result = match acquire_result {
+                Ok(()) => frame_pool
+                    .retire(framebuffer, presentation.frame_coordinator_mut())
+                    .map(|_| ())
+                    .map_err(|retire_error| retire_error.to_string()),
+                Err(acquire_error) => {
+                    match frame_pool.retire(framebuffer, presentation.frame_coordinator_mut()) {
+                        Ok(_) => Ok(()),
+                        Err(retire_error) => Err(format!(
+                            "{acquire_error}; retirement also failed: {retire_error}"
+                        )),
+                    }
+                }
+            };
+
+            if let Err(cleanup_error) = cleanup_result {
+                eprintln!(
+                    "AureaOS: retaining failed scanout framebuffer {}: {cleanup_error}",
+                    framebuffer.value()
+                );
+            }
+
+            return Err(error);
+        }
+
+        Ok(())
+    }
+}

@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+"""Publish a completed rootfs with an atomic, no-replace directory rename."""
+
+from __future__ import annotations
+
+import ctypes
+import errno
+import os
+import stat
+import sys
+
+
+STAGING_PREFIX = "aureaos-rootfs."
+RENAME_NOREPLACE = 1
+
+
+def _open_directory(path: str) -> int:
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW
+    return os.open(path, flags)
+
+
+def _rename_noreplace(
+    source_parent_fd: int,
+    source_name: bytes,
+    destination_parent_fd: int,
+    destination_name: bytes,
+) -> None:
+    libc = ctypes.CDLL(None, use_errno=True)
+    renameat2 = getattr(libc, "renameat2", None)
+    if renameat2 is None:
+        raise RuntimeError("libc does not expose renameat2; refusing a non-atomic fallback")
+
+    renameat2.argtypes = [
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_uint,
+    ]
+    renameat2.restype = ctypes.c_int
+
+    result = renameat2(
+        source_parent_fd,
+        source_name,
+        destination_parent_fd,
+        destination_name,
+        RENAME_NOREPLACE,
+    )
+    if result != 0:
+        error_number = ctypes.get_errno()
+        if error_number in (errno.ENOSYS, errno.EINVAL, errno.EOPNOTSUPP):
+            raise RuntimeError(
+                "filesystem/kernel does not support atomic RENAME_NOREPLACE; "
+                "staging was left untouched"
+            )
+        raise OSError(error_number, os.strerror(error_number))
+
+
+def publish_rootfs(
+    source_path: str,
+    destination_name: str,
+    destination_parent: str,
+    expected_destination_id: str,
+    source_parent_path: str = ".",
+) -> str:
+    source_parent = os.path.dirname(source_path)
+    source_name = os.path.basename(source_path)
+
+    if source_parent != source_parent_path or not source_name.startswith(STAGING_PREFIX):
+        raise ValueError("source must be a rootfs staging directory in the pinned staging parent")
+    if source_parent_path != "." and os.path.realpath(source_parent_path) != source_parent_path:
+        raise ValueError("staging parent path must be canonical")
+    if (
+        not destination_name
+        or destination_name in (".", "..")
+        or os.sep in destination_name
+    ):
+        raise ValueError("destination must be a single valid basename")
+    if os.path.realpath(destination_parent) != destination_parent:
+        raise ValueError("destination parent path is no longer canonical")
+
+    try:
+        expected_device, expected_inode = (
+            int(value) for value in expected_destination_id.split(":", maxsplit=1)
+        )
+    except (TypeError, ValueError) as error:
+        raise ValueError("expected destination identity must be DEV:INO") from error
+
+    source_parent_fd = _open_directory(source_parent_path)
+    destination_parent_fd = _open_directory(destination_parent)
+    source_fd = -1
+
+    try:
+        source_parent_stat = os.fstat(source_parent_fd)
+        if source_parent_stat.st_uid != 0 or stat.S_IMODE(source_parent_stat.st_mode) != 0o711:
+            raise PermissionError("staging parent must be root-owned with mode 0711")
+
+        destination_parent_stat = os.fstat(destination_parent_fd)
+        if (destination_parent_stat.st_dev, destination_parent_stat.st_ino) != (
+            expected_device,
+            expected_inode,
+        ):
+            raise PermissionError("destination parent identity changed after validation")
+        if source_parent_stat.st_dev != destination_parent_stat.st_dev:
+            raise OSError(errno.EXDEV, "staging and destination must be on the same filesystem")
+
+        source_fd = os.open(
+            source_name,
+            os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW,
+            dir_fd=source_parent_fd,
+        )
+        source_stat = os.fstat(source_fd)
+        if source_stat.st_uid != 0 or stat.S_IMODE(source_stat.st_mode) != 0o700:
+            raise PermissionError("staging rootfs must be root-owned with mode 0700")
+        if source_stat.st_dev != destination_parent_stat.st_dev:
+            raise OSError(errno.EXDEV, "staging and destination must be on the same filesystem")
+
+        source_entry_stat = os.stat(
+            source_name,
+            dir_fd=source_parent_fd,
+            follow_symlinks=False,
+        )
+        if (source_entry_stat.st_dev, source_entry_stat.st_ino) != (
+            source_stat.st_dev,
+            source_stat.st_ino,
+        ):
+            raise RuntimeError("staging pathname no longer identifies the opened rootfs inode")
+
+        try:
+            os.stat(destination_name, dir_fd=destination_parent_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            pass
+        else:
+            raise FileExistsError(errno.EEXIST, "destination already exists", destination_name)
+
+        _rename_noreplace(
+            source_parent_fd,
+            os.fsencode(source_name),
+            destination_parent_fd,
+            os.fsencode(destination_name),
+        )
+
+        # The directory was private while staged. Change only the pinned inode
+        # after publication so the final rootfs has the normal 0755 root.
+        os.fchmod(source_fd, 0o755)
+
+        published_stat = os.stat(
+            destination_name,
+            dir_fd=destination_parent_fd,
+            follow_symlinks=False,
+        )
+        if (
+            not stat.S_ISDIR(published_stat.st_mode)
+            or published_stat.st_uid != 0
+            or stat.S_IMODE(published_stat.st_mode) != 0o755
+            or published_stat.st_dev != source_stat.st_dev
+            or published_stat.st_ino != source_stat.st_ino
+        ):
+            raise RuntimeError("published directory identity or final mode is invalid")
+
+        try:
+            os.stat(source_name, dir_fd=source_parent_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            pass
+        else:
+            raise RuntimeError("staging entry still exists after publication")
+
+        published_parent = os.readlink(f"/proc/self/fd/{destination_parent_fd}")
+        return os.path.join(published_parent, destination_name)
+    finally:
+        if source_fd >= 0:
+            os.close(source_fd)
+        os.close(destination_parent_fd)
+        os.close(source_parent_fd)
+
+
+def main(argv: list[str]) -> int:
+    if len(argv) != 5:
+        print(
+            f"Usage: {argv[0]} STAGING_PATH DESTINATION_BASENAME "
+            "DESTINATION_PARENT EXPECTED_PARENT_DEV:INO",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        published_location = publish_rootfs(argv[1], argv[2], argv[3], argv[4])
+    except (OSError, RuntimeError, ValueError) as error:
+        print(f"Rootfs publication failed: {error}", file=sys.stderr)
+        return 1
+
+    print(published_location)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))

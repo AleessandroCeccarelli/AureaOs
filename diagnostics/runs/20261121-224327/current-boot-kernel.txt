@@ -1,0 +1,7 @@
+nov 21 22:44:23.205495 fedora kernel: wlp1s0: authenticate with [redacted-mac] (local address=[redacted-mac])
+nov 21 22:44:23.226623 fedora kernel: wlp1s0: send auth to [redacted-mac] (try 1/3)
+nov 21 22:44:23.227364 fedora kernel: wlp1s0: authenticated
+nov 21 22:44:23.229720 fedora kernel: wlp1s0: associate with [redacted-mac] (try 1/3)
+nov 21 22:44:23.232313 fedora kernel: wlp1s0: RX AssocResp from [redacted-mac] (capab=0x1431 status=0 aid=16)
+nov 21 22:44:23.232546 fedora kernel: wlp1s0: associated
+nov 21 22:44:23.263337 fedora kernel: wlp1s0: Limiting TX power to 17 (20 - 3) dBm as advertised by [redacted-mac]

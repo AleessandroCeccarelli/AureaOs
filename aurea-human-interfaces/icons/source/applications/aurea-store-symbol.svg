@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+<title id="title">Aurea Store symbol</title>
+<desc id="desc">A glossy dimensional blue shopping bag with a luminous cyan handle and a subtle Aurea A mark, on transparency.</desc>
+<defs>
+ <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#E9FFFF"/><stop offset=".22" stop-color="#7DE7FF"/><stop offset=".58" stop-color="#168FE0"/><stop offset="1" stop-color="#064A9E"/></linearGradient>
+ <linearGradient id="face" x1=".12" y1="0" x2=".88" y2="1"><stop stop-color="#BDF5FF"/><stop offset=".2" stop-color="#42C9F2"/><stop offset=".52" stop-color="#1688D8"/><stop offset=".82" stop-color="#0755B2"/><stop offset="1" stop-color="#063B82"/></linearGradient>
+ <linearGradient id="handle" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#F2FFFF"/><stop offset=".24" stop-color="#8CF0FF"/><stop offset=".62" stop-color="#20A9EA"/><stop offset="1" stop-color="#0754AD"/></linearGradient>
+ <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF"/><stop offset=".55" stop-color="#D9F9FF"/><stop offset="1" stop-color="#8BE9FF"/></linearGradient>
+ <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFFFFF" stop-opacity=".92"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+ <filter id="shadow" x="-35%" y="-35%" width="170%" height="185%">
+  <feGaussianBlur in="SourceAlpha" stdDeviation="18" result="blur"/><feOffset dy="22" result="offset"/>
+  <feColorMatrix in="offset" type="matrix" values="0 0 0 0 .01 0 0 0 0 .16 0 0 0 0 .36 0 0 0 .30 0" result="shade"/>
+  <feMerge><feMergeNode in="shade"/><feMergeNode in="SourceGraphic"/></feMerge>
+ </filter>
+ <clipPath id="bagClip"><path d="M270 366 Q270 330 308 330 H716 Q754 330 754 368 L720 820 Q716 866 670 866 H354 Q308 866 304 820Z"/></clipPath>
+</defs>
+<g filter="url(#shadow)">
+ <path d="M390 380 V286 C390 194 445 138 512 138 C579 138 634 194 634 286 V380" fill="none" stroke="url(#edge)" stroke-width="76" stroke-linecap="round"/>
+ <path d="M390 368 V286 C390 210 438 166 512 166 C586 166 634 210 634 286 V368" fill="none" stroke="url(#handle)" stroke-width="48" stroke-linecap="round"/>
+ <path d="M411 276 C414 214 453 184 498 180" fill="none" stroke="#FFFFFF" stroke-opacity=".82" stroke-width="12" stroke-linecap="round"/>
+ <path d="M270 366 Q270 330 308 330 H716 Q754 330 754 368 L720 820 Q716 866 670 866 H354 Q308 866 304 820Z" fill="url(#edge)"/>
+ <path d="M292 374 Q292 354 316 354 H708 Q732 354 732 378 L700 808 Q697 842 666 842 H358 Q327 842 324 808Z" fill="url(#face)"/>
+ <g clip-path="url(#bagClip)">
+  <path d="M270 380 Q420 330 510 390 Q620 464 754 390 L754 870 H270Z" fill="#B7EEFF" opacity=".24"/>
+  <path d="M286 430 C380 382 464 394 540 452 C612 507 678 506 744 466" fill="none" stroke="#E5FCFF" stroke-opacity=".42" stroke-width="18"/>
+  <path d="M286 740 C420 680 572 700 738 638 L730 870 H280Z" fill="#052F70" opacity=".12"/>
+  <ellipse cx="416" cy="434" rx="130" ry="54" transform="rotate(-18 416 434)" fill="url(#gloss)" opacity=".72"/>
+ </g>
+ <path d="M292 374 Q292 354 316 354 H708" fill="none" stroke="#F0FFFF" stroke-opacity=".88" stroke-width="10" stroke-linecap="round"/>
+ <path d="M512 506 L423 706 H468 L512 607 L556 706 H601Z" fill="url(#mark)" opacity=".96"/>
+ <path d="M477 650 H547" fill="none" stroke="#0A67B9" stroke-opacity=".58" stroke-width="15" stroke-linecap="round"/>
+ <path d="M466 704 L512 602 L558 704" fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

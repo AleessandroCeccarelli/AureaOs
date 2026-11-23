@@ -1,0 +1,71 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// AureaOS
+// Copyright (C) 2026 Alessandro Ceccarelli
+
+//! Virtual workspace operations and workspace-related window management.
+
+use smithay::reexports::wayland_server::protocol::wl_surface::WlSurface;
+
+use aurea_desktop_api::desktop_interaction::DesktopInteraction;
+
+use super::AureaCompositor;
+
+impl AureaCompositor {
+    /// Returns the zero-based index of the active virtual workspace.
+    pub fn active_workspace(&self) -> usize {
+        self.window_manager.active_workspace()
+    }
+
+    /// Switches the visible scene to a workspace by its zero-based index.
+    ///
+    /// Returns `false` when the index is outside the four-workspace set.
+    /// Keyboard focus is moved to a mapped surface on the new workspace.
+    pub fn switch_workspace(&mut self, workspace: usize) -> bool {
+        if !self.window_manager.switch_workspace(workspace) {
+            return false;
+        }
+
+        self.focus_surface(self.window_manager.active_workspace_surface());
+        self.refresh_pointer_focus_at_current_location();
+        self.request_all_output_frames();
+        if let Ok(index) = u8::try_from(self.window_manager.active_workspace()) {
+            if self
+                .desktop_interactions
+                .send(DesktopInteraction::WorkspaceChanged { index })
+                .is_err()
+            {
+                tracing::debug!("Shell workspace receiver is no longer available");
+            }
+        }
+
+        true
+    }
+
+    /// Requests a bounded logical size for a managed toplevel.
+    ///
+    /// The new dimensions are sent to the client through the XDG configure
+    /// handshake. Returns false when the surface is not managed.
+    pub fn resize_toplevel(&mut self, surface: &WlSurface, size: (i32, i32)) -> bool {
+        self.window_manager.resize_toplevel(surface, size)
+    }
+
+    /// Moves a managed toplevel surface to a workspace by its zero-based index.
+    ///
+    /// Returns `false` when the surface is unmanaged or the workspace index
+    /// is invalid. Focus is refreshed after a successful move.
+    pub fn move_toplevel_to_workspace(&mut self, surface: &WlSurface, workspace: usize) -> bool {
+        if !self
+            .window_manager
+            .move_toplevel_to_workspace(surface, workspace)
+        {
+            return false;
+        }
+
+        self.focus_surface(self.window_manager.active_workspace_surface());
+        self.refresh_pointer_focus_at_current_location();
+        self.request_all_output_frames();
+
+        true
+    }
+}

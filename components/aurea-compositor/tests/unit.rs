@@ -1,0 +1,86 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// AureaOS
+// Copyright (C) 2026 Alessandro Ceccarelli
+
+use aurea_compositor::output::{
+    DisplayOutput, OutputId, OutputMode, OutputRegistry,
+    layout::{OutputLayout, OutputPosition},
+    limits::MAX_ACTIVE_OUTPUTS,
+    manager::{OutputManager, OutputManagerError, OutputReconciliation},
+};
+
+#[cfg(feature = "drm")]
+#[path = "unit/drm_presentation.rs"]
+mod drm_presentation;
+
+#[cfg(all(feature = "drm", feature = "vulkan"))]
+#[path = "unit/drm_frame_coordinator.rs"]
+mod drm_frame_coordinator;
+
+#[cfg(feature = "drm")]
+#[path = "unit/vulkan_frame_resource_registry.rs"]
+mod vulkan_frame_resource_registry;
+
+#[path = "unit/frame_scheduler.rs"]
+mod frame_scheduler;
+
+#[path = "unit/output.rs"]
+mod output;
+
+#[path = "unit/output_layout.rs"]
+mod output_layout;
+
+#[path = "unit/output_manager.rs"]
+mod output_manager;
+
+#[path = "unit/compositor_output_reconciliation.rs"]
+mod compositor_output_reconciliation;
+
+#[cfg(all(feature = "drm", feature = "vulkan"))]
+#[path = "unit/vulkan_drm_compatibility.rs"]
+mod vulkan_drm_compatibility;
+
+#[cfg(all(feature = "drm", feature = "vulkan"))]
+#[path = "unit/vulkan_buffer_allocator.rs"]
+mod vulkan_buffer_allocator;
+
+#[cfg(all(feature = "drm", feature = "vulkan"))]
+#[path = "unit/vulkan_dmabuf_layout.rs"]
+mod vulkan_dmabuf_layout;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_device_extensions.rs"]
+mod vulkan_device_extensions;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_memory_type.rs"]
+mod vulkan_memory_type;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_frame_scheduler.rs"]
+mod vulkan_frame_scheduler;
+
+#[cfg(all(feature = "drm", feature = "vulkan"))]
+#[path = "unit/vulkan_frame_resource.rs"]
+mod vulkan_frame_resource;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_shader.rs"]
+mod vulkan_shader;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_clear_pass.rs"]
+mod vulkan_clear_pass;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_readback.rs"]
+mod vulkan_readback;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_draw_pass.rs"]
+mod vulkan_draw_pass;
+
+#[cfg(feature = "vulkan")]
+#[path = "unit/vulkan_offscreen_triangle.rs"]
+mod vulkan_offscreen_triangle;

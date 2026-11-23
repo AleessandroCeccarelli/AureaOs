@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<svg xmlns="http://www.w3.org/2000/svg" width="670" height="675" viewBox="0 0 670 675" role="img" aria-labelledby="title desc">
+<title id="title">AureaOS launcher symbol</title><desc id="desc">A glossy sculptural blue arch crossed by a luminous cyan flowing ribbon. Transparent background.</desc><defs>
+<linearGradient id="archFill" x1=".18" y1=".02" x2=".82" y2=".98"><stop stop-color="#12BFF5"/><stop offset=".18" stop-color="#0879E7"/><stop offset=".42" stop-color="#0755D0"/><stop offset=".72" stop-color="#0754C8"/><stop offset="1" stop-color="#0878DD"/></linearGradient>
+<linearGradient id="crossFill" x1=".08" y1=".08" x2=".92" y2=".82"><stop stop-color="#A8F8FF"/><stop offset=".22" stop-color="#43DDF8"/><stop offset=".5" stop-color="#19BFF1"/><stop offset=".78" stop-color="#35D5F6"/><stop offset="1" stop-color="#9AF1FF"/></linearGradient>
+<linearGradient id="shine" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#C9F9FF" stop-opacity=".12"/><stop offset=".23" stop-color="#E7FFFF" stop-opacity=".78"/><stop offset=".48" stop-color="#FFF" stop-opacity=".2"/><stop offset=".76" stop-color="#C7F8FF" stop-opacity=".46"/><stop offset="1" stop-color="#FFF" stop-opacity=".08"/></linearGradient>
+<linearGradient id="crossShine" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#FFF" stop-opacity=".86"/><stop offset=".35" stop-color="#F0FFFF" stop-opacity=".4"/><stop offset="1" stop-color="#D7FFFF" stop-opacity=".05"/></linearGradient>
+<linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF"/><stop offset=".55" stop-color="#F5FAFF"/><stop offset="1" stop-color="#E6F4FF"/></linearGradient>
+<radialGradient id="tileGlow" cx=".3" cy=".2" r=".9"><stop stop-color="#FFF" stop-opacity=".96"/><stop offset=".56" stop-color="#EAF6FF" stop-opacity=".55"/><stop offset="1" stop-color="#8DCDF5" stop-opacity=".22"/></radialGradient>
+<filter id="shadow" x="-.35" y="-.35" width="1.7" height="1.8"><feGaussianBlur in="SourceAlpha" stdDeviation="8"/><feOffset dy="8"/><feComponentTransfer><feFuncA type="linear" slope=".34"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs><g filter="url(#shadow)" stroke-linecap="round" stroke-linejoin="round">
+<path d="M133 498 C157 451 211 338 260 247 C282 205 302 163 330 151 C350 142 368 156 381 183 C424 270 476 399 527 487 C535 502 525 522 504 525 L455 525 C439 525 427 516 420 501 C386 425 349 327 320 260 C313 244 306 237 297 244 C286 252 277 277 267 299 C231 380 197 463 181 505 C174 522 159 526 143 521 C128 517 125 509 133 498 Z" fill="url(#archFill)"/>
+<path d="M330 151 C350 142 368 156 381 183 C424 270 476 399 527 487" fill="none" stroke="url(#shine)" stroke-width="5" opacity=".72"/>
+<path d="M151 505 C181 488 225 448 270 411 C312 378 344 354 375 353 C415 351 450 378 477 420 C500 456 518 485 527 500 C538 519 524 533 505 533 C486 533 476 519 467 501 C444 457 420 420 390 405 C359 389 330 394 301 413 C258 441 218 486 179 515 C158 531 138 526 134 510 C131 500 139 497 151 505 Z" fill="url(#crossFill)"/>
+<path d="M148 505 C194 472 237 428 281 395 C319 367 347 350 376 351 C414 351 445 377 470 414" fill="none" stroke="url(#crossShine)" stroke-width="8" opacity=".9"/>
+</g></svg>

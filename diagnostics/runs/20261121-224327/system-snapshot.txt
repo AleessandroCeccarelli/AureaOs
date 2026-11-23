@@ -1,0 +1,155 @@
+
+=== PCI devices and active drivers ===
+00:00.0 Host bridge [0600]: Advanced Micro Devices, Inc. [AMD] Family 15h (Models 60h-6fh) Processor Root Complex [1022:1576]
+	Subsystem: Lenovo Device [17aa:3812]
+00:00.2 IOMMU [0806]: Advanced Micro Devices, Inc. [AMD] Family 15h (Models 60h-6fh) I/O Memory Management Unit [1022:1577]
+	Subsystem: Advanced Micro Devices, Inc. [AMD] Family 15h (Models 60h-6fh) I/O Memory Management Unit [1022:1577]
+00:01.0 VGA compatible controller [0300]: Advanced Micro Devices, Inc. [AMD/ATI] Stoney [Radeon R2/R3/R4/R5 Graphics] [1002:98e4] (rev da)
+	Subsystem: Lenovo Device [17aa:39f3]
+	Kernel driver in use: amdgpu
+	Kernel modules: amdgpu
+00:01.1 Audio device [0403]: Advanced Micro Devices, Inc. [AMD/ATI] Stoney HDMI/DP Audio Controller [1002:15b3]
+	Subsystem: Lenovo Device [17aa:380b]
+	Kernel driver in use: snd_hda_intel
+	Kernel modules: snd_hda_intel
+00:02.0 Host bridge [0600]: Advanced Micro Devices, Inc. [AMD] Family 15h (Models 60h-6fh) Host Bridge [1022:157b]
+00:02.3 PCI bridge [0604]: Advanced Micro Devices, Inc. [AMD] Family 15h (Models 60h-6fh) Processor Root Port [1022:157c]
+	Subsystem: Lenovo Device [17aa:382a]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+00:02.4 PCI bridge [0604]: Advanced Micro Devices, Inc. [AMD] Family 15h (Models 60h-6fh) Processor Root Port [1022:157c]
+	Subsystem: Lenovo Device [17aa:382a]
+	Kernel driver in use: pcieport
+	Kernel modules: shpchp
+00:03.0 Host bridge [0600]: Advanced Micro Devices, Inc. [AMD] Family 15h (Models 60h-6fh) Host Bridge [1022:157b]
+00:08.0 Encryption controller [1080]: Advanced Micro Devices, Inc. [AMD] Carrizo Platform Security Processor [1022:1578]
+	Subsystem: Lenovo Device [17aa:3810]
+00:09.0 Host bridge [0600]: Advanced Micro Devices, Inc. [AMD] Carrizo Audio Dummy Host Bridge [1022:157d]
+00:09.2 Audio device [0403]: Advanced Micro Devices, Inc. [AMD] Family 15h (Models 60h-6fh) Audio Controller [1022:157a]
+	Subsystem: Lenovo Device [17aa:3811]
+	Kernel driver in use: snd_hda_intel
+	Kernel modules: snd_hda_intel
+00:10.0 USB controller [0c03]: Advanced Micro Devices, Inc. [AMD] FCH USB XHCI Controller [1022:7914] (rev 20)
+	Subsystem: Lenovo Device [17aa:380c]
+	Kernel driver in use: xhci_hcd
+	Kernel modules: xhci_pci
+00:11.0 SATA controller [0106]: Advanced Micro Devices, Inc. [AMD] FCH SATA Controller [AHCI mode] [1022:7901] (rev 4b)
+	Subsystem: Lenovo Device [17aa:380a]
+	Kernel driver in use: ahci
+	Kernel modules: ahci
+00:12.0 USB controller [0c03]: Advanced Micro Devices, Inc. [AMD] FCH USB EHCI Controller [1022:7908] (rev 49)
+	Subsystem: Lenovo Device [17aa:380d]
+	Kernel driver in use: ehci-pci
+	Kernel modules: ehci_pci
+00:14.0 SMBus [0c05]: Advanced Micro Devices, Inc. [AMD] FCH SMBus Controller [1022:790b] (rev 4b)
+	Subsystem: Lenovo Device [17aa:3816]
+	Kernel modules: i2c_piix4, sp5100_tco
+00:14.3 ISA bridge [0601]: Advanced Micro Devices, Inc. [AMD] FCH LPC Bridge [1022:790e] (rev 11)
+	Subsystem: Lenovo Device [17aa:3818]
+00:18.0 Host bridge [0600]: Advanced Micro Devices, Inc. [AMD] Stoney HT Configuration [1022:15b0]
+00:18.1 Host bridge [0600]: Advanced Micro Devices, Inc. [AMD] Stoney Address Maps [1022:15b1]
+00:18.2 Host bridge [0600]: Advanced Micro Devices, Inc. [AMD] Stoney DRAM Configuration [1022:15b2]
+00:18.3 Host bridge [0600]: Advanced Micro Devices, Inc. [AMD] Stoney Miscellaneous Configuration [1022:15b3]
+	Kernel driver in use: k10temp
+	Kernel modules: k10temp
+00:18.4 Host bridge [0600]: Advanced Micro Devices, Inc. [AMD] Stoney PM Configuration [1022:15b4]
+	Kernel driver in use: fam15h_power
+	Kernel modules: fam15h_power
+00:18.5 Host bridge [0600]: Advanced Micro Devices, Inc. [AMD] Stoney NB Performance Monitor [1022:15b5]
+01:00.0 Network controller [0280]: Realtek Semiconductor Co., Ltd. RTL8821CE 802.11ac PCIe Wireless Network Adapter [10ec:c821]
+	Subsystem: Lenovo Device [17aa:c024]
+	Kernel driver in use: rtw88_8821ce
+	Kernel modules: rtw88_8821ce
+02:00.0 Ethernet controller [0200]: Realtek Semiconductor Co., Ltd. RTL810xE PCI Express Fast Ethernet controller [10ec:8136] (rev 07)
+	Subsystem: Lenovo Device [17aa:3861]
+	Kernel driver in use: r8169
+	Kernel modules: r8169
+
+=== DRM devices ===
+card1: /sys/bus/pci/drivers/amdgpu
+card1-eDP-1: /sys/devices/pci0000:00/0000:00:01.0/drm/card1/driver
+card1-HDMI-A-1: /sys/devices/pci0000:00/0000:00:01.0/drm/card1/driver
+
+=== Vulkan summary ===
+WARNING: [Loader Message] Code 0 : terminator_CreateInstance: Received return code -9 from call to vkCreateInstance in ICD /usr/lib64/libvulkan_dzn.so. Skipping this driver.
+'DISPLAY' environment variable not set... skipping surface info
+WARNING: [Loader Message] Code 0 : ICD for selected physical device does not export vkGetPhysicalDeviceDisplayPlanePropertiesKHR!
+WARNING: [Loader Message] Code 0 : ICD for selected physical device does not export vkGetPhysicalDeviceDisplayPropertiesKHR!
+==========
+VULKANINFO
+==========
+
+Vulkan Instance Version: 1.4.341
+
+
+Instance Extensions: count = 26
+-------------------------------
+VK_EXT_acquire_drm_display             : extension revision 1
+VK_EXT_acquire_xlib_display            : extension revision 1
+VK_EXT_debug_report                    : extension revision 10
+VK_EXT_debug_utils                     : extension revision 2
+VK_EXT_direct_mode_display             : extension revision 1
+VK_EXT_display_surface_counter         : extension revision 1
+VK_EXT_headless_surface                : extension revision 1
+VK_EXT_layer_settings                  : extension revision 2
+VK_EXT_surface_maintenance1            : extension revision 1
+VK_EXT_swapchain_colorspace            : extension revision 5
+VK_KHR_device_group_creation           : extension revision 1
+VK_KHR_display                         : extension revision 23
+VK_KHR_external_fence_capabilities     : extension revision 1
+VK_KHR_external_memory_capabilities    : extension revision 1
+VK_KHR_external_semaphore_capabilities : extension revision 1
+VK_KHR_get_display_properties2         : extension revision 1
+VK_KHR_get_physical_device_properties2 : extension revision 2
+VK_KHR_get_surface_capabilities2       : extension revision 1
+VK_KHR_portability_enumeration         : extension revision 1
+VK_KHR_surface                         : extension revision 25
+VK_KHR_surface_maintenance1            : extension revision 1
+VK_KHR_surface_protected_capabilities  : extension revision 1
+VK_KHR_wayland_surface                 : extension revision 6
+VK_KHR_xcb_surface                     : extension revision 6
+VK_KHR_xlib_surface                    : extension revision 6
+VK_LUNARG_direct_driver_loading        : extension revision 1
+
+Instance Layers: count = 2
+--------------------------
+VK_LAYER_MESA_anti_lag      Open-source implementation of the VK_AMD_anti_lag extension. 1.4.303  version 1
+VK_LAYER_MESA_device_select Linux device selection layer                                 1.4.303  version 1
+
+Devices:
+========
+GPU0:
+	apiVersion         = 1.4.354
+	driverVersion      = 26.2.7
+	vendorID           = 0x1002
+	deviceID           = 0x98e4
+	deviceType         = PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU
+	deviceName         = AMD Radeon R5 Graphics (RADV STONEY)
+	driverID           = DRIVER_ID_MESA_RADV
+	driverName         = radv
+	driverInfo         = Mesa 26.2.7
+	conformanceVersion = 1.4.5.3
+	deviceUUID         = 00000000-0000-0000-0100-000000000000
+	driverUUID         = 414d442d-4d45-5341-2d44-525600000000
+GPU1:
+	apiVersion         = 1.4.354
+	driverVersion      = 26.2.7
+	vendorID           = 0x10005
+	deviceID           = 0x0000
+	deviceType         = PHYSICAL_DEVICE_TYPE_CPU
+	deviceName         = llvmpipe (LLVM 22.1.8, 256 bits)
+	driverID           = DRIVER_ID_MESA_LLVMPIPE
+	driverName         = llvmpipe
+	driverInfo         = Mesa 26.2.7 (LLVM 22.1.8)
+	conformanceVersion = 1.3.1.1
+	deviceUUID         = 6d657361-3236-2e32-2e37-000000000000
+	driverUUID         = 6c6c766d-7069-7065-5555-494400000000
+
+=== Relevant kernel modules ===
+amdgpu              24313856  0
+drm_buddy              12288  1 amdgpu
+drm_ttm_helper         20480  2 amdgpu
+drm_exec               16384  1 amdgpu
+drm_panel_backlight_quirks    12288  1 amdgpu
+drm_suballoc_helper    24576  1 amdgpu
+drm_display_helper    372736  1 amdgpu

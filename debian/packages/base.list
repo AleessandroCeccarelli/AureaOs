@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Essential terminal-only base. No desktop environment or GUI applications.
+systemd
+systemd-sysv
+systemd-timesyncd
+dbus
+sudo
+apt
+ca-certificates
+locales
+tzdata
+keyboard-configuration
+bash-completion
+less
+nano
+vim-tiny
+procps
+psmisc
+iproute2
+iputils-ping
+# Enable unprivileged ICMP datagram sockets without CAP_NET_RAW on ping.
+linux-sysctl-defaults
+pciutils
+usbutils
+lsof

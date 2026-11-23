@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="it" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eaf3ff">
+  <title>Aurea Desktop · Visione 01</title>
+  <link rel="stylesheet" href="../design-system/tokens/index.css">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: var(--aurea-text-primary);
+      --muted: var(--aurea-text-muted);
+      --hairline: var(--aurea-border-subtle);
+      --accent: var(--aurea-accent-strong);
+      --glass: rgba(224,239,255,.68);
+      --glass-edge: rgba(255,255,255,.78);
+      --desk-top: #f7fbff;
+      --desk-mid: #d9eaff;
+      --desk-low: #a9cff8;
+      --gold-glow: rgba(244,195,104,.36);
+      --blue-glow: rgba(92,160,244,.20);
+      --shadow: 0 24px 70px rgba(30,70,119,.18), 0 3px 12px rgba(40,78,121,.08);
+    }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --ink: #edf4ff; --muted:#a8bbd3; --hairline:rgba(255,255,255,.1);
+      --accent:#8ab8ff; --glass:rgba(17,35,57,.76); --glass-edge:rgba(255,255,255,.12);
+      --desk-top:#102036; --desk-mid:#153353; --desk-low:#0c1c30;
+      --gold-glow:rgba(202,156,83,.2); --blue-glow:rgba(56,129,221,.17);
+      --shadow:0 24px 70px rgba(0,0,0,.38),0 3px 12px rgba(0,0,0,.24);
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; overflow:hidden; color:var(--ink); font:14px/1.45 var(--aurea-font-ui); background:var(--desk-mid); }
+    button,input { font:inherit; color:inherit; }
+    button { cursor:pointer; }
+    .desktop {
+      position:relative; isolation:isolate; width:100vw; height:100vh; height:100svh; overflow:hidden;
+      background:linear-gradient(166deg,var(--desk-top) 0%,var(--desk-mid) 51%,var(--desk-low) 100%);
+      transition:background .35s ease;
+    }
+    .desktop::before,.desktop::after { content:""; position:absolute; z-index:-1; inset:0; pointer-events:none; }
+    .desktop::before {
+      background:
+        radial-gradient(ellipse 52% 48% at 51% 43%,var(--gold-glow),transparent 72%),
+        radial-gradient(ellipse 70% 58% at 50% 54%,var(--blue-glow),transparent 74%),
+        radial-gradient(ellipse 94% 45% at 52% 112%,rgba(255,255,255,.68),transparent 72%);
+    }
+    .desktop::after {
+      opacity:.38;
+      background:radial-gradient(120% 66% at 16% 120%,transparent 54%,rgba(255,255,255,.75) 54.2%,transparent 54.55%),
+                 radial-gradient(110% 60% at 92% 122%,transparent 56%,rgba(255,255,255,.42) 56.2%,transparent 56.5%);
+    }
+    .wallpaper-mark { position:absolute; left:50%; top:45%; width:min(340px,42vw); aspect-ratio:1; transform:translate(-50%,-50%); display:grid; place-items:center; pointer-events:none; }
+    .wallpaper-mark::before { content:""; position:absolute; inset:3%; border-radius:50%; background:radial-gradient(circle,rgba(255,250,232,.58),rgba(255,245,215,.17) 43%,transparent 72%); filter:blur(12px); }
+    .wallpaper-mark img { position:relative; width:75%; height:75%; object-fit:contain; opacity:.62; filter:drop-shadow(0 0 18px rgba(255,224,155,.52)) drop-shadow(0 0 60px rgba(255,244,215,.72)); }
+    [data-theme="dark"] .wallpaper-mark img { opacity:.48; }
+    .dock-wrap { position:fixed; left:50%; bottom:20px; z-index:30; width:max-content; max-width:calc(100vw - 24px); transform:translateX(-50%); transition:bottom .24s cubic-bezier(.2,.8,.2,1); }
+    .dock { min-height:67px; display:flex; align-items:center; gap:12px; padding:8px 11px; border:1px solid var(--glass-edge); border-radius:22px; background:var(--glass); box-shadow:0 13px 42px rgba(32,72,119,.17),inset 0 1px rgba(255,255,255,.54); backdrop-filter:blur(28px) saturate(1.24); -webkit-backdrop-filter:blur(28px) saturate(1.24); transition:border-radius .24s,background .24s,min-height .24s,padding .24s; }
+    .dock-wrap.edge { bottom:0; }
+    .dock-wrap.edge .dock { min-height:54px; padding-top:4px; padding-bottom:4px; border-bottom:0; border-radius:18px 18px 0 0; }
+    .dock-wrap.hidden-by-choice { opacity:0; pointer-events:none; transform:translate(-50%,calc(100% + 12px)); }
+    .dock-wrap.hidden-by-choice.revealed { opacity:1; pointer-events:auto; transform:translate(-50%,0); }
+    .dock-start { width:48px; height:48px; flex:0 0 auto; display:grid; place-items:center; border:0; border-radius:15px; background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(178,211,249,.68)); box-shadow:inset 0 1px 1px rgba(255,255,255,.9),0 4px 12px rgba(48,91,142,.13); transition:transform .16s,box-shadow .16s; }
+    .dock-start:hover,.dock-start[aria-expanded="true"] { transform:translateY(-3px); box-shadow:inset 0 1px 1px rgba(255,255,255,.95),0 7px 17px rgba(48,91,142,.2); }
+    .dock-start img { width:35px; height:35px; object-fit:contain; filter:drop-shadow(0 2px 4px rgba(202,142,53,.22)); }
+    .dock-separator { width:1px; height:34px; background:var(--aurea-border-strong); }
+    .workspace-switcher { display:flex; align-items:center; gap:5px; padding:0 3px; }
+    .workspace-dot { width:8px; height:8px; padding:0; border:1px solid color-mix(in srgb,var(--accent) 45%,white); border-radius:50%; background:transparent; transition:width .18s,border-radius .18s,background .18s; }
+    .workspace-dot[aria-current="true"] { width:21px; border-radius:99px; background:var(--accent); border-color:var(--accent); }
+    .running-apps { min-width:106px; display:flex; align-items:center; justify-content:center; gap:5px; }
+    .running-app { position:relative; min-width:58px; max-width:130px; height:47px; display:flex; align-items:center; gap:7px; padding:0 10px; border:1px solid transparent; border-radius:13px; background:transparent; color:var(--ink); font-size:10px; cursor:pointer; transition:background .16s,border .16s; }
+    .running-app:hover,.running-app[aria-current="true"] { border-color:rgba(255,255,255,.58); background:rgba(255,255,255,.34); }
+    .app-glyph { width:27px; height:27px; flex:0 0 auto; display:grid; place-items:center; border:1px solid rgba(255,255,255,.75); border-radius:9px; background:linear-gradient(145deg,#fafdff,#c8e0ff); color:#387fca; box-shadow:0 3px 9px rgba(40,90,146,.12); }
+    .app-glyph svg { width:15px; height:15px; }
+    .running-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .app-preview { position:absolute; left:50%; bottom:calc(100% + 13px); width:205px; padding:8px; border:1px solid var(--glass-edge); border-radius:14px; background:var(--glass); box-shadow:var(--shadow); backdrop-filter:blur(25px); transform:translate(-50%,5px); opacity:0; visibility:hidden; transition:.16s ease; pointer-events:none; }
+    .running-app:hover .app-preview,.running-app:focus-visible .app-preview { opacity:1; visibility:visible; transform:translate(-50%,0); }
+    .preview-screen { height:110px; display:grid; place-items:center; border-radius:8px; background:linear-gradient(145deg,#f7fbff,#c9e0fd); color:#6687ac; }
+    .preview-screen svg { width:34px; height:34px; opacity:.75; }
+    .preview-caption { display:flex; justify-content:space-between; padding:7px 2px 0; font-size:10px; }
+    .preview-caption span { color:var(--muted); }
+    .system-area { display:flex; align-items:center; gap:5px; }
+    .system-button { min-width:36px; height:42px; display:flex; align-items:center; justify-content:center; gap:7px; padding:0 7px; border:0; border-radius:11px; background:transparent; color:var(--aurea-text-secondary); transition:background .15s,color .15s; }
+    .system-button:hover,.system-button[aria-expanded="true"] { background:rgba(255,255,255,.4); color:var(--accent); }
+    .system-button svg { width:17px; height:17px; }
+    .clock-button { min-width:83px; display:block; text-align:right; line-height:1.25; }
+    .clock-button strong { display:block; font-size:11px; font-weight:700; }
+    .clock-button span { display:block; color:var(--muted); font-size:9px; }
+    .panel { position:fixed; z-index:42; bottom:103px; border:1px solid var(--glass-edge); border-radius:20px; background:var(--glass); box-shadow:var(--shadow); backdrop-filter:blur(30px) saturate(1.18); -webkit-backdrop-filter:blur(30px) saturate(1.18); }
+    .panel[hidden] { display:none; }
+    .launcher { left:max(18px,calc((100vw - 1440px)/2 + 26px)); width:min(380px,calc(100vw - 28px)); padding:16px; }
+    .panel-heading { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+    .panel-heading h2 { margin:0; font-size:13px; letter-spacing:-.02em; }
+    .quiet-button { width:28px; height:28px; display:grid; place-items:center; border:0; border-radius:9px; background:transparent; color:var(--muted); }
+    .quiet-button:hover { background:rgba(255,255,255,.42); }
+    .launcher-greeting { display:flex; align-items:center; gap:10px; margin:1px 0 14px; }
+    .avatar { width:34px; height:34px; display:grid; place-items:center; border-radius:50%; background:linear-gradient(145deg,#f7e7c6,#d9a756); color:#684314; font-weight:800; }
+    .launcher-greeting strong { display:block; font-size:11px; }
+    .launcher-greeting span { display:block; color:var(--muted); font-size:9px; }
+    .launcher-search { height:39px; display:flex; align-items:center; gap:9px; padding:0 11px; border:1px solid var(--hairline); border-radius:11px; background:rgba(255,255,255,.64); color:var(--muted); }
+    .launcher-search svg { width:16px; height:16px; }
+    .launcher-search input { width:100%; border:0; outline:0; background:transparent; color:var(--ink); font-size:11px; }
+    .menu-label { margin:15px 1px 8px; color:var(--muted); font-size:9px; font-weight:750; letter-spacing:.1em; text-transform:uppercase; }
+    .app-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; }
+    .menu-app { min-height:72px; display:grid; align-content:center; justify-items:center; gap:6px; padding:6px 3px; border:1px solid transparent; border-radius:11px; background:transparent; font-size:9px; }
+    .menu-app:hover,.menu-app:focus-visible { border-color:var(--hairline); background:rgba(255,255,255,.38); outline:0; }
+    .menu-app .app-glyph { width:32px; height:32px; border-radius:10px; }
+    .menu-app[hidden] { display:none; }
+    .global-results[hidden] { display:none; }
+    .global-result { width:100%; display:flex; align-items:center; gap:9px; padding:8px; border:0; border-radius:9px; background:transparent; text-align:left; }
+    .global-result:hover { background:rgba(255,255,255,.42); }
+    .global-result .tile-symbol { width:27px; height:27px; flex:0 0 auto; }
+    .global-result strong { display:block; font-size:9px; }
+    .global-result small { display:block; margin-top:2px; color:var(--muted); font-size:8px; }
+    .menu-shortcuts { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+    .menu-shortcut { display:flex; align-items:center; gap:8px; padding:8px; border:0; border-radius:9px; background:transparent; text-align:left; font-size:9px; }
+    .menu-shortcut:hover { background:rgba(255,255,255,.38); }
+    .menu-shortcut svg { width:15px; height:15px; color:var(--accent); }
+    .launcher-footer { display:flex; align-items:center; justify-content:space-between; margin:13px -2px -2px; padding-top:10px; border-top:1px solid var(--hairline); }
+    .user-actions,.power-actions { display:flex; gap:3px; }
+    .launcher-footer button { width:31px; height:30px; display:grid; place-items:center; border:0; border-radius:9px; background:transparent; color:var(--aurea-text-secondary); }
+    .launcher-footer button:hover { background:rgba(255,255,255,.48); color:var(--accent); }
+    .launcher-footer svg { width:16px; height:16px; }
+    .quick-panel { right:max(18px,calc((100vw - 1440px)/2 + 26px)); width:min(340px,calc(100vw - 28px)); padding:16px; }
+    .connectivity { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .control-tile { min-height:61px; display:flex; align-items:center; gap:10px; padding:9px; border:1px solid var(--hairline); border-radius:12px; background:rgba(255,255,255,.36); text-align:left; }
+    .control-tile[aria-pressed="true"] { border-color:rgba(77,141,247,.3); background:var(--aurea-accent-soft); }
+    .tile-symbol { width:30px; height:30px; display:grid; place-items:center; border-radius:9px; background:rgba(255,255,255,.63); color:var(--accent); }
+    .tile-symbol svg { width:16px; height:16px; }
+    .control-tile strong { display:block; font-size:9px; }
+    .control-tile small { display:block; margin-top:2px; color:var(--muted); font-size:8px; }
+    .range-control { display:grid; grid-template-columns:22px 1fr 35px; align-items:center; gap:9px; margin-top:14px; color:var(--muted); }
+    .range-control svg { width:16px; height:16px; }
+    .range-control input { width:100%; accent-color:var(--accent); }
+    .range-control output { text-align:right; font-size:9px; }
+    .dock-mode { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; margin-top:13px; }
+    .dock-mode button { padding:7px 3px; border:1px solid var(--hairline); border-radius:9px; background:rgba(255,255,255,.28); color:var(--muted); font-size:8px; }
+    .dock-mode button[aria-pressed="true"] { border-color:rgba(77,141,247,.35); background:var(--aurea-accent-soft); color:var(--ink); }
+    .notification-rail { position:fixed; z-index:39; top:50%; left:22px; width:min(285px,calc(100vw - 36px)); display:grid; gap:9px; transform:translateY(-50%); pointer-events:none; }
+    .notification-rail[hidden] { display:none; }
+    .notification-card { padding:12px 13px; border:1px solid rgba(255,255,255,.72); border-radius:15px; background:rgba(255,255,255,.57); box-shadow:0 12px 32px rgba(36,74,118,.12); backdrop-filter:blur(23px) saturate(1.15); pointer-events:auto; animation:appear .2s ease-out; }
+    [data-theme="dark"] .notification-card { background:rgba(19,37,58,.78); }
+    .notification-card header { display:flex; align-items:center; gap:7px; color:var(--muted); font-size:8px; }
+    .notification-card header svg { width:13px; height:13px; color:var(--accent); }
+    .notification-card header time { margin-left:auto; }
+    .notification-card strong { display:block; margin-top:7px; font-size:10px; }
+    .notification-card p { margin:3px 0 0; color:var(--aurea-text-secondary); font-size:9px; }
+    .app-window { position:absolute; z-index:8; top:50%; left:50%; width:min(680px,calc(100vw - 34px)); height:min(430px,calc(100vh - 190px)); display:flex; flex-direction:column; overflow:hidden; border:1px solid rgba(255,255,255,.78); border-radius:17px; background:var(--aurea-surface-window); box-shadow:var(--shadow); transform:translate(-50%,-54%); animation:appear .18s ease-out; }
+    .app-window[hidden] { display:none; }
+    .window-titlebar { height:48px; flex:0 0 auto; display:flex; align-items:center; gap:9px; padding:0 14px; border-bottom:1px solid var(--hairline); background:rgba(255,255,255,.36); }
+    .window-titlebar strong { flex:1; font-size:11px; }
+    .window-titlebar button { width:25px; height:25px; display:grid; place-items:center; border:0; border-radius:8px; background:transparent; color:var(--muted); }
+    .window-titlebar button:hover { background:rgba(200,80,73,.14); color:#ad443f; }
+    .window-content { flex:1; display:grid; place-items:center; padding:24px; text-align:center; }
+    .window-content h2 { margin:13px 0 4px; font-size:20px; letter-spacing:-.04em; }
+    .window-content p { max-width:330px; margin:0; color:var(--muted); font-size:11px; }
+    .window-content .app-glyph { width:58px; height:58px; border-radius:17px; }
+    .window-content .app-glyph svg { width:27px; height:27px; }
+    .desktop-switcher { position:fixed; z-index:45; inset:0; display:grid; place-items:center; background:rgba(38,71,108,.14); backdrop-filter:blur(8px); }
+    .desktop-switcher[hidden] { display:none; }
+    .switcher-panel { width:min(660px,calc(100vw - 28px)); padding:18px; border:1px solid var(--glass-edge); border-radius:20px; background:var(--glass); box-shadow:var(--shadow); backdrop-filter:blur(26px); }
+    .switcher-panel h2 { margin:0 0 13px; font-size:13px; }
+    .workspace-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }
+    .workspace-card { min-height:112px; display:grid; align-content:space-between; padding:11px; border:1px solid var(--hairline); border-radius:12px; background:rgba(255,255,255,.3); text-align:left; font-size:9px; }
+    .workspace-card[aria-current="true"] { border:2px solid var(--accent); padding:10px; background:var(--aurea-accent-soft); }
+    .workspace-mini { height:57px; display:grid; place-items:center; border:1px solid rgba(255,255,255,.7); border-radius:7px; background:linear-gradient(145deg,#fafdff,#c0dcff); color:#748fac; }
+    .workspace-mini svg { width:21px; height:21px; }
+    .desktop-switcher p { margin:11px 0 0; color:var(--muted); font-size:9px; }
+    .toast { position:fixed; z-index:55; left:50%; bottom:100px; padding:9px 13px; border:1px solid var(--glass-edge); border-radius:10px; background:var(--aurea-surface-window); box-shadow:var(--aurea-shadow-soft); font-size:10px; opacity:0; transform:translate(-50%,8px); transition:.2s; pointer-events:none; }
+    .toast.show { opacity:1; transform:translate(-50%,0); }
+    svg { width:17px; height:17px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    @keyframes appear { from { opacity:0; transform:translateY(8px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+    @media (max-width:760px) {
+      .wallpaper-mark { top:41%; width:min(280px,64vw); }
+      .dock-wrap { bottom:10px; }
+      .dock-wrap.edge { bottom:0; }
+      .dock { min-height:59px; gap:7px; padding:5px 7px; border-radius:18px; }
+      .dock-start { width:43px; height:43px; }
+      .dock-start img { width:32px; height:32px; }
+      .workspace-switcher { gap:4px; }
+      .running-apps:empty::after { content:""; }
+      .running-app { min-width:40px; width:42px; padding:0; justify-content:center; }
+      .running-name { display:none; }
+      .system-button { min-width:29px; padding:0 4px; }
+      .system-button.network-status { display:none; }
+      .clock-button { min-width:57px; }
+      .clock-button span { font-size:8px; }
+      .panel { bottom:79px; }
+      .notification-rail { top:auto; bottom:83px; left:10px; transform:none; }
+      .workspace-cards { grid-template-columns:repeat(2,1fr); }
+      .workspace-card { min-height:86px; }
+      .workspace-mini { height:39px; }
+      .app-window { height:min(390px,calc(100svh - 150px)); transform:translate(-50%,-50%); }
+    }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
+  </style>
+</head>
+<body>
+  <svg aria-hidden="true" width="0" height="0" style="position:absolute">
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v8a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/><path d="M3 10h18"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19 13 2 1-2 4-2-1-2 1v2h-5v-2l-2-1-2 1-2-4 2-1v-2l-2-1 2-4 2 1 2-1V4h5v2l2 1 2-1 2 4-2 1z"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.5"/><path d="m4 17 5-5 3 3 3-4 5 6"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4M17 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 17h.01M12 17h.01"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13M9 18a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Zm12-2a3 3 0 1 1-3-3c1.7 0 3 1.3 3 3Z"/></symbol>
+    <symbol id="i-browser" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M7 6.5h.01M10 6.5h.01"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 9 3 3-3 3m6 0h4"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3 9a14 14 0 0 1 18 0M6.5 12.5a9 9 0 0 1 11 0M10 16a4 4 0 0 1 4 0M12 20h.01"/></symbol>
+    <symbol id="i-ethernet" viewBox="0 0 24 24"><path d="M7 3v5M12 3v5M17 3v5M5 8h14v6l-3 3h-3v4h-2v-4H8l-3-3z"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4zM16 9a5 5 0 0 1 0 6M18.5 6.5a9 9 0 0 1 0 11"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-plane" viewBox="0 0 24 24"><path d="m3 12 18-8-7 18-3-7-8-3Z"/><path d="m11 15 4-5"/></symbol>
+    <symbol id="i-record" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10M6.2 5.8a8 8 0 1 0 11.6 0"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.5 9a7 7 0 0 1 12-2L20 12M4 12l2.5 6a7 7 0 0 0 12-2"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 1 1 8 0v3"/></symbol>
+    <symbol id="i-desktop" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+  </svg>
+
+  <main class="desktop" id="desktop" aria-label="Desktop AureaOS">
+    <div class="wallpaper-mark" aria-hidden="true"><img src="../../assets/AureaOS-Icon.png" alt=""></div>
+
+    <section class="notification-rail" id="notification-rail" hidden aria-label="Notifiche">
+      <article class="notification-card"><header><svg><use href="#i-calendar"/></svg> Calendario <time>10 min</time></header><strong>La tua giornata è pronta</strong><p>La rassegna del progetto inizia alle 10:30.</p></article>
+      <article class="notification-card"><header><svg><use href="#i-folder"/></svg> Fides <time>1 ora</time></header><strong>File sincronizzati</strong><p>I tuoi documenti sono aggiornati.</p></article>
+    </section>
+
+    <article class="app-window" id="app-window" hidden>
+      <header class="window-titlebar"><span class="app-glyph"><svg><use id="window-icon" href="#i-folder"/></svg></span><strong id="window-title">Fides</strong><button id="close-window" aria-label="Chiudi finestra"><svg><use href="#i-close"/></svg></button></header>
+      <div class="window-content"><span class="app-glyph"><svg><use id="window-icon-large" href="#i-folder"/></svg></span><h2 id="window-heading">Benvenuto in Fides</h2><p>Questa finestra dimostrativa rappresenta un'app aperta. Il desktop AureaOS reale la mostrerà qui.</p></div>
+    </article>
+
+    <div class="dock-wrap" id="dock-wrap">
+      <nav class="dock" aria-label="Dock AureaOS">
+        <button class="dock-start" id="launcher-button" aria-label="Apri menu AureaOS" aria-expanded="false"><img src="../../assets/AureaOS-Icon.png" alt=""></button>
+        <span class="dock-separator"></span>
+        <div class="workspace-switcher" aria-label="Quattro desktop virtuali">
+          <button class="workspace-dot" data-workspace="0" aria-label="Desktop 1" aria-current="true"></button>
+          <button class="workspace-dot" data-workspace="1" aria-label="Desktop 2" aria-current="false"></button>
+          <button class="workspace-dot" data-workspace="2" aria-label="Desktop 3" aria-current="false"></button>
+          <button class="workspace-dot" data-workspace="3" aria-label="Desktop 4" aria-current="false"></button>
+        </div>
+        <span class="dock-separator"></span>
+        <div class="running-apps" id="running-apps" aria-label="Applicazioni aperte"></div>
+        <span class="dock-separator"></span>
+        <div class="system-area">
+          <button class="system-button network-status" id="network-status" aria-label="Connessione Wi-Fi"><svg><use id="network-icon" href="#i-wifi"/></svg></button>
+          <button class="system-button" id="notifications-button" aria-label="Mostra notifiche"><svg><use href="#i-bell"/></svg></button>
+          <button class="system-button" id="quick-settings-button" aria-label="Apri controlli rapidi" aria-expanded="false"><svg><use href="#i-volume"/></svg><svg><use href="#i-grid"/></svg></button>
+          <button class="system-button clock-button" id="clock-button" aria-label="Apri controlli rapidi"><strong id="clock-time">--:--</strong><span id="clock-date">Oggi</span></button>
+        </div>
+      </nav>
+    </div>
+
+    <section class="panel launcher" id="launcher-panel" hidden aria-label="Menu AureaOS">
+      <header class="panel-heading"><h2>Il tuo desktop</h2><button class="quiet-button" data-close-panel aria-label="Chiudi menu"><svg><use href="#i-close"/></svg></button></header>
+      <div class="launcher-greeting"><span class="avatar">A</span><span><strong>Buongiorno, Alessandro</strong><span>Pronto per oggi</span></span></div>
+      <label class="launcher-search"><svg><use href="#i-search"/></svg><input id="app-search" type="search" placeholder="Cerca app, file e impostazioni"><kbd>Super</kbd></label>
+      <div class="menu-label">Applicazioni</div>
+      <div class="app-grid" id="app-grid">
+        <button class="menu-app" data-app="Fides" data-symbol="#i-folder" data-search="fides file documenti"><span class="app-glyph"><svg><use href="#i-folder"/></svg></span><span>Fides</span></button>
+        <button class="menu-app" data-app="Visio" data-symbol="#i-image" data-search="visio foto immagini"><span class="app-glyph"><svg><use href="#i-image"/></svg></span><span>Visio</span></button>
+        <button class="menu-app" data-app="Quaero" data-symbol="#i-search" data-search="quaero cerca ricerca"><span class="app-glyph"><svg><use href="#i-search"/></svg></span><span>Quaero</span></button>
+        <button class="menu-app" data-app="Aurea Store" data-symbol="#i-grid" data-search="store applicazioni"><span class="app-glyph"><svg><use href="#i-grid"/></svg></span><span>Aurea Store</span></button>
+        <button class="menu-app" data-app="Impostazioni" data-symbol="#i-settings" data-search="impostazioni sistema"><span class="app-glyph"><svg><use href="#i-settings"/></svg></span><span>Impostazioni</span></button>
+        <button class="menu-app" data-app="Musica" data-symbol="#i-music" data-search="musica audio"><span class="app-glyph"><svg><use href="#i-music"/></svg></span><span>Musica</span></button>
+        <button class="menu-app" data-app="Browser" data-symbol="#i-browser" data-search="browser web internet"><span class="app-glyph"><svg><use href="#i-browser"/></svg></span><span>Browser</span></button>
+        <button class="menu-app" data-app="Terminale" data-symbol="#i-terminal" data-search="terminale console"><span class="app-glyph"><svg><use href="#i-terminal"/></svg></span><span>Terminale</span></button>
+      </div>
+      <div class="global-results" id="global-results" hidden><div class="menu-label">Altri risultati</div><div id="global-result-list"></div></div>
+      <div class="menu-label">Scorciatoie</div>
+      <div class="menu-shortcuts"><button class="menu-shortcut" data-action="show-desktop"><svg><use href="#i-desktop"/></svg>Mostra desktop</button><button class="menu-shortcut" data-action="overview"><svg><use href="#i-grid"/></svg>Panoramica desktop</button></div>
+      <footer class="launcher-footer">
+        <div class="user-actions"><button data-action="switch-user" aria-label="Cambia utente"><svg><use href="#i-user"/></svg></button><button data-action="lock" aria-label="Blocca sessione"><svg><use href="#i-lock"/></svg></button></div>
+        <div class="power-actions"><button data-action="logout" aria-label="Esci"><svg><use href="#i-user"/></svg></button><button data-action="restart" aria-label="Riavvia"><svg><use href="#i-restart"/></svg></button><button data-action="shutdown" aria-label="Spegni"><svg><use href="#i-power"/></svg></button></div>
+      </footer>
+    </section>
+
+    <section class="panel quick-panel" id="quick-panel" hidden aria-label="Controlli rapidi">
+      <header class="panel-heading"><h2>Controlli rapidi</h2><button class="quiet-button" data-close-panel aria-label="Chiudi controlli"><svg><use href="#i-close"/></svg></button></header>
+      <div class="connectivity">
+        <button class="control-tile" aria-pressed="true" data-toggle><span class="tile-symbol"><svg><use href="#i-wifi"/></svg></span><span><strong>Wi-Fi</strong><small>Connesso</small></span></button>
+        <button class="control-tile" aria-pressed="false" data-toggle><span class="tile-symbol"><svg><use href="#i-ethernet"/></svg></span><span><strong>Ethernet</strong><small>Disponibile</small></span></button>
+        <button class="control-tile" aria-pressed="false" data-toggle><span class="tile-symbol"><svg><use href="#i-plane"/></svg></span><span><strong>Modalità aereo</strong><small>Disattivata</small></span></button>
+        <button class="control-tile" aria-pressed="false" data-toggle id="record-toggle"><span class="tile-symbol"><svg><use href="#i-record"/></svg></span><span><strong>Registra schermo</strong><small>Avvia registrazione</small></span></button>
+      </div>
+      <label class="range-control"><svg><use href="#i-sun"/></svg><input type="range" min="10" max="100" value="72" aria-label="Luminosità"><output>72%</output></label>
+      <label class="range-control"><svg><use href="#i-volume"/></svg><input type="range" min="0" max="100" value="48" aria-label="Volume"><output>48%</output></label>
+      <div class="menu-label">Comportamento dock</div>
+      <div class="dock-mode"><button data-dock-mode="smart" aria-pressed="true">Intelligente</button><button data-dock-mode="visible" aria-pressed="false">Sempre visibile</button><button data-dock-mode="hidden" aria-pressed="false">Nascondi</button></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><span style="font-size:9px;color:var(--muted)">Aspetto</span><button id="theme-toggle" class="quiet-button" aria-label="Cambia tema"><svg><use href="#i-sun"/></svg></button></div>
+    </section>
+
+    <section class="desktop-switcher" id="desktop-switcher" hidden aria-label="Panoramica desktop">
+      <div class="switcher-panel"><h2>I tuoi desktop</h2><div class="workspace-cards">
+        <button class="workspace-card" data-workspace-card="0" aria-current="true"><span class="workspace-mini"><svg><use href="#i-desktop"/></svg></span><strong>Desktop 1</strong></button>
+        <button class="workspace-card" data-workspace-card="1" aria-current="false"><span class="workspace-mini"><svg><use href="#i-desktop"/></svg></span><strong>Desktop 2</strong></button>
+        <button class="workspace-card" data-workspace-card="2" aria-current="false"><span class="workspace-mini"><svg><use href="#i-desktop"/></svg></span><strong>Desktop 3</strong></button>
+        <button class="workspace-card" data-workspace-card="3" aria-current="false"><span class="workspace-mini"><svg><use href="#i-desktop"/></svg></span><strong>Desktop 4</strong></button>
+      </div><p>Scorri con tre dita sul touchpad oppure usa Super + Ctrl + ← / →. Premi Escape per chiudere.</p></div>
+    </section>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </main>
+
+  <script>
+    const $ = (selector, root = document) => root.querySelector(selector);
+    const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+    const dockWrap = $('#dock-wrap'), launcherPanel = $('#launcher-panel'), quickPanel = $('#quick-panel');
+    const launcherButton = $('#launcher-button'), switcher = $('#desktop-switcher'), appWindow = $('#app-window');
+    const toast = $('#toast');
+    const apps = new Map();
+    const appWorkspaces = new Map();
+    let activeApp = null, currentWorkspace = 0, dockMode = 'smart', toastTimer, touchStartX = null;
+
+    function notify(message) { toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 1900); }
+    function closePanels() { launcherPanel.hidden = true; quickPanel.hidden = true; launcherButton.setAttribute('aria-expanded','false'); $('#quick-settings-button').setAttribute('aria-expanded','false'); }
+    function updateDock() {
+      const edge = apps.size > 0;
+      dockWrap.classList.toggle('edge', edge);
+      if (dockMode === 'hidden') dockWrap.classList.add('hidden-by-choice');
+      else dockWrap.classList.remove('hidden-by-choice','revealed');
+    }
+    function updateRunningApps() {
+      const host = $('#running-apps'); host.replaceChildren();
+      for (const [name, symbol] of apps) {
+        const button = document.createElement('button'); button.className='running-app'; button.setAttribute('aria-current',String(name === activeApp)); button.setAttribute('aria-label',`Torna a ${name}`);
+        const glyph = document.createElement('span'); glyph.className='app-glyph'; glyph.innerHTML=`<svg><use href="${symbol}"></use></svg>`;
+        const label = document.createElement('span'); label.className='running-name'; label.textContent=name;
+        const preview = document.createElement('span'); preview.className='app-preview'; preview.innerHTML='<span class="preview-screen"><svg><use href="#i-desktop"></use></svg></span>';
+        const caption = document.createElement('span'); caption.className='preview-caption'; caption.innerHTML=`<strong></strong><span>Anteprima finestra</span>`; caption.querySelector('strong').textContent=name; preview.append(caption);
+        button.append(glyph,label,preview); button.addEventListener('click',()=>openApp(name,symbol)); host.append(button);
+      }
+      updateDock();
+    }
+    function openApp(name, symbol) {
+      if(apps.has(name)) setWorkspace(appWorkspaces.get(name));
+      else { apps.set(name,symbol); appWorkspaces.set(name,currentWorkspace); }
+      closePanels(); switcher.hidden=true;
+      activeApp=name; $('#window-icon').setAttribute('href',symbol); $('#window-icon-large').setAttribute('href',symbol);
+      $('#window-title').textContent=name; $('#window-heading').textContent=`Benvenuto in ${name}`;
+      appWindow.hidden=false; updateRunningApps();
+    }
+    function closeApp() { appWindow.hidden=true; apps.delete($('#window-title').textContent); appWorkspaces.delete($('#window-title').textContent); activeApp=null; updateRunningApps(); }
+    function setWorkspace(index) {
+      currentWorkspace=(index+4)%4;
+      $$('[data-workspace]').forEach(button=>button.setAttribute('aria-current',String(Number(button.dataset.workspace)===currentWorkspace)));
+      $$('[data-workspace-card]').forEach(button=>button.setAttribute('aria-current',String(Number(button.dataset.workspaceCard)===currentWorkspace)));
+      appWindow.hidden=!activeApp||appWorkspaces.get(activeApp)!==currentWorkspace;
+      notify(`Desktop ${currentWorkspace+1} di 4`);
+    }
+    function cycleWorkspace(direction) { setWorkspace(currentWorkspace+direction); }
+
+    launcherButton.addEventListener('click',()=>{
+      const opening=launcherPanel.hidden; closePanels(); launcherPanel.hidden=!opening;
+      launcherButton.setAttribute('aria-expanded',String(opening)); if(opening) $('#app-search').focus();
+    });
+    $('#quick-settings-button').addEventListener('click',()=>{const opening=quickPanel.hidden;closePanels();quickPanel.hidden=!opening;$('#quick-settings-button').setAttribute('aria-expanded',String(opening));});
+    $('#clock-button').addEventListener('click',()=>$('#quick-settings-button').click());
+    $('#network-status').addEventListener('click',()=>$('#quick-settings-button').click());
+    $('#notifications-button').addEventListener('click',()=>{const rail=$('#notification-rail');rail.hidden=!rail.hidden;});
+    $('#close-window').addEventListener('click',closeApp);
+    $$('[data-close-panel]').forEach(button=>button.addEventListener('click',closePanels));
+    $$('.menu-app').forEach(button=>button.addEventListener('click',()=>openApp(button.dataset.app,button.dataset.symbol)));
+    $$('[data-workspace]').forEach(button=>button.addEventListener('click',()=>setWorkspace(Number(button.dataset.workspace))));
+    $$('[data-workspace-card]').forEach(button=>button.addEventListener('click',()=>{setWorkspace(Number(button.dataset.workspaceCard));switcher.hidden=true;}));
+    const globalEntries=[
+      {terms:['documenti','file','cartella','fides'],title:'Documenti',detail:'File e cartelle · Fides',symbol:'#i-folder',app:'Fides'},
+      {terms:['wifi','wi-fi','ethernet','rete','connessione'],title:'Rete e connessioni',detail:'Impostazioni di sistema',symbol:'#i-wifi',app:'Impostazioni'},
+      {terms:['schermo','luminosita','luminosità','display'],title:'Schermo e luminosità',detail:'Impostazioni di sistema',symbol:'#i-sun',app:'Impostazioni'},
+      {terms:['riavvia','riavvio'],title:'Riavvia il sistema',detail:'Azione di sistema',symbol:'#i-restart',action:'restart'},
+      {terms:['spegni','spegnimento'],title:'Spegni il sistema',detail:'Azione di sistema',symbol:'#i-power',action:'shutdown'}
+    ];
+    $('#app-search').addEventListener('input',event=>{
+      const query=event.target.value.trim().toLocaleLowerCase('it');
+      $$('.menu-app').forEach(button=>button.hidden=!!query&&!button.dataset.search.includes(query));
+      const matches=query?globalEntries.filter(entry=>entry.terms.some(term=>term.includes(query)||query.includes(term))):[];
+      const resultPanel=$('#global-results'),list=$('#global-result-list');
+      resultPanel.hidden=matches.length===0;list.replaceChildren();
+      for(const entry of matches){
+        const button=document.createElement('button');button.className='global-result';button.innerHTML=`<span class="tile-symbol"><svg><use href="${entry.symbol}"></use></svg></span><span><strong></strong><small></small></span>`;
+        button.querySelector('strong').textContent=entry.title;button.querySelector('small').textContent=entry.detail;
+        button.addEventListener('click',()=>{if(entry.app)openApp(entry.app,entry.app==='Fides'?'#i-folder':'#i-settings');else notify(entry.action==='restart'?'Riavvio del sistema':'Spegnimento del sistema');});list.append(button);
+      }
+    });
+    $$('[data-toggle]').forEach(button=>button.addEventListener('click',()=>{
+      const on=button.getAttribute('aria-pressed')!=='true';button.setAttribute('aria-pressed',String(on));
+      const label=button.querySelector('strong')?.textContent;
+      if(button.id==='record-toggle')button.querySelector('small').textContent=on?'Registrazione in corso':'Avvia registrazione';
+      if(label==='Wi-Fi'&&on)$('#network-icon').setAttribute('href','#i-wifi');
+      if(label==='Ethernet'&&on)$('#network-icon').setAttribute('href','#i-ethernet');
+    }));
+    $$('.range-control input').forEach(input=>input.addEventListener('input',()=>input.nextElementSibling.textContent=`${input.value}%`));
+    $$('[data-dock-mode]').forEach(button=>button.addEventListener('click',()=>{
+      dockMode=button.dataset.dockMode;try{localStorage.setItem('aurea-dock-mode',dockMode);}catch(_){} $$('[data-dock-mode]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));updateDock();
+    }));
+    $('#theme-toggle').addEventListener('click',()=>{document.documentElement.dataset.theme=document.documentElement.dataset.theme==='dark'?'light':'dark';});
+    $$('[data-action]').forEach(button=>button.addEventListener('click',()=>{
+      const actions={ 'show-desktop':()=>{appWindow.hidden=true;closePanels();notify('Desktop mostrato');}, overview:()=>{closePanels();switcher.hidden=false;}, 'switch-user':()=>notify('Cambio utente'), lock:()=>notify('Sessione bloccata'), logout:()=>notify('Uscita dalla sessione'), restart:()=>notify('Riavvio del sistema'), shutdown:()=>notify('Spegnimento del sistema') };
+      actions[button.dataset.action]?.();
+    }));
+    let superKeyAlone=true;
+    document.addEventListener('keydown',event=>{
+      const superKey=event.metaKey;
+      if(event.key==='Meta')superKeyAlone=true;else if(superKey)superKeyAlone=false;
+      if(event.key==='Escape'){closePanels();switcher.hidden=true;}
+      if(superKey&&event.key.toLowerCase()==='e'){event.preventDefault();openApp('Fides','#i-folder');}
+      if(superKey&&event.key.toLowerCase()==='l'){event.preventDefault();notify('Sessione bloccata');}
+      if(superKey&&event.key.toLowerCase()==='d'){event.preventDefault();appWindow.hidden=true;closePanels();notify('Desktop mostrato');}
+      if(superKey&&event.key==='Tab'){event.preventDefault();closePanels();switcher.hidden=false;}
+      if(event.altKey&&event.key==='Tab'&&apps.size>0){event.preventDefault();const names=[...apps.keys()];const current=names.indexOf(activeApp);const next=names[(current+(event.shiftKey?names.length-1:1))%names.length];openApp(next,apps.get(next));}
+      if(event.altKey&&event.key==='F4'&&!appWindow.hidden){event.preventDefault();closeApp();}
+      if(superKey&&event.ctrlKey&&event.key==='ArrowRight'){event.preventDefault();cycleWorkspace(1);}
+      if(superKey&&event.ctrlKey&&event.key==='ArrowLeft'){event.preventDefault();cycleWorkspace(-1);}
+      if(superKey&&event.key.startsWith('Arrow'))notify('Aggancio finestra · concept');
+    });
+    document.addEventListener('keyup',event=>{if(event.key==='Meta'&&superKeyAlone)launcherButton.click();if(event.key==='Meta')superKeyAlone=true;});
+    document.addEventListener('click',event=>{if(event.target.closest('.panel')||event.target.closest('.dock'))return;if(!launcherPanel.hidden||!quickPanel.hidden)closePanels();});
+    document.addEventListener('mousemove',event=>{if(dockMode==='hidden'&&event.clientY>innerHeight-9)dockWrap.classList.add('revealed');else if(dockMode==='hidden'&&!dockWrap.matches(':hover'))dockWrap.classList.remove('revealed');});
+    dockWrap.addEventListener('focusin',()=>{if(dockMode==='hidden')dockWrap.classList.add('revealed');});
+    dockWrap.addEventListener('focusout',event=>{if(dockMode==='hidden'&&!dockWrap.contains(event.relatedTarget))dockWrap.classList.remove('revealed');});
+    document.addEventListener('touchstart',event=>{touchStartX=event.changedTouches[0].screenX;},{passive:true});
+    document.addEventListener('touchend',event=>{if(touchStartX===null)return;const delta=event.changedTouches[0].screenX-touchStartX;if(Math.abs(delta)>75)cycleWorkspace(delta<0?1:-1);touchStartX=null;},{passive:true});
+    try{dockMode=localStorage.getItem('aurea-dock-mode')||'smart';}catch(_){} $$('[data-dock-mode]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.dockMode===dockMode)));updateDock();
+    function updateClock(){const now=new Date();$('#clock-time').textContent=new Intl.DateTimeFormat('it-IT',{hour:'2-digit',minute:'2-digit'}).format(now);$('#clock-date').textContent=new Intl.DateTimeFormat('it-IT',{weekday:'short',day:'numeric',month:'short'}).format(now);}
+    updateClock();setInterval(updateClock,30000);
+  </script>
+</body>
+</html>

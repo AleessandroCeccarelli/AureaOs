@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# AureaOS — Color Management
+
+[package]
+name = "aurea-color"
+version = "0.1.0"
+edition = "2024"
+description = "ICC profile inspection and color-management services for AureaOS"
+license = "GPL-3.0-or-later"
+
+[dependencies]
+aurea-desktop-api = { path = "../aurea-desktop-api" }
+lcms2 = "6.3"
+sha2 = "0.10"

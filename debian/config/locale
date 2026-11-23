@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# AureaOS default system language. Keyboard layout is configured separately.
+LANG=en_US.UTF-8
