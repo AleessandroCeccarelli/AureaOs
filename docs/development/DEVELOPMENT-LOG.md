@@ -442,3 +442,18 @@ The media backend is intentionally undecided. GStreamer and FFmpeg are candidate
 Implementation order remains: finish the static JPEG Vulkan path first; add PNG/BMP and Tile/Span; then define timestamped animation frames and deterministic playback state; finally integrate a media backend and power/session policy.
 
 This is a product decision and documented plan, not an implemented feature. No Cargo build or tests were run.
+
+
+## 23 November 2026 — Animated wallpaper playback contracts
+
+The first backend-independent Rust contracts for animated wallpaper have been added and integrated into the existing wallpaper manager.
+
+- `wallpaper/animation.rs` defines a bounded playback policy, desktop playback conditions, explicit pause reasons, timestamped RGBA frames, provider errors, and the `WallpaperFrameProvider` trait.
+- `WallpaperManager` owns the playback policy and includes it in immutable wallpaper snapshots.
+- The default policy caps animation at 30 fps, keeps audio muted, and pauses for obscured wallpapers, disabled outputs, locked sessions, system suspend, and power-saving mode. Reduced-motion forces a paused decision. The configurable frame-rate range is 1–60 fps.
+
+This is a real API and policy integration, not a working GIF/video decoder. No animated frames are decoded or rendered yet. Provider implementations must run on a dedicated worker and must never block the Vulkan render thread.
+
+Next: Fedora validation, finish the static JPEG decode/upload/cache/draw path, then add GIF/video providers and a bounded worker-to-renderer frame queue.
+
+No Cargo formatting, build, tests, or hardware validation were performed.
