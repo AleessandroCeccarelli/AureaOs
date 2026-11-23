@@ -378,3 +378,28 @@ Unit tests were added for themes, background validation, and DesktopManager beha
 Wallpaper decoding, Vulkan texture upload, scaling/cropping, and persistence are not implemented yet. Pointer, Dock, and Launcher work remains deferred.
 
 Main commits: `542f918`, `2826f2d`, `e0fb92e`.
+
+
+## 23 November 2026 — First wallpaper asset-management layer
+
+Implementation has begun for the selected `aureaos-midnight-flow.jpg` asset.
+
+### Code added
+
+Created `components/aurea-compositor/src/desktop/wallpaper/` with small, single-purpose modules:
+- `asset.rs`: embeds the selected JPEG in the compositor binary and validates its JPEG frame header/dimensions without decoding pixels.
+- `manager.rs`: owns the selected wallpaper, supports a safe no-wallpaper fallback, and produces immutable snapshots.
+- `snapshot.rs`: carries the selected asset into a render-frame snapshot.
+- `mod.rs`: exports the wallpaper subsystem.
+
+Integrated the manager into `DesktopManager` and `DesktopSnapshot`; `RenderScene` now carries the selected asset reference supplied by the compositor.
+
+### Explicit implementation boundary
+
+The compressed JPEG bytes are embedded and available to the render scene, but the image is **not yet displayed**. JPEG-to-RGBA decoding, Vulkan texture upload, wallpaper draw pass, output fitting/cropping, and GPU cache remain outstanding. The Vulkan renderer still paints the solid fallback background.
+
+No decoder dependency was added because the compositor's current Cargo dependency/lock state does not include one and the lockfile must be regenerated and checked on Fedora rather than edited speculatively.
+
+### Verification
+
+No Cargo formatting, build, tests, ISO work, or hardware validation were run. Fedora validation remains pending.
