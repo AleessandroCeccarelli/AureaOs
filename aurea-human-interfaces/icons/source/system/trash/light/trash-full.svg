@@ -38,6 +38,7 @@
   <path d="M309 111l23 14 22-8" fill="none" stroke="#6F8DA9" stroke-width="3"/>
   <path d="M350 151l19-34 24-2 17 24-20 28-25 1z" fill="#E4C78B" stroke="#B9A16F" stroke-width="2"/>
  </g>
+<g clip-path="url(#cup)">
  <g filter="url(#soft)" opacity=".32">
   <ellipse cx="205" cy="277" rx="35" ry="49" fill="#E6C9A4"/>
   <ellipse cx="296" cy="305" rx="48" ry="56" fill="#9DB8C9"/>
