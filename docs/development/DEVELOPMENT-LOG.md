@@ -457,3 +457,25 @@ This is a real API and policy integration, not a working GIF/video decoder. No a
 Next: Fedora validation, finish the static JPEG decode/upload/cache/draw path, then add GIF/video providers and a bounded worker-to-renderer frame queue.
 
 No Cargo formatting, build, tests, or hardware validation were performed.
+
+
+## 23 November 2026 — Wallpaper output clipping geometry
+
+### Changes committed
+
+- Extended `WallpaperPixelRect` with an intersection operation that returns the visible portion of a rectangle inside an output clip rectangle.
+- The operation uses saturating edge calculations and returns `None` when rectangles do not overlap.
+- Added focused unit tests for clipping a centered 2560×1440 wallpaper to a 1920×1080 output and for disjoint rectangles.
+- Kept the change inside the existing wallpaper layout module. No renderer, Vulkan resource, decoder, dependency, or Cargo.lock changes were made.
+
+Commit: `99714264f53e280c1ad820cac92de9106f5a9172`.
+
+### Verification status
+
+- Source and tests were committed to `main`.
+- Tests have **not** been executed yet. No build or formatting result is claimed.
+- The new helper prepares output-local clipping geometry for the future Vulkan wallpaper draw path; it does not itself render or display the wallpaper.
+
+### Next step
+
+Continue a coherent block of desktop work before the next CI run, as agreed. On the next validation pass, run Rust formatting, workspace checks, and tests together. Fedora hardware validation remains necessary for actual monitor clipping and Vulkan presentation.
