@@ -90,7 +90,7 @@ pub(super) fn render_frame(
     let background_color = scene.desktop().surface().background_color();
     let wallpaper = scene.desktop().wallpaper();
     surface_cache
-        .prepare_wallpaper_decode(wallpaper.map(|wallpaper| wallpaper.asset()))
+        .prepare_wallpaper_decode(wallpaper.map(|wallpaper| wallpaper.asset().clone()))
         .map_err(|error| match error {
             super::wallpaper_texture_cache::VulkanWallpaperTextureCacheError::Command(
                 smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
