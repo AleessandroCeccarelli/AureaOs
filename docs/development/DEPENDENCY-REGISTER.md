@@ -273,7 +273,7 @@ This register is the shared source of truth for dependency decisions. When imple
 - **Runtime footprint:** install only the required decoder plugins. Do not install libheif-plugins-all, encoder plugins or FFmpeg plugins for this wallpaper feature.
 - **Security:** parse untrusted files off the render thread; enforce image dimension, pixel, output-byte and container item limits; inspect upstream advisories and supported ABI.
 - **Evidence:** Debian Trixie package metadata and descriptions for libheif1, libheif-plugin-libde265; https://packages.debian.org/trixie/libheif1 and https://packages.debian.org/trixie/libheif-plugin-libde265
-- **Decision:** Candidate; no dependency or package added.
+- **Decision:** Optional implementation added behind `aurea-media/heif`; production/runtime package adoption remains gated on CI, security review, fixture coverage and package/license verification.
 
 ### JPEG 2000
 
