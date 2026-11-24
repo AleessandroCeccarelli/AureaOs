@@ -19,6 +19,8 @@ fn main() {
     for shader in [
         "surface_texture.vert",
         "surface_texture.frag",
+        "wallpaper_texture.vert",
+        "wallpaper_texture.frag",
         "display_color.vert",
         "display_color.frag",
     ] {
@@ -52,6 +54,26 @@ fn main() {
     println!(
         "cargo:rustc-env=AUREA_SURFACE_TEXTURE_FRAG_SPV={}",
         output_dir.join("surface_texture.frag.spv").display()
+    );
+
+    compile_shader(
+        &shader_dir.join("wallpaper_texture.vert"),
+        &output_dir.join("wallpaper_texture.vert.spv"),
+        "vert",
+    );
+    compile_shader(
+        &shader_dir.join("wallpaper_texture.frag"),
+        &output_dir.join("wallpaper_texture.frag.spv"),
+        "frag",
+    );
+
+    println!(
+        "cargo:rustc-env=AUREA_WALLPAPER_TEXTURE_VERT_SPV={}",
+        output_dir.join("wallpaper_texture.vert.spv").display()
+    );
+    println!(
+        "cargo:rustc-env=AUREA_WALLPAPER_TEXTURE_FRAG_SPV={}",
+        output_dir.join("wallpaper_texture.frag.spv").display()
     );
 
     compile_shader(
