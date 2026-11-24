@@ -1610,7 +1610,7 @@ GIF è escluso anche come primo fotogramma statico. Sono esclusi anche WebP anim
 ### Documenti ufficiali creati
 
 - `docs/architecture/MEDIA-FORMATS.md` — registro principale in inglese.
-- `docs/it/FORMATS-MULTIMEDIALI.md` — variante italiana.
+- `docs/architecture/MEDIA-FORMATS-it.md` — variante italiana.
 
 Il registro distingue approvazione del formato e stato reale dell'implementazione: HEIF/HEIC e AVIF sono approvati come obiettivo di prodotto, ma i rispettivi adapter di decodifica devono ancora essere realizzati e verificati. Il codice dei decoder raster già presente richiede ancora la verifica concordata su Fedora. Nessun formato audio o musicale è ancora approvato: la sezione è predisposta per decisioni future.
 
