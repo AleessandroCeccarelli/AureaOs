@@ -969,3 +969,14 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Il worker non dipende da compositor, Smithay o Vulkan.
 - Il compositor non è ancora collegato al worker: il percorso JPEG → WallpaperPixels → cache texture Vulkan resta il prossimo obiettivo. Nessuna visualizzazione dello sfondo viene ancora dichiarata.
 - I test del nuovo worker sono stati aggiunti, ma attendono una CI completata sul commit aggiornato.
+
+
+## Collegamento iniziale del servizio di decodifica wallpaper
+
+- Aggiunta la dipendenza locale `aurea-media` al compositor.
+- Creato `desktop/wallpaper/decode_service.rs`: un file dedicato esclusivamente al ciclo di vita della decodifica dello sfondo.
+- Il servizio invia i byte compressi al worker limitato, interroga il risultato senza bloccare e convalida il buffer RGBA8 tramite `WallpaperPixels`.
+- Ogni risultato valido porta asset ID e revisione; la selezione di un altro sfondo invalida i risultati precedenti.
+- Se la coda è momentaneamente piena, la richiesta può essere ritentata senza cambiare revisione.
+- Aggiunti test per decodifica, annullamento logico di una selezione e idempotenza della stessa selezione.
+- Il servizio non è ancora collegato a `RenderScene` né alla cache texture Vulkan. Questo è il prossimo passaggio, da fare con un handoff piccolo e senza bloccare il thread di rendering.
