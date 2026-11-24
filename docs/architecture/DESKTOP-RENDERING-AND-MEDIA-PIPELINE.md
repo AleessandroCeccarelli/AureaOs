@@ -63,7 +63,7 @@ The native Vulkan composition path does **not** yet draw desktop item icons. The
 
 Approved SVG artwork remains the canonical editable source. The compositor does not contain a runtime SVG renderer, and librsvg is not approved as a core runtime dependency because of its wider Cairo/GLib/Pango dependency footprint.
 
-The generated icon directory currently contains its README but no generated raster icon set. A deterministic asset-generation route and its host-tool/build-time dependency policy must be established before wiring icons into Vulkan.
+The generated icon directory currently contains its README but no generated raster icon set. A deterministic SVG-to-RGBA8 host pipeline is now committed: existing rsvg-convert produces temporary PNGs and a bounded Python standard-library converter validates and strips them to tightly packed raw RGBA8. It creates 64, 96, 128 and 192 pixel variants for a 64-logical-pixel icon. The pipeline has not yet been executed or visually validated.
 
 ## Linux and Debian integration
 
@@ -113,9 +113,9 @@ Do not regress Night Light, output transforms, fractional scaling, scanout synch
 
 ## Next implementation sequence
 
-1. Establish a deterministic, reproducible SVG-to-raster asset pipeline for the approved desktop icon artwork. Keep SVG sources canonical and generated variants separate; avoid a new runtime SVG dependency.
-2. Add a small compositor-owned desktop-asset description/cache with bounded raster dimensions and asynchronous Vulkan upload. Do not overload the Wayland SHM texture cache.
-3. Convert `DesktopItemsSnapshot` entries into output-clipped render elements and draw them between wallpaper and Wayland surfaces.
+1. Execute and visually inspect the deterministic SVG-to-RGBA8 pipeline on Fedora; verify all 24 outputs, alpha edges, theme contrast and optical alignment.
+2. Add a small compositor-owned desktop-asset description/cache with bounded raw RGBA dimensions and asynchronous Vulkan upload. Do not overload the Wayland SHM texture cache.
+3. Connect the per-output icon geometry module to the desktop texture cache and draw items between wallpaper and Wayland surfaces.
 4. Connect the existing `DesktopHitTest` logical geometry to pointer input only after the icons are visible. Preserve Wayland surface focus/raise precedence and forward events normally.
 5. Add selection, single/double-click and context-menu semantics through explicit desktop interaction contracts; keep file opening and application launch in Aurea Files/Shell, not in the compositor.
 6. Review active-grab completion when an output disappears, then validate hotplug/session pause/resume on hardware.
