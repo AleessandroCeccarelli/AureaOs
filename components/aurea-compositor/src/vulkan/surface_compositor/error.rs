@@ -7,6 +7,10 @@
 
 use std::{error::Error, fmt};
 
+use smithay::reexports::ash::vk;
+
+use crate::vulkan::queue_submitter::VulkanQueueSubmitError;
+
 /// Errors raised while preparing or recording a SHM-composited frame.
 #[derive(Debug)]
 pub(crate) enum VulkanSurfaceCompositionError {
@@ -14,10 +18,30 @@ pub(crate) enum VulkanSurfaceCompositionError {
     Texture(String),
     Descriptor(String),
     Command(String),
-    DeviceLost(smithay::reexports::ash::vk::Result),
+    DeviceLost(vk::Result),
     InvalidSurfaceGeometry,
     TooManySurfaces,
     FrameMemoryLimitExceeded,
+}
+
+impl VulkanSurfaceCompositionError {
+    pub(crate) fn from_queue_submit_error(error: VulkanQueueSubmitError) -> Self {
+        let device_lost = match error {
+            VulkanQueueSubmitError::Rejected(result)
+            | VulkanQueueSubmitError::SubmissionUncertain(result) => {
+                result == vk::Result::ERROR_DEVICE_LOST
+            }
+            VulkanQueueSubmitError::CompletionUncertain { wait_error, idle_error } => {
+                wait_error == vk::Result::ERROR_DEVICE_LOST
+                    || idle_error == vk::Result::ERROR_DEVICE_LOST
+            }
+        };
+        if device_lost {
+            Self::DeviceLost(vk::Result::ERROR_DEVICE_LOST)
+        } else {
+            Self::Command(format!("{error:?}"))
+        }
+    }
 }
 
 impl fmt::Display for VulkanSurfaceCompositionError {
