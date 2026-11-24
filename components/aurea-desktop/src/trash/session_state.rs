@@ -13,7 +13,7 @@ use super::TrashService;
 
 /// Reads the current user's Trash state without transferring filesystem access
 /// into the compositor. Live refresh is handled by a later session service.
-pub(crate) fn initial_visual_state() -> Result<DesktopTrashState, String> {
+pub fn initial_visual_state() -> Result<DesktopTrashState, String> {
     let home = env::var_os("HOME")
         .filter(|value| !value.is_empty())
         .ok_or_else(|| "HOME is unset; the home Trash cannot be initialized".to_owned())?;
