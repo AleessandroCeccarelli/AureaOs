@@ -100,7 +100,7 @@ Its technical direction includes:
 - PipeWire for multimedia infrastructure.
 - NetworkManager for network management.
 - systemd for system and service management.
-- GRUB2 as the planned bootloader.
+- systemd-boot as the UEFI-only boot manager; Secure Boot is disabled for Roma 1.0.
 - Btrfs as the selected default installed filesystem.
 
 The selection of these technologies does not mean their complete integration is already implemented.
