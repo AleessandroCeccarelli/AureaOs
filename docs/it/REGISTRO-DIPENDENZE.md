@@ -149,3 +149,29 @@ Se una risposta richiesta è sconosciuta, mantenere la dipendenza come Candidata
 Rivedere il registro quando viene proposta/aggiunta/rimossa/aggiornata una dipendenza; cambiano versioni o sicurezza dei pacchetti Debian stable; cambia la politica MSRV/toolchain Rust; un advisory interessa una dipendenza diretta/transitiva; oppure un componente modifica ABI nativa, linking o requisiti runtime.
 
 Questo registro è la fonte condivisa di verità per le decisioni sulle dipendenze. Se la comodità d'implementazione entra in conflitto con la compatibilità Debian, prevale la compatibilità Debian.
+
+## Strategia desktop universale e multimedialità — 24 novembre 2026
+
+### Direzione del prodotto
+- AureaOS è destinato a bambini, anziani, utenti alle prime armi, studenti, professionisti creativi e d'ufficio, amministratori e sviluppatori attraverso un unico desktop coerente; niente edizioni basate sull'età o supposizioni sulle capacità.
+- Principio adottato: semplice per impostazione predefinita, potente quando serve, accessibile fin dall'inizio.
+- Accessibilità, multimedialità e produttività sono requisiti fondamentali, non rifiniture successive al rilascio.
+
+### Valutazioni tecnologiche registrate (nessuna dipendenza aggiunta)
+- PipeWire + WirePlumber: base raccomandata per instradamento audio/video e politiche di sessione. Evidenze pacchetti Debian Trixie esaminate: PipeWire 1.4.2 e WirePlumber 0.5.8. Inclusione nell'immagine e integrazione runtime restano da verificare.
+- GStreamer 1.x: framework modulare raccomandato per pipeline di riproduzione, acquisizione, codifica, muxing e streaming. Evidenze pacchetti Debian Trixie esaminate: famiglia 1.26.2. Licenze e disponibilità di codec/plugin vanno valutate per singola funzionalità; non installare tutti i gruppi plugin per impostazione predefinita.
+- XDG Desktop Portal: confine raccomandato per interoperabilità applicativa e permessi Flatpak. Evidenza pacchetto Debian Trixie esaminata: xdg-desktop-portal 1.20.3. AureaOS deve implementare un proprio backend per le interfacce supportate, senza dipendere dai backend desktop GNOME/KDE.
+- AT-SPI2: obiettivo di interoperabilità con le tecnologie assistive Linux. Orca è un bersaglio concreto per la validazione con screen reader. AccessKit è un candidato livello di astrazione Rust per l'accessibilità dei widget nativi, non sostituisce AT-SPI2 né costituisce un toolkit completo.
+- Parley e cosmic-text: candidati come componenti Rust per layout testuale, shaping, bidi, interruzione righe e fallback dei font. Nessuno dei due è un toolkit UI completo; occorre prototipare prima della scelta.
+- Il toolkit UI nativo resta da decidere. Ogni candidato deve dimostrare funzionamento Wayland-only, rendering compatibile Vulkan, accessibilità AT-SPI2/AccessKit, IME, testo complesso, touch, scaling, prestazioni e packaging Debian.
+
+### Confini architetturali
+- Mantenere separate le responsabilità Aurea Media e Aurea Capture: il decode immagini restituisce pixel CPU-owned con limiti; Capture coordina autorizzazioni e ciclo sessione; PipeWire trasporta gli stream; GStreamer gestisce pipeline/codifica selezionate; il compositor possiede soltanto i frame finali autorizzati e la presentazione Vulkan.
+- Non inserire codec, muxing, mix audio o scrittura file nel compositor/render thread.
+- Non introdurre un daemon multimediale monolitico. Iniziare con librerie e adapter; rivalutare un helper process ristretto per isolare media non fidati quando lo giustificheranno threat model e numero di client.
+- Le tecnologie nuove o immature possono essere prototipate in crate/processi/feature isolati, ma non diventano dipendenze base o di boot/sessione prima di aver dimostrato beneficio misurabile, sicurezza, compatibilità Debian e possibilità di rollback.
+
+### Documentazione
+- Creato docs/architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md.
+- Allineati i documenti di visione e principi tecnologici in inglese e italiano; aggiunti i collegamenti nei due README.
+- Nessuna dipendenza, manifest Cargo, lockfile, sorgente Rust o pacchetto di sistema modificato. Nessun build, format, check, test o CI eseguito.
