@@ -1619,3 +1619,28 @@ Aggiornati anche `docs/architecture/AUREA-MEDIA-SERVICE.md` e `docs/design/WALLP
 ### Verifica
 
 Documentazione aggiornata su `main`. Nessuna build, cargo check, rustfmt o test eseguiti. Nessuna modifica a Cargo.lock. La verifica dei decoder resta da eseguire in un unico blocco su Fedora, mantenendo Debian 13 come riferimento per le dipendenze.
+
+
+## 24 novembre 2026 — Modularizzazione del backend di input
+
+### Obiettivo
+
+Proseguire la costruzione del desktop rendendo più manutenibile il percorso di input nativo. Il file `server/input.rs` conteneva sia la registrazione del backend libinput e la gestione delle preferenze touchpad, sia il dispatch di tutte le famiglie di eventi.
+
+### Modifiche pubblicate su main
+
+- Ridotto `components/aurea-compositor/src/server/input.rs` a 135 righe: registrazione del backend Calloop/libinput, conversione timestamp e applicazione delle impostazioni touchpad.
+- Estratto il dispatch degli eventi in `components/aurea-compositor/src/server/input/dispatch.rs` (335 righe).
+- Conservati i percorsi esistenti per tastiera, puntatore, assi, gesti swipe/pinch/hold, touchscreen e tavoletta grafica.
+- Il nuovo modulo richiama gli stessi handler del compositor; questa modifica è una riorganizzazione strutturale, non una dichiarazione di nuove funzionalità input.
+
+### Vincoli e verifica
+
+- Nessuna build, cargo check, rustfmt o test eseguiti, in linea con la procedura concordata.
+- Nessuna modifica a Cargo.toml o Cargo.lock.
+- La compilazione e i test dovranno essere eseguiti in blocco su Fedora dopo il pull.
+- Da verificare in seguito, con le API effettive di Smithay 0.7, il percorso dei tablet pad e la copertura completa degli eventi libinput; non viene dichiarato supporto completo dei pulsanti/controlli aggiuntivi delle tavolette.
+
+### Prossimo passo
+
+Proseguire l'audit dei percorsi input e dei moduli di interazione, verificando che eventi e dispositivi siano instradati correttamente e che ogni file mantenga una responsabilità singola.
