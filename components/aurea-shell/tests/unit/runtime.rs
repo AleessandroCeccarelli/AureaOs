@@ -337,6 +337,10 @@ fn compositor_desktop_item_selection_is_applied_to_shell_state() {
     });
     assert_eq!(runtime.desktop_state().selected_item_id(), Some("system:trash"));
     assert_eq!(
+        runtime.desktop_selection.selected_item().as_deref(),
+        Some("system:trash")
+    );
+    assert_eq!(
         runtime.take_desktop_interaction(),
         Some(DesktopInteraction::DesktopItemSelected {
             id: "system:trash".to_owned(),
@@ -345,6 +349,7 @@ fn compositor_desktop_item_selection_is_applied_to_shell_state() {
 
     runtime.handle_desktop_interaction(DesktopInteraction::DesktopSelectionCleared);
     assert_eq!(runtime.desktop_state().selected_item_id(), None);
+    assert_eq!(runtime.desktop_selection.selected_item(), None);
 }
 
 
