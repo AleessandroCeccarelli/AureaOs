@@ -875,6 +875,13 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 
 ## WALLPAPER UV PUSH-CONSTANT ENCODING — 2026-11-24
 
+## WALLPAPER FRAME DRAW INTEGRATION — 2026-11-24
+
+- `surface_compositor::render_frame` now binds a selected wallpaper only when its Vulkan upload is complete, then records the dedicated wallpaper pipeline directly after clear and before SHM surfaces and cursor.
+- The frame uses output-local physical dimensions and `WallpaperFitMode::Fill`; a ready wallpaper is drawn even for an otherwise empty scene. Clearing wallpaper selection clears the GPU cache.
+- Commits: `30582074`, `a347fde8`.
+- Critical remaining dependency: no JPEG decoder or pixel producer currently calls `prepare_wallpaper_texture`; the default embedded JPEG is still metadata-only. Do not claim the wallpaper is visible. Do not add a decoder/dependency until the Fedora and Debian 13 TurboJPEG ABI probe is approved. No Cargo fmt/check/test/build, CI or ISO was run.
+
 - Added `WallpaperUvRect::to_push_constant_bytes`, serializing min X, min Y, max X, max Y as four native-endian `f32` values matching the wallpaper shader's 16-byte `vec4` push-constant ABI.
 - Added a round-trip unit test for component order. Commit: `f474ddfd`. Test authored, not run.
 - This only prepares the CPU payload. Descriptor binding, draw recording, and empty-scene integration remain outstanding. Do not claim wallpaper is visible.
