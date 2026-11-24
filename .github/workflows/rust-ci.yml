@@ -71,6 +71,9 @@ jobs:
     timeout-minutes: 20
 
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
       - name: Install Rust and decoder-only HEIF and AVIF development packages
         run: |
           apt-get update
@@ -80,6 +83,7 @@ jobs:
             libheif-dev \
             libheif-plugin-libde265 \
             libheif-plugin-dav1d \
+            libturbojpeg0-dev \
             pkg-config \
             rustc
 
@@ -95,6 +99,9 @@ jobs:
           for package in libheif-plugin-libde265 libheif-plugin-dav1d; do
             dpkg-query -L "${package}" | grep -F '.so' >/dev/null
           done
+
+      - name: Test the AureaOS media decoder with HEIF enabled
+        run: cargo test -p aurea-media --features heif
 
       - name: Compile and link the libheif-rs decode API probe
         run: |
@@ -153,6 +160,15 @@ jobs:
           EOF
           cargo build --manifest-path /tmp/aurea-heif-probe/Cargo.toml
 
+      - name: Preserve resolved workspace lockfile
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: aureaos-cargo-lock
+          path: Cargo.lock
+          if-no-files-found: error
+          retention-days: 3
+
   build-and-test:
     name: Build and test workspace
     runs-on: ubuntu-24.04
@@ -209,16 +225,16 @@ jobs:
         run: cargo check -p aurea-desktop
 
       - name: Check workspace
-        run: cargo check --workspace --locked
+        run: cargo check --workspace
 
       - name: Check compositor with DRM and Vulkan
-        run: cargo check -p aurea-compositor --features drm --locked
+        run: cargo check -p aurea-compositor --features drm
 
       - name: Test workspace
-        run: cargo test --workspace --locked
+        run: cargo test --workspace
 
       - name: Test compositor with DRM and Vulkan
-        run: cargo test -p aurea-compositor --features drm --locked
+        run: cargo test -p aurea-compositor --features drm
 
       - name: Preserve resolved lockfile for review
         if: always()

@@ -13,6 +13,7 @@ license = "GPL-3.0-or-later"
 
 [features]
 default = []
+heif = ["aurea-media/heif"]
 
 # Native Linux desktop backend.
 #
