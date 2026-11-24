@@ -94,7 +94,8 @@ Implemented in code but not yet verified on Fedora:
 - WallpaperManager and immutable snapshot path;
 - Fill, Fit, Stretch, Center layout calculations;
 - bounded owned RGBA8 pixel buffer;
-- `VulkanWallpaperTexture` resource: sampled RGBA8 image allocation, staging upload and explicit shader-read transition; asynchronous `submit_pixels` returns a fence-backed pending upload, while `from_pixels` remains a blocking convenience wrapper. Not yet integrated into scene rendering.
+- `VulkanWallpaperTexture` resource: sampled RGBA8 image allocation, staging upload and explicit shader-read transition; asynchronous `submit_pixels` returns a fence-backed pending upload, while `from_pixels` remains a blocking convenience wrapper.
+- Bounded per-device `VulkanWallpaperTextureCache`: asset-ID/revision key, one ready selection, at most two pending uploads and a 256 MiB pending-byte budget; frame preparation polls fences without blocking. Cache population and scene drawing are still pending.
 
 Not yet implemented:
 - JPEG pixel decoding and display;
@@ -104,4 +105,4 @@ Not yet implemented:
 - animated image/video playback;
 - dynamic time-of-day collections and UI.
 
-The Vulkan wallpaper texture upload and asynchronous submission path are not yet verified by Cargo build/tests or hardware. No Cargo build, format, test, or hardware validation is claimed by this document.
+The Vulkan wallpaper texture upload, asynchronous submission path and cache lifecycle are not yet verified by Cargo build/tests or hardware. No Cargo build, format, test, or hardware validation is claimed by this document.
