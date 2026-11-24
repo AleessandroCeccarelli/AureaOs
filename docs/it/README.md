@@ -16,6 +16,12 @@ Le versioni italiane sono pensate per facilitare la collaborazione e la revision
 - [Principi tecnologici e architetturali](PRINCIPI-TECNOLOGICI.md)
 - [Contratto di interoperabilità del desktop](INTEROPERABILITA-DESKTOP.md)
 
+## Scelte tecniche e architettura
+
+- [Fondamenta della piattaforma AureaOS](BASE-ARCHITETTURALI-PIATTAFORMA-AUREAOS.md)
+- [Avvio systemd-boot e UKI](AVVIO-SYSTEMD-BOOT-E-UKI.md)
+- [Scelta di Btrfs e layout del disco di sistema](PROGETTAZIONE-BTRFS-E-RIPRISTINO.md)
+
 ## Percorso e stato del progetto
 
 - [Roadmap](ROADMAP.md)
