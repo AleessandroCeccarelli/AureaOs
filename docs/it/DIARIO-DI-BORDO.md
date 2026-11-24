@@ -1352,3 +1352,14 @@ Commit: `4bb33193`, `1ca67908`. Nessuna verifica Cargo o CI eseguita.
 Commit: `4769658c`, `f00e1d9e`, `78e05c62`, `40a95532`, `a3f6e9b2`.
 
 Verifica soltanto statica dei percorsi e delle dipendenze. Nessuna build, test, rustfmt, cargo check o CI eseguiti.
+
+
+### Follow-up — Isolamento del ciclo di vita del puntatore Vulkan
+
+- Il file `vulkan/surface_pipeline_cache.rs` è sceso da 398 a 353 righe.
+- Il caricamento asincrono della freccia nativa, la fence pendente, la promozione della texture pronta e i relativi errori sono stati spostati in `vulkan/native_cursor_texture.rs` (99 righe).
+- Il coordinatore delle pipeline ora delega il ciclo di vita del puntatore a un componente dedicato; non conserva più direttamente lo stato dell'upload del cursore.
+- Nessuna modifica alla semantica attesa: il frame non blocca l'upload iniziale e il puntatore non viene esposto finché la texture non è pronta.
+- Nessuna dipendenza aggiunta.
+
+Commit: `d0ea103b`, `bd5a6e28`, `bf415144`. Solo revisione statica; nessuna build, test, rustfmt, cargo check o CI.
