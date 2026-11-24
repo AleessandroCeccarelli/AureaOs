@@ -88,12 +88,24 @@ impl VulkanWallpaperTextureCache {
         pixels: &WallpaperPixels,
     ) -> Result<bool, VulkanWallpaperTextureCacheError> {
         self.poll()?;
-        if self.ready.as_ref().is_some_and(|(ready_key, _)| *ready_key == key)
-            || self.pending.iter().any(|pending| pending.key == key)
-        {
+        if self.ready.as_ref().is_some_and(|(ready_key, _)| *ready_key == key) {
             self.selected = Some(key);
             return Ok(true);
         }
+        if self.pending.iter().any(|pending| pending.key == key) {
+            self.selected = Some(key);
+            self.ready = None;
+            return Ok(true);
+        }
+
+        // Invalidate the previously visible revision before attempting any
+        // fallible allocation or submission for the new selection. Pending
+        // uploads remain owned until their fences prove completion.
+        if self.selected != Some(key) {
+            self.selected = Some(key);
+            self.ready = None;
+        }
+
         if self.failed_upload == Some(key) {
             return Ok(false);
         }
