@@ -195,3 +195,8 @@ A focused unit test was added for fatal device loss from the SHM texture cache. 
 ### Native cursor texture error propagation — 2026-11-24
 
 Native cursor texture initialization now retains the typed `VulkanShmTextureError` through the surface pipeline cache. The composition layer classifies `ERROR_DEVICE_LOST` as fatal rather than flattening it into a generic texture message. A focused unit test covers this conversion. The first-time cursor upload still uses the synchronous convenience path; replacing it with a fence-polled asynchronous upload remains a separate performance/lifecycle task. No build, formatting, tests or CI were run for this follow-up.
+
+
+### Legacy Vulkan result conversion follow-up — 2026-11-24
+
+The compatibility conversion from `VulkanQueueSubmitError` to `vk::Result` now prioritizes `ERROR_DEVICE_LOST` whether it is reported by fence waiting or by the `device_wait_idle` fallback. This prevents older diagnostic/offscreen and frame-acquisition callers that still use `submit_and_wait()` from masking a fatal device-loss result. Two focused unit tests were added. No build, formatting, tests or CI were run.
