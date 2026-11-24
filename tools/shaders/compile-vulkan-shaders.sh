@@ -7,7 +7,7 @@ SOURCE_DIR="${REPO_ROOT}/components/aurea-compositor/shaders"
 OUTPUT_DIR="${1:-${REPO_ROOT}/target/aurea-shaders}"
 
 if ! command -v glslangValidator >/dev/null 2>&1; then
-    printf '%s\n' "glslangValidator is required. On Fedora install it with:" "  sudo dnf install glslang"
+    printf '%s\n' "glslangValidator is required." "  Debian 13: sudo apt install glslang-tools" "  Fedora:    sudo dnf install glslang"
     exit 1
 fi
 
