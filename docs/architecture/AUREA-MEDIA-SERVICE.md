@@ -1,7 +1,7 @@
 # Aurea Media Service — initial architecture decision
 
 - SPDX-License-Identifier: GPL-3.0-or-later
-- Status: Proposed architecture; JPEG backend remains pending local ABI verification.
+- Status: Proposed architecture; the legacy JPEG API passed the Debian 13 and Fedora container ABI/decode smoke tests. Local Fedora host verification and the remaining security/integration reviews are still pending.
 - Scope: the first production consumer is the desktop wallpaper pipeline.
 
 ## Decision
@@ -10,7 +10,7 @@ AureaOS owns the media service, its public API, validation policy, resource limi
 
 Use a small dedicated Rust workspace crate named `aurea-media` as an in-process service/library in the first phase. Do not create a standalone daemon or IPC protocol yet. A daemon would add process lifecycle, protocol versioning, transport, permissions, and failure recovery before there are multiple independent clients that need it.
 
-The first JPEG backend candidate is the legacy TurboJPEG C API from system libjpeg-turbo, called through a very small Aurea-owned Rust FFI module. This remains conditional on compiling and running the compatibility probe against the actual Fedora development host and Debian 13 Trixie runtime/development packages. Debian Trixie currently packages libturbojpeg 2.1.5; Fedora package streams reviewed are on 3.1.x. The API overlap must be proven, not assumed.
+The first JPEG backend candidate is the legacy TurboJPEG C API from system libjpeg-turbo, called through a very small Aurea-owned Rust FFI module. The compatibility probe has now compiled, linked and decoded the committed wallpaper in GitHub Actions containers for Debian 13 Trixie and Fedora. The tested packages were Debian `libturbojpeg0` / `libturbojpeg0-dev` `1:2.1.5-4` and Fedora `libjpeg-turbo` / `turbojpeg` `3.1.4.1-2.fc45`. Both environments resolved `libturbojpeg.so.0` at runtime and produced identical 3840 × 2160 RGBA8 output. This proves the tested legacy API surface and runtime linkage in those container images; the user's Fedora workstation still needs its own local verification before the adapter is approved.
 
 ## Responsibilities
 
@@ -92,9 +92,9 @@ For the built-in wallpaper milestone, an in-process library called from a bounde
 
 ## Implementation gates
 
-1. Compile and run `tools/dependencies/jpeg/turbojpeg-abi-probe.c` on Fedora against the committed wallpaper.
-2. Repeat against Debian 13 Trixie. The same source must compile and run on both.
-3. Inspect the actual `turbojpeg.h` declarations and exported symbols; confirm the legacy API and scan-limit flag exist on both.
+1. **Passed in CI containers:** compile and run `tools/dependencies/jpeg/turbojpeg-abi-probe.c` against the committed wallpaper on Debian 13 Trixie and Fedora. Both reported `TurboJPEG legacy API: OK`, 3840 × 2160, 33,177,600 RGBA8 bytes and opaque alpha.
+2. **Passed in CI containers:** link and load `libturbojpeg.so.0` in both environments. Compilation and execution exercise the required legacy declarations and symbols, including the progressive scan-limit flag.
+3. **Pending:** repeat the probe on the actual Fedora development workstation and record its installed package build; inspect and record the target runtime package inclusion in the Debian image.
 4. Review the probe and error paths before translating the minimal calls into Rust FFI.
 5. Add the `aurea-media` crate and isolated backend only after gates 1–4 pass.
 6. Unit-test the backend contract and run the workspace checks locally on Fedora, then verify the Debian runtime package in the target environment.
