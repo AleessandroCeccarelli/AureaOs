@@ -91,3 +91,23 @@ fn validate_dimensions(width: u32, height: u32, limits: DecodeLimits) -> Result<
     }
     Ok(())
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::decode;
+    use crate::{DecodeError, DecodeLimits, ImageFormat};
+
+    #[test]
+    fn rejects_a_container_that_does_not_match_the_selected_format() {
+        let mut input = Vec::new();
+        input.extend_from_slice(&16u32.to_be_bytes());
+        input.extend_from_slice(b"ftypheic");
+        input.extend_from_slice(&0u32.to_be_bytes());
+
+        assert_eq!(
+            decode(ImageFormat::Avif, &input, DecodeLimits::default()).unwrap_err(),
+            DecodeError::InvalidImage
+        );
+    }
+}
