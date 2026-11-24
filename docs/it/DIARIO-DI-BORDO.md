@@ -1176,3 +1176,14 @@ Nessuna build, test, rustfmt o CI avviati. Nessuna dipendenza runtime aggiunta. 
 - Aggiornati README delle icone e registro dipendenze IT/EN. Il tool resta candidato finché gli export non saranno generati e ispezionati visivamente.
 - Commit principali: `be04164b` (script), `70409c7d` (validazione PNG), `8c17ffc1`, `cdac2ab4`, `33ed98bd`, `67e2278b` (documentazione).
 - Non eseguiti lo script, build, test, rustfmt o CI. Nessun PNG generato e nessuna dipendenza runtime aggiunta.
+
+
+### Follow-up — riuso del renderer SVG già presente
+
+- La prima bozza della pipeline aveva introdotto `resvg` come tool separato. Prima di considerare la scelta definitiva, l'ispezione di `tools/assets/build_cursor_theme.py` e `cursor_rasterizer.py` ha evidenziato che AureaOS usa già `rsvg-convert` per generare il tema cursore.
+- Per evitare un secondo renderer e una nuova procedura di installazione, `render-trash-icons.sh` è stato corretto per riutilizzare `rsvg-convert`.
+- Pacchetti verificati: Debian 13 `librsvg2-bin 2.60.0+dfsg-1+deb13u1`; Fedora 45 `librsvg2-tools 2.63.2-2.fc45`. Entrambi forniscono il comando `rsvg-convert`.
+- La versione effettiva del renderer viene registrata in `EXPORT-MANIFEST.txt`; il controllo PNG verifica firma, dimensioni quadrate e formato RGBA8.
+- La voce resvg è stata sostituita nel registro dipendenze. Nessun nuovo strumento o pacchetto runtime è richiesto oltre al renderer già usato dal flusso cursori.
+- La pipeline Trash non è stata ancora eseguita; nessun PNG è stato generato o validato visivamente.
+- Commit di correzione: `e0228650`; documentazione aggiornata nei commit `65705341`, `eb28e253`, `4aa8a60e`, `e9819c41`, `bc95da4b`.
