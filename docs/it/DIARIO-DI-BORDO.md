@@ -1071,3 +1071,5 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Corretto `VulkanQueueSubmitError::result()` per dare precedenza a `ERROR_DEVICE_LOST` in entrambi i campi, mantenendo `wait_error` per gli errori ordinari. Aggiunti due test unitari mirati.
 - Commit: `4a5ac3d2`.
 - Nessun test/build/format/CI eseguito.
+
+- Follow-up statico: mantenuta la funzione `result()` `const` usando pattern matching invece di confronti tramite `PartialEq`, così da non introdurre chiamate non-const nel percorso di compilazione. Commit: `2acb358a`.
