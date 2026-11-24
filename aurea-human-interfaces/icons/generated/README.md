@@ -13,7 +13,7 @@ Never edit generated files as masters. Record source version, build command/tool
 - Renderer: `resvg 0.45.1`, used only on the developer/asset-generation host.
 - Outputs: `trash/trash-{light,dark}-{empty,half,full}-{size}.png`.
 - Sizes: 16, 24, 32, 48, 64, 96, 128 and 256 pixels.
-- Output is transparent PNG; the script checks file presence and the PNG signature.
+- Source SVGs use a transparent canvas. The script checks file presence, PNG signature, exact square dimensions and 8-bit RGBA format; transparency appearance still requires visual inspection.
 
 Run from any working directory with:
 
