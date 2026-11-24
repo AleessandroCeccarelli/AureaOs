@@ -4,138 +4,133 @@
 
 ## Purpose
 
-This document records the current audit and the implementation boundary for the first usable AureaOS desktop: a wallpaper, native desktop items, mapped Wayland windows, and a working pointer.
+This document records the implementation state and boundaries for the first usable AureaOS desktop: wallpaper, native desktop items, mapped Wayland windows, and pointer interaction. It distinguishes code present in the repository from behavior that has been validated on physical hardware.
 
-It is an engineering decision record, not a claim that the pipeline is implemented or hardware-validated.
+## Platform and engineering constraints
 
-## Repository baseline
+- Debian 13 Trixie is the target system; Fedora is the development host only.
+- The compositor uses Smithay, Wayland and Vulkan. X11, XWayland and OpenGL are excluded.
+- Keep modules small and single-purpose. The compositor owns GPU resources and presentation, not file discovery or media policy.
+- Decode and asset preparation must stay off the render thread. Queues and memory budgets must be bounded.
+- New native packages require Debian availability, licensing, build-time/runtime classification and least-privilege review before adoption.
+- Do not add a permanent daemon where an in-process bounded worker is sufficient.
 
-- Branch: `main`.
-- Audited commit: `d9089aafaaa0b6470aa231f946aad1d8a7c5aede`.
-- Workspace components include `aurea-desktop-api`, `aurea-compositor`, `aurea-shell`, and `aurea-desktop`.
-- The compositor uses Smithay with its Wayland frontend and an exclusive Vulkan rendering path under the native DRM feature.
-- No build, formatting command, test, or CI workflow was run during this audit.
+## Current implementation
 
-## Existing implementation
+### Desktop appearance and wallpaper
 
-### Wallpaper
+Implemented in the compositor:
 
-The compositor already contains:
+- `DesktopManager`, Light/Dark theme tokens, fallback background color and immutable per-frame `DesktopSnapshot`.
+- `WallpaperManager`, embedded `WallpaperAsset`, bounded JPEG header/dimension validation, `WallpaperPixels` RGBA8 validation and Fill/Fit/Stretch/Center geometry.
+- `aurea-media`, a separate workspace crate with a private TurboJPEG C shim and Rust-facing decode API. JPEG decoding runs on a named worker thread with a one-request waiting queue and explicit compressed-input, dimensions, pixel-count and output-memory limits.
+- `WallpaperDecodeService` tracks selection revisions, polls without blocking, discards stale results and distinguishes temporary queue saturation from decode failure.
+- A dedicated bounded Vulkan wallpaper texture cache owns pending uploads until their fences complete. A texture is exposed only when its asset/revision is still selected.
+- The Vulkan frame path polls decode/upload work without waiting, draws the wallpaper after the fallback clear and before Wayland surfaces, and retains the native cursor above the scene. Removing the selected wallpaper clears its visible cached texture.
+- Wallpaper fit geometry is calculated per output in physical target coordinates; the wallpaper uses its own shader/push-constant ABI and does not reuse fake Wayland surface IDs.
 
-- `WallpaperAsset`: embedded JPEG bytes and bounded header metadata extraction.
-- `WallpaperPixels`: owned RGBA8 data with overflow and memory-budget validation.
-- `WallpaperManager` and `WallpaperSnapshot`: selection and immutable state.
-- `WallpaperLayout`: Fill, Fit, Stretch and Center geometry.
-- Playback policy contracts that explicitly require media decoding on a worker thread.
+**Validation boundary:** source integration is present, but no successful Fedora hardware display test is recorded. The TurboJPEG ABI probe passed in Debian 13 and Fedora GitHub Actions containers; that validates the exercised native ABI path, not the complete Rust production integration. The current Rust integration and Vulkan presentation still require the agreed grouped verification on Fedora.
 
-The missing link is a real JPEG decoder and the transfer from decoded pixels into a persistent Vulkan texture. The render path currently clears the output to the desktop background color; it does not sample a wallpaper texture.
+### Vulkan composition and failure handling
 
-### Vulkan composition
+The existing renderer retains separate ownership for Wayland SHM textures, wallpaper textures and the native cursor. Uploads are fence-backed and asynchronous where implemented. Descriptor resources remain frame-scoped until GPU completion is established.
 
-The existing Vulkan SHM path already provides:
+Vulkan `ERROR_DEVICE_LOST` is propagated as a fatal typed condition through the reviewed wallpaper, SHM, cursor-upload and scanout paths. The current policy is fail-stop: do not attempt a CPU fallback that still depends on the lost logical device, and do not retire GPU/KMS resources while completion is uncertain. Full device recreation is not implemented.
 
-- RGBA8 image allocation and upload.
-- Asynchronous upload tracking and bounded surface texture caching.
-- Textured-region drawing.
-- Native cursor texture handling and cursor geometry.
-- Frame-scoped descriptor resources and GPU completion handling.
+### Native desktop items
 
-This machinery is currently specialized for Wayland SHM surfaces and the native cursor. It is not yet a generic desktop asset pipeline. Wallpaper and desktop-item textures must have their own ownership/cache lifecycle or a deliberately generalized cache; do not force them into the Wayland surface-ID cache.
+The technology-independent desktop API already defines:
 
-### Desktop items
+- Stable `DesktopItemId`, item kinds (File, Folder, Application, Trash) and logical positions.
+- Desktop preferences and visual grouping.
+- `DesktopRect` and deterministic `DesktopHitTest`, including overlap ordering and logical-coordinate semantics.
+- A compositor-owned `DesktopItemsSnapshot` captured into `RenderScene`.
 
-The shared desktop model and `DesktopItemsSnapshot` are present and connected to `RenderScene`. The native Vulkan composition path does not yet turn those items into drawable elements. Desktop icons must remain compositor-owned desktop elements, not fake Wayland application windows.
+The native Vulkan composition path does **not** yet draw desktop item icons. The hit-test contract exists, but desktop item hit testing is not yet connected to physical pointer events. Do not treat the existing API tests as proof of end-to-end icon interaction.
 
-### Pointer and input
+### Pointer, output hotplug and session lifecycle
 
-Smithay, libinput integration, pointer state and native cursor composition already exist. The pointer is drawn after the current Wayland surfaces. Once the wallpaper is drawn as the base layer, the pointer should remain above it. Native desktop hit-testing and click behavior are separate work and must use the shared desktop geometry contract.
+- Relative motion, buttons, axes/scroll and touchpad gestures arrive through libinput/Smithay.
+- Pointer coordinates are global logical coordinates and are constrained to the union of enabled output rectangles. Gaps resolve to the nearest output edge.
+- Primary-button presses already focus/raise a Wayland toplevel and are forwarded through the Wayland pointer.
+- Native cursor geometry is resolved per output using logical position, cursor scale, target scale/fractional scale and output transform.
+- Output reconciliation refreshes pointer focus and requests frames. DRM-device removal unregisters its outputs and attempts to place the pointer on the primary remaining output.
+- On libseat pause, input events are ignored; KMS surfaces are cleared before graphics resources are released. On activation, GBM/Vulkan/KMS and deferred outputs are restored before the pointer is centered on an enabled output.
 
-### Trash artwork
+**Known limitation:** centering is deliberately skipped while a client owns an active pointer grab. The pointer is constrained on subsequent physical motion, but the end-of-grab transition after removal of the output under the pointer still deserves a focused lifecycle review. No hardware hotplug/session-switch validation is recorded.
 
-The six approved Trash SVGs remain the canonical source artwork in Human Interfaces. The shell currently resolves SVG bytes by theme and Trash state. The compositor has no SVG rasterization pipeline. Do not add librsvg to the core desktop solely for these icons without accepting its runtime dependency footprint.
+### Trash artwork and raster assets
 
-## Linux and Debian integration findings
+Approved SVG artwork remains the canonical editable source. The compositor does not contain a runtime SVG renderer, and librsvg is not approved as a core runtime dependency because of its wider Cairo/GLib/Pango dependency footprint.
 
-### JPEG decoding
+The generated icon directory currently contains its README but no generated raster icon set. A deterministic asset-generation route and its host-tool/build-time dependency policy must be established before wiring icons into Vulkan.
 
-Debian 13 Trixie provides libjpeg-turbo, including the TurboJPEG runtime and development packages:
+## Linux and Debian integration
 
-- `libturbojpeg0`: runtime library.
-- `libturbojpeg0-dev`: headers and development files.
+### JPEG codec
 
-The initial wallpaper is JPEG, so TurboJPEG is a narrowly scoped system codec candidate. The Rust integration should be isolated behind an Aurea-owned safe wrapper and invoked from a worker, never from the render loop. Before implementation, confirm the exact ABI/API version, Fedora development package availability, packaging requirements, error handling and allocation limits.
+The TurboJPEG ABI probe has exercised:
+- Debian 13 Trixie: `libturbojpeg0-dev` and `libturbojpeg0`, version `1:2.1.5-4`.
+- Fedora: `libjpeg-turbo-devel` and `turbojpeg-devel`, version `3.1.4.1-2.fc45`.
 
-Do not add a general-purpose Rust image stack just to decode the one committed JPEG asset.
+Both container jobs passed the probe's compile, SONAME and real-wallpaper decode checks. The runtime library is distinct from the development headers. Keep the native adapter isolated; do not add a general-purpose Rust image stack for the initial JPEG-only requirement.
 
-### SVG artwork
+### Shader compiler
 
-Debian provides librsvg, but its runtime dependency chain includes Cairo, GLib, Pango and related components. That is disproportionate for the current static icon requirement and conflicts with the goal of a lean, independent desktop stack.
+`glslang-tools` is available in Debian 13 Trixie and is build-time only. Fedora's package is `glslang`. Do not include shader compiler tools in the installed runtime image without a separate reason.
 
-Initial direction: preserve SVG as the editable canonical artwork and generate bounded raster variants as build-time/project assets using an established host tool. The installed desktop should consume those raster resources directly through Vulkan. This avoids a runtime SVG engine. The asset-generation command and reproducibility/licensing details must be documented before adding generated files.
+### Linux desktop interoperability
 
-### Linux desktop specifications
-
-Use established FreeDesktop/XDG conventions where applicable:
-
+Use established FreeDesktop/XDG conventions where appropriate:
 - Desktop Entry for application metadata and launch.
 - Icon Theme conventions for icon lookup and fallback.
 - Shared MIME-info for file type identification.
-- Thumbnail Managing Standard and registered thumbnailers for file thumbnails.
-- Trash specification for deletion metadata and storage.
-- XDG Base Directory for user data, configuration and cache locations.
-- Wayland protocols and Smithay/libinput for input, surfaces and outputs.
+- Thumbnail Managing Standard and registered thumbnailers.
+- Trash specification and XDG Base Directory locations.
+- Wayland protocols and Smithay/libinput for surfaces, input and outputs.
 
-These specifications do not provide a universal desktop-icon renderer or a complete desktop shell. AureaOS owns those product-level services and their UI.
+These specifications do not supply a complete desktop shell or native desktop-icon renderer; AureaOS owns those product-level components.
 
-## Service architecture
+## Ownership boundaries
 
-AureaOS should own coherent services, but a service does not automatically mean a permanently running process.
+- **Aurea Background:** wallpaper selection, layout and policy. Decode delegated to Aurea Media; render consumes completed texture state.
+- **Aurea Media:** bounded in-process decode/asset worker. No compositor, Smithay or Vulkan dependency.
+- **Aurea Desktop Items:** item model, placement, hit testing and interaction state. Not a file manager or Dock.
+- **Aurea Files:** filesystem operations, MIME/open-with, thumbnails and Trash service.
+- **Aurea Shell:** Dock, launcher, panels, notifications and user-facing controls.
+- **Aurea Compositor:** Wayland surfaces, outputs, pointer routing, hit-test handoff, Vulkan composition and presentation.
 
-Initial boundaries:
-
-- **Aurea Background**: wallpaper selection, per-output layout, lifecycle and policy. Decode work is delegated to a worker; the render thread consumes completed pixel/texture state only.
-- **Aurea Media**: a narrow internal media/asset provider boundary for decoding and raster asset preparation. Start as an in-process worker/library unless measured needs justify a separate daemon or IPC.
-- **Aurea Desktop Items**: desktop item model, placement, hit-testing and interaction state. It must not become a file manager or a generic Dock container.
-- **Aurea Files**: filesystem operations, MIME/open-with integration, thumbnails and Trash service.
-- **Aurea Shell**: Dock, launcher, panels, notifications and user-facing controls.
-- **Aurea Compositor**: Wayland surfaces, outputs, pointer, hit-testing handoff and Vulkan composition/presentation. It owns GPU resources, not file discovery or image decoding policy.
-
-Services should be lazy/on-demand where possible, bounded in memory and work, and should not duplicate Linux facilities that already meet the requirement.
-
-## Rendering order for the first visible desktop
-
-The intended composition order is:
+## Rendering order
 
 1. Clear output to the selected theme fallback color.
-2. Draw the wallpaper texture using the selected per-output fit mode and output-local clipping.
-3. Draw native desktop items when their texture assets and geometry are ready.
-4. Draw mapped Wayland surfaces in the correct stacking order.
+2. Draw the selected wallpaper texture using per-output fit geometry and clipping.
+3. Draw native desktop items once their raster assets and geometry are ready.
+4. Draw mapped Wayland surfaces in stacking order.
 5. Draw the native pointer/cursor above the scene.
-6. Apply the existing output color pass and present through the existing DRM/KMS path.
+6. Apply the existing output color pass and present through DRM/KMS.
 
-The exact placement of the output color pass must continue to follow the existing Vulkan color pipeline contract. Do not regress Night Light or scanout synchronization while adding background textures.
+Do not regress Night Light, output transforms, fractional scaling, scanout synchronization or GPU resource lifetime while extending the pipeline.
 
-## Implementation sequence
+## Next implementation sequence
 
-1. Add a focused architecture record and keep the development diary current.
-2. Implement a small, safe TurboJPEG adapter behind an Aurea-owned media boundary; enforce input/output size limits and decode off-thread.
-3. Add a bounded wallpaper texture resource/cache using the existing Vulkan image/upload primitives. Do not reuse the Wayland surface cache by inventing fake surface IDs.
-4. Draw the wallpaper before windows and cursor, using the existing fit/layout contract.
-5. Produce raster variants of the approved static Trash artwork and add a dedicated desktop asset texture path.
-6. Convert desktop item snapshots into render elements, preserving logical-to-output coordinate conversion and clipping.
-7. Connect pointer hit-testing and click behavior to desktop items only after visible rendering is working.
-8. Validate on Fedora hardware only after the user agrees to the first build/test milestone.
+1. Establish a deterministic, reproducible SVG-to-raster asset pipeline for the approved desktop icon artwork. Keep SVG sources canonical and generated variants separate; avoid a new runtime SVG dependency.
+2. Add a small compositor-owned desktop-asset description/cache with bounded raster dimensions and asynchronous Vulkan upload. Do not overload the Wayland SHM texture cache.
+3. Convert `DesktopItemsSnapshot` entries into output-clipped render elements and draw them between wallpaper and Wayland surfaces.
+4. Connect the existing `DesktopHitTest` logical geometry to pointer input only after the icons are visible. Preserve Wayland surface focus/raise precedence and forward events normally.
+5. Add selection, single/double-click and context-menu semantics through explicit desktop interaction contracts; keep file opening and application launch in Aurea Files/Shell, not in the compositor.
+6. Review active-grab completion when an output disappears, then validate hotplug/session pause/resume on hardware.
+7. Run the agreed grouped Cargo formatting/check/test and visual validation on Fedora. Do not run builds/tests for every small source correction.
 
-## Explicit non-goals for this milestone
+## Explicit non-goals
 
-- No ISO generation.
-- No build, Cargo check, formatting, tests or CI until the agreed visual milestone and user approval.
+- No ISO generation during desktop development.
 - No X11, XWayland or OpenGL.
 - No GNOME/KDE desktop dependencies.
-- No permanent background daemon unless profiling or lifecycle requirements demonstrate a real need.
+- No runtime SVG engine added solely for static icons.
+- No permanent background daemon without measured need.
 - No copying COSMIC implementation code or assets.
-- No replacing the existing Vulkan pipeline or restructuring unrelated modules.
+- No unrelated compositor or Vulkan restructuring.
 
-## Audit limitations
+## Verification limits
 
-This audit inspected the repository source at the recorded commit and Debian package metadata. It did not run the code, inspect the running Fedora host, prove the presence of runtime libraries on that host, or validate physical DRM/KMS presentation. TurboJPEG remains a selected candidate pending its packaging and ABI integration review.
+Repository inspection and the recorded container ABI probe do not prove that the desktop boots, that the wallpaper is visible on the user's hardware, that all Vulkan paths work on the AMD Stoney GPU, or that hotplug/session restoration is correct in a live session. Those remain explicit validation tasks.
