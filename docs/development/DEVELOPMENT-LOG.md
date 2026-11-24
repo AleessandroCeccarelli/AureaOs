@@ -1600,3 +1600,12 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - The map now retains an unavailable-assignment state for affected devices. Routing stays blocked until the device is explicitly reassigned or unassigned to restore automatic mode.
 - Device removal clears the retained state; a new explicit assignment also restores routing.
 - No build, Cargo check, rustfmt or tests run. Grouped Fedora validation remains pending.
+
+
+### 2026-11-24 — Separate pen-tablet and tablet-pad inventory kinds
+
+- Found that pad-only devices were classified as `InputDeviceKind::Tablet`, allowing them to appear eligible for pen calibration and tablet output assignment despite having no TabletTool event path.
+- Added `InputDeviceKind::TabletPad`; `Tablet` now requires `TabletTool`, while pad-only hardware receives the distinct inventory kind. Devices exposing both capabilities remain `Tablet` and keep their pad capability metadata.
+- Pad-only devices remain discoverable in the pointing-device registry, but pen-specific calibration and output mapping APIs continue to accept only actual pen tablets.
+- This does not add tablet-pad event support; the Smithay 0.7 limitation remains.
+- No build, Cargo check, rustfmt or tests run. Grouped Fedora validation remains pending.
