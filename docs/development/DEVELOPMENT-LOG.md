@@ -1155,3 +1155,14 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Touchpad preferences are applied only when libinput advertises the corresponding device capabilities; unsupported settings are reported rather than forcing drivers or broader permissions.
 - No new dependency, root access, or Debian-base modification was introduced. No build, tests, rustfmt or CI were run.
 - Standing compatibility gate reaffirmed: assess every new dependency and hardware/codec/service integration against Debian 13 Trixie, least-privilege requirements, licensing, and repository availability before adoption.
+
+
+
+### Follow-up — Debian compatibility for shader build tools
+
+- The build audit found a Fedora-specific installation hint in `components/aurea-compositor/build.rs`, which was inappropriate for the target platform. Replaced it with a distribution-neutral message identifying `glslang-tools` for Debian and `glslang` for Fedora. Commit: `6be56e11`.
+- Updated `tools/shaders/compile-vulkan-shaders.sh` to show both installation commands. Commit: `4e30598b`.
+- Verified `glslang-tools` availability on Debian 13 Trixie amd64 (version `15.1.0+1.4.309.0-1`). It is a build-time tool and must not be added automatically to the installed runtime image.
+- Recorded candidate native development dependencies for Smithay/DRM/input in both language versions of the dependency register. The package set is not approved wholesale: exact direct requirements must be confirmed from the locked Cargo graph and a future Debian build.
+- English dependency register commit: `39a20444`; Italian register commit: `f0542b28`.
+- No package was installed or added to runtime manifests. No build, tests, rustfmt or CI were run.
