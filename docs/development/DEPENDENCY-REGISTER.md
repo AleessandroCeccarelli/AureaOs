@@ -175,3 +175,18 @@ This register is the shared source of truth for dependency decisions. When imple
 - Added docs/architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md.
 - Aligned English and Italian vision and technology-principles documents and linked the new strategy from both README entry points.
 - No dependency, Cargo manifest, lockfile, Rust source or system package was changed. No build, format, check, test or CI was run.
+
+### LocalSend Protocol v2.x — cross-device transfer interoperability
+
+- **Status:** Candidate protocol interoperability; no dependency or implementation approved.
+- **Purpose:** Local-first transfer of files, photos, audio, video, links and text between AureaOS and Android/iOS/macOS/other desktop clients.
+- **Evidence reviewed:** The published protocol repository documents v2.2 REST discovery and HTTPS upload/download flows, receiver approval, per-file tokens and optional SHA-256 integrity verification. The LocalSend project documents cross-platform clients for Linux, macOS, Windows, Android and iOS.
+- **Proposed use:** Implement a narrow Rust adapter behind Aurea Link's stable API. Prefer authenticated HTTPS app-to-app mode; discovery is not authentication. Provide manual IP/QR fallback where multicast is blocked. Stream large files with bounded buffers and safe temporary storage.
+- **Code reuse:** Protocol interoperability does not authorize copying or bundling the LocalSend application. Before reuse, inspect the protocol repository's current license and maintenance/security posture, then record any implementation crate's exact version, license and transitive graph.
+- **Security gates:** explicit pairing/consent, peer identity validation, no silent HTTP downgrade, filename/path validation, size/session/rate limits, hash verification, collision-safe destination, atomic publication, cancellation and cleanup.
+- **Debian/Fedora:** no package or crate has been selected. Check Debian 13 availability and the actual Rust/toolchain/runtime requirements before implementation. Fedora-only validation is insufficient.
+- **Alternatives:** KDE Connect is an optional interoperability target; AirDrop/AWDL/OWL remains experimental and hardware-dependent, not a release requirement.
+- **Constraint:** no always-on daemon, cloud relay, message/contact/notification sync or live media streaming in the first milestone. Keep transfer outside compositor, render thread and Aurea Media decoder.
+- **References:** https://github.com/localsend/protocol and https://github.com/localsend/localsend
+- **Validation:** No dependency, Cargo manifest or lockfile change; no build or tests.
+
