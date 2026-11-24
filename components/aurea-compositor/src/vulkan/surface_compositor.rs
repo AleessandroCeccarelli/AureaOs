@@ -203,7 +203,12 @@ pub(super) fn render_frame(
     if cursor.is_some() {
         surface_cache
             .ensure_native_cursor_texture()
-            .map_err(VulkanSurfaceCompositionError::Texture)?;
+            .map_err(|error| match error {
+                super::surface_pipeline_cache::VulkanSurfacePipelineCacheError::CursorTexture(error) => {
+                    VulkanSurfaceCompositionError::from_shm_texture_error(error)
+                }
+                other => VulkanSurfaceCompositionError::Texture(other.to_string()),
+            })?;
     }
 
     surface_cache
