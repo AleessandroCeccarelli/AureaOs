@@ -1131,3 +1131,5 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Updated `VulkanQueueSubmitError::result()` to prioritize `ERROR_DEVICE_LOST` in either field while retaining `wait_error` for ordinary failures. Added two focused unit tests.
 - Commit: `4a5ac3d2`.
 - No tests, build, formatting or CI were run.
+
+- Static follow-up: kept `result()` const-compatible by using pattern matching instead of `PartialEq` comparisons. Commit: `2acb358a`.
