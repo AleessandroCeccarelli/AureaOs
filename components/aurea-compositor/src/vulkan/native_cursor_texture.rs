@@ -15,6 +15,7 @@ use super::{
 #[derive(Debug)]
 pub(crate) enum VulkanNativeCursorTextureError {
     Snapshot(String),
+    EmptyUpload,
     Texture(VulkanShmTextureError),
 }
 
@@ -22,6 +23,7 @@ impl fmt::Display for VulkanNativeCursorTextureError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Snapshot(error) => write!(formatter, "Native cursor snapshot: {error}"),
+            Self::EmptyUpload => formatter.write_str("Native cursor upload completed without a texture"),
             Self::Texture(error) => write!(formatter, "Native cursor texture: {error}"),
         }
     }
@@ -73,13 +75,9 @@ impl VulkanNativeCursorTexture {
                     VulkanShmTextureError::Command(error),
                 )
             })?;
-            let texture = textures.pop().ok_or_else(|| {
-                VulkanNativeCursorTextureError::Texture(
-                    VulkanShmTextureError::Command(
-                        smithay::reexports::ash::vk::Result::ERROR_UNKNOWN,
-                    ),
-                )
-            })?;
+            let texture = textures
+                .pop()
+                .ok_or(VulkanNativeCursorTextureError::EmptyUpload)?;
             self.texture = Some(texture);
             return Ok(true);
         }
