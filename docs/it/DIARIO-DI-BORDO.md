@@ -1273,3 +1273,43 @@ Nessuna build, test, rustfmt o CI avviati. Nessuna dipendenza runtime aggiunta. 
 2. Aggiungere il mapping tra item desktop, tema/stato e asset approvato.
 3. Collegare cache, geometria per-output e draw Vulkan, mantenendo l'ordine wallpaper → icone → superfici Wayland → cursore.
 4. Solo dopo passare a hit-testing, selezione e attivazione.
+
+
+## 24 novembre 2026 — Risoluzione degli asset delle icone Desktop
+
+### Modifiche registrate
+
+- Aggiunto `components/aurea-compositor/src/desktop/icon_assets.rs`, con responsabilità limitata alla risoluzione degli asset grafici approvati per gli elementi Desktop.
+- Il modello `DesktopItemKind::Trash` viene associato alle sei varianti ufficiali: Light/Dark × Empty/PartiallyFull/Full.
+- Sono dichiarate le quattro densità raster già previste dalla pipeline: 64, 96, 128 e 192 pixel per un'icona da 64 pixel logici.
+- Ogni variante produce un identificatore stabile (asset ID, revisione del contenuto e dimensione raster) e il percorso relativo del file RGBA8 generato.
+- Il descrittore converte i byte RGBA8 in uno `ShmBufferSnapshot` usando `ShmBufferSnapshot::from_rgba8`, che controlla dimensioni e lunghezza esatta dei dati prima dell'upload.
+- Il tipo `DesktopIconTextureKey` è stato spostato nel confine Desktop, fuori dal modulo Vulkan. In questo modo la descrizione degli asset non dipende dalla feature opzionale `vulkan`.
+- File, cartelle e applicazioni non ricevono ancora un'icona predefinita: i rispettivi asset canonici e i servizi di identificazione non sono ancora stati definiti.
+
+### Limiti espliciti
+
+- Lo stato Empty/PartiallyFull/Full è un input del resolver; non viene dedotto dal nome o dall'URI e non è ancora collegato al servizio Cestino.
+- I 24 file RGBA8 non sono stati generati, caricati o ispezionati visivamente su Fedora.
+- Il resolver non è ancora collegato al frame renderer; la cache Vulkan resta infrastruttura preparatoria e nessuna icona viene ancora disegnata.
+- Nessuna dipendenza Cargo o runtime aggiunta.
+
+### Riferimenti
+
+- `0f06f637` — primo modulo descrittore degli asset Desktop.
+- `fbd82001` — identità della texture spostata fuori dalla cache Vulkan.
+- `38d5749b` — registrazione del resolver nel modulo Desktop.
+- `0d1e135e` — prima esportazione della chiave dal modulo Vulkan, poi rimossa.
+- `9c0b9a26`, `6ca60a59`, `f0353135` — correzione architetturale: chiave definita nel modulo Desktop, indipendente dalla feature Vulkan.
+- Documentazione architetturale aggiornata nello stesso blocco.
+
+### Verifica
+
+Revisione statica del sorgente e dei contratti esistenti. Nessuna build, test, rustfmt, cargo check o CI eseguiti, secondo la procedura concordata. Non viene dichiarata la compilazione.
+
+### Prossime attività
+
+1. Eseguire su Fedora la generazione dei 24 asset e verificarne dimensioni, trasparenza, bordi alpha e resa su sfondi chiari/scuri.
+2. Collegare il servizio Cestino al valore `DesktopTrashContents`, senza inventare uno stato di default.
+3. Caricare i byte generati e costruire le richieste per la cache Vulkan.
+4. Collegare cache e geometria per-output al draw pass, mantenendo l'ordine wallpaper → icone → superfici Wayland → puntatore.
