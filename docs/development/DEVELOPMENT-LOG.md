@@ -639,3 +639,46 @@ Restore never overwrites an existing destination. Entries require both the file 
 Added `ShellRuntime::set_trash_contents` as the shell-side update point for semantic state supplied by the service.
 
 **Not wired yet:** the service is not instantiated by the composition root, no filesystem watcher or confirmation UI exists, and the Vulkan renderer does not yet draw the icon. This implementation currently targets the home Trash only: cross-filesystem moves return an error and remove the just-written metadata. Tests were added but not run; no Cargo command was launched.
+
+
+## 2026-11-24 — Desktop rendering and media pipeline audit
+
+### Repository baseline
+
+- Audited `main` at commit `d9089aafaaa0b6470aa231f946aad1d8a7c5aede`.
+- Confirmed the wallpaper metadata/pixel/layout/manager contracts, desktop item snapshot, Vulkan SHM texture upload/cache, textured-region draw path, native cursor composition, and home Trash service.
+- Added [Desktop Rendering and Media Pipeline](../architecture/DESKTOP-RENDERING-AND-MEDIA-PIPELINE.md) as the detailed audit and implementation boundary.
+
+### Findings
+
+- Wallpaper selection and RGBA8 pixel storage exist, but the committed JPEG is not decoded and no wallpaper texture is uploaded or drawn.
+- Vulkan currently clears to the desktop fallback color, then draws mapped Wayland surfaces and the native cursor. Desktop item snapshots are present in `RenderScene` but are not yet converted into native drawable elements.
+- The existing SHM texture cache is keyed to Wayland surface IDs and should not be misused for wallpaper or desktop assets.
+- Pointer/input foundations already exist; the first visible desktop should layer wallpaper underneath windows and cursor.
+- Trash SVG artwork is embedded by the shell, but there is no compositor SVG rasterizer or desktop-icon rendering path.
+- Debian 13 provides libjpeg-turbo/TurboJPEG packages. librsvg is available too, but its runtime dependency chain includes Cairo, GLib and Pango; this is not justified for the current static icon requirement.
+
+### Decisions and direction
+
+- Keep decoding off the compositor render thread.
+- Evaluate a small Aurea-owned safe adapter over Debian's TurboJPEG system library for the committed JPEG wallpaper; verify ABI, Fedora package availability, packaging and error handling before adding code.
+- Keep the Vulkan renderer as the exclusive GPU API and reuse its existing image/upload/draw primitives with a dedicated bounded desktop-asset cache.
+- Preserve approved SVG masters as canonical editable artwork; evaluate generated raster variants for static desktop assets instead of adding a heavyweight runtime SVG stack.
+- Treat Aurea Background, Aurea Media, Desktop Items, Aurea Files and Aurea Shell as clear service boundaries. Begin with in-process/on-demand workers where possible; do not create always-running daemons without measured need.
+- Continue using FreeDesktop/XDG and Wayland conventions rather than replacing Linux facilities.
+
+### Verification and limitations
+
+- Source files and Debian package metadata were inspected.
+- No source code was changed in this audit entry.
+- No Cargo formatting, build, check, test, CI, ISO generation or physical-hardware validation was performed.
+- TurboJPEG is a candidate pending packaging and ABI review, not yet an implemented dependency.
+
+### Next actions
+
+1. Inspect the existing Vulkan image/upload abstractions and output-coordinate conversion before designing the wallpaper texture cache.
+2. Verify TurboJPEG development/runtime packages on both Debian Trixie and the Fedora development host.
+3. Implement the isolated decoder and worker boundary with strict memory limits.
+4. Connect wallpaper texture upload and draw before Wayland surfaces and cursor.
+5. Add raster desktop artwork and native desktop item draw elements.
+6. Only after a visible wallpaper and pointer are ready, request the agreed Fedora build/test cycle.
