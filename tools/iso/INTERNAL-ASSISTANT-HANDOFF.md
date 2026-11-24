@@ -831,3 +831,12 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - JPEG decoder/ABI gate remains pending. No dependencies/manifests changed; no fmt/check/test/build/CI or ISO run. Local Fedora verification is required before the next integration step.
 
 - Follow-up compile-safety review: `wallpaper_texture.rs` imports `WallpaperPixels` through the public `crate::desktop::WallpaperPixels` re-export (the internal `desktop::wallpaper` module is private). Fix commit: `881c88f9`.
+
+
+## ASYNC WALLPAPER UPLOAD — 2026-11-24
+
+- Commit: `8d0bb2e5` in `components/aurea-compositor/src/vulkan/wallpaper_texture.rs`.
+- Added `VulkanWallpaperTexture::submit_pixels(Arc<VulkanLogicalDevice>, WallpaperPixels)`, returning `VulkanPendingUpload<Arc<VulkanWallpaperTexture>>`. The pending object retains staging and texture resources until its fence completes.
+- `from_pixels` remains as a blocking convenience wrapper implemented via `submit_pixels(...).wait()`; never call it from the latency-sensitive render callback.
+- This removes the synchronous-only limitation at the low-level upload API, but there is still no wallpaper cache, decoder, render-scene wiring, or draw-under-surfaces pass.
+- No dependency/manifests changed. No Cargo fmt/check/test/build/CI or ISO run. User must run local Fedora verification; Debian 13 remains the compatibility target.
