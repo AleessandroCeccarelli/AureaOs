@@ -18,9 +18,9 @@ const MAX_PENDING_WALLPAPER_UPLOADS: usize = 2;
 const MAX_PENDING_WALLPAPER_BYTES: usize = 256 * 1024 * 1024;
 
 /// Identifies one selected wallpaper revision independently from Wayland surfaces.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct WallpaperTextureKey {
-    pub(crate) asset_id: &'static str,
+    pub(crate) asset_id: String,
     pub(crate) revision: u64,
 }
 
@@ -90,12 +90,12 @@ impl VulkanWallpaperTextureCache {
         pixels: &WallpaperPixels,
     ) -> Result<bool, VulkanWallpaperTextureCacheError> {
         self.poll()?;
-        if self.ready.as_ref().is_some_and(|(ready_key, _)| *ready_key == key) {
-            self.selected = Some(key);
+        if self.ready.as_ref().is_some_and(|(ready_key, _)| ready_key == &key) {
+            self.selected = Some(key.clone());
             return Ok(true);
         }
         if self.pending.iter().any(|pending| pending.key == key) {
-            self.selected = Some(key);
+            self.selected = Some(key.clone());
             self.ready = None;
             return Ok(true);
         }
@@ -103,15 +103,15 @@ impl VulkanWallpaperTextureCache {
         // Invalidate the previously visible revision before attempting any
         // fallible allocation or submission for the new selection. Pending
         // uploads remain owned until their fences prove completion.
-        if self.selected != Some(key) {
+        if self.selected.as_ref() != Some(&key) {
             self.selected = Some(key);
             self.ready = None;
         }
 
-        if self.failed_upload == Some(key) {
+        if self.failed_upload.as_ref() == Some(&key) {
             return Ok(false);
         }
-        if self.failed_upload.is_some_and(|failed| failed != key) {
+        if self.failed_upload.as_ref().is_some_and(|failed| failed != &key) {
             self.failed_upload = None;
         }
 
@@ -133,7 +133,7 @@ impl VulkanWallpaperTextureCache {
                 return Err(VulkanWallpaperTextureCacheError::Command(error));
             }
             Err(error) => {
-                self.failed_upload = Some(key);
+                self.failed_upload = Some(key.clone());
                 return Err(VulkanWallpaperTextureCacheError::Upload(error));
             }
         };
@@ -142,7 +142,7 @@ impl VulkanWallpaperTextureCache {
         self.ready = None;
         self.pending_bytes = self.pending_bytes.saturating_add(byte_len);
         self.pending.push(PendingWallpaperUpload {
-            key,
+            key: key.clone(),
             byte_len,
             upload,
         });
@@ -190,13 +190,13 @@ impl VulkanWallpaperTextureCache {
 
     pub(crate) fn texture(&self) -> Option<&VulkanWallpaperTexture> {
         let (key, texture) = self.ready.as_ref()?;
-        (self.selected == Some(*key)).then_some(texture.as_ref())
+        (self.selected.as_ref() == Some(key)).then_some(texture.as_ref())
     }
 
     /// Returns the ready texture only if the selected cache key belongs to this asset.
     pub(crate) fn texture_for_asset(
         &self,
-        asset_id: &'static str,
+        asset_id: &str,
     ) -> Option<&VulkanWallpaperTexture> {
         let (key, texture) = self.ready.as_ref()?;
         (self.selected == Some(*key) && key.asset_id == asset_id)
