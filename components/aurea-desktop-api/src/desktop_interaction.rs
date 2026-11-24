@@ -87,7 +87,7 @@ pub struct DesktopInteractionReceiver {
 }
 
 impl DesktopInteractionReceiver {
-    /// Returns the shared shell-owned desktop selection state.
+    /// Returns the shared desktop selection projection.
     pub fn selection_controller(&self) -> DesktopSelectionController {
         self.selection.clone()
     }
