@@ -24,7 +24,7 @@ use super::super::state::WaylandState;
 
 static POINTER_MOTION_EVENTS: AtomicU64 = AtomicU64::new(0);
 
-fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut WaylandState) {
+pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut WaylandState) {
     // Do not forward stale or queued input while libseat has paused this
     // compositor session (for example, after switching to another VT).
     if !state.session_active {
