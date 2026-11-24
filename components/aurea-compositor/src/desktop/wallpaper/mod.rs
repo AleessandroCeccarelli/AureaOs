@@ -3,9 +3,8 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Desktop wallpaper assets, layout, decoded pixels, and animation contracts.
+//! Desktop still-image wallpaper assets, layout, and decoded pixels.
 
-mod animation;
 mod asset;
 mod draw_geometry;
 mod decode_service;
@@ -14,11 +13,6 @@ mod manager;
 mod pixels;
 mod snapshot;
 
-pub use animation::{
-    MAX_WALLPAPER_FRAME_RATE, MIN_WALLPAPER_FRAME_RATE, WallpaperFrame, WallpaperFrameProvider,
-    WallpaperPauseReason, WallpaperPlaybackDecision, WallpaperPlaybackEnvironment,
-    WallpaperPlaybackPolicy, WallpaperProviderError,
-};
 pub use asset::{WallpaperAsset, WallpaperAssetError, WallpaperDimensions, WallpaperFormat};
 pub use draw_geometry::{WallpaperDrawGeometry, WallpaperUvRect};
 pub use decode_service::{
