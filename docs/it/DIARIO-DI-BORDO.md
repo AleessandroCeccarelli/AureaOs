@@ -1187,3 +1187,34 @@ Nessuna build, test, rustfmt o CI avviati. Nessuna dipendenza runtime aggiunta. 
 - La voce resvg è stata sostituita nel registro dipendenze. Nessun nuovo strumento o pacchetto runtime è richiesto oltre al renderer già usato dal flusso cursori.
 - La pipeline Trash non è stata ancora eseguita; nessun PNG è stato generato o validato visivamente.
 - Commit di correzione: `e0228650`; documentazione aggiornata nei commit `65705341`, `eb28e253`, `4aa8a60e`, `e9819c41`, `bc95da4b`.
+
+
+## 24 novembre 2026 — Geometria per-output delle icone desktop e pipeline RGBA8
+
+### Geometria delle icone
+
+- Aggiunto `components/aurea-compositor/src/desktop/item_geometry.rs`.
+- Le posizioni salvate restano coordinate logiche globali; per ogni output il modulo calcola la destinazione fisica.
+- Gestisce origine del monitor, scala intera e fractional scale, trasformazione del display e clipping ai limiti fisici dell'output.
+- Prima dimensione di rendering fissata a 64 × 64 pixel logici; il renderer userà varianti raster corrispondenti a 1x, 1.5x, 2x e 3x.
+- Gli elementi fuori dal monitor o con geometria non valida vengono saltati individualmente, senza impedire il disegno degli altri.
+- Aggiunti quattro test sorgente: monitor secondario con origine globale, icona fuori output, scala 2x e clipping parziale.
+- Il modulo è preparatorio: non è ancora collegato al draw Vulkan e non dichiariamo icone visibili sul desktop. Nessun test è stato eseguito.
+
+### Asset statici senza decoder PNG nel runtime
+
+- Aggiunto `tools/assets/png_to_rgba.py`, basato esclusivamente sulla libreria standard Python.
+- Il convertitore accetta solo PNG non interlacciati RGBA8 fino a 256 × 256; controlla CRC dei chunk, limiti di decompressione, dimensione esatta dei pixel e filtri PNG 0–4.
+- `render-trash-icons.sh` ora genera 24 file RGBA8 raw (64, 96, 128 e 192 px) dalle sei SVG canoniche, usando `rsvg-convert` già previsto dal flusso cursori.
+- I file raw sono tightly packed, row-major, senza padding: dimensione esatta = larghezza × altezza × 4. I PNG sono temporanei e rimossi al termine.
+- Nessun decoder PNG Rust, crate Cargo o pacchetto runtime aggiunto. Python 3 e rsvg-convert restano strumenti host per la generazione degli asset.
+- Il nuovo script non è stato eseguito; i 24 output non sono stati generati o ispezionati visivamente.
+
+### Stato e prossimi passaggi
+
+1. Eseguire lo script sul Fedora host e ispezionare trasparenza, alpha edges, contrasto Light/Dark e allineamento.
+2. Implementare cache asset desktop dedicata e upload Vulkan asincrono con limiti espliciti di numero/byte; non riutilizzare la cache SHM.
+3. Collegare la geometria per-output al renderer e disegnare le icone tra wallpaper e superfici Wayland.
+4. Solo dopo implementare hit-test, selezione e attivazione.
+
+Nessuna build, test, rustfmt o CI avviati. Nessuna dipendenza runtime aggiunta. Debian 13 Trixie resta il target.
