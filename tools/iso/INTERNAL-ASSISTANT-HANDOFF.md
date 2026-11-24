@@ -873,6 +873,12 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
  
 ## VULKAN TEXTURED DRAW PASS — GENERIC PUSH CONSTANTS — 2026-11-24
 
+## WALLPAPER UV PUSH-CONSTANT ENCODING — 2026-11-24
+
+- Added `WallpaperUvRect::to_push_constant_bytes`, serializing min X, min Y, max X, max Y as four native-endian `f32` values matching the wallpaper shader's 16-byte `vec4` push-constant ABI.
+- Added a round-trip unit test for component order. Commit: `f474ddfd`. Test authored, not run.
+- This only prepares the CPU payload. Descriptor binding, draw recording, and empty-scene integration remain outstanding. Do not claim wallpaper is visible.
+
 - Added `VulkanDrawPass::record_textured_region_with_push_constants`, allowing dedicated textured pipelines to provide their own push-constant bytes without changing the existing surface transform ABI.
 - Existing surface draws still use the four-byte `u32` transform; the wallpaper pipeline can provide its independent 16-byte UV rectangle.
 - Payload validation rejects empty, non-four-byte-aligned, and greater-than-128-byte data. Unit tests cover the 16-byte wallpaper payload and invalid sizes.
