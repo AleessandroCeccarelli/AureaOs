@@ -1462,3 +1462,19 @@ Il flag arriva fino alla preparazione della geometria per-output, ma il draw pas
 2. Completare la mappatura asset per tutte le categorie.
 3. Collegare geometria, cache Vulkan e pass di disegno in moduli dedicati.
 4. Implementare evidenziazione della selezione e poi collegare le azioni Shell/Files.
+
+
+## 24 novembre 2026 — Perimetro del primo desktop utilizzabile
+
+È stato ristretto esplicitamente il prossimo traguardo: non realizziamo ancora il desktop completo. La prima sessione deve mostrare soltanto sfondo, puntatore funzionante e una singola icona Cestino in alto a sinistra, con evidenziazione quando viene selezionata.
+
+- Il modello contiene già un solo elemento Trash predefinito, identificato da `system:trash`, in posizione logica globale `(32, 32)`. Non va duplicato né riposizionato.
+- Movimento, pulsanti, doppio clic e rotellina appartengono al percorso input già esistente; la verifica reale sul portatile resta da fare.
+- Il flag di selezione raggiunge già la geometria per-output, ma manca ancora il disegno visibile.
+- Resolver degli asset, geometria e cache Vulkan sono infrastruttura preparatoria: non sono ancora collegati al draw pass.
+- I 24 file RGBA8 del Cestino non sono ancora stati generati né ispezionati. Prima dell'integrazione vanno esportati su Fedora e verificati.
+- Non si implementano ora icone File/Cartella/Applicazione, menu contestuali, drag-and-drop o apertura di elementi.
+- Il loader dovrà ricevere una root runtime esplicita e caricare gli asset fuori dal ciclo dei frame; niente dipendenza dalla directory corrente e niente letture del filesystem a ogni frame.
+- L'icona va disegnata una sola volta nel percorso di composizione condiviso da Vulkan diretto e compatibilità CPU-upload, tra wallpaper e superfici Wayland.
+
+Nessuna build, test, rustfmt o CI eseguiti. La verifica resta raggruppata su Fedora, dopo aver completato l'integrazione e generato gli asset. Non si dichiara ancora visibile o validato il Cestino.
