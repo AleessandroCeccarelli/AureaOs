@@ -87,7 +87,7 @@ pub(crate) fn desktop_icon_asset(
     item: &DesktopItem,
     theme: DesktopTheme,
     trash_contents: DesktopTrashState,
-    raster_size: DesktopIconRasterSize,
+    output_scale: f64,
 ) -> Option<DesktopIconAssetDescriptor> {
     if !matches!(item.kind(), DesktopItemKind::Trash) {
         return None;
@@ -114,7 +114,7 @@ pub(crate) fn desktop_icon_asset(
         }
     };
 
-    let pixel_size = raster_size.pixels();
+    let pixel_size = DesktopIconRasterSize::for_scale(output_scale).pixels();
     Some(DesktopIconAssetDescriptor {
         key: DesktopIconTextureKey {
             asset_id,
@@ -150,7 +150,7 @@ mod tests {
                     trash,
                     theme,
                     state,
-                    DesktopIconRasterSize::OneX,
+                    1.0,
                 )
                 .expect("Trash artwork must resolve");
                 assert!(asset.relative_path.ends_with("-64.rgba"));
@@ -168,7 +168,7 @@ mod tests {
             trash,
             DesktopTheme::Dark,
             DesktopTrashState::Empty,
-            DesktopIconRasterSize::ThreeX,
+            3.0,
         )
         .unwrap();
 
@@ -194,7 +194,7 @@ mod tests {
             &manager.items()[0],
             DesktopTheme::Light,
             DesktopTrashState::Empty,
-            DesktopIconRasterSize::OneX,
+            1.0,
         )
         .unwrap();
 
