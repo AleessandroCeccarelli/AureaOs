@@ -1010,3 +1010,13 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Nessun clone completo del buffer RGBA è stato introdotto: resta soltanto la copia necessaria verso lo staging Vulkan.
 - Commit su main: `130975a6`, `3ebe773e`, `d5d69149`.
 - La conservazione dei pixel non equivale a un retry automatico: per riprovare la stessa selezione dopo un errore temporaneo servirà una politica esplicita. Nessuna build, test, rustfmt o CI avviata; verifiche raggruppate a fine blocco su Fedora/CI.
+
+
+## 24 novembre 2026 — Invalidazione immediata della vecchia texture
+
+- Individuato un caso limite: se la preparazione del nuovo wallpaper falliva prima della submission, la cache poteva conservare la vecchia texture come selezione attiva.
+- Ora il cambio di chiave asset/revisione invalida subito la texture pronta, prima delle operazioni Vulkan che possono fallire.
+- Gli upload già inviati non vengono cancellati né liberati anticipatamente: restano posseduti dalla cache fino al completamento verificato della fence; se appartengono a una revisione non più selezionata, vengono poi scartati.
+- La rimozione dello sfondo continua a togliere immediatamente la texture dalla vista senza compromettere la durata delle risorse GPU pendenti.
+- Commit: `58e37b8d`.
+- Nessuna build, test, rustfmt o CI avviata. La verifica resta raggruppata al termine del blocco.
