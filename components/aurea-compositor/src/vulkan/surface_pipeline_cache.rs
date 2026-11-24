@@ -227,14 +227,17 @@ impl VulkanSurfacePipelineCache {
         if ready_len.is_some_and(|byte_len| {
             self.wallpaper_texture_cache.can_accept_upload(byte_len)
         }) {
-            if let Some(decoded) = service.take_ready() {
+            if let Some(decoded) = service.ready() {
                 let key = WallpaperTextureKey {
                     asset_id: decoded.key().asset_id(),
                     revision: decoded.key().revision(),
                 };
-                self.wallpaper_texture_cache
-                    .prepare(key, decoded.into_pixels())
-                    .map_err(|error| error.to_string())?;
+                if self.wallpaper_texture_cache
+                    .prepare(key, decoded.pixels())
+                    .map_err(|error| error.to_string())?
+                {
+                    let _ = service.take_ready();
+                }
             }
         }
         Ok(())
