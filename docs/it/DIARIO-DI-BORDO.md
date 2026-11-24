@@ -1694,3 +1694,12 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Il registro continua a mostrare i pad-only, ma le API specifiche per penna non li accettano.
 - Non è stato aggiunto supporto agli eventi pad: il limite Smithay 0.7 resta invariato.
 - Nessuna build, cargo check, rustfmt o test eseguiti; verifica raggruppata su Fedora ancora in sospeso.
+
+### Protezione mapping tavoletta grafica dopo disconnessione monitor — 24 novembre 2026
+
+- Individuata un'incoerenza rispetto alla correzione touchscreen: la mappa delle tavolette eliminava l'assegnazione esplicita quando il monitor veniva rimosso.
+- In una configurazione con un solo monitor rimasto, la tavoletta poteva quindi passare automaticamente dal monitor assegnato all'intero desktop.
+- La mappa ora conserva l'associazione come non disponibile e blocca la risoluzione finché l'utente non assegna esplicitamente un nuovo output o rimuove l'assegnazione.
+- La rimozione fisica della tavoletta elimina sia l'associazione sia lo stato non disponibile. Le assegnazioni degli altri dispositivi restano indipendenti.
+- Aggiunti test sorgente per blocco del rerouting, riassegnazione, disassegnazione e isolamento tra dispositivi.
+- Nessuna build, cargo check, rustfmt o test eseguiti; verifica raggruppata su Fedora ancora in sospeso.
