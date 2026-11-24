@@ -268,7 +268,7 @@ impl VulkanSurfacePipelineCache {
         }) {
             if let Some(decoded) = service.ready() {
                 let key = WallpaperTextureKey {
-                    asset_id: decoded.key().asset_id(),
+                    asset_id: decoded.key().asset_id().to_owned(),
                     revision: decoded.key().revision(),
                 };
                 if self.wallpaper_texture_cache
@@ -307,7 +307,7 @@ impl VulkanSurfacePipelineCache {
     /// between a desktop selection change and completion of the replacement upload.
     pub(crate) fn wallpaper_texture_for_asset(
         &self,
-        asset_id: &'static str,
+        asset_id: &str,
     ) -> Option<&VulkanWallpaperTexture> {
         self.wallpaper_texture_cache.texture_for_asset(asset_id)
     }
