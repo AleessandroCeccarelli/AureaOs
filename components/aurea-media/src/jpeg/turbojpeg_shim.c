@@ -38,6 +38,7 @@ int aurea_turbojpeg_header(const unsigned char *input, unsigned long input_len, 
 int aurea_turbojpeg_decode(const unsigned char *input, unsigned long input_len, int width, int height, unsigned char *output, size_t output_len)
 {
     if (input == NULL || output == NULL || width <= 0 || height <= 0) return SHIM_INVALID_INPUT;
+    if ((size_t)width > SIZE_MAX / (size_t)height) return SHIM_OUTPUT_MISMATCH;
     size_t pixels = (size_t)width * (size_t)height;
     if (pixels > SIZE_MAX / 4) return SHIM_OUTPUT_MISMATCH;
     size_t required = pixels * 4;
