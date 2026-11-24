@@ -39,3 +39,7 @@ Run the same compile and probe commands from the repository root. A successful F
 ## Compatibility note
 
 TurboJPEG 2.1.x does not define `TJCS_DEFAULT` or `TJCS_UNKNOWN` in its legacy colorspace enum. The probe therefore initializes the output-only `jpegColorspace` integer to `-1`; `tjDecompressHeader3()` writes the detected value on success. Do not replace this with a newer TurboJPEG 3.x enum constant when checking Debian 13 compatibility.
+
+## Automated compatibility check
+
+The GitHub Actions workflow `.github/workflows/turbojpeg-abi.yml` compiles this probe and runs it against the committed wallpaper in Debian 13 Trixie and Fedora containers. It also inspects the linked TurboJPEG runtime library. A successful workflow validates only this probe and image path; it does not approve a Rust FFI adapter or replace review of the headers, exported symbols, runtime package and decoder boundary.
