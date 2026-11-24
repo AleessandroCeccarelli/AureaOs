@@ -1618,3 +1618,12 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Physical tablet removal clears both assignment and unavailable state. Other devices' mappings remain independent.
 - Added source tests for blocked rerouting, reassignment, unassignment and per-device isolation.
 - No build, Cargo check, rustfmt or tests were run; grouped Fedora validation remains pending.
+
+### 2026-11-24 — Constrain pen-tablet coordinates to actual monitor rectangles
+
+- Reviewed pen coordinates on multi-monitor layouts with gaps or offset displays.
+- Tablet calibration uses a bounding rectangle; on a non-contiguous layout that rectangle can include points that do not belong to any output.
+- After calibration, tablet locations are now constrained to the actual enabled logical output rectangles. A point in a gap is moved to the nearest valid output edge.
+- When a tablet is explicitly mapped to one monitor, only that monitor's geometry participates in the constraint.
+- Reuses the geometry policy already used for relative pointer motion; touchscreen transforms and generic absolute-pointer events are unchanged.
+- No build, Cargo check, rustfmt or tests were run. Grouped Fedora validation remains pending.
