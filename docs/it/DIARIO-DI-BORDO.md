@@ -1116,3 +1116,51 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Il cursore client Wayland e la freccia nativa AureaOS hanno percorsi distinti; il primo usa la superficie client e il relativo hotspot, il secondo la bitmap interna e la geometria output-aware.
 - Nessun permesso globale aggiuntivo o driver vendor proprietario è richiesto dal percorso esaminato: la gestione input è mediata da libinput nella sessione libseat.
 - Audit statico soltanto; nessuna build/test/format eseguiti. Prossimo passo: verificare lifecycle della posizione/cursor state tra output, hotplug e session pause/resume, poi collegare hit testing e interazioni del desktop senza duplicare la logica Wayland.
+
+
+## 24 novembre 2026 — Allineamento della pipeline desktop e audit lifecycle puntatore
+
+### Stato reale della pipeline wallpaper
+
+La revisione del codice su `main` ha mostrato che la pipeline è più avanzata di quanto riportasse la precedente versione del documento architetturale:
+
+- `aurea-media` è già un crate separato, con shim C TurboJPEG, API Rust e worker limitato.
+- `WallpaperDecodeService` è collegato alla cache Vulkan e gestisce revisioni, risultati obsoleti, errori e back-pressure senza bloccare il frame.
+- `VulkanWallpaperTextureCache` mantiene upload asincroni e risorse pendenti fino al completamento delle fence.
+- `surface_compositor::render_frame` disegna la texture wallpaper pronta dopo il clear e prima delle superfici Wayland; il cursore resta sopra la scena.
+- La geometria Fill viene calcolata per ciascun output. La cache wallpaper è separata dalla cache delle superfici SHM.
+
+Questa è integrazione presente nel sorgente, non una verifica visiva: non abbiamo ancora eseguito la prova sul laptop Fedora e non dichiariamo il wallpaper funzionante su hardware.
+
+### Audit statico output/sessione/puntatore
+
+- La riconciliazione degli output aggiorna il focus del puntatore e richiede nuovi frame.
+- Quando viene rimosso un intero dispositivo DRM, i relativi output vengono ritirati e il compositor tenta di ricentrare il puntatore sul primo output ancora attivo.
+- Durante `PauseSession`, gli eventi input in coda vengono ignorati; le superfici KMS vengono disabilitate prima del rilascio delle risorse GBM/Vulkan.
+- Durante `ActivateSession`, il compositor ripristina GBM, Vulkan, superfici KMS e output differiti; poi ricentra il puntatore su un output attivo.
+- Il ricentramento non avviene mentre un client possiede un pointer grab. È una protezione intenzionale per non interrompere un'interazione Wayland. Resta da verificare il passaggio di fine grab se l'output su cui si trovava il puntatore viene rimosso durante il grab.
+- La geometria del cursore nativo è calcolata per output e considera scala, fractional scale e trasformazione del target.
+
+L'audit è statico: nessuna prova di hotplug o cambio VT è stata eseguita sul dispositivo fisico.
+
+### Desktop items: punto di partenza già disponibile
+
+- L'API condivisa contiene già `DesktopRect` e `DesktopHitTest`, con coordinate logiche, bordi sinistro/superiore inclusivi, destro/inferiore esclusivi e risoluzione deterministica delle sovrapposizioni.
+- `DesktopItemsSnapshot` è già incluso in `RenderScene`.
+- Il rendering Vulkan non disegna ancora le icone native e il percorso del click primario non consulta ancora `DesktopHitTest`: oggi il click si occupa del focus/raise delle finestre Wayland.
+- La cartella `icons/generated` contiene al momento solo il README; le icone SVG sorgenti restano canoniche.
+
+### Documentazione
+
+- Aggiornato `docs/architecture/DESKTOP-RENDERING-AND-MEDIA-PIPELINE.md` per riflettere il codice realmente presente, separare implementazione e validazione hardware e correggere la sequenza delle attività successive.
+- Commit: `33e8ebae`.
+
+### Prossimo blocco
+
+1. Definire una pipeline riproducibile SVG → raster con output versionati e senza dipendenza SVG runtime.
+2. Aggiungere asset desktop e cache texture Vulkan dedicate, senza riutilizzare la cache SHM.
+3. Disegnare le icone tra wallpaper e superfici Wayland, con clipping e coordinate logiche/output coerenti.
+4. Solo dopo collegare hit-testing, selezione, doppio clic e menu contestuale; apertura file e avvio applicazioni restano responsabilità dei servizi Files/Shell.
+5. Riprendere l'audit del termine dei pointer grab in caso di hot-unplug.
+
+Nessuna build, test, rustfmt o CI avviati. Nessuna dipendenza runtime aggiunta. Debian 13 Trixie resta la piattaforma obiettivo; Fedora resta l'ambiente di sviluppo.
