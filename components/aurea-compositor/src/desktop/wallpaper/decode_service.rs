@@ -125,7 +125,6 @@ impl WallpaperDecodeService {
             WallpaperFormat::Jpeg => ImageFormat::Jpeg,
             WallpaperFormat::Png => ImageFormat::Png,
             WallpaperFormat::Bmp => ImageFormat::Bmp,
-            WallpaperFormat::Gif => ImageFormat::Gif,
             WallpaperFormat::Tiff => ImageFormat::Tiff,
             WallpaperFormat::WebP => ImageFormat::WebP,
         };
