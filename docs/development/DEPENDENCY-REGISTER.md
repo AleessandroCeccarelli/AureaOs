@@ -236,3 +236,11 @@ This register is the shared source of truth for dependency decisions. When imple
 - **Use:** offline rasterization of the six approved Trash SVG masters; the exact renderer version is recorded in the export manifest. The compositor does not link this tool.
 - **Evidence:** Debian Trixie and Fedora 45 package metadata checked on 24 November 2026.
 - **Validation:** the tool is already used by the cursor-theme generator; the new Trash export pipeline has not yet been run and its output has not been inspected. No runtime dependency was added.
+
+
+### Asset generator: Python standard library
+
+- `tools/assets/png_to_rgba.py` uses only Python 3 standard-library modules (`argparse`, `struct`, `zlib`, `pathlib`); no pip package or OS runtime library is required.
+- **Classification:** host-only asset-generation tool; it is not part of Cargo manifests or the AureaOS image.
+- **Limits:** non-interlaced RGBA8 PNG, maximum 256 × 256, CRC validation, bounded decompression and PNG filter conversion 0–4.
+- **Status:** source committed; not yet run or validated on the laptop.
