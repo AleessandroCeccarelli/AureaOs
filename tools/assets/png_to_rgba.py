@@ -76,8 +76,10 @@ def decode_rgba8(data: bytes) -> tuple[int, int, bytes]:
     expected = height * (stride + 1)
     decompressor = zlib.decompressobj()
     raw = decompressor.decompress(bytes(compressed), expected + 1)
+    if len(raw) > expected or decompressor.unconsumed_tail:
+        raise ValueError("PNG decompressed data exceeds the expected image size")
     raw += decompressor.flush()
-    if len(raw) != expected or decompressor.unused_data:
+    if len(raw) != expected or not decompressor.eof or decompressor.unused_data:
         raise ValueError("PNG decompressed data length is invalid")
 
     pixels = bytearray(height * stride)
