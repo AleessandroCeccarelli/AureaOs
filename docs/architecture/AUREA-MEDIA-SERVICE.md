@@ -190,3 +190,8 @@ This still does not recreate the Vulkan device. It makes the current behavior co
 The follow-up audit found that Wayland SHM texture cache errors could still be converted into generic texture strings in the surface compositor. The cache wraps queue submission and fence-completion failures as `VulkanShmTextureError::Command`; the composition layer now recognizes `ERROR_DEVICE_LOST` and preserves it as `VulkanSurfaceCompositionError::DeviceLost` for both preparation and completion paths. The empty-scene readback path also now uses the typed queue-submission error contract instead of the removed result converter.
 
 A focused unit test was added for fatal device loss from the SHM texture cache. No build, formatting, tests or CI were run for this grouped change; local Fedora verification remains pending. This does not change the fail-stop policy or implement device recreation.
+
+
+### Native cursor texture error propagation — 2026-11-24
+
+Native cursor texture initialization now retains the typed `VulkanShmTextureError` through the surface pipeline cache. The composition layer classifies `ERROR_DEVICE_LOST` as fatal rather than flattening it into a generic texture message. A focused unit test covers this conversion. The first-time cursor upload still uses the synchronous convenience path; replacing it with a fence-polled asynchronous upload remains a separate performance/lifecycle task. No build, formatting, tests or CI were run for this follow-up.
