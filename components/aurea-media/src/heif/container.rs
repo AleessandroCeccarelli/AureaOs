@@ -18,7 +18,7 @@ const MSF1: &[u8; 4] = b"msf1";
 ///
 /// Animated/sequence brands are rejected even when they appear only in the
 /// compatible-brand list. Generic `mif1` files are deliberately not guessed.
-pub(super) fn detect_container_format(bytes: &[u8]) -> Option<ImageFormat> {
+pub fn detect_container_format(bytes: &[u8]) -> Option<ImageFormat> {
     let brands = parse_ftyp_brands(bytes)?;
     if brands.iter().any(|brand| *brand == AVIS || *brand == MSF1) {
         return None;
