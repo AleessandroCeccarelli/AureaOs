@@ -111,9 +111,18 @@ fn jpeg_dimensions(bytes: &[u8]) -> Option<WallpaperDimensions> {
         }
 
         if matches!(marker, 0xC0..=0xC3 | 0xC5..=0xC7 | 0xC9..=0xCB | 0xCD..=0xCF) {
+            // A JPEG SOF payload contains precision, dimensions, component
+            // count, then exactly three bytes for each component.
             if segment_length < 8 {
                 return None;
             }
+
+            let component_count = usize::from(*bytes.get(segment_start.checked_add(5)?)?);
+            let expected_length = 8usize.checked_add(component_count.checked_mul(3)?)?;
+            if component_count == 0 || segment_length != expected_length {
+                return None;
+            }
+
             let height = u16::from_be_bytes([
                 *bytes.get(segment_start.checked_add(1)?)?,
                 *bytes.get(segment_start.checked_add(2)?)?,
@@ -152,5 +161,30 @@ mod tests {
     fn jpeg_header_parser_rejects_invalid_and_truncated_data() {
         assert!(jpeg_dimensions(b"not a jpeg").is_none());
         assert!(jpeg_dimensions(&[0xFF, 0xD8, 0xFF]).is_none());
+    }
+
+    #[test]
+    fn jpeg_header_parser_requires_a_well_formed_frame_component_table() {
+        // SOI, SOF0 (8-bit, 1x1, one component), then a minimal component table.
+        let valid = [
+            0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x0B, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01,
+            0x01, 0x11, 0x00,
+        ];
+        assert_eq!(
+            jpeg_dimensions(&valid),
+            Some(super::WallpaperDimensions { width: 1, height: 1 })
+        );
+
+        // The declared component count is one, but the SOF segment is too short.
+        let truncated_components = [
+            0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x08, 0x08, 0x00, 0x01, 0x00, 0x01, 0x01,
+        ];
+        assert!(jpeg_dimensions(&truncated_components).is_none());
+
+        // A zero component count cannot describe a decodable frame.
+        let zero_components = [
+            0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x08, 0x08, 0x00, 0x01, 0x00, 0x01, 0x00,
+        ];
+        assert!(jpeg_dimensions(&zero_components).is_none());
     }
 }
