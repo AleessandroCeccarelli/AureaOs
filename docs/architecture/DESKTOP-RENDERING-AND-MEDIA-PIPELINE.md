@@ -181,4 +181,6 @@ This is an initial snapshot only. Live refresh after file deletion/restoration s
 
 The primary pointer-button path gives mapped Wayland surfaces precedence. When no client surface is hit, the compositor converts the global pointer location to logical integer coordinates and uses the shared `DesktopHitTest` contract with the desktop icon logical dimensions. It emits either `DesktopItemSelected { id }` or `DesktopSelectionCleared` through the existing compositor-to-shell interaction channel. The shell owns the selected item identifier in `DesktopState`; the compositor does not own presentation state for selection.
 
-This establishes selection semantics only. A visual selection treatment, double-click recognition and item activation/opening are not implemented yet.
+Selection semantics are implemented, while the visual selection treatment is still pending. A compositor-owned `DesktopClickTracker` recognizes a second click on the same item within 400 ms and within 4 logical pixels. It uses monotonic `Instant` timestamps and has no timer or polling loop; clicking a window or empty desktop cancels the pending first click. A recognized double-click emits `DesktopItemActivated { id }` after the selection event.
+
+The shell retains activation as a semantic pending action, but does not launch files or applications. Resolving desktop entries, permissions and launch policy belongs to the Files/Shell service layer and is not implemented by this tracker. No icon drawing or visible selection highlight is claimed yet.
