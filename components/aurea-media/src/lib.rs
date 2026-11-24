@@ -10,7 +10,9 @@ mod decoder;
 mod error;
 mod limits;
 mod jpeg;
+mod worker;
 
 pub use decoder::{DecodedImage, ImageFormat, PixelFormat, decode};
 pub use error::DecodeError;
 pub use limits::{DecodeLimits, DEFAULT_DECODE_LIMITS};
+pub use worker::{DecodeWorker, DecodeWorkerError, DECODE_QUEUE_CAPACITY};
