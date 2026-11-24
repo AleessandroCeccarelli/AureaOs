@@ -12,7 +12,7 @@ use smithay::backend::{
         AbsolutePositionEvent, Axis, Event, GestureBeginEvent, GestureEndEvent,
         GesturePinchUpdateEvent as BackendPinchUpdateEvent,
         GestureSwipeUpdateEvent as BackendSwipeUpdateEvent, InputEvent, KeyboardKeyEvent,
-        PointerAxisEvent, PointerButtonEvent, PointerMotionEvent, TouchEvent,
+        PointerAxisEvent, PointerButtonEvent, PointerMotionEvent, SwitchToggleEvent, TouchEvent,
     },
     libinput::LibinputInputBackend,
 };
@@ -128,6 +128,19 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 event.key_code(),
                 event.state(),
                 wayland_time(event.time()),
+            );
+        }
+        InputEvent::PointerMotionAbsolute { event } => {
+            // Absolute pointing devices need an explicit output-mapping policy.
+            // Until that policy is connected to the device settings, make the
+            // unsupported path observable instead of silently swallowing it.
+            let device = event.device();
+            tracing::debug!(
+                device = ?device.name(),
+                sysname = ?device.sysname(),
+                x = event.x(),
+                y = event.y(),
+                "Absolute pointer motion received without an output assignment"
             );
         }
         InputEvent::PointerMotion { event } => {
@@ -315,6 +328,16 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::TouchFrame { .. } => {
             state.compositor.handle_touch_frame();
+        }
+        InputEvent::SwitchToggle { event } => {
+            // Lid and tablet-mode switches are reported by libinput, but their
+            // system policy is owned by the session/power-management layer.
+            tracing::info!(
+                device = ?event.device().name(),
+                switch = ?event.switch(),
+                state = ?event.state(),
+                "Input switch state changed"
+            );
         }
         InputEvent::TabletToolProximity { event } => {
             state.compositor.handle_tablet_proximity(event);
