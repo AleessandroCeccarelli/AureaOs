@@ -980,3 +980,13 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Se la coda è momentaneamente piena, la richiesta può essere ritentata senza cambiare revisione.
 - Aggiunti test per decodifica, annullamento logico di una selezione e idempotenza della stessa selezione.
 - Il servizio non è ancora collegato a `RenderScene` né alla cache texture Vulkan. Questo è il prossimo passaggio, da fare con un handoff piccolo e senza bloccare il thread di rendering.
+
+
+## Collegamento decoder JPEG alla cache Vulkan
+
+- Collegato `WallpaperDecodeService` alla preparazione delle risorse del backend Vulkan, senza aggiungere responsabilità a `AureaCompositor`.
+- Il backend sincronizza la selezione dell'asset, interroga il worker senza attese e trasferisce il buffer RGBA8 completato alla cache texture senza duplicare l'intera immagine.
+- La cache usa la coppia asset/revisione e rende disponibile la texture solo dopo il completamento del fence GPU; una selezione precedente non può diventare la texture attiva.
+- La saturazione della coda di decodifica è transitoria: il tentativo viene ripetuto nei frame successivi. La rimozione dello sfondo invalida la selezione.
+- Il test di decodifica del worker è stato reso meno dipendente dalla schedulazione della CPU: ora attende con intervalli brevi e un limite massimo invece di affidarsi a un numero fisso di `yield_now`.
+- La CI del 24 novembre ha evidenziato una precedente instabilità in quel test e un controllo rustfmt già non conforme su numerosi file del workspace. La nuova esecuzione deve confermare il risultato del fix e la compilazione dell'integrazione; non consideriamo ancora verificata la build.
