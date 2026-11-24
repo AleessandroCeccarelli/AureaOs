@@ -51,6 +51,7 @@ mod tests {
     #[test]
     fn handles_leap_day_and_year_boundaries() {
         assert_eq!(civil_from_days(19_782), (2024, 2, 29));
-        assert_eq!(civil_from_days(20_088), (2025, 1, 1));
+        assert_eq!(civil_from_days(20_088), (2024, 12, 31));
+        assert_eq!(civil_from_days(20_089), (2025, 1, 1));
     }
 }
