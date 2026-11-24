@@ -93,6 +93,7 @@ impl VulkanSurfacePipelineCache {
             wallpaper_texture_cache,
             wallpaper_decode_service,
             native_cursor_texture: None,
+            pending_cursor_upload: None,
         })
     }
 
