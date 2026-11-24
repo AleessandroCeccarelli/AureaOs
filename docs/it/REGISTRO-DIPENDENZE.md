@@ -235,3 +235,11 @@ Questo registro è la fonte condivisa di verità per le decisioni sulle dipenden
 - **Uso:** rasterizzazione offline delle sei SVG Trash approvate; la versione effettiva del renderer viene registrata nel manifest export. Il tool non viene linkato dal compositor.
 - **Evidenze:** metadati Debian Trixie e Fedora 45 verificati il 24 novembre 2026.
 - **Validazione:** tool già usato dal generatore del tema cursore; nuova pipeline Trash non ancora eseguita e output non ancora ispezionati. Nessuna dipendenza runtime aggiunta.
+
+
+### Asset generator: Python standard library
+
+- `tools/assets/png_to_rgba.py` uses only Python 3 standard-library modules (`argparse`, `struct`, `zlib`, `pathlib`); no pip package or OS runtime library is required.
+- **Classificazione:** host-only asset-generation tool; non entra nei manifest Cargo né nell'immagine AureaOS.
+- **Limiti:** PNG non interlacciato RGBA8, massimo 256 × 256, verifica CRC, decompressione limitata, conversione filtri 0–4.
+- **Stato:** sorgente aggiunto; non ancora eseguito o validato sul laptop.
