@@ -131,3 +131,7 @@ Initial search prioritizes filename, path, MIME, inexpensive metadata and explic
 7. Validate on Debian 13 and Fedora hardware, including constrained machines and offline operation.
 
 This document does not imply implementation, build, test or runtime availability.
+
+
+## Btrfs layout proposal
+A dedicated design document proposes a flat sibling-subvolume layout: @root at /, @home at /home, @snapshots at a dedicated mount, and candidate @var-log and @var-cache subvolumes. Keep /var/lib inside @root so dpkg and system service state remain aligned with installed system files. Preserve /home and diagnostic logs by default. Bootloader/ESP behavior, encryption, retention, cache policy and swap/hibernation remain open. This is a proposal pending validation, not an installer specification.
