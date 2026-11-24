@@ -50,6 +50,7 @@ fn backend_limits(limits: DecodeLimits) -> Limits {
         max_image_width: Some(limits.max_dimension()),
         max_image_height: Some(limits.max_dimension()),
         max_alloc: Some(limits.max_output_bytes() as u64),
+        ..Limits::default()
     }
 }
 
