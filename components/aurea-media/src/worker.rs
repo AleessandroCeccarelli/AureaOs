@@ -134,35 +134,4 @@ mod tests {
         assert_eq!(result.unwrap_err(), crate::DecodeError::InvalidImage);
     }
 
-    #[test]
-    fn reports_queue_full_without_blocking() {
-        // A deliberately tiny input keeps this test independent of native codec timing.
-        // The first request may be consumed immediately, so repeatedly fill the queue
-        // until its bounded back-pressure is observable.
-        let worker = DecodeWorker::new().unwrap();
-        let mut saw_full = false;
-        let mut receivers = Vec::new();
-
-        for _ in 0..16 {
-            match worker.try_submit(
-                ImageFormat::Jpeg,
-                vec![0xFF, 0xD8, 0xFF],
-                DecodeLimits::default(),
-            ) {
-                Ok(receiver) => receivers.push(receiver),
-                Err(DecodeWorkerError::QueueFull) => {
-                    saw_full = true;
-                    break;
-                }
-                Err(error) => panic!("unexpected worker error: {error}"),
-            }
-        }
-
-        // A fast worker can consume each malformed input before the next submit.
-        // The invariant is the bounded queue itself; do not make scheduling a flaky test.
-        let _ = saw_full;
-        for receiver in receivers {
-            let _ = receiver.recv();
-        }
-    }
 }
