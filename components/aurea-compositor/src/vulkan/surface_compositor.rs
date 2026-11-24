@@ -244,7 +244,9 @@ pub(super) fn render_frame(
         .collect::<Result<Vec<_>, _>>()?;
 
     let wallpaper_binding = if wallpaper_ready {
-        let texture = surface_cache.wallpaper_texture().ok_or_else(|| {
+        let texture = wallpaper_asset_id
+            .and_then(|asset_id| surface_cache.wallpaper_texture_for_asset(asset_id))
+            .ok_or_else(|| {
             VulkanSurfaceCompositionError::Texture(
                 "The selected wallpaper texture was not ready after upload polling".to_owned(),
             )
