@@ -95,10 +95,40 @@ impl AureaCompositor {
         let profile = self.tablet_calibration(device_id);
         let output_aspect = f64::from(width) / f64::from(height);
         let (x, y) = profile.apply(raw_x, raw_y, output_aspect)?;
-        Some(Point::from((
+        let requested = Point::from((
             origin.x as f64 + x * f64::from(width - 1),
             origin.y as f64 + y * f64::from(height - 1),
-        )))
+        ));
+        let target = self.tablet_output_target(device_id)?;
+        let output_geometry = self
+            .output_manager
+            .registry()
+            .iter()
+            .filter(|output| output.is_enabled())
+            .filter(|output| match target {
+                TabletOutputTarget::All => true,
+                TabletOutputTarget::Output(id) => output.id() == id,
+            })
+            .filter_map(|output| {
+                let bounds = self
+                    .output_manager
+                    .logical_bounds(output.id())
+                    .ok()
+                    .flatten()?;
+                let origin = bounds.origin();
+                let size = bounds.size();
+                super::pointer_bounds::OutputGeometry::new(
+                    origin.x as f64,
+                    origin.y as f64,
+                    f64::from(size.width),
+                    f64::from(size.height),
+                )
+            });
+
+        // The bounding rectangle used for tablet calibration may include gaps
+        // between monitors. Keep the pen on a real enabled output instead of
+        // allowing focus to land in empty desktop space.
+        super::pointer_bounds::constrain_to_outputs(requested, output_geometry)
     }
 
     fn tablet_focus(
