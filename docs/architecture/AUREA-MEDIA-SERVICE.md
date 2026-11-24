@@ -138,3 +138,10 @@ The worker is infrastructure only at this stage. The compositor does not yet own
 The compositor now depends on `aurea-media` and contains a wallpaper-specific `WallpaperDecodeService` in `desktop/wallpaper/decode_service.rs`. The service owns the bounded media worker, submits the selected asset's compressed bytes, polls results without blocking, validates the returned RGBA8 buffer through `WallpaperPixels`, and tags successful results with an asset ID and monotonically increasing revision. Selection changes invalidate pending and ready results; a queue-full submission can be retried by selecting the same asset again.
 
 This service is not yet wired into `AureaCompositor::render_output` or `RenderScene`, and its decoded pixels are not yet submitted to `VulkanWallpaperTextureCache`. This separation is intentional: next we must add a narrow handoff from compositor-owned decode state to the frame scene, then let the Vulkan backend consume only completed, current-generation pixels. No decode, wait, or allocation should be added to the render callback.
+
+
+## Vulkan wallpaper decode handoff
+
+The Vulkan surface pipeline cache now owns a lazily created `WallpaperDecodeService`. During frame preparation, the selected `WallpaperAsset` is synchronized with that service, the worker is polled once without blocking, and a completed `DecodedWallpaper` transfers its `WallpaperPixels` buffer into `VulkanWallpaperTextureCache` without cloning the pixel allocation. The cache uploads the pixels asynchronously and exposes the texture only after its fence completes and only while the matching asset/revision remains selected. Queue saturation is treated as transient and retried on a later frame. Clearing the selection invalidates decode state and clears the selected texture.
+
+The decode worker performs JPEG work off-thread. Vulkan image allocation and upload submission remain on the backend's resource-preparation path; GPU completion is polled rather than waited on by the CPU frame path.
