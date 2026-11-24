@@ -1676,3 +1676,11 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Estesa la condizione anche a `TabletPad`: i dispositivi pad-only vengono ora inclusi nel lifecycle cleanup, pur senza dichiarare la disponibilità degli eventi pad in Smithay 0.7.
 - La pulizia delle mappe e delle calibrazioni per device continua a passare dal cleanup generico del pointing-device service.
 - Nessuna build, cargo check, rustfmt o test eseguiti.
+
+### Correzione instradamento touchscreen dopo disconnessione monitor — 24 novembre 2026
+
+- Individuato un caso limite nella mappa touchscreen: la rimozione di un output cancellava l'assegnazione esplicita del dispositivo.
+- Su una configurazione rimasta con un solo monitor, il touchscreen poteva quindi essere instradato automaticamente verso un display diverso da quello a cui era stato assegnato.
+- La mappa ora conserva il fatto che l'assegnazione precedente è diventata non disponibile; il dispositivo resta senza destinazione finché non viene riassegnato o esplicitamente riportato alla modalità automatica.
+- La rimozione del dispositivo elimina anche questo stato; una nuova assegnazione lo riattiva.
+- Nessuna build, cargo check, rustfmt o test eseguiti. Verifica raggruppata su Fedora ancora in sospeso.
