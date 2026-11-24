@@ -28,7 +28,6 @@ pub enum WallpaperFormat {
     Jpeg,
     Png,
     Bmp,
-    Gif,
     Tiff,
     WebP,
 }
@@ -163,9 +162,6 @@ fn detect_format(bytes: &[u8]) -> Option<WallpaperFormat> {
     if bytes.starts_with(b"BM") {
         return Some(WallpaperFormat::Bmp);
     }
-    if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
-        return Some(WallpaperFormat::Gif);
-    }
     if bytes.starts_with(b"II*\0") || bytes.starts_with(b"MM\0*") {
         return Some(WallpaperFormat::Tiff);
     }
@@ -237,7 +233,6 @@ mod tests {
     fn detects_supported_formats_from_signatures() {
         assert_eq!(detect_format(b"\x89PNG\r\n\x1A\n"), Some(WallpaperFormat::Png));
         assert_eq!(detect_format(b"BM"), Some(WallpaperFormat::Bmp));
-        assert_eq!(detect_format(b"GIF89a"), Some(WallpaperFormat::Gif));
         assert_eq!(detect_format(b"II*\0"), Some(WallpaperFormat::Tiff));
         assert_eq!(detect_format(b"RIFF0000WEBP"), Some(WallpaperFormat::WebP));
     }
