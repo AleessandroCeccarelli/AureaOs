@@ -12,5 +12,6 @@ members = [
     "components/aurea-shell",
     "components/aurea-compositor",
     "components/aurea-desktop",
+    "components/aurea-media",
 ]
 resolver = "3"
