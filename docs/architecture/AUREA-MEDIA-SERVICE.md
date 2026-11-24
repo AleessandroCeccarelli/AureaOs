@@ -174,3 +174,12 @@ Wallpaper fence polling now preserves `ERROR_DEVICE_LOST` as a typed surface-com
 When the direct Vulkan render path reports device loss, the dispatcher stops the output/session rendering path instead of attempting the CPU compatibility fallback. That fallback shares the same logical Vulkan device and cannot recover a lost device. The scanout renderer also skips framebuffer cancellation, reacquisition, and retirement when device completion is uncertain; those operations could issue further Vulkan work or release resources still referenced by the GPU.
 
 This is a fail-stop policy, not device recreation. Recreating the Vulkan backend requires a higher-level lifecycle that rebuilds the device, dependent caches, frame pools, and output bindings. That lifecycle remains future work. No automatic retry is performed after `ERROR_DEVICE_LOST`.
+
+
+### Vulkan submission error propagation follow-up — 2026-11-24
+
+The fatal device-loss path now also covers wallpaper GPU-upload submission, not only fence polling. The wallpaper texture cache latches `ERROR_DEVICE_LOST` as a synchronization failure and surfaces it as a typed cache error; the pipeline cache no longer flattens that failure into a string before frame composition handles it.
+
+Frame composition and its clear/release/readback paths preserve the full `VulkanQueueSubmitError` classification. In particular, both the queue-submit result and the fence/device-idle completion results are inspected, so a device-loss reported by the fallback idle wait is not hidden by an earlier wait error. The scanout path therefore receives the fatal status and avoids unsafe framebuffer retirement or CPU fallback.
+
+This still does not recreate the Vulkan device. It makes the current behavior consistently fail-stop when device loss is detected along these covered submission and wallpaper synchronization paths.
