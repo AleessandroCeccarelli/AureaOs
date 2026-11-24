@@ -82,10 +82,10 @@ impl AureaCompositor {
                     .with_selected_item(self.desktop_selection.selected_item()),
             )
             .with_cursor(
-            &self.cursor_image,
-            pointer_location,
-            self.cursor_locate_scale(),
-        )
+                &self.cursor_image,
+                pointer_location,
+                self.cursor_locate_scale(),
+            )
     }
 
     /// Renders a previously requested frame on an enabled output.
