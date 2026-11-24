@@ -243,3 +243,44 @@ Questo registro è la fonte condivisa di verità per le decisioni sulle dipenden
 - **Classificazione:** host-only asset-generation tool; non entra nei manifest Cargo né nell'immagine AureaOS.
 - **Limiti:** PNG non interlacciato RGBA8, massimo 256 × 256, verifica CRC, decompressione limitata, conversione filtri 0–4.
 - **Stato:** sorgente aggiunto; non ancora eseguito o validato sul laptop.
+
+
+## Aurea Media — formati immagine statici per gli sfondi (24 novembre 2026)
+
+### Crate Rust image
+
+- **Stato:** Candidato; non ancora aggiunto ai manifest Cargo.
+- **Scopo:** adapter di decodifica per PNG, BMP, GIF, TIFF e WebP; JPEG può restare temporaneamente sul backend TurboJPEG esistente durante la migrazione.
+- **Upstream candidato:** image 0.25.x. Le feature documentate includono BMP, GIF, JPEG, PNG, TIFF e WebP. Usare default-features = false e abilitare soltanto i formati necessari; non ereditare la feature Rayon predefinita né codec estranei.
+- **AVIF:** non presumere che la feature avif predefinita abiliti la decodifica. Il percorso nativo documentato per AVIF usa avif-native e libdav1d; va confrontato con libheif prima della scelta.
+- **Debian 13:** l'integrazione codec in puro Rust dovrebbe evitare pacchetti codec di sistema per questi formati, ma grafo Cargo bloccato, MSRV, licenze esatte e comportamento di build sono Non verificati.
+- **Fedora sviluppo:** dipendenza Cargo; build host non eseguita.
+- **Licenza:** il progetto upstream è dual-licensed; i metadati Cargo della versione esatta e tutte le licenze transitive abilitate vanno controllati prima dell'approvazione.
+- **Sicurezza/limiti:** dimensioni e allocazioni del decoder vanno limitate prima dell'allocazione dei pixel; il solo limite sui byte compressi non basta.
+- **Decisione:** solo candidato. Nessuna modifica a sorgenti, manifest o lockfile autorizzata da questa voce.
+
+### libheif e plugin decoder immagini
+
+- **Stato:** candidato per decodifica di immagini HEIC/HEIF e AVIF; non ancora collegato ad AureaOS.
+- **Scopo:** parsing del contenitore HEIF ISO-BMFF e dispatch ai codec per immagini statiche. HEIC usa codifica immagine HEVC; AVIF usa codifica immagine AV1. Questa voce non autorizza riproduzione video.
+- **Debian 13 Trixie:** i metadati confermano libheif1 e libheif-dev; i metadati correnti esaminati riportano 1.23.6-2~deb13u1 per il runtime. La versione amd64 esatta va ricontrollata al momento dell'integrazione/packaging perché gli aggiornamenti di sicurezza possono cambiarla.
+- **Plugin HEIC:** libheif-plugin-libde265, con dipendenza runtime libde265-0. Debian lo descrive come plugin per decodificare immagini HEVC.
+- **Plugin AVIF:** scegliere un plugin decoder AV1, preferibilmente libheif-plugin-dav1d oppure libheif-plugin-aomdec, dopo verifica del pacchetto Trixie esatto e delle licenze/footprint transitive.
+- **Fedora sviluppo:** nomi e versioni dei pacchetti non ancora verificati.
+- **Integrazione Rust:** nessun wrapper Rust selezionato. Preferire un piccolo shim ABI C sottoposto ad audit oppure un wrapper mantenuto e ristretto; mantenere handle nativi e codice unsafe dentro l'adapter.
+- **Licenza:** combinazione delle licenze libheif/plugin/codec non ancora completamente verificata rispetto agli obblighi di distribuzione GPL-3.0-or-later. Non approvato finché la revisione non è conclusa.
+- **Footprint runtime:** installare soltanto i plugin decoder necessari. Non installare libheif-plugins-all, plugin encoder o plugin FFmpeg per questa funzione.
+- **Sicurezza:** decodifica di file non fidati fuori dal render thread; limiti su dimensioni, pixel, byte di output e numero di item del contenitore; verifica advisory upstream e ABI supportata.
+- **Evidenza:** metadati e descrizioni pacchetti Debian Trixie per libheif1 e libheif-plugin-libde265; https://packages.debian.org/trixie/libheif1 e https://packages.debian.org/trixie/libheif-plugin-libde265
+- **Decisione:** candidato; nessuna dipendenza o pacchetto aggiunto.
+
+### JPEG 2000
+
+- **Stato:** candidato rinviato.
+- **Scopo:** interoperabilità opzionale con macOS per immagini .jp2/.j2k.
+- **Evidenza:** Apple Preview documenta l'esportazione JPEG 2000, ma non è ancora stato approvato un decoder Debian 13, un adapter Rust, la licenza o il footprint.
+- **Decisione:** non dichiarare il supporto finché non viene selezionato e testato un backend compatibile Debian.
+
+### Esclusione ambito
+
+Nessun formato video o libreria di riproduzione è selezionato per gli sfondi. GStreamer, plugin video FFmpeg, H.264, HEVC video e AV1 video restano fuori dall'ambito degli sfondi statici di Aurea Media.
