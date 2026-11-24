@@ -860,3 +860,11 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Esportato `WallpaperPixels` dal modulo `desktop` per permettere alla risorsa GPU di consumare il contratto senza collegare il decoder media a Vulkan.
 - Questo completa soltanto il primo livello di upload/risorsa GPU. La texture non è ancora memorizzata in cache per identità dello sfondo, inserita nella scena di rendering o disegnata sotto le superfici desktop. Il costruttore attuale attende il completamento del trasferimento: deve essere chiamato da un percorso di preparazione risorse/background, mai dal callback di rendering sensibile alla latenza.
 - Nessun decoder JPEG o dipendenza aggiunti. Non eseguiti Cargo fmt/check/test/build né CI; nessuna ISO generata.
+
+
+## 24 novembre 2026 — Upload Vulkan asincrono dello sfondo
+
+- Rifattorizzato `VulkanWallpaperTexture` per offrire il percorso `submit_pixels`: invia il trasferimento tramite staging e restituisce un `VulkanPendingUpload<Arc<VulkanWallpaperTexture>>` protetto da fence, senza attendere il completamento GPU.
+- Mantenuto `from_pixels` come wrapper bloccante per percorsi controllati di preparazione risorse; ora delega all'implementazione asincrona e attende soltanto in quel punto.
+- L'upload pendente conserva staging buffer e texture fino al completamento della fence, seguendo il modello di ownership già usato per le superfici SHM. Cache e integrazione nella scena non sono ancora state aggiunte.
+- Nessuna dipendenza o modifica ai manifest. Non eseguiti Cargo fmt/check/test/build né CI; nessuna ISO generata.
