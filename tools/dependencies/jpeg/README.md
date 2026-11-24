@@ -35,3 +35,7 @@ Run the same compile and probe commands from the repository root. A successful F
 - The initial probe accepts RGB, YCbCr, and grayscale JPEG color spaces; CMYK/YCCK are rejected explicitly.
 - This is an ABI/decode smoke test, not a security audit, exhaustive JPEG conformance suite, or production decoder.
 - Do not add this C source to the installed AureaOS image.
+
+## Compatibility note
+
+TurboJPEG 2.1.x does not define `TJCS_DEFAULT` or `TJCS_UNKNOWN` in its legacy colorspace enum. The probe therefore initializes the output-only `jpegColorspace` integer to `-1`; `tjDecompressHeader3()` writes the detected value on success. Do not replace this with a newer TurboJPEG 3.x enum constant when checking Debian 13 compatibility.
