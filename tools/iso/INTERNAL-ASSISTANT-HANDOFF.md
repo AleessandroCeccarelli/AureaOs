@@ -840,3 +840,12 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - `from_pixels` remains as a blocking convenience wrapper implemented via `submit_pixels(...).wait()`; never call it from the latency-sensitive render callback.
 - This removes the synchronous-only limitation at the low-level upload API, but there is still no wallpaper cache, decoder, render-scene wiring, or draw-under-surfaces pass.
 - No dependency/manifests changed. No Cargo fmt/check/test/build/CI or ISO run. User must run local Fedora verification; Debian 13 remains the compatibility target.
+
+
+## WALLPAPER TEXTURE CACHE — 2026-11-24
+
+- Commits: `7696e483` (new cache), `0e5ad381` (module registration), `0c5bc317` (per-device surface pipeline cache integration), `8e881c7d` (poll fences during frame preparation), `f09710bc` / `3c29e0bd` / `91a3087c` / `1f817319` (cleanup and explicit deferred-use annotations).
+- New `VulkanWallpaperTextureCache` key is `{ asset_id: &'static str, revision: u64 }`, independent of Wayland ObjectIds. It keeps one selected ready texture plus up to two pending uploads, capped at 256 MiB aggregate pending bytes.
+- Upload completion is polled at the start of Vulkan surface frame preparation. A texture is exposed only after its upload fence signals and only if its key is still selected. Stale completed uploads are discarded.
+- `VulkanSurfacePipelineCache` now owns this cache and exposes crate-internal preparation, texture access, and clear entry points. The decoder does not yet provide pixels and the wallpaper draw pass is not implemented, so these preparation/access methods are deliberately marked as deferred integration points. Polling is active.
+- No dependency/manifests changed. No Cargo fmt/check/test/build/CI or ISO run. User must run local Fedora verification; Debian 13 remains the compatibility target.
