@@ -3,7 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Bounded decoding for PNG, BMP, GIF, TIFF and WebP raster images.
+//! Bounded decoding for PNG, BMP, TIFF and WebP still images.
 
 use std::io::Cursor;
 
@@ -38,7 +38,6 @@ fn to_backend_format(format: ImageFormat) -> Result<image::ImageFormat, DecodeEr
     match format {
         ImageFormat::Png => Ok(image::ImageFormat::Png),
         ImageFormat::Bmp => Ok(image::ImageFormat::Bmp),
-        ImageFormat::Gif => Ok(image::ImageFormat::Gif),
         ImageFormat::Tiff => Ok(image::ImageFormat::Tiff),
         ImageFormat::WebP => Ok(image::ImageFormat::WebP),
         ImageFormat::Jpeg => Err(DecodeError::UnsupportedFormat),
