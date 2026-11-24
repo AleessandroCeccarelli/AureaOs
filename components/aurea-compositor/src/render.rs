@@ -76,8 +76,8 @@ impl<'a> RenderScene<'a> {
     }
 
     /// Returns the immutable desktop state captured for this frame.
-    pub fn desktop(&self) -> DesktopSnapshot {
-        self.desktop
+    pub fn desktop(&self) -> &DesktopSnapshot {
+        &self.desktop
     }
 
     /// Replaces the desktop-entry collection captured for this render frame.

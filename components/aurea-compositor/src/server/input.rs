@@ -7,6 +7,8 @@
 
 use std::io;
 
+use aurea_desktop_api::input::InputDeviceProvider;
+
 use smithay::{
     backend::libinput::{LibinputInputBackend, LibinputSessionInterface},
     reexports::{calloop::LoopHandle, input::Libinput},

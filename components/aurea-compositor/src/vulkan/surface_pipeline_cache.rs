@@ -10,7 +10,7 @@ use std::{collections::HashMap, error::Error, fmt, sync::Arc};
 use smithay::{reexports::ash::vk, reexports::wayland_server::backend::ObjectId};
 
 use crate::{
-    desktop::{WallpaperAsset, WallpaperDecodeService, WallpaperDecodeServiceError, WallpaperPixels},
+    desktop::{DesktopIconTextureKey, WallpaperAsset, WallpaperDecodeService, WallpaperDecodeServiceError, WallpaperPixels},
     render::shm_buffer::ShmBufferSnapshot,
 };
 
@@ -21,10 +21,7 @@ use super::{
     VulkanNativeCursorTexture,
     VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
     surface_texture_cache::{VulkanSurfaceTextureCache, VulkanSurfaceTextureCacheError},
-    desktop_icon_texture_cache::{
-        DesktopIconTextureKey, VulkanDesktopIconTextureCache,
-        VulkanDesktopIconTextureCacheError,
-    },
+    desktop_icon_texture_cache::{VulkanDesktopIconTextureCache, VulkanDesktopIconTextureCacheError},
     wallpaper_texture_cache::{
         VulkanWallpaperTextureCache, VulkanWallpaperTextureCacheError, WallpaperTextureKey,
     },

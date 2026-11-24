@@ -17,6 +17,8 @@ use smithay::backend::{
     libinput::LibinputInputBackend,
 };
 
+use aurea_desktop_api::input::InputDeviceProvider;
+
 use crate::input::pointing;
 
 use super::{refresh_touchpad_settings, wayland_time};

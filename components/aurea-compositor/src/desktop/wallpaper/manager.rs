@@ -8,7 +8,7 @@
 use super::{WallpaperAsset, WallpaperSnapshot};
 
 /// Owns still-image wallpaper selection independently from Vulkan resources.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WallpaperManager {
     selected: Option<WallpaperAsset>,
 }

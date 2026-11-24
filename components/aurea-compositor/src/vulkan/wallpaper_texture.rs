@@ -104,7 +104,7 @@ impl VulkanWallpaperTexture {
         let staging = VulkanUploadBatch::new(Arc::clone(&device), expected_len)
             .map_err(VulkanWallpaperTextureError::Upload)?;
         staging
-            .write_segments(&[(0, rgba8.as_slice())])
+            .write_segments(&[(0, &rgba8[..])])
             .map_err(VulkanWallpaperTextureError::Upload)?;
 
         let pending = VulkanPendingUpload::new(Arc::clone(&device), staging, texture)

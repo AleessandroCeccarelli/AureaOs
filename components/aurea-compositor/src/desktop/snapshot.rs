@@ -30,6 +30,6 @@ impl DesktopSnapshot {
 
     /// Returns the selected wallpaper included in this snapshot, if valid.
     pub fn wallpaper(&self) -> Option<&WallpaperSnapshot> {
-        self.wallpaper
+        self.wallpaper.as_ref()
     }
 }

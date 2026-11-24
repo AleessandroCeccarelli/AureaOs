@@ -175,7 +175,11 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                 drop(backend);
 
                 if let Err(error) = direct_result {
-                    if error.is_device_lost() {
+                    if matches!(
+                        &error,
+                        crate::compositor::CompositorRenderError::Backend(backend_error)
+                            if backend_error.is_device_lost()
+                    ) {
                         return Err(io::Error::other(format!(
                             "AureaOS: Vulkan device was lost while rendering output {output_id}; refusing cleanup and CPU fallback because GPU completion is uncertain: {error}"
                         )));

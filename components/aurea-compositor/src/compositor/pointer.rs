@@ -165,10 +165,15 @@ impl AureaCompositor {
 
         let width = size.width;
         let height = size.height;
+        let (Ok(event_width), Ok(event_height)) =
+            (i32::try_from(width), i32::try_from(height))
+        else {
+            return false;
+        };
         let requested = Point::from((
-            origin.x as f64 + event.x_transformed(width) / f64::from(width)
+            origin.x as f64 + event.x_transformed(event_width) / f64::from(width)
                 * f64::from(width - 1),
-            origin.y as f64 + event.y_transformed(height) / f64::from(height)
+            origin.y as f64 + event.y_transformed(event_height) / f64::from(height)
                 * f64::from(height - 1),
         ));
         let Some(output_geometry) = OutputGeometry::new(

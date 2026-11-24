@@ -87,8 +87,9 @@ pub(super) fn render_frame(
     readback: Option<&VulkanReadbackBuffer<'_>>,
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
-    let background_color = scene.desktop().surface().background_color();
-    let wallpaper = scene.desktop().wallpaper();
+    let desktop_snapshot = scene.desktop();
+    let background_color = desktop_snapshot.surface().background_color();
+    let wallpaper = desktop_snapshot.wallpaper();
     surface_cache
         .prepare_wallpaper_decode(wallpaper.map(|wallpaper| wallpaper.asset().clone()))
         .map_err(|error| match error {
