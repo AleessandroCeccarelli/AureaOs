@@ -824,3 +824,12 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Definiti descrittori provider neutrali (tipi contenuto, azioni, account, scope OAuth, limiti MIME/dimensione, quote, revisione app, vincoli commerciali, conferma).
 - Creata architettura integrazioni online EN/IT e collegata a strategia, documenti Aurea Link/Share e README. Aggiornati registri dipendenze.
 - Nessun codice Rust/Cargo, dipendenza, registrazione OAuth o build/test modificati. Le approvazioni API restano da verificare prima dell'implementazione.
+
+## 24 novembre 2026 — Modello account Aurea Share
+
+- Chiarito che AureaOS deve servire utenti comuni, bambini, anziani, creator, professionisti e aziende senza presumere una categoria.
+- Collegamento account facoltativo e avviato dall'utente; nessun account online obbligatorio durante l'installazione.
+- Previsto un gestore account con account multipli quando consentiti dal provider, tipologia, permessi, capacità disponibili, disconnessione e revoca.
+- Le operazioni disponibili dipendono da account, scope, revisione provider, regione, contenuto e limiti correnti.
+- Il selettore Condividi resta utilizzabile anche senza account collegati, tramite handoff desktop supportati.
+- Aggiornate le architetture Aurea Share online in italiano e inglese. Nessun codice o dipendenza aggiunti.
