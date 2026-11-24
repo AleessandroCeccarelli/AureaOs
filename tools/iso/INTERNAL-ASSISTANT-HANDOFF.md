@@ -699,3 +699,12 @@ Non fare ISO prima di venerdì 27 novembre 2026, salvo nuova richiesta esplicita
 
 ### Prossima azione esatta
 Ispezionare l'header `turbojpeg.h` e la tabella dei simboli esportati dai pacchetti reali Debian 13 e Fedora, con un piccolo smoke test C/FFI solo dopo il consenso al primo ciclo di verifica locale. Non iniziare ancora la texture Vulkan.
+
+
+### ABI probe prepared — not yet executed
+
+- Added `tools/dependencies/jpeg/turbojpeg-abi-probe.c` and `tools/dependencies/jpeg/README.md`.
+- The C probe exercises the legacy API `tjInitDecompress`, `tjDecompressHeader3`, `tjDecompress2`, and `tjDestroy`, outputting RGBA8 and checking opaque alpha.
+- Safety limits: 64 MiB compressed input, 16384 pixels per axis, 256 MiB decoded RGBA8; initial color-space scope RGB/YCbCr/grayscale, explicit CMYK/YCCK rejection.
+- No compile or execution has been performed. Do not claim that the ABI is validated.
+- When the user is back on Fedora, run the exact commands in `tools/dependencies/jpeg/README.md`; then repeat against Debian 13's `libturbojpeg0-dev` 2.1.5. Only after both succeed should the Rust FFI adapter be implemented.
