@@ -10,6 +10,7 @@ use aurea_desktop_api::{
     desktop_interaction::DesktopInteraction,
 };
 use smithay::utils::{Logical, Point};
+use std::time::Instant;
 
 use super::AureaCompositor;
 
@@ -28,15 +29,43 @@ impl AureaCompositor {
             crate::desktop::DESKTOP_ICON_LOGICAL_SIZE,
         );
 
-        let interaction = match selected {
-            Some(id) => DesktopInteraction::DesktopItemSelected {
-                id: id.as_str().to_owned(),
-            },
-            None => DesktopInteraction::DesktopSelectionCleared,
-        };
+        match selected {
+            Some(id) => {
+                let id = id.as_str().to_owned();
+                let activated = self.desktop_click_tracker.record(
+                    &id,
+                    location.x,
+                    location.y,
+                    Instant::now(),
+                );
 
-        if self.desktop_interactions.send(interaction).is_err() {
-            tracing::debug!("Shell desktop-selection receiver is no longer available");
+                if self
+                    .desktop_interactions
+                    .send(DesktopInteraction::DesktopItemSelected { id: id.clone() })
+                    .is_err()
+                {
+                    tracing::debug!("Shell desktop-selection receiver is no longer available");
+                }
+
+                if activated
+                    && self
+                        .desktop_interactions
+                        .send(DesktopInteraction::DesktopItemActivated { id })
+                        .is_err()
+                {
+                    tracing::debug!("Shell desktop-activation receiver is no longer available");
+                }
+            }
+            None => {
+                self.desktop_click_tracker.reset();
+                if self
+                    .desktop_interactions
+                    .send(DesktopInteraction::DesktopSelectionCleared)
+                    .is_err()
+                {
+                    tracing::debug!("Shell desktop-selection receiver is no longer available");
+                }
+            }
         }
 
         self.request_all_output_frames();
