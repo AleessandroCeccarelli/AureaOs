@@ -1074,6 +1074,13 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 
 ## 2026-11-24 — Generic Vulkan textured push constants
 
+## 2026-11-24 — Wallpaper UV push-constant encoding
+
+- Added `WallpaperUvRect::to_push_constant_bytes`, encoding the UV rectangle as four native-endian `f32` values in shader ABI order: min X, min Y, max X, max Y.
+- Added a unit test that decodes the 16-byte payload and checks the exact component order.
+- Commit: `f474ddfd`.
+- This is CPU-side payload preparation only. No wallpaper descriptor binding or draw integration has been added. Test authored, not run; no Cargo format/check/test/build or CI run.
+
 - Extended `VulkanDrawPass` with `record_textured_region_with_push_constants`, allowing dedicated textured pipelines to provide their own push-constant bytes without changing the existing surface transform ABI.
 - Existing textured surface calls retain the four-byte `u32` transform. The wallpaper shader can use its separate 16-byte UV rectangle range.
 - Added pre-record validation for non-empty, four-byte-aligned payloads up to 128 bytes, plus unit tests for the 16-byte wallpaper payload and invalid sizes.
