@@ -77,6 +77,7 @@ impl AureaCompositor {
             .map(|pointer| pointer.current_location());
         RenderScene::from_window_manager(&self.window_manager)
             .with_desktop(self.desktop_manager.snapshot())
+            .with_desktop_items(crate::desktop::DesktopItemsSnapshot::capture(&self.desktop_items))
             .with_cursor(
             &self.cursor_image,
             pointer_location,
