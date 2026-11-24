@@ -820,3 +820,12 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - Commit: `0c7aa3f0`.
 - This does not decode JPEG data and does not remove the ABI gate. Before introducing the Rust `aurea-media` backend, the existing C probe must compile and run against both Fedora development packages and Debian 13 Trixie libturbojpeg0-dev. Do not claim that gate passed without the user's local results.
 - No Cargo manifest/dependency changes; no format/check/test/build/CI or ISO run.
+
+
+## VULKAN WALLPAPER TEXTURE RESOURCE — 2026-11-24
+
+- Added `components/aurea-compositor/src/vulkan/wallpaper_texture.rs` with `VulkanWallpaperTexture`. It consumes `WallpaperPixels`, allocates a sampled `R8G8B8A8_UNORM` shared image, uploads via the existing staging batch, records explicit UNDEFINED → TRANSFER_DST → SHADER_READ transitions, and waits for the upload fence before returning the owned texture.
+- Exported the texture/error from `vulkan.rs` and re-exported `WallpaperPixels`/`WallpaperPixelsError` from `desktop/mod.rs`.
+- Commits: `84aab939` (Vulkan module registration), `9a2e2ab6` (texture implementation), `00dc99bc` (desktop pixel-contract export).
+- Important limitations: no wallpaper identity cache, no render-scene integration, no draw-under-surfaces yet. `from_pixels` waits for the one-time upload; call only from a resource-preparation/background path, never a render callback.
+- JPEG decoder/ABI gate remains pending. No dependencies/manifests changed; no fmt/check/test/build/CI or ISO run. Local Fedora verification is required before the next integration step.
