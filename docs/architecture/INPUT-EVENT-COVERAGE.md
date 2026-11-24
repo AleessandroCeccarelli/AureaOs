@@ -59,3 +59,8 @@ Smithay 0.7 `backend::input::InputEvent` includes:
 ## Verification
 
 Static source/API review only. No build, Cargo check, rustfmt, tests or hardware validation were run. Those remain grouped for the agreed Friday Fedora session, with Debian 13 compatibility as the dependency baseline.
+
+
+## Device inventory distinction — 2026-11-24
+
+AureaOS now distinguishes `InputDeviceKind::Tablet` (a pen/tablet-tool device with routed tool events) from `InputDeviceKind::TabletPad` (a pad-only device). Pad-only devices remain visible in the pointing-device inventory and retain their discovered pad capability counts, but they are not accepted by pen calibration or tablet-to-output assignment APIs. Devices exposing both `TabletTool` and `TabletPad` are classified as `Tablet`, with pad capabilities retained in the descriptor. This is inventory accuracy only; Smithay 0.7 still provides no pad-control event route.
