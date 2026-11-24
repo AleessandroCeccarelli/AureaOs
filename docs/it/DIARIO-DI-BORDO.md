@@ -957,3 +957,15 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Nessuna integrazione nel compositor ancora: prima si deve ottenere una CI verde e completare i test con JPEG validi, progressivi, grayscale, troncati e malformati. Nessuna ISO generata.
 
 - Aggiunti test unitari per limiti, input vuoto/eccessivo, dimensioni, pixel e memoria; aggiunti test nativi che decodificano il wallpaper reale, verificano RGBA8/alpha e rifiutano JPEG troncati. La CI Rust è ancora in coda e non considero i test superati fino al risultato del runner.
+
+
+## Aurea Media — worker di decodifica
+
+- Aggiunto `components/aurea-media/src/worker.rs`, con un singolo thread dedicato alla decodifica.
+- La coda accetta al massimo una richiesta in attesa oltre a quella eventualmente in elaborazione.
+- `try_submit` non attende spazio nella coda: segnala il back-pressure quando è piena.
+- I byte compressi vengono controllati rispetto al limite configurato prima dell'inserimento in coda.
+- Ogni richiesta accettata restituisce un ricevitore one-shot per il risultato.
+- Il worker non dipende da compositor, Smithay o Vulkan.
+- Il compositor non è ancora collegato al worker: il percorso JPEG → WallpaperPixels → cache texture Vulkan resta il prossimo obiettivo. Nessuna visualizzazione dello sfondo viene ancora dichiarata.
+- I test del nuovo worker sono stati aggiunti, ma attendono una CI completata sul commit aggiornato.
