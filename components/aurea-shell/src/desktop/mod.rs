@@ -134,6 +134,18 @@ mod tests {
     }
 
     #[test]
+    fn desktop_item_selection_can_be_set_and_cleared() {
+        let mut state = DesktopState::default();
+        assert_eq!(state.selected_item_id(), None);
+
+        state.select_item("system:trash");
+        assert_eq!(state.selected_item_id(), Some("system:trash"));
+
+        state.clear_item_selection();
+        assert_eq!(state.selected_item_id(), None);
+    }
+
+    #[test]
     fn night_light_preferences_are_part_of_desktop_state() {
         let mut state = DesktopState::default();
         state.night_light.set_enabled(true);
