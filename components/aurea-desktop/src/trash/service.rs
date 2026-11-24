@@ -13,7 +13,10 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use super::{metadata::{read_original_path, write_info}, timestamp::deletion_timestamp};
+use super::{
+    metadata::{read_original_path, write_info},
+    timestamp::deletion_timestamp,
+};
 
 /// Number of retained entries at which the icon uses its full artwork.
 pub const DEFAULT_FULL_STATE_THRESHOLD: usize = 10;
