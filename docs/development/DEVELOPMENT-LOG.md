@@ -1166,3 +1166,13 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Recorded candidate native development dependencies for Smithay/DRM/input in both language versions of the dependency register. The package set is not approved wholesale: exact direct requirements must be confirmed from the locked Cargo graph and a future Debian build.
 - English dependency register commit: `39a20444`; Italian register commit: `f0542b28`.
 - No package was installed or added to runtime manifests. No build, tests, rustfmt or CI were run.
+
+
+### Follow-up — pointer input path status
+
+- Static review confirms that libinput relative motion, button, axis/scroll and touchpad gesture events are routed into the compositor through Smithay.
+- Motion updates global logical pointer coordinates, constrains them to the union of enabled outputs, recomputes the Wayland surface under the pointer and requests frames on all outputs.
+- Primary-button press already focuses/raises the hit toplevel; the event is then delivered to the Wayland surface. Double-click semantics and desktop-icon interactions are not yet implemented in this path.
+- Client Wayland cursor surfaces and the AureaOS native arrow use separate paths: the former uses the client surface and its hotspot; the latter uses the internal bitmap and output-aware geometry.
+- No additional broad device permissions or proprietary vendor driver are required by the reviewed input path; libinput access is mediated by the libseat session.
+- Static audit only; no build/tests/formatting were run. Next: inspect cursor-state lifecycle across outputs, hotplug and session pause/resume, then connect desktop hit testing/interactions without duplicating Wayland input logic.
