@@ -33,6 +33,7 @@ pub(crate) enum VulkanSurfacePipelineCacheError {
     Sampler(VulkanSamplerError),
     Shader(VulkanShaderError),
     Pipeline(VulkanGraphicsPipelineError),
+    WallpaperDecode(WallpaperDecodeServiceError),
 }
 
 impl fmt::Display for VulkanSurfacePipelineCacheError {
@@ -44,6 +45,7 @@ impl fmt::Display for VulkanSurfacePipelineCacheError {
             Self::Sampler(error) => write!(formatter, "Surface sampler: {error}"),
             Self::Shader(error) => write!(formatter, "Surface shader: {error}"),
             Self::Pipeline(error) => write!(formatter, "Surface pipeline: {error}"),
+            Self::WallpaperDecode(error) => write!(formatter, "Wallpaper decode service: {error}"),
         }
     }
 }
@@ -59,7 +61,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     sampler: VulkanSampler<'static>,
     texture_cache: VulkanSurfaceTextureCache,
     wallpaper_texture_cache: VulkanWallpaperTextureCache,
-    wallpaper_decode_service: Option<WallpaperDecodeService>,
+    wallpaper_decode_service: WallpaperDecodeService,
     native_cursor_texture: Option<VulkanShmTexture>,
 }
 
@@ -73,6 +75,8 @@ impl VulkanSurfacePipelineCache {
             .map_err(VulkanSurfacePipelineCacheError::Sampler)?;
         let texture_cache = VulkanSurfaceTextureCache::new(Arc::clone(&device));
         let wallpaper_texture_cache = VulkanWallpaperTextureCache::new(Arc::clone(&device));
+        let wallpaper_decode_service = WallpaperDecodeService::new()
+            .map_err(VulkanSurfacePipelineCacheError::WallpaperDecode)?;
 
         Ok(Self {
             device,
@@ -82,7 +86,7 @@ impl VulkanSurfacePipelineCache {
             sampler,
             texture_cache,
             wallpaper_texture_cache,
-            wallpaper_decode_service: None,
+            wallpaper_decode_service,
             native_cursor_texture: None,
         })
     }
@@ -203,18 +207,13 @@ impl VulkanSurfacePipelineCache {
     ) -> Result<(), String> {
         let Some(asset) = asset else {
             self.wallpaper_texture_cache.clear();
-            if let Some(service) = self.wallpaper_decode_service.as_mut() {
-                service.select(None).map_err(|error| error.to_string())?;
-            }
+            self.wallpaper_decode_service
+                .select(None)
+                .map_err(|error| error.to_string())?;
             return Ok(());
         };
 
-        if self.wallpaper_decode_service.is_none() {
-            self.wallpaper_decode_service = Some(
-                WallpaperDecodeService::new().map_err(|error| error.to_string())?,
-            );
-        }
-        let service = self.wallpaper_decode_service.as_mut().expect("service initialized");
+        let service = &mut self.wallpaper_decode_service;
         match service.select(Some(asset)) {
             Ok(_) => {}
             Err(WallpaperDecodeServiceError::Worker(
