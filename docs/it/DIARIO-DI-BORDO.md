@@ -851,3 +851,12 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Aggiunti test unitari per un frame minimo valido a un componente, una tabella componenti troncata e un conteggio componenti nullo.
 - È soltanto validazione dei metadati: non decodifica i pixel e non approva il backend FFI TurboJPEG. La prova ABI su Fedora e Debian 13 resta obbligatoria prima di aggiungere il decoder Rust.
 - Nessuna dipendenza o manifest modificati. Non eseguiti build, format, check, test, CI o ISO.
+
+
+## 24 novembre 2026 — Prima risorsa texture Vulkan per lo sfondo
+
+- Aggiunta `VulkanWallpaperTexture` in `components/aurea-compositor/src/vulkan/wallpaper_texture.rs`. Consuma il contratto RGBA8 validato `WallpaperPixels`, alloca un'immagine Vulkan ottimizzata e campionabile, carica i pixel tramite lo staging batch già esistente e transita l'immagine da UNDEFINED → TRANSFER_DST → SHADER_READ.
+- La texture possiede un'immagine Vulkan condivisa e una image view: la durata della risorsa non dipende da una variabile locale di uno stack frame. La risorsa è esportata dal modulo Vulkan.
+- Esportato `WallpaperPixels` dal modulo `desktop` per permettere alla risorsa GPU di consumare il contratto senza collegare il decoder media a Vulkan.
+- Questo completa soltanto il primo livello di upload/risorsa GPU. La texture non è ancora memorizzata in cache per identità dello sfondo, inserita nella scena di rendering o disegnata sotto le superfici desktop. Il costruttore attuale attende il completamento del trasferimento: deve essere chiamato da un percorso di preparazione risorse/background, mai dal callback di rendering sensibile alla latenza.
+- Nessun decoder JPEG o dipendenza aggiunti. Non eseguiti Cargo fmt/check/test/build né CI; nessuna ISO generata.
