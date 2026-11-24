@@ -75,8 +75,8 @@ mod touchscreen;
 pub(crate) mod window_placement;
 mod workspace;
 
-use surface_output_tracking::SurfaceOutputTracker;
 use desktop_click_tracker::DesktopClickTracker;
+use surface_output_tracking::SurfaceOutputTracker;
 
 pub use frame_scheduling::CompositorFrameError;
 pub use output_configuration::CompositorOutputConfigurationError;
