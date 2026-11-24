@@ -93,7 +93,14 @@ pub(super) fn render_frame(
         .map_err(VulkanSurfaceCompositionError::Texture)?;
     surface_cache
         .poll_wallpaper_texture_uploads()
-        .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+        .map_err(|error| match error {
+            super::VulkanWallpaperTextureCacheError::Command(
+                smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
+            ) => VulkanSurfaceCompositionError::DeviceLost(
+                smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
+            ),
+            other => VulkanSurfaceCompositionError::Texture(other.to_string()),
+        })?;
     let active_surface_ids = scene.surface_ids();
     let snapshots = scene.shm_snapshots();
     let visible = visible_surfaces(snapshots, target)?;
