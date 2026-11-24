@@ -5,7 +5,7 @@
 
 //! Owned desktop-entry data captured for one render frame.
 
-use aurea_desktop_api::desktop::{DesktopItem, DesktopManager};
+use aurea_desktop_api::desktop::{DesktopItem, DesktopManager, DesktopTrashState};
 
 /// Immutable, frame-owned copy of the desktop entries.
 ///
@@ -15,17 +15,26 @@ use aurea_desktop_api::desktop::{DesktopItem, DesktopManager};
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct DesktopItemsSnapshot {
     items: Vec<DesktopItem>,
+    trash_state: DesktopTrashState,
 }
 
 impl DesktopItemsSnapshot {
     /// Captures the current desktop entries in their model-defined visual order.
     pub fn capture(manager: &DesktopManager) -> Self {
-        Self { items: manager.items().to_vec() }
+        Self {
+            items: manager.items().to_vec(),
+            trash_state: manager.trash_state(),
+        }
     }
 
     /// Returns the immutable entries in their captured order.
     pub fn items(&self) -> &[DesktopItem] {
         &self.items
+    }
+
+    /// Returns the Trash state captured from the shared desktop model.
+    pub const fn trash_state(&self) -> DesktopTrashState {
+        self.trash_state
     }
 
     /// Returns the number of captured desktop entries.
@@ -42,7 +51,7 @@ impl DesktopItemsSnapshot {
 #[cfg(test)]
 mod tests {
     use super::DesktopItemsSnapshot;
-    use aurea_desktop_api::desktop::DesktopManager;
+    use aurea_desktop_api::desktop::{DesktopManager, DesktopTrashState};
 
     #[test]
     fn captures_default_system_trash_entry() {
@@ -50,6 +59,16 @@ mod tests {
         let snapshot = DesktopItemsSnapshot::capture(&manager);
         assert_eq!(snapshot.len(), 1);
         assert_eq!(snapshot.items()[0].id().as_str(), "system:trash");
+    }
+
+    #[test]
+    fn captures_the_shared_trash_visual_state() {
+        let mut manager = DesktopManager::default();
+        manager.set_trash_state(DesktopTrashState::PartiallyFull);
+
+        let snapshot = DesktopItemsSnapshot::capture(&manager);
+
+        assert_eq!(snapshot.trash_state(), DesktopTrashState::PartiallyFull);
     }
 
     #[test]
