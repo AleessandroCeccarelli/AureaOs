@@ -29,6 +29,13 @@ pub struct WallpaperPixelRect {
 }
 
 impl WallpaperPixelRect {
+    pub(super) const fn new(x: i64, y: i64, width: u32, height: u32) -> Option<Self> {
+        if width == 0 || height == 0 {
+            return None;
+        }
+        Some(Self { x, y, width, height })
+    }
+
     pub const fn x(self) -> i64 { self.x }
     pub const fn y(self) -> i64 { self.y }
     pub const fn width(self) -> u32 { self.width }
