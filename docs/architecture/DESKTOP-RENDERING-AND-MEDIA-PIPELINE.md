@@ -175,3 +175,10 @@ The native cursor upload lifecycle reports an explicit empty-result error rather
 At session startup, the Aurea Desktop composition root reads one snapshot from the home Trash service and passes only the resulting `DesktopTrashState` through `WaylandCompositorFactory` to the compositor’s shared desktop item model. The compositor never scans Trash directories or owns filesystem policy. If the initial service read fails, startup continues and records a warning.
 
 This is an initial snapshot only. Live refresh after file deletion/restoration still requires a session-owned watcher or polling service; the current implementation does not claim automatic updates.
+
+
+### Desktop item selection input flow
+
+The primary pointer-button path gives mapped Wayland surfaces precedence. When no client surface is hit, the compositor converts the global pointer location to logical integer coordinates and uses the shared `DesktopHitTest` contract with the desktop icon logical dimensions. It emits either `DesktopItemSelected { id }` or `DesktopSelectionCleared` through the existing compositor-to-shell interaction channel. The shell owns the selected item identifier in `DesktopState`; the compositor does not own presentation state for selection.
+
+This establishes selection semantics only. A visual selection treatment, double-click recognition and item activation/opening are not implemented yet.
