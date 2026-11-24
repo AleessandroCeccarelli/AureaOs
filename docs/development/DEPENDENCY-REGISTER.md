@@ -190,3 +190,14 @@ This register is the shared source of truth for dependency decisions. When imple
 - **References:** https://github.com/localsend/protocol and https://github.com/localsend/localsend
 - **Validation:** No dependency, Cargo manifest or lockfile change; no build or tests.
 
+### Social/online service APIs — provider-specific candidates
+
+- **Status:** Research only. No SDK, OAuth client or provider adapter approved.
+- **Purpose:** Share local files/media/text from Fides and Aurea first-party viewers to online services without manual file re-selection.
+- **Candidate services:** Telegram, WhatsApp, Facebook, Instagram, Reddit, YouTube and email.
+- **Important distinction:** official APIs differ by account class and action. Telegram Bot API is not a personal-user API; WhatsApp Cloud API is business messaging; Facebook Graph publishing is Page-oriented; Instagram publishing targets eligible Professional accounts; Reddit requires OAuth/access approval and written permission for commercial use; YouTube Data API uploads to an authenticated channel.
+- **Fallback hierarchy:** direct official API only where allowed → official share/deep link → registered desktop application handoff → unsupported (never private endpoint/scraping).
+- **Security:** OAuth/PKCE where supported, least privilege, system credential store, revocation, final user confirmation, no embedded confidential secrets, no silent publishing.
+- **References:** official provider docs are recorded in docs/architecture/AUREA-SHARE-ONLINE-INTEGRATIONS.md.
+- **Compatibility:** Debian 13 baseline; no GNOME/KDE, X11/XWayland or OpenGL dependency. API adapters stay outside compositor and media decode/render paths.
+- **Validation:** no dependency, source code, OAuth registration or tests added.
