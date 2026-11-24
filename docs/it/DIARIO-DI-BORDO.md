@@ -1644,3 +1644,27 @@ Proseguire la costruzione del desktop rendendo più manutenibile il percorso di 
 ### Prossimo passo
 
 Proseguire l'audit dei percorsi input e dei moduli di interazione, verificando che eventi e dispositivi siano instradati correttamente e che ogni file mantenga una responsabilità singola.
+
+
+
+## 24 novembre 2026 — Audit degli eventi Smithay 0.7
+
+### Modifiche al codice
+
+- In `server/input/dispatch.rs` aggiunto un ramo esplicito per `PointerMotionAbsolute`: registra dispositivo e coordinate a livello debug, senza spostare il puntatore. Manca ancora una policy di assegnazione del dispositivo a un output e di conversione in coordinate logiche globali.
+- Aggiunto un ramo esplicito per `SwitchToggle`: registra dispositivo, tipo di switch e stato. La policy per chiusura coperchio e modalità tablet resta al livello sessione/risparmio energetico, non nel router input del compositor.
+- Gli eventi assoluti e gli switch noti non vengono più assorbiti silenziosamente dal ramo wildcard.
+
+### Risultato dell'audit API
+
+- Smithay 0.7 espone eventi per motion assoluto/relativo, pulsanti/assi, gesti, touchscreen, tablet tool e switch.
+- La capability `TabletPad` è presente, ma l'enum `InputEvent` di Smithay 0.7 non espone eventi TabletPad né un relativo trait per pulsanti, ring o strip. Non inventiamo varianti né dichiariamo supporto che l'API non consegna.
+- I pulsanti del tablet tool già instradati non equivalgono ai controlli del tablet pad.
+
+### Documentazione
+
+Creato `docs/architecture/INPUT-EVENT-COVERAGE.md` con matrice di copertura, limiti e sequenza di implementazione.
+
+### Verifica
+
+Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna build, cargo check, rustfmt, test o prova hardware. Verifica raggruppata prevista venerdì su Fedora; Debian 13 resta il riferimento per le dipendenze.
