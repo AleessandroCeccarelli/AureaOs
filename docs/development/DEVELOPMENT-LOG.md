@@ -1034,3 +1034,11 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Exposed the existing validated `WallpaperPixels` type from `desktop` so the GPU resource can consume it without coupling the media decoder to Vulkan.
 - This is the GPU upload/resource milestone only. It is not yet cached by wallpaper identity, inserted into the render scene, or drawn below desktop surfaces. The current constructor waits for its one-time upload; it must be called from a resource-preparation/background path, not a latency-sensitive render callback.
 - No JPEG decoder or dependency was added. No Cargo fmt/check/test/build or CI was run; no ISO was generated.
+
+
+## 2026-11-24 — Asynchronous Vulkan wallpaper upload
+
+- Refactored `VulkanWallpaperTexture` so the upload path is available as `submit_pixels`: it submits the staging transfer and returns a fence-backed `VulkanPendingUpload<Arc<VulkanWallpaperTexture>>` without waiting for GPU completion.
+- Kept `from_pixels` as a blocking convenience wrapper for controlled resource-preparation paths; it now delegates to the asynchronous implementation and waits only there.
+- The pending upload retains the staging buffer and texture until the fence completes, matching the ownership model already used by SHM surface uploads. No render-scene integration or cache has been added yet.
+- No dependencies/manifests changed. No Cargo fmt/check/test/build or CI was run; no ISO was generated.
