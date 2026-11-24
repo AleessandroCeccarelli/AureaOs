@@ -558,3 +558,33 @@ Introdurre uno snapshot desktop posseduto e immutabile, separato dall'attuale De
 3. Definire identità stabile, provenienza, freschezza e permessi dei metadati.
 4. Disegnare i contratti pubblici senza aggiungere ancora dipendenze o duplicare Desktop API.
 5. Proseguire con moduli piccoli e documentazione bilingue (inglese/italiano).
+
+
+## 24 novembre 2026 — Fondamenta della piattaforma AureaOS
+
+### Direzione confermata
+- Base tecnologica: Debian 13 Trixie, Btrfs, Rust, Wayland, Smithay e Vulkan.
+- Quaero è il punto di accesso conversazionale e di ricerca a livello di sistema, con esperienza simile a ChatGPT integrata tramite Aurea Intelligence.
+- Aurea Intelligence gestisce orchestrazione, policy del contesto locale, confini provider e autorizzazioni. ChatGPT è un provider remoto opzionale ed esplicito; ricerca essenziale e funzioni desktop restano locali e utilizzabili offline.
+- Aurea Passkey è una capacità di autenticazione di sistema per login/sblocco, autorizzazione privilegi e API documentate per le applicazioni, con FIDO2/CTAP, integrazione PAM e TPM 2.0 opzionale.
+- Layout Btrfs, transazioni aggiornamento, snapshot e rollback vanno progettati insieme. Gli snapshot non sono backup; i sottovolumi annidati sono confini per gli snapshot.
+- Le credenziali restano fuori dal compositor e dalle normali configurazioni applicative. Servono recupero e fallback; nessun protocollo crittografico proprietario.
+- Restano validi i confini di responsabilità e la modularità di File Intelligence.
+
+### Ricerca tecnologica
+- Debian 13 fornisce pacchetti SQLite runtime e sviluppo; i metadati Fedora indicano FTS5 abilitato. Sulla build Debian di destinazione serve una verifica esplicita della capacità FTS5.
+- notify 9 documenta supporto Linux tramite inotify e licenza CC0, ma richiede attualmente Rust 1.91 come MSRV. I manifest esaminati usano edition 2024 e non dichiarano rust-version. Non aggiungere notify 9 finché la policy MSRV non è definita; valutare anche inotify nativo.
+- Le crate Rust passkey hanno ambiti differenti. passkey-rs offre componenti client WebAuthn e autenticatore CTAP2; le librerie FIDO Linux hanno compromessi distinti su trasporti e licenze. Nessuna dipendenza è stata selezionata.
+- Gli snapshot Btrfs sono basati su sottovolumi, non attraversano ricorsivamente sottovolumi annidati e non sono backup.
+
+### Repository e verifiche
+- Branch: main. HEAD prima di questo aggiornamento documentale: 9332e26cdb936695c7dc85e6dee3f347820eb129.
+- Aggiunti documenti architetturali bilingue.
+- Nessun sorgente Rust, dipendenza, manifest Cargo o comportamento runtime è stato modificato.
+- Nessun Cargo fmt/check/test/build o CI è stato eseguito.
+
+### Prossime attività
+1. Progettare layout sottovolumi Btrfs e modello rollback.
+2. Definire threat model Aurea Passkey e confini broker di sistema/PAM.
+3. Definire provider Aurea Intelligence e contratti di autorizzazione azioni.
+4. Completare verifiche SQLite FTS5 e compatibilità watcher prima di aggiungere dipendenze.
