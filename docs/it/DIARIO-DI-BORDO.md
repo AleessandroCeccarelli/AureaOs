@@ -1062,3 +1062,12 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Aggiunto un test unitario per la conversione diretta dell'errore SHM fatale; il test della cache resta presente.
 - Commit: `c6e2737c`, `3d5fba86`, `d3ff57c4`.
 - Nessuna verifica eseguita. Il caricamento iniziale del cursore usa ancora il percorso sincrono `from_snapshot`: valutare una futura conversione a upload asincrono senza introdurre attese nel frame callback.
+
+
+### Follow-up — compatibilità del convertitore Vulkan legacy
+
+- L'audit ha verificato anche i chiamanti che usano ancora `submit_and_wait()` e ricevono un `vk::Result` invece del tipo completo `VulkanQueueSubmitError`.
+- Il convertitore legacy restituiva sempre `wait_error` per `CompletionUncertain`: se la fence riportava `TIMEOUT` e il fallback `device_wait_idle` riportava `ERROR_DEVICE_LOST`, il guasto fatale veniva nascosto.
+- Corretto `VulkanQueueSubmitError::result()` per dare precedenza a `ERROR_DEVICE_LOST` in entrambi i campi, mantenendo `wait_error` per gli errori ordinari. Aggiunti due test unitari mirati.
+- Commit: `4a5ac3d2`.
+- Nessun test/build/format/CI eseguito.
