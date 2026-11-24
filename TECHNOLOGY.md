@@ -213,7 +213,7 @@ The current or intended technical direction includes:
 * PipeWire and WirePlumber for audio infrastructure.
 * NetworkManager for network connectivity.
 * DRM/KMS for graphics-device and display management.
-* GRUB 2 for the planned bootloader configuration.
+* systemd-boot as the UEFI-only boot manager; Secure Boot is disabled for Roma 1.0. UKI is the selected boot-artifact direction, subject to Debian integration validation.
 * Btrfs as the selected default installed filesystem.
 * Udev for hardware discovery and device events.
 
