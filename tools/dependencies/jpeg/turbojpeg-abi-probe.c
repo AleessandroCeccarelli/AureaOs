@@ -65,11 +65,6 @@ static int read_input(const char *path, unsigned char **data, size_t *length)
 
 static int decode_and_check(const unsigned char *jpeg, size_t jpeg_length)
 {
-    if (jpeg_length > (size_t)ULONG_MAX) {
-        fprintf(stderr, "JPEG input length does not fit TurboJPEG's API.\n");
-        return -1;
-    }
-
     tjhandle decoder = tjInitDecompress();
     if (decoder == NULL) {
         fprintf(stderr, "tjInitDecompress failed: %s\n", tjGetErrorStr());
