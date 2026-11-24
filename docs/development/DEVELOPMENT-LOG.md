@@ -1061,3 +1061,13 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Added a validated `WallpaperPixelRect::new` constructor and exported the new geometry/layout types through `desktop`.
 - Commits: `a5b33ccd` (geometry), `93284f76` (rectangle constructor), `804f9e67` (wallpaper module exports), `96c49b75` (desktop exports).
 - This is CPU-side geometry only. No Vulkan shader/draw integration, decoder, or wallpaper display has been added. No Cargo fmt/check/test/build/CI or ISO was run; local Fedora validation remains required.
+
+
+## 2026-11-24 — Dedicated Vulkan wallpaper shader and pipeline
+
+- Added dedicated `wallpaper_texture.vert` / `.frag` shaders. The vertex shader maps a normalized UV rectangle supplied as four float push constants; the fragment shader samples the wallpaper texture.
+- Updated `build.rs` to track and compile both shaders for DRM builds and expose their generated SPIR-V paths.
+- Added a format-specific wallpaper pipeline cache alongside the existing surface pipeline cache. It uses the existing sampled-texture descriptor layout but has its own four-float UV push-constant range; the surface shader and its `u32` transform ABI remain unchanged.
+- This is pipeline infrastructure only. No wallpaper descriptor is bound and no wallpaper draw is recorded yet. The decoder and selected texture population remain outstanding.
+- Commits: `e0823ebe` (vertex shader), `fa3d28e4` (fragment shader), `41b24c1c` (shader build integration), `7a742fe6` (dedicated pipeline cache).
+- No Cargo fmt/check/test/build, CI or ISO was run. Fedora local validation remains required; Debian 13 compatibility remains the target.
