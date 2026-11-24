@@ -116,3 +116,18 @@ For the built-in wallpaper milestone, an in-process library called from a bounde
 - creating a permanent media daemon or IPC protocol now;
 - adding GPU code to the media crate;
 - modifying the existing wallpaper renderer before decoded pixels are proven correct.
+
+
+## Bounded decode worker
+
+The crate now exposes an optional `DecodeWorker` for callers that need to keep synchronous decoding away from latency-sensitive threads.
+
+- One worker thread processes requests sequentially.
+- The waiting queue has capacity one; one request may be in flight and one may wait.
+- Submission uses non-blocking `try_send`; a full queue is reported as back-pressure.
+- Compressed input is checked against the caller's byte limit before enqueueing.
+- Each accepted request returns a one-shot receiver for its decoded result.
+- Dropping all worker handles closes the request channel; the worker exits after queued work is drained.
+- The worker is backend-neutral and has no compositor, Smithay or Vulkan dependency.
+
+The worker is infrastructure only at this stage. The compositor does not yet own or call it, and the decoded pixels are not yet connected to the Vulkan wallpaper upload cache. The next integration must define ownership and lifecycle outside the render callback, poll completed results without blocking, and discard stale results when the wallpaper selection/revision changes.
