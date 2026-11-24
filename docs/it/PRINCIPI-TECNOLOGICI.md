@@ -2,6 +2,14 @@
 
 # Principi tecnologici e architetturali di AureaOS
 
+## Strategia per desktop universale, multimedialità e accessibilità
+
+AureaOS deve essere adatto a bambini, anziani, utenti alle prime armi, studenti, professionisti creativi e d'ufficio, amministratori e sviluppatori, attraverso un unico desktop coerente. Accessibilità, multimedialità e produttività sono requisiti fondamentali del prodotto.
+
+Il progetto adotta tre livelli di selezione tecnologica: fondamenta mature e compatibili con Debian per i percorsi critici; infrastruttura Linux consolidata integrata tramite esperienza e API AureaOS; prototipi isolati per tecnologie nuove o immature. I componenti sperimentali non devono diventare silenziosamente dipendenze obbligatorie del rilascio.
+
+La mappa tecnologica dettagliata, i criteri di adozione, i confini multimediali, la strategia dei portali, gli obiettivi di accessibilità, i criteri di valutazione del toolkit UI e le priorità immediate sono descritti nella [Strategia del desktop universale e delle tecnologie](docs/architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md).
+
 ## 1. Piattaforma e architettura del prodotto
 
 **Sviluppato dal progetto non significa codice chiuso.** AureaOS progetta e mantiene il proprio ambiente desktop, la shell, l’integrazione del compositor, i servizi di sistema e le applicazioni con un nome e una funzione propri. Sono componenti sviluppati direttamente per AureaOS, ma il codice originale del progetto è distribuito con licenza GPL-3.0-or-later, salvo diversa indicazione esplicita nel singolo file.
