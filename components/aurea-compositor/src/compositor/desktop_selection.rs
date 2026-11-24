@@ -5,12 +5,13 @@
 
 //! Desktop-canvas item selection from global pointer coordinates.
 
+use std::time::Instant;
+
 use aurea_desktop_api::{
     desktop::{DesktopHitTest, DesktopPoint},
     desktop_interaction::DesktopInteraction,
 };
 use smithay::utils::{Logical, Point};
-use std::time::Instant;
 
 use super::AureaCompositor;
 
