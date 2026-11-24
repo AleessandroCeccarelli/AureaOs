@@ -5,7 +5,7 @@
 
 //! Maps desktop model entries to approved, pre-rasterized icon assets.
 
-use aurea_desktop_api::desktop::{DesktopItem, DesktopItemKind};
+use aurea_desktop_api::desktop::{DesktopItem, DesktopItemKind, DesktopTrashState};
 
 use crate::{
     render::shm_buffer::{ShmBufferError, ShmBufferSnapshot},
@@ -44,14 +44,6 @@ impl DesktopIconRasterSize {
     }
 }
 
-/// Actual content state supplied by the Trash service.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum DesktopTrashContents {
-    Empty,
-    PartiallyFull,
-    Full,
-}
-
 /// A canonical generated asset and the identity used by the Vulkan cache.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct DesktopIconAssetDescriptor {
@@ -81,7 +73,7 @@ impl DesktopIconAssetDescriptor {
 pub(crate) fn desktop_icon_asset(
     item: &DesktopItem,
     theme: DesktopTheme,
-    trash_contents: DesktopTrashContents,
+    trash_contents: DesktopTrashState,
     raster_size: DesktopIconRasterSize,
 ) -> Option<DesktopIconAssetDescriptor> {
     if !matches!(item.kind(), DesktopItemKind::Trash) {
@@ -89,22 +81,22 @@ pub(crate) fn desktop_icon_asset(
     }
 
     let (theme_name, state_name, asset_id) = match (theme, trash_contents) {
-        (DesktopTheme::Light, DesktopTrashContents::Empty) => {
+        (DesktopTheme::Light, DesktopTrashState::Empty) => {
             ("light", "empty", "system:trash:light:empty")
         }
-        (DesktopTheme::Light, DesktopTrashContents::PartiallyFull) => {
+        (DesktopTheme::Light, DesktopTrashState::PartiallyFull) => {
             ("light", "half", "system:trash:light:half")
         }
-        (DesktopTheme::Light, DesktopTrashContents::Full) => {
+        (DesktopTheme::Light, DesktopTrashState::Full) => {
             ("light", "full", "system:trash:light:full")
         }
-        (DesktopTheme::Dark, DesktopTrashContents::Empty) => {
+        (DesktopTheme::Dark, DesktopTrashState::Empty) => {
             ("dark", "empty", "system:trash:dark:empty")
         }
-        (DesktopTheme::Dark, DesktopTrashContents::PartiallyFull) => {
+        (DesktopTheme::Dark, DesktopTrashState::PartiallyFull) => {
             ("dark", "half", "system:trash:dark:half")
         }
-        (DesktopTheme::Dark, DesktopTrashContents::Full) => {
+        (DesktopTheme::Dark, DesktopTrashState::Full) => {
             ("dark", "full", "system:trash:dark:full")
         }
     };
@@ -125,7 +117,7 @@ pub(crate) fn desktop_icon_asset(
 #[cfg(test)]
 mod tests {
     use super::{
-        DesktopIconRasterSize, DesktopTrashContents, desktop_icon_asset,
+        DesktopIconRasterSize, DesktopTrashState, desktop_icon_asset,
     };
     use crate::desktop::DesktopTheme;
     use aurea_desktop_api::desktop::DesktopManager;
@@ -137,9 +129,9 @@ mod tests {
 
         for theme in [DesktopTheme::Light, DesktopTheme::Dark] {
             for state in [
-                DesktopTrashContents::Empty,
-                DesktopTrashContents::PartiallyFull,
-                DesktopTrashContents::Full,
+                DesktopTrashState::Empty,
+                DesktopTrashState::PartiallyFull,
+                DesktopTrashState::Full,
             ] {
                 let asset = desktop_icon_asset(
                     trash,
@@ -162,7 +154,7 @@ mod tests {
         let asset = desktop_icon_asset(
             trash,
             DesktopTheme::Dark,
-            DesktopTrashContents::Empty,
+            DesktopTrashState::Empty,
             DesktopIconRasterSize::ThreeX,
         )
         .unwrap();
@@ -177,7 +169,7 @@ mod tests {
         let asset = desktop_icon_asset(
             &manager.items()[0],
             DesktopTheme::Light,
-            DesktopTrashContents::Empty,
+            DesktopTrashState::Empty,
             DesktopIconRasterSize::OneX,
         )
         .unwrap();
