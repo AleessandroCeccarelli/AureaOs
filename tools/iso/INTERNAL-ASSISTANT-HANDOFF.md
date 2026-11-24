@@ -708,3 +708,22 @@ Ispezionare l'header `turbojpeg.h` e la tabella dei simboli esportati dai pacche
 - Safety limits: 64 MiB compressed input, 16384 pixels per axis, 256 MiB decoded RGBA8; initial color-space scope RGB/YCbCr/grayscale, explicit CMYK/YCCK rejection.
 - No compile or execution has been performed. Do not claim that the ABI is validated.
 - When the user is back on Fedora, run the exact commands in `tools/dependencies/jpeg/README.md`; then repeat against Debian 13's `libturbojpeg0-dev` 2.1.5. Only after both succeed should the Rust FFI adapter be implemented.
+
+
+## DECISIONE ARCHITETTURALE MEDIA — 2026-11-24
+
+- Decisione proposta: creare un crate Rust proprietario `aurea-media` come servizio/libreria in-process, non un daemon IPC nella prima fase.
+- AureaOS possiede API, limiti, validazione, scheduling, errori, dispatch e integrazione. Il codec JPEG resta un backend sostituibile.
+- Candidato backend: API TurboJPEG legacy via FFI Rust isolato in un solo modulo. Non implementare JPEG da zero.
+- Confine: il servizio restituisce pixel RGBA8 CPU-owned; non conosce Vulkan, texture, wallpaper layout o scene compositor.
+- Il decoder gira su worker in background, mai sul render thread. Valutare helper process ristretto prima di esporre decode a file/download/preview non fidati o app terze.
+- Specifica completa: `docs/architecture/AUREA-MEDIA-SERVICE.md`.
+- Debian 13 Trixie libturbojpeg 2.1.5; Fedora streams verificati 3.1.x. La compatibilità API legacy deve essere provata localmente su entrambi gli ambienti prima di introdurre crate/dependency.
+
+### Correzione importante al probe
+
+- L'ispezione dell'header TurboJPEG 2.1.5 Debian ha rivelato che `TJCS_DEFAULT` e `TJCS_UNKNOWN` non sono definiti nell'enum legacy 2.1.
+- Corretto `turbojpeg-abi-probe.c`: il parametro di output colorspace viene inizializzato a `-1`, poi scritto da `tjDecompressHeader3()`.
+- Aggiunta nota di compatibilità al README.
+- `TJFLAG_LIMITSCANS` è presente in 2.1.5; non va rimosso.
+- Probe non compilato né eseguito: la compatibilità effettiva resta non verificata.
