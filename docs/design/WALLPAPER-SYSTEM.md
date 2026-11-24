@@ -116,3 +116,5 @@ Implemented since the CPU geometry milestone:
 - `VulkanSurfacePipelineCache` now owns a separate wallpaper pipeline per target format. Its vertex push-constant range is a four-float UV rectangle, independent of the existing surface transform ABI.
 
 This is pipeline preparation only: no descriptor binding or wallpaper draw is issued yet, and the decoder/cache still do not provide a ready selected texture. Local Fedora validation has not been run.
+
+The Vulkan textured draw-pass API now also accepts caller-defined push-constant payloads. It validates that payloads are non-empty, four-byte aligned, and no larger than Vulkan's guaranteed 128-byte minimum. The existing surface path still supplies its original four-byte transform; the wallpaper pipeline can supply its independent 16-byte UV rectangle. This API layer does not yet bind or draw the wallpaper.
