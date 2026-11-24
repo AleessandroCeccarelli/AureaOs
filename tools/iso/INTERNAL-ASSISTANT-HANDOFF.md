@@ -877,6 +877,13 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 
 ## WALLPAPER FRAME DRAW INTEGRATION — 2026-11-24
 
+## WALLPAPER ASSET IDENTITY GUARD — 2026-11-24
+
+- Added `texture_for_asset` to the wallpaper texture cache and exposed it through `VulkanSurfacePipelineCache`.
+- Frame composition now matches the selected `DesktopSnapshot` asset ID to the ready GPU texture key before binding/drawing. This prevents rendering a stale previous wallpaper during a selection replacement upload.
+- Commits: `e5faff5a`, `337b403a`, `4bbde807`, `2c2e0e3e`.
+- Still no JPEG decoder or producer of `WallpaperPixels`; do not claim wallpaper is visible. No Cargo fmt/check/test/build, CI or ISO was run.
+
 - `surface_compositor::render_frame` now binds a selected wallpaper only when its Vulkan upload is complete, then records the dedicated wallpaper pipeline directly after clear and before SHM surfaces and cursor.
 - The frame uses output-local physical dimensions and `WallpaperFitMode::Fill`; a ready wallpaper is drawn even for an otherwise empty scene. Clearing wallpaper selection clears the GPU cache.
 - Commits: `30582074`, `a347fde8`.
