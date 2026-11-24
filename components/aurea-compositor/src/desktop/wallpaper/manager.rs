@@ -3,34 +3,25 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Selects the desktop wallpaper and exposes immutable frame snapshots.
+//! Selects a still-image desktop wallpaper and exposes immutable snapshots.
 
-use super::{WallpaperAsset, WallpaperPlaybackPolicy, WallpaperSnapshot};
+use super::{WallpaperAsset, WallpaperSnapshot};
 
-/// Owns wallpaper selection and playback policy independently from Vulkan resources.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Owns still-image wallpaper selection independently from Vulkan resources.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct WallpaperManager {
     selected: Option<WallpaperAsset>,
-    playback_policy: WallpaperPlaybackPolicy,
 }
 
 impl WallpaperManager {
     pub fn with_default_wallpaper() -> Self {
-        Self {
-            selected: WallpaperAsset::default_wallpaper(),
-            playback_policy: WallpaperPlaybackPolicy::default(),
-        }
+        Self { selected: WallpaperAsset::default_wallpaper() }
     }
 
     pub fn selected(&self) -> Option<&WallpaperAsset> { self.selected.as_ref() }
-    pub const fn playback_policy(&self) -> WallpaperPlaybackPolicy { self.playback_policy }
-
-    pub fn set_playback_policy(&mut self, policy: WallpaperPlaybackPolicy) {
-        self.playback_policy = policy;
-    }
 
     pub fn snapshot(&self) -> Option<WallpaperSnapshot> {
-        self.selected.clone().map(|asset| WallpaperSnapshot::new(asset, self.playback_policy))
+        self.selected.clone().map(WallpaperSnapshot::new)
     }
 
     pub fn select(&mut self, asset: WallpaperAsset) { self.selected = Some(asset); }
@@ -42,15 +33,13 @@ impl Default for WallpaperManager {
 }
 
 impl From<WallpaperAsset> for WallpaperManager {
-    fn from(asset: WallpaperAsset) -> Self {
-        Self { selected: Some(asset), playback_policy: WallpaperPlaybackPolicy::default() }
-    }
+    fn from(asset: WallpaperAsset) -> Self { Self { selected: Some(asset) } }
 }
 
 #[cfg(test)]
 mod tests {
     use super::WallpaperManager;
-    use crate::desktop::wallpaper::{WallpaperAsset, WallpaperPlaybackPolicy};
+    use crate::desktop::wallpaper::WallpaperAsset;
 
     #[test]
     fn default_manager_selects_the_aureaos_wallpaper() {
@@ -71,13 +60,5 @@ mod tests {
         let mut manager = WallpaperManager::default();
         manager.clear_selection();
         assert!(manager.snapshot().is_none());
-    }
-
-    #[test]
-    fn playback_policy_is_carried_into_the_frame_snapshot() {
-        let mut manager = WallpaperManager::default();
-        let policy = WallpaperPlaybackPolicy::default().with_reduced_motion(true);
-        manager.set_playback_policy(policy);
-        assert!(manager.snapshot().unwrap().playback_policy().reduced_motion());
     }
 }
