@@ -1085,3 +1085,13 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Nessuna dipendenza aggiunta e nessuna modifica a Cargo.toml/Cargo.lock.
 - Commit: `bb8ae90e`, `fd1f8a80`, `0e35bd1f`.
 - Nessuna build, rustfmt, cargo check, test o CI eseguiti. Verifica rimandata al blocco concordato su Fedora.
+
+
+### Follow-up — audit statico del cursore e correzione ownership upload
+
+- La revisione del costruttore di `VulkanSurfacePipelineCache` ha individuato che il nuovo campo `pending_cursor_upload` non veniva inizializzato. Corretto con `None` nel costruttore; senza questa inizializzazione il workspace non avrebbe compilato.
+- Commit correttivo: `45757f16`.
+- Prima verifica statica del percorso puntatore: il cursore nativo usa una bitmap RGBA8 interna, hotspot logico esplicito, coordinate logiche e trasformazione/scala dell'output; l'input fisico passa da libinput tramite Smithay.
+- Le impostazioni touchpad vengono applicate solo quando libinput espone le capacità corrispondenti; le funzioni non supportate vengono riportate come tali, senza forzare driver o permessi aggiuntivi.
+- Nessuna nuova dipendenza, nessun accesso root aggiunto e nessuna modifica a Debian base. Nessuna build, test, rustfmt o CI eseguiti.
+- Vincolo permanente ribadito: ogni nuova dipendenza e integrazione hardware/codec/servizio deve essere valutata per Debian 13 Trixie, permessi minimi, licenza e disponibilità nei repository prima dell'adozione.
