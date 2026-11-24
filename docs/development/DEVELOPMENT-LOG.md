@@ -898,3 +898,11 @@ Before proposing or adding any dependency, consult and update the register. Debi
 ### Scope
 
 No dependency was added to Cargo manifests or lockfiles. No decoder implementation was written. No build, format, check, tests or CI were run.
+
+
+### Additional decoder review — 2026-11-24
+
+- Found upstream issue #496: zune-jpeg 0.5.15 can decode valid baseline JPEG images with incorrect colors; upstream identifies a fix in 0.5.16-rc3.
+- 0.5.16-rc3 is a pre-release and is not accepted as a production dependency.
+- Updated both dependency registers: zune-jpeg 0.5.15 is now explicitly blocked; wait for a stable fixed release and repeat security, compatibility and decoder-boundary review.
+- No decoder dependency or source code was added. No builds or tests were run.
