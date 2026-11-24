@@ -25,6 +25,14 @@ pub(crate) enum VulkanSurfaceCompositionError {
 }
 
 impl VulkanSurfaceCompositionError {
+    pub(crate) fn from_vk_result(error: vk::Result) -> Self {
+        if error == vk::Result::ERROR_DEVICE_LOST {
+            Self::DeviceLost(error)
+        } else {
+            Self::Command(format!("{error:?}"))
+        }
+    }
+
     pub(crate) fn from_queue_submit_error(error: VulkanQueueSubmitError) -> Self {
         let device_lost = match error {
             VulkanQueueSubmitError::Rejected(result)
