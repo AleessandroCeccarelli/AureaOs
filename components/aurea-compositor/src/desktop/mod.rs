@@ -7,6 +7,7 @@
 
 mod background;
 mod items_snapshot;
+mod item_geometry;
 mod manager;
 mod snapshot;
 mod surface;
@@ -15,6 +16,9 @@ mod wallpaper;
 
 pub use background::DesktopBackground;
 pub use items_snapshot::DesktopItemsSnapshot;
+pub(crate) use item_geometry::{
+    DESKTOP_ICON_LOGICAL_SIZE, DesktopItemDrawGeometry, desktop_item_geometries,
+};
 pub use manager::DesktopManager;
 pub use snapshot::DesktopSnapshot;
 pub use surface::DesktopSurface;
