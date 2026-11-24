@@ -46,13 +46,13 @@ The technology-independent desktop API already defines:
 - `DesktopRect` and deterministic `DesktopHitTest`, including overlap ordering and logical-coordinate semantics.
 - A compositor-owned `DesktopItemsSnapshot` captured into `RenderScene`.
 
-The native Vulkan composition path does **not** yet draw desktop item icons. A first per-output geometry module now converts each item's global logical position into physical output geometry, applying integer/fractional scale, output transform and clipping. It uses a 64-logical-pixel icon destination and skips invalid/off-output entries independently. This module is staged but not yet connected to the Vulkan draw path. The hit-test contract exists, but desktop item hit testing is not yet connected to physical pointer events. Do not treat unit tests as proof of end-to-end icon interaction.
+The native Vulkan composition path does **not** yet draw desktop item icons. A first per-output geometry module now converts each item's global logical position into physical output geometry, applying integer/fractional scale, output transform and clipping. It uses a 64-logical-pixel icon destination and skips invalid/off-output entries independently. This module is staged but not yet connected to the Vulkan draw path. Desktop hit testing is now connected to primary pointer presses on the empty desktop: mapped Wayland surfaces retain focus/raise precedence, and a click outside a window selects or clears the item in Shell state. A separate monotonic click tracker recognizes a same-item double-click and emits a semantic activation intent. Neither selection highlighting nor actual file/application launching is implemented. Do not treat source tests as proof of end-to-end interaction on hardware.
 
 ### Pointer, output hotplug and session lifecycle
 
 - Relative motion, buttons, axes/scroll and touchpad gestures arrive through libinput/Smithay.
 - Pointer coordinates are global logical coordinates and are constrained to the union of enabled output rectangles. Gaps resolve to the nearest output edge.
-- Primary-button presses already focus/raise a Wayland toplevel and are forwarded through the Wayland pointer.
+- Primary-button presses focus/raise a Wayland toplevel when a surface is hit; otherwise they run desktop item hit testing. The event is still forwarded through the Wayland pointer. Double-click activation is emitted as a semantic intent only; the Files/Shell launch service is not connected yet.
 - Native cursor geometry is resolved per output using logical position, cursor scale, target scale/fractional scale and output transform.
 - Output reconciliation refreshes pointer focus and requests frames. DRM-device removal unregisters its outputs and attempts to place the pointer on the primary remaining output.
 - On libseat pause, input events are ignored; KMS surfaces are cleared before graphics resources are released. On activation, GBM/Vulkan/KMS and deferred outputs are restored before the pointer is centered on an enabled output.
