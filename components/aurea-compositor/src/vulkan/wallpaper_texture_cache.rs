@@ -138,7 +138,7 @@ impl VulkanWallpaperTextureCache {
             }
         };
 
-        self.selected = Some(key);
+        self.selected = Some(key.clone());
         self.ready = None;
         self.pending_bytes = self.pending_bytes.saturating_add(byte_len);
         self.pending.push(PendingWallpaperUpload {
