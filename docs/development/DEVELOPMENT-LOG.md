@@ -1423,3 +1423,15 @@ Static path and dependency review only. No build, tests, rustfmt, cargo check or
 - No dependency added.
 
 Commits: `d0ea103b`, `bd5a6e28`, `bf415144`. Static review only; no build, tests, rustfmt, cargo check or CI.
+
+
+## 2026-11-24 — Native cursor Vulkan error-path corrections
+
+- Replaced the synthetic Vulkan `ERROR_UNKNOWN` used for an empty completed upload with an explicit `EmptyUpload` error. An empty result violates the upload contract; it is not a driver-reported Vulkan failure.
+- Aligned the composition layer with the extracted `NativeCursor` cache-error variant.
+- Made the pipeline-cache error type visible to the sibling Vulkan composition module so it can preserve the specific SHM texture error mapping, including `ERROR_DEVICE_LOST`.
+- No dependency added and no intended change to normal frame behavior.
+
+Commits: `30397783`, `04c3aed5`, `552a342b`.
+
+Static source review only. No build, tests, rustfmt, cargo check or CI were run. Compilation remains unverified until the agreed Fedora verification block.
