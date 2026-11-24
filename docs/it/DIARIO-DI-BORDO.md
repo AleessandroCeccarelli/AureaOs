@@ -1313,3 +1313,19 @@ Revisione statica del sorgente e dei contratti esistenti. Nessuna build, test, r
 2. Collegare il servizio Cestino al valore `DesktopTrashContents`, senza inventare uno stato di default.
 3. Caricare i byte generati e costruire le richieste per la cache Vulkan.
 4. Collegare cache e geometria per-output al draw pass, mantenendo l'ordine wallpaper → icone → superfici Wayland → puntatore.
+
+
+### Follow-up — Stato Cestino nel contratto Desktop condiviso
+
+- Aggiunto `DesktopTrashState` a `aurea-desktop-api`: Empty, PartiallyFull e Full sono ora un unico tipo semantico condiviso, indipendente da Shell e Vulkan.
+- `DesktopManager` possiede lo stato e offre getter/setter espliciti; il valore predefinito è Empty.
+- `DesktopItemsSnapshot` copia lo stato insieme agli elementi, così ogni frame riceve un valore immutabile e coerente.
+- Aurea Shell riutilizza il tipo condiviso come `TrashContentsState`; il servizio `aurea-desktop::TrashVisualState` può essere convertito esplicitamente nel contratto condiviso.
+- Il resolver delle icone ora usa lo stesso `DesktopTrashState`, senza mantenere un secondo enum locale.
+- L'accesso al filesystem resta nel servizio Trash. Il compositor non interroga directory, non calcola soglie e non avvia watcher.
+
+Riferimenti: `1807c23d`, `544036fb`, `5c35a382`, `17e7062e`, `5a08ca66`, `6048a1cc`, `5a3c05bf`, `e776dfba`.
+
+**Limite ancora presente:** la conversione è disponibile, ma il composition root non ha ancora collegato automaticamente lo snapshot del servizio al modello Desktop del compositor. Non esiste ancora un watcher o un aggiornamento automatico dello stato.
+
+Nessuna dipendenza aggiunta. Nessuna build, test, rustfmt, cargo check o CI eseguiti.
