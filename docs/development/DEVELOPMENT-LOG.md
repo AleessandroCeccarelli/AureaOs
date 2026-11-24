@@ -1176,3 +1176,51 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Client Wayland cursor surfaces and the AureaOS native arrow use separate paths: the former uses the client surface and its hotspot; the latter uses the internal bitmap and output-aware geometry.
 - No additional broad device permissions or proprietary vendor driver are required by the reviewed input path; libinput access is mediated by the libseat session.
 - Static audit only; no build/tests/formatting were run. Next: inspect cursor-state lifecycle across outputs, hotplug and session pause/resume, then connect desktop hit testing/interactions without duplicating Wayland input logic.
+
+
+## 24 November 2026 — Desktop pipeline alignment and pointer lifecycle audit
+
+### Actual wallpaper pipeline status
+
+A source review on `main` showed that the implementation is further ahead than the previous architecture record described:
+
+- `aurea-media` is already a separate crate with a TurboJPEG C shim, Rust API and bounded worker.
+- `WallpaperDecodeService` is connected to the Vulkan cache and handles revisions, stale results, failures and back-pressure without blocking the frame.
+- `VulkanWallpaperTextureCache` retains asynchronous uploads and pending resources until their fences complete.
+- `surface_compositor::render_frame` draws a ready wallpaper texture after the clear and before Wayland surfaces; the cursor remains above the scene.
+- Fill geometry is computed per output. Wallpaper resources are separate from the Wayland SHM surface cache.
+
+This describes source integration, not visual validation. The Fedora laptop test has not been run, and wallpaper presentation on physical hardware is not claimed as working.
+
+### Static output/session/pointer audit
+
+- Output reconciliation refreshes pointer focus and requests new frames.
+- When an entire DRM device is removed, its outputs are withdrawn and the compositor attempts to recenter the pointer on the first remaining enabled output.
+- During `PauseSession`, queued input events are ignored; KMS surfaces are disabled before GBM/Vulkan resources are released.
+- During `ActivateSession`, GBM, Vulkan, KMS surfaces and deferred outputs are restored; the pointer is then centered on an enabled output.
+- Recentering is skipped while a client owns a pointer grab. This intentionally avoids interrupting a Wayland interaction. The end-of-grab transition still needs review when the output underneath the pointer is removed during the grab.
+- Native cursor geometry is resolved per output and accounts for scale, fractional scale and target transform.
+
+This was a static audit; no physical hotplug or VT-switch test was performed.
+
+### Desktop items: existing starting point
+
+- The shared API already contains `DesktopRect` and `DesktopHitTest`, using logical coordinates, inclusive left/top edges, exclusive right/bottom edges and deterministic overlap resolution.
+- `DesktopItemsSnapshot` is already carried by `RenderScene`.
+- Vulkan composition does not yet draw native desktop icons, and primary-click handling does not yet consult `DesktopHitTest`: current click handling focuses/raises Wayland windows.
+- `icons/generated` currently contains only its README; SVG source artwork remains canonical.
+
+### Documentation
+
+- Updated `docs/architecture/DESKTOP-RENDERING-AND-MEDIA-PIPELINE.md` to match the implementation, distinguish source integration from hardware validation, and correct the next implementation sequence.
+- Commit: `33e8ebae`.
+
+### Next block
+
+1. Define a reproducible SVG-to-raster pipeline with versioned outputs and no runtime SVG dependency.
+2. Add dedicated desktop assets and a Vulkan texture cache without reusing the SHM cache.
+3. Draw icons between wallpaper and Wayland surfaces, with consistent logical/output geometry and clipping.
+4. Only then connect hit testing, selection, double-click and context menus; file opening and application launching remain owned by Files/Shell services.
+5. Resume the pointer-grab completion audit for hot-unplug.
+
+No build, tests, rustfmt or CI were run. No runtime dependency was added. Debian 13 Trixie remains the target platform; Fedora remains the development host.
