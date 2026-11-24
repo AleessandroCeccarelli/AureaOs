@@ -1487,3 +1487,32 @@ Nessuna build, test, rustfmt o CI eseguiti. La verifica resta raggruppata su Fed
 - La root runtime non è ancora scelta dal composition root e il loader non è ancora chiamato dal renderer: il modulo resta deliberatamente preparatorio.
 - Nessuna lettura su disco è stata aggiunta al ciclo dei frame; nessuna dipendenza aggiunta.
 - Nessuna build, test, rustfmt o CI eseguiti.
+
+
+## 24 novembre 2026 — Audit formati wallpaper Windows/macOS e direzione Aurea Media
+
+### Decisione prodotto
+
+- Nessun video, nessun codec video e nessuna dipendenza GStreamer/PipeWire per gli sfondi.
+- Gli sfondi utente saranno immagini statiche. Un futuro wallpaper dinamico potrà essere costruito con varianti statiche e pianificazione temporale, senza introdurre riproduzione video.
+- Confrontate le fonti ufficiali Microsoft e Apple: Windows documenta JPEG, BMP/DIB, TIFF/TIF, PNG e GIF nei file tema, mentre alcune interfacce gestite moderne restringono l'impostazione a JPG/JPEG/PNG. macOS permette di scegliere file, cartelle, album e foto; l'ecosistema Apple documenta JPEG, PNG, GIF, TIFF, HEIC e altri formati, e Preview esporta anche JPEG 2000 e OpenEXR.
+- AureaOS adotterà una selezione ampia: JPEG, PNG, BMP/DIB, GIF (solo primo frame), TIFF (solo prima pagina), WebP, HEIC/HEIF e AVIF. JPEG 2000 resta candidato condizionato a backend Debian e revisione licenze. OpenEXR, PDF, SVG e RAW non fanno parte del primo import wallpaper.
+
+### Audit del codice corrente
+
+- aurea-media/src/decoder.rs espone attualmente soltanto ImageFormat::Jpeg.
+- aurea-media/src/jpeg.rs usa il TurboJPEG ABI tramite shim C e restituisce RGBA8.
+- aurea-media/build.rs compila e collega sempre il solo shim TurboJPEG.
+- WallpaperAsset incorpora un JPEG nel binario e usa identificatore/byte slice statici: non può rappresentare direttamente un file scelto dall'utente.
+- WallpaperDecodeService accetta un solo WallpaperFormat::Jpeg e passa i byte compressi al worker.
+- Quindi la limitazione non riguarda soltanto i decoder: va resa dinamica e posseduta anche l'identità dell'asset wallpaper, senza introdurre accessi filesystem nel frame loop.
+
+### Direzione implementativa
+
+- Mantenere aurea-media come unica API pubblica, decoder privati e output RGBA8.
+- Valutare crate Rust image con feature esplicite e disabilitando i default per PNG/BMP/GIF/TIFF/WebP.
+- Integrare HEIC/HEIF e AVIF tramite libheif solo dopo verifica ABI, plugin decoder, licenze e pacchetti Debian 13; HEIC richiede il plugin libde265, AVIF un plugin AV1 come dav1d o aomdec.
+- Mantenere i limiti di input/dimensioni/pixel/output e verificarli prima dell'allocazione; decodifica sempre nel worker bounded, mai nel render thread.
+- GIF e TIFF restano wallpaper statici: primo frame/prima pagina.
+- Rivedere WallpaperAsset e WallpaperDecodeKey per file utente con identità posseduta e revisione, mantenendo il caricamento fuori dal frame loop.
+- Nessuna build, test, rustfmt, cargo check o CI eseguiti. Nessuna dipendenza o pacchetto è stato aggiunto in questo blocco.
