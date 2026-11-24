@@ -90,7 +90,7 @@ mod tests {
     }
 
     #[test]
-    fn snapshot_captures_shell_selection_immutably() {\n        let manager = DesktopManager::default();\n        let snapshot = DesktopItemsSnapshot::capture(&manager)\n            .with_selected_item(Some("system:trash".to_owned()));\n\n        assert_eq!(snapshot.selected_item_id(), Some("system:trash"));\n        assert!(snapshot.is_selected(snapshot.items()[0].id()));\n    }\n\n    #[test]\n    fn snapshot_captures_shell_selection_immutably() {
+    #[test]\n    fn snapshot_captures_shell_selection_immutably() {
         let manager = DesktopManager::default();
         let snapshot = DesktopItemsSnapshot::capture(&manager)
             .with_selected_item(Some("system:trash".to_owned()));
