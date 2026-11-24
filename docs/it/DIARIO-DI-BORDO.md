@@ -1339,3 +1339,16 @@ Nessuna dipendenza aggiunta. Nessuna build, test, rustfmt, cargo check o CI eseg
 - Il resolver resta non collegato al frame renderer finché gli asset RGBA8 non saranno generati e controllati.
 
 Commit: `4bb33193`, `1ca67908`. Nessuna verifica Cargo o CI eseguita.
+
+
+## 24 novembre 2026 — Riduzione responsabilità del servizio Cestino
+
+- `components/aurea-desktop/src/trash/service.rs` è stato ridotto da 399 a circa 280 righe.
+- La formattazione della data freedesktop è stata spostata in `trash/timestamp.rs`, con test mirati per epoch Unix, anno bisestile e cambio anno.
+- I test del contratto pubblico del servizio sono stati spostati in `components/aurea-desktop/tests/trash_service.rs`; il file di produzione non contiene più una lunga sezione test.
+- La lettura/scrittura dei metadati resta in `trash/metadata.rs`; le operazioni su file e directory restano in `trash/service.rs`.
+- Nessuna nuova dipendenza. Nessun cambiamento al comportamento pubblico previsto.
+
+Commit: `4769658c`, `f00e1d9e`, `78e05c62`, `40a95532`, `a3f6e9b2`.
+
+Verifica soltanto statica dei percorsi e delle dipendenze. Nessuna build, test, rustfmt, cargo check o CI eseguiti.
