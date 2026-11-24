@@ -22,6 +22,19 @@ impl WallpaperUvRect {
     pub const fn max(self) -> [f32; 2] {
         self.max
     }
+
+    /// Encodes min/max UV coordinates in the wallpaper vertex shader ABI order.
+    ///
+    /// The returned 16 bytes match vec4(min.x, min.y, max.x, max.y).
+    pub fn to_push_constant_bytes(self) -> [u8; 16] {
+        let values = [self.min[0], self.min[1], self.max[0], self.max[1]];
+        let mut bytes = [0_u8; 16];
+        for (index, value) in values.into_iter().enumerate() {
+            let start = index * 4;
+            bytes[start..start + 4].copy_from_slice(&value.to_ne_bytes());
+        }
+        bytes
+    }
 }
 
 /// Destination rectangle and source UV range for one physical output.
@@ -114,6 +127,20 @@ mod tests {
             layout, source.0, source.1, output.0, output.1,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn uv_push_constants_follow_the_shader_vec4_order() {
+        let uv = super::WallpaperUvRect {
+            min: [0.1, 0.2],
+            max: [0.8, 0.9],
+        };
+        let bytes = uv.to_push_constant_bytes();
+        let values = bytes
+            .chunks_exact(4)
+            .map(|chunk| f32::from_ne_bytes(chunk.try_into().unwrap()))
+            .collect::<Vec<_>>();
+        assert_eq!(values, vec![0.1, 0.2, 0.8, 0.9]);
     }
 
     #[test]
