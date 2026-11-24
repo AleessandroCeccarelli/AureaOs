@@ -47,6 +47,7 @@ The following formats are outside the approved wallpaper list for version 1.0:
 
 | Format / type | Decision |
 |---|---|
+| DIB as a standalone `.dib` file | Not approved in v1.0; only BMP files with the `.bmp` extension are accepted |
 | GIF | Rejected |
 | APNG | Rejected |
 | Animated WebP | Rejected |
