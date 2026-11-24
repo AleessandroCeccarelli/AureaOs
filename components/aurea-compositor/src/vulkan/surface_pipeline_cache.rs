@@ -9,7 +9,7 @@ use std::{collections::HashMap, error::Error, fmt, sync::Arc};
 
 use smithay::{reexports::ash::vk, reexports::wayland_server::backend::ObjectId};
 
-use crate::render::shm_buffer::ShmBufferSnapshot;
+use crate::{desktop::WallpaperPixels, render::shm_buffer::ShmBufferSnapshot};
 
 use super::{
     VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
@@ -17,6 +17,10 @@ use super::{
     VulkanShmTexture, VulkanTextureBindingError, VulkanTextureBindingPool,
     VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
     surface_texture_cache::{VulkanSurfaceTextureCache, VulkanSurfaceTextureCacheError},
+    wallpaper_texture_cache::{
+        VulkanWallpaperTextureCache, VulkanWallpaperTextureCacheError, WallpaperTextureKey,
+    },
+    VulkanWallpaperTexture,
 };
 
 /// Errors returned while preparing cached surface-composition resources.
@@ -50,6 +54,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     descriptor_layout: VulkanTextureDescriptorSetLayout<'static>,
     sampler: VulkanSampler<'static>,
     texture_cache: VulkanSurfaceTextureCache,
+    wallpaper_texture_cache: VulkanWallpaperTextureCache,
     native_cursor_texture: Option<VulkanShmTexture>,
 }
 
@@ -62,6 +67,7 @@ impl VulkanSurfacePipelineCache {
         let sampler = VulkanSampler::linear_clamp_shared(Arc::clone(&device))
             .map_err(VulkanSurfacePipelineCacheError::Sampler)?;
         let texture_cache = VulkanSurfaceTextureCache::new(Arc::clone(&device));
+        let wallpaper_texture_cache = VulkanWallpaperTextureCache::new(Arc::clone(&device));
 
         Ok(Self {
             device,
@@ -69,6 +75,7 @@ impl VulkanSurfacePipelineCache {
             descriptor_layout,
             sampler,
             texture_cache,
+            wallpaper_texture_cache,
             native_cursor_texture: None,
         })
     }
@@ -130,6 +137,31 @@ impl VulkanSurfacePipelineCache {
 
     pub(crate) fn surface_texture(&self, surface_id: &ObjectId) -> Option<&VulkanShmTexture> {
         self.texture_cache.texture(surface_id)
+    }
+
+    /// Submits the selected wallpaper pixels without waiting for GPU completion.
+    pub(crate) fn prepare_wallpaper_texture(
+        &mut self,
+        key: WallpaperTextureKey,
+        pixels: WallpaperPixels,
+    ) -> Result<(), VulkanWallpaperTextureCacheError> {
+        self.wallpaper_texture_cache.prepare(key, pixels)
+    }
+
+    /// Polls wallpaper upload fences without blocking the render path.
+    pub(crate) fn poll_wallpaper_texture_uploads(
+        &mut self,
+    ) -> Result<(), VulkanWallpaperTextureCacheError> {
+        self.wallpaper_texture_cache.poll()
+    }
+
+    /// Returns the selected wallpaper only after its upload fence has completed.
+    pub(crate) fn wallpaper_texture(&self) -> Option<&VulkanWallpaperTexture> {
+        self.wallpaper_texture_cache.texture()
+    }
+
+    pub(crate) fn clear_wallpaper_texture(&mut self) {
+        self.wallpaper_texture_cache.clear();
     }
 
     /// Lazily uploads the compositor-owned arrow once per Vulkan device.
