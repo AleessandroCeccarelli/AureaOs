@@ -64,3 +64,7 @@ Static source/API review only. No build, Cargo check, rustfmt, tests or hardware
 ## Device inventory distinction — 2026-11-24
 
 AureaOS now distinguishes `InputDeviceKind::Tablet` (a pen/tablet-tool device with routed tool events) from `InputDeviceKind::TabletPad` (a pad-only device). Pad-only devices remain visible in the pointing-device inventory and retain their discovered pad capability counts, but they are not accepted by pen calibration or tablet-to-output assignment APIs. Devices exposing both `TabletTool` and `TabletPad` are classified as `Tablet`, with pad capabilities retained in the descriptor. This is inventory accuracy only; Smithay 0.7 still provides no pad-control event route.
+
+## Tablet output disconnect policy — 2026-11-24
+
+Pen-tablet output mappings now follow the same no-surprise rule as touchscreen mappings. When an explicitly assigned output disconnects, the assignment is retained as unavailable and the tablet resolves to no target; it is not silently changed to the full desktop or another remaining output. An explicit reassignment restores routing, while an explicit unassignment restores the default full-desktop mode. Device removal clears both the assignment and unavailable state. This is a source-level policy change; runtime behavior remains pending grouped Fedora validation.
