@@ -162,6 +162,7 @@ impl VulkanSurfacePipelineCache {
         self.wallpaper_texture_cache.texture()
     }
 
+    #[allow(dead_code)] // Called when the desktop wallpaper selection is cleared.
     pub(crate) fn clear_wallpaper_texture(&mut self) {
         self.wallpaper_texture_cache.clear();
     }
