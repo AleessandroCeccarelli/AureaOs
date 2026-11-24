@@ -18,6 +18,7 @@ Le versioni italiane sono pensate per facilitare la collaborazione e la revision
 
 ## Scelte tecniche e architettura
 
+- [Strategia del desktop universale e delle tecnologie](../architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md)
 - [Fondamenta della piattaforma AureaOS](BASE-ARCHITETTURALI-PIATTAFORMA-AUREAOS.md)
 - [Avvio systemd-boot e UKI](AVVIO-SYSTEMD-BOOT-E-UKI.md)
 - [Scelta di Btrfs e layout del disco di sistema](PROGETTAZIONE-BTRFS-E-RIPRISTINO.md)
