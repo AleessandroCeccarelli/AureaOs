@@ -58,7 +58,7 @@ impl VulkanWallpaperTexture {
         device: Arc<VulkanLogicalDevice>,
         pixels: WallpaperPixels,
     ) -> Result<Self, VulkanWallpaperTextureError> {
-        let texture = Self::submit_pixels(device, pixels)?
+        let texture = Self::submit_pixels(device, &pixels)?
             .wait()
             .map_err(VulkanWallpaperTextureError::Command)?;
         Arc::try_unwrap(texture).map_err(|_| {
