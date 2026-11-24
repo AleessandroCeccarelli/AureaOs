@@ -1042,3 +1042,15 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Il percorso scanout può così interrompersi senza tentare fallback CPU o retirement non sicuro.
 - La ricreazione del device non è ancora implementata: la politica rimane fail-stop.
 - Commit aggiuntivi: `c5bb65c2`, `b9f11e2e`, `7861acf1`, `d5618002`, `b0b755db`, `53a6525f`, `de00b7fa`, `3a5bcf7d`, `87d69682`, `633ce8b5`, `b0459eaf`, `bb9cba1d`, `1f957360`.
+
+
+## 24 novembre 2026 — Propagazione device loss nelle texture SHM
+
+- L'audit della catena Vulkan ha rilevato un riferimento obsoleto a `from_vk_result` nel percorso `clear_and_readback`, dopo la rimozione del convertitore. Corretto con `submit_and_wait_with` e la classificazione centralizzata di `VulkanQueueSubmitError`.
+- Commit: `76af94e5`.
+- Estesa la classificazione fatale anche agli errori di submission e completamento delle upload delle texture SHM Wayland. `ERROR_DEVICE_LOST` non viene più trasformato in un generico errore texture nei percorsi `prepare_surface_textures` e `complete_surface_texture_uploads`.
+- Aggiunto un test unitario per verificare che la perdita del device nella cache SHM diventi `VulkanSurfaceCompositionError::DeviceLost`.
+- Commit: `8feb7509`, `822e1da3`.
+- Nessun nuovo pacchetto o crate; nessuna modifica a Cargo.toml/Cargo.lock.
+- I test sono stati aggiunti ma non eseguiti. Nessuna build, rustfmt, cargo check o CI avviata; la verifica resta programmata su Fedora secondo la procedura concordata.
+- Prossimo audit: controllare gli altri ingressi Vulkan che possono ancora appiattire `ERROR_DEVICE_LOST`, in particolare la creazione della texture del cursore e i percorsi diagnostici/offscreen. Mantenere la politica fail-stop e non introdurre recovery del device finché non esiste un lifecycle completo di ricreazione.
