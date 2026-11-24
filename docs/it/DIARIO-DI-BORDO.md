@@ -1442,3 +1442,23 @@ Il tracker contiene test per doppio clic valido, elementi differenti, intervallo
 ### Limite
 
 Il flag arriva fino alla preparazione della geometria per-output, ma il draw pass Vulkan non lo consuma ancora. Non c'è ancora evidenziazione visibile e non è stato dichiarato completato il rendering delle icone desktop. Nessuna build, test, rustfmt, cargo check o CI è stata eseguita.
+
+## 24 novembre 2026 — Contratto di responsabilità per gli elementi del Desktop
+
+- Chiarita la responsabilità: Desktop Shell governa l'esperienza e le regole di presentazione; il Compositor si occupa di geometria per output, risorse GPU, disegno Vulkan e presentazione.
+- aurea-desktop-api resta il confine neutrale per elementi, identificatori, posizioni e intenti di interazione.
+- Filesystem/Fides forniscono scoperta, metadati autorevoli, MIME, miniature e operazioni; Fides non disegna le icone del Desktop.
+- Trash Service mantiene stato e operazioni del cestino e comunica dati semantici; non disegna la propria icona.
+- Icon/Theme risolve gli asset approvati; non decide posizioni e non esegue operazioni sui file.
+- La pipeline grafica comune deve supportare File, Folder, Application e Trash. Per i file il tipo autorevole sarà MIME, non la sola estensione; per le applicazioni l'identità deriva dai Desktop Entry.
+- Il renderer non deve leggere URI per dedurre tipi, scandire directory, contare elementi del cestino, lanciare applicazioni o contenere policy filesystem.
+- Prima dell'integrazione va definito il percorso runtime installato degli asset: i percorsi relativi al repository servono al workflow di generazione e non devono dipendere dalla working directory.
+- Aggiornato docs/architecture/DESKTOP-RENDERING-AND-MEDIA-PIPELINE.md con il contratto e la sequenza implementativa.
+- Nessun codice runtime modificato in questo blocco. Nessuna build, test, rustfmt o CI eseguiti.
+
+### Prossimo blocco
+
+1. Definire asset root/runtime packaging e loader RGBA8 fuori dal frame loop.
+2. Completare la mappatura asset per tutte le categorie.
+3. Collegare geometria, cache Vulkan e pass di disegno in moduli dedicati.
+4. Implementare evidenziazione della selezione e poi collegare le azioni Shell/Files.
