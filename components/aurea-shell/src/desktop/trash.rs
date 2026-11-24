@@ -1,21 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-// AureaOS — Aurea Shell
+// AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Logical content state of the desktop Trash.
+//! Shared semantic content state of the desktop Trash.
 
-/// Visual state derived from the Trash service's actual item count.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum TrashContentsState {
-    /// No deleted items are present.
-    #[default]
-    Empty,
-    /// The Trash contains items but is not considered full.
-    PartiallyFull,
-    /// The Trash has reached the configured full-state threshold.
-    Full,
-}
+pub use aurea_desktop_api::desktop::DesktopTrashState as TrashContentsState;
 
 #[cfg(test)]
 mod tests {
