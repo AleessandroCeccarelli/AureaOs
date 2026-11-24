@@ -12,7 +12,7 @@ use std::{
     sync::Arc,
 };
 
-use crate::render::shm_buffer::ShmBufferSnapshot;
+use crate::{desktop::DesktopIconTextureKey, render::shm_buffer::ShmBufferSnapshot};
 
 use super::{VulkanLogicalDevice, VulkanPendingUpload, VulkanShmTexture, VulkanShmTextureError};
 
@@ -20,17 +20,6 @@ const MAX_DESKTOP_ICON_TEXTURES: usize = 32;
 const MAX_DESKTOP_ICON_BYTES: usize = 16 * 1024 * 1024;
 const MAX_PENDING_ICON_BATCHES: usize = 2;
 const MAX_PENDING_ICON_BYTES: usize = 8 * 1024 * 1024;
-
-/// Stable identity for one rasterized desktop artwork variant.
-///
-/// The asset ID identifies the approved artwork; revision changes when its
-/// pixel content changes; pixel size distinguishes scale-specific variants.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct DesktopIconTextureKey {
-    pub(crate) asset_id: &'static str,
-    pub(crate) revision: u64,
-    pub(crate) pixel_size: u32,
-}
 
 /// Errors returned while preparing native desktop icon textures.
 #[derive(Debug)]
