@@ -955,3 +955,5 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Il servizio è sincrono e non crea thread: i consumer dovranno chiamarlo da un worker limitato, mai dal thread di rendering.
 - Aggiornati workspace, lockfile e Rust CI per installare gli header TurboJPEG. La pipeline è stata avviata; compilazione e test Rust sono ancora da verificare.
 - Nessuna integrazione nel compositor ancora: prima si deve ottenere una CI verde e completare i test con JPEG validi, progressivi, grayscale, troncati e malformati. Nessuna ISO generata.
+
+- Aggiunti test unitari per limiti, input vuoto/eccessivo, dimensioni, pixel e memoria; aggiunti test nativi che decodificano il wallpaper reale, verificano RGBA8/alpha e rifiutano JPEG troncati. La CI Rust è ancora in coda e non considero i test superati fino al risultato del runner.
