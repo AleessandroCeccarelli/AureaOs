@@ -72,6 +72,7 @@ mod texture_layout;
 mod upload_batch;
 mod upload_buffer;
 mod wallpaper_texture;
+mod wallpaper_texture_cache;
 
 use std::{error::Error, fmt};
 
