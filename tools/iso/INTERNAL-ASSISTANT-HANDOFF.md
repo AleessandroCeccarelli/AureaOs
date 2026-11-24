@@ -869,3 +869,13 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - Commits: `e0823ebe`, `fa3d28e4`, `41b24c1c`, `7a742fe6`.
 - Important: pipeline infrastructure only. No wallpaper texture descriptor binding or draw call exists yet. No decoder/cache population exists yet. Do not claim wallpaper is visible.
 - No Cargo fmt/check/test/build/CI or ISO was run. Next: add a draw-pass API for the UV push constant, build output-local viewport/scissor from `WallpaperDrawGeometry`, bind a ready cached texture, and draw immediately after clear and before SHM windows/cursor. Ensure the empty-scene path also records wallpaper. JPEG decoding remains gated on the user's Fedora and Debian 13 TurboJPEG ABI probe.
+
+ 
+## VULKAN TEXTURED DRAW PASS — GENERIC PUSH CONSTANTS — 2026-11-24
+
+- Added `VulkanDrawPass::record_textured_region_with_push_constants`, allowing dedicated textured pipelines to provide their own push-constant bytes without changing the existing surface transform ABI.
+- Existing surface draws still use the four-byte `u32` transform; the wallpaper pipeline can provide its independent 16-byte UV rectangle.
+- Payload validation rejects empty, non-four-byte-aligned, and greater-than-128-byte data. Unit tests cover the 16-byte wallpaper payload and invalid sizes.
+- Commits: `7b9b4b37` (draw-pass API), `d8a31412` (validation/tests). Tests were authored but not run.
+- This remains infrastructure only: no wallpaper descriptor binding or draw submission has been integrated. Next: convert `WallpaperDrawGeometry` into a safe Vulkan viewport/scissor and 16-byte UV payload, bind a ready cached texture, and draw after clear but before SHM surfaces/cursor, including the empty-scene path. JPEG decoding remains gated on the Fedora + Debian 13 TurboJPEG ABI probe.
+- No Cargo fmt/check/test/build, CI or ISO was run.
