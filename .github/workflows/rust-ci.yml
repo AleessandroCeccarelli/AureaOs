@@ -68,22 +68,26 @@ jobs:
     runs-on: ubuntu-24.04
     container:
       image: debian:trixie
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
-      - name: Install decoder-only HEIF and AVIF development packages
+      - name: Install Rust and decoder-only HEIF and AVIF development packages
         run: |
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
             ca-certificates \
+            cargo \
             libheif-dev \
             libheif-plugin-libde265 \
             libheif-plugin-dav1d \
-            pkg-config
+            pkg-config \
+            rustc
 
       - name: Verify the required libheif API baseline
         run: |
           set -eu
+          rustc --version
+          cargo --version
           pkg-config --modversion libheif
           pkg-config --atleast-version=1.20 libheif
           dpkg-query -W -f='${Package} ${Version}\n' \
@@ -91,6 +95,38 @@ jobs:
           for package in libheif-plugin-libde265 libheif-plugin-dav1d; do
             dpkg-query -L "${package}" | grep -F '.so' >/dev/null
           done
+
+      - name: Compile and link the libheif-rs security API probe
+        run: |
+          set -eu
+          mkdir -p /tmp/aurea-heif-probe/src
+          cat > /tmp/aurea-heif-probe/Cargo.toml <<'EOF'
+          [package]
+          name = "aurea-heif-api-probe"
+          version = "0.1.0"
+          edition = "2021"
+
+          [dependencies]
+          libheif-rs = { version = "=3.0.0", default-features = false, features = ["v1_20"] }
+          EOF
+          cat > /tmp/aurea-heif-probe/src/main.rs <<'EOF'
+          use libheif_rs::{HeifContext, SecurityLimits};
+
+          fn main() {
+              let mut limits = SecurityLimits::new();
+              limits.set_max_image_size_pixels(64 * 1024 * 1024);
+              limits.set_max_total_memory(256 * 1024 * 1024);
+
+              let mut context = HeifContext::new().expect("create HEIF context");
+              context
+                  .set_security_limits(&limits)
+                  .expect("apply HEIF security limits");
+              let _contains_sequence = context.has_sequence();
+              let _image_ids = context.image_ids();
+          }
+          EOF
+          cargo build --manifest-path /tmp/aurea-heif-probe/Cargo.toml --locked || \
+            cargo build --manifest-path /tmp/aurea-heif-probe/Cargo.toml
 
   build-and-test:
     name: Build and test workspace
