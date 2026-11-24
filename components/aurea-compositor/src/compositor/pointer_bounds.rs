@@ -64,22 +64,26 @@ pub(super) fn constrain_to_outputs(
     point: Point<f64, Logical>,
     outputs: impl IntoIterator<Item = OutputGeometry>,
 ) -> Option<Point<f64, Logical>> {
-    let outputs = outputs.into_iter().collect::<Vec<_>>();
-
-    if outputs.is_empty() || !point.x.is_finite() || !point.y.is_finite() {
+    if !point.x.is_finite() || !point.y.is_finite() {
         return None;
     }
 
-    if outputs.iter().any(|output| output.contains(point)) {
-        return Some(point);
+    let mut nearest: Option<(Point<f64, Logical>, f64)> = None;
+
+    for output in outputs {
+        if output.contains(point) {
+            return Some(point);
+        }
+
+        let candidate = output.clamp(point);
+        let distance = distance_squared(candidate, point);
+
+        if nearest.is_none_or(|(_, best_distance)| distance < best_distance) {
+            nearest = Some((candidate, distance));
+        }
     }
 
-    outputs
-        .into_iter()
-        .map(|output| output.clamp(point))
-        .min_by(|left, right| {
-            distance_squared(*left, point).total_cmp(&distance_squared(*right, point))
-        })
+    nearest.map(|(location, _)| location)
 }
 
 fn distance_squared(left: Point<f64, Logical>, right: Point<f64, Logical>) -> f64 {
