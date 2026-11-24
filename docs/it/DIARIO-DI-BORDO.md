@@ -513,3 +513,48 @@ Aggiunti test unitari per bordi, dimensioni nulle, sovrapposizione e coordinate 
 ### Prossimo passo
 
 Introdurre uno snapshot desktop posseduto e immutabile, separato dall'attuale DesktopSnapshot Copy, che trasporti gli elementi dal modello condiviso al compositor senza trasferire responsabilità filesystem o dipendenze grafiche nell'API. Poi collegare hit-testing e input alla scena e soltanto dopo affrontare la rasterizzazione SVG e il rendering Vulkan delle icone.
+
+
+## 24 novembre 2026 — Audit dei moduli Desktop e File Intelligence
+
+### Ambito e riferimenti
+
+- Branch attivo: `main`.
+- Documento architetturale inglese: `docs/architecture/FILE-INTELLIGENCE-AND-METADATA.md`.
+- Variante italiana: `docs/it/ARCHITETTURA-INTELLIGENZA-FILE-METADATI.md`.
+- L'architettura definisce una capacità AureaOS originale, ispirata ai concetti utili dei moderni sistemi desktop, senza replicare database privati, interfacce o implementazioni di Windows, macOS, KDE o GNOME.
+
+### Risultati dell'ispezione del codice esistente
+
+- `aurea-desktop-api::desktop` contiene già contratti indipendenti dalla tecnologia grafica: DesktopItem, DesktopItemId, DesktopItemKind, DesktopPosition, DesktopPreferences, DesktopManager, raggruppamenti visuali e hit-testing.
+- Il modello Desktop è attualmente in memoria. Non è ancora presente una persistenza delle posizioni né un servizio che scopra e aggiorni automaticamente i file visualizzati sul Desktop.
+- `DesktopItemKind` distingue File, Folder, Application e Trash; i riferimenti a file/cartelle sono URI stringa. Il metodo `file_extension()` ricava l'estensione dal percorso, ma non equivale a identificazione MIME e non deve diventare la fonte autorevole del tipo di file.
+- `DesktopItemsSnapshot` trasferisce una copia posseduta degli elementi al compositor. Il percorso Vulkan non disegna ancora le icone desktop native.
+- `components/aurea-desktop/src/trash` implementa un servizio per il Cestino home compatibile con il formato FreeDesktop, ma il servizio non è ancora collegato al composition root, a un watcher o alla UI di conferma.
+- Il crate `aurea-desktop` è il composition root/servizi condivisi; il workspace attuale non contiene ancora crate applicativi autonomi per Fides o Quaero.
+- Non è stato individuato un catalogo generale dei file, un motore di ricerca globale o un servizio di estrazione metadati/miniature già implementato. Le relative responsabilità non devono essere duplicate nei moduli Desktop esistenti.
+
+### Decisioni e direzione
+
+- Aurea File Intelligence sarà il proprietario del catalogo locale condiviso; Fides gestirà operazioni e navigazione file, Quaero l'esperienza di ricerca, Desktop la disposizione degli elementi, Aurea Media l'estrazione limitata e il compositor soltanto rendering/input.
+- Nessun file nascosto per-directory in stile Finder `.DS_Store` come formato canonico AureaOS.
+- Separazione tra fatti filesystem, metadati nativi dei formati, metadati estratti, metadati scritti dall'utente, stato di presentazione e cache delle miniature.
+- SQLite è il candidato iniziale per il catalogo, ma non è ancora una dipendenza approvata: verificare FTS5, binding Rust, MSRV, packaging Debian/Fedora, WAL e recupero.
+- Notifiche filesystem come suggerimenti a bassa latenza; scanner e riconciliazione restano la fonte autorevole.
+- Nessun demone permanente, fanotify privilegiato, indicizzazione completa del disco, database vettoriale o runtime AI nella prima fase.
+- Tutte le nuove specifiche Markdown devono essere pubblicate in inglese e nella corrispondente variante italiana sotto `docs/it/`.
+
+### Verifiche e limiti
+
+- Ispezionati i contratti Desktop API, DesktopManager, DesktopItemsSnapshot, il servizio Trash, il composition root e i documenti architetturali correlati.
+- Nessun file sorgente Rust è stato modificato.
+- Nessun comando Cargo, formattazione, build, test o CI è stato eseguito.
+- L'audit è statico sul repository; non dimostra comportamento runtime né prestazioni su Fedora.
+
+### Prossime attività
+
+1. Verificare la disponibilità di SQLite/FTS5 e i pacchetti Debian 13/Fedora.
+2. Confrontare in modo mirato notify e inotify nativo, includendo overflow, limiti watch, filesystem di rete e riconciliazione.
+3. Definire identità stabile, provenienza, freschezza e permessi dei metadati.
+4. Disegnare i contratti pubblici senza aggiungere ancora dipendenze o duplicare Desktop API.
+5. Proseguire con moduli piccoli e documentazione bilingue (inglese/italiano).
