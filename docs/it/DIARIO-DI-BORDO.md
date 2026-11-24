@@ -692,3 +692,11 @@ Prima di proporre o aggiungere una dipendenza, consultare e aggiornare il regist
 ### Ambito
 
 Nessuna dipendenza è stata aggiunta ai manifest Cargo o ai lockfile. Nessuna implementazione del decoder è stata scritta. Non sono stati eseguiti build, format, check, test o CI.
+
+
+### Ulteriore verifica decoder — 24 novembre 2026
+
+- Individuato il problema upstream #496: zune-jpeg 0.5.15 può decodificare JPEG baseline validi con colori errati; upstream indica una correzione nella 0.5.16-rc3.
+- La 0.5.16-rc3 è una pre-release e non viene accettata come dipendenza di produzione.
+- Aggiornati entrambi i registri: zune-jpeg 0.5.15 è esplicitamente bloccato; attendere una release stabile corretta e ripetere la revisione di sicurezza, compatibilità e limiti del decoder.
+- Nessuna dipendenza o codice decoder aggiunto. Nessuna build o test eseguiti.
