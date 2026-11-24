@@ -89,7 +89,7 @@ jobs:
           dpkg-query -W -f='${Package} ${Version}\n' \
             libheif-dev libheif1 libheif-plugin-libde265 libheif-plugin-dav1d
           for package in libheif-plugin-libde265 libheif-plugin-dav1d; do
-            dpkg-query -L "${package}" | grep -E '\\.so([.]|$)' >/dev/null
+            dpkg-query -L "${package}" | grep -F '.so' >/dev/null
           done
 
   build-and-test:
