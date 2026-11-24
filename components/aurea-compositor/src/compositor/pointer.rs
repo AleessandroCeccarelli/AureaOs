@@ -171,15 +171,17 @@ impl AureaCompositor {
             origin.y as f64 + event.y_transformed(height) / f64::from(height)
                 * f64::from(height - 1),
         ));
-        let Some(location) = super::pointer_bounds::constrain_to_outputs(
-            requested,
-            [OutputGeometry::new(
-                origin.x as f64,
-                origin.y as f64,
-                f64::from(width),
-                f64::from(height),
-            )?],
+        let Some(output_geometry) = OutputGeometry::new(
+            origin.x as f64,
+            origin.y as f64,
+            f64::from(width),
+            f64::from(height),
         ) else {
+            return false;
+        };
+        let Some(location) =
+            super::pointer_bounds::constrain_to_outputs(requested, [output_geometry])
+        else {
             return false;
         };
 
