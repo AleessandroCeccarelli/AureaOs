@@ -1329,3 +1329,13 @@ Riferimenti: `1807c23d`, `544036fb`, `5c35a382`, `17e7062e`, `5a08ca66`, `6048a1
 **Limite ancora presente:** la conversione è disponibile, ma il composition root non ha ancora collegato automaticamente lo snapshot del servizio al modello Desktop del compositor. Non esiste ancora un watcher o un aggiornamento automatico dello stato.
 
 Nessuna dipendenza aggiunta. Nessuna build, test, rustfmt, cargo check o CI eseguiti.
+
+
+### Follow-up — Selezione densità raster
+
+- Il resolver sceglie automaticamente la più piccola variante approvata che copre la scala effettiva dell'uscita: 64 px fino a 1x, 96 px fino a 1,5x, 128 px fino a 2x e 192 px oltre 2x.
+- Un valore di scala non finito usa prudentemente la variante 1x.
+- La scala deve provenire dal `RenderTarget::effective_scale()`; la selezione non si basa soltanto sul vecchio fattore intero dell'output.
+- Il resolver resta non collegato al frame renderer finché gli asset RGBA8 non saranno generati e controllati.
+
+Commit: `4bb33193`, `1ca67908`. Nessuna verifica Cargo o CI eseguita.
