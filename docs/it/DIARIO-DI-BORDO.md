@@ -814,3 +814,13 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Creati docs/architecture/AUREA-LINK-SHARE.md e docs/it/ARCHITETTURA-AUREA-LINK-SHARE.md.
 - Aggiornati strategia tecnologica universale, registri dipendenze EN/IT, catalogo applicazioni e README.
 - Nessuna dipendenza Cargo, manifest, lockfile o sorgente Rust modificati. Nessun build, format, check, test o CI eseguito.
+
+## 24 novembre 2026 — Aurea Share Online: integrazioni dirette con i servizi
+
+- Chiarito l'obiettivo: condividere una foto/PDF/video/documento visualizzato in Fides o in un viewer proprietario verso servizi online senza aprire manualmente l'app di destinazione e riselezionare/allegare il file.
+- Percorso distinto dal trasferimento dispositivo-dispositivo Aurea Link. Aurea Share include ora un percorso esplicito di adapter per servizi online.
+- Ricercate le API ufficiali: Telegram Bot API rispetto a Telegram API/TDLib; ambito business di WhatsApp Cloud API; pubblicazione Facebook Pages; Instagram Professional; OAuth/accesso e uso commerciale Reddit; upload sul canale autenticato YouTube.
+- Decisione: usare API ufficiali solo per azioni/tipi account consentiti; altrimenti share/deep link ufficiale o handoff ad app desktop registrata. Mai endpoint privati, scraping o automazione silenziosa.
+- Definiti descrittori provider neutrali (tipi contenuto, azioni, account, scope OAuth, limiti MIME/dimensione, quote, revisione app, vincoli commerciali, conferma).
+- Creata architettura integrazioni online EN/IT e collegata a strategia, documenti Aurea Link/Share e README. Aggiornati registri dipendenze.
+- Nessun codice Rust/Cargo, dipendenza, registrazione OAuth o build/test modificati. Le approvazioni API restano da verificare prima dell'implementazione.
