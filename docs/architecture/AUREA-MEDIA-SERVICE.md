@@ -152,3 +152,11 @@ The compositor now owns one WallpaperDecodeService alongside its persistent Vulk
 The decode service records the current asset/revision as failed when decoding, pixel validation, or worker delivery fails. Re-selecting the same asset does not submit the same failing request on every frame; selecting a different asset clears the failure state and starts a new revision. Queue saturation remains transient and is retried on a later frame.
 
 The renderer still performs GPU upload asynchronously and only exposes the texture after its fence completes and its asset/revision matches the active selection. Local Fedora visual verification remains pending; CI compilation/tests must be run after the current grouped implementation work is complete.
+
+## Wallpaper upload ownership and failure handling — 2026-11-24
+
+The decode service retains its completed `DecodedWallpaper` while Vulkan prepares the texture upload. `VulkanWallpaperTexture::submit_pixels` now borrows the validated pixel buffer and copies it into the staging allocation; it does not consume the CPU buffer before command setup and queue submission have succeeded. The pipeline calls `take_ready` only after the texture cache confirms that the upload was accepted.
+
+If texture allocation, staging setup, command setup, or queue submission fails, the decoded pixels remain owned by the decode service. The texture cache records the failed asset/revision and does not retry the same failed upload on every frame. A different wallpaper revision clears that per-selection failure latch. Clearing the wallpaper also clears the latch. This is a bounded failure policy, not an automatic recovery mechanism: retrying the same selection after a transient resource failure still needs an explicit retry policy.
+
+The retained CPU buffer remains subject to the existing 256 MiB decoded-image limit. Staging still performs the expected transfer copy; no second full RGBA clone is introduced.
