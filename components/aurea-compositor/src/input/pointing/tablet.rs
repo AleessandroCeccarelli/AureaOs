@@ -9,5 +9,9 @@ use smithay::reexports::input::{Device, DeviceCapability};
 
 pub(super) fn supports(device: &Device) -> bool {
     device.has_capability(DeviceCapability::TabletTool)
-        || device.has_capability(DeviceCapability::TabletPad)
+}
+
+pub(super) fn supports_pad(device: &Device) -> bool {
+    device.has_capability(DeviceCapability::TabletPad)
+        && !device.has_capability(DeviceCapability::TabletTool)
 }
