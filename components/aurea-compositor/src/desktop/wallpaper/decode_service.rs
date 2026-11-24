@@ -220,19 +220,19 @@ mod tests {
         let mut service = WallpaperDecodeService::new().unwrap();
         let key = service.select(Some(asset)).unwrap().unwrap();
 
-        let mut ready = None;
+        let mut completed = false;
         for _ in 0..10_000 {
             if let Some(decoded) = service.poll().unwrap() {
-                ready = Some(decoded.clone());
+                assert_eq!(decoded.key(), key);
+                assert_eq!(decoded.pixels().width(), u32::from(asset.dimensions().width()));
+                assert_eq!(decoded.pixels().height(), u32::from(asset.dimensions().height()));
+                completed = true;
                 break;
             }
             std::thread::yield_now();
         }
 
-        let decoded = ready.expect("wallpaper decode should complete");
-        assert_eq!(decoded.key(), key);
-        assert_eq!(decoded.pixels().width(), u32::from(asset.dimensions().width()));
-        assert_eq!(decoded.pixels().height(), u32::from(asset.dimensions().height()));
+        assert!(completed, "wallpaper decode should complete");
     }
 
     #[test]
