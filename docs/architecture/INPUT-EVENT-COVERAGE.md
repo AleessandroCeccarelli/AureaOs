@@ -38,20 +38,20 @@ Smithay 0.7 `backend::input::InputEvent` includes:
 | Swipe/pinch/hold | Gesture handlers | Routed |
 | Touchscreen | Calibrated output extent and touch handlers | Routed |
 | Tablet tool | Proximity, axes, tip and tool buttons | Routed |
-| Absolute pointer motion | Diagnostic trace only; no output mapping policy | Not implemented |
+| Absolute pointer motion | Output-local mapping on exactly one enabled output; multi-output layouts are safely ignored pending explicit assignment | Partially routed |
 | Switch toggle | State-change diagnostic only; no lid/tablet-mode policy | Not implemented |
 | Tablet pad controls | No corresponding Smithay 0.7 InputEvent path | Not available through this event API |
 | Special backend events | No AureaOS policy | Ignored |
 
 ## Source changes in this audit
 
-- Added explicit `PointerMotionAbsolute` handling in `server/input/dispatch.rs`. It records device identity and raw coordinates at debug level. It deliberately does not move the pointer: absolute devices need an explicit output assignment/mapping policy first.
+- Connected `PointerMotionAbsolute` to the compositor. A single enabled output provides an unambiguous target and allows output-local coordinates to be mapped into global logical coordinates. Multi-output layouts remain blocked until per-device output assignment is available.
 - Added explicit `SwitchToggle` handling. It records device, switch and state. Power/session policy for lid close and tablet mode remains outside the compositor input router.
 - Kept the final wildcard for future/non-actionable backend variants; the known absolute and switch cases are no longer silently swallowed.
 
 ## Follow-up implementation sequence
 
-1. Define and expose an absolute-pointer output mapping contract before converting absolute coordinates into global logical coordinates.
+1. Add an explicit per-device output assignment contract for absolute pointers so multi-monitor routing can be enabled without guessing.
 2. Define ownership and policy for lid-close and tablet-mode switches in the session/power-management layer; the compositor should consume resulting state, not own power policy.
 3. Revisit tablet-pad support only if Smithay adds a supported event path or AureaOS adopts a separately verified libinput integration that does not fork/patch blindly.
 4. Keep tool buttons distinct from tablet-pad buttons: current tablet-tool button routing does not imply pad support.
@@ -71,4 +71,4 @@ Pen-tablet output mappings now follow the same no-surprise rule as touchscreen m
 
 ## Pen-tablet motion and monitor gaps — 2026-11-24
 
-When a tablet is mapped to the full desktop, the rectangular calibration extent can span empty gaps between non-adjacent or offset monitors. Tablet coordinates are now constrained against the actual enabled output rectangles after calibration. A point falling in a gap is moved to the nearest valid output edge, following the same geometry policy already used by relative pointer motion. For a tablet explicitly mapped to one output, the candidate geometry is restricted to that output, so the pen cannot escape its assigned display. This does not change touchscreen transforms or absolute-pointer routing.
+When a tablet is mapped to the full desktop, the rectangular calibration extent can span empty gaps between non-adjacent or offset monitors. Tablet coordinates are now constrained against the actual enabled output rectangles after calibration. A point falling in a gap is moved to the nearest valid output edge, following the same geometry policy already used by relative pointer motion. For a tablet explicitly mapped to one output, the candidate geometry is restricted to that output, so the pen cannot escape its assigned display. This does not change touchscreen transforms. Generic absolute-pointer routing is now available only on single-output desktops; multi-output routing still awaits explicit assignment.
