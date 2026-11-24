@@ -877,3 +877,13 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Integrata la cache nel ciclo di vita della `VulkanSurfacePipelineCache` per dispositivo e aggiunto il polling durante la preparazione del frame. Predisposti i punti di ingresso per preparazione, accesso e rimozione, destinati al decoder e al futuro draw pass.
 - Il decoder non produce ancora `WallpaperPixels` dall'asset selezionato: per ora la cache è infrastruttura, non contiene texture effettive e lo sfondo non viene ancora disegnato. Restano da completare draw pass e integrazione nella scena.
 - Nessuna dipendenza o modifica ai manifest. Non eseguiti Cargo fmt/check/test/build né CI; nessuna ISO generata.
+
+
+## GEOMETRIA DI DISEGNO WALLPAPER PER OUTPUT — 2026-11-24
+
+- Aggiunto `desktop/wallpaper/draw_geometry.rs` con `WallpaperDrawGeometry` e `WallpaperUvRect`.
+- Converte il layout Fill/Fit/Stretch/Center in una destinazione ritagliata sui limiti del singolo output e nel corrispondente intervallo UV normalizzato. Center corregge le UV dopo il clipping, evitando scissor Vulkan con coordinate negative; Fill mantiene il crop centrale della sorgente.
+- Aggiunti test unitari per le quattro modalità e per output nullo/non intersezione.
+- Aggiunto `WallpaperPixelRect::new` con validazione delle dimensioni e pubblicati i nuovi tipi tramite l'API desktop.
+- Commit: `a5b33ccd` (geometria), `93284f76` (costruttore rettangolo), `804f9e67` (export modulo wallpaper), `96c49b75` (export desktop).
+- È solo geometria CPU: non è ancora integrata nel draw pass Vulkan e non visualizza il wallpaper. Nessun decoder aggiunto. Non sono stati eseguiti Cargo fmt/check/test/build/CI né ISO; serve la verifica locale su Fedora.
