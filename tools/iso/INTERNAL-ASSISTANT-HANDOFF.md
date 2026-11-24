@@ -811,3 +811,12 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - Commits on main: `e0fee072` (single-pass constraint), `182ba0d5` (stream output geometry), `ced13560` (non-finite coordinate test).
 - No behavior/API/dependency change intended. No Cargo fmt/check/test/build or CI was run. User must verify locally on Fedora; no ISO was generated.
 - Continue the desktop work from the current repository state. Keep Debian 13 as compatibility authority and Fedora as development/build host. Generate and test an ISO only at a meaningful milestone, then validate on real hardware.
+
+
+## WALLPAPER JPEG HEADER HARDENING — 2026-11-24
+
+- Updated `components/aurea-compositor/src/desktop/wallpaper/asset.rs`: JPEG SOF metadata is accepted only when component count is non-zero and the segment length is exactly `8 + 3 * component_count`.
+- Added tests for a valid minimal one-component SOF, a truncated component table and a zero component count.
+- Commit: `0c7aa3f0`.
+- This does not decode JPEG data and does not remove the ABI gate. Before introducing the Rust `aurea-media` backend, the existing C probe must compile and run against both Fedora development packages and Debian 13 Trixie libturbojpeg0-dev. Do not claim that gate passed without the user's local results.
+- No Cargo manifest/dependency changes; no format/check/test/build/CI or ISO run.
