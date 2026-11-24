@@ -27,6 +27,8 @@ pub(crate) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
     let touch = device.has_capability(DeviceCapability::Touch);
     let kind = if tablet::supports(device) {
         InputDeviceKind::Tablet
+    } else if tablet::supports_pad(device) {
+        InputDeviceKind::TabletPad
     } else if touchpad::supports(device) {
         InputDeviceKind::Touchpad
     } else if touchscreen::supports(device) {
