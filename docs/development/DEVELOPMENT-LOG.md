@@ -1573,3 +1573,14 @@ The native input backend module mixed Calloop/libinput registration, touchpad pr
 ### Next action
 
 Continue auditing input and interaction modules for correct event routing, lifecycle handling, and single-responsibility file boundaries.
+
+
+
+## 2026-11-24 — Smithay 0.7 input event coverage audit
+
+- Added explicit diagnostic routing for `PointerMotionAbsolute`; it records device identity and coordinates but does not move the pointer because no absolute-device-to-output mapping contract exists yet.
+- Added explicit `SwitchToggle` diagnostics for lid/tablet-mode switch changes. Power/session policy remains outside the compositor input router.
+- Confirmed from Smithay 0.7's public `InputEvent` API that `DeviceCapability::TabletPad` exists but there is no TabletPad event variant or pad event trait in this event enum. Existing tablet-tool buttons are not tablet-pad controls.
+- Added `docs/architecture/INPUT-EVENT-COVERAGE.md` with the supported event surface, AureaOS routing status, limitations and follow-up sequence.
+- No new dependencies and no Cargo manifest/lockfile changes.
+- Static source/API review only. No build, Cargo check, rustfmt, tests or hardware validation. Grouped Fedora validation remains scheduled for Friday; Debian 13 remains the compatibility baseline.
