@@ -1524,3 +1524,12 @@ The immediate target is deliberately narrower than the long-term desktop archite
 - Insert the Trash icon once in the shared composition path used by direct Vulkan and CPU-upload compatibility, between wallpaper and Wayland surfaces.
 
 No build, tests, rustfmt or CI were run. Verification remains grouped on Fedora after integration and asset generation. The Trash is not yet claimed to be visible or hardware-validated.
+
+
+### Desktop asset loader — groundwork
+
+- Added `desktop/icon_asset_loader.rs` with one responsibility: read an already-generated RGBA8 asset beneath an explicitly supplied root directory.
+- The loader rejects absolute paths and non-normal path components (including parent traversal), does not consult the process working directory, and reuses `ShmBufferSnapshot` RGBA8 validation.
+- The runtime root has not yet been selected by the application composition root, and the renderer does not call the loader yet; the module is intentionally staged.
+- No disk reads were added to the frame loop. No dependency was added.
+- No build, tests, rustfmt or CI were run.
