@@ -1668,3 +1668,11 @@ Creato `docs/architecture/INPUT-EVENT-COVERAGE.md` con matrice di copertura, lim
 ### Verifica
 
 Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna build, cargo check, rustfmt, test o prova hardware. Verifica raggruppata prevista venerdì su Fedora; Debian 13 resta il riferimento per le dipendenze.
+
+
+### Correzione lifecycle tablet pad — 24 novembre 2026
+
+- Durante la revisione della rimozione dispositivi è emerso che il cleanup della tablet seat veniva invocato soltanto per dispositivi con capability `TabletTool`.
+- Estesa la condizione anche a `TabletPad`: i dispositivi pad-only vengono ora inclusi nel lifecycle cleanup, pur senza dichiarare la disponibilità degli eventi pad in Smithay 0.7.
+- La pulizia delle mappe e delle calibrazioni per device continua a passare dal cleanup generico del pointing-device service.
+- Nessuna build, cargo check, rustfmt o test eseguiti.
