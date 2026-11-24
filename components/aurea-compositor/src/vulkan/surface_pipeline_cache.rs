@@ -33,7 +33,7 @@ use super::{
 
 /// Errors returned while preparing cached surface-composition resources.
 #[derive(Debug)]
-pub(crate) pub(super) enum VulkanSurfacePipelineCacheError {
+pub(crate) enum VulkanSurfacePipelineCacheError {
     DescriptorLayout(VulkanTextureLayoutError),
     Sampler(VulkanSamplerError),
     Shader(VulkanShaderError),
