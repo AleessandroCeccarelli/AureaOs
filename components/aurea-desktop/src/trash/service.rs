@@ -27,6 +27,16 @@ pub enum TrashVisualState {
     Full,
 }
 
+impl From<TrashVisualState> for aurea_desktop_api::desktop::DesktopTrashState {
+    fn from(state: TrashVisualState) -> Self {
+        match state {
+            TrashVisualState::Empty => Self::Empty,
+            TrashVisualState::PartiallyFull => Self::PartiallyFull,
+            TrashVisualState::Full => Self::Full,
+        }
+    }
+}
+
 /// A file or directory currently stored in the user's Trash.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TrashEntry {
@@ -311,6 +321,24 @@ mod tests {
     }
     impl Drop for TestHome {
         fn drop(&mut self) { let _ = fs::remove_dir_all(&self.0); }
+    }
+
+    #[test]
+    fn maps_service_visual_state_to_the_shared_desktop_contract() {
+        use aurea_desktop_api::desktop::DesktopTrashState;
+
+        assert_eq!(
+            DesktopTrashState::from(TrashVisualState::Empty),
+            DesktopTrashState::Empty,
+        );
+        assert_eq!(
+            DesktopTrashState::from(TrashVisualState::PartiallyFull),
+            DesktopTrashState::PartiallyFull,
+        );
+        assert_eq!(
+            DesktopTrashState::from(TrashVisualState::Full),
+            DesktopTrashState::Full,
+        );
     }
 
     #[test]
