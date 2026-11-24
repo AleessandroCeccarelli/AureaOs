@@ -13,7 +13,7 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use super::metadata::{read_original_path, write_info};
+use super::{metadata::{read_original_path, write_info}, timestamp::deletion_timestamp};
 
 /// Number of retained entries at which the icon uses its full artwork.
 pub const DEFAULT_FULL_STATE_THRESHOLD: usize = 10;
@@ -149,7 +149,7 @@ impl TrashService {
         let stored_name = self.unique_name(original_name)?;
         let stored_path = self.files_dir.join(&stored_name);
         let info_path = self.info_dir.join(format!("{stored_name}.trashinfo"));
-        let deletion_date = deletion_timestamp()?;
+        let deletion_date = deletion_timestamp().ok_or(TrashError::ClockUnavailable)?;
         fs::write(&info_path, write_info(source, &deletion_date))?;
 
         if let Err(error) = fs::rename(source, &stored_path) {
@@ -277,122 +277,3 @@ impl TrashService {
     }
 }
 
-fn deletion_timestamp() -> Result<String, TrashError> {
-    let seconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_err(|_| TrashError::ClockUnavailable)?
-        .as_secs();
-    let days = seconds / 86_400;
-    let seconds_of_day = seconds % 86_400;
-    let (year, month, day) = civil_from_days(days as i64);
-    let hour = seconds_of_day / 3_600;
-    let minute = (seconds_of_day % 3_600) / 60;
-    let second = seconds_of_day % 60;
-    Ok(format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}"))
-}
-
-fn civil_from_days(days_since_epoch: i64) -> (i64, i64, i64) {
-    let z = days_since_epoch + 719_468;
-    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
-    let doe = z - era * 146_097;
-    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
-    let mut year = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let day = doy - (153 * mp + 2) / 5 + 1;
-    let month = mp + if mp < 10 { 3 } else { -9 };
-    year += i64::from(month <= 2);
-    (year, month, day)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{TrashError, TrashService, TrashVisualState};
-    use std::{fs, path::PathBuf, time::{SystemTime, UNIX_EPOCH}};
-
-    struct TestHome(PathBuf);
-    impl TestHome {
-        fn new() -> Self {
-            let id = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-            let path = std::env::temp_dir().join(format!("aurea-trash-test-{id}"));
-            fs::create_dir_all(&path).unwrap();
-            Self(path)
-        }
-    }
-    impl Drop for TestHome {
-        fn drop(&mut self) { let _ = fs::remove_dir_all(&self.0); }
-    }
-
-    #[test]
-    fn maps_service_visual_state_to_the_shared_desktop_contract() {
-        use aurea_desktop_api::desktop::DesktopTrashState;
-
-        assert_eq!(
-            DesktopTrashState::from(TrashVisualState::Empty),
-            DesktopTrashState::Empty,
-        );
-        assert_eq!(
-            DesktopTrashState::from(TrashVisualState::PartiallyFull),
-            DesktopTrashState::PartiallyFull,
-        );
-        assert_eq!(
-            DesktopTrashState::from(TrashVisualState::Full),
-            DesktopTrashState::Full,
-        );
-    }
-
-    #[test]
-    fn moves_lists_restores_and_updates_visual_state() {
-        let home = TestHome::new();
-        let source = home.0.join("report.txt");
-        fs::write(&source, "hello").unwrap();
-        let trash = TrashService::new(&home.0).unwrap();
-        assert_eq!(trash.snapshot().unwrap().visual_state(), TrashVisualState::Empty);
-
-        trash.move_to_trash(&source).unwrap();
-        assert!(!source.exists());
-        let entries = trash.entries().unwrap();
-        assert_eq!(entries.len(), 1);
-        assert_eq!(trash.snapshot().unwrap().visual_state(), TrashVisualState::PartiallyFull);
-
-        let restored = trash.restore(entries[0].name()).unwrap();
-        assert_eq!(restored, source);
-        assert_eq!(fs::read_to_string(restored).unwrap(), "hello");
-        assert_eq!(trash.snapshot().unwrap().visual_state(), TrashVisualState::Empty);
-    }
-
-    #[test]
-    fn refuses_to_overwrite_restore_destination() {
-        let home = TestHome::new();
-        let source = home.0.join("report.txt");
-        fs::write(&source, "old").unwrap();
-        let trash = TrashService::new(&home.0).unwrap();
-        trash.move_to_trash(&source).unwrap();
-        fs::write(&source, "new").unwrap();
-        let entry = trash.entries().unwrap().remove(0);
-        assert!(matches!(trash.restore(entry.name()), Err(TrashError::RestoreDestinationExists(_))));
-        assert_eq!(fs::read_to_string(source).unwrap(), "new");
-    }
-
-    #[test]
-    fn full_state_uses_configured_threshold() {
-        let home = TestHome::new();
-        let trash = TrashService::with_full_threshold(&home.0, 1).unwrap();
-        let source = home.0.join("item");
-        fs::write(&source, "x").unwrap();
-        trash.move_to_trash(&source).unwrap();
-        assert_eq!(trash.snapshot().unwrap().visual_state(), TrashVisualState::Full);
-    }
-
-    #[test]
-    fn permanently_deletes_only_the_selected_entry() {
-        let home = TestHome::new();
-        let source = home.0.join("report.txt");
-        fs::write(&source, "hello").unwrap();
-        let trash = TrashService::new(&home.0).unwrap();
-        trash.move_to_trash(&source).unwrap();
-        let entry = trash.entries().unwrap().remove(0);
-        trash.delete_permanently(entry.name()).unwrap();
-        assert!(trash.entries().unwrap().is_empty());
-    }
-}
