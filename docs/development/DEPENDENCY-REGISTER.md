@@ -308,3 +308,16 @@ No video formats or playback libraries are selected for wallpaper support. GStre
 - **Input detection:** JPEG, PNG, BMP, GIF, TIFF and WebP are identified by signatures. Extensions are not trusted for format selection. HEIC/HEIF and AVIF are not yet enabled.
 - **Memory:** compressed input remains capped by DecodeLimits::default().max_input_bytes() (64 MiB). Owned compressed bytes are shared immutably within the asset, then copied into the bounded worker request. This temporary copy is intentional but must be considered in memory budgeting.
 - **Verification:** no build/test/rustfmt performed. Review ownership API and snapshot call sites during the next planned Fedora validation.
+
+## HEIF/AVIF backend verification update — 24 November 2026
+
+Debian Trixie package metadata was rechecked:
+
+- libheif source/runtime/development packages are available at 1.23.6-2~deb13u1 in the current security-updated Trixie metadata.
+- HEVC still-image decode is supplied by libheif-plugin-libde265, which depends on libde265-0.
+- AV1 still-image decode is supplied by libheif-plugin-dav1d, which depends on libdav1d7. The plugin's installed size is small (71 KiB amd64 in the current package listing); the codec runtime is additional.
+- libheif documents HEIF as a container supporting HEVC- or AV1-coded images and loads codec implementations through separate plugins.
+- Do not install the libheif-plugins-all metapackage. Select only the HEVC and AV1 decoder plugins if/when approved.
+- Exact upstream license compatibility for libheif, libde265 and dav1d, ABI details, Fedora package parity and runtime plugin discovery remain to be reviewed. No native dependency has been added to Cargo.toml or the target package set.
+
+Evidence: Debian Trixie package pages for libheif-dev, libheif-plugin-libde265 and libheif-plugin-dav1d; https://packages.debian.org/trixie/libheif-dev, https://packages.debian.org/trixie/libheif-plugin-libde265, https://packages.debian.org/trixie/libheif-plugin-dav1d.
