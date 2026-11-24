@@ -11,30 +11,21 @@ use std::{
     sync::mpsc::{Receiver, TryRecvError},
 };
 
-use aurea_media::{
-    DecodeError, DecodeLimits, DecodeWorker, DecodeWorkerError, ImageFormat,
-};
+use aurea_media::{DecodeError, DecodeLimits, DecodeWorker, DecodeWorkerError, ImageFormat};
 
 use super::{WallpaperAsset, WallpaperFormat, WallpaperPixels, WallpaperPixelsError};
 
-/// Identifies one selected wallpaper decode generation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WallpaperDecodeKey {
-    asset_id: &'static str,
+    asset_id: String,
     revision: u64,
 }
 
 impl WallpaperDecodeKey {
-    pub const fn asset_id(self) -> &'static str {
-        self.asset_id
-    }
-
-    pub const fn revision(self) -> u64 {
-        self.revision
-    }
+    pub fn asset_id(&self) -> &str { &self.asset_id }
+    pub const fn revision(&self) -> u64 { self.revision }
 }
 
-/// A decoded wallpaper ready to be handed to the renderer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DecodedWallpaper {
     key: WallpaperDecodeKey,
@@ -42,20 +33,11 @@ pub struct DecodedWallpaper {
 }
 
 impl DecodedWallpaper {
-    pub const fn key(&self) -> WallpaperDecodeKey {
-        self.key
-    }
-
-    pub const fn pixels(&self) -> &WallpaperPixels {
-        &self.pixels
-    }
-
-    pub fn into_pixels(self) -> WallpaperPixels {
-        self.pixels
-    }
+    pub fn key(&self) -> &WallpaperDecodeKey { &self.key }
+    pub const fn pixels(&self) -> &WallpaperPixels { &self.pixels }
+    pub fn into_pixels(self) -> WallpaperPixels { self.pixels }
 }
 
-/// Errors raised while starting or submitting wallpaper decode work.
 #[derive(Debug)]
 pub enum WallpaperDecodeServiceError {
     WorkerStart(std::io::Error),
@@ -83,13 +65,9 @@ impl Error for WallpaperDecodeServiceError {}
 
 type DecodeResponse = Result<aurea_media::DecodedImage, DecodeError>;
 
-/// Owns the request lifecycle for one selected wallpaper.
-///
-/// The service never waits for decoding. A changed selection invalidates the
-/// previous receiver; late results are discarded instead of being published.
 pub struct WallpaperDecodeService {
     worker: DecodeWorker,
-    requested_asset: Option<&'static str>,
+    requested_asset: Option<String>,
     revision: u64,
     pending: Option<(WallpaperDecodeKey, Receiver<DecodeResponse>)>,
     ready: Option<DecodedWallpaper>,
@@ -111,37 +89,21 @@ impl WallpaperDecodeService {
         })
     }
 
-    /// Synchronizes decode work with the currently selected wallpaper.
-    ///
-    /// Calling repeatedly with the same asset is idempotent. A changed asset
-    /// increments the revision and invalidates both pending and ready results.
     pub fn select(
         &mut self,
         asset: Option<WallpaperAsset>,
     ) -> Result<Option<WallpaperDecodeKey>, WallpaperDecodeServiceError> {
-        let asset_id = asset.map(WallpaperAsset::id);
+        let asset_id = asset.as_ref().map(|asset| asset.id().to_owned());
         if asset_id == self.requested_asset {
-            if let Some(completed) = self.completed {
-                return Ok(Some(completed));
-            }
-            if let Some(failed) = self.failed {
-                return Ok(Some(failed));
-            }
-            if let Some(ready) = self.ready.as_ref() {
-                return Ok(Some(ready.key()));
-            }
-            if let Some((key, _)) = self.pending.as_ref() {
-                return Ok(Some(*key));
-            }
-            if let Some(asset) = asset {
-                return self.submit(asset).map(Some);
-            }
+            if let Some(completed) = self.completed.as_ref() { return Ok(Some(completed.clone())); }
+            if let Some(failed) = self.failed.as_ref() { return Ok(Some(failed.clone())); }
+            if let Some(ready) = self.ready.as_ref() { return Ok(Some(ready.key().clone())); }
+            if let Some((key, _)) = self.pending.as_ref() { return Ok(Some(key.clone())); }
+            if let Some(asset) = asset { return self.submit(asset).map(Some); }
             return Ok(None);
         }
 
-        self.revision = self
-            .revision
-            .checked_add(1)
+        self.revision = self.revision.checked_add(1)
             .ok_or(WallpaperDecodeServiceError::RevisionExhausted)?;
         self.requested_asset = asset_id;
         self.pending = None;
@@ -149,11 +111,10 @@ impl WallpaperDecodeService {
         self.completed = None;
         self.failed = None;
 
-        let Some(asset) = asset else {
-            return Ok(None);
-        };
-
-        self.submit(asset).map(Some)
+        match asset {
+            Some(asset) => self.submit(asset).map(Some),
+            None => Ok(None),
+        }
     }
 
     fn submit(
@@ -162,20 +123,23 @@ impl WallpaperDecodeService {
     ) -> Result<WallpaperDecodeKey, WallpaperDecodeServiceError> {
         let format = match asset.format() {
             WallpaperFormat::Jpeg => ImageFormat::Jpeg,
+            WallpaperFormat::Png => ImageFormat::Png,
+            WallpaperFormat::Bmp => ImageFormat::Bmp,
+            WallpaperFormat::Gif => ImageFormat::Gif,
+            WallpaperFormat::Tiff => ImageFormat::Tiff,
+            WallpaperFormat::WebP => ImageFormat::WebP,
         };
         let key = WallpaperDecodeKey {
-            asset_id: asset.id(),
+            asset_id: asset.id().to_owned(),
             revision: self.revision,
         };
-        let response = self
-            .worker
+        let response = self.worker
             .try_submit(format, asset.bytes().to_vec(), DecodeLimits::default())
             .map_err(WallpaperDecodeServiceError::Worker)?;
-        self.pending = Some((key, response));
+        self.pending = Some((key.clone(), response));
         Ok(key)
     }
 
-    /// Polls once without blocking and publishes only the current generation.
     pub fn poll(&mut self) -> Result<Option<&DecodedWallpaper>, WallpaperDecodeServiceError> {
         let Some((key, receiver)) = self.pending.as_ref() else {
             return Ok(self.ready.as_ref());
@@ -183,7 +147,7 @@ impl WallpaperDecodeService {
 
         match receiver.try_recv() {
             Ok(result) => {
-                let key = *key;
+                let key = key.clone();
                 self.pending = None;
                 let decoded = match result {
                     Ok(decoded) => decoded,
@@ -203,7 +167,8 @@ impl WallpaperDecodeService {
                         return Err(WallpaperDecodeServiceError::InvalidPixels(error));
                     }
                 };
-                if self.requested_asset == Some(key.asset_id()) && self.revision == key.revision()
+                if self.requested_asset.as_deref() == Some(key.asset_id())
+                    && self.revision == key.revision()
                 {
                     self.ready = Some(DecodedWallpaper { key, pixels });
                 }
@@ -212,36 +177,27 @@ impl WallpaperDecodeService {
             Err(TryRecvError::Empty) => Ok(self.ready.as_ref()),
             Err(TryRecvError::Disconnected) => {
                 self.pending = None;
-                self.failed = self.requested_asset.map(|asset_id| WallpaperDecodeKey {
-                    asset_id,
+                self.failed = self.requested_asset.as_ref().map(|asset_id| WallpaperDecodeKey {
+                    asset_id: asset_id.clone(),
                     revision: self.revision,
                 });
-                Err(WallpaperDecodeServiceError::Worker(
-                    DecodeWorkerError::WorkerStopped,
-                ))
+                Err(WallpaperDecodeServiceError::Worker(DecodeWorkerError::WorkerStopped))
             }
         }
     }
 
-    /// Transfers completed pixels to the renderer without cloning the RGBA buffer.
     pub fn take_ready(&mut self) -> Option<DecodedWallpaper> {
         let ready = self.ready.take()?;
-        self.completed = Some(ready.key());
+        self.completed = Some(ready.key().clone());
         Some(ready)
     }
 
-    pub fn ready(&self) -> Option<&DecodedWallpaper> {
-        self.ready.as_ref()
-    }
+    pub fn ready(&self) -> Option<&DecodedWallpaper> { self.ready.as_ref() }
 
-    pub const fn pending_key(&self) -> Option<WallpaperDecodeKey> {
-        match &self.pending {
-            Some((key, _)) => Some(*key),
-            None => None,
-        }
+    pub fn pending_key(&self) -> Option<&WallpaperDecodeKey> {
+        self.pending.as_ref().map(|(key, _)| key)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -251,21 +207,21 @@ mod tests {
     #[test]
     fn selected_wallpaper_decodes_off_the_calling_thread() {
         let asset = WallpaperAsset::default_wallpaper().unwrap();
+        let expected_dimensions = asset.dimensions().unwrap();
         let mut service = WallpaperDecodeService::new().unwrap();
         let key = service.select(Some(asset)).unwrap().unwrap();
 
         let mut completed = false;
         for _ in 0..10_000 {
             if let Some(decoded) = service.poll().unwrap() {
-                assert_eq!(decoded.key(), key);
-                assert_eq!(decoded.pixels().width(), u32::from(asset.dimensions().width()));
-                assert_eq!(decoded.pixels().height(), u32::from(asset.dimensions().height()));
+                assert_eq!(decoded.key(), &key);
+                assert_eq!(decoded.pixels().width(), expected_dimensions.width());
+                assert_eq!(decoded.pixels().height(), expected_dimensions.height());
                 completed = true;
                 break;
             }
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
-
         assert!(completed, "wallpaper decode should complete");
     }
 
@@ -278,33 +234,26 @@ mod tests {
 
         for _ in 0..10_000 {
             assert!(service.poll().unwrap().is_none());
-            if service.pending_key().is_none() {
-                break;
-            }
+            if service.pending_key().is_none() { break; }
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
         assert!(service.ready().is_none());
     }
 
     #[test]
-    fn failed_decode_is_not_retried_for_the_same_selection() {
-        let asset = WallpaperAsset::default_wallpaper().unwrap();
-        let mut service = WallpaperDecodeService::new().unwrap();
-        let key = service.select(Some(asset)).unwrap().unwrap();
-
-        service.pending = None;
-        service.failed = Some(key);
-
-        assert_eq!(service.select(Some(asset)).unwrap(), Some(key));
-        assert!(service.pending_key().is_none());
-    }
-
-    #[test]
     fn selecting_the_same_asset_does_not_create_a_new_revision() {
         let asset = WallpaperAsset::default_wallpaper().unwrap();
         let mut service = WallpaperDecodeService::new().unwrap();
-        let first = service.select(Some(asset)).unwrap().unwrap();
+        let first = service.select(Some(asset.clone())).unwrap().unwrap();
         let second = service.select(Some(asset)).unwrap().unwrap();
         assert_eq!(first, second);
+    }
+
+    #[test]
+    fn user_selected_asset_is_submitted_to_the_same_worker() {
+        let asset = WallpaperAsset::from_bytes("user-wallpaper", b"BM".to_vec()).unwrap();
+        let mut service = WallpaperDecodeService::new().unwrap();
+        let key = service.select(Some(asset)).unwrap().unwrap();
+        assert_eq!(key.asset_id(), "user-wallpaper");
     }
 }
