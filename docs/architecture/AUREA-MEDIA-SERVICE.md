@@ -261,3 +261,21 @@ The current compositor WallpaperAsset is a compile-time embedded JPEG with a sta
 - Confirm exact Debian 13 package versions, runtime dependencies, upstream licenses and plugin availability before adding native packages to the target image. Do not install every libheif plugin or encoder.
 - JPEG 2000 remains conditional on a supported decoder and its license/footprint review.
 - No video playback, HEVC video, H.264, AV1 video, GStreamer or PipeWire work is authorized by this wallpaper-format decision.
+
+
+## Implementation progress — common raster formats (2026-11-24)
+
+The first decoder expansion is now present in source:
+
+- ImageFormat includes JPEG, PNG, BMP, GIF, TIFF and WebP.
+- JPEG remains routed to the existing TurboJPEG adapter.
+- PNG, BMP, GIF, TIFF and WebP route through a private raster adapter backed by image 0.25.10.
+- The dependency disables default features and enables only bmp, gif, png, tiff and webp; no Rayon, video or unrelated image codecs are enabled.
+- Raster decode applies maximum axis limits through the decoder API and validates pixel count, RGBA8 output bytes and exact output length before returning pixels.
+- GIF/TIFF are exposed as static decode formats; the wallpaper policy is first frame/page only. No playback path is added.
+
+Important verification boundary: this source has not been built or tested. image::Limits::max_alloc is documented as best-effort/non-strict for some decoders; axis limits are strict where supported. AureaOS therefore also validates output dimensions and bytes and retains a bounded decode worker. Do not describe this as a formally hard process-wide memory sandbox.
+
+The Cargo manifest is updated, but Cargo.lock has not been regenerated. Before the next locked build, regenerate it on Fedora, inspect the resolved transitive license graph and confirm Debian 13 compatibility.
+
+HEIC/HEIF and AVIF are not yet implemented. They remain the next decoder integration block; JPEG 2000 remains conditional.
