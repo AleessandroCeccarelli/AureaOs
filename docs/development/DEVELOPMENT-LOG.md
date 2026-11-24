@@ -1450,3 +1450,18 @@ Static source review only. No build, tests, rustfmt, cargo check or CI were run.
 Commits: `46d2c1d6`, `1d3f8fa4`, `611720ee`, `cc7b860e`, `5930c025`.
 
 Static interface and data-flow review only. No build, tests, rustfmt, cargo check or CI were run.
+
+
+## 2026-11-24 — Desktop canvas item selection
+
+- Added semantic `DesktopItemSelected { id }` and `DesktopSelectionCleared` events to the shared `aurea-desktop-api` contract. The interaction enum is no longer `Copy` because selection carries an owned identifier.
+- Added `compositor/desktop_selection.rs`: converts global pointer coordinates to logical integer coordinates, applies `DesktopHitTest` to desktop model entries using a 64×64 logical-pixel hit region, and forwards the result to the shell.
+- Primary-click handling still prioritizes Wayland surfaces. A click is interpreted as a desktop selection only when no window surface is hit.
+- `ShellRuntime` updates `DesktopState.selected_item_id` and handles selection clearing. Added runtime and desktop-state tests for both transitions.
+- Kept hit-testing policy separate from the general pointer-button handler.
+
+**Explicit limitation:** selection is computed and retained in Shell state, but the renderer does not yet draw a selection outline/highlight. Double-click and item activation/opening remain future work. No desktop icon is visible yet: generated RGBA8 assets still need to be produced and connected to the Vulkan draw pass.
+
+Main commits: `edb084ba`, `57174278`, `281eeb56`, `66259fdc`, `141bb3d2`, `23eefbc5`, `52eb356e`, `1aab344d`, `738a7dca`.
+
+Also fixed the duplicated invalid visibility declaration on `VulkanSurfacePipelineCacheError` (`2169ed40`). No build, tests, rustfmt, cargo check or CI were run.
