@@ -10,7 +10,7 @@ use std::io;
 use aurea_desktop_api::{
     CompositorFactory, CompositorService, ShutdownSignal,
     desktop_interaction::DesktopInteractionSender, display::DisplayColorController,
-    input::TouchpadSettingsCommand, keyboard::KeyboardLayoutId,
+    input::TouchpadSettingsCommand, keyboard::KeyboardLayoutId, desktop::DesktopTrashState,
 };
 
 use crate::WaylandServer;
@@ -27,6 +27,7 @@ pub struct WaylandCompositorFactory {
     socket_name: String,
     seat: String,
     keyboard_layout: Option<KeyboardLayoutId>,
+    initial_trash_state: Option<DesktopTrashState>,
 }
 
 impl WaylandCompositorFactory {
@@ -36,7 +37,14 @@ impl WaylandCompositorFactory {
             socket_name: socket_name.into(),
             seat: seat.into(),
             keyboard_layout: None,
+            initial_trash_state: None,
         }
+    }
+
+    /// Supplies the initial Trash state captured by the desktop composition root.
+    pub fn with_trash_state(mut self, state: DesktopTrashState) -> Self {
+        self.initial_trash_state = Some(state);
+        self
     }
 
     /// Uses a persisted user-selected keyboard layout for the session.
@@ -66,6 +74,9 @@ impl CompositorFactory for WaylandCompositorFactory {
             interactions,
             touchpad_settings,
         )?;
+        if let Some(state) = self.initial_trash_state {
+            server.set_trash_state(state);
+        }
         if let Some(layout) = self.keyboard_layout.as_ref() {
             if let Err(error) = server.set_keyboard_layout(layout) {
                 eprintln!(
