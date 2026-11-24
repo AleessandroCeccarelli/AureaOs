@@ -163,3 +163,8 @@ Do not regress Night Light, output transforms, fractional scaling, scanout synch
 ## Verification limits
 
 Repository inspection and the recorded container ABI probe do not prove that the desktop boots, that the wallpaper is visible on the user's hardware, that all Vulkan paths work on the AMD Stoney GPU, or that hotplug/session restoration is correct in a live session. Those remain explicit validation tasks.
+
+
+### Native cursor error contract
+
+The native cursor upload lifecycle reports an explicit empty-result error rather than synthesizing a Vulkan driver error. The surface composition layer consumes the extracted `NativeCursor` cache error and retains the underlying SHM texture error classification, including device loss. This keeps upload-contract failures distinct from Vulkan command failures.
