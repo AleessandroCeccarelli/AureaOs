@@ -12,7 +12,8 @@ La domanda guida è: **quale esperienza vogliamo offrire e qual è il modo corre
 
 ## Fondamenta tecnologiche
 - Debian GNU/Linux 13 Trixie, inizialmente amd64.
-- Btrfs come filesystem di sistema previsto, con progettazione di sottovolumi, snapshot e ripristino.
+- Btrfs come filesystem di sistema scelto, con una sola partizione Btrfs per l'intero sistema installato; backup e ripristino sono responsabilità di Aurea Time.
+- systemd-boot come boot manager esclusivamente UEFI; Secure Boot è disabilitato in Roma 1.0.
 - Rust come linguaggio principale per servizi, API, shell e componenti desktop.
 - Wayland + Smithay come architettura nativa display/compositor; niente X11 o XWayland.
 - Vulkan come API grafica esclusiva; nessun ripiego OpenGL.
@@ -20,6 +21,9 @@ La domanda guida è: **quale esperienza vogliamo offrire e qual è il modo corre
 - GPL-3.0-or-later.
 
 Queste scelte sono vincoli, non un motivo per duplicare funzionalità già offerte da Linux.
+
+## Architettura di avvio
+Il boot manager approvato è systemd-boot. AureaOS supporta esclusivamente sistemi UEFI; BIOS Legacy/CSM non è supportato. Secure Boot è disabilitato in Roma 1.0 perché i costi di firma/certificazione Microsoft non sono sostenibili come prerequisito della prima release. UKI è la direzione scelta per gli artefatti di avvio, subordinata alla verifica dell'integrazione tra kernel Debian 13, initramfs-tools e systemd. L'ESP ospita systemd-boot e le UKI; il sistema installato resta su una sola partizione Btrfs. Non è prevista una partizione XBOOTLDR. Vedi [Avvio systemd-boot e UKI](AVVIO-SYSTEMD-BOOT-E-UKI.md).
 
 ## Confini del sistema
 - **Aurea Desktop:** superficie desktop, disposizione elementi, selezione e stato di presentazione.
@@ -74,29 +78,20 @@ WebAuthn e CTAP2 sono correlati ma distinti: WebAuthn definisce il flusso relyin
 
 Nella prima versione una passkey non sarà l'unico metodo di recupero. Occorrono recupero sicuro, amministrazione account e fallback documentato. Non inventare crittografia proprietaria e non conservare chiavi private in normali configurazioni applicative. Il supporto TPM è opzionale e rilevato in base alle capacità. Il compositor non possiede segreti delle credenziali.
 
-## Btrfs: sistema e ripristino
-Btrfs è il filesystem di base previsto, non una semplice opzione dell'installer. Il layout dei sottovolumi va progettato prima che aggiornamenti e ripristino dipendano da esso.
+## Btrfs: filesystem di sistema e Aurea Time
+Btrfs è stato scelto come filesystem Linux moderno per AureaOS. La scelta non implica l'uso degli snapshot Btrfs nativi, aggiornamenti basati su snapshot o rollback.
 
-Valutare sottovolumi separati per:
-- root di sistema gestita;
-- /var e stato mutabile;
-- dati home utente;
-- snapshot e metadati rollback;
-- dati applicativi/container quando ciclo di vita e isolamento lo giustificano.
+Il layout del disco installato è volutamente semplice:
+- Una EFI System Partition (ESP) per gli artefatti di avvio UEFI.
+- Una partizione Btrfs contenente l'intero sistema operativo installato.
+- Nessuna partizione separata per `/home`, `/var`, cache, snapshot o backup.
+- Nessuna partizione XBOOTLDR nell'attuale architettura di avvio.
 
-È un layout candidato, non una tabella mount definitiva. Stato package manager, log, database, dati Flatpak e file utente vanno collocati deliberatamente, affinché il rollback non distrugga il lavoro utente né lasci stati incompatibili.
+Aurea Time è l'unico sistema AureaOS previsto per backup e ripristino. La destinazione sarà un'unità USB esterna o un NAS e l'esperienza dovrà consentire il recupero nel tempo dai singoli file e cartelle, fino alle impostazioni e all'intero sistema operativo. Implementazione, modello di consistenza, formato di archiviazione, conservazione e flusso di ripristino completo restano da progettare.
 
-### Regole snapshot e rollback
-- Creare snapshot pre-aggiornamento prima delle transazioni di sistema, quando possibile.
-- Usare snapshot read-only come punti di ripristino quando opportuno.
-- Rendere il rollback un'operazione esplicita e validata di avvio/sistema, con percorso di recupero.
-- Definire conservazione, comportamento sotto pressione di spazio e pulizia.
-- Distinguere rollback del sistema da recupero dati utente.
-- Fornire indicazioni di backup: gli snapshot non sono backup.
-- Considerare i confini dei sottovolumi annidati: gli snapshot non sono automaticamente ricorsivi.
-- Testare bootloader, aggiornamenti interrotti, disco pieno e rollback dopo migrazioni di schema/stato.
+È necessario un ambiente indipendente Aurea Recovery, così da poter ripristinare il sistema operativo anche quando il sistema installato non si avvia. Il recupero non deve dipendere dagli snapshot Btrfs.
 
-Non implementare una policy snapshot prima di specificare insieme grafo dei sottovolumi, transazioni aggiornamento e UX di ripristino.
+La configurazione delle funzionalità Btrfs — inclusi sottovolumi, compressione, scrub, quote, RAID, cifratura e swap/ibernazione — non è stata selezionata in questa baseline. Ogni funzionalità richiede una motivazione tecnica separata e una decisione esplicita.
 
 ## File Intelligence e dati locali
 Aurea File Intelligence resta il catalogo locale condiviso per Fides, Quaero e client autorizzati. Deve rispettare i permessi, essere incrementale, limitato nelle risorse e ricostruibile.
@@ -119,11 +114,11 @@ La ricerca iniziale privilegia nome, percorso, MIME, metadati economici e testo 
 - Debian 13 fornisce pacchetti SQLite runtime e sviluppo. I metadati dei pacchetti Fedora indicano FTS5 abilitato. Il solo elenco pacchetti Debian non prova le opzioni di compilazione della libreria installata: verificare FTS5 sull'immagine destinazione.
 - La documentazione corrente di notify 9 indica supporto Linux tramite inotify, licenza CC0 e MSRV 1.91. Il workspace esaminato usa Rust edition 2024 ma non dichiara rust-version. Non adottare notify 9 finché la policy toolchain/MSRV non è esplicita; resta valida l'alternativa di un adattatore inotify nativo.
 - Le librerie Rust passkey hanno ambiti diversi. La famiglia passkey-rs di 1Password copre componenti client WebAuthn e autenticatore CTAP2; le librerie FIDO Linux hanno vincoli distinti su trasporti e licenze. Nessuna crate è approvata qui.
-- Gli snapshot Btrfs sono snapshot di sottovolumi, non backup di dispositivi a blocchi. I sottovolumi annidati costituiscono confini per gli snapshot.
+- Gli snapshot Btrfs nativi non fanno parte del flusso pianificato di backup, aggiornamento o ripristino di AureaOS.
 
 ## Sequenza di realizzazione
 1. Fissare principi piattaforma e confini di responsabilità.
-2. Definire sottovolumi Btrfs, aggiornamenti e ripristino.
+2. Definire i contratti di backup/ripristino di Aurea Time e l'ambiente indipendente Aurea Recovery.
 3. Definire threat model Aurea Passkey, broker, recupero e strategia PAM.
 4. Definire provider Aurea Intelligence, privacy e autorizzazione azioni.
 5. Completare valutazione compatibilità database/watcher File Intelligence.
