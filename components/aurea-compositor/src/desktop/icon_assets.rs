@@ -1,0 +1,177 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// AureaOS
+// Copyright (C) 2026 Alessandro Ceccarelli
+
+//! Maps desktop model entries to approved, pre-rasterized icon assets.
+
+use aurea_desktop_api::desktop::{DesktopItem, DesktopItemKind};
+
+use crate::{
+    render::shm_buffer::{ShmBufferError, ShmBufferSnapshot},
+    vulkan::DesktopIconTextureKey,
+};
+
+use super::DesktopTheme;
+
+/// Raster sizes generated for a 64-logical-pixel desktop icon.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DesktopIconRasterSize {
+    OneX,
+    OneAndHalfX,
+    TwoX,
+    ThreeX,
+}
+
+impl DesktopIconRasterSize {
+    pub(crate) const fn pixels(self) -> u32 {
+        match self {
+            Self::OneX => 64,
+            Self::OneAndHalfX => 96,
+            Self::TwoX => 128,
+            Self::ThreeX => 192,
+        }
+    }
+}
+
+/// Actual content state supplied by the Trash service.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DesktopTrashContents {
+    Empty,
+    PartiallyFull,
+    Full,
+}
+
+/// A canonical generated asset and the identity used by the Vulkan cache.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct DesktopIconAssetDescriptor {
+    pub(crate) key: DesktopIconTextureKey,
+    pub(crate) relative_path: String,
+}
+
+impl DesktopIconAssetDescriptor {
+    /// Validates generated RGBA8 bytes and creates the cache request snapshot.
+    pub(crate) fn snapshot(
+        &self,
+        rgba8: &[u8],
+    ) -> Result<(DesktopIconTextureKey, ShmBufferSnapshot), ShmBufferError> {
+        let snapshot = ShmBufferSnapshot::from_rgba8(
+            self.key.pixel_size,
+            self.key.pixel_size,
+            rgba8.to_vec(),
+        )?;
+        Ok((self.key, snapshot))
+    }
+}
+
+/// Resolves the approved Trash artwork for the current appearance and contents.
+///
+/// Other item kinds deliberately return no asset until their canonical artwork
+/// has been approved and added to the generated asset pipeline.
+pub(crate) fn desktop_icon_asset(
+    item: &DesktopItem,
+    theme: DesktopTheme,
+    trash_contents: DesktopTrashContents,
+    raster_size: DesktopIconRasterSize,
+) -> Option<DesktopIconAssetDescriptor> {
+    if !matches!(item.kind(), DesktopItemKind::Trash) {
+        return None;
+    }
+
+    let (theme_name, state_name, asset_id) = match (theme, trash_contents) {
+        (DesktopTheme::Light, DesktopTrashContents::Empty) => {
+            ("light", "empty", "system:trash:light:empty")
+        }
+        (DesktopTheme::Light, DesktopTrashContents::PartiallyFull) => {
+            ("light", "half", "system:trash:light:half")
+        }
+        (DesktopTheme::Light, DesktopTrashContents::Full) => {
+            ("light", "full", "system:trash:light:full")
+        }
+        (DesktopTheme::Dark, DesktopTrashContents::Empty) => {
+            ("dark", "empty", "system:trash:dark:empty")
+        }
+        (DesktopTheme::Dark, DesktopTrashContents::PartiallyFull) => {
+            ("dark", "half", "system:trash:dark:half")
+        }
+        (DesktopTheme::Dark, DesktopTrashContents::Full) => {
+            ("dark", "full", "system:trash:dark:full")
+        }
+    };
+
+    let pixel_size = raster_size.pixels();
+    Some(DesktopIconAssetDescriptor {
+        key: DesktopIconTextureKey {
+            asset_id,
+            revision: 1,
+            pixel_size,
+        },
+        relative_path: format!(
+            "aurea-human-interfaces/icons/generated/trash/trash-{theme_name}-{state_name}-{pixel_size}.rgba"
+        ),
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        DesktopIconRasterSize, DesktopTrashContents, desktop_icon_asset,
+    };
+    use crate::desktop::DesktopTheme;
+    use aurea_desktop_api::desktop::DesktopManager;
+
+    #[test]
+    fn resolves_every_approved_theme_and_trash_state() {
+        let manager = DesktopManager::default();
+        let trash = &manager.items()[0];
+
+        for theme in [DesktopTheme::Light, DesktopTheme::Dark] {
+            for state in [
+                DesktopTrashContents::Empty,
+                DesktopTrashContents::PartiallyFull,
+                DesktopTrashContents::Full,
+            ] {
+                let asset = desktop_icon_asset(
+                    trash,
+                    theme,
+                    state,
+                    DesktopIconRasterSize::OneX,
+                )
+                .expect("Trash artwork must resolve");
+                assert!(asset.relative_path.ends_with("-64.rgba"));
+                assert_eq!(asset.key.pixel_size, 64);
+                assert_eq!(asset.key.revision, 1);
+            }
+        }
+    }
+
+    #[test]
+    fn selects_the_requested_raster_density() {
+        let manager = DesktopManager::default();
+        let trash = &manager.items()[0];
+        let asset = desktop_icon_asset(
+            trash,
+            DesktopTheme::Dark,
+            DesktopTrashContents::Empty,
+            DesktopIconRasterSize::ThreeX,
+        )
+        .unwrap();
+
+        assert_eq!(asset.key.pixel_size, 192);
+        assert!(asset.relative_path.ends_with("trash-dark-empty-192.rgba"));
+    }
+
+    #[test]
+    fn snapshot_validation_rejects_incorrect_rgba_byte_count() {
+        let manager = DesktopManager::default();
+        let asset = desktop_icon_asset(
+            &manager.items()[0],
+            DesktopTheme::Light,
+            DesktopTrashContents::Empty,
+            DesktopIconRasterSize::OneX,
+        )
+        .unwrap();
+
+        assert!(asset.snapshot(&[0; 4]).is_err());
+    }
+}
