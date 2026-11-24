@@ -1042,3 +1042,12 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Kept `from_pixels` as a blocking convenience wrapper for controlled resource-preparation paths; it now delegates to the asynchronous implementation and waits only there.
 - The pending upload retains the staging buffer and texture until the fence completes, matching the ownership model already used by SHM surface uploads. No render-scene integration or cache has been added yet.
 - No dependencies/manifests changed. No Cargo fmt/check/test/build or CI was run; no ISO was generated.
+
+
+## 2026-11-24 — Bounded Vulkan wallpaper texture cache
+
+- Added `VulkanWallpaperTextureCache`, keyed by a wallpaper asset identifier plus an explicit revision number, never by Wayland surface IDs.
+- The cache retains one ready selected texture and up to two pending fence-backed uploads, with a 256 MiB aggregate pending-upload budget. Uploads are polled without blocking; only a completed upload matching the currently selected key becomes visible.
+- Integrated the cache into the per-device `VulkanSurfacePipelineCache` lifecycle and poll it during frame preparation. Added preparation/access/clear entry points for the decoder and upcoming wallpaper draw pass.
+- The decoder does not yet produce `WallpaperPixels` for the selected asset, so the cache is infrastructure only: no texture is populated and the background is not drawn yet. The draw pass and scene integration remain outstanding.
+- No dependencies/manifests changed. No Cargo fmt/check/test/build or CI was run; no ISO was generated.
