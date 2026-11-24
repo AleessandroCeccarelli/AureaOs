@@ -1476,3 +1476,15 @@ Also fixed the duplicated invalid visibility declaration on `VulkanSurfacePipeli
 - Added tracker source tests for valid double-click, different item, timeout, pointer distance, reset and triple-click, plus a shell test for activation retention.
 
 No icon drawing, selection highlight or actual file/application launch is claimed. Static review only; no build, tests, rustfmt, cargo check or CI were run.
+
+
+## 2026-11-24 — Shell selection propagated into Vulkan frame preparation
+
+- Added a shared `DesktopSelectionController` to `aurea-desktop-api`, backed by `Arc<RwLock<Option<String>>>`. It returns owned snapshots and never exposes a lock guard to rendering code.
+- The interaction sender publishes selection only after successful event delivery. This makes the next click-triggered frame observe the new selection without racing the Shell event-loop poll.
+- `ShellRuntime` attaches the receiver's controller and mirrors selection/clear events into both `DesktopState` and the shared projection.
+- `AureaCompositor` retains the controller; `render_scene` samples the selected identifier into the immutable frame.
+- `DesktopItemsSnapshot` captures that identifier, and per-output `DesktopItemDrawGeometry` carries an `is_selected` flag for the matching item.
+- Added source tests for shared controller state, immediate publication, immutable frame snapshot and selected/unselected geometry.
+
+The flag currently reaches per-output geometry preparation only. The Vulkan draw pass does not consume it yet, so no visible selection highlight or native desktop icon rendering is claimed. No build, tests, rustfmt, cargo check or CI were run.
