@@ -119,4 +119,10 @@ This is pipeline preparation only: no descriptor binding or wallpaper draw is is
 
 The Vulkan textured draw-pass API now also accepts caller-defined push-constant payloads.
 
+### Frame-composition integration
+
+The Vulkan SHM compositor now consumes a wallpaper texture only when the wallpaper is selected in the immutable desktop snapshot and its upload has completed. It creates a frame-scoped sampled-image descriptor, records the dedicated wallpaper pipeline immediately after the clear pass, and then draws application surfaces and the cursor above it. The wallpaper-only/empty-scene path no longer exits through the clear-only fast path when a ready selected texture exists. Clearing the desktop wallpaper selection also clears the cached texture.
+
+The current integration uses `WallpaperFitMode::Fill` and output-local physical dimensions. It is ready to draw a populated `VulkanWallpaperTextureCache`, but the JPEG decoder and the producer that calls `prepare_wallpaper_texture` are still absent. Therefore the embedded JPEG is not yet displayed; no user-visible wallpaper is claimed.
+
 `WallpaperUvRect::to_push_constant_bytes` now serializes the normalized UV rectangle in the exact `vec4(min.x, min.y, max.x, max.y)` order expected by the dedicated wallpaper vertex shader. A unit test checks the byte round-trip. This remains CPU-side preparation; no descriptor binding or wallpaper draw is wired into the frame yet. It validates that payloads are non-empty, four-byte aligned, and no larger than Vulkan's guaranteed 128-byte minimum. The existing surface path still supplies its original four-byte transform; the wallpaper pipeline can supply its independent 16-byte UV rectangle. This API layer does not yet bind or draw the wallpaper.
