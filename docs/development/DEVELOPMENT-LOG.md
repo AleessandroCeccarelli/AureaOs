@@ -1051,3 +1051,13 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Integrated the cache into the per-device `VulkanSurfacePipelineCache` lifecycle and poll it during frame preparation. Added preparation/access/clear entry points for the decoder and upcoming wallpaper draw pass.
 - The decoder does not yet produce `WallpaperPixels` for the selected asset, so the cache is infrastructure only: no texture is populated and the background is not drawn yet. The draw pass and scene integration remain outstanding.
 - No dependencies/manifests changed. No Cargo fmt/check/test/build or CI was run; no ISO was generated.
+
+
+## WALLPAPER OUTPUT DRAW GEOMETRY — 2026-11-24
+
+- Added `desktop/wallpaper/draw_geometry.rs` with `WallpaperDrawGeometry` and `WallpaperUvRect`.
+- It converts the existing Fill/Fit/Stretch/Center layout into an output-clipped destination and normalized source UV range. Center clipping adjusts UVs rather than producing negative Vulkan scissor offsets; Fill preserves the centered source crop.
+- Added unit tests for all four modes and a zero-sized output/non-intersection case.
+- Added a validated `WallpaperPixelRect::new` constructor and exported the new geometry/layout types through `desktop`.
+- Commits: `a5b33ccd` (geometry), `93284f76` (rectangle constructor), `804f9e67` (wallpaper module exports), `96c49b75` (desktop exports).
+- This is CPU-side geometry only. No Vulkan shader/draw integration, decoder, or wallpaper display has been added. No Cargo fmt/check/test/build/CI or ISO was run; local Fedora validation remains required.
