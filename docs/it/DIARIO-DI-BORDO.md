@@ -588,3 +588,11 @@ Introdurre uno snapshot desktop posseduto e immutabile, separato dall'attuale De
 2. Definire threat model Aurea Passkey e confini broker di sistema/PAM.
 3. Definire provider Aurea Intelligence e contratti di autorizzazione azioni.
 4. Completare verifiche SQLite FTS5 e compatibilità watcher prima di aggiungere dipendenze.
+
+
+## 24 novembre 2026 — Progettazione Btrfs e recupero
+- Aggiunti documenti bilingue di proposta per layout Btrfs e ripristino.
+- Proposti sottovolumi fratelli e piatti per rendere espliciti i confini snapshot ed evitare omissioni dovute a sottovolumi annidati.
+- Mantenuto /var/lib nell'unità di rollback affinché dpkg e stato servizi restino coerenti con i file installati; proposto di preservare /home e log diagnostici.
+- Definiti ciclo di vita obiettivo delle transazioni aggiornamento e requisiti di recupero. Bootloader, cifratura, conservazione, policy cache e swap/ibernazione restano aperti.
+- Nessun installer, gestore snapshot, transazione aggiornamento o codice rollback implementato. Nessun comando Cargo o test eseguito.
