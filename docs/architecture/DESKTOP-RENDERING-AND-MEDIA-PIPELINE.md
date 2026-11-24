@@ -222,3 +222,23 @@ Repository-relative Trash asset paths are suitable for source export, not a fina
 6. Add live item discovery and Trash-state updates through service/API notifications. Keep filesystem watchers and policy outside the compositor.
 7. Connect activation to Shell/Files operations. The compositor emits semantic intents only.
 8. Run one grouped Fedora verification/visual session after this implementation block; do not build, test or run rustfmt after every small edit.
+
+
+## First usable desktop milestone — 24 November 2026
+
+The immediate implementation target is intentionally narrower than the long-term item contract above. The first usable desktop must contain only:
+
+- the desktop background (solid color or the currently selected wallpaper);
+- the native pointer, with movement, primary/secondary buttons, double-click recognition and wheel input;
+- one Trash icon at the upper-left desktop position, already defined by the desktop model as global logical coordinates (32, 32);
+- visible selection feedback when the Trash item is clicked.
+
+Files, folders, application icons, context menus, drag-and-drop and opening/launching items are explicitly deferred. The shared item model may retain its future-facing variants, but this milestone must not implement speculative rendering or filesystem behavior for them.
+
+### Implementation gate
+
+The Trash resolver and bounded Vulkan cache exist, but the 24 generated RGBA8 variants are not yet present/verified. The export script must be run on Fedora and the outputs inspected before the icon is integrated. Runtime loading must use an explicit installed asset root and happen outside the frame-critical path; repository-relative paths and current-working-directory assumptions are not acceptable.
+
+The renderer integration must preserve the common frame order: background/wallpaper → Trash artwork and selection treatment → Wayland surfaces → pointer → display-color transform → presentation/readback. Both direct Vulkan and CPU-upload compatibility paths already share the composition path, so the icon pass must be inserted there once, not duplicated per backend.
+
+No claim is made that the Trash is visible or that the desktop is hardware-validated until the asset pipeline and draw pass are connected and the grouped Fedora visual test succeeds. Build, tests and rustfmt remain grouped into the agreed verification session rather than being run after each edit.
