@@ -899,3 +899,17 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - Commits: `7b9b4b37` (draw-pass API), `d8a31412` (validation/tests). Tests were authored but not run.
 - This remains infrastructure only: no wallpaper descriptor binding or draw submission has been integrated. Next: convert `WallpaperDrawGeometry` into a safe Vulkan viewport/scissor and 16-byte UV payload, bind a ready cached texture, and draw after clear but before SHM surfaces/cursor, including the empty-scene path. JPEG decoding remains gated on the Fedora + Debian 13 TurboJPEG ABI probe.
 - No Cargo fmt/check/test/build, CI or ISO was run.
+
+
+## 2026-11-24 — Wallpaper product decision superseding older handoff notes
+
+Current decision: AureaOS wallpapers are still raster images only. GIF is rejected entirely (not even first-frame import); animated wallpaper and video playback are out of scope. Do not reintroduce the previous animation provider, frame queue, playback policy or GIF decoder.
+
+The implementation on `main` has removed:
+- `ImageFormat::Gif` and the `image` crate GIF feature;
+- `WallpaperFormat::Gif` and GIF signature detection;
+- the wallpaper animation module and playback state in manager/snapshot.
+
+TIFF remains a still-image input for professional photography, scans and publishing. It can be lossless/high-bit-depth and large; multi-page TIFF is treated as a static image from its first page.
+
+Current raster decoder set: PNG, BMP, TIFF and WebP, alongside the existing JPEG backend. HEIC/HEIF and AVIF remain pending. No build, test, rustfmt, Cargo check or CI was run for the GIF-removal changes; validate as a grouped block on Fedora and regenerate Cargo.lock there.
