@@ -108,6 +108,7 @@ A compositor-owned descriptor module now maps the existing desktop model's Trash
 
 - Light/Dark appearance × Empty/PartiallyFull/Full contents.
 - Raster variants: 64, 96, 128 and 192 pixels for the 64-logical-pixel destination.
+- The resolver chooses the smallest available raster that covers the effective output scale: 1x up to 1.0, 1.5x up to 1.5, 2x up to 2.0, then 3x. Non-finite scale values fall back conservatively to 1x.
 - Stable cache identity: asset ID, content revision and raster pixel size.
 - Repository-relative generated asset path matching the host export script.
 - RGBA8 bytes are passed through the existing checked `ShmBufferSnapshot::from_rgba8` constructor before they can become a Vulkan cache request.
