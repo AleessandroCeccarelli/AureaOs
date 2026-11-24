@@ -25,7 +25,7 @@ Initial scope: files, multiple files, directories where safe, links and plain te
 
 ### Aurea Share — system-wide share experience
 
-Owns the user-facing Share action and destination registry, not the transport protocol. It can send selected content to Aurea Link devices, open compatible installed apps such as Telegram/WhatsApp, expose a consistent action in Fides and first-party apps, and receive content from registered share targets/companion apps.
+Owns the user-facing Share action and destination registry, not the transport protocol. It can send selected content to Aurea Link devices and hand content to online-service integrations (official APIs/OAuth, supported share/deep links, or registered desktop applications). Telegram, WhatsApp, Facebook, Instagram, Reddit and YouTube have materially different API capabilities and account restrictions; do not treat them as interchangeable or promise direct personal-account sending. See [Aurea Share Online Integrations](AUREA-SHARE-ONLINE-INTEGRATIONS.md) for the provider capability model and research.
 
 Do not assume every Linux desktop app supports a universal share-sheet API. Start with Aurea-owned apps and explicit app adapters/desktop entries. Keep XDG Desktop Portal for file access and sandbox permission boundaries; FileChooser is not a share portal.
 
