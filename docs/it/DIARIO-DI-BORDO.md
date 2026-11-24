@@ -1405,3 +1405,26 @@ Solo controllo statico delle interfacce e dei punti di passaggio. Nessuna build,
 Commit principali: `edb084ba`, `57174278`, `281eeb56`, `66259fdc`, `141bb3d2`, `23eefbc5`, `52eb356e`, `1aab344d`, `738a7dca`.
 
 Inoltre corretto il dichiaratore di visibilità duplicato e non valido in `VulkanSurfacePipelineCacheError` (`2169ed40`). Nessuna build, test, rustfmt, cargo check o CI eseguiti.
+
+
+## 24 novembre 2026 — Riconoscimento del doppio clic sul desktop
+
+### Modifiche pubblicate su main
+
+- Aggiunto `DesktopClickTracker` in `components/aurea-compositor/src/compositor/desktop_click_tracker.rs`, separato dal gestore generale dei pulsanti.
+- Il tracker riconosce due clic sullo stesso identificatore entro 400 ms e una distanza massima di 4 pixel logici.
+- Usa `std::time::Instant`, quindi tempo monotono; non crea timer, thread o cicli di polling.
+- Un clic su una finestra o sul desktop vuoto annulla la sequenza pendente. Dopo un doppio clic il tracker si azzera, così un terzo clic inizia una nuova sequenza.
+- Aggiunto l'evento condiviso `DesktopItemActivated { id }`. Il compositor invia prima la selezione e poi l'attivazione riconosciuta.
+- `ShellRuntime` conserva l'intento di attivazione nella coda semantica, senza avviare direttamente file o applicazioni.
+
+### Test sorgente aggiunti
+
+Il tracker contiene test per doppio clic valido, elementi differenti, intervallo scaduto, distanza eccessiva, reset e triplo clic. Aggiunto anche un test Shell per la conservazione dell'evento di attivazione.
+
+### Limiti espliciti
+
+- Nessun lancio di file o applicazioni: servirà il servizio Files/Shell per risolvere Desktop Entry, URI, permessi e policy di apertura.
+- La selezione non è ancora disegnata dal renderer.
+- Le icone native non sono ancora collegate al draw pass Vulkan.
+- Il blocco è stato revisionato staticamente; non sono stati eseguiti build, test, rustfmt, cargo check o CI.
