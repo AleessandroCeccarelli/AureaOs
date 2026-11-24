@@ -298,3 +298,13 @@ No video formats or playback libraries are selected for wallpaper support. GStre
 - **Debian 13:** Rust crate dependency; no system codec package required by this selection. Actual Trixie build and runtime behavior not yet tested.
 - **Security note:** AureaOS applies axis limits before decode and independently validates pixel count/output bytes after decode. Because the crate documents max allocation as non-strict, this must not be treated as the sole memory guard. Worker queue remains bounded.
 - **Pending:** regenerate Cargo.lock on Fedora, inspect the resolved graph/licenses, add format fixtures and decode/limit tests, then run one planned build/test cycle.
+
+## Wallpaper asset ownership boundary — 24 November 2026
+
+- **Status:** source implementation added; build verification pending.
+- **Filesystem:** no new dependency. Standard Rust file I/O is confined to WallpaperAsset::from_file, which performs a metadata size check and bounded read before taking ownership of compressed bytes.
+- **Threading contract:** callers must invoke file loading from settings/media-I/O work, not the compositor frame/render callback. Decoder execution remains on DecodeWorker.
+- **Identity:** wallpaper asset IDs and texture/decode keys are owned strings; the old static identity requirement has been removed from this path.
+- **Input detection:** JPEG, PNG, BMP, GIF, TIFF and WebP are identified by signatures. Extensions are not trusted for format selection. HEIC/HEIF and AVIF are not yet enabled.
+- **Memory:** compressed input remains capped by DecodeLimits::default().max_input_bytes() (64 MiB). Owned compressed bytes are shared immutably within the asset, then copied into the bounded worker request. This temporary copy is intentional but must be considered in memory budgeting.
+- **Verification:** no build/test/rustfmt performed. Review ownership API and snapshot call sites during the next planned Fedora validation.
