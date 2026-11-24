@@ -14,7 +14,9 @@ The wallpaper service is independent from the Vulkan renderer. The renderer rece
 
 ## Still-image format policy
 
-AureaOS accepts the following user-selected raster formats:
+The authoritative closed list is maintained in [`../architecture/MEDIA-FORMATS.md`](../architecture/MEDIA-FORMATS.md), with an Italian companion at [`../it/FORMATS-MULTIMEDIALI.md`](../it/FORMATS-MULTIMEDIALI.md).
+
+AureaOS accepts only the following user-selected raster formats:
 
 | Format | Extensions | Policy |
 |---|---|---|
@@ -29,7 +31,7 @@ AureaOS accepts the following user-selected raster formats:
 | JPEG 2000 | `.jp2`, `.j2k`, `.jpf`, `.jpx` | Conditional on Debian-compatible decoder, license and footprint review |
 | OpenEXR | `.exr` | Deferred pending HDR/color-management policy |
 
-PDF, SVG and camera RAW are not first-release wallpaper inputs: they require separate rasterization, vector-rendering or RAW-processing policies.
+GIF, APNG, animated WebP, video, PDF, SVG, camera RAW, JPEG 2000 and OpenEXR are not accepted wallpaper inputs under registry v1.0.
 
 Windows theme documentation lists BMP, GIF, JPEG, PNG and TIFF wallpaper assets; its theme-pack list also includes DIB. Some managed Windows configuration interfaces intentionally narrow the list to JPEG/PNG/BMP. Apple's wallpaper settings let users select an image file, a photo or a photo set; Apple's broader image tooling supports additional still-image formats. AureaOS adopts a practical superset rather than treating one narrow management interface as the full desktop capability.
 
