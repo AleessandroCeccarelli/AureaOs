@@ -10,10 +10,11 @@ Never edit generated files as masters. Record source version, build command/tool
 
 - Source masters: `../source/system/trash/{light,dark}/trash-{empty,half,full}.svg`.
 - Generator: `tools/assets/render-trash-icons.sh`.
-- Renderer: `resvg 0.45.1`, used only on the developer/asset-generation host.
+- Renderer: the existing `rsvg-convert` host tool, also used by the cursor-theme asset pipeline.
 - Outputs: `trash/trash-{light,dark}-{empty,half,full}-{size}.png`.
 - Sizes: 16, 24, 32, 48, 64, 96, 128 and 256 pixels.
-- Source SVGs use a transparent canvas. The script checks file presence, PNG signature, exact square dimensions and 8-bit RGBA format; transparency appearance still requires visual inspection.
+- The script records the exact renderer version in `trash/EXPORT-MANIFEST.txt` and checks file presence, PNG signature, exact square dimensions and 8-bit RGBA format.
+- The source SVGs have transparent canvases; transparency appearance still requires visual inspection.
 
 Run from any working directory with:
 
@@ -21,6 +22,9 @@ Run from any working directory with:
 bash tools/assets/render-trash-icons.sh
 ```
 
-The script refuses a different renderer version to keep generated assets reproducible. Debian 13 Trixie provides `resvg 0.45.1-1` in the `resvg` package. Fedora package availability is not confirmed; the script documents a version-pinned Cargo installation route. The renderer is not a runtime dependency of AureaOS.
+Install the host-only tool when needed:
 
-The export pipeline is committed but has not yet been executed or visually validated. Do not wire these files into the compositor until output dimensions, transparency, theme contrast and optical alignment have been inspected.
+- Debian 13: `sudo apt install librsvg2-bin`
+- Fedora: `sudo dnf install librsvg2-tools`
+
+This reuses the renderer already required by the cursor-theme asset builder. Neither `rsvg-convert` nor librsvg is an AureaOS runtime dependency. Generated exports have not yet been produced or visually validated; do not wire them into the compositor until transparency, theme contrast and optical alignment have been inspected.
