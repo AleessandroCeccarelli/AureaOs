@@ -202,3 +202,24 @@ This register is the shared source of truth for dependency decisions. When imple
 - **References:** official provider docs are recorded in docs/architecture/AUREA-SHARE-ONLINE-INTEGRATIONS.md.
 - **Compatibility:** Debian 13 baseline; no GNOME/KDE, X11/XWayland or OpenGL dependency. API adapters stay outside compositor and media decode/render paths.
 - **Validation:** no dependency, source code, OAuth registration or tests added.
+
+
+## Native compositor build prerequisites — preliminary Debian audit (24 November 2026)
+
+### Shader compiler
+
+- **Tool:** `glslangValidator`, invoked by `components/aurea-compositor/build.rs` when the `drm` feature is enabled.
+- **Debian 13 evidence:** `glslang-tools` is available for Trixie amd64, version `15.1.0+1.4.309.0-1`; Debian identifies it as the package containing the validator tools.
+- **Fedora development package:** `glslang`.
+- **Scope:** build-time only. Do not add it to the installed desktop runtime package set unless a runtime use is separately justified.
+- **Status:** Debian package availability verified; an actual Debian build has not yet been run.
+- **Evidence:** https://packages.debian.org/trixie/amd64/glslang-tools
+
+### Native Smithay / DRM / input development libraries
+
+- **Known integration:** Smithay 0.7 enables `backend_drm`, `backend_gbm`, `backend_libinput`, `backend_udev`, `backend_session_libseat` and `backend_vulkan` under the compositor's `drm` feature.
+- **Debian package evidence:** `libinput-dev` exists in Trixie and depends on `libinput10`, `libudev-dev`, `libmtdev-dev` and `libwacom-dev`. Debian's Trixie wlroots source build also lists `libgbm-dev`, `libseat-dev`, `libvulkan-dev` and `libwayland-dev` as build dependencies.
+- **Status:** candidate native build package set only; exact direct requirements for Smithay 0.7 and required pkg-config modules must be confirmed from the locked Cargo graph and a Debian build. Do not copy the complete wlroots build-dependency list blindly.
+- **Runtime separation:** development headers and shader tools must stay out of the installed runtime image unless a specific runtime package is required.
+- **Evidence:** https://packages.debian.org/en/stable/libdevel/libinput-dev and https://packages.debian.org/it/source/trixie/wlroots
+- **Validation:** no Debian compositor build has yet been performed; no package has been added to the target runtime manifests.
