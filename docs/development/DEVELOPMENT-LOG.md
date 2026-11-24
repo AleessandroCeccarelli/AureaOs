@@ -1247,3 +1247,34 @@ No build, tests, rustfmt or CI were run. No runtime dependency was added. Debian
 - The resvg entry was replaced in the dependency register. No additional renderer or runtime package is required beyond the tool already used by the cursor asset flow.
 - The Trash pipeline has not yet been run; no PNGs have been generated or visually validated.
 - Correction commit: `e0228650`; documentation updated in commits `65705341`, `eb28e253`, `4aa8a60e`, `e9819c41`, `bc95da4b`.
+
+
+## 24 November 2026 — Per-output desktop icon geometry and RGBA8 asset pipeline
+
+### Icon geometry
+
+- Added `components/aurea-compositor/src/desktop/item_geometry.rs`.
+- Persisted positions remain global logical coordinates; the module resolves physical destination geometry independently for each output.
+- Handles output origin, integer and fractional scale, display transform and clipping to physical output bounds.
+- Initial icon destination is 64 × 64 logical pixels; the renderer will use raster variants for 1x, 1.5x, 2x and 3x.
+- Items outside an output or with invalid geometry are skipped individually so one bad saved position cannot suppress other icons.
+- Added four source tests: secondary-output global origin, off-output item, 2x scale and partial clipping.
+- This module is preparatory: it is not connected to Vulkan drawing yet, and visible desktop icons are not claimed. No tests were run.
+
+### Static assets without a runtime PNG decoder
+
+- Added `tools/assets/png_to_rgba.py`, using only the Python standard library.
+- The converter accepts only non-interlaced RGBA8 PNGs up to 256 × 256; it validates chunk CRCs, decompression limits, exact pixel length and PNG filters 0–4.
+- `render-trash-icons.sh` now generates 24 raw RGBA8 files (64, 96, 128 and 192 px) from the six canonical SVGs, reusing `rsvg-convert` already required by the cursor asset flow.
+- Raw files are tightly packed, row-major, without padding: exact size = width × height × 4. Temporary PNGs are removed at the end.
+- No Rust PNG decoder, Cargo crate or runtime package was added. Python 3 and rsvg-convert remain host-side asset-generation tools.
+- The new script has not been run; the 24 outputs have not been generated or visually inspected.
+
+### Status and next steps
+
+1. Run the script on Fedora and inspect transparency, alpha edges, Light/Dark contrast and optical alignment.
+2. Implement a dedicated desktop asset cache and bounded asynchronous Vulkan upload; do not reuse the SHM cache.
+3. Connect per-output geometry to the renderer and draw icons between wallpaper and Wayland surfaces.
+4. Only then implement hit testing, selection and activation.
+
+No builds, tests, rustfmt or CI were started. No runtime dependency was added. Debian 13 Trixie remains the target.
