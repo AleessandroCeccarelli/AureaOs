@@ -224,13 +224,14 @@ Questo registro è la fonte condivisa di verità per le decisioni sulle dipenden
 - **Verifica:** nessuna build Debian del compositor è stata ancora eseguita; nessun pacchetto è stato aggiunto ai manifest runtime.
 
 
-## resvg — rasterizzazione SVG per asset statici
+## rsvg-convert — generazione di asset SVG statici
 
-- **Tipo:** strumento CLI per generazione asset, solo host di sviluppo; non è una dipendenza runtime AureaOS.
-- **Stato:** Candidato condizionato alla validazione visiva degli export.
-- **Debian 13 Trixie:** pacchetto `resvg` versione `0.45.1-1`, sezione graphics; binario amd64 disponibile. Il pacchetto installa circa 3,4 MB. Il pacchetto usa una build CLI Rust e non richiede di introdurre librerie SVG nel sistema installato.
-- **Fedora:** pacchetto ufficiale non verificato. Lo script propone `cargo install resvg --version 0.45.1`; disponibilità e costo di compilazione sul laptop Fedora devono essere verificati prima dell'uso.
-- **Versione e licenza upstream:** resvg 0.45.1; licenza upstream Apache-2.0 OR MIT. Il pacchetto Debian include anche licenze di test e packaging; non distribuire il binario resvg dentro AureaOS.
-- **Uso limitato:** conversione offline delle SVG originali in PNG statici versionati. Nessun rendering SVG a runtime, nessuna dipendenza aggiunta ai manifest Rust o al rootfs.
-- **Evidenze:** pagina pacchetto Debian Trixie e copyright Debian verificati il 24 novembre 2026. Il comando CLI e le opzioni di dimensionamento sono documentati nel manuale Debian.
-- **Validazione:** non ancora eseguito su Fedora; gli export non sono stati generati né ispezionati. La pipeline è candidata, non approvata per release.
+- **Tipo:** CLI di generazione asset, solo host di sviluppo; riutilizza il renderer già richiesto dal builder del tema cursore.
+- **Stato:** Candidato per export desktop; non è una dipendenza runtime AureaOS.
+- **Debian 13 Trixie:** `librsvg2-bin`, versione `2.60.0+dfsg-1+deb13u1`; fornisce `rsvg-convert`.
+- **Fedora 45:** `librsvg2-tools`, versione `2.63.2-2.fc45`; fornisce `rsvg-convert`.
+- **Footprint:** il renderer host dipende da librsvg e componenti Cairo/GLib/Pango e altre librerie. Questo footprint resta confinato all'host di sviluppo/generazione; nessuna libreria SVG viene aggiunta al runtime AureaOS.
+- **Licenza:** librsvg LGPL-2.1-or-later con licenze di dipendenze elencate dai pacchetti; revisione necessaria solo se in futuro si decidesse di distribuire il tool o librerie.
+- **Uso:** rasterizzazione offline delle sei SVG Trash approvate; la versione effettiva del renderer viene registrata nel manifest export. Il tool non viene linkato dal compositor.
+- **Evidenze:** metadati Debian Trixie e Fedora 45 verificati il 24 novembre 2026.
+- **Validazione:** tool già usato dal generatore del tema cursore; nuova pipeline Trash non ancora eseguita e output non ancora ispezionati. Nessuna dipendenza runtime aggiunta.
