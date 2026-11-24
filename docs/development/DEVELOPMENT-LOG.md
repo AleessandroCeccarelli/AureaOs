@@ -1465,3 +1465,14 @@ Static interface and data-flow review only. No build, tests, rustfmt, cargo chec
 Main commits: `edb084ba`, `57174278`, `281eeb56`, `66259fdc`, `141bb3d2`, `23eefbc5`, `52eb356e`, `1aab344d`, `738a7dca`.
 
 Also fixed the duplicated invalid visibility declaration on `VulkanSurfacePipelineCacheError` (`2169ed40`). No build, tests, rustfmt, cargo check or CI were run.
+
+
+## 2026-11-24 — Desktop double-click recognition
+
+- Added the focused `compositor/desktop_click_tracker.rs` module. It recognizes the same item clicked twice within 400 ms and within 4 logical pixels.
+- Uses monotonic `Instant` timestamps without timers, worker threads or polling. Clicking a window or empty desktop resets the pending sequence; a completed double-click resets the tracker so a third click starts a new sequence.
+- Added the shared `DesktopItemActivated { id }` semantic event. The compositor emits selection first, then activation.
+- The shell retains the activation intent in its bounded pending-action queue. It deliberately does not launch a file or application; entry resolution and launch policy belong to the Files/Shell service layer.
+- Added tracker source tests for valid double-click, different item, timeout, pointer distance, reset and triple-click, plus a shell test for activation retention.
+
+No icon drawing, selection highlight or actual file/application launch is claimed. Static review only; no build, tests, rustfmt, cargo check or CI were run.
