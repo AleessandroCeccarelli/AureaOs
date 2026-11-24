@@ -933,3 +933,13 @@ No dependency was added to Cargo manifests or lockfiles. No decoder implementati
 
 ### Next action
 Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debian 13 and Fedora packages, then define the adapter contract without connecting it to the Vulkan renderer yet.
+
+
+### Local ABI probe prepared
+
+- Added `tools/dependencies/jpeg/turbojpeg-abi-probe.c`, a small C diagnostic using the legacy TurboJPEG API: initialization, header read, RGBA decode and handle cleanup.
+- Added `tools/dependencies/jpeg/README.md` with compile/run instructions for Fedora and Debian 13.
+- The probe caps compressed input at 64 MiB, each dimension at 16384 pixels and RGBA8 output at 256 MiB; it explicitly rejects CMYK/YCCK in the initial scope and verifies opaque alpha.
+- The source received a static review and was corrected to initialize the colorspace with the legacy `TJCS_DEFAULT` value.
+- The probe has NOT been compiled or executed and therefore does not prove ABI compatibility. No package was installed and no Rust dependency was added.
+- Next: when the user is back on Fedora, compile and run the probe against the committed wallpaper; then repeat the same check in a Debian 13 Trixie environment before approving the adapter.
