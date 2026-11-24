@@ -63,6 +63,35 @@ jobs:
       - name: Audit locked Rust dependencies
         run: cargo audit
 
+  debian-media-dependencies:
+    name: Debian 13 media dependency compatibility
+    runs-on: ubuntu-24.04
+    container:
+      image: debian:trixie
+    timeout-minutes: 15
+
+    steps:
+      - name: Install decoder-only HEIF and AVIF development packages
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
+            ca-certificates \
+            libheif-dev \
+            libheif-plugin-libde265 \
+            libheif-plugin-dav1d \
+            pkg-config
+
+      - name: Verify the required libheif API baseline
+        run: |
+          set -eu
+          pkg-config --modversion libheif
+          pkg-config --atleast-version=1.20 libheif
+          dpkg-query -W -f='${Package} ${Version}\n' \
+            libheif-dev libheif1 libheif-plugin-libde265 libheif-plugin-dav1d
+          for package in libheif-plugin-libde265 libheif-plugin-dav1d; do
+            dpkg-query -L "${package}" | grep -E '\\.so([.]|$)' >/dev/null
+          done
+
   build-and-test:
     name: Build and test workspace
     runs-on: ubuntu-24.04
