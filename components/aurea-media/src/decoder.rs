@@ -3,15 +3,20 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-use crate::{jpeg, DecodeError, DecodeLimits};
+use crate::{jpeg, raster, DecodeError, DecodeLimits};
 
 /// Encoded image format accepted by the media service.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageFormat {
     Jpeg,
+    Png,
+    Bmp,
+    Gif,
+    Tiff,
+    WebP,
 }
 
-/// Pixel layout returned by the first media-service milestone.
+/// Pixel layout returned by the media service.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PixelFormat {
     Rgba8,
@@ -76,10 +81,13 @@ pub fn decode(
         return Err(DecodeError::InputTooLarge);
     }
 
-    match format {
-        ImageFormat::Jpeg => jpeg::decode(input, limits)
-            .map(|(width, height, pixels)| DecodedImage::new(width, height, pixels)),
-    }
+    let decoded = match format {
+        ImageFormat::Jpeg => jpeg::decode(input, limits),
+        ImageFormat::Png | ImageFormat::Bmp | ImageFormat::Gif | ImageFormat::Tiff
+        | ImageFormat::WebP => raster::decode(format, input, limits),
+    }?;
+
+    Ok(DecodedImage::new(decoded.0, decoded.1, decoded.2))
 }
 
 #[cfg(test)]
