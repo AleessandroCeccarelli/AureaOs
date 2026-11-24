@@ -7,29 +7,21 @@
 
 use super::{WallpaperAsset, WallpaperPlaybackPolicy};
 
-/// Borrowed, frame-safe wallpaper source data and its playback policy.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Owned wallpaper source data and its playback policy.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WallpaperSnapshot {
     asset: WallpaperAsset,
     playback_policy: WallpaperPlaybackPolicy,
 }
 
 impl WallpaperSnapshot {
-    pub(super) const fn new(
+    pub(super) fn new(
         asset: WallpaperAsset,
         playback_policy: WallpaperPlaybackPolicy,
     ) -> Self {
-        Self {
-            asset,
-            playback_policy,
-        }
+        Self { asset, playback_policy }
     }
 
-    pub const fn asset(self) -> WallpaperAsset {
-        self.asset
-    }
-
-    pub const fn playback_policy(self) -> WallpaperPlaybackPolicy {
-        self.playback_policy
-    }
+    pub fn asset(&self) -> &WallpaperAsset { &self.asset }
+    pub const fn playback_policy(&self) -> WallpaperPlaybackPolicy { self.playback_policy }
 }
