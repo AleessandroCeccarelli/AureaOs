@@ -34,6 +34,19 @@ pub(crate) enum DesktopIconRasterSize {
 }
 
 impl DesktopIconRasterSize {
+    /// Chooses the smallest approved raster that does not undersample the output.
+    pub(crate) fn for_scale(scale: f64) -> Self {
+        if !scale.is_finite() || scale <= 1.0 {
+            Self::OneX
+        } else if scale <= 1.5 {
+            Self::OneAndHalfX
+        } else if scale <= 2.0 {
+            Self::TwoX
+        } else {
+            Self::ThreeX
+        }
+    }
+
     pub(crate) const fn pixels(self) -> u32 {
         match self {
             Self::OneX => 64,
@@ -161,6 +174,17 @@ mod tests {
 
         assert_eq!(asset.key.pixel_size, 192);
         assert!(asset.relative_path.ends_with("trash-dark-empty-192.rgba"));
+    }
+
+    #[test]
+    fn selects_the_smallest_raster_that_covers_fractional_output_scale() {
+        assert_eq!(DesktopIconRasterSize::for_scale(1.0), DesktopIconRasterSize::OneX);
+        assert_eq!(DesktopIconRasterSize::for_scale(1.25), DesktopIconRasterSize::OneAndHalfX);
+        assert_eq!(DesktopIconRasterSize::for_scale(1.5), DesktopIconRasterSize::OneAndHalfX);
+        assert_eq!(DesktopIconRasterSize::for_scale(1.75), DesktopIconRasterSize::TwoX);
+        assert_eq!(DesktopIconRasterSize::for_scale(2.0), DesktopIconRasterSize::TwoX);
+        assert_eq!(DesktopIconRasterSize::for_scale(2.5), DesktopIconRasterSize::ThreeX);
+        assert_eq!(DesktopIconRasterSize::for_scale(f64::NAN), DesktopIconRasterSize::OneX);
     }
 
     #[test]
