@@ -157,6 +157,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Returns the selected wallpaper only after its upload fence has completed.
+    #[allow(dead_code)] // Consumed by the wallpaper draw pass integration.
     pub(crate) fn wallpaper_texture(&self) -> Option<&VulkanWallpaperTexture> {
         self.wallpaper_texture_cache.texture()
     }
