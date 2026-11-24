@@ -165,3 +165,12 @@ The retained CPU buffer remains subject to the existing 256 MiB decoded-image li
 ## Wallpaper selection invalidation — 2026-11-24
 
 The Vulkan wallpaper cache now invalidates the previously visible texture as soon as a different asset/revision key is selected, before any fallible image allocation or queue submission. This prevents an older ready texture from remaining eligible when preparation of the replacement fails. Already submitted uploads are not destroyed or cancelled: they remain fence-backed and owned by the cache until completion can be established, then are discarded if their key is no longer selected. Clearing the wallpaper similarly removes visibility immediately while preserving pending-upload lifetime safety.
+
+
+## Fatal Vulkan device loss handling — 2026-11-24
+
+Wallpaper fence polling now preserves `ERROR_DEVICE_LOST` as a typed surface-composition error instead of flattening it into a generic texture string. The DRM scanout error carries an explicit device-loss flag to the server rendering dispatcher.
+
+When the direct Vulkan render path reports device loss, the dispatcher stops the output/session rendering path instead of attempting the CPU compatibility fallback. That fallback shares the same logical Vulkan device and cannot recover a lost device. The scanout renderer also skips framebuffer cancellation, reacquisition, and retirement when device completion is uncertain; those operations could issue further Vulkan work or release resources still referenced by the GPU.
+
+This is a fail-stop policy, not device recreation. Recreating the Vulkan backend requires a higher-level lifecycle that rebuilds the device, dependent caches, frame pools, and output bindings. That lifecycle remains future work. No automatic retry is performed after `ERROR_DEVICE_LOST`.
