@@ -66,6 +66,21 @@ Do not merge these concerns into Fides, the media decoder, compositor or GStream
 - Email should use a standard mail client handoff or a separately authorized mail connector; attachment size and account security policies apply.
 - Add providers through capability discovery and explicit adapters, not hardcoded assumptions about a universal API.
 
+## Account model and user profiles
+
+AureaOS must not assume whether the person using it is a child, older adult, casual user, creator, professional or business. Aurea Share offers the same coherent system capability to everyone; provider eligibility and available actions are determined by the connected account and the provider's current rules, not by a presumed user persona.
+
+- Account connection is optional and initiated by the user when they choose a provider.
+- Provide an account manager listing connected provider accounts, account type, granted permissions, connection state and available actions.
+- Support multiple accounts for a provider where its official authentication/API model allows it (for example, multiple Telegram identities or multiple eligible Meta Pages/accounts). Do not promise multi-account support where the provider does not permit it.
+- Keep account credentials and tokens isolated per provider and account. Allow disconnect/revoke and explain the effect.
+- Personal, Creator, Professional, Page, Business and Channel account classes must be represented explicitly where relevant.
+- A connected account does not imply every capability is available. Re-evaluate capabilities using provider account type, scopes, app review, region, content kind and current limits.
+- Never force account linking during OS setup or make online accounts mandatory for core desktop use.
+- The share chooser must be useful with zero connected accounts: show supported desktop handoff destinations and a clear route to connect an account only when the user chooses an API-backed action.
+- Accessibility and clarity are system requirements; do not simplify by hiding important permission, recipient or publication details.
+
+
 ## 4. Adapter contract
 
 Define a provider-neutral capability model before implementing providers. A provider adapter should declare:
