@@ -1722,3 +1722,13 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Touchscreen e penne continuano a usare i rispettivi percorsi dedicati; non vengono mescolati con il puntatore assoluto generico.
 - È un primo supporto parziale, non ancora una gestione completa dei dispositivi assoluti su più monitor.
 - Nessuna build, cargo check, rustfmt o test eseguiti. Verifica raggruppata su Fedora ancora in sospeso; nessuna dipendenza o modifica ai manifest Cargo.
+
+
+### Decodifica immagini statiche HEIC/AVIF opt-in — 24 novembre 2026
+
+- Aggiunto il rilevamento del box ISO-BMFF `ftyp` per i brand statici AVIF (`avif`) e HEIC (`heic`/`heix`). I brand di sequenza (`avis`, `msf1`) e il solo `mif1` generico vengono rifiutati; test unitari coprono box estesi, malformati e troncati.
+- Integrata la dipendenza opzionale `libheif-rs 3.0.0` con feature API esplicita `v1_20`. La build predefinita resta indipendente da libheif nativo; il compositor inoltra una feature opt-in `heif`.
+- L'adapter applica i limiti di sicurezza libheif prima del parsing, limita i thread di decodifica, rifiuta sequenze e contenitori multi-immagine, verifica dimensioni/stride/lunghezza buffer e restituisce RGBA8 posseduto e compatto. Il formato richiesto deve corrispondere al brand rilevato.
+- Rilevamento asset wallpaper e dispatch decoder riconoscono ora HEIC/AVIF, mantenendo le API codec fuori dal renderer compositor. Nessun supporto video o immagini animate è stato introdotto.
+- Aggiunto un job CI Debian 13 per installare i soli plugin decoder selezionati e compilare/testare la feature reale Aurea Media. Il primo tentativo si è fermato per un re-export Rust privato e perché Rust 1.85 Debian è troppo vecchio per `image 0.25.10` (richiede Rust 1.88). Entrambi i problemi sono stati corretti; la prossima esecuzione raggruppata deve confermare il risultato.
+- Rust formatting resta rinviato alla sessione Fedora raggruppata. Nessuna build/test locale Fedora eseguiti. Restano da completare revisione sicurezza, fixture HEIC/AVIF reali, parità pacchetti Fedora e manifest runtime.
