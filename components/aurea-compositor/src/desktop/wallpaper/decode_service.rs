@@ -94,6 +94,7 @@ pub struct WallpaperDecodeService {
     pending: Option<(WallpaperDecodeKey, Receiver<DecodeResponse>)>,
     ready: Option<DecodedWallpaper>,
     completed: Option<WallpaperDecodeKey>,
+    failed: Option<WallpaperDecodeKey>,
 }
 
 impl WallpaperDecodeService {
@@ -106,6 +107,7 @@ impl WallpaperDecodeService {
             pending: None,
             ready: None,
             completed: None,
+            failed: None,
         })
     }
 
@@ -121,6 +123,9 @@ impl WallpaperDecodeService {
         if asset_id == self.requested_asset {
             if let Some(completed) = self.completed {
                 return Ok(Some(completed));
+            }
+            if let Some(failed) = self.failed {
+                return Ok(Some(failed));
             }
             if let Some(ready) = self.ready.as_ref() {
                 return Ok(Some(ready.key()));
@@ -142,6 +147,7 @@ impl WallpaperDecodeService {
         self.pending = None;
         self.ready = None;
         self.completed = None;
+        self.failed = None;
 
         let Some(asset) = asset else {
             return Ok(None);
@@ -179,13 +185,24 @@ impl WallpaperDecodeService {
             Ok(result) => {
                 let key = *key;
                 self.pending = None;
-                let decoded = result.map_err(WallpaperDecodeServiceError::Decode)?;
-                let pixels = WallpaperPixels::new(
+                let decoded = match result {
+                    Ok(decoded) => decoded,
+                    Err(error) => {
+                        self.failed = Some(key);
+                        return Err(WallpaperDecodeServiceError::Decode(error));
+                    }
+                };
+                let pixels = match WallpaperPixels::new(
                     decoded.width(),
                     decoded.height(),
                     decoded.into_pixels(),
-                )
-                .map_err(WallpaperDecodeServiceError::InvalidPixels)?;
+                ) {
+                    Ok(pixels) => pixels,
+                    Err(error) => {
+                        self.failed = Some(key);
+                        return Err(WallpaperDecodeServiceError::InvalidPixels(error));
+                    }
+                };
                 if self.requested_asset == Some(key.asset_id()) && self.revision == key.revision()
                 {
                     self.ready = Some(DecodedWallpaper { key, pixels });
@@ -195,6 +212,10 @@ impl WallpaperDecodeService {
             Err(TryRecvError::Empty) => Ok(self.ready.as_ref()),
             Err(TryRecvError::Disconnected) => {
                 self.pending = None;
+                self.failed = self.requested_asset.map(|asset_id| WallpaperDecodeKey {
+                    asset_id,
+                    revision: self.revision,
+                });
                 Err(WallpaperDecodeServiceError::Worker(
                     DecodeWorkerError::WorkerStopped,
                 ))
