@@ -39,7 +39,18 @@ impl VulkanQueueSubmitError {
     pub(super) const fn result(self) -> vk::Result {
         match self {
             Self::Rejected(error) | Self::SubmissionUncertain(error) => error,
-            Self::CompletionUncertain { wait_error, .. } => wait_error,
+            Self::CompletionUncertain {
+                wait_error,
+                idle_error,
+            } => {
+                if wait_error == vk::Result::ERROR_DEVICE_LOST {
+                    wait_error
+                } else if idle_error == vk::Result::ERROR_DEVICE_LOST {
+                    idle_error
+                } else {
+                    wait_error
+                }
+            }
         }
     }
 }
@@ -134,6 +145,24 @@ mod tests {
             VulkanQueueSubmitError::from_submit_error(vk::Result::ERROR_DEVICE_LOST),
             VulkanQueueSubmitError::SubmissionUncertain(vk::Result::ERROR_DEVICE_LOST)
         );
+    }
+
+    #[test]
+    fn result_preserves_device_loss_from_idle_fallback() {
+        let error = VulkanQueueSubmitError::CompletionUncertain {
+            wait_error: vk::Result::TIMEOUT,
+            idle_error: vk::Result::ERROR_DEVICE_LOST,
+        };
+        assert_eq!(error.result(), vk::Result::ERROR_DEVICE_LOST);
+    }
+
+    #[test]
+    fn result_preserves_device_loss_from_fence_wait() {
+        let error = VulkanQueueSubmitError::CompletionUncertain {
+            wait_error: vk::Result::ERROR_DEVICE_LOST,
+            idle_error: vk::Result::ERROR_UNKNOWN,
+        };
+        assert_eq!(error.result(), vk::Result::ERROR_DEVICE_LOST);
     }
 
     #[test]
