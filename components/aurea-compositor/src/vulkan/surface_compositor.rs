@@ -20,8 +20,6 @@ use visible_surfaces::visible_surfaces;
 
 use std::sync::Arc;
 
-use error::VulkanSurfaceCompositionError;
-
 use smithay::reexports::ash::vk;
 
 use crate::{
