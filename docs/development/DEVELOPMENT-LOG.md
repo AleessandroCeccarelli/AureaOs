@@ -1533,3 +1533,18 @@ No build, tests, rustfmt or CI were run. Verification remains grouped on Fedora 
 - The runtime root has not yet been selected by the application composition root, and the renderer does not call the loader yet; the module is intentionally staged.
 - No disk reads were added to the frame loop. No dependency was added.
 - No build, tests, rustfmt or CI were run.
+
+
+## 2026-11-24 — Static wallpaper policy: GIF removed
+
+AureaOS wallpaper support is now explicitly still-image-only. GIF is excluded entirely, including first-frame import; no animated wallpaper or video playback path is part of the product.
+
+Source changes on `main`:
+- Removed GIF from `aurea-media::ImageFormat`, decoder dispatch and the `image` crate feature list.
+- Removed GIF from `WallpaperFormat`, signature detection and decode-service mapping.
+- Removed the animated wallpaper provider/playback contracts and the playback state previously carried by `WallpaperManager` and `WallpaperSnapshot`.
+- Kept TIFF as a still-image format. Multi-page TIFF uses its first page as a static source; there is no page animation.
+
+Updated `docs/design/WALLPAPER-SYSTEM.md` and `docs/architecture/AUREA-MEDIA-SERVICE.md`. This supersedes earlier development notes proposing GIF/video wallpaper providers.
+
+No build, tests, rustfmt, Cargo check or CI were run. Cargo.lock has not been regenerated; Fedora validation remains pending.
