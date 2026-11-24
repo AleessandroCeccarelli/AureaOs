@@ -72,7 +72,7 @@ mod tests {
     }
 
     #[test]
-    fn snapshot_is_owned_and_does_not_change_with_model() {
+    fn snapshot_captures_shell_selection_immutably() {\n        let manager = DesktopManager::default();\n        let snapshot = DesktopItemsSnapshot::capture(&manager)\n            .with_selected_item(Some("system:trash".to_owned()));\n\n        assert_eq!(snapshot.selected_item_id(), Some("system:trash"));\n        assert!(snapshot.is_selected(snapshot.items()[0].id()));\n    }\n\n    #[test]\n    fn snapshot_is_owned_and_does_not_change_with_model() {
         let mut manager = DesktopManager::default();
         let snapshot = DesktopItemsSnapshot::capture(&manager);
         let trash_id = snapshot.items()[0].id().clone();
