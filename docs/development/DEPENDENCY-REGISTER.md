@@ -285,3 +285,16 @@ This register is the shared source of truth for dependency decisions. When imple
 ### Scope exclusion
 
 No video formats or playback libraries are selected for wallpaper support. GStreamer, FFmpeg video plugins, H.264, HEVC video and AV1 video remain outside Aurea Media's static wallpaper scope.
+
+
+## Selected raster decoder dependency — 24 November 2026
+
+- **Crate:** image 0.25.10.
+- **Status:** selected in aurea-media Cargo.toml; Cargo.lock is intentionally not regenerated in this work session because the user requested no build/check/test cycle. The lockfile must be refreshed on Fedora before a locked build can succeed.
+- **Enabled decoder features only:** bmp, gif, png, tiff, webp. default-features = false; Rayon, AVIF, EXR, DDS, HDR and other unrelated format features are not enabled.
+- **Purpose:** safe Rust decoding adapter for BMP, GIF, PNG, TIFF and WebP. JPEG remains on the existing TurboJPEG adapter; no duplicate JPEG backend is enabled.
+- **Upstream evidence:** image 0.25.10 documents these formats and recommends disabling default features for libraries. Its Limits supports strict maximum width/height; max allocation is best-effort and some decoders may ignore it.
+- **License:** crate metadata/license expression and the enabled transitive dependency license set still require verification from the resolved Cargo.lock before distribution approval.
+- **Debian 13:** Rust crate dependency; no system codec package required by this selection. Actual Trixie build and runtime behavior not yet tested.
+- **Security note:** AureaOS applies axis limits before decode and independently validates pixel count/output bytes after decode. Because the crate documents max allocation as non-strict, this must not be treated as the sole memory guard. Worker queue remains bounded.
+- **Pending:** regenerate Cargo.lock on Fedora, inspect the resolved graph/licenses, add format fixtures and decode/limit tests, then run one planned build/test cycle.
