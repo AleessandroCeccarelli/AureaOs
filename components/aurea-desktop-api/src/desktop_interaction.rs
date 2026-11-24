@@ -15,6 +15,8 @@ pub enum DesktopInteraction {
     ShowContextMenu,
     DesktopItemSelected { id: String },
     DesktopSelectionCleared,
+    /// Activates a desktop item after a recognized double-click.
+    DesktopItemActivated { id: String },
 }
 
 /// Sends semantic interactions from the compositor to the shell.
