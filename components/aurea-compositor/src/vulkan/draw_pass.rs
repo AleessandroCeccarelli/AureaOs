@@ -24,6 +24,7 @@ pub enum VulkanDrawPassError {
     NonFiniteClearColor,
     InvalidViewport,
     InvalidScissor,
+    InvalidPushConstants,
 }
 
 impl fmt::Display for VulkanDrawPassError {
@@ -48,6 +49,9 @@ impl fmt::Display for VulkanDrawPassError {
             Self::InvalidScissor => {
                 formatter.write_str("The Vulkan surface scissor is outside the attachment")
             }
+            Self::InvalidPushConstants => formatter.write_str(
+                "Vulkan push constants must be non-empty, four-byte aligned, and at most 128 bytes",
+            ),
         }
     }
 }
@@ -133,7 +137,7 @@ impl VulkanDrawPass {
             instance_count,
             Some((texture, set_index)),
             None,
-            Some(0),
+            Some(&0_u32.to_ne_bytes()),
         )
     }
 
@@ -168,7 +172,40 @@ impl VulkanDrawPass {
             1,
             Some((texture, set_index)),
             Some((viewport, scissor)),
-            Some(texture_transform),
+            Some(&texture_transform.to_ne_bytes()),
+        )
+    }
+
+    /// Records a textured region with caller-defined push-constant bytes.
+    ///
+    /// This supports dedicated pipelines whose shader interface differs from
+    /// the four-byte surface texture transform.
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_textured_region_with_push_constants(
+        command_buffer: vk::CommandBuffer,
+        view: &VulkanImageView<'_, '_>,
+        pipeline: &VulkanGraphicsPipeline<'_>,
+        texture: &VulkanTextureBinding<'_, '_, '_, '_>,
+        set_index: u32,
+        previous_state: VulkanImageState,
+        final_state: VulkanImageState,
+        load: VulkanColorLoad,
+        viewport: vk::Viewport,
+        scissor: vk::Rect2D,
+        push_constants: &[u8],
+    ) -> Result<(), VulkanDrawPassError> {
+        Self::record_inner(
+            command_buffer,
+            view,
+            pipeline,
+            previous_state,
+            final_state,
+            load,
+            3,
+            1,
+            Some((texture, set_index)),
+            Some((viewport, scissor)),
+            Some(push_constants),
         )
     }
 
@@ -184,9 +221,14 @@ impl VulkanDrawPass {
         instance_count: u32,
         texture: Option<(&VulkanTextureBinding<'_, '_, '_, '_>, u32)>,
         region: Option<(vk::Viewport, vk::Rect2D)>,
-        texture_transform: Option<u32>,
+        push_constants: Option<&[u8]>,
     ) -> Result<(), VulkanDrawPassError> {
         Self::validate(vertex_count, instance_count, final_state, load)?;
+        if push_constants.is_some_and(|bytes| {
+            bytes.is_empty() || bytes.len() > 128 || bytes.len() % 4 != 0
+        }) {
+            return Err(VulkanDrawPassError::InvalidPushConstants);
+        }
         if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
             return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
         }
@@ -209,8 +251,9 @@ impl VulkanDrawPass {
         pipeline.bind(command_buffer);
         if let Some((binding, set_index)) = texture {
             binding.bind(command_buffer, pipeline.layout(), set_index);
-            let transform = texture_transform.unwrap_or(0).to_ne_bytes();
-            pipeline.push_constants(command_buffer, vk::ShaderStageFlags::VERTEX, 0, &transform);
+            if let Some(data) = push_constants {
+                pipeline.push_constants(command_buffer, vk::ShaderStageFlags::VERTEX, 0, data);
+            }
         }
         if let Some((viewport, scissor)) = region {
             pipeline.set_viewport_and_scissor_region(command_buffer, viewport, scissor);
