@@ -1488,3 +1488,23 @@ No icon drawing, selection highlight or actual file/application launch is claime
 - Added source tests for shared controller state, immediate publication, immutable frame snapshot and selected/unselected geometry.
 
 The flag currently reaches per-output geometry preparation only. The Vulkan draw pass does not consume it yet, so no visible selection highlight or native desktop icon rendering is claimed. No build, tests, rustfmt, cargo check or CI were run.
+
+## 24 November 2026 — Desktop item ownership contract
+
+- Clarified ownership: Desktop Shell owns the user-facing experience and presentation policy; the Compositor owns output geometry, GPU resources, Vulkan drawing and presentation only.
+- aurea-desktop-api remains the technology-neutral boundary for items, identifiers, positions and interaction intents.
+- Filesystem/Fides provide discovery, authoritative metadata, MIME information, thumbnails and operations; Fides does not draw desktop icons.
+- Trash Service owns Trash state and operations and publishes semantic data; it does not draw its own icon.
+- Icon/Theme resolves approved assets; it does not choose positions or perform file operations.
+- The common visual pipeline must support File, Folder, Application and Trash. File artwork must use authoritative MIME metadata rather than filename extension alone; application artwork is resolved from Desktop Entry identity.
+- The renderer must not inspect URIs to infer types, scan directories, count Trash entries, launch applications or contain filesystem policy.
+- Identified a decision required before rendering integration: the installed runtime asset-root contract. Repository-relative paths are only suitable for source asset generation and must not depend on process working directory.
+- Updated docs/architecture/DESKTOP-RENDERING-AND-MEDIA-PIPELINE.md with the ownership contract and implementation sequence.
+- No runtime source code changed in this block. No build, tests, rustfmt or CI were run.
+
+### Next block
+
+1. Define runtime asset root/packaging and an RGBA8 loader outside the frame loop.
+2. Complete asset mapping for all item categories.
+3. Connect geometry, Vulkan cache and draw pass through focused modules.
+4. Implement visible selection treatment, then connect Shell/Files actions.
