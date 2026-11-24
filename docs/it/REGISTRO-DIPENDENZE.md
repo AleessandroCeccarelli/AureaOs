@@ -73,13 +73,14 @@ La tabella registra scelte architetturali, non dimostra che ogni pacchetto sia i
 
 ### Decodifica JPEG — TurboJPEG / libjpeg-turbo
 
-- **Stato:** Candidata; non approvata per l'integrazione.
+- **Stato:** la libreria nativa è disponibile su Debian; il percorso con i binding Rust attualmente esaminati è respinto per l'integrazione Debian 13. L'uso di FFI diretta non è ancora approvato.
 - **Scopo:** decodificare il wallpaper JPEG iniziale senza introdurre uno stack immagini generalista.
-- **Evidenza Debian registrata:** Debian 13 fornisce libturbojpeg0 (runtime) e libturbojpeg0-dev (file di sviluppo).
-- **Pacchetto/versione Fedora:** Non verificato in questo registro.
-- **Verifiche richieste:** versione esatta pacchetto Debian e API/ABI TurboJPEG; pacchetto sviluppo Fedora; binding Rust/generazione API; linking e packaging runtime; licenza, manutenzione e gestione errori.
-- **Architettura:** piccolo adapter sicuro di proprietà AureaOS; worker limitato, mai render loop; limiti rigorosi a dimensioni input, allocazioni output e memoria.
-- **Attenzione:** non adottare un binding Rust solo perché compila su Fedora. I binding orientati alle API TurboJPEG 3 non sono da considerare compatibili con la libreria Debian 13 prima della verifica.
+- **Evidenza Debian verificata:** Debian 13 Trixie amd64 fornisce `libturbojpeg0` e `libturbojpeg0-dev`, entrambi versione `1:2.1.5-4`. Il pacchetto di sviluppo dipende dalla corrispondente versione esatta del runtime.
+- **Evidenza Fedora:** Fedora pubblica `libjpeg-turbo-devel` e `turbojpeg-devel`; le pagine pacchetto consultate riportano versioni libjpeg-turbo 3.1.x per i flussi Fedora 43/44/45. La differenza di versione è rilevante e non va nascosta testando soltanto su Fedora.
+- **Verifica binding Rust:** `turbojpeg-sys` 1.1.1 e 1.2.0 espongono l'API TurboJPEG 3.0 `tj3*`; il crate di alto livello `turbojpeg` 1.5.1 dipende da questa famiglia di binding. Non si può presumere che siano collegabili all'ABI/API TurboJPEG 2.1 di Debian Trixie.
+- **Decisione:** non aggiungere `turbojpeg` o `turbojpeg-sys` ad AureaOS per usare la libreria di sistema Debian 13. Rivalutare solo se viene verificato un binding TurboJPEG 2.1 oppure se un adapter FFI AureaOS, mantenuto esplicitamente, risulta giustificato e testato con header/libreria Debian.
+- **Alternativa candidata:** `zune-jpeg` 0.5.15 è un decoder Rust puro con una sola dipendenza normale dichiarata, `zune-core ^0.5.1`; il manifest dichiara MSRV 1.75 e licenza `MIT OR Apache-2.0 OR Zlib`. Evita una dipendenza ABI nativa, ma resta **Candidata**, non Approvata: prima dell'integrazione verificare grafo transitivo completo, manutenzione/sicurezza, limiti del decoder e comportamento in caso di errore.
+- **Architettura:** il decoder scelto dovrà essere isolato dietro un piccolo adapter AureaOS e operare in un worker limitato, mai nel render loop. Applicare limiti a byte input, dimensioni, allocazione output e memoria totale.
 
 ### Rasterizzazione SVG — librsvg
 
