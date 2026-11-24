@@ -7,8 +7,6 @@
 
 use smithay::reexports::ash::vk;
 
-use crate::vulkan::queue_submitter::VulkanQueueSubmitError;
-
 use super::{
     VulkanClearPass, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanImageState,
     VulkanImageTransition, VulkanImageView, VulkanLogicalDevice, VulkanSurfaceCompositionError,
@@ -106,7 +104,7 @@ pub(super) fn clear_and_release(
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
     command_buffer
         .submit_and_wait_with(on_submitted)
-        .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
+        .map_err(VulkanSurfaceCompositionError::from_queue_submit_error)?;
 
     Ok(())
 }
