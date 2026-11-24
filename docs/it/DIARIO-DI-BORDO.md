@@ -990,3 +990,14 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - La saturazione della coda di decodifica è transitoria: il tentativo viene ripetuto nei frame successivi. La rimozione dello sfondo invalida la selezione.
 - Il test di decodifica del worker è stato reso meno dipendente dalla schedulazione della CPU: ora attende con intervalli brevi e un limite massimo invece di affidarsi a un numero fisso di `yield_now`.
 - La CI del 24 novembre ha evidenziato una precedente instabilità in quel test e un controllo rustfmt già non conforme su numerosi file del workspace. La nuova esecuzione deve confermare il risultato del fix e la compilazione dell'integrazione; non consideriamo ancora verificata la build.
+
+## 24 novembre 2026 — Stabilizzazione del ciclo di decodifica wallpaper
+
+- Spostata la creazione di WallpaperDecodeService nell'inizializzazione della cache persistente delle pipeline Vulkan. Il thread di decodifica non viene più creato pigramente durante il callback di composizione del frame.
+- Aggiunto uno stato di fallimento associato alla revisione corrente: un JPEG non valido, pixel non validi o un worker disconnesso non causano un nuovo tentativo a ogni frame. La selezione di un altro asset azzera lo stato e avvia una nuova revisione.
+- La saturazione temporanea della coda resta distinta da un errore definitivo: viene ritentata nei frame successivi.
+- Aggiunto un test unitario per verificare che una selezione già fallita non venga reinserita nella coda.
+- Aggiornata l'architettura Aurea Media in inglese.
+- Commit su main: 1c6fe1a0, 70ad0c7c, b8cb721c, 98c66183.
+- Nessuna build o batteria di test avviata per queste correzioni: le verifiche saranno raggruppate dopo il completamento del blocco di lavoro. La formattazione Rust resta affidata a Fedora.
+- Verifica visiva su Fedora ancora da eseguire; non viene dichiarato il funzionamento grafico verificato.
