@@ -172,6 +172,18 @@ mod tests {
     }
 
     #[test]
+    fn rejects_non_finite_requested_pointer_locations() {
+        assert_eq!(
+            constrain_to_outputs(Point::from((f64::NAN, 10.0)), [output(0.0, 0.0, 100.0, 80.0)]),
+            None
+        );
+        assert_eq!(
+            constrain_to_outputs(Point::from((10.0, f64::INFINITY)), [output(0.0, 0.0, 100.0, 80.0)]),
+            None
+        );
+    }
+
+    #[test]
     fn rejects_invalid_output_geometry() {
         assert!(OutputGeometry::new(0.0, 0.0, 0.0, 100.0).is_none());
         assert!(OutputGeometry::new(0.0, 0.0, f64::NAN, 100.0).is_none());
