@@ -223,3 +223,15 @@ This register is the shared source of truth for dependency decisions. When imple
 - **Runtime separation:** development headers and shader tools must stay out of the installed runtime image unless a specific runtime package is required.
 - **Evidence:** https://packages.debian.org/en/stable/libdevel/libinput-dev and https://packages.debian.org/it/source/trixie/wlroots
 - **Validation:** no Debian compositor build has yet been performed; no package has been added to the target runtime manifests.
+
+
+## resvg — static SVG asset rasterization
+
+- **Type:** asset-generation CLI, developer host only; not an AureaOS runtime dependency.
+- **Status:** Candidate, conditional on visual export validation.
+- **Debian 13 Trixie:** `resvg` package version `0.45.1-1`, graphics section; amd64 binary available. The package installs about 3.4 MB. It is a Rust CLI and does not require SVG libraries in the installed AureaOS system.
+- **Fedora:** official package availability not verified. The script documents `cargo install resvg --version 0.45.1`; availability and compilation cost on the Fedora laptop must be checked before use.
+- **Upstream version and license:** resvg 0.45.1; upstream license Apache-2.0 OR MIT. Debian package also includes test and packaging license notices; do not ship the resvg binary inside AureaOS.
+- **Narrow use:** offline conversion of canonical SVG masters into versioned static PNG assets. No runtime SVG rendering and no Rust manifest or rootfs dependency added.
+- **Evidence:** Debian Trixie package metadata and Debian copyright file checked on 24 November 2026. CLI sizing options are documented in the Debian manpage.
+- **Validation:** not yet run on Fedora; exports have not been generated or inspected. The pipeline remains a candidate, not release-approved.
