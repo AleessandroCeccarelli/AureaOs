@@ -754,3 +754,35 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Corretto il probe C inizializzando il parametro di output colorspace a `-1`; la funzione header lo valorizza in caso di successo.
 - Confermato che `TJFLAG_LIMITSCANS` è disponibile nell'API 2.1.5.
 - Il probe non è stato compilato o eseguito. Nessuna compatibilità ABI è ancora dichiarata.
+
+## 24 novembre 2026 — Direzione prodotto: desktop universale, multimediale e produttivo
+
+### Conclusione
+- AureaOS deve servire bambini, anziani, principianti, studenti, creativi, professionisti, amministratori e sviluppatori attraverso un unico desktop coerente.
+- Principio: semplice per impostazione predefinita, potente quando serve, accessibile fin dall'inizio.
+- Accessibilità, multimedialità e produttività sono requisiti architetturali e di prodotto, non rifiniture successive.
+- Non creare edizioni diverse per età o presunte capacità. Usare progressive disclosure, impostazioni comprensibili, controlli leggibili e grandi, navigazione da tastiera, tecnologie assistive, undo e recupero.
+
+### Conclusioni tecnologiche
+- Debian stable resta l'autorità di compatibilità; Fedora resta ambiente di sviluppo rapido e primo rilevatore di problemi.
+- Confermata la direzione d'integrazione PipeWire + WirePlumber per trasporto/routing e policy audio-video.
+- GStreamer 1.x è il candidato framework multimediale per playback, recording, encoding, muxing e streaming. Su Debian Trixie è stata verificata la disponibilità della famiglia 1.26.2. Plugin e codec saranno selezionati per funzione, con verifica licenze e disponibilità.
+- XDG Desktop Portal è il confine d'interoperabilità e permessi per Flatpak; AureaOS dovrà sviluppare il proprio backend per le interfacce realmente supportate, senza dipendere da sessioni GNOME/KDE.
+- AT-SPI2 è il target d'interoperabilità accessibile; Orca sarà usato per prove reali. AccessKit è candidato come astrazione per widget Rust, non sostituisce AT-SPI2.
+- Parley e cosmic-text sono candidati per il testo, non toolkit completi. Il toolkit nativo resta non deciso finché un prototipo non dimostra Wayland-only, Vulkan, accessibilità, IME, testo complesso, touch, scaling e packaging Debian.
+- Le tecnologie nuove/acerbe sono benvenute in prototipi isolati, non come dipendenze obbligatorie del boot o del sistema senza prove, benefici misurabili e rollback.
+
+### Confini
+- Aurea Media, Aurea Capture, PipeWire, GStreamer e compositor mantengono responsabilità separate.
+- Il compositor non deve codificare media, mixare audio, fare muxing o scrivere file; non deve bloccare il render thread.
+- Nessun daemon multimediale monolitico nella prima fase.
+
+### Documentazione aggiornata
+- Nuovo docs/architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md.
+- Allineati VISION.md, docs/it/VISIONE.md, TECHNOLOGY.md e docs/it/PRINCIPI-TECNOLOGICI.md.
+- Aggiunti collegamenti ai README EN/IT.
+- Aggiornati i registri dipendenze EN/IT con le valutazioni e gli stati non approvati.
+
+### Verifiche
+- Nessun manifest Cargo, Cargo.lock, sorgente Rust o pacchetto di sistema modificato.
+- Nessun build, format, check, test o CI eseguito.
