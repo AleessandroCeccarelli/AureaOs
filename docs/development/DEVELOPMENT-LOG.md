@@ -1145,3 +1145,13 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - No dependency added and no Cargo.toml/Cargo.lock changes.
 - Commits: `bb8ae90e`, `fd1f8a80`, `0e35bd1f`.
 - No build, rustfmt, cargo check, tests or CI were run. Verification remains scheduled for the agreed Fedora session.
+
+
+### Follow-up — static cursor audit and pending-upload initialization fix
+
+- Static review of `VulkanSurfacePipelineCache::new` found that the newly added `pending_cursor_upload` field was not initialized. Added `None` to the constructor; without this correction the workspace would fail to compile.
+- Fix commit: `45757f16`.
+- Initial pointer-path review: the native cursor uses an internal RGBA8 bitmap, an explicit logical hotspot, logical coordinates, and output-aware scale/transform geometry. Physical input is routed through libinput via Smithay.
+- Touchpad preferences are applied only when libinput advertises the corresponding device capabilities; unsupported settings are reported rather than forcing drivers or broader permissions.
+- No new dependency, root access, or Debian-base modification was introduced. No build, tests, rustfmt or CI were run.
+- Standing compatibility gate reaffirmed: assess every new dependency and hardware/codec/service integration against Debian 13 Trixie, least-privilege requirements, licensing, and repository availability before adoption.
