@@ -224,10 +224,8 @@ impl VulkanDrawPass {
         push_constants: Option<&[u8]>,
     ) -> Result<(), VulkanDrawPassError> {
         Self::validate(vertex_count, instance_count, final_state, load)?;
-        if push_constants.is_some_and(|bytes| {
-            bytes.is_empty() || bytes.len() > 128 || bytes.len() % 4 != 0
-        }) {
-            return Err(VulkanDrawPassError::InvalidPushConstants);
+        if let Some(bytes) = push_constants {
+            Self::validate_push_constants(bytes)?;
         }
         if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
             return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
@@ -271,6 +269,13 @@ impl VulkanDrawPass {
             final_state,
         );
 
+        Ok(())
+    }
+
+    fn validate_push_constants(bytes: &[u8]) -> Result<(), VulkanDrawPassError> {
+        if bytes.is_empty() || bytes.len() > 128 || bytes.len() % 4 != 0 {
+            return Err(VulkanDrawPassError::InvalidPushConstants);
+        }
         Ok(())
     }
 
@@ -342,6 +347,31 @@ mod tests {
                 height: 24,
             },
         }
+    }
+
+    #[test]
+    fn accepts_four_float_wallpaper_push_constants() {
+        assert_eq!(VulkanDrawPass::validate_push_constants(&[0; 16]), Ok(()));
+    }
+
+    #[test]
+    fn rejects_empty_or_unaligned_push_constants() {
+        assert_eq!(
+            VulkanDrawPass::validate_push_constants(&[]),
+            Err(VulkanDrawPassError::InvalidPushConstants)
+        );
+        assert_eq!(
+            VulkanDrawPass::validate_push_constants(&[0; 6]),
+            Err(VulkanDrawPassError::InvalidPushConstants)
+        );
+    }
+
+    #[test]
+    fn rejects_push_constants_larger_than_vulkan_minimum_limit() {
+        assert_eq!(
+            VulkanDrawPass::validate_push_constants(&[0; 132]),
+            Err(VulkanDrawPassError::InvalidPushConstants)
+        );
     }
 
     #[test]
