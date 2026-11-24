@@ -1428,3 +1428,17 @@ Il tracker contiene test per doppio clic valido, elementi differenti, intervallo
 - La selezione non è ancora disegnata dal renderer.
 - Le icone native non sono ancora collegate al draw pass Vulkan.
 - Il blocco è stato revisionato staticamente; non sono stati eseguiti build, test, rustfmt, cargo check o CI.
+
+
+## 24 novembre 2026 — Propagazione selezione Shell → frame Vulkan
+
+- Aggiunto `DesktopSelectionController` al contratto condiviso `aurea-desktop-api`, basato su `Arc<RwLock<Option<String>>>`. Non espone guardie di lock: il compositor legge una copia posseduta dell'identificatore.
+- Il canale di interazione pubblica la selezione solo dopo l'invio riuscito dell'evento; la pubblicazione immediata evita che il frame richiesto dal click venga preparato prima che il thread Shell abbia consumato il messaggio.
+- `ShellRuntime` collega il controller ricevuto dal canale e mantiene sincronizzati il controller e `DesktopState` quando applica selezione/deselezione.
+- `AureaCompositor` conserva una copia del controller e `render_scene` campiona la selezione nel frame.
+- `DesktopItemsSnapshot` include l'identificatore selezionato come dato immutabile; `DesktopItemDrawGeometry` espone `is_selected` per l'elemento corrispondente su ogni output.
+- Aggiunti test sorgente per condivisione del controller, pubblicazione immediata, snapshot immutabile e propagazione del flag geometrico selezionato/non selezionato.
+
+### Limite
+
+Il flag arriva fino alla preparazione della geometria per-output, ma il draw pass Vulkan non lo consuma ancora. Non c'è ancora evidenziazione visibile e non è stato dichiarato completato il rendering delle icone desktop. Nessuna build, test, rustfmt, cargo check o CI è stata eseguita.
