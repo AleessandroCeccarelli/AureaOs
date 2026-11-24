@@ -94,8 +94,8 @@ pub(super) fn render_frame(
     let snapshots = scene.shm_snapshots();
     let visible = visible_surfaces(snapshots, target)?;
     let cursor = native_cursor_geometry(scene, target);
-    let wallpaper_selected = scene.desktop().wallpaper().is_some();
-    if !wallpaper_selected {
+    let wallpaper_asset_id = scene.desktop().wallpaper().map(|wallpaper| wallpaper.asset().id());
+    if wallpaper_asset_id.is_none() {
         surface_cache.clear_wallpaper_texture();
     }
     let texture_requests = visible
@@ -113,7 +113,12 @@ pub(super) fn render_frame(
         .prepare_surface_textures(&active_surface_ids, &texture_requests)
         .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
 
-    if visible.is_empty() && cursor.is_none() && surface_cache.wallpaper_texture().is_none() {
+    if visible.is_empty()
+        && cursor.is_none()
+        && wallpaper_asset_id.is_none_or(|asset_id| {
+            surface_cache.wallpaper_texture_for_asset(asset_id).is_none()
+        })
+    {
         surface_cache
             .complete_surface_texture_uploads()
             .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
@@ -186,7 +191,9 @@ pub(super) fn render_frame(
     surface_cache
         .ensure_pipeline(composition_view.format())
         .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
-    let wallpaper_ready = wallpaper_selected && surface_cache.wallpaper_texture().is_some();
+    let wallpaper_ready = wallpaper_asset_id.is_some_and(|asset_id| {
+        surface_cache.wallpaper_texture_for_asset(asset_id).is_some()
+    });
     if wallpaper_ready {
         surface_cache
             .ensure_wallpaper_pipeline(composition_view.format())
@@ -301,7 +308,12 @@ pub(super) fn render_frame(
     .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
 
     if let (Some(texture), Some(binding)) =
-        (surface_cache.wallpaper_texture(), wallpaper_binding.as_ref())
+        (
+            wallpaper_asset_id.and_then(|asset_id| {
+                surface_cache.wallpaper_texture_for_asset(asset_id)
+            }),
+            wallpaper_binding.as_ref(),
+        )
     {
         let layout = WallpaperLayout::calculate(
             texture.width(),
