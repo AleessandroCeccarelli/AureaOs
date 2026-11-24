@@ -1412,3 +1412,14 @@ Commits: `4bb33193`, `1ca67908`. No Cargo or CI verification was run.
 Commits: `4769658c`, `f00e1d9e`, `78e05c62`, `40a95532`, `a3f6e9b2`.
 
 Static path and dependency review only. No build, tests, rustfmt, cargo check or CI were run.
+
+
+### Follow-up — Native cursor Vulkan module extraction
+
+- Reduced `vulkan/surface_pipeline_cache.rs` from 398 to 353 lines.
+- Moved native arrow texture creation, pending upload fence ownership, ready-texture promotion and cursor-specific errors into `vulkan/native_cursor_texture.rs` (99 lines).
+- The general surface pipeline coordinator now delegates cursor resource lifecycle rather than owning its pending upload state.
+- Intended behavior is unchanged: initial upload remains asynchronous and the cursor texture is exposed only after it is ready.
+- No dependency added.
+
+Commits: `d0ea103b`, `bd5a6e28`, `bf415144`. Static review only; no build, tests, rustfmt, cargo check or CI.
