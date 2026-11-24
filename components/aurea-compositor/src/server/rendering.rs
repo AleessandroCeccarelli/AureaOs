@@ -175,6 +175,8 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                 drop(backend);
 
                 if let Err(error) = direct_result {
+                    // Device-loss state belongs to the Vulkan backend error; the
+                    // compositor wrapper also represents lifecycle and routing failures.
                     if matches!(
                         &error,
                         crate::compositor::CompositorRenderError::Backend(backend_error)
