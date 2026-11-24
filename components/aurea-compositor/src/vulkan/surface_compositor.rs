@@ -200,7 +200,7 @@ pub(super) fn render_frame(
         None => (view, previous_image_state),
     };
 
-    if cursor.is_some() {
+    let cursor_texture_ready = if cursor.is_some() {
         surface_cache
             .ensure_native_cursor_texture()
             .map_err(|error| match error {
@@ -208,8 +208,10 @@ pub(super) fn render_frame(
                     VulkanSurfaceCompositionError::from_shm_texture_error(error)
                 }
                 other => VulkanSurfaceCompositionError::Texture(other.to_string()),
-            })?;
-    }
+            })?
+    } else {
+        false
+    };
 
     surface_cache
         .ensure_pipeline(composition_view.format())
@@ -236,7 +238,7 @@ pub(super) fn render_frame(
     // frame-scoped until submit_and_wait confirms GPU completion.
     let binding_pool = surface_cache
         .create_texture_binding_pool(
-            visible.len() as u32 + u32::from(cursor.is_some()) + u32::from(wallpaper_ready),
+            visible.len() as u32 + u32::from(cursor_texture_ready) + u32::from(wallpaper_ready),
         )
         .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
     let views = visible
@@ -288,7 +290,7 @@ pub(super) fn render_frame(
         None
     };
 
-    let cursor_binding = if cursor.is_some() {
+    let cursor_binding = if cursor_texture_ready {
         let texture = surface_cache.native_cursor_texture().ok_or_else(|| {
             VulkanSurfaceCompositionError::Texture(
                 "The native cursor texture was not initialized".to_owned(),
