@@ -153,6 +153,10 @@ impl ShellRuntime {
             DesktopInteraction::DesktopSelectionCleared => {
                 self.desktop.clear_item_selection();
             }
+            DesktopInteraction::DesktopItemActivated { .. } => {
+                // Activation is retained for the desktop/file service consumer.
+                // Launching is deliberately not inferred by the shell runtime.
+            }
         }
 
         if self.pending_desktop_interactions.len() == MAX_PENDING_DESKTOP_INTERACTIONS {
