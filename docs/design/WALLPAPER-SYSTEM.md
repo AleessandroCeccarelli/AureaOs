@@ -108,3 +108,11 @@ Not yet implemented:
 - dynamic time-of-day collections and UI.
 
 The Vulkan wallpaper texture upload, asynchronous submission path and cache lifecycle are not yet verified by Cargo build/tests or hardware. No Cargo build, format, test, or hardware validation is claimed by this document.
+
+
+Implemented since the CPU geometry milestone:
+- Added dedicated `wallpaper_texture.vert` and `.frag` shaders. The vertex shader maps a caller-provided normalized UV rectangle; the fragment shader samples the wallpaper descriptor.
+- `build.rs` compiles the wallpaper shaders only for the DRM/Vulkan build and exports their SPIR-V paths.
+- `VulkanSurfacePipelineCache` now owns a separate wallpaper pipeline per target format. Its vertex push-constant range is a four-float UV rectangle, independent of the existing surface transform ABI.
+
+This is pipeline preparation only: no descriptor binding or wallpaper draw is issued yet, and the decoder/cache still do not provide a ready selected texture. Local Fedora validation has not been run.
