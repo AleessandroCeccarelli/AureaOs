@@ -93,6 +93,7 @@ pub struct WallpaperDecodeService {
     revision: u64,
     pending: Option<(WallpaperDecodeKey, Receiver<DecodeResponse>)>,
     ready: Option<DecodedWallpaper>,
+    completed: Option<WallpaperDecodeKey>,
 }
 
 impl WallpaperDecodeService {
@@ -104,6 +105,7 @@ impl WallpaperDecodeService {
             revision: 0,
             pending: None,
             ready: None,
+            completed: None,
         })
     }
 
@@ -117,6 +119,9 @@ impl WallpaperDecodeService {
     ) -> Result<Option<WallpaperDecodeKey>, WallpaperDecodeServiceError> {
         let asset_id = asset.map(WallpaperAsset::id);
         if asset_id == self.requested_asset {
+            if let Some(completed) = self.completed {
+                return Ok(Some(completed));
+            }
             if let Some(ready) = self.ready.as_ref() {
                 return Ok(Some(ready.key()));
             }
@@ -136,6 +141,7 @@ impl WallpaperDecodeService {
         self.requested_asset = asset_id;
         self.pending = None;
         self.ready = None;
+        self.completed = None;
 
         let Some(asset) = asset else {
             return Ok(None);
@@ -194,6 +200,13 @@ impl WallpaperDecodeService {
                 ))
             }
         }
+    }
+
+    /// Transfers completed pixels to the renderer without cloning the RGBA buffer.
+    pub fn take_ready(&mut self) -> Option<DecodedWallpaper> {
+        let ready = self.ready.take()?;
+        self.completed = Some(ready.key());
+        Some(ready)
     }
 
     pub fn ready(&self) -> Option<&DecodedWallpaper> {
