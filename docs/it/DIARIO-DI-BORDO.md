@@ -843,3 +843,11 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Aggiunti test per rifiutare coordinate del puntatore non finite. Restano i test esistenti su spazi tra monitor, bordi, origini negative e scale differenti.
 - Nessuna modifica intenzionale alla semantica del puntatore, al routing input, al layout monitor, alle dipendenze o all'API pubblica.
 - Modifiche pubblicate su main. Non eseguiti Cargo fmt/check/test/build né CI: resta necessaria la verifica locale su Fedora. Nessuna ISO generata.
+
+
+## 24 novembre 2026 — Validazione metadati JPEG SOF
+
+- Rafforzato il parser dei metadati JPEG dello sfondo incorporato: il segmento Start Of Frame deve dichiarare un numero di componenti diverso da zero e una lunghezza esattamente coerente con la struttura JPEG SOF (8 byte più 3 byte per componente).
+- Aggiunti test unitari per un frame minimo valido a un componente, una tabella componenti troncata e un conteggio componenti nullo.
+- È soltanto validazione dei metadati: non decodifica i pixel e non approva il backend FFI TurboJPEG. La prova ABI su Fedora e Debian 13 resta obbligatoria prima di aggiungere il decoder Rust.
+- Nessuna dipendenza o manifest modificati. Non eseguiti build, format, check, test, CI o ISO.
