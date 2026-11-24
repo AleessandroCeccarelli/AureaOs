@@ -1164,3 +1164,15 @@ L'audit è statico: nessuna prova di hotplug o cambio VT è stata eseguita sul d
 5. Riprendere l'audit del termine dei pointer grab in caso di hot-unplug.
 
 Nessuna build, test, rustfmt o CI avviati. Nessuna dipendenza runtime aggiunta. Debian 13 Trixie resta la piattaforma obiettivo; Fedora resta l'ambiente di sviluppo.
+
+
+## 24 novembre 2026 — Prima pipeline riproducibile per le icone Trash
+
+- Aggiunto `tools/assets/render-trash-icons.sh`, uno script Bash indipendente dalla directory corrente che genera gli export PNG delle sei SVG Trash approvate (Light/Dark × Empty/Half/Full).
+- Sono previste otto dimensioni quadrate: 16, 24, 32, 48, 64, 96, 128 e 256 pixel; totale 48 file.
+- Il renderer è fissato a `resvg 0.45.1`. Lo script rifiuta versioni diverse e verifica presenza file, firma PNG, dimensioni esatte e formato 8-bit RGBA.
+- Verificata la disponibilità Debian 13 Trixie del pacchetto `resvg 0.45.1-1` (amd64). Licenza upstream Apache-2.0 OR MIT. Fedora non ha un pacchetto ufficiale confermato; è documentata la possibilità di installare la stessa versione con Cargo, da valutare per costo di compilazione sul laptop.
+- `resvg` è esclusivamente un tool host per generare asset statici. Non viene aggiunto al runtime AureaOS, a Cargo.toml o al rootfs.
+- Aggiornati README delle icone e registro dipendenze IT/EN. Il tool resta candidato finché gli export non saranno generati e ispezionati visivamente.
+- Commit principali: `be04164b` (script), `70409c7d` (validazione PNG), `8c17ffc1`, `cdac2ab4`, `33ed98bd`, `67e2278b` (documentazione).
+- Non eseguiti lo script, build, test, rustfmt o CI. Nessun PNG generato e nessuna dipendenza runtime aggiunta.
