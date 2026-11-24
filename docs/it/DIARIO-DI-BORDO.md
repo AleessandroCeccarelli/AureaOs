@@ -1588,3 +1588,34 @@ Nessuna build, test, rustfmt o CI eseguiti. La verifica resta raggruppata su Fed
 ### Verifica
 
 Nessuna build, cargo check, rustfmt o test eseguiti. Cargo.lock non è stato rigenerato. Le modifiche sorgente vanno verificate insieme al prossimo blocco concordato su Fedora.
+
+
+## 24 novembre 2026 — Registro ufficiale dei formati multimediali
+
+### Decisione di prodotto
+
+Creato un registro unico e vincolante per i formati multimediali che AureaOS decide di supportare. Il registro nasce con la sezione immagini per gli sfondi desktop e sarà esteso in futuro con le decisioni sui codec e contenitori audio/musicali e su eventuali altre categorie multimediali.
+
+Formati immagine ufficialmente approvati per gli sfondi, versione 1.0:
+- JPEG: `.jpg`, `.jpeg`, `.jpe`
+- PNG: `.png` (solo contenuti statici; APNG escluso)
+- BMP: `.bmp`
+- TIFF: `.tif`, `.tiff` (se multipagina, viene utilizzata soltanto la prima pagina)
+- WebP: `.webp` (solo contenuti statici)
+- HEIF/HEIC: `.heif`, `.heic` (solo immagini statiche)
+- AVIF: `.avif` (solo immagini statiche)
+
+GIF è escluso anche come primo fotogramma statico. Sono esclusi anche WebP animato, video, SVG, PDF, RAW, JPEG 2000 e OpenEXR dalla prima politica wallpaper. Non aggiungere estensioni o codec senza una decisione esplicita e una revisione Debian, licenze, dipendenze, limiti e test.
+
+### Documenti ufficiali creati
+
+- `docs/architecture/MEDIA-FORMATS.md` — registro principale in inglese.
+- `docs/it/FORMATS-MULTIMEDIALI.md` — variante italiana.
+
+Il registro distingue approvazione del formato e stato reale dell'implementazione: HEIF/HEIC e AVIF sono approvati come obiettivo di prodotto, ma i rispettivi adapter di decodifica devono ancora essere realizzati e verificati. Il codice dei decoder raster già presente richiede ancora la verifica concordata su Fedora. Nessun formato audio o musicale è ancora approvato: la sezione è predisposta per decisioni future.
+
+Aggiornati anche `docs/architecture/AUREA-MEDIA-SERVICE.md` e `docs/design/WALLPAPER-SYSTEM.md` per rimandare al registro centrale e rimuovere le precedenti indicazioni contraddittorie su GIF, JPEG 2000 e OpenEXR.
+
+### Verifica
+
+Documentazione aggiornata su `main`. Nessuna build, cargo check, rustfmt o test eseguiti. Nessuna modifica a Cargo.lock. La verifica dei decoder resta da eseguire in un unico blocco su Fedora, mantenendo Debian 13 come riferimento per le dipendenze.
