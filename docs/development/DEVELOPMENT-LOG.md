@@ -1508,3 +1508,19 @@ The flag currently reaches per-output geometry preparation only. The Vulkan draw
 2. Complete asset mapping for all item categories.
 3. Connect geometry, Vulkan cache and draw pass through focused modules.
 4. Implement visible selection treatment, then connect Shell/Files actions.
+
+
+## 2026-11-24 — Scope of the first usable desktop milestone
+
+The immediate target is deliberately narrower than the long-term desktop architecture. The first usable session must show only the desktop background, a working pointer and one Trash icon at the upper-left, with visible selection feedback on click.
+
+- The desktop model already contains exactly one default Trash item, ID `system:trash`, at global logical position `(32, 32)`. Do not duplicate or reposition it.
+- Pointer movement, buttons, double-click recognition and wheel input already have code paths; real laptop validation is still pending.
+- The selection flag reaches per-output icon geometry, but no visible selection treatment is drawn yet.
+- The asset resolver, geometry and dedicated Vulkan cache are preparatory and are not connected to the draw pass.
+- The 24 generated Trash RGBA8 files have not yet been exported or inspected. Generate and inspect them on Fedora before renderer integration.
+- File, Folder and Application icons, context menus, drag-and-drop and item opening are explicitly deferred.
+- Runtime loading must use an explicit installed asset root and happen outside the frame loop. Do not rely on the process working directory or read assets on every frame.
+- Insert the Trash icon once in the shared composition path used by direct Vulkan and CPU-upload compatibility, between wallpaper and Wayland surfaces.
+
+No build, tests, rustfmt or CI were run. Verification remains grouped on Fedora after integration and asset generation. The Trash is not yet claimed to be visible or hardware-validated.
