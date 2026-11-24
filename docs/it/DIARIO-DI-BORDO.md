@@ -1363,3 +1363,15 @@ Verifica soltanto statica dei percorsi e delle dipendenze. Nessuna build, test, 
 - Nessuna dipendenza aggiunta.
 
 Commit: `d0ea103b`, `bd5a6e28`, `bf415144`. Solo revisione statica; nessuna build, test, rustfmt, cargo check o CI.
+
+
+## 24 novembre 2026 — Correzione del percorso errori del puntatore Vulkan
+
+- Sostituito l'errore Vulkan sintetico `ERROR_UNKNOWN` usato quando un upload completato non contiene texture con la variante esplicita `EmptyUpload`. Un risultato vuoto è un errore del contratto di upload, non un errore restituito dal driver.
+- Allineato il compositor al nome attuale della variante `NativeCursor`, introdotta durante l'estrazione del ciclo di vita del puntatore.
+- Reso visibile al livello di composizione Vulkan il tipo di errore della cache pipeline, così il pass può distinguere gli errori texture e preservare la classificazione `ERROR_DEVICE_LOST`.
+- Nessuna dipendenza aggiunta e nessuna modifica al comportamento del normale percorso frame.
+
+Commit: `30397783`, `04c3aed5`, `552a342b`.
+
+Verifica statica dei percorsi e delle corrispondenze tra tipi. Nessuna build, test, rustfmt, cargo check o CI eseguiti. La compilabilità resta da verificare nel blocco concordato su Fedora.
