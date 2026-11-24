@@ -779,3 +779,15 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - No always-on monolithic daemon for milestone 1. Keep network transfers outside compositor, render thread, Aurea Media decoder and GStreamer pipeline.
 - First milestone is local file/link/text transfer only. No live media streaming, cloud relay, message/notification/contact sync or automatic clipboard sharing.
 - Docs created EN/IT; strategy, dependency registers, catalog, README and diary updated. No Rust/Cargo source changes and no checks run.
+
+## AUREA SHARE ONLINE — SERVICE INTEGRATIONS — 2026-11-24
+
+- Read docs/architecture/AUREA-SHARE-ONLINE-INTEGRATIONS.md and its Italian counterpart before implementation.
+- User intent: from Fides or an image/PDF/media/document viewer, press Share and send/publish the currently selected local content to an online service without manually opening the destination app and reselecting/attaching the file.
+- This is distinct from Aurea Link, which is local device-to-device transfer. Aurea Share includes online service adapters.
+- Use official APIs only for supported account types/actions; fallback to official share/deep link or registered desktop app handoff. Never private endpoints, scraping, browser automation to evade limits or silent sending.
+- Provider caveats: Telegram Bot API is not personal-account messaging; Telegram API/TDLib imply custom-client scope. WhatsApp Cloud API is Business Platform, not generic personal WhatsApp. Facebook Graph publishing is Page-oriented. Instagram publishing targets eligible Professional accounts. Reddit requires OAuth and may require explicit access approval; commercial use needs written permission. YouTube Data API uploads to authenticated channels, not chat attachments.
+- Every adapter declares supported content/actions, account class, OAuth scopes, MIME/size/format limits, quotas, approval/commercial restrictions and whether final confirmation is required.
+- OAuth: PKCE where supported, least privilege, system credential store, token revocation, no embedded confidential secrets. Always show account, destination, file and visibility before action.
+- Keep online provider adapters outside compositor, decoder and GStreamer pipeline. Begin with core contracts and one provider at a time; no daemon without a demonstrated need.
+- EN/IT architecture docs created; product catalog, universal technology strategy, dependency registers, README and diaries updated. No Rust/Cargo implementation, dependency, OAuth registration or tests were added.
