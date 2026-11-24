@@ -700,3 +700,30 @@ Nessuna dipendenza è stata aggiunta ai manifest Cargo o ai lockfile. Nessuna im
 - La 0.5.16-rc3 è una pre-release e non viene accettata come dipendenza di produzione.
 - Aggiornati entrambi i registri: zune-jpeg 0.5.15 è esplicitamente bloccato; attendere una release stabile corretta e ripetere la revisione di sicurezza, compatibilità e limiti del decoder.
 - Nessuna dipendenza o codice decoder aggiunto. Nessuna build o test eseguiti.
+
+
+
+## 24 novembre 2026 — Valutazione adapter nativo libjpeg-turbo
+
+### Risultati della ricerca
+- Confermata la disponibilità su Debian 13 Trixie amd64 di `libturbojpeg0` e `libturbojpeg0-dev` versione `1:2.1.5-4`.
+- Confermati su Fedora i pacchetti di sviluppo `libjpeg-turbo-devel` e `turbojpeg-devel`; i flussi esaminati riportano la serie 3.1.x.
+- Le note di rilascio upstream della serie 3.x descrivono un wrapper di compatibilità TurboJPEG 2.x. È quindi plausibile usare una piccola interfaccia FFI AureaOS basata sull'API legacy comune, senza dipendere dai binding Rust che espongono l'API 3.0 `tj3*`.
+- La compatibilità esatta non è ancora dimostrata: occorre verificare simboli, header, ABI e linking contro Debian 2.1 e Fedora 3.1 reali.
+- `jpeg-decoder` 0.3.2 è un'alternativa Rust pura, ma upstream la dichiara in maintenance mode; Debian Trixie fornisce 0.3.0.
+- `zune-jpeg` 0.5.15 resta bloccato per la regressione cromatica; la correzione è stata individuata soltanto in una pre-release 0.5.16-rc3.
+
+### Decisione provvisoria
+- Registrare libjpeg-turbo con adapter FFI AureaOS come Candidato principale, non ancora Approvato.
+- Tenere l'FFI unsafe confinato in un modulo piccolo; il resto del progetto deve ricevere soltanto un risultato sicuro `WallpaperPixels`.
+- Decodifica su worker limitato, mai nel render thread.
+- Prima dell'implementazione verificare ABI/simboli su entrambe le distribuzioni, runtime package nella base Debian, licenza/advisory, gestione errori e limiti memoria.
+
+### Stato e verifiche
+- Aggiornati i registri dipendenze EN/IT con la valutazione e i controlli ancora aperti.
+- Nessuna dipendenza aggiunta a Cargo.toml o Cargo.lock; nessun codice Rust modificato.
+- Nessun pacchetto installato; nessun build, format, check, test o CI eseguito.
+- HEAD di partenza della sessione: `66a0b6ce0657a8be35baa169ae1cb6d3fa5420eb` su `main`.
+
+### Prossima azione
+Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pacchetti Debian 13 e Fedora, quindi definire il contratto dell'adapter senza ancora collegarlo al renderer Vulkan.
