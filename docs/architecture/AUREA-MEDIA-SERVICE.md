@@ -202,3 +202,8 @@ Native cursor texture initialization now retains the typed `VulkanShmTextureErro
 The compatibility conversion from `VulkanQueueSubmitError` to `vk::Result` now prioritizes `ERROR_DEVICE_LOST` whether it is reported by fence waiting or by the `device_wait_idle` fallback. This prevents older diagnostic/offscreen and frame-acquisition callers that still use `submit_and_wait()` from masking a fatal device-loss result. Two focused unit tests were added. No build, formatting, tests or CI were run.
 
 The result conversion remains a `const fn`; fatal-result selection uses pattern matching rather than non-const equality operators. Follow-up commit: `2acb358a`.
+
+
+### Native cursor upload is now asynchronous — 2026-11-24
+
+The first native cursor texture no longer uses the synchronous `VulkanShmTexture::from_snapshot` convenience path. The surface pipeline cache submits the cursor snapshot with `submit_snapshots`, retains the fence-backed `VulkanPendingUpload`, and polls completion on subsequent frames. Until the fence signals, the compositor skips drawing the cursor rather than blocking the frame callback or sampling an incomplete image. Once complete, the cache publishes the texture with shared `Arc` ownership. Typed Vulkan errors, including fatal `ERROR_DEVICE_LOST`, continue through the surface-composition error path. No dependencies changed. No build, formatting, tests or CI were run; local Fedora verification remains pending.
