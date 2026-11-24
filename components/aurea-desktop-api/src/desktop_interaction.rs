@@ -8,11 +8,13 @@
 use std::sync::mpsc::{self, Receiver, SendError, Sender, TryRecvError};
 
 /// A desktop-level intent resolved from a physical input gesture.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum DesktopInteraction {
     WorkspaceChanged { index: u8 },
     ShowOverview,
     ShowContextMenu,
+    DesktopItemSelected { id: String },
+    DesktopSelectionCleared,
 }
 
 /// Sends semantic interactions from the compositor to the shell.
