@@ -137,10 +137,6 @@ impl VulkanWallpaperTextureCache {
         (self.selected == Some(*key)).then_some(texture.as_ref())
     }
 
-    pub(crate) fn selected_key(&self) -> Option<WallpaperTextureKey> {
-        self.selected
-    }
-
     pub(crate) fn clear(&mut self) {
         self.selected = None;
         self.ready = None;
