@@ -71,6 +71,7 @@ mod texture_binding;
 mod texture_layout;
 mod upload_batch;
 mod upload_buffer;
+mod wallpaper_texture;
 
 use std::{error::Error, fmt};
 
@@ -167,6 +168,7 @@ pub use texture_binding::{
 };
 pub use texture_layout::{VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError};
 pub use upload_buffer::{VulkanUploadBuffer, VulkanUploadError};
+pub use wallpaper_texture::{VulkanWallpaperTexture, VulkanWallpaperTextureError};
 
 pub(super) use device_owner::VulkanDeviceOwner;
 pub(super) use pending_upload::VulkanPendingUpload;
