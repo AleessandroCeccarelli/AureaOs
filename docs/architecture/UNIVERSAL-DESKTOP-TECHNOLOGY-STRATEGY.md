@@ -154,6 +154,21 @@ A Wayland-only and Vulkan-only product has real compatibility costs. AureaOS mus
 - Publish a compatibility matrix with tested application, architecture, runtime, Wayland protocol and graphics requirements.
 - If an application requires X11/XWayland or OpenGL, mark it incompatible or unsupported unless a separately approved solution exists. Do not quietly violate the product's Wayland/Vulkan decisions.
 
+## 6.1 Cross-device continuity and sharing
+
+AureaOS should exchange files, media and links with Android, iOS/iPadOS, macOS and other desktops. Keep two separate product concepts:
+
+- **Aurea Link:** peer discovery, explicit pairing, local transfer, integrity, safe receive storage and device trust.
+- **Aurea Share:** the desktop Share action and destination registry, handing user-selected content to Aurea Link or an installed application such as Telegram/WhatsApp. The user confirms the final recipient/action in that application; do not automate private messaging APIs.
+
+First interoperability candidate: the published LocalSend Protocol v2.x (review current v2.2 spec), using authenticated HTTPS app-to-app transfer, receiver approval, integrity checks and bounded streaming. Discovery is not authentication. Provide manual IP/QR fallback for networks that block multicast. Review protocol version, license, upstream security and Debian compatibility before implementation; do not copy or bundle LocalSend application code by assumption.
+
+Evaluate KDE Connect as an optional peer ecosystem, not a required KDE/Qt desktop dependency. A future Aurea Link mobile companion can integrate Android Sharesheet and iOS Share Extensions; macOS interoperability should initially use existing compatible clients. AirDrop/AWDL/OWL remains experimental research and is not a Roma 1.0 promise.
+
+Do not create an always-on monolithic daemon for the first milestone. Start with small Rust libraries and session-scoped listeners. Pairing, consent, sender/file summary, collision-safe names, bounded temporary storage, hash verification, atomic publication, cancellation and revocation are mandatory. No silent overwrite, auto-open, clipboard/message/contact access or unauthenticated fallback.
+
+The first milestone is local file/link/text handoff, not live media streaming, cloud sync or message mirroring. Full design: [Aurea Link and Aurea Share](AUREA-LINK-SHARE.md).
+
 ## 7. Native UI toolkit decision
 
 Do not select a toolkit because it is popular or because it is written in Rust. A native AureaOS toolkit must be evaluated against:
@@ -212,5 +227,6 @@ The quality bar applies to the default experience, not only to an optional acces
 5. Establish accessibility contracts in Human Interfaces and evaluate AT-SPI2/AccessKit before choosing the native widget toolkit.
 6. Prototype candidate text/UI stacks with the actual Wayland/Vulkan constraints before making a toolkit decision.
 7. Build the application compatibility matrix and curate the Roma 1.0 productivity/media app set.
+8. Review and prototype Aurea Link interoperability before approving any network-transfer dependency or companion application.
 
 No new crate, system package, daemon or UI toolkit is approved solely by this strategy document. Each implementation still requires a focused design, dependency-register entry, tests and Fedora/Debian verification.
