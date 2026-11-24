@@ -52,6 +52,16 @@ The desktop should feel like one integrated environment rather than a collection
 
 AureaOS should provide sensible defaults while allowing users to retain control over their system.
 
+## A Desktop for Everyone
+
+AureaOS is designed for people, not for a single technical demographic. Children, older adults, first-time users, students, creative professionals, office workers, administrators and developers should be able to use the same coherent desktop.
+
+The experience must be **simple by default, capable when needed, and accessible from the beginning**. We will not create rigid age-based editions or hide capabilities based on assumptions about users. Clear language, readable interfaces, large and consistent interaction targets, keyboard access, assistive technology, safe defaults, undo and recovery benefit everyone.
+
+Accessibility is an architectural requirement for Aurea Desktop, Human Interfaces and first-party applications, not a final polish phase. Multimedia and productivity are core desktop capabilities. Advanced developer and administrator workflows remain available without dominating the default experience.
+
+The full product and technology direction is documented in [Universal Desktop and Technology Strategy](docs/architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md). Its technology proposals are not claims of implementation or release readiness.
+
 ## Our Own Product Identity
 
 AureaOS is responsible for its own desktop experience and the system applications that define its identity.
