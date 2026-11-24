@@ -1020,3 +1020,14 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - La rimozione dello sfondo continua a togliere immediatamente la texture dalla vista senza compromettere la durata delle risorse GPU pendenti.
 - Commit: `58e37b8d`.
 - Nessuna build, test, rustfmt o CI avviata. La verifica resta raggruppata al termine del blocco.
+
+
+## 24 novembre 2026 — Gestione fatale di Vulkan DEVICE_LOST
+
+- La perdita del device durante il polling delle fence wallpaper viene ora propagata come errore tipizzato, senza appiattirla in un generico errore texture.
+- L'errore scanout conserva un indicatore esplicito di device loss fino al dispatcher di rendering.
+- Se il percorso Vulkan diretto segnala device loss, il dispatcher interrompe il rendering dell'output: non tenta il fallback CPU, perché usa lo stesso logical device Vulkan e non può recuperare un dispositivo perso.
+- Lo scanout evita inoltre cancel, reacquire e retire del framebuffer quando il completamento GPU è incerto. Queste operazioni potrebbero invocare altro lavoro Vulkan o liberare risorse ancora referenziate dalla GPU.
+- È una politica fail-stop, non una ricreazione del device. La ricostruzione richiederà un lifecycle superiore capace di ricreare device, cache, frame pool e binding degli output.
+- Commit: `80f7a7b1`, `5dc7503e`, `ea505973`, `caf159cf`, `5048c861`, `5cc97b6c`.
+- Nessuna build, test, rustfmt o CI avviata.
