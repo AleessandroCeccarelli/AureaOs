@@ -13,7 +13,7 @@ use super::{
 ///
 /// Output discovery, window management, input and Vulkan resource ownership
 /// remain outside this manager.
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq)]
 pub struct DesktopManager {
     theme: DesktopTheme,
     background: DesktopBackground,
