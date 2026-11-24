@@ -242,7 +242,7 @@ mod tests {
                 completed = true;
                 break;
             }
-            std::thread::yield_now();
+            std::thread::sleep(std::time::Duration::from_millis(1));
         }
 
         assert!(completed, "wallpaper decode should complete");
@@ -260,7 +260,7 @@ mod tests {
             if service.pending_key().is_none() {
                 break;
             }
-            std::thread::yield_now();
+            std::thread::sleep(std::time::Duration::from_millis(1));
         }
         assert!(service.ready().is_none());
     }
