@@ -284,3 +284,16 @@ Questo registro è la fonte condivisa di verità per le decisioni sulle dipenden
 ### Esclusione ambito
 
 Nessun formato video o libreria di riproduzione è selezionato per gli sfondi. GStreamer, plugin video FFmpeg, H.264, HEVC video e AV1 video restano fuori dall'ambito degli sfondi statici di Aurea Media.
+
+
+## Dipendenza decoder raster selezionata — 24 novembre 2026
+
+- **Crate:** image 0.25.10.
+- **Stato:** selezionata in Cargo.toml di aurea-media; Cargo.lock non è stato rigenerato in questa sessione perché l'utente ha chiesto di non avviare build/check/test. Il lockfile dovrà essere aggiornato su Fedora prima di una build bloccata.
+- **Sole feature decoder abilitate:** bmp, gif, png, tiff, webp. default-features = false; Rayon, AVIF, EXR, DDS, HDR e gli altri formati non necessari restano disabilitati.
+- **Scopo:** adapter Rust per BMP, GIF, PNG, TIFF e WebP. JPEG resta sul backend TurboJPEG esistente; non viene aggiunto un secondo decoder JPEG.
+- **Evidenza upstream:** image 0.25.10 documenta questi formati e raccomanda di disabilitare le feature predefinite nelle librerie. Limits offre limiti stretti per larghezza/altezza massime; il limite di allocazione è best-effort e alcuni decoder possono ignorarlo.
+- **Licenza:** espressione di licenza del crate e licenze di tutte le dipendenze transitive abilitate da verificare sul grafo Cargo risolto prima dell'approvazione alla distribuzione.
+- **Debian 13:** dipendenza Rust; questa selezione non richiede pacchetti codec di sistema. Build e comportamento runtime su Trixie non ancora verificati.
+- **Nota sicurezza:** AureaOS applica limiti sugli assi prima della decodifica e verifica separatamente pixel, byte RGBA8 e lunghezza esatta dell'output. Poiché max_alloc è non stretto per alcuni decoder, non può essere considerato da solo una barriera di memoria assoluta. La coda worker resta limitata.
+- **Da completare:** rigenerare Cargo.lock su Fedora, controllare grafo e licenze esatti, aggiungere fixture e test per formati/limiti, poi eseguire un unico ciclo pianificato di build e test.
