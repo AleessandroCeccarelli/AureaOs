@@ -68,3 +68,7 @@ AureaOS now distinguishes `InputDeviceKind::Tablet` (a pen/tablet-tool device wi
 ## Tablet output disconnect policy — 2026-11-24
 
 Pen-tablet output mappings now follow the same no-surprise rule as touchscreen mappings. When an explicitly assigned output disconnects, the assignment is retained as unavailable and the tablet resolves to no target; it is not silently changed to the full desktop or another remaining output. An explicit reassignment restores routing, while an explicit unassignment restores the default full-desktop mode. Device removal clears both the assignment and unavailable state. This is a source-level policy change; runtime behavior remains pending grouped Fedora validation.
+
+## Pen-tablet motion and monitor gaps — 2026-11-24
+
+When a tablet is mapped to the full desktop, the rectangular calibration extent can span empty gaps between non-adjacent or offset monitors. Tablet coordinates are now constrained against the actual enabled output rectangles after calibration. A point falling in a gap is moved to the nearest valid output edge, following the same geometry policy already used by relative pointer motion. For a tablet explicitly mapped to one output, the candidate geometry is restricted to that output, so the pen cannot escape its assigned display. This does not change touchscreen transforms or absolute-pointer routing.
