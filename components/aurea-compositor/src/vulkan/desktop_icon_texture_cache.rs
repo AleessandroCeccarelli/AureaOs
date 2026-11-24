@@ -37,6 +37,7 @@ pub(crate) struct DesktopIconTextureKey {
 pub(crate) enum VulkanDesktopIconTextureCacheError {
     Texture(VulkanShmTextureError),
     CacheBudgetExceeded,
+    InvalidAssetDimensions,
 }
 
 impl fmt::Display for VulkanDesktopIconTextureCacheError {
@@ -45,6 +46,9 @@ impl fmt::Display for VulkanDesktopIconTextureCacheError {
             Self::Texture(error) => write!(formatter, "Desktop icon texture upload failed: {error}"),
             Self::CacheBudgetExceeded => {
                 formatter.write_str("Desktop icon textures exceed the cache resource budget")
+            }
+            Self::InvalidAssetDimensions => {
+                formatter.write_str("Desktop icon asset dimensions do not match its cache key")
             }
         }
     }
@@ -90,10 +94,13 @@ impl VulkanDesktopIconTextureCache {
     ) -> Result<(), VulkanDesktopIconTextureCacheError> {
         self.reap_completed_uploads()?;
         let requested_keys = requested.iter().map(|(key, _)| *key).collect::<HashSet<_>>();
-        self.entries.retain(|key, _| requested_keys.contains(key));
+        let pending_keys = self.pending_uploads.iter()
+            .flat_map(|batch| batch.keys.iter().copied())
+            .collect::<HashSet<_>>();
+        self.entries.retain(|key, _| requested_keys.contains(key) || pending_keys.contains(key));
         self.recalculate_cached_bytes();
 
-        if requested.len() > MAX_DESKTOP_ICON_TEXTURES {
+        if requested_keys.len() > MAX_DESKTOP_ICON_TEXTURES {
             return Err(VulkanDesktopIconTextureCacheError::CacheBudgetExceeded);
         }
 
@@ -101,6 +108,13 @@ impl VulkanDesktopIconTextureCache {
         let mut missing_bytes = 0usize;
         let mut seen = HashSet::new();
         for (key, snapshot) in requested {
+            if snapshot.width() != key.pixel_size
+                || snapshot.height() != key.pixel_size
+                || key.pixel_size == 0
+                || key.pixel_size > 256
+            {
+                return Err(VulkanDesktopIconTextureCacheError::InvalidAssetDimensions);
+            }
             if !seen.insert(*key) {
                 continue;
             }
