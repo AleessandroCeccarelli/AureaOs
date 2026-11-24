@@ -1375,3 +1375,18 @@ Commit: `d0ea103b`, `bd5a6e28`, `bf415144`. Solo revisione statica; nessuna buil
 Commit: `30397783`, `04c3aed5`, `552a342b`.
 
 Verifica statica dei percorsi e delle corrispondenze tra tipi. Nessuna build, test, rustfmt, cargo check o CI eseguiti. La compilabilità resta da verificare nel blocco concordato su Fedora.
+
+
+## 24 novembre 2026 — Primo collegamento del Cestino al Desktop
+
+- Aggiunto `trash/session_state.rs` in Aurea Desktop: legge lo snapshot iniziale del servizio Trash dell’utente e lo converte nel contratto condiviso `DesktopTrashState`.
+- Il composition root `aurea-desktop` acquisisce questo valore prima di creare il compositor. Se il servizio non è disponibile, registra un avviso e lascia il desktop avviarsi senza bloccare la sessione.
+- `WaylandCompositorFactory` accetta il valore semantico iniziale; `WaylandServer` lo applica al modello desktop condiviso prima dell’avvio dell’event loop.
+- Il compositor continua a non accedere al filesystem: riceve soltanto Empty/PartiallyFull/Full già calcolato dal servizio.
+- Non sono state aggiunte dipendenze. Il servizio crea/usa la Trash home standard sotto `$HOME/.local/share/Trash`.
+
+**Limite esplicito:** questo è un aggiornamento iniziale all’avvio. Non è ancora presente un watcher o un meccanismo di refresh durante la sessione; il contenuto può diventare obsoleto dopo nuove operazioni di eliminazione/ripristino.
+
+Commit: `46d2c1d6`, `1d3f8fa4`, `611720ee`, `cc7b860e`, `5930c025`.
+
+Solo controllo statico delle interfacce e dei punti di passaggio. Nessuna build, test, rustfmt, cargo check o CI.
