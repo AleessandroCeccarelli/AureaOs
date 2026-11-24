@@ -109,7 +109,7 @@ pub(super) fn clear_and_readback(
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
     command_buffer
         .submit_and_wait()
-        .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
+        .map_err(VulkanSurfaceCompositionError::from_vk_result)?;
 
     Ok(())
 }
