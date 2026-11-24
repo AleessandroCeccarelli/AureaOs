@@ -5,13 +5,12 @@
 
 use crate::{jpeg, raster, DecodeError, DecodeLimits};
 
-/// Encoded image format accepted by the media service.
+/// Encoded still-image format accepted by the media service.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageFormat {
     Jpeg,
     Png,
     Bmp,
-    Gif,
     Tiff,
     WebP,
 }
@@ -41,32 +40,15 @@ impl DecodedImage {
         }
     }
 
-    pub const fn width(&self) -> u32 {
-        self.width
-    }
-
-    pub const fn height(&self) -> u32 {
-        self.height
-    }
-
-    pub const fn format(&self) -> PixelFormat {
-        self.format
-    }
-
-    pub fn pixels(&self) -> &[u8] {
-        &self.pixels
-    }
-
-    pub fn byte_len(&self) -> usize {
-        self.pixels.len()
-    }
-
-    pub fn into_pixels(self) -> Vec<u8> {
-        self.pixels
-    }
+    pub const fn width(&self) -> u32 { self.width }
+    pub const fn height(&self) -> u32 { self.height }
+    pub const fn format(&self) -> PixelFormat { self.format }
+    pub fn pixels(&self) -> &[u8] { &self.pixels }
+    pub fn byte_len(&self) -> usize { self.pixels.len() }
+    pub fn into_pixels(self) -> Vec<u8> { self.pixels }
 }
 
-/// Decodes synchronously under explicit limits.
+/// Decodes a still image synchronously under explicit limits.
 ///
 /// Call from a bounded worker, never from a compositor/rendering thread.
 pub fn decode(
@@ -83,8 +65,9 @@ pub fn decode(
 
     let decoded = match format {
         ImageFormat::Jpeg => jpeg::decode(input, limits),
-        ImageFormat::Png | ImageFormat::Bmp | ImageFormat::Gif | ImageFormat::Tiff
-        | ImageFormat::WebP => raster::decode(format, input, limits),
+        ImageFormat::Png | ImageFormat::Bmp | ImageFormat::Tiff | ImageFormat::WebP => {
+            raster::decode(format, input, limits)
+        }
     }?;
 
     Ok(DecodedImage::new(decoded.0, decoded.1, decoded.2))
