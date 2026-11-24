@@ -20,6 +20,10 @@ use super::{
     VulkanPendingUpload, VulkanShmTexture, VulkanTextureBindingError, VulkanTextureBindingPool,
     VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
     surface_texture_cache::{VulkanSurfaceTextureCache, VulkanSurfaceTextureCacheError},
+    desktop_icon_texture_cache::{
+        DesktopIconTextureKey, VulkanDesktopIconTextureCache,
+        VulkanDesktopIconTextureCacheError,
+    },
     wallpaper_texture_cache::{
         VulkanWallpaperTextureCache, VulkanWallpaperTextureCacheError, WallpaperTextureKey,
     },
@@ -65,6 +69,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     sampler: VulkanSampler<'static>,
     texture_cache: VulkanSurfaceTextureCache,
     wallpaper_texture_cache: VulkanWallpaperTextureCache,
+    desktop_icon_texture_cache: VulkanDesktopIconTextureCache,
     wallpaper_decode_service: WallpaperDecodeService,
     native_cursor_texture: Option<Arc<VulkanShmTexture>>,
     pending_cursor_upload: Option<VulkanPendingUpload<Vec<Arc<VulkanShmTexture>>>>,
@@ -80,6 +85,7 @@ impl VulkanSurfacePipelineCache {
             .map_err(VulkanSurfacePipelineCacheError::Sampler)?;
         let texture_cache = VulkanSurfaceTextureCache::new(Arc::clone(&device));
         let wallpaper_texture_cache = VulkanWallpaperTextureCache::new(Arc::clone(&device));
+        let desktop_icon_texture_cache = VulkanDesktopIconTextureCache::new(Arc::clone(&device));
         let wallpaper_decode_service = WallpaperDecodeService::new()
             .map_err(VulkanSurfacePipelineCacheError::WallpaperDecode)?;
 
@@ -91,6 +97,7 @@ impl VulkanSurfacePipelineCache {
             sampler,
             texture_cache,
             wallpaper_texture_cache,
+            desktop_icon_texture_cache,
             wallpaper_decode_service,
             native_cursor_texture: None,
             pending_cursor_upload: None,
@@ -201,6 +208,35 @@ impl VulkanSurfacePipelineCache {
 
     pub(crate) fn surface_texture(&self, surface_id: &ObjectId) -> Option<&VulkanShmTexture> {
         self.texture_cache.texture(surface_id)
+    }
+
+    /// Prepares compositor-owned desktop artwork without using Wayland surface IDs.
+    pub(crate) fn prepare_desktop_icon_textures(
+        &mut self,
+        requested: &[(DesktopIconTextureKey, ShmBufferSnapshot)],
+    ) -> Result<(), VulkanDesktopIconTextureCacheError> {
+        self.desktop_icon_texture_cache.prepare(requested)
+    }
+
+    /// Polls native desktop artwork uploads without blocking the render path.
+    pub(crate) fn poll_desktop_icon_texture_uploads(
+        &mut self,
+    ) -> Result<(), VulkanDesktopIconTextureCacheError> {
+        self.desktop_icon_texture_cache.poll()
+    }
+
+    /// Completes icon uploads before descriptor bindings borrow their image views.
+    pub(crate) fn complete_desktop_icon_texture_uploads(
+        &mut self,
+    ) -> Result<(), VulkanDesktopIconTextureCacheError> {
+        self.desktop_icon_texture_cache.complete_pending_uploads()
+    }
+
+    pub(crate) fn desktop_icon_texture(
+        &self,
+        key: DesktopIconTextureKey,
+    ) -> Option<&VulkanShmTexture> {
+        self.desktop_icon_texture_cache.texture(key)
     }
 
     /// Advances background decoding and transfers completed pixels to the GPU upload cache.
