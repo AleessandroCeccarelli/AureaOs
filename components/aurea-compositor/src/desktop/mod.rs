@@ -9,6 +9,7 @@ mod background;
 mod items_snapshot;
 #[allow(dead_code)] // Asset descriptors are staged until Fedora-generated RGBA8 assets are available.
 mod icon_assets;
+#[allow(dead_code)] // Loader is staged until the runtime asset root is supplied by the composition root.
 mod icon_asset_loader;
 #[allow(dead_code)] // Geometry is staged before the dedicated desktop texture renderer.
 mod item_geometry;
