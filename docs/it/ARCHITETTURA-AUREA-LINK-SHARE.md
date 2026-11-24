@@ -25,7 +25,7 @@ Perimetro iniziale: file, più file, directory quando sicuro, link e testo sempl
 
 ### Aurea Share — esperienza di condivisione
 
-Gestisce l'azione Condividi e il registro delle destinazioni, non il protocollo di trasporto. Può inviare contenuti ad Aurea Link, aprire app installate compatibili come Telegram/WhatsApp, offrire un'azione coerente in Fides e nelle app AureaOS e ricevere contenuti da target registrati/app companion.
+Gestisce l'azione Condividi e il registro delle destinazioni, non il protocollo di trasporto. Può inviare contenuti ad Aurea Link e consegnarli a integrazioni di servizi online (API ufficiali/OAuth, share/deep link supportati o applicazioni desktop registrate). Telegram, WhatsApp, Facebook, Instagram, Reddit e YouTube hanno capacità API e limitazioni account differenti: non considerarli intercambiabili e non promettere invii diretti da account personali. Vedi [Aurea Share Online](ARCHITETTURA-AUREA-SHARE-ONLINE.md) per il modello capacità e la ricerca provider.
 
 Non presumere che ogni app desktop Linux supporti uno share sheet universale. Iniziare dalle app AureaOS e da adapter/desktop entry espliciti. XDG Desktop Portal resta il confine per accesso ai file e permessi sandbox; FileChooser non è un portale di condivisione.
 
