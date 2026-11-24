@@ -14,6 +14,7 @@ pub(crate) enum VulkanSurfaceCompositionError {
     Texture(String),
     Descriptor(String),
     Command(String),
+    DeviceLost(smithay::reexports::ash::vk::Result),
     InvalidSurfaceGeometry,
     TooManySurfaces,
     FrameMemoryLimitExceeded,
@@ -30,6 +31,7 @@ impl fmt::Display for VulkanSurfaceCompositionError {
                 formatter,
                 "Surface texture descriptor creation failed: {error}"
             ),
+            Self::DeviceLost(error) => write!(formatter, "Vulkan device was lost during surface composition: {error:?}"),
             Self::Command(error) => {
                 write!(formatter, "Surface composition command failed: {error}")
             }
