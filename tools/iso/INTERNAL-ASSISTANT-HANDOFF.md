@@ -800,3 +800,14 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - Provider capability depends on account class, scopes, app review, region, selected content and current provider limits.
 - Share chooser remains useful with zero linked accounts via supported desktop handoff; offer account connection only when an API-backed action needs it.
 - Read the account model sections in both EN/IT Aurea Share Online architecture documents before implementation.
+
+
+## DESKTOP — POINTER MOTION OPTIMIZATION — 2026-11-24
+
+- Audited the existing libinput → compositor pointer path and the multi-output coordinate constraint helper.
+- Removed the temporary output-geometry Vec built in `AureaCompositor::handle_pointer_motion`; enabled output geometry is now passed directly as an iterator.
+- Reworked `constrain_to_outputs` to evaluate outputs in one pass without collecting another Vec. It returns immediately for a point already inside an output, otherwise retaining only the nearest clamped point.
+- Added unit coverage for non-finite requested pointer coordinates. Existing tests cover no outputs, gaps, edges, negative origins and mixed-scale layouts.
+- Commits on main: `e0fee072` (single-pass constraint), `182ba0d5` (stream output geometry), `ced13560` (non-finite coordinate test).
+- No behavior/API/dependency change intended. No Cargo fmt/check/test/build or CI was run. User must verify locally on Fedora; no ISO was generated.
+- Continue the desktop work from the current repository state. Keep Debian 13 as compatibility authority and Fedora as development/build host. Generate and test an ISO only at a meaningful milestone, then validate on real hardware.
