@@ -1078,6 +1078,13 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 
 ## 2026-11-24 — Wallpaper draw integration in Vulkan frame composition
 
+## 2026-11-24 — Wallpaper cache asset identity guard
+
+- Added `VulkanWallpaperTextureCache::texture_for_asset` and a matching surface-cache accessor.
+- The compositor now compares the selected asset ID in `DesktopSnapshot` with the ready texture key before binding or drawing. A stale texture from a previously selected asset can no longer flash while a replacement upload is pending.
+- Commits: `e5faff5a`, `337b403a`, `4bbde807`, `2c2e0e3e`.
+- No decoder or pixel producer is present yet. No Cargo fmt/check/test/build, CI or ISO was run.
+
 - Integrated the selected, upload-complete wallpaper texture into `surface_compositor::render_frame`.
 - The frame creates a descriptor binding for the wallpaper, uses the dedicated format-specific wallpaper pipeline, computes output-local `Fill` geometry from the uploaded texture dimensions, and records the draw immediately after clear and before SHM surfaces/cursor.
 - A ready wallpaper is rendered even when the scene has no windows or cursor; the old clear-only fast path is retained when no ready wallpaper texture exists.
