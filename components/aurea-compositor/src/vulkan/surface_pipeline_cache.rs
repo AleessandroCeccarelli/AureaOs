@@ -34,6 +34,8 @@ pub(crate) enum VulkanSurfacePipelineCacheError {
     Shader(VulkanShaderError),
     Pipeline(VulkanGraphicsPipelineError),
     WallpaperDecode(WallpaperDecodeServiceError),
+    CursorSnapshot(String),
+    CursorTexture(super::VulkanShmTextureError),
 }
 
 impl fmt::Display for VulkanSurfacePipelineCacheError {
@@ -46,6 +48,8 @@ impl fmt::Display for VulkanSurfacePipelineCacheError {
             Self::Shader(error) => write!(formatter, "Surface shader: {error}"),
             Self::Pipeline(error) => write!(formatter, "Surface pipeline: {error}"),
             Self::WallpaperDecode(error) => write!(formatter, "Wallpaper decode service: {error}"),
+            Self::CursorSnapshot(error) => write!(formatter, "Native cursor snapshot: {error}"),
+            Self::CursorTexture(error) => write!(formatter, "Native cursor texture: {error}"),
         }
     }
 }
@@ -279,15 +283,17 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Lazily uploads the compositor-owned arrow once per Vulkan device.
-    pub(crate) fn ensure_native_cursor_texture(&mut self) -> Result<(), String> {
+    pub(crate) fn ensure_native_cursor_texture(
+        &mut self,
+    ) -> Result<(), VulkanSurfacePipelineCacheError> {
         if self.native_cursor_texture.is_some() {
             return Ok(());
         }
 
-        let snapshot =
-            crate::render::cursor::default_cursor_snapshot().map_err(|error| error.to_string())?;
+        let snapshot = crate::render::cursor::default_cursor_snapshot()
+            .map_err(|error| VulkanSurfacePipelineCacheError::CursorSnapshot(error.to_string()))?;
         let texture = VulkanShmTexture::from_snapshot(Arc::clone(&self.device), snapshot)
-            .map_err(|error| error.to_string())?;
+            .map_err(VulkanSurfacePipelineCacheError::CursorTexture)?;
         self.native_cursor_texture = Some(texture);
         Ok(())
     }
