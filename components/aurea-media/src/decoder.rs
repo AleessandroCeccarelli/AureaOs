@@ -3,7 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-use crate::{jpeg, raster, DecodeError, DecodeLimits};
+use crate::{heif, jpeg, raster, DecodeError, DecodeLimits};
 
 /// Encoded still-image format accepted by the media service.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -13,6 +13,8 @@ pub enum ImageFormat {
     Bmp,
     Tiff,
     WebP,
+    Heic,
+    Avif,
 }
 
 /// Pixel layout returned by the media service.
@@ -32,12 +34,7 @@ pub struct DecodedImage {
 
 impl DecodedImage {
     fn new(width: u32, height: u32, pixels: Vec<u8>) -> Self {
-        Self {
-            width,
-            height,
-            format: PixelFormat::Rgba8,
-            pixels,
-        }
+        Self { width, height, format: PixelFormat::Rgba8, pixels }
     }
 
     pub const fn width(&self) -> u32 { self.width }
@@ -56,20 +53,21 @@ pub fn decode(
     input: &[u8],
     limits: DecodeLimits,
 ) -> Result<DecodedImage, DecodeError> {
-    if input.is_empty() {
-        return Err(DecodeError::EmptyInput);
-    }
-    if input.len() > limits.max_input_bytes() {
-        return Err(DecodeError::InputTooLarge);
-    }
+    if input.is_empty() { return Err(DecodeError::EmptyInput); }
+    if input.len() > limits.max_input_bytes() { return Err(DecodeError::InputTooLarge); }
 
     let decoded = match format {
         ImageFormat::Jpeg => jpeg::decode(input, limits),
         ImageFormat::Png | ImageFormat::Bmp | ImageFormat::Tiff | ImageFormat::WebP => {
             raster::decode(format, input, limits)
         }
+        ImageFormat::Heic | ImageFormat::Avif => {
+            #[cfg(feature = "heif")]
+            { heif::decode(input, limits) }
+            #[cfg(not(feature = "heif"))]
+            { let _ = (input, limits); Err(DecodeError::UnsupportedFormat) }
+        }
     }?;
-
     Ok(DecodedImage::new(decoded.0, decoded.1, decoded.2))
 }
 
@@ -80,18 +78,18 @@ mod tests {
 
     #[test]
     fn rejects_empty_input_before_backend() {
-        assert_eq!(
-            decode(ImageFormat::Jpeg, &[], DecodeLimits::default()).unwrap_err(),
-            DecodeError::EmptyInput
-        );
+        assert_eq!(decode(ImageFormat::Jpeg, &[], DecodeLimits::default()).unwrap_err(), DecodeError::EmptyInput);
     }
 
     #[test]
     fn rejects_input_over_limit() {
         let limits = DecodeLimits::new(3, 100, 100, 400);
-        assert_eq!(
-            decode(ImageFormat::Jpeg, &[1, 2, 3, 4], limits).unwrap_err(),
-            DecodeError::InputTooLarge
-        );
+        assert_eq!(decode(ImageFormat::Jpeg, &[1, 2, 3, 4], limits).unwrap_err(), DecodeError::InputTooLarge);
+    }
+
+    #[cfg(not(feature = "heif"))]
+    #[test]
+    fn heif_is_explicitly_unsupported_without_feature() {
+        assert_eq!(decode(ImageFormat::Heic, b"file", DecodeLimits::default()).unwrap_err(), DecodeError::UnsupportedFormat);
     }
 }

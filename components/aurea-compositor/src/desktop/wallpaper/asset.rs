@@ -30,6 +30,8 @@ pub enum WallpaperFormat {
     Bmp,
     Tiff,
     WebP,
+    Heic,
+    Avif,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -168,7 +170,11 @@ fn detect_format(bytes: &[u8]) -> Option<WallpaperFormat> {
     if bytes.len() >= 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
         return Some(WallpaperFormat::WebP);
     }
-    None
+    match aurea_media::detect_heif_format(bytes) {
+        Some(aurea_media::ImageFormat::Heic) => Some(WallpaperFormat::Heic),
+        Some(aurea_media::ImageFormat::Avif) => Some(WallpaperFormat::Avif),
+        _ => None,
+    }
 }
 
 /// Reads JPEG SOF metadata without decoding or allocating the pixel buffer.
@@ -235,6 +241,16 @@ mod tests {
         assert_eq!(detect_format(b"BM"), Some(WallpaperFormat::Bmp));
         assert_eq!(detect_format(b"II*\0"), Some(WallpaperFormat::Tiff));
         assert_eq!(detect_format(b"RIFF0000WEBP"), Some(WallpaperFormat::WebP));
+        assert_eq!(detect_format(&ftyp(b"heic")), Some(WallpaperFormat::Heic));
+        assert_eq!(detect_format(&ftyp(b"avif")), Some(WallpaperFormat::Avif));
+    }
+
+    fn ftyp(brand: &[u8; 4]) -> Vec<u8> {
+        let mut bytes = Vec::from(16u32.to_be_bytes());
+        bytes.extend_from_slice(b"ftyp");
+        bytes.extend_from_slice(brand);
+        bytes.extend_from_slice(&0u32.to_be_bytes());
+        bytes
     }
 
     #[test]

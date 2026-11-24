@@ -127,6 +127,8 @@ impl WallpaperDecodeService {
             WallpaperFormat::Bmp => ImageFormat::Bmp,
             WallpaperFormat::Tiff => ImageFormat::Tiff,
             WallpaperFormat::WebP => ImageFormat::WebP,
+            WallpaperFormat::Heic => ImageFormat::Heic,
+            WallpaperFormat::Avif => ImageFormat::Avif,
         };
         let key = WallpaperDecodeKey {
             asset_id: asset.id().to_owned(),
