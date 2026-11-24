@@ -14,7 +14,7 @@ pub mod surface_tree;
 
 use surface_tree::{SurfaceTreeSnapshot, collect_surface_tree_ids, collect_surface_tree_snapshots};
 
-use crate::desktop::DesktopSnapshot;
+use crate::desktop::{DesktopItemsSnapshot, DesktopSnapshot};
 
 use smithay::{
     backend::renderer::{
@@ -36,6 +36,7 @@ use crate::window_manager::WindowManager;
 /// A snapshot of the mapped toplevels and pointer image for one rendering pass.
 pub struct RenderScene<'a> {
     desktop: DesktopSnapshot,
+    desktop_items: DesktopItemsSnapshot,
     toplevels: Vec<RenderToplevel<'a>>,
     cursor_surface: Option<(WlSurface, Point<i32, Logical>, Point<i32, Logical>)>,
     native_cursor_location: Option<Point<i32, Logical>>,
@@ -57,6 +58,7 @@ impl<'a> RenderScene<'a> {
                 ),
                 None,
             ),
+            desktop_items: DesktopItemsSnapshot::default(),
             toplevels: window_manager
                 .mapped_toplevels_with_location()
                 .map(|(surface, location)| RenderToplevel { surface, location })
@@ -76,6 +78,17 @@ impl<'a> RenderScene<'a> {
     /// Returns the immutable desktop state captured for this frame.
     pub fn desktop(&self) -> DesktopSnapshot {
         self.desktop
+    }
+
+    /// Replaces the desktop-entry collection captured for this render frame.
+    pub fn with_desktop_items(mut self, items: DesktopItemsSnapshot) -> Self {
+        self.desktop_items = items;
+        self
+    }
+
+    /// Returns the owned desktop-entry snapshot captured for this frame.
+    pub fn desktop_items(&self) -> &DesktopItemsSnapshot {
+        &self.desktop_items
     }
 
     /// Adds the client-provided cursor surface at the pointer's global location.

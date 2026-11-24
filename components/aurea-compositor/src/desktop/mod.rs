@@ -6,6 +6,7 @@
 //! Compositor-owned desktop surface policy.
 
 mod background;
+mod items_snapshot;
 mod manager;
 mod snapshot;
 mod surface;
@@ -13,6 +14,7 @@ mod theme;
 mod wallpaper;
 
 pub use background::DesktopBackground;
+pub use items_snapshot::DesktopItemsSnapshot;
 pub use manager::DesktopManager;
 pub use snapshot::DesktopSnapshot;
 pub use surface::DesktopSurface;

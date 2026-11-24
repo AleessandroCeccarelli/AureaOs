@@ -8,7 +8,9 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use aurea_desktop_api::{
-    desktop_interaction::DesktopInteractionSender, input::InputDeviceProvider,
+    desktop::DesktopManager as DesktopItemsManager,
+    desktop_interaction::DesktopInteractionSender,
+    input::InputDeviceProvider,
 };
 
 use smithay::{
@@ -92,6 +94,7 @@ pub struct AureaCompositor {
     consumed_shortcut_keys: HashSet<Keycode>,
     window_manager: WindowManager,
     desktop_manager: DesktopManager,
+    desktop_items: DesktopItemsManager,
     output_manager: OutputManager,
     frame_scheduler: FrameScheduler,
     wayland_outputs: BTreeMap<OutputId, Output>,
@@ -160,6 +163,7 @@ impl AureaCompositor {
             consumed_shortcut_keys: HashSet::new(),
             window_manager: WindowManager::new(),
             desktop_manager: DesktopManager::default(),
+            desktop_items: DesktopItemsManager::default(),
             output_manager: OutputManager::new(),
             frame_scheduler: FrameScheduler::new(),
             wayland_outputs: BTreeMap::new(),
@@ -208,6 +212,16 @@ impl AureaCompositor {
     /// Returns mutable access to desktop appearance policy.
     pub fn desktop_manager_mut(&mut self) -> &mut DesktopManager {
         &mut self.desktop_manager
+    }
+
+    /// Returns the shared desktop-entry model used by desktop presentation.
+    pub fn desktop_items(&self) -> &DesktopItemsManager {
+        &self.desktop_items
+    }
+
+    /// Returns mutable access to the shared desktop-entry model.
+    pub fn desktop_items_mut(&mut self) -> &mut DesktopItemsManager {
+        &mut self.desktop_items
     }
 
     /// Returns the window manager.
