@@ -103,9 +103,10 @@ Before enabling the adapter in the default workspace build:
 5. Add small, licensed or generated HEIC and AVIF still-image fixtures plus malformed, truncated, over-limit, multi-image and sequence fixtures.
 6. Run the normal workspace, DRM/Vulkan, security-audit and media tests after the grouped change.
 
-## Current implementation status
+## Current implementation status — 24 November 2026
 
-- JPEG, PNG, BMP, TIFF and static WebP remain the currently implemented wallpaper decoder paths.
-- HEIF/HEIC and AVIF remain approved product formats but are **not implemented**.
-- No Cargo dependency, native package, build script, lockfile, or runtime image manifest is changed by this decision record.
-- The next implementation step is to complete the Debian/Fedora dependency and security gate, then add a private HEIF adapter inside `aurea-media`.
+- Added a private HEIF/AVIF adapter under `aurea-media`, backed by optional `libheif-rs = 3.0.0` with only the `v1_20` API feature enabled.
+- `aurea-media` exposes the opt-in Cargo feature `heif`; `aurea-compositor` forwards it through its own `heif` feature. Neither feature is enabled by default, so ordinary workspace builds do not acquire a native libheif requirement.
+- The adapter applies input, pixel, dimension and native decoder memory limits; rejects sequence/multi-image input; verifies the requested format against ISO-BMFF brands; and copies the RGBA plane row-by-row into owned tightly packed memory.
+- A dedicated Debian 13 CI job installs libheif development headers and selected decoder plugins, then compiles/tests Aurea Media with `heif` enabled. Its first run exposed a Rust visibility error and Debian's distro Rust 1.85 being too old for the resolved `image` crate (MSRV 1.88). Both causes have been addressed in source/workflow, but the corrected run is still required.
+- Parser security/maintenance review, actual HEIC/AVIF fixture tests, Fedora package parity and runtime package manifest review remain open gates. This is an opt-in implementation under validation, not yet production approval.
