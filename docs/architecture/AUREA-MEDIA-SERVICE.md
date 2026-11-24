@@ -160,3 +160,8 @@ The decode service retains its completed `DecodedWallpaper` while Vulkan prepare
 If texture allocation, staging setup, command setup, or queue submission fails, the decoded pixels remain owned by the decode service. The texture cache records the failed asset/revision and does not retry the same failed upload on every frame. A different wallpaper revision clears that per-selection failure latch. Clearing the wallpaper also clears the latch. This is a bounded failure policy, not an automatic recovery mechanism: retrying the same selection after a transient resource failure still needs an explicit retry policy.
 
 The retained CPU buffer remains subject to the existing 256 MiB decoded-image limit. Staging still performs the expected transfer copy; no second full RGBA clone is introduced.
+
+
+## Wallpaper selection invalidation — 2026-11-24
+
+The Vulkan wallpaper cache now invalidates the previously visible texture as soon as a different asset/revision key is selected, before any fallible image allocation or queue submission. This prevents an older ready texture from remaining eligible when preparation of the replacement fails. Already submitted uploads are not destroyed or cancelled: they remain fence-backed and owned by the cache until completion can be established, then are discarded if their key is no longer selected. Clearing the wallpaper similarly removes visibility immediately while preserving pending-upload lifetime safety.
