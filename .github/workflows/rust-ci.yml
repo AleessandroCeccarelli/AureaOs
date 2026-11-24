@@ -83,7 +83,7 @@ jobs:
             libheif-plugin-libde265 \
             libheif-plugin-dav1d \
             libturbojpeg0-dev \
-            pkg-config \
+            pkg-config
 
       - name: Install stable Rust
         uses: dtolnay/rust-toolchain@stable
