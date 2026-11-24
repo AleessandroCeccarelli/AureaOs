@@ -153,7 +153,8 @@ The main documentation files are:
 - [Application and Component Catalog](docs/product/APPLICATION-CATALOG.md) — authoritative inventory of first-party apps, tools, desktop components, services, and shared design resources.
 - [Initial architecture](docs/architecture/INITIAL-ARCHITECTURE.md) — system layers and open decisions.
 - [Universal Desktop and Technology Strategy](docs/architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md) — universal usability, accessibility, multimedia, productivity, technology maturity lanes, interoperability, and research policy.
-- [Aurea Link and Aurea Share](docs/architecture/AUREA-LINK-SHARE.md) — local-first sharing between phones and desktops, app sharing, security boundaries, and interoperability.
+- [Aurea Link and Aurea Share](docs/architecture/AUREA-LINK-SHARE.md) — local-first sharing between devices and the system-wide Share experience.
+- [Aurea Share Online Integrations](docs/architecture/AUREA-SHARE-ONLINE-INTEGRATIONS.md) — provider APIs, OAuth, capability limits, security and service-specific adapters.
 - [Minimum hardware requirements](docs/architecture/HARDWARE-REQUIREMENTS.md) — the vendor-neutral Roma 1.0 CPU, memory, Vulkan, DRM/KMS, and GBM support floor.
 - [Debian base](docs/architecture/DEBIAN-BASE.md) — current bootstrap implementation and limitations.
 - [systemd-boot and UKI architecture](docs/architecture/SYSTEMD-BOOT-AND-UKI.md) — UEFI-only boot policy, first-release Secure Boot scope, UKI direction and recovery integration.
