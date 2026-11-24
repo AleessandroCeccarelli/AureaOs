@@ -183,3 +183,10 @@ The fatal device-loss path now also covers wallpaper GPU-upload submission, not 
 Frame composition and its clear/release/readback paths preserve the full `VulkanQueueSubmitError` classification. In particular, both the queue-submit result and the fence/device-idle completion results are inspected, so a device-loss reported by the fallback idle wait is not hidden by an earlier wait error. The scanout path therefore receives the fatal status and avoids unsafe framebuffer retirement or CPU fallback.
 
 This still does not recreate the Vulkan device. It makes the current behavior consistently fail-stop when device loss is detected along these covered submission and wallpaper synchronization paths.
+
+
+### SHM texture submission error propagation — 2026-11-24
+
+The follow-up audit found that Wayland SHM texture cache errors could still be converted into generic texture strings in the surface compositor. The cache wraps queue submission and fence-completion failures as `VulkanShmTextureError::Command`; the composition layer now recognizes `ERROR_DEVICE_LOST` and preserves it as `VulkanSurfaceCompositionError::DeviceLost` for both preparation and completion paths. The empty-scene readback path also now uses the typed queue-submission error contract instead of the removed result converter.
+
+A focused unit test was added for fatal device loss from the SHM texture cache. No build, formatting, tests or CI were run for this grouped change; local Fedora verification remains pending. This does not change the fail-stop policy or implement device recreation.
