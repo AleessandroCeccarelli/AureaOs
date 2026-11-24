@@ -859,3 +859,13 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - Commits: `a5b33ccd`, `93284f76`, `804f9e67`, `96c49b75`.
 - CPU geometry only; no shader, descriptor binding, wallpaper draw submission, JPEG decoder or display integration yet. No local checks run.
 - Next: add dedicated wallpaper UV shader/pipeline path and integrate its draw before SHM surfaces, including the empty-scene path. Do not modify the existing surface shader push-constant ABI casually. JPEG decoder remains gated by the Fedora + Debian 13 TurboJPEG ABI probe.
+
+
+## DEDICATED WALLPAPER SHADER / PIPELINE — 2026-11-24
+
+- Added `shaders/wallpaper_texture.vert` and `.frag`. The vertex shader accepts a normalized UV rectangle as four float push constants; the fragment shader samples the wallpaper texture.
+- `build.rs` now tracks and compiles these shaders for DRM builds and exports their SPIR-V output paths.
+- `VulkanSurfacePipelineCache` owns a separate wallpaper pipeline per target format. It reuses the sampled-texture descriptor layout while declaring an independent 16-byte vertex push-constant range. The existing surface shader and `u32` transform ABI were not changed.
+- Commits: `e0823ebe`, `fa3d28e4`, `41b24c1c`, `7a742fe6`.
+- Important: pipeline infrastructure only. No wallpaper texture descriptor binding or draw call exists yet. No decoder/cache population exists yet. Do not claim wallpaper is visible.
+- No Cargo fmt/check/test/build/CI or ISO was run. Next: add a draw-pass API for the UV push constant, build output-local viewport/scissor from `WallpaperDrawGeometry`, bind a ready cached texture, and draw immediately after clear and before SHM windows/cursor. Ensure the empty-scene path also records wallpaper. JPEG decoding remains gated on the user's Fedora and Debian 13 TurboJPEG ABI probe.
