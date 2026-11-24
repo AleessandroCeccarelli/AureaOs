@@ -190,3 +190,14 @@ Questo registro è la fonte condivisa di verità per le decisioni sulle dipenden
 - **Riferimenti:** https://github.com/localsend/protocol e https://github.com/localsend/localsend
 - **Verifiche:** nessuna dipendenza, modifica Cargo o lockfile; nessun build o test.
 
+### API dei servizi online/social — provider candidati
+
+- **Stato:** sola ricerca. Nessun SDK, client OAuth o adapter provider approvato.
+- **Scopo:** condividere file/media/testo locali da Fides e dai visualizzatori AureaOS senza riselezionare manualmente il file.
+- **Servizi candidati:** Telegram, WhatsApp, Facebook, Instagram, Reddit, YouTube ed email.
+- **Distinzione importante:** le API ufficiali differiscono per tipo account e azione. Telegram Bot API non è un'API per account personali; WhatsApp Cloud API è messaggistica business; Facebook Graph pubblica sulle Pagine; Instagram pubblica su account Professional idonei; Reddit richiede OAuth/accesso approvato e permesso scritto per uso commerciale; YouTube Data API carica sul canale autenticato.
+- **Fallback:** API ufficiale diretta solo dove consentita → share/deep link ufficiale → handoff ad applicazione desktop registrata → non supportato (mai endpoint privati/scraping).
+- **Sicurezza:** OAuth/PKCE dove supportato, privilegi minimi, credential store di sistema, revoca, conferma finale utente, nessun secret confidenziale nei binari, nessuna pubblicazione silenziosa.
+- **Riferimenti:** documentazione provider ufficiale registrata in docs/it/ARCHITETTURA-AUREA-SHARE-ONLINE.md.
+- **Compatibilità:** base Debian 13; nessuna dipendenza GNOME/KDE, X11/XWayland o OpenGL. Gli adapter API restano fuori da compositor e pipeline media.
+- **Verifiche:** nessuna dipendenza, sorgente, registrazione OAuth o test aggiunti.
