@@ -34,6 +34,7 @@ use super::{
     VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanDrawPass,
     VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanLogicalDevice,
     VulkanReadbackBuffer, VulkanSurfacePipelineCache, VulkanTextureBinding,
+    VulkanNativeCursorTextureError,
 };
 
 pub(super) const MAX_COMPOSITED_SURFACES: usize = 128;
@@ -204,9 +205,12 @@ pub(super) fn render_frame(
         surface_cache
             .ensure_native_cursor_texture()
             .map_err(|error| match error {
-                super::surface_pipeline_cache::VulkanSurfacePipelineCacheError::CursorTexture(error) => {
-                    VulkanSurfaceCompositionError::from_shm_texture_error(error)
-                }
+                super::surface_pipeline_cache::VulkanSurfacePipelineCacheError::NativeCursor(
+                    VulkanNativeCursorTextureError::Texture(error),
+                ) => VulkanSurfaceCompositionError::from_shm_texture_error(error),
+                super::surface_pipeline_cache::VulkanSurfacePipelineCacheError::NativeCursor(
+                    other,
+                ) => VulkanSurfaceCompositionError::Texture(other.to_string()),
                 other => VulkanSurfaceCompositionError::Texture(other.to_string()),
             })?
     } else {
