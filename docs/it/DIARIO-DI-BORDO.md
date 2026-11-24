@@ -1031,3 +1031,14 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - È una politica fail-stop, non una ricreazione del device. La ricostruzione richiederà un lifecycle superiore capace di ricreare device, cache, frame pool e binding degli output.
 - Commit: `80f7a7b1`, `5dc7503e`, `ea505973`, `caf159cf`, `5048c861`, `5cc97b6c`.
 - Nessuna build, test, rustfmt o CI avviata.
+
+
+## 24 novembre 2026 — Propagazione estesa di Vulkan DEVICE_LOST
+
+- Estesa la gestione al submit dell'upload GPU del wallpaper: se la creazione/submission dell'upload segnala `ERROR_DEVICE_LOST`, la cache memorizza il guasto di sincronizzazione e restituisce un errore tipizzato.
+- La pipeline cache conserva il tipo di errore invece di trasformarlo subito in una stringa.
+- Composizione, clear/release e readback conservano la classificazione completa di `VulkanQueueSubmitError`.
+- Vengono controllati sia l'errore del submit sia quelli di attesa fence e fallback `device_wait_idle`: una perdita segnalata dal secondo controllo non viene nascosta dal primo.
+- Il percorso scanout può così interrompersi senza tentare fallback CPU o retirement non sicuro.
+- La ricreazione del device non è ancora implementata: la politica rimane fail-stop.
+- Commit aggiuntivi: `c5bb65c2`, `b9f11e2e`, `7861acf1`, `d5618002`, `b0b755db`, `53a6525f`, `de00b7fa`, `3a5bcf7d`, `87d69682`, `633ce8b5`, `b0459eaf`, `bb9cba1d`, `1f957360`.
