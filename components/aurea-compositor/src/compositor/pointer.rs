@@ -61,32 +61,29 @@ impl AureaCompositor {
 
         let current = pointer.current_location();
         let requested = Point::from((current.x + delta.x, current.y + delta.y));
-        let output_geometry = self
-            .output_manager
-            .registry()
-            .iter()
-            .filter(|output| output.is_enabled())
-            .filter_map(|output| {
-                let bounds = self
-                    .output_manager
-                    .logical_bounds(output.id())
-                    .ok()
-                    .flatten()?;
-                let origin = bounds.origin();
-                let size = bounds.size();
+        let Some(location) = super::pointer_bounds::constrain_to_outputs(
+            requested,
+            self.output_manager
+                .registry()
+                .iter()
+                .filter(|output| output.is_enabled())
+                .filter_map(|output| {
+                    let bounds = self
+                        .output_manager
+                        .logical_bounds(output.id())
+                        .ok()
+                        .flatten()?;
+                    let origin = bounds.origin();
+                    let size = bounds.size();
 
-                OutputGeometry::new(
-                    origin.x as f64,
-                    origin.y as f64,
-                    f64::from(size.width),
-                    f64::from(size.height),
-                )
-            })
-            .collect::<Vec<_>>();
-
-        let Some(location) =
-            super::pointer_bounds::constrain_to_outputs(requested, output_geometry.iter().copied())
-        else {
+                    OutputGeometry::new(
+                        origin.x as f64,
+                        origin.y as f64,
+                        f64::from(size.width),
+                        f64::from(size.height),
+                    )
+                }),
+        ) else {
             return;
         };
 
