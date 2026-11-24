@@ -20,7 +20,8 @@ pub use snapshot::DesktopSnapshot;
 pub use surface::DesktopSurface;
 pub use theme::DesktopTheme;
 pub use wallpaper::{
-    WallpaperAsset, WallpaperDimensions, WallpaperDrawGeometry, WallpaperFitMode, WallpaperFormat,
+    DecodedWallpaper, WallpaperAsset, WallpaperDecodeKey, WallpaperDecodeService,
+    WallpaperDecodeServiceError, WallpaperDimensions, WallpaperDrawGeometry, WallpaperFitMode, WallpaperFormat,
     WallpaperLayout, WallpaperManager, WallpaperPixelRect, WallpaperPixels, WallpaperPixelsError,
     WallpaperSnapshot, WallpaperUvRect,
 };
