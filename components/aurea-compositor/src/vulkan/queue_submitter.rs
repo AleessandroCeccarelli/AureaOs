@@ -43,9 +43,9 @@ impl VulkanQueueSubmitError {
                 wait_error,
                 idle_error,
             } => {
-                if wait_error == vk::Result::ERROR_DEVICE_LOST {
+                if matches!(wait_error, vk::Result::ERROR_DEVICE_LOST) {
                     wait_error
-                } else if idle_error == vk::Result::ERROR_DEVICE_LOST {
+                } else if matches!(idle_error, vk::Result::ERROR_DEVICE_LOST) {
                     idle_error
                 } else {
                     wait_error
