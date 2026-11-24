@@ -596,3 +596,38 @@ Introdurre uno snapshot desktop posseduto e immutabile, separato dall'attuale De
 - Mantenuto /var/lib nell'unità di rollback affinché dpkg e stato servizi restino coerenti con i file installati; proposto di preservare /home e log diagnostici.
 - Definiti ciclo di vita obiettivo delle transazioni aggiornamento e requisiti di recupero. Bootloader, cifratura, conservazione, policy cache e swap/ibernazione restano aperti.
 - Nessun installer, gestore snapshot, transazione aggiornamento o codice rollback implementato. Nessun comando Cargo o test eseguito.
+
+
+## 24 novembre 2026 — Decisione architetturale di avvio: systemd-boot
+
+### Decisioni approvate
+- systemd-boot è il boot manager principale di AureaOS Roma 1.0.
+- UEFI è obbligatorio; BIOS Legacy/CSM non è supportato. Il target iniziale è costituito da PC amd64 moderni, indicativamente degli ultimi dieci anni, subordinatamente alla qualificazione effettiva di firmware e hardware.
+- Secure Boot è disabilitato in Roma 1.0. Firma/certificazione Microsoft non è un prerequisito della prima release. Il supporto Secure Boot resta un obiettivo futuro, non una garanzia attuale.
+- GRUB 2 resta soltanto una possibile alternativa futura, se emergerà una necessità dimostrata; non viene installato né configurato come boot manager predefinito.
+- UKI è la direzione scelta per gli artefatti di avvio, subordinata alla verifica dell'integrazione kernel Debian 13/initramfs.
+- L'ESP ospita systemd-boot e le UKI. Il layout resta una ESP più una partizione Btrfs per l'intero sistema installato; non è prevista una partizione XBOOTLDR.
+- 1 GiB per l'ESP è soltanto un obiettivo provvisorio. La dimensione finale richiede misurazioni che includano UKI corrente, precedente e Aurea Recovery.
+
+### Ricerca tecnica
+- Debian 13 Trixie fornisce systemd-boot 257, gli strumenti systemd-boot e il pacchetto systemd-ukify.
+- systemd-boot supporta soltanto UEFI, carica UKI da ESP o XBOOTLDR e implementa il conteggio dei tentativi con comportamento di fallback.
+- Il boot manager non può stabilire autonomamente se l'intero desktop/sessione sia sano. AureaOS richiede un segnale esplicito userspace e un ciclo di vita coordinato con gli aggiornamenti.
+
+### Documentazione e ambito
+- Aggiunti documenti architetturali systemd-boot/UKI in inglese e italiano.
+- Sostituita la precedente proposta speculativa Btrfs basata su sottovolumi/snapshot con la direzione approvata: una sola partizione Btrfs e Aurea Time come unico sistema di backup.
+- Aggiornati i riferimenti nelle fondamenta della piattaforma, README, Technology e Vision nelle rispettive versioni.
+- Nessun sorgente Rust, manifest pacchetti, installer, configurazione di avvio o comportamento runtime è stato modificato.
+- Nessun comando Cargo, build, test o CI è stato eseguito.
+
+### Prossimo lavoro tecnico
+1. Verificare nel bootstrap Debian e nei manifest pacchetti eventuali assunzioni sul boot.
+2. Prototipare la creazione UKI dai pacchetti kernel Debian e initramfs-tools.
+3. Misurare l'occupazione ESP e validare la capacità provvisoria.
+4. Specificare segnale di avvio riuscito, conteggio tentativi, ritorno al precedente artefatto e responsabilità di pulizia.
+5. Progettare l'immagine di avvio indipendente Aurea Recovery e il percorso tramite supporto esterno.
+6. Mantenere Secure Boot fuori dai criteri di accettazione di Roma 1.0; valutare firma e gestione chiavi separatamente per una release futura.
+
+### Proposta Btrfs superata
+La precedente bozza del 24 novembre che proponeva sottovolumi fratelli, snapshot, transazioni di aggiornamento basate su snapshot e rollback non era una decisione approvata. È superata. AureaOS usa Btrfs come filesystem scelto, con una sola partizione Btrfs per il sistema installato. Aurea Time è l'unico sistema pianificato per backup/ripristino; gli snapshot Btrfs nativi non fanno parte del flusso previsto.
