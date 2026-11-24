@@ -1007,3 +1007,13 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Available actions depend on account, scopes, provider review, region, content and current limits.
 - Share chooser remains usable without linked accounts through supported desktop handoff.
 - Updated EN/IT Aurea Share online architecture. No code or dependency added.
+
+
+## 2026-11-24 — Pointer motion allocation reduction
+
+- Audited the existing mouse/touchpad input path before changing behavior.
+- Removed the intermediate output-geometry vector from pointer motion and changed output-bound constraint evaluation to a single pass over enabled outputs.
+- The constraint helper no longer collects its iterator into a temporary vector; it returns immediately when the requested point is already inside an output and otherwise tracks only the nearest valid point.
+- Added tests rejecting non-finite requested pointer coordinates. Existing gap, edge, negative-origin and mixed-scale coverage remains in place.
+- No pointer semantics, input routing, output layout, dependencies or public API were intentionally changed.
+- Changes are committed on main. No Cargo fmt/check/test/build or CI was run; local Fedora verification remains required. No ISO was generated.
