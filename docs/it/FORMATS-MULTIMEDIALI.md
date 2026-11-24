@@ -46,6 +46,7 @@ I seguenti formati sono esclusi dall'elenco approvato per gli sfondi nella versi
 
 | Formato / tipo | Decisione |
 |---|---|
+| DIB come file autonomo `.dib` | Non approvato nella versione 1.0; sono accettati soltanto file BMP con estensione `.bmp` |
 | GIF | Rifiutato |
 | APNG | Rifiutato |
 | WebP animato | Rifiutato |
