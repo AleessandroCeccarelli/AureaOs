@@ -65,6 +65,8 @@ Approved SVG artwork remains the canonical editable source. The compositor does 
 
 The generated icon directory currently contains its README but no generated raster icon set. A deterministic SVG-to-RGBA8 host pipeline is now committed: existing rsvg-convert produces temporary PNGs and a bounded Python standard-library converter validates and strips them to tightly packed raw RGBA8. It creates 64, 96, 128 and 192 pixel variants for a 64-logical-pixel icon. The pipeline has not yet been executed or visually validated.
 
+A dedicated compositor-side Vulkan texture cache has now been added for native desktop artwork. Its identity is independent from Wayland `ObjectId` values and includes an approved asset identifier, revision and raster pixel size. It enforces a 32-texture / 16 MiB resident budget and a two-batch / 8 MiB in-flight upload budget, validates square dimensions up to 256 pixels, and retains pending resources until upload fences complete. This is cache infrastructure only: no generated icon bytes are available yet, and the cache is not connected to the frame renderer or desktop item geometry.
+
 ## Linux and Debian integration
 
 ### JPEG codec
@@ -114,12 +116,13 @@ Do not regress Night Light, output transforms, fractional scaling, scanout synch
 ## Next implementation sequence
 
 1. Execute and visually inspect the deterministic SVG-to-RGBA8 pipeline on Fedora; verify all 24 outputs, alpha edges, theme contrast and optical alignment.
-2. Add a small compositor-owned desktop-asset description/cache with bounded raw RGBA dimensions and asynchronous Vulkan upload. Do not overload the Wayland SHM texture cache.
-3. Connect the per-output icon geometry module to the desktop texture cache and draw items between wallpaper and Wayland surfaces.
-4. Connect the existing `DesktopHitTest` logical geometry to pointer input only after the icons are visible. Preserve Wayland surface focus/raise precedence and forward events normally.
-5. Add selection, single/double-click and context-menu semantics through explicit desktop interaction contracts; keep file opening and application launch in Aurea Files/Shell, not in the compositor.
-6. Review active-grab completion when an output disappears, then validate hotplug/session pause/resume on hardware.
-7. Run the agreed grouped Cargo formatting/check/test and visual validation on Fedora. Do not run builds/tests for every small source correction.
+2. Generate and visually inspect the static RGBA8 assets on Fedora; do not commit unverified binary output.
+3. Add a small compositor-owned asset descriptor that maps desktop item kind/theme/state to approved raw RGBA bytes and creates validated snapshots.
+4. Connect the per-output icon geometry module to the dedicated texture cache and draw items between wallpaper and Wayland surfaces.
+5. Connect the existing `DesktopHitTest` logical geometry to pointer input only after the icons are visible. Preserve Wayland surface focus/raise precedence and forward events normally.
+6. Add selection, single/double-click and context-menu semantics through explicit desktop interaction contracts; keep file opening and application launch in Aurea Files/Shell, not in the compositor.
+7. Review active-grab completion when an output disappears, then validate hotplug/session pause/resume on hardware.
+8. Run the agreed grouped Cargo formatting/check/test and visual validation on Fedora. Do not run builds/tests for every small source correction.
 
 ## Explicit non-goals
 
