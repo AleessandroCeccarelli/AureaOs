@@ -12,7 +12,8 @@ Guiding question: **what experience should the user have, and what is the correc
 
 ## Platform baseline
 - Debian GNU/Linux 13 Trixie, amd64 initially.
-- Btrfs as the intended system filesystem, with deliberate subvolume, snapshot and recovery design.
+- Btrfs as the selected system filesystem, with one Btrfs partition for the complete installed OS; Aurea Time owns backup and restore.
+- systemd-boot as the UEFI-only boot manager; Secure Boot is disabled for Roma 1.0.
 - Rust as the primary language for services, APIs, shell and desktop components.
 - Wayland + Smithay as the native display/compositor architecture; no X11 or XWayland.
 - Vulkan as the exclusive graphics API; no OpenGL rendering fallback.
@@ -20,6 +21,9 @@ Guiding question: **what experience should the user have, and what is the correc
 - GPL-3.0-or-later.
 
 These choices are constraints, not a reason to duplicate facilities already provided by Linux.
+
+## Boot architecture
+The approved boot manager is systemd-boot. AureaOS targets UEFI systems only; Legacy BIOS/CSM is unsupported. Secure Boot is disabled for Roma 1.0 because Microsoft signing/certification costs are not a sustainable first-release prerequisite. UKI is the selected boot-artifact direction, subject to validation of Debian 13 kernel, initramfs-tools and systemd integration. The ESP stores systemd-boot and UKIs; the installed OS remains on one Btrfs partition. No XBOOTLDR partition is planned. See [systemd-boot and UKI architecture](SYSTEMD-BOOT-AND-UKI.md).
 
 ## System boundaries
 - **Aurea Desktop:** desktop surface, item placement, selection and presentation state.
@@ -74,29 +78,20 @@ WebAuthn and CTAP2 are related but distinct: WebAuthn defines the relying-party/
 
 A passkey must not be the sole recovery path in the first release. Preserve secure recovery, account administration and documented fallback. Do not invent proprietary cryptography or store raw private keys in ordinary application configuration. TPM support is optional and capability-detected. The compositor never owns credential secrets.
 
-## Btrfs system and recovery model
-Btrfs is the intended filesystem foundation, not just an installer option. Its subvolume layout must be designed before update and recovery workflows depend on it.
+## Btrfs system filesystem and Aurea Time
+Btrfs is selected as AureaOS's modern Linux filesystem. Its selection does not imply a plan to use native Btrfs snapshots, snapshot-based updates or rollback.
 
-Evaluate separate subvolumes for:
-- managed system root;
-- /var and mutable system state;
-- user home data;
-- snapshots and rollback metadata;
-- application/container data where lifecycle and isolation justify it.
+The installed disk layout is intentionally simple:
+- One EFI System Partition (ESP) for UEFI boot artifacts.
+- One Btrfs partition containing the entire installed operating system.
+- No separate partitions for `/home`, `/var`, cache, snapshots or backups.
+- No XBOOTLDR partition in the current boot design.
 
-This is a candidate layout, not a finalized mount table. Package-manager state, logs, databases, Flatpak data and user files must be placed deliberately so rollback neither destroys user work nor leaves incompatible state.
+Aurea Time is the single planned AureaOS backup and restore system. It will target external USB storage or a NAS and provide time-based recovery from individual files and folders through settings and the complete operating system. Its implementation, consistency model, storage format, retention and full-system recovery workflow remain to be designed.
 
-### Snapshot and rollback rules
-- Create a pre-update snapshot before system transactions where feasible.
-- Use read-only snapshots as recovery points where appropriate.
-- Make rollback an explicit, validated boot/system operation with a recovery path.
-- Define retention, disk-pressure behavior and cleanup.
-- Distinguish system rollback from user-data recovery.
-- Provide backup guidance: snapshots are not backups.
-- Account for nested-subvolume snapshot boundaries: snapshots are not automatically recursive across nested subvolumes.
-- Test bootloader integration, interrupted updates, full-disk conditions and rollback after schema/state migrations.
+An independent Aurea Recovery environment is required so the operating system can be restored even when the installed system does not boot. Recovery must not depend on Btrfs snapshots.
 
-Do not implement a snapshot policy until the subvolume graph, update transaction model and recovery UX are specified together.
+Btrfs feature tuning—including subvolumes, compression, scrub, quotas, RAID, encryption and swap/hibernation—has not been selected as part of this baseline. Each feature requires a separate technical justification and explicit decision.
 
 ## File Intelligence and local data
 Aurea File Intelligence remains the shared local catalog for Fides, Quaero and authorized clients. It must be permission-aware, incremental, resource-bounded and rebuildable.
@@ -119,11 +114,11 @@ Initial search prioritizes filename, path, MIME, inexpensive metadata and explic
 - Debian 13 provides SQLite runtime and development packages. Fedora package metadata reports FTS5 enabled. Debian package listings alone do not prove the installed library's compile options; verify FTS5 on the target image.
 - Current notify 9 documentation reports Linux inotify support, CC0 licensing and MSRV 1.91. The inspected workspace uses Rust edition 2024 but declares no rust-version. Do not adopt notify 9 until the toolchain/MSRV policy is explicit; a narrow native inotify adapter remains an alternative.
 - Rust passkey libraries have different scopes. The 1Password passkey-rs family covers WebAuthn client and CTAP2 authenticator components; Linux FIDO libraries have distinct transport and licensing constraints. No crate is approved here.
-- Btrfs snapshots are subvolume snapshots, not block-device backups. Nested subvolumes form snapshot boundaries.
+- Native Btrfs snapshots are not part of the planned AureaOS backup, update or restore workflow.
 
 ## Delivery sequence
 1. Freeze platform principles and ownership boundaries.
-2. Define Btrfs subvolume, update and recovery architecture.
+2. Define Aurea Time backup/restore contracts and the independent Aurea Recovery environment.
 3. Define Aurea Passkey threat model, broker contract, recovery and PAM strategy.
 4. Define Aurea Intelligence provider, privacy and action-authorization contracts.
 5. Complete File Intelligence database/watcher compatibility evaluation.
