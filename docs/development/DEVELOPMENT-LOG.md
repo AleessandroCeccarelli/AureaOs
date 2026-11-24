@@ -1609,3 +1609,12 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Pad-only devices remain discoverable in the pointing-device registry, but pen-specific calibration and output mapping APIs continue to accept only actual pen tablets.
 - This does not add tablet-pad event support; the Smithay 0.7 limitation remains.
 - No build, Cargo check, rustfmt or tests run. Grouped Fedora validation remains pending.
+
+### 2026-11-24 — Prevent pen-tablet rerouting after output disconnect
+
+- Found an inconsistency with touchscreen routing: tablet output mappings were deleted when their assigned monitor disconnected.
+- With one display remaining, a pen tablet could then fall back to controlling the full desktop without an explicit user decision.
+- The map now retains the stale assignment as unavailable and blocks resolution until the user explicitly assigns another output or unassigns the tablet.
+- Physical tablet removal clears both assignment and unavailable state. Other devices' mappings remain independent.
+- Added source tests for blocked rerouting, reassignment, unassignment and per-device isolation.
+- No build, Cargo check, rustfmt or tests were run; grouped Fedora validation remains pending.
