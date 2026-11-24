@@ -45,12 +45,11 @@ fn to_backend_format(format: ImageFormat) -> Result<image::ImageFormat, DecodeEr
 }
 
 fn backend_limits(limits: DecodeLimits) -> Limits {
-    Limits {
-        max_image_width: Some(limits.max_dimension()),
-        max_image_height: Some(limits.max_dimension()),
-        max_alloc: Some(limits.max_output_bytes() as u64),
-        ..Limits::default()
-    }
+    let mut backend = Limits::default();
+    backend.max_image_width = Some(limits.max_dimension());
+    backend.max_image_height = Some(limits.max_dimension());
+    backend.max_alloc = Some(limits.max_output_bytes() as u64);
+    backend
 }
 
 fn validate_dimensions(
@@ -97,5 +96,6 @@ fn map_decode_error(error: image::ImageError) -> DecodeError {
         image::ImageError::Unsupported(_) => DecodeError::UnsupportedFormat,
         image::ImageError::Decoding(_) | image::ImageError::IoError(_) => DecodeError::InvalidImage,
         image::ImageError::Encoding(_) => DecodeError::DecoderFailure,
+        image::ImageError::Parameter(_) => DecodeError::InvalidImage,
     }
 }
