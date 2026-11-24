@@ -2,6 +2,14 @@
 
 # AureaOS Technology Principles
 
+## Universal desktop, multimedia and accessibility strategy
+
+AureaOS must serve children, older adults, first-time users, students, creative and office professionals, administrators and developers through one coherent desktop. Accessibility, multimedia and productivity are foundational product requirements.
+
+The project adopts a three-lane technology policy: mature Debian-compatible foundations for critical system paths; established Linux infrastructure integrated behind AureaOS-owned UX and APIs; and isolated research prototypes for new or immature technologies. Experimental components must not silently become release dependencies.
+
+The detailed technology map, adoption criteria, multimedia boundaries, portal strategy, accessibility targets, UI-toolkit evaluation criteria and immediate priorities are maintained in [Universal Desktop and Technology Strategy](docs/architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md).
+
 ## 1. Platform and Product Architecture
 
 **First-party does not mean closed-source.** AureaOS develops and maintains its own desktop environment, shell, compositor integration, system services, and named applications. These are first-party AureaOS components, but original project code is released under GPL-3.0-or-later unless a file explicitly states another license. In public descriptions, use *AureaOS-developed*, *first-party*, or *AureaOS-native* rather than *proprietary* when referring to code ownership or architecture. See [Project identity and terminology](docs/PROJECT-IDENTITY-AND-TERMINOLOGY.md).
