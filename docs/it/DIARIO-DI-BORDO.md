@@ -1529,3 +1529,13 @@ Nessuna build, test, rustfmt o CI eseguiti. La verifica resta raggruppata su Fed
 - Non sono stati eseguiti build, test, rustfmt o cargo check. Cargo.lock non è stato rigenerato e dovrà essere aggiornato su Fedora prima del prossimo build locked.
 - La documentazione upstream chiarisce che max_alloc è best-effort/non stretto per alcuni decoder: i limiti applicati non equivalgono a un sandbox di memoria di processo. La revisione sicurezza e i test reali restano obbligatori.
 - Prossimo blocco: rendere WallpaperAsset capace di rappresentare file utente con identità/byte posseduti e rilevamento del formato; poi integrare HEIC/HEIF e AVIF tramite backend Debian verificato.
+
+## 24 novembre 2026 — Asset wallpaper posseduti e caricamento file utente
+
+- WallpaperAsset ora possiede ID e byte compressi tramite storage condiviso immutabile, non è più limitato a byte JPEG statici incorporati.
+- Aggiunto from_bytes con controlli su ID, input vuoto, limite input e rilevamento firma per JPEG, PNG, BMP, GIF, TIFF e WebP.
+- Aggiunto from_file con controllo dimensione preventiva e lettura limitata. Deve essere chiamato da un task impostazioni/media-I/O, mai dal frame/render callback.
+- WallpaperManager e WallpaperSnapshot sono stati adattati al nuovo asset non-Copy; le chiavi decode e texture usano identità possedute.
+- Il compositor passa una copia posseduta dei byte al worker limitato; il renderer continua soltanto a interrogare risultati e gestire upload Vulkan.
+- HEIC/HEIF e AVIF non sono ancora accettati: saranno abilitati insieme ai rispettivi decoder.
+- Nessuna build, test, rustfmt o cargo check eseguiti. L'intera modifica resta da verificare su Fedora.
