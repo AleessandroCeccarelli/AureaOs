@@ -1703,3 +1703,12 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - La rimozione fisica della tavoletta elimina sia l'associazione sia lo stato non disponibile. Le assegnazioni degli altri dispositivi restano indipendenti.
 - Aggiunti test sorgente per blocco del rerouting, riassegnazione, disassegnazione e isolamento tra dispositivi.
 - Nessuna build, cargo check, rustfmt o test eseguiti; verifica raggruppata su Fedora ancora in sospeso.
+
+### Coordinate tavoletta vincolate ai monitor effettivi — 24 novembre 2026
+
+- Esaminato il percorso delle coordinate della penna con più monitor e disposizione non contigua.
+- La calibrazione della tavoletta usa un rettangolo complessivo: con monitor sfalsati o separati da uno spazio vuoto, il rettangolo può includere coordinate che non appartengono ad alcun display.
+- Dopo la calibrazione, la posizione della penna viene ora vincolata alle geometrie logiche reali degli output abilitati. Se cade in uno spazio vuoto, viene riportata al punto valido più vicino.
+- Quando la tavoletta è assegnata a un singolo monitor, il vincolo considera esclusivamente quel monitor: la penna non può sconfinare sugli altri display.
+- Riutilizzata la policy geometrica già impiegata dal puntatore relativo; nessuna modifica al percorso touchscreen o agli eventi assoluti generici.
+- Nessuna build, cargo check, rustfmt o test eseguiti; verifica raggruppata su Fedora ancora in sospeso.
