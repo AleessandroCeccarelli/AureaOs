@@ -211,6 +211,8 @@ The first native cursor texture no longer uses the synchronous `VulkanShmTexture
 
 ## Desktop wallpaper image-format policy — 2026-11-24
 
+The authoritative and closed format list is maintained in [`MEDIA-FORMATS.md`](MEDIA-FORMATS.md), with its Italian companion at [`../it/FORMATS-MULTIMEDIALI.md`](../it/FORMATS-MULTIMEDIALI.md). Keep implementation notes in this architecture document and product acceptance decisions in the registry.
+
 The wallpaper importer is an image feature, not a video player. No video container, video codec, GStreamer or PipeWire dependency is part of this scope.
 
 ### Reference platforms
@@ -231,8 +233,8 @@ The wallpaper importer is an image feature, not a video player. No video contain
 | WebP | .webp | Required |
 | HEIF / HEIC | .heif, .heic | Required; still-image decode, including HEVC-coded Apple photos |
 | AVIF | .avif | Required |
-| JPEG 2000 | .jp2, .j2k, .jpf, .jpx | Accepted if the selected Debian-supported backend is available; otherwise report unsupported, never silently mislabel |
-| OpenEXR | .exr | Deferred; high-dynamic-range color management and memory policy need a separate decision |
+| JPEG 2000 | .jp2, .j2k, .jpf, .jpx | Not approved in registry v1.0 |
+| OpenEXR | .exr | Not approved in registry v1.0 |
 | PDF / SVG / RAW | various | Not wallpaper inputs in the first release; these require rasterization, vector rendering or camera-RAW processing policies |
 
 Format detection must inspect file content/signatures and validate the decoded container. Filename extensions are a chooser hint only, never the security boundary.
@@ -259,7 +261,7 @@ The current compositor WallpaperAsset is a compile-time embedded JPEG with a sta
 - Keep the existing TurboJPEG adapter until the replacement path is verified; avoid compiling two JPEG implementations indefinitely.
 - Evaluate libheif for HEIC/HEIF and AVIF, including Debian's separately packaged decoder plugins. HEVC image decoding requires the libde265 plugin; AV1 image decoding requires a suitable AV1 plugin such as dav1d or aomdec.
 - Confirm exact Debian 13 package versions, runtime dependencies, upstream licenses and plugin availability before adding native packages to the target image. Do not install every libheif plugin or encoder.
-- JPEG 2000 remains conditional on a supported decoder and its license/footprint review.
+- JPEG 2000 is not approved by the official media-format registry v1.0.
 - No video playback, HEVC video, H.264, AV1 video, GStreamer or PipeWire work is authorized by this wallpaper-format decision.
 
 
@@ -269,7 +271,7 @@ The first decoder expansion is now present in source:
 
 - ImageFormat includes JPEG, PNG, BMP, TIFF and WebP.
 - JPEG remains routed to the existing TurboJPEG adapter.
-- PNG, BMP, GIF, TIFF and WebP route through a private raster adapter backed by image 0.25.10.
+- PNG, BMP, TIFF and WebP route through a private raster adapter backed by image 0.25.10.
 - The dependency disables default features and enables only bmp, png, tiff and webp; no Rayon, video or unrelated image codecs are enabled.
 - Raster decode applies maximum axis limits through the decoder API and validates pixel count, RGBA8 output bytes and exact output length before returning pixels.
 - GIF is not exposed as a decode format. TIFF is a still-image format; multi-page input uses its first page.
