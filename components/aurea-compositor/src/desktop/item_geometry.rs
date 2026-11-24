@@ -24,6 +24,7 @@ pub(crate) const DESKTOP_ICON_LOGICAL_SIZE: u32 = 64;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct DesktopItemDrawGeometry {
     pub(crate) item_id: DesktopItemId,
+    pub(crate) is_selected: bool,
     pub(crate) geometry: SurfaceGeometry,
     pub(crate) scissor: SurfaceScissor,
 }
@@ -78,6 +79,7 @@ pub(crate) fn desktop_item_geometries(
 
         result.push(DesktopItemDrawGeometry {
             item_id: item.id().clone(),
+            is_selected: snapshot.is_selected(item.id()),
             geometry,
             scissor,
         });
@@ -99,6 +101,28 @@ mod tests {
         let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
         let output = DisplayOutput::new(1, "DP-1", vec![mode], mode, scale).unwrap();
         RenderTarget::from_output(&output, origin).unwrap()
+    }
+
+    #[test]
+    fn selected_item_geometry_carries_selection_state() {
+        let manager = aurea_desktop_api::desktop::DesktopManager::default();
+        let snapshot = DesktopItemsSnapshot::capture(&manager)
+            .with_selected_item(Some("system:trash".to_owned()));
+
+        let geometries = desktop_item_geometries(&snapshot, &target((0, 0), 1));
+        assert_eq!(geometries.len(), 1);
+        assert!(geometries[0].is_selected);
+    }
+
+    #[test]
+    fn unselected_item_geometry_does_not_mark_selection() {
+        let snapshot = DesktopItemsSnapshot::capture(
+            &aurea_desktop_api::desktop::DesktopManager::default(),
+        );
+
+        let geometries = desktop_item_geometries(&snapshot, &target((0, 0), 1));
+        assert_eq!(geometries.len(), 1);
+        assert!(!geometries[0].is_selected);
     }
 
     #[test]
