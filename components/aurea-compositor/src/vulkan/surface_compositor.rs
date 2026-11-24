@@ -22,7 +22,11 @@ use std::sync::Arc;
 
 use smithay::reexports::ash::vk;
 
-use crate::{render::RenderScene, renderer::RenderTarget};
+use crate::{
+    desktop::{WallpaperDrawGeometry, WallpaperFitMode, WallpaperLayout},
+    render::RenderScene,
+    renderer::RenderTarget,
+};
 
 use cursor_geometry::native_cursor_geometry;
 
@@ -90,6 +94,7 @@ pub(super) fn render_frame(
     let snapshots = scene.shm_snapshots();
     let visible = visible_surfaces(snapshots, target)?;
     let cursor = native_cursor_geometry(scene, target);
+    let wallpaper_selected = scene.desktop().wallpaper().is_some();
     let texture_requests = visible
         .iter()
         .map(|surface| {
@@ -105,7 +110,7 @@ pub(super) fn render_frame(
         .prepare_surface_textures(&active_surface_ids, &texture_requests)
         .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
 
-    if visible.is_empty() && cursor.is_none() {
+    if visible.is_empty() && cursor.is_none() && surface_cache.wallpaper_texture().is_none() {
         surface_cache
             .complete_surface_texture_uploads()
             .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
@@ -178,6 +183,12 @@ pub(super) fn render_frame(
     surface_cache
         .ensure_pipeline(composition_view.format())
         .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
+    let wallpaper_ready = wallpaper_selected && surface_cache.wallpaper_texture().is_some();
+    if wallpaper_ready {
+        surface_cache
+            .ensure_wallpaper_pipeline(composition_view.format())
+            .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
+    }
     let descriptor_layout = surface_cache.descriptor_layout();
     let sampler = surface_cache.sampler();
     let pipeline = surface_cache
@@ -191,7 +202,9 @@ pub(super) fn render_frame(
     // Cached images survive across frames. Views and descriptor sets remain
     // frame-scoped until submit_and_wait confirms GPU completion.
     let binding_pool = surface_cache
-        .create_texture_binding_pool(visible.len() as u32 + u32::from(cursor.is_some()))
+        .create_texture_binding_pool(
+            visible.len() as u32 + u32::from(cursor.is_some()) + u32::from(wallpaper_ready),
+        )
         .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
     let views = visible
         .iter()
@@ -219,6 +232,26 @@ pub(super) fn render_frame(
             .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
         })
         .collect::<Result<Vec<_>, _>>()?;
+
+    let wallpaper_binding = if wallpaper_ready {
+        let texture = surface_cache.wallpaper_texture().ok_or_else(|| {
+            VulkanSurfaceCompositionError::Texture(
+                "The selected wallpaper texture was not ready after upload polling".to_owned(),
+            )
+        })?;
+        Some(
+            VulkanTextureBinding::new_in_pool(
+                device,
+                &binding_pool,
+                &descriptor_layout,
+                texture.view(),
+                &sampler,
+            )
+            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?,
+        )
+    } else {
+        None
+    };
 
     let cursor_binding = if cursor.is_some() {
         let texture = surface_cache.native_cursor_texture().ok_or_else(|| {
@@ -263,6 +296,69 @@ pub(super) fn render_frame(
         background_color,
     )
     .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+
+    if let (Some(texture), Some(binding)) =
+        (surface_cache.wallpaper_texture(), wallpaper_binding.as_ref())
+    {
+        let layout = WallpaperLayout::calculate(
+            texture.width(),
+            texture.height(),
+            target.width(),
+            target.height(),
+            WallpaperFitMode::Fill,
+        )
+        .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+        if let Some(geometry) = WallpaperDrawGeometry::for_output(
+            layout,
+            texture.width(),
+            texture.height(),
+            target.width(),
+            target.height(),
+        ) {
+            let destination = geometry.destination();
+            let viewport = vk::Viewport {
+                x: destination.x() as f32,
+                y: destination.y() as f32,
+                width: destination.width() as f32,
+                height: destination.height() as f32,
+                min_depth: 0.0,
+                max_depth: 1.0,
+            };
+            let scissor = vk::Rect2D {
+                offset: vk::Offset2D {
+                    x: i32::try_from(destination.x())
+                        .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                    y: i32::try_from(destination.y())
+                        .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                },
+                extent: vk::Extent2D {
+                    width: destination.width(),
+                    height: destination.height(),
+                },
+            };
+            let pipeline = surface_cache
+                .wallpaper_pipeline(composition_view.format())
+                .ok_or_else(|| {
+                    VulkanSurfaceCompositionError::Pipeline(
+                        "The requested wallpaper pipeline was not cached".to_owned(),
+                    )
+                })?;
+            VulkanDrawPass::record_textured_region_with_push_constants(
+                command_buffer.handle(),
+                composition_view,
+                pipeline,
+                binding,
+                0,
+                VulkanImageState::General,
+                VulkanImageState::General,
+                VulkanColorLoad::Load,
+                viewport,
+                scissor,
+                &geometry.uv().to_push_constant_bytes(),
+            )
+            .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+        }
+    }
 
     for (surface, binding) in visible.iter().zip(bindings.iter()) {
         let geometry = surface.geometry;
