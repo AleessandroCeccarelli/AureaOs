@@ -1584,3 +1584,11 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Added `docs/architecture/INPUT-EVENT-COVERAGE.md` with the supported event surface, AureaOS routing status, limitations and follow-up sequence.
 - No new dependencies and no Cargo manifest/lockfile changes.
 - Static source/API review only. No build, Cargo check, rustfmt, tests or hardware validation. Grouped Fedora validation remains scheduled for Friday; Debian 13 remains the compatibility baseline.
+
+
+### 2026-11-24 — Include pad-only devices in tablet-seat cleanup
+
+- Device removal previously called `remove_tablet_device` only when `TabletTool` capability was present.
+- Expanded the guard to include `TabletPad`, ensuring pad-only tablet devices participate in tablet-seat lifecycle cleanup even though Smithay 0.7 does not route pad input events.
+- Per-device mapping/calibration cleanup remains handled by the generic pointing-device removal path.
+- No build, Cargo check, rustfmt or tests run; grouped Fedora verification remains pending.
