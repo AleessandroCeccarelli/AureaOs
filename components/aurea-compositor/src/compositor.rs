@@ -118,6 +118,7 @@ pub struct AureaCompositor {
     #[cfg(feature = "drm")]
     pointer_gesture_owner: pointer_gestures::PointerGestureOwner,
     desktop_interactions: DesktopInteractionSender,
+    desktop_selection: aurea_desktop_api::desktop_interaction::DesktopSelectionController,
     desktop_click_tracker: DesktopClickTracker,
     pointer_shake: PointerShakeDetector,
     cursor_locate_animation: CursorLocateAnimation,
@@ -187,6 +188,7 @@ impl AureaCompositor {
             interaction_engine: InteractionEngine::new(),
             #[cfg(feature = "drm")]
             pointer_gesture_owner: pointer_gestures::PointerGestureOwner::default(),
+            desktop_selection: desktop_interactions.selection_controller(),
             desktop_interactions,
             desktop_click_tracker: DesktopClickTracker::default(),
             pointer_shake: PointerShakeDetector::default(),
