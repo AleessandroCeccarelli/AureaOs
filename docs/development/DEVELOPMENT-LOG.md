@@ -837,3 +837,13 @@ Added `ShellRuntime::set_trash_contents` as the shell-side update point for sema
 
 ### Superseded Btrfs proposal
 The earlier 24 November draft proposing sibling subvolumes, snapshots, snapshot-based update transactions and rollback was not an approved project decision. It is superseded. AureaOS uses Btrfs as its selected filesystem, with one Btrfs partition for the installed OS. Aurea Time is the sole planned backup/restore system; native Btrfs snapshots are not part of the planned workflow.
+
+
+## 2026-11-24 — Secure Boot readiness strategy
+
+- Confirmed that Roma 1.0 keeps Secure Boot disabled, but the UKI pipeline should be structured for a future signed profile.
+- Research found Debian 13 Trixie packages a Microsoft-UEFI-CA-signed shim, Debian-signed shim helpers and systemd-boot, plus systemd-ukify for UKI generation/signing.
+- A future owner-enrollment path using firmware DB or shim MOK may avoid AureaOS needing its own Microsoft signing relationship, but the exact shim → systemd-boot → UKI trust path must be proven on real firmware. Do not promise universal compatibility.
+- Documented separate build/signing stages, public/private key separation, protected production key custody, signature verification, rotation/revocation, SBAT/DBX awareness and recovery requirements.
+- No signing keys were generated; no firmware state or package manifests were changed. No build, test or CI was run.
+- Updated the English and Italian systemd-boot/UKI architecture documents.
