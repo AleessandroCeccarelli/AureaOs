@@ -131,3 +131,10 @@ The crate now exposes an optional `DecodeWorker` for callers that need to keep s
 - The worker is backend-neutral and has no compositor, Smithay or Vulkan dependency.
 
 The worker is infrastructure only at this stage. The compositor does not yet own or call it, and the decoded pixels are not yet connected to the Vulkan wallpaper upload cache. The next integration must define ownership and lifecycle outside the render callback, poll completed results without blocking, and discard stale results when the wallpaper selection/revision changes.
+
+
+## Wallpaper decode service integration boundary
+
+The compositor now depends on `aurea-media` and contains a wallpaper-specific `WallpaperDecodeService` in `desktop/wallpaper/decode_service.rs`. The service owns the bounded media worker, submits the selected asset's compressed bytes, polls results without blocking, validates the returned RGBA8 buffer through `WallpaperPixels`, and tags successful results with an asset ID and monotonically increasing revision. Selection changes invalidate pending and ready results; a queue-full submission can be retried by selecting the same asset again.
+
+This service is not yet wired into `AureaCompositor::render_output` or `RenderScene`, and its decoded pixels are not yet submitted to `VulkanWallpaperTextureCache`. This separation is intentional: next we must add a narrow handoff from compositor-owned decode state to the frame scene, then let the Vulkan backend consume only completed, current-generation pixels. No decode, wait, or allocation should be added to the render callback.
