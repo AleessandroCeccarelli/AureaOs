@@ -7,7 +7,7 @@
 
 use super::{
     stacks::build_stacks, DesktopItem, DesktopItemId, DesktopItemKind, DesktopPosition,
-    DesktopPreferences, DesktopStack, StackGrouping,
+    DesktopPreferences, DesktopStack, DesktopTrashState, StackGrouping,
 };
 
 /// Errors returned when changing the desktop entry collection.
@@ -23,12 +23,19 @@ pub enum DesktopManagerError {
 pub struct DesktopManager {
     items: Vec<DesktopItem>,
     preferences: DesktopPreferences,
+    trash_state: DesktopTrashState,
 }
 
 impl DesktopManager {
     pub fn items(&self) -> &[DesktopItem] { &self.items }
     pub const fn preferences(&self) -> &DesktopPreferences { &self.preferences }
     pub fn preferences_mut(&mut self) -> &mut DesktopPreferences { &mut self.preferences }
+    pub const fn trash_state(&self) -> DesktopTrashState { self.trash_state }
+
+    /// Updates the visual state supplied by the Trash service.
+    pub fn set_trash_state(&mut self, state: DesktopTrashState) {
+        self.trash_state = state;
+    }
 
     pub fn add_item(&mut self, item: DesktopItem) -> Result<(), DesktopManagerError> {
         if self.items.iter().any(|existing| existing.id() == item.id()) {
@@ -76,14 +83,21 @@ impl Default for DesktopManager {
             DesktopItemKind::Trash,
             DesktopPosition::new(32, 32),
         );
-        Self { items: vec![trash], preferences: DesktopPreferences::default() }
+        Self {
+            items: vec![trash],
+            preferences: DesktopPreferences::default(),
+            trash_state: DesktopTrashState::default(),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::{DesktopManager, DesktopManagerError};
-    use crate::desktop::{DesktopItem, DesktopItemId, DesktopItemKind, DesktopPosition, StackGrouping};
+    use crate::desktop::{
+        DesktopItem, DesktopItemId, DesktopItemKind, DesktopPosition, DesktopTrashState,
+        StackGrouping,
+    };
 
     fn file(id: &str, name: &str) -> DesktopItem {
         DesktopItem::new(
@@ -110,6 +124,16 @@ mod tests {
         assert_eq!(manager.add_item(item), Err(DesktopManagerError::DuplicateItem));
         let trash_id = DesktopItemId::new("system:trash").unwrap();
         assert_eq!(manager.remove_item(&trash_id), Err(DesktopManagerError::SystemItem));
+    }
+
+    #[test]
+    fn trash_visual_state_is_shared_with_desktop_snapshots() {
+        let mut manager = DesktopManager::default();
+        assert_eq!(manager.trash_state(), DesktopTrashState::Empty);
+
+        manager.set_trash_state(DesktopTrashState::Full);
+
+        assert_eq!(manager.trash_state(), DesktopTrashState::Full);
     }
 
     #[test]
