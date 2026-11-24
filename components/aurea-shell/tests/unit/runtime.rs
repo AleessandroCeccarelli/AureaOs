@@ -324,3 +324,25 @@ fn runtime_event_loop_receives_compositor_interactions() {
         Some(DesktopInteraction::ShowOverview)
     );
 }
+
+#[test]
+fn compositor_desktop_item_selection_is_applied_to_shell_state() {
+    use aurea_desktop_api::desktop_interaction::DesktopInteraction;
+
+    let mut runtime = ShellRuntime::new();
+    assert_eq!(runtime.desktop_state().selected_item_id(), None);
+
+    runtime.handle_desktop_interaction(DesktopInteraction::DesktopItemSelected {
+        id: "system:trash".to_owned(),
+    });
+    assert_eq!(runtime.desktop_state().selected_item_id(), Some("system:trash"));
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::DesktopItemSelected {
+            id: "system:trash".to_owned(),
+        })
+    );
+
+    runtime.handle_desktop_interaction(DesktopInteraction::DesktopSelectionCleared);
+    assert_eq!(runtime.desktop_state().selected_item_id(), None);
+}
