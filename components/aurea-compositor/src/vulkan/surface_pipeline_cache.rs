@@ -51,6 +51,7 @@ impl Error for VulkanSurfacePipelineCacheError {}
 pub(crate) struct VulkanSurfacePipelineCache {
     device: Arc<VulkanLogicalDevice>,
     pipelines: HashMap<vk::Format, VulkanGraphicsPipeline<'static>>,
+    wallpaper_pipelines: HashMap<vk::Format, VulkanGraphicsPipeline<'static>>,
     descriptor_layout: VulkanTextureDescriptorSetLayout<'static>,
     sampler: VulkanSampler<'static>,
     texture_cache: VulkanSurfaceTextureCache,
@@ -72,6 +73,7 @@ impl VulkanSurfacePipelineCache {
         Ok(Self {
             device,
             pipelines: HashMap::new(),
+            wallpaper_pipelines: HashMap::new(),
             descriptor_layout,
             sampler,
             texture_cache,
@@ -118,6 +120,53 @@ impl VulkanSurfacePipelineCache {
 
         self.pipelines.insert(format, pipeline);
         Ok(())
+    }
+
+    /// Creates a wallpaper-specific pipeline with an independent UV push-constant ABI.
+    pub(crate) fn ensure_wallpaper_pipeline(
+        &mut self,
+        format: vk::Format,
+    ) -> Result<(), VulkanSurfacePipelineCacheError> {
+        if self.wallpaper_pipelines.contains_key(&format) {
+            return Ok(());
+        }
+
+        let vertex = VulkanShaderModule::from_bytes(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_VERT_SPV")),
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let fragment = VulkanShaderModule::from_bytes(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_FRAG_SPV")),
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let descriptor_layouts = [self.descriptor_layout.handle()];
+        let uv_range = [vk::PushConstantRange::default()
+            .stage_flags(vk::ShaderStageFlags::VERTEX)
+            .offset(0)
+            .size((4 * std::mem::size_of::<f32>()) as u32)];
+        let pipeline = VulkanGraphicsPipeline::new_shared_with_descriptor_layout_handles(
+            Arc::clone(&self.device),
+            VulkanGraphicsShaders {
+                vertex: &vertex,
+                fragment: &fragment,
+            },
+            format,
+            &descriptor_layouts,
+            &uv_range,
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Pipeline)?;
+
+        self.wallpaper_pipelines.insert(format, pipeline);
+        Ok(())
+    }
+
+    pub(crate) fn wallpaper_pipeline(
+        &self,
+        format: vk::Format,
+    ) -> Option<&VulkanGraphicsPipeline<'static>> {
+        self.wallpaper_pipelines.get(&format)
     }
 
     pub(crate) fn prepare_surface_textures(
