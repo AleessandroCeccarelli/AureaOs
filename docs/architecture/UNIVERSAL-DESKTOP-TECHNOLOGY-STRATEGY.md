@@ -169,6 +169,16 @@ Do not create an always-on monolithic daemon for the first milestone. Start with
 
 The first milestone is local file/link/text handoff, not live media streaming, cloud sync or message mirroring. Full design: [Aurea Link and Aurea Share](AUREA-LINK-SHARE.md).
 
+## 6.2 Online-service sharing
+
+Aurea Share must also hand selected local content directly from Fides, image/PDF viewers and media/document apps to online services. This is distinct from Aurea Link's local device-to-device transport.
+
+Use official provider APIs/OAuth where the provider permits the exact action and account type; otherwise use a supported share/deep link or registered desktop application handoff. Never claim all providers permit personal-account direct messaging or publishing. Telegram Bot API is not a personal-user API; WhatsApp Cloud API is a Business Platform; Facebook publishing is Page-oriented; Instagram publishing is limited to eligible Professional accounts; Reddit API access and commercial use require approval review; YouTube Data API supports authenticated channel uploads, not arbitrary chat sharing.
+
+Build a provider-neutral capability registry (content types, actions, account class, OAuth scopes, file limits, quotas, review/commercial constraints and required confirmation), then small per-provider adapters. OAuth tokens belong in the system credential store; use least privilege and PKCE where supported. Never embed confidential client secrets in desktop binaries. No scraping, private endpoints, UI automation to bypass limits or silent publication.
+
+Full research and architecture: [Aurea Share Online Integrations](AUREA-SHARE-ONLINE-INTEGRATIONS.md).
+
 ## 7. Native UI toolkit decision
 
 Do not select a toolkit because it is popular or because it is written in Rust. A native AureaOS toolkit must be evaluated against:
