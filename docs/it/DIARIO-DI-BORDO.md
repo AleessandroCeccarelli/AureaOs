@@ -1712,3 +1712,13 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Quando la tavoletta è assegnata a un singolo monitor, il vincolo considera esclusivamente quel monitor: la penna non può sconfinare sugli altri display.
 - Riutilizzata la policy geometrica già impiegata dal puntatore relativo; nessuna modifica al percorso touchscreen o agli eventi assoluti generici.
 - Nessuna build, cargo check, rustfmt o test eseguiti; verifica raggruppata su Fedora ancora in sospeso.
+
+
+### Primo instradamento puntatore assoluto — 24 novembre 2026
+
+- Collegato PointerMotionAbsolute al compositor: con un solo output abilitato, le coordinate assolute vengono trasformate nello spazio logico globale del monitor e inviate alla normale seat Wayland del puntatore.
+- Il percorso riutilizza il vincolo geometrico degli output e aggiorna il focus sotto il cursore, la frame del puntatore e il rendering.
+- Su desktop multi-monitor l'evento viene deliberatamente ignorato: senza un'assegnazione esplicita del dispositivo non indoviniamo il monitor di destinazione.
+- Touchscreen e penne continuano a usare i rispettivi percorsi dedicati; non vengono mescolati con il puntatore assoluto generico.
+- È un primo supporto parziale, non ancora una gestione completa dei dispositivi assoluti su più monitor.
+- Nessuna build, cargo check, rustfmt o test eseguiti. Verifica raggruppata su Fedora ancora in sospeso; nessuna dipendenza o modifica ai manifest Cargo.
