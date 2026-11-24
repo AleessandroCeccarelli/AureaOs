@@ -156,6 +156,7 @@ fn is_pointing_device(kind: InputDeviceKind) -> bool {
         InputDeviceKind::Mouse
             | InputDeviceKind::Touchpad
             | InputDeviceKind::Tablet
+            | InputDeviceKind::TabletPad
             | InputDeviceKind::Touchscreen
     )
 }
@@ -190,7 +191,8 @@ mod tests {
         assert!(service.connect(descriptor(2, InputDeviceKind::Touchpad)));
         assert!(service.connect(descriptor(3, InputDeviceKind::Tablet)));
         assert!(service.connect(descriptor(4, InputDeviceKind::Touchscreen)));
-        assert_eq!(service.device_count(), 4);
+        assert!(service.connect(descriptor(5, InputDeviceKind::TabletPad)));
+        assert_eq!(service.device_count(), 5);
     }
 
     #[test]
