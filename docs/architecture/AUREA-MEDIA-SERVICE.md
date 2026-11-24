@@ -217,7 +217,7 @@ The wallpaper importer is an image feature, not a video player. No video contain
 
 - Windows theme files document JPG/JPEG, BMP/DIB, TIFF/TIF, PNG and GIF wallpaper assets. Some newer managed desktop-background configuration interfaces deliberately document the narrower JPG/JPEG/PNG subset.
 - macOS lets users select an image file, folder, photo set or Photos-library image as wallpaper. Apple's image platform documents JPEG, PNG, GIF, TIFF, HEIC and other formats; Preview also exports HEIC, JPEG, JPEG 2000, OpenEXR, PDF, PNG and TIFF.
-- AureaOS adopts a practical superset for user-selected raster wallpapers rather than copying the narrowest policy interface of either platform.
+- AureaOS adopts a practical still-raster subset for user-selected wallpapers rather than copying the narrowest policy interface of either platform. GIF is deliberately excluded even though the reference platforms may accept it.
 
 ### Accepted wallpaper formats
 
@@ -244,7 +244,7 @@ Format detection must inspect file content/signatures and validate the decoded c
 - Preserve the current input, axis, pixel-count and output-memory limits. Enforce dimensions and allocation limits before pixel allocation; do not rely only on post-decode validation.
 - Decode only on the bounded media worker, never on a compositor frame/render callback.
 - Reject malformed/truncated files, unsupported bit depth/color spaces, oversized dimensions, excessive frame/page counts and allocation failures with stable service errors.
-- GIF and multi-page TIFF produce a single static wallpaper from the first frame/page. No animation scheduling or video playback is implied.
+- GIF is rejected as a wallpaper format. Multi-page TIFF is decoded as a still image using its first page; no page animation or video playback is implied.
 - HEIC/HEIF support is image decoding through libheif with an HEVC still-image decoder plugin. This is not HEVC video playback.
 - AVIF is a still-image format. Its decoder plugin/backend must be present and checked separately from HEIC's HEVC plugin.
 - Do not add a codec dependency to the compositor. Native libraries belong to aurea-media; only decoded RGBA8 crosses the boundary.
@@ -255,7 +255,7 @@ The current compositor WallpaperAsset is a compile-time embedded JPEG with a sta
 
 ### Dependency decision gates
 
-- Evaluate a narrowly featured Rust image crate adapter for PNG, BMP, GIF, TIFF and WebP, with only the necessary codec features enabled and decoder limits applied before allocation.
+- Evaluate a narrowly featured Rust image crate adapter for PNG, BMP, TIFF and WebP, with only the necessary codec features enabled and decoder limits applied before allocation.
 - Keep the existing TurboJPEG adapter until the replacement path is verified; avoid compiling two JPEG implementations indefinitely.
 - Evaluate libheif for HEIC/HEIF and AVIF, including Debian's separately packaged decoder plugins. HEVC image decoding requires the libde265 plugin; AV1 image decoding requires a suitable AV1 plugin such as dav1d or aomdec.
 - Confirm exact Debian 13 package versions, runtime dependencies, upstream licenses and plugin availability before adding native packages to the target image. Do not install every libheif plugin or encoder.
@@ -267,12 +267,12 @@ The current compositor WallpaperAsset is a compile-time embedded JPEG with a sta
 
 The first decoder expansion is now present in source:
 
-- ImageFormat includes JPEG, PNG, BMP, GIF, TIFF and WebP.
+- ImageFormat includes JPEG, PNG, BMP, TIFF and WebP.
 - JPEG remains routed to the existing TurboJPEG adapter.
 - PNG, BMP, GIF, TIFF and WebP route through a private raster adapter backed by image 0.25.10.
-- The dependency disables default features and enables only bmp, gif, png, tiff and webp; no Rayon, video or unrelated image codecs are enabled.
+- The dependency disables default features and enables only bmp, png, tiff and webp; no Rayon, video or unrelated image codecs are enabled.
 - Raster decode applies maximum axis limits through the decoder API and validates pixel count, RGBA8 output bytes and exact output length before returning pixels.
-- GIF/TIFF are exposed as static decode formats; the wallpaper policy is first frame/page only. No playback path is added.
+- GIF is not exposed as a decode format. TIFF is a still-image format; multi-page input uses its first page.
 
 Important verification boundary: this source has not been built or tested. image::Limits::max_alloc is documented as best-effort/non-strict for some decoders; axis limits are strict where supported. AureaOS therefore also validates output dimensions and bytes and retains a bounded decode worker. Do not describe this as a formally hard process-wide memory sandbox.
 
@@ -287,8 +287,15 @@ The compositor wallpaper source is no longer restricted to a compile-time JPEG b
 - WallpaperAsset now owns its compressed bytes and identifier through shared immutable storage.
 - from_bytes validates non-empty identity/input, enforces the configured compressed-input ceiling, and detects supported formats by file signature rather than extension.
 - from_file reads a selected path into owned memory with a pre-read metadata size check and a bounded read. It is explicitly intended for a settings/media-I/O task, never a frame callback.
-- Current asset signatures cover JPEG, PNG, BMP, GIF, TIFF and WebP. HEIC/HEIF and AVIF are intentionally not accepted until their decoder adapters are present.
+- Current asset signatures cover JPEG, PNG, BMP, TIFF and WebP; GIF signatures are rejected. HEIC/HEIF and AVIF are intentionally not accepted until their decoder adapters are present.
 - Wallpaper manager/snapshot/decode keys now carry owned asset identity. Decode requests copy owned compressed bytes into the bounded media worker. The texture cache key is also owned, so arbitrary user-selected paths do not require static lifetimes.
 - The renderer still only polls the worker and submits completed RGBA8 pixels; file reading and image decoding remain outside the frame/render callback.
 
 This is an internal API change and has not been compiled. The user-facing file picker and settings persistence are separate work; this change provides the asset-loading boundary those features will call.
+
+
+## Product clarification — GIF excluded from wallpapers (2026-11-24)
+
+The Windows/macOS comparison above records formats documented by those platforms; it is not AureaOS's acceptance list. AureaOS deliberately does not accept GIF as a wallpaper, even as a first-frame still. The GIF decoder feature, `ImageFormat::Gif`, `WallpaperFormat::Gif`, signature detection, animated frame provider, and playback policy have been removed from the wallpaper/media implementation.
+
+TIFF remains accepted as a still-image format for professional photography, scanning, publishing and archival workflows. TIFF may be lossless and support high bit depth; its files can be large. Multi-page TIFF is treated as a static image using its first page.
