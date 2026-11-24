@@ -38,3 +38,7 @@ First-party application icons use coordinated complete-tile and transparent-symb
 
 ## Production boundary
 SVG masters do not imply validated exports, packaging or runtime loading. Validate optical alignment, scaling, contrast, transparent exports and target-shell rendering before release. Do not modify preserved legacy artwork as part of unrelated icon work.
+
+
+## Desktop Trash raster export
+The six approved Trash SVG masters remain canonical. A reproducible export script is available at `tools/assets/render-trash-icons.sh`; it targets `resvg 0.45.1` and the eight standard raster sizes documented in `generated/README.md`. The generated assets have not yet been produced or visually validated. The renderer is a developer-only tool, never a runtime dependency.
