@@ -19,7 +19,7 @@ pub use animation::{
     WallpaperPauseReason, WallpaperPlaybackDecision, WallpaperPlaybackEnvironment,
     WallpaperPlaybackPolicy, WallpaperProviderError,
 };
-pub use asset::{WallpaperAsset, WallpaperDimensions, WallpaperFormat};
+pub use asset::{WallpaperAsset, WallpaperAssetError, WallpaperDimensions, WallpaperFormat};
 pub use draw_geometry::{WallpaperDrawGeometry, WallpaperUvRect};
 pub use decode_service::{
     DecodedWallpaper, WallpaperDecodeKey, WallpaperDecodeService,
