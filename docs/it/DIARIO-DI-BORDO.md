@@ -671,3 +671,24 @@ Non sono stati eseguiti Cargo formatting, build, check, test o CI.
 ### Regola operativa
 
 Prima di proporre o aggiungere una dipendenza, consultare e aggiornare il registro. La compatibilità Debian prevale sulla comodità dell'ambiente di sviluppo. Non dedurre mai la compatibilità Debian da una compilazione Fedora o dalla CI Ubuntu.
+
+
+
+## 24 novembre 2026 — Verifica compatibilità decoder JPEG Debian
+
+### Risultati
+
+- Verificati i pacchetti Debian 13 Trixie amd64 `libturbojpeg0` e `libturbojpeg0-dev`, versione `1:2.1.5-4`.
+- Verificati i nomi dei pacchetti di sviluppo Fedora `libjpeg-turbo-devel` e `turbojpeg-devel`; i flussi Fedora consultati usano libjpeg-turbo 3.1.x, quindi gli header nativi Fedora non rappresentano il target Debian 2.1.
+- Verificato che `turbojpeg-sys` 1.1.1 e 1.2.0 espongono le API TurboJPEG 3.0 `tj3*`. Il crate di alto livello `turbojpeg` attuale dipende da questa famiglia di binding. Non è una corrispondenza valida da presumere con la libreria TurboJPEG 2.1 di Debian 13.
+- Valutato `zune-jpeg` 0.5.15 come alternativa candidata: Rust puro, una dipendenza normale dichiarata (`zune-core ^0.5.1`), MSRV 1.75, licenza `MIT OR Apache-2.0 OR Zlib`.
+
+### Aggiornamento registro
+
+- Aggiornate entrambe le versioni linguistiche del registro.
+- I binding Rust TurboJPEG non sono accettati per il percorso con libreria di sistema Debian, salvo verifica di un binding 2.1 o definizione di un adapter FFI AureaOS mantenuto esplicitamente.
+- `zune-jpeg` è registrato solo come Candidato. Restano aperte la revisione completa delle dipendenze/sicurezza, i limiti e la gestione degli errori.
+
+### Ambito
+
+Nessuna dipendenza è stata aggiunta ai manifest Cargo o ai lockfile. Nessuna implementazione del decoder è stata scritta. Non sono stati eseguiti build, format, check, test o CI.
