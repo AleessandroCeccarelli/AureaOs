@@ -17,18 +17,41 @@ pub struct DecodeLimits {
 }
 
 impl DecodeLimits {
-    pub const fn new(max_input_bytes: usize, max_dimension: u32, max_pixels: u64, max_output_bytes: usize) -> Self {
-        Self { max_input_bytes, max_dimension, max_pixels, max_output_bytes }
+    pub const fn new(
+        max_input_bytes: usize,
+        max_dimension: u32,
+        max_pixels: u64,
+        max_output_bytes: usize,
+    ) -> Self {
+        Self {
+            max_input_bytes,
+            max_dimension,
+            max_pixels,
+            max_output_bytes,
+        }
     }
 
-    pub const fn max_input_bytes(self) -> usize { self.max_input_bytes }
-    pub const fn max_dimension(self) -> u32 { self.max_dimension }
-    pub const fn max_pixels(self) -> u64 { self.max_pixels }
-    pub const fn max_output_bytes(self) -> usize { self.max_output_bytes }
+    pub const fn max_input_bytes(self) -> usize {
+        self.max_input_bytes
+    }
+
+    pub const fn max_dimension(self) -> u32 {
+        self.max_dimension
+    }
+
+    pub const fn max_pixels(self) -> u64 {
+        self.max_pixels
+    }
+
+    pub const fn max_output_bytes(self) -> usize {
+        self.max_output_bytes
+    }
 }
 
 impl Default for DecodeLimits {
-    fn default() -> Self { DEFAULT_DECODE_LIMITS }
+    fn default() -> Self {
+        DEFAULT_DECODE_LIMITS
+    }
 }
 
 #[cfg(test)]
@@ -40,7 +63,10 @@ mod tests {
         assert_eq!(DEFAULT_DECODE_LIMITS.max_input_bytes(), 64 * 1024 * 1024);
         assert_eq!(DEFAULT_DECODE_LIMITS.max_dimension(), 16_384);
         assert_eq!(DEFAULT_DECODE_LIMITS.max_pixels(), 64 * 1024 * 1024);
-        assert_eq!(DEFAULT_DECODE_LIMITS.max_output_bytes(), 256 * 1024 * 1024);
+        assert_eq!(
+            DEFAULT_DECODE_LIMITS.max_output_bytes(),
+            256 * 1024 * 1024
+        );
     }
 
     #[test]
