@@ -849,3 +849,13 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - Upload completion is polled at the start of Vulkan surface frame preparation. A texture is exposed only after its upload fence signals and only if its key is still selected. Stale completed uploads are discarded.
 - `VulkanSurfacePipelineCache` now owns this cache and exposes crate-internal preparation, texture access, and clear entry points. The decoder does not yet provide pixels and the wallpaper draw pass is not implemented, so these preparation/access methods are deliberately marked as deferred integration points. Polling is active.
 - No dependency/manifests changed. No Cargo fmt/check/test/build/CI or ISO run. User must run local Fedora verification; Debian 13 remains the compatibility target.
+
+
+## WALLPAPER — OUTPUT DRAW GEOMETRY UPDATE — 2026-11-24
+
+- New `components/aurea-compositor/src/desktop/wallpaper/draw_geometry.rs`: `WallpaperDrawGeometry` maps the existing fit layout to output-clipped destination pixels and normalized UV coordinates.
+- Handles Fill source crop, Fit letterboxing, Stretch, and Center clipping. The returned destination is safe for output-local Vulkan viewport/scissor use; UVs are adjusted for clipping.
+- New tests cover the four modes and empty/non-intersecting output. Types exported through `desktop`.
+- Commits: `a5b33ccd`, `93284f76`, `804f9e67`, `96c49b75`.
+- CPU geometry only; no shader, descriptor binding, wallpaper draw submission, JPEG decoder or display integration yet. No local checks run.
+- Next: add dedicated wallpaper UV shader/pipeline path and integrate its draw before SHM surfaces, including the empty-scene path. Do not modify the existing surface shader push-constant ABI casually. JPEG decoder remains gated by the Fedora + Debian 13 TurboJPEG ABI probe.
