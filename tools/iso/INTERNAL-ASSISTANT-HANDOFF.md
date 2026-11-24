@@ -829,3 +829,5 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - Commits: `84aab939` (Vulkan module registration), `9a2e2ab6` (texture implementation), `00dc99bc` (desktop pixel-contract export).
 - Important limitations: no wallpaper identity cache, no render-scene integration, no draw-under-surfaces yet. `from_pixels` waits for the one-time upload; call only from a resource-preparation/background path, never a render callback.
 - JPEG decoder/ABI gate remains pending. No dependencies/manifests changed; no fmt/check/test/build/CI or ISO run. Local Fedora verification is required before the next integration step.
+
+- Follow-up compile-safety review: `wallpaper_texture.rs` imports `WallpaperPixels` through the public `crate::desktop::WallpaperPixels` re-export (the internal `desktop::wallpaper` module is private). Fix commit: `881c88f9`.
