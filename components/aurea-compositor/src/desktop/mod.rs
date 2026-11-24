@@ -9,6 +9,7 @@ mod background;
 mod items_snapshot;
 #[allow(dead_code)] // Asset descriptors are staged until Fedora-generated RGBA8 assets are available.
 mod icon_assets;
+mod icon_asset_loader;
 #[allow(dead_code)] // Geometry is staged before the dedicated desktop texture renderer.
 mod item_geometry;
 mod manager;
@@ -20,6 +21,7 @@ mod wallpaper;
 pub use background::DesktopBackground;
 pub use items_snapshot::DesktopItemsSnapshot;
 #[allow(unused_imports)]
+pub(crate) use icon_asset_loader::{DesktopIconAssetLoadError, load_desktop_icon_snapshot};
 pub(crate) use icon_assets::{
     DesktopIconAssetDescriptor, DesktopIconRasterSize, DesktopIconTextureKey,
     desktop_icon_asset,
