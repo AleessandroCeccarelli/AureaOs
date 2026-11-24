@@ -1516,3 +1516,16 @@ Nessuna build, test, rustfmt o CI eseguiti. La verifica resta raggruppata su Fed
 - GIF e TIFF restano wallpaper statici: primo frame/prima pagina.
 - Rivedere WallpaperAsset e WallpaperDecodeKey per file utente con identità posseduta e revisione, mantenendo il caricamento fuori dal frame loop.
 - Nessuna build, test, rustfmt, cargo check o CI eseguiti. Nessuna dipendenza o pacchetto è stato aggiunto in questo blocco.
+
+
+## 24 novembre 2026 — Primo blocco decoder raster Aurea Media
+
+- Aggiunta la dipendenza image 0.25.10 ad aurea-media con default-features disabilitate e sole feature bmp, gif, png, tiff e webp.
+- Esteso ImageFormat con JPEG, PNG, BMP, GIF, TIFF e WebP.
+- JPEG continua a usare il decoder TurboJPEG già presente; i cinque formati raster nuovi passano da un adapter privato raster.rs.
+- Il decoder imposta i limiti massimi sugli assi prima della decodifica e controlla successivamente pixel, byte RGBA8 e lunghezza esatta del buffer.
+- GIF e TIFF sono trattati come immagini statiche (primo frame/prima pagina); nessuna animazione o riproduzione video è stata aggiunta.
+- Nessuna modifica al compositor in questo blocco.
+- Non sono stati eseguiti build, test, rustfmt o cargo check. Cargo.lock non è stato rigenerato e dovrà essere aggiornato su Fedora prima del prossimo build locked.
+- La documentazione upstream chiarisce che max_alloc è best-effort/non stretto per alcuni decoder: i limiti applicati non equivalgono a un sandbox di memoria di processo. La revisione sicurezza e i test reali restano obbligatori.
+- Prossimo blocco: rendere WallpaperAsset capace di rappresentare file utente con identità/byte posseduti e rilevamento del formato; poi integrare HEIC/HEIF e AVIF tramite backend Debian verificato.
