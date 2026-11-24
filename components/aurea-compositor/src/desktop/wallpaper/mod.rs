@@ -8,6 +8,7 @@
 mod animation;
 mod asset;
 mod draw_geometry;
+mod decode_service;
 mod layout;
 mod manager;
 mod pixels;
@@ -20,6 +21,10 @@ pub use animation::{
 };
 pub use asset::{WallpaperAsset, WallpaperDimensions, WallpaperFormat};
 pub use draw_geometry::{WallpaperDrawGeometry, WallpaperUvRect};
+pub use decode_service::{
+    DecodedWallpaper, WallpaperDecodeKey, WallpaperDecodeService,
+    WallpaperDecodeServiceError,
+};
 pub use layout::{WallpaperFitMode, WallpaperLayout, WallpaperPixelRect};
 pub use manager::WallpaperManager;
 pub use pixels::{MAX_WALLPAPER_RGBA_BYTES, WallpaperPixels, WallpaperPixelsError};
