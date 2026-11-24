@@ -204,12 +204,12 @@ impl VulkanSurfacePipelineCache {
     pub(crate) fn prepare_wallpaper_decode(
         &mut self,
         asset: Option<WallpaperAsset>,
-    ) -> Result<(), String> {
+    ) -> Result<(), VulkanWallpaperTextureCacheError> {
         let Some(asset) = asset else {
             self.wallpaper_texture_cache.clear();
             self.wallpaper_decode_service
                 .select(None)
-                .map_err(|error| error.to_string())?;
+                .map_err(|error| VulkanWallpaperTextureCacheError::Decode(error.to_string()))?;
             return Ok(());
         };
 
@@ -219,10 +219,10 @@ impl VulkanSurfacePipelineCache {
             Err(WallpaperDecodeServiceError::Worker(
                 aurea_media::DecodeWorkerError::QueueFull,
             )) => return Ok(()),
-            Err(error) => return Err(error.to_string()),
+            Err(error) => return Err(VulkanWallpaperTextureCacheError::Decode(error.to_string())),
         }
 
-        service.poll().map_err(|error| error.to_string())?;
+        service.poll().map_err(|error| VulkanWallpaperTextureCacheError::Decode(error.to_string()))?;
         let ready_len = service.ready().map(|decoded| decoded.pixels().byte_len());
         if ready_len.is_some_and(|byte_len| {
             self.wallpaper_texture_cache.can_accept_upload(byte_len)
@@ -234,7 +234,7 @@ impl VulkanSurfacePipelineCache {
                 };
                 if self.wallpaper_texture_cache
                     .prepare(key, decoded.pixels())
-                    .map_err(|error| error.to_string())?
+                    .map_err(|error| error)?
                 {
                     let _ = service.take_ready();
                 }
