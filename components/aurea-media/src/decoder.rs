@@ -63,9 +63,9 @@ pub fn decode(
         ImageFormat::Png | ImageFormat::Bmp | ImageFormat::Tiff | ImageFormat::WebP => {
             raster::decode(format, input, limits)
         }
-        ImageFormat::Heic | ImageFormat::Avif => {
+        format @ (ImageFormat::Heic | ImageFormat::Avif) => {
             #[cfg(feature = "heif")]
-            { heif::decode(input, limits) }
+            { heif::decode(format, input, limits) }
             #[cfg(not(feature = "heif"))]
             { let _ = (input, limits); Err(DecodeError::UnsupportedFormat) }
         }
