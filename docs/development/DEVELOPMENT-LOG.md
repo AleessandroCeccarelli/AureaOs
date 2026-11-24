@@ -1399,3 +1399,16 @@ No dependency was added. No build, tests, rustfmt, cargo check or CI were run.
 - The resolver remains disconnected from the frame renderer until RGBA8 assets have been generated and inspected.
 
 Commits: `4bb33193`, `1ca67908`. No Cargo or CI verification was run.
+
+
+## 2026-11-24 — Trash service modularization
+
+- Reduced `components/aurea-desktop/src/trash/service.rs` from 399 to approximately 280 lines.
+- Moved freedesktop deletion-date formatting into `trash/timestamp.rs`, with focused tests for the Unix epoch, leap day and year boundary.
+- Moved public Trash service behavior tests into `components/aurea-desktop/tests/trash_service.rs`; production service code no longer embeds a large test module.
+- Metadata parsing/serialization remains in `trash/metadata.rs`; filesystem entry lifecycle operations remain in `trash/service.rs`.
+- No new dependency and no intended public behavior change.
+
+Commits: `4769658c`, `f00e1d9e`, `78e05c62`, `40a95532`, `a3f6e9b2`.
+
+Static path and dependency review only. No build, tests, rustfmt, cargo check or CI were run.
