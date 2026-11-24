@@ -14,7 +14,7 @@ The wallpaper service is independent from the Vulkan renderer. The renderer rece
 
 ## Still-image format policy
 
-The authoritative closed list is maintained in [`../architecture/MEDIA-FORMATS.md`](../architecture/MEDIA-FORMATS.md), with an Italian companion at [`../it/FORMATS-MULTIMEDIALI.md`](../it/FORMATS-MULTIMEDIALI.md).
+The authoritative closed list is maintained in [`../architecture/MEDIA-FORMATS.md`](../architecture/MEDIA-FORMATS.md), with an Italian companion at [`../architecture/MEDIA-FORMATS-it.md`](../it/FORMATS-MULTIMEDIALI.md).
 
 AureaOS accepts only the following user-selected raster formats:
 
