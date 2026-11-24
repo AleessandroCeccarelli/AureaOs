@@ -50,6 +50,16 @@ Il desktop dovrà apparire come un ambiente integrato, non come una raccolta di 
 
 AureaOS dovrà offrire impostazioni predefinite sensate, lasciando comunque all’utente il controllo del proprio sistema.
 
+## Un desktop per tutti
+
+AureaOS è progettato per le persone, non per una singola categoria tecnica. Bambini, anziani, utenti alle prime armi, studenti, professionisti creativi, lavoratori d'ufficio, amministratori e sviluppatori devono poter utilizzare lo stesso desktop coerente.
+
+L'esperienza deve essere **semplice per impostazione predefinita, potente quando serve e accessibile fin dall'inizio**. Non creeremo edizioni rigide basate sull'età né nasconderemo funzionalità sulla base di supposizioni sugli utenti. Linguaggio chiaro, interfacce leggibili, controlli ampi e coerenti, uso da tastiera, tecnologie assistive, impostazioni sicure, annullamento e ripristino sono vantaggi per tutti.
+
+L'accessibilità è un requisito architetturale di Aurea Desktop, Human Interfaces e delle applicazioni sviluppate dal progetto, non una rifinitura finale. Multimedialità e produttività sono capacità fondamentali del desktop. Gli strumenti avanzati per sviluppatori e amministratori devono restare disponibili senza dominare l'esperienza predefinita.
+
+La direzione completa del prodotto e delle tecnologie è documentata nella [Strategia del desktop universale e delle tecnologie](../architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md). Le proposte tecnologiche contenute nel documento non attestano che siano già implementate o pronte per il rilascio.
+
 ## Una nostra identità di prodotto
 
 AureaOS è responsabile della progettazione e dello sviluppo della propria esperienza desktop e delle applicazioni di sistema che ne definiscono l’identità.
