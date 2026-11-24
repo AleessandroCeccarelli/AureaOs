@@ -247,9 +247,11 @@ impl VulkanSurfacePipelineCache {
     pub(crate) fn prepare_wallpaper_texture(
         &mut self,
         key: WallpaperTextureKey,
-        pixels: WallpaperPixels,
+        pixels: &WallpaperPixels,
     ) -> Result<(), VulkanWallpaperTextureCacheError> {
-        self.wallpaper_texture_cache.prepare(key, pixels)
+        self.wallpaper_texture_cache
+            .prepare(key, pixels)
+            .map(|_| ())
     }
 
     /// Polls wallpaper upload fences without blocking the render path.
