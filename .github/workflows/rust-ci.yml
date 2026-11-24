@@ -164,7 +164,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: aureaos-cargo-lock
+          name: aureaos-cargo-lock-heif
           path: Cargo.lock
           if-no-files-found: error
           retention-days: 3
