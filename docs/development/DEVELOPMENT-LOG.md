@@ -1017,3 +1017,11 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Added tests rejecting non-finite requested pointer coordinates. Existing gap, edge, negative-origin and mixed-scale coverage remains in place.
 - No pointer semantics, input routing, output layout, dependencies or public API were intentionally changed.
 - Changes are committed on main. No Cargo fmt/check/test/build or CI was run; local Fedora verification remains required. No ISO was generated.
+
+
+## 2026-11-24 — JPEG SOF metadata validation
+
+- Hardened the embedded wallpaper JPEG metadata parser: a Start Of Frame segment must now declare a non-zero component count and its segment length must exactly match the JPEG SOF structure (8 bytes plus 3 bytes per component).
+- Added unit coverage for a minimal valid one-component frame, a truncated component table and a zero component count.
+- This is metadata validation only; it does not decode pixels or approve the TurboJPEG FFI backend. The Fedora and Debian 13 ABI probe remains a required gate before adding the Rust decoder.
+- No dependency or manifest changed. No build, format, check, test, CI or ISO was run.
