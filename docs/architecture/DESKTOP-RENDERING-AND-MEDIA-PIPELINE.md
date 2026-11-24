@@ -184,3 +184,41 @@ The primary pointer-button path gives mapped Wayland surfaces precedence. When n
 `DesktopItemsSnapshot` copies the selected identifier once per frame, and per-output geometry marks the matching item with `is_selected`. This establishes the path from Shell state to Vulkan frame preparation, but the Vulkan draw pass does not consume the flag yet. The visual selection treatment remains pending. A compositor-owned `DesktopClickTracker` recognizes a second click on the same item within 400 ms and within 4 logical pixels. It uses monotonic `Instant` timestamps and has no timer or polling loop; clicking a window or empty desktop cancels the pending first click. A recognized double-click emits `DesktopItemActivated { id }` after the selection event.
 
 The shell retains activation as a semantic pending action, but does not launch files or applications. Resolving desktop entries, permissions and launch policy belongs to the Files/Shell service layer and is not implemented by this tracker. No icon drawing or visible selection highlight is claimed yet.
+
+## Desktop item presentation ownership contract
+
+The desktop presents every supported item category through one native item pipeline. Trash is one item kind, not a special renderer or the definition of the desktop architecture.
+
+- **Aurea Shell / Desktop experience:** owns user-facing presentation policy: exposed entries, arrangement preferences, labels, selection UX, drag/drop policy, context-menu intent and activation intent. It does not issue Vulkan commands or own GPU resources.
+- **aurea-desktop-api:** owns technology-independent contracts: stable IDs, item kinds, resource references, logical positions, preferences, selection and activation events. It must not depend on Smithay, Vulkan, filesystem implementations or Fides internals.
+- **Aurea Files / filesystem services:** discover entries and provide authoritative metadata, MIME type, thumbnails and file operations. Fides is the user-facing file manager, not the desktop icon renderer.
+- **Trash service:** owns Trash contents, state calculation, delete/restore/empty operations and refresh notifications. It exports semantic state/data; it does not draw the Trash icon.
+- **Icon and theme asset service:** resolves approved artwork for item kind, MIME/application identity and theme, and supplies validated raster data. It does not decide placement or perform file operations.
+- **Aurea Compositor:** owns output-specific physical geometry, clipping, GPU texture lifetime, Vulkan draw commands, frame ordering and presentation. It consumes immutable item snapshots and prepared visual assets. It must not scan directories, infer MIME types, count Trash entries, launch applications or implement file-management policy.
+
+The frame data flow is one-way: Shell and services publish semantic desktop state through aurea-desktop-api; the compositor captures an immutable snapshot, resolves output geometry and draws prepared assets. Pointer hit testing may identify an item and return a semantic selection/activation event, but opening a file or launching an application remains a Shell/Files responsibility.
+
+### Common item rendering contract
+
+The native item renderer must support File, Folder, Application and Trash through one common visual-entry pipeline:
+- Trash artwork depends on Empty/PartiallyFull/Full semantic state and theme.
+- Folder artwork uses a canonical folder asset.
+- File artwork uses authoritative MIME metadata, not filename extension alone; a generic-file fallback is required.
+- Application artwork is resolved from desktop-entry/application identity, with a generic application fallback.
+
+The renderer receives a resolved asset key and immutable pixel snapshot. It does not inspect URI strings to guess file types. Asset I/O, decoding and raster preparation stay outside the frame-critical path; Vulkan uploads remain bounded, asynchronous and fence-owned. A missing optional icon must not prevent other items, windows or the pointer from rendering.
+
+### Current implementation boundary and next sequence
+
+The shared API defines all four item kinds, but the compositor snapshot and geometry are preparatory. The icon resolver currently resolves Trash only; File, Folder and Application have no approved asset mapping. The dedicated Vulkan icon cache is not fed by generated assets and is not connected to the draw pass. Selection and double-click intent reach Shell, but there is no visible icon or selection highlight yet, and no file/application launch implementation.
+
+Repository-relative Trash asset paths are suitable for source export, not a finalized installed runtime lookup contract. Before frame integration, define one explicit asset-root/packaging contract and pass it into an asset loader. Do not rely on process working directory or perform filesystem reads inside render_frame.
+
+1. Finalize the installed asset-root contract and generate/visually inspect the 24 Trash RGBA8 variants on Fedora; do not add unverified binaries.
+2. Add a small asset loader that reads validated raw RGBA8 data outside the render loop and reports missing/corrupt assets without aborting the desktop session.
+3. Complete item-to-asset mapping for Trash, Folder, File and Application using MIME/application metadata supplied by services.
+4. Prepare per-output geometry and texture requests from the immutable snapshot, then connect the dedicated bounded Vulkan icon cache.
+5. Extract icon drawing and selection treatment into focused modules; keep surface_compositor.rs an orchestrator. Draw wallpaper, desktop items/selection, Wayland surfaces, pointer, then display color.
+6. Add live item discovery and Trash-state updates through service/API notifications. Keep filesystem watchers and policy outside the compositor.
+7. Connect activation to Shell/Files operations. The compositor emits semantic intents only.
+8. Run one grouped Fedora verification/visual session after this implementation block; do not build, test or run rustfmt after every small edit.
