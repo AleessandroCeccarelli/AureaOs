@@ -36,12 +36,12 @@ pub(crate) struct DesktopItemDrawGeometry {
 pub(crate) fn desktop_item_geometries(
     snapshot: &DesktopItemsSnapshot,
     target: &RenderTarget,
-) -> Option<Vec<DesktopItemDrawGeometry>> {
+) -> Vec<DesktopItemDrawGeometry> {
     let mut result = Vec::new();
 
     for item in snapshot.items() {
         let position = item.position();
-        let geometry = if let Some(scale) = target.fractional_scale() {
+        let Some(geometry) = (if let Some(scale) = target.fractional_scale() {
             surface_geometry_with_fractional_scale(
                 (position.x, position.y),
                 (DESKTOP_ICON_LOGICAL_SIZE, DESKTOP_ICON_LOGICAL_SIZE),
@@ -49,7 +49,7 @@ pub(crate) fn desktop_item_geometries(
                 Transform::Normal,
                 target.logical_origin(),
                 scale,
-            )?
+            )
         } else {
             surface_geometry(
                 (position.x, position.y),
@@ -58,15 +58,20 @@ pub(crate) fn desktop_item_geometries(
                 Transform::Normal,
                 target.logical_origin(),
                 target.scale(),
-            )?
+            )
+        }) else {
+            // A malformed or overflowing saved position must not hide other icons.
+            continue;
         };
 
-        let geometry = transform_geometry_for_output(
+        let Some(geometry) = transform_geometry_for_output(
             geometry,
             target.width(),
             target.height(),
             target.transform(),
-        )?;
+        ) else {
+            continue;
+        };
         let Some(scissor) = geometry.scissor(target.width(), target.height()) else {
             continue;
         };
@@ -78,7 +83,7 @@ pub(crate) fn desktop_item_geometries(
         });
     }
 
-    Some(result)
+    result
 }
 
 #[cfg(test)]
@@ -106,7 +111,7 @@ mod tests {
         ).unwrap();
         let snapshot = DesktopItemsSnapshot::capture(&manager);
 
-        let geometries = desktop_item_geometries(&snapshot, &target((1920, 0), 1)).unwrap();
+        let geometries = desktop_item_geometries(&snapshot, &target((1920, 0), 1));
         assert_eq!(geometries.len(), 1);
         assert_eq!(geometries[0].geometry.x(), 40);
         assert_eq!(geometries[0].geometry.y(), 40);
@@ -119,7 +124,6 @@ mod tests {
             &aurea_desktop_api::desktop::DesktopManager::default(),
         );
         assert!(desktop_item_geometries(&snapshot, &target((1920, 0), 1))
-            .unwrap()
             .is_empty());
     }
 
@@ -128,7 +132,7 @@ mod tests {
         let snapshot = DesktopItemsSnapshot::capture(
             &aurea_desktop_api::desktop::DesktopManager::default(),
         );
-        let geometries = desktop_item_geometries(&snapshot, &target((0, 0), 2)).unwrap();
+        let geometries = desktop_item_geometries(&snapshot, &target((0, 0), 2));
         assert_eq!(geometries.len(), 1);
         assert_eq!(geometries[0].geometry.width(), DESKTOP_ICON_LOGICAL_SIZE * 2);
         assert_eq!(geometries[0].geometry.height(), DESKTOP_ICON_LOGICAL_SIZE * 2);
@@ -144,7 +148,7 @@ mod tests {
         ).unwrap();
         let snapshot = DesktopItemsSnapshot::capture(&manager);
 
-        let geometries = desktop_item_geometries(&snapshot, &target((0, 0), 1)).unwrap();
+        let geometries = desktop_item_geometries(&snapshot, &target((0, 0), 1));
         assert_eq!(geometries.len(), 1);
         assert_eq!(geometries[0].scissor.x, 0);
         assert_eq!(geometries[0].scissor.width, 32);
