@@ -80,6 +80,7 @@ jobs:
             libgbm-dev \
             libinput-dev \
             libseat-dev \
+            libturbojpeg0-dev \
             libudev-dev \
             libvulkan-dev \
             libwayland-dev \
