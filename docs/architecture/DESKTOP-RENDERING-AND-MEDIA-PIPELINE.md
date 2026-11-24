@@ -46,7 +46,7 @@ The technology-independent desktop API already defines:
 - `DesktopRect` and deterministic `DesktopHitTest`, including overlap ordering and logical-coordinate semantics.
 - A compositor-owned `DesktopItemsSnapshot` captured into `RenderScene`.
 
-The native Vulkan composition path does **not** yet draw desktop item icons. The hit-test contract exists, but desktop item hit testing is not yet connected to physical pointer events. Do not treat the existing API tests as proof of end-to-end icon interaction.
+The native Vulkan composition path does **not** yet draw desktop item icons. A first per-output geometry module now converts each item's global logical position into physical output geometry, applying integer/fractional scale, output transform and clipping. It uses a 64-logical-pixel icon destination and skips invalid/off-output entries independently. This module is staged but not yet connected to the Vulkan draw path. The hit-test contract exists, but desktop item hit testing is not yet connected to physical pointer events. Do not treat unit tests as proof of end-to-end icon interaction.
 
 ### Pointer, output hotplug and session lifecycle
 
