@@ -137,6 +137,16 @@ impl VulkanWallpaperTextureCache {
         (self.selected == Some(*key)).then_some(texture.as_ref())
     }
 
+    /// Returns the ready texture only if the selected cache key belongs to this asset.
+    pub(crate) fn texture_for_asset(
+        &self,
+        asset_id: &'static str,
+    ) -> Option<&VulkanWallpaperTexture> {
+        let (key, texture) = self.ready.as_ref()?;
+        (self.selected == Some(*key) && key.asset_id == asset_id)
+            .then_some(texture.as_ref())
+    }
+
     pub(crate) fn clear(&mut self) {
         self.selected = None;
         self.ready = None;
