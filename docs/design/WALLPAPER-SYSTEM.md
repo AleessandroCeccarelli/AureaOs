@@ -87,20 +87,21 @@ Do not add a media dependency or edit Cargo.lock speculatively. The compositor m
 6. Add pause/resume policy, frame queue limits, fallback frame, reduced-motion and power-saving behavior.
 7. Add UI for choosing static, slideshow, dynamic day/night, and looping motion wallpapers.
 
-## Current implementation status (2026-11-23)
+## Current implementation status (2026-11-24)
 
 Implemented in code but not yet verified on Fedora:
 - embedded selected JPEG asset metadata;
 - WallpaperManager and immutable snapshot path;
 - Fill, Fit, Stretch, Center layout calculations;
-- bounded owned RGBA8 pixel buffer.
+- bounded owned RGBA8 pixel buffer;
+- `VulkanWallpaperTexture` resource: sampled RGBA8 image allocation, staging upload and explicit shader-read transition (not yet integrated into scene rendering).
 
 Not yet implemented:
 - JPEG pixel decoding and display;
-- Vulkan wallpaper texture/cache and draw pass;
+- wallpaper identity cache and draw pass below desktop surfaces;
 - PNG/BMP decoders;
 - Tile and Span;
 - animated image/video playback;
 - dynamic time-of-day collections and UI.
 
-No Cargo build, format, test, or hardware validation is claimed by this document.
+The Vulkan wallpaper texture upload is not yet verified by Cargo build/tests or hardware. No Cargo build, format, test, or hardware validation is claimed by this document.
