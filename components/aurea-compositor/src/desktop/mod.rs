@@ -22,7 +22,7 @@ pub use items_snapshot::DesktopItemsSnapshot;
 #[allow(unused_imports)]
 pub(crate) use icon_assets::{
     DesktopIconAssetDescriptor, DesktopIconRasterSize, DesktopIconTextureKey,
-    DesktopTrashContents, desktop_icon_asset,
+    desktop_icon_asset,
 };
 #[allow(unused_imports)]
 pub(crate) use item_geometry::{
