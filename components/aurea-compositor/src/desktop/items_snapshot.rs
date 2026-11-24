@@ -16,6 +16,7 @@ use aurea_desktop_api::desktop::{DesktopItem, DesktopManager, DesktopTrashState}
 pub struct DesktopItemsSnapshot {
     items: Vec<DesktopItem>,
     trash_state: DesktopTrashState,
+    selected_item_id: Option<String>,
 }
 
 impl DesktopItemsSnapshot {
@@ -24,12 +25,29 @@ impl DesktopItemsSnapshot {
         Self {
             items: manager.items().to_vec(),
             trash_state: manager.trash_state(),
+            selected_item_id: None,
         }
     }
 
     /// Returns the immutable entries in their captured order.
     pub fn items(&self) -> &[DesktopItem] {
         &self.items
+    }
+
+    /// Adds the shell-owned selection to this immutable frame snapshot.
+    pub fn with_selected_item(mut self, item_id: Option<String>) -> Self {
+        self.selected_item_id = item_id;
+        self
+    }
+
+    /// Returns whether the supplied desktop item is selected in this frame.
+    pub fn is_selected(&self, item_id: &aurea_desktop_api::desktop::DesktopItemId) -> bool {
+        self.selected_item_id.as_deref() == Some(item_id.as_str())
+    }
+
+    /// Returns the selected item identifier captured for this frame.
+    pub fn selected_item_id(&self) -> Option<&str> {
+        self.selected_item_id.as_deref()
     }
 
     /// Returns the Trash state captured from the shared desktop model.
@@ -72,7 +90,17 @@ mod tests {
     }
 
     #[test]
-    fn snapshot_captures_shell_selection_immutably() {\n        let manager = DesktopManager::default();\n        let snapshot = DesktopItemsSnapshot::capture(&manager)\n            .with_selected_item(Some("system:trash".to_owned()));\n\n        assert_eq!(snapshot.selected_item_id(), Some("system:trash"));\n        assert!(snapshot.is_selected(snapshot.items()[0].id()));\n    }\n\n    #[test]\n    fn snapshot_is_owned_and_does_not_change_with_model() {
+    fn snapshot_captures_shell_selection_immutably() {\n        let manager = DesktopManager::default();\n        let snapshot = DesktopItemsSnapshot::capture(&manager)\n            .with_selected_item(Some("system:trash".to_owned()));\n\n        assert_eq!(snapshot.selected_item_id(), Some("system:trash"));\n        assert!(snapshot.is_selected(snapshot.items()[0].id()));\n    }\n\n    #[test]\n    fn snapshot_captures_shell_selection_immutably() {
+        let manager = DesktopManager::default();
+        let snapshot = DesktopItemsSnapshot::capture(&manager)
+            .with_selected_item(Some("system:trash".to_owned()));
+
+        assert_eq!(snapshot.selected_item_id(), Some("system:trash"));
+        assert!(snapshot.is_selected(snapshot.items()[0].id()));
+    }
+
+    #[test]
+    fn snapshot_is_owned_and_does_not_change_with_model() {
         let mut manager = DesktopManager::default();
         let snapshot = DesktopItemsSnapshot::capture(&manager);
         let trash_id = snapshot.items()[0].id().clone();
