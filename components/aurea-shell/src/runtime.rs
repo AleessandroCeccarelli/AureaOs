@@ -11,7 +11,7 @@ use std::{
     time::Duration,
 };
 
-use aurea_desktop_api::desktop_interaction::{DesktopInteraction, DesktopInteractionReceiver};
+use aurea_desktop_api::desktop_interaction::{\n    DesktopInteraction, DesktopInteractionReceiver, DesktopSelectionController,\n};
 use aurea_desktop_api::input::{
     InputDeviceId, TouchpadSettings, TouchpadSettingsController, touchpad_settings_channel,
 };
@@ -35,7 +35,7 @@ pub struct ShellRuntime {
     desktop: DesktopState,
     display_color: DisplayColorController,
     touchpad_settings: TouchpadSettingsController,
-    pending_desktop_interactions: VecDeque<DesktopInteraction>,
+    pending_desktop_interactions: VecDeque<DesktopInteraction>,\n    desktop_selection: DesktopSelectionController,
 }
 
 impl ShellRuntime {
@@ -61,7 +61,7 @@ impl ShellRuntime {
             desktop: DesktopState::default(),
             display_color,
             touchpad_settings,
-            pending_desktop_interactions: VecDeque::new(),
+            pending_desktop_interactions: VecDeque::new(),\n            desktop_selection: DesktopSelectionController::default(),
         }
     }
 
