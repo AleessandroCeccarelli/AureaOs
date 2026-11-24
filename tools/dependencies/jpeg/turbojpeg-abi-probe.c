@@ -72,7 +72,8 @@ static int decode_and_check(const unsigned char *jpeg, size_t jpeg_length)
 
     int width = 0;
     int height = 0;
-    int subsampling = TJSAMP_UNKNOWN;
+    /* The legacy API writes this output parameter on success. */
+    int subsampling = -1;
     /* TurboJPEG 2.1 has no TJCS_DEFAULT/TJCS_UNKNOWN enum value. */
     int colorspace = -1;
 
