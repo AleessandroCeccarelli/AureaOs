@@ -72,6 +72,13 @@ name = "aurea-desktop-api"
 version = "0.1.0"
 
 [[package]]
+name = "aurea-media"
+version = "0.1.0"
+dependencies = [
+ "cc",
+]
+
+[[package]]
 name = "aurea-shell"
 version = "0.1.0"
 dependencies = [
