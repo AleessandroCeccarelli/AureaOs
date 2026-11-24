@@ -1478,3 +1478,12 @@ Il flag arriva fino alla preparazione della geometria per-output, ma il draw pas
 - L'icona va disegnata una sola volta nel percorso di composizione condiviso da Vulkan diretto e compatibilità CPU-upload, tra wallpaper e superfici Wayland.
 
 Nessuna build, test, rustfmt o CI eseguiti. La verifica resta raggruppata su Fedora, dopo aver completato l'integrazione e generato gli asset. Non si dichiara ancora visibile o validato il Cestino.
+
+
+### Loader degli asset desktop — preparazione
+
+- Aggiunto `desktop/icon_asset_loader.rs`, con una responsabilità sola: leggere un asset RGBA8 già generato da una directory radice esplicitamente fornita dal chiamante.
+- Il loader rifiuta percorsi assoluti e componenti non normali (incluso `..`), legge il file senza dipendere dalla working directory e riutilizza la validazione RGBA8 di `ShmBufferSnapshot`.
+- La root runtime non è ancora scelta dal composition root e il loader non è ancora chiamato dal renderer: il modulo resta deliberatamente preparatorio.
+- Nessuna lettura su disco è stata aggiunta al ciclo dei frame; nessuna dipendenza aggiunta.
+- Nessuna build, test, rustfmt o CI eseguiti.
