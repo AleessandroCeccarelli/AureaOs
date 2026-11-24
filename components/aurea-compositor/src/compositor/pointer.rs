@@ -117,6 +117,7 @@ impl AureaCompositor {
         }
         self.request_all_output_frames();
     }
+
     /// Routes an absolute pointer device when the desktop has exactly one
     /// enabled output.
     ///
@@ -132,31 +133,36 @@ impl AureaCompositor {
                 smithay::backend::libinput::LibinputInputBackend,
             >,
     {
-        let mut enabled = self
-            .output_manager
-            .registry()
-            .iter()
-            .filter(|output| output.is_enabled());
-        let Some(output) = enabled.next() else {
-            return false;
-        };
-        if enabled.next().is_some() {
-            tracing::debug!(
-                device = ?event.device().name(),
-                sysname = ?event.device().sysname(),
-                "Absolute pointer motion ignored: output assignment required on multi-monitor desktop"
-            );
-            return false;
-        }
+        // Resolve the sole enabled output inside a short borrow scope. The
+        // output iterator borrows the manager and must be dropped before
+        // Smithay dispatches pointer events through the mutable compositor.
+        let bounds = {
+            let mut enabled = self
+                .output_manager
+                .registry()
+                .iter()
+                .filter(|output| output.is_enabled());
+            let Some(output) = enabled.next() else {
+                return false;
+            };
+            if enabled.next().is_some() {
+                tracing::debug!(
+                    device = ?event.device().name(),
+                    sysname = ?event.device().sysname(),
+                    "Absolute pointer motion ignored: output assignment required on multi-monitor desktop"
+                );
+                return false;
+            }
 
-        let Some(bounds) = self
-            .output_manager
-            .logical_bounds(output.id())
-            .ok()
-            .flatten()
-        else {
+            self.output_manager
+                .logical_bounds(output.id())
+                .ok()
+                .flatten()
+        };
+        let Some(bounds) = bounds else {
             return false;
         };
+
         let origin = bounds.origin();
         let size = bounds.size();
         if size.width <= 0 || size.height <= 0 {
@@ -219,5 +225,4 @@ impl AureaCompositor {
         self.request_all_output_frames();
         true
     }
-
 }
