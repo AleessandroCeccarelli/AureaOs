@@ -83,6 +83,9 @@ pub(super) fn render_frame(
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let background_color = scene.desktop().surface().background_color();
+    surface_cache
+        .poll_wallpaper_texture_uploads()
+        .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
     let active_surface_ids = scene.surface_ids();
     let snapshots = scene.shm_snapshots();
     let visible = visible_surfaces(snapshots, target)?;
