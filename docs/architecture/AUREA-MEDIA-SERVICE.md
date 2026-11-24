@@ -279,3 +279,16 @@ Important verification boundary: this source has not been built or tested. image
 The Cargo manifest is updated, but Cargo.lock has not been regenerated. Before the next locked build, regenerate it on Fedora, inspect the resolved transitive license graph and confirm Debian 13 compatibility.
 
 HEIC/HEIF and AVIF are not yet implemented. They remain the next decoder integration block; JPEG 2000 remains conditional.
+
+## User-selected wallpaper assets — implementation progress (2026-11-24)
+
+The compositor wallpaper source is no longer restricted to a compile-time JPEG byte slice:
+
+- WallpaperAsset now owns its compressed bytes and identifier through shared immutable storage.
+- from_bytes validates non-empty identity/input, enforces the configured compressed-input ceiling, and detects supported formats by file signature rather than extension.
+- from_file reads a selected path into owned memory with a pre-read metadata size check and a bounded read. It is explicitly intended for a settings/media-I/O task, never a frame callback.
+- Current asset signatures cover JPEG, PNG, BMP, GIF, TIFF and WebP. HEIC/HEIF and AVIF are intentionally not accepted until their decoder adapters are present.
+- Wallpaper manager/snapshot/decode keys now carry owned asset identity. Decode requests copy owned compressed bytes into the bounded media worker. The texture cache key is also owned, so arbitrary user-selected paths do not require static lifetimes.
+- The renderer still only polls the worker and submits completed RGBA8 pixels; file reading and image decoding remain outside the frame/render callback.
+
+This is an internal API change and has not been compiled. The user-facing file picker and settings persistence are separate work; this change provides the asset-loading boundary those features will call.
