@@ -129,7 +129,7 @@ pub(super) fn render_frame(
 
     surface_cache
         .prepare_surface_textures(&active_surface_ids, &texture_requests)
-        .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+        .map_err(VulkanSurfaceCompositionError::from_surface_texture_cache_error)?;
 
     if visible.is_empty()
         && cursor.is_none()
@@ -139,7 +139,7 @@ pub(super) fn render_frame(
     {
         surface_cache
             .complete_surface_texture_uploads()
-            .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+            .map_err(VulkanSurfaceCompositionError::from_surface_texture_cache_error)?;
         if let Some(readback) = readback {
             return match display_color {
                 Some((pass, warmth, intermediate_view, intermediate_state)) => {
@@ -191,7 +191,7 @@ pub(super) fn render_frame(
     // This keeps upload retirement separate from the immutable descriptor/pipeline borrows.
     surface_cache
         .complete_surface_texture_uploads()
-        .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+        .map_err(VulkanSurfaceCompositionError::from_surface_texture_cache_error)?;
 
     let (composition_view, composition_previous_state) = match display_color {
         Some((_, _, intermediate_view, intermediate_state)) => {
