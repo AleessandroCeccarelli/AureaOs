@@ -1076,6 +1076,15 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 
 ## 2026-11-24 — Wallpaper UV push-constant encoding
 
+## 2026-11-24 — Wallpaper draw integration in Vulkan frame composition
+
+- Integrated the selected, upload-complete wallpaper texture into `surface_compositor::render_frame`.
+- The frame creates a descriptor binding for the wallpaper, uses the dedicated format-specific wallpaper pipeline, computes output-local `Fill` geometry from the uploaded texture dimensions, and records the draw immediately after clear and before SHM surfaces/cursor.
+- A ready wallpaper is rendered even when the scene has no windows or cursor; the old clear-only fast path is retained when no ready wallpaper texture exists.
+- Clearing wallpaper selection clears the texture cache, preventing a previously selected image from persisting.
+- Commit: `30582074` (frame integration), `a347fde8` (selection-clear behavior).
+- Important limitation: there is still no JPEG decoder or producer feeding decoded pixels to `prepare_wallpaper_texture`. This is the Vulkan consumption path only; no visible wallpaper is claimed. No Cargo fmt/check/test/build, CI or ISO was run.
+
 - Added `WallpaperUvRect::to_push_constant_bytes`, encoding the UV rectangle as four native-endian `f32` values in shader ABI order: min X, min Y, max X, max Y.
 - Added a unit test that decodes the 16-byte payload and checks the exact component order.
 - Commit: `f474ddfd`.
