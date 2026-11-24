@@ -631,3 +631,13 @@ Introdurre uno snapshot desktop posseduto e immutabile, separato dall'attuale De
 
 ### Proposta Btrfs superata
 La precedente bozza del 24 novembre che proponeva sottovolumi fratelli, snapshot, transazioni di aggiornamento basate su snapshot e rollback non era una decisione approvata. È superata. AureaOS usa Btrfs come filesystem scelto, con una sola partizione Btrfs per il sistema installato. Aurea Time è l'unico sistema pianificato per backup/ripristino; gli snapshot Btrfs nativi non fanno parte del flusso previsto.
+
+
+## 24 novembre 2026 — Predisposizione futura Secure Boot
+
+- Confermato che Roma 1.0 mantiene Secure Boot disabilitato, ma la pipeline UKI deve essere strutturata per un futuro profilo firmato.
+- La ricerca ha verificato che Debian 13 Trixie fornisce shim firmato da una Microsoft UEFI CA, helper shim firmati da Debian, systemd-boot firmato da Debian e systemd-ukify per generazione/firma UKI.
+- Un futuro percorso di registrazione da parte del proprietario tramite DB firmware o MOK di shim potrebbe evitare che AureaOS debba ottenere un proprio rapporto di firma Microsoft; tuttavia la catena shim → systemd-boot → UKI deve essere dimostrata su firmware reali. Non promettere compatibilità universale.
+- Documentate fasi separate di build/firma, separazione chiavi pubbliche/private, custodia protetta delle chiavi di produzione, verifica firme, rotazione/revoca, attenzione a SBAT/DBX e requisiti di ripristino.
+- Non sono state generate chiavi; non sono stati modificati stato firmware o manifest pacchetti. Nessun build, test o CI eseguito.
+- Aggiornati i documenti architetturali systemd-boot/UKI in inglese e italiano.
