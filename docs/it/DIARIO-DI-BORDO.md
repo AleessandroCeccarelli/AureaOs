@@ -1106,3 +1106,13 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Registrate entrambe le lingue le dipendenze native candidate per Smithay/DRM/input. I pacchetti di sviluppo non sono ancora approvati in blocco: i requisiti diretti devono essere confermati dal grafo Cargo e da una futura build Debian.
 - Commit registro inglese: `39a20444`; registro italiano: `f0542b28`.
 - Nessun pacchetto installato o aggiunto ai manifest runtime. Nessuna build, test, rustfmt o CI eseguiti.
+
+
+### Follow-up — stato del percorso input puntatore
+
+- Verificato staticamente che gli eventi libinput di movimento relativo, pulsanti, assi di scroll e gesture touchpad vengono inoltrati al compositor tramite Smithay.
+- Il movimento aggiorna la posizione globale logica, la limita all'unione degli output attivi, ricalcola la superficie Wayland sotto il puntatore e richiede un nuovo frame su tutti gli output.
+- Il pulsante sinistro esegue già focus/raise della finestra colpita; gli eventi vengono poi inoltrati alla superficie Wayland. La semantica di doppio clic e le interazioni con le icone desktop non risultano ancora implementate in questo percorso.
+- Il cursore client Wayland e la freccia nativa AureaOS hanno percorsi distinti; il primo usa la superficie client e il relativo hotspot, il secondo la bitmap interna e la geometria output-aware.
+- Nessun permesso globale aggiuntivo o driver vendor proprietario è richiesto dal percorso esaminato: la gestione input è mediata da libinput nella sessione libseat.
+- Audit statico soltanto; nessuna build/test/format eseguiti. Prossimo passo: verificare lifecycle della posizione/cursor state tra output, hotplug e session pause/resume, poi collegare hit testing e interazioni del desktop senza duplicare la logica Wayland.
