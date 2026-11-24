@@ -1,0 +1,148 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// AureaOS
+// Copyright (C) 2026 Alessandro Ceccarelli
+
+//! Bounded cache for the currently selected desktop wallpaper texture.
+
+use std::{error::Error, fmt, sync::Arc};
+
+use crate::desktop::WallpaperPixels;
+
+use super::{
+    VulkanLogicalDevice, VulkanPendingUpload, VulkanWallpaperTexture,
+    VulkanWallpaperTextureError,
+};
+
+const MAX_PENDING_WALLPAPER_UPLOADS: usize = 2;
+const MAX_PENDING_WALLPAPER_BYTES: usize = 256 * 1024 * 1024;
+
+/// Identifies one selected wallpaper revision independently from Wayland surfaces.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct WallpaperTextureKey {
+    pub(crate) asset_id: &'static str,
+    pub(crate) revision: u64,
+}
+
+struct PendingWallpaperUpload {
+    key: WallpaperTextureKey,
+    byte_len: usize,
+    upload: VulkanPendingUpload<Arc<VulkanWallpaperTexture>>,
+}
+
+/// Errors returned while preparing the selected wallpaper texture.
+#[derive(Debug)]
+pub(crate) enum VulkanWallpaperTextureCacheError {
+    Upload(VulkanWallpaperTextureError),
+    Command(smithay::reexports::ash::vk::Result),
+    PendingBudgetExceeded,
+}
+
+impl fmt::Display for VulkanWallpaperTextureCacheError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Upload(error) => write!(formatter, "Wallpaper texture cache upload: {error}"),
+            Self::Command(error) => write!(formatter, "Wallpaper upload synchronization: {error:?}"),
+            Self::PendingBudgetExceeded => formatter.write_str("Wallpaper upload queue budget exceeded"),
+        }
+    }
+}
+
+impl Error for VulkanWallpaperTextureCacheError {}
+
+/// Owns one ready texture and a small bounded set of fence-backed uploads.
+pub(crate) struct VulkanWallpaperTextureCache {
+    device: Arc<VulkanLogicalDevice>,
+    selected: Option<WallpaperTextureKey>,
+    ready: Option<(WallpaperTextureKey, Arc<VulkanWallpaperTexture>)>,
+    pending: Vec<PendingWallpaperUpload>,
+    pending_bytes: usize,
+}
+
+impl VulkanWallpaperTextureCache {
+    pub(crate) fn new(device: Arc<VulkanLogicalDevice>) -> Self {
+        Self {
+            device,
+            selected: None,
+            ready: None,
+            pending: Vec::new(),
+            pending_bytes: 0,
+        }
+    }
+
+    /// Selects a new pixel revision and submits its upload without waiting.
+    pub(crate) fn prepare(
+        &mut self,
+        key: WallpaperTextureKey,
+        pixels: WallpaperPixels,
+    ) -> Result<(), VulkanWallpaperTextureCacheError> {
+        self.poll()?;
+        if self.ready.as_ref().is_some_and(|(ready_key, _)| *ready_key == key)
+            || self.pending.iter().any(|pending| pending.key == key)
+        {
+            self.selected = Some(key);
+            return Ok(());
+        }
+
+        let byte_len = pixels.byte_len();
+        if self.pending.len() >= MAX_PENDING_WALLPAPER_UPLOADS
+            || self.pending_bytes.checked_add(byte_len)
+                .map_or(true, |total| total > MAX_PENDING_WALLPAPER_BYTES)
+        {
+            return Err(VulkanWallpaperTextureCacheError::PendingBudgetExceeded);
+        }
+
+        let upload = VulkanWallpaperTexture::submit_pixels(Arc::clone(&self.device), pixels)
+            .map_err(VulkanWallpaperTextureCacheError::Upload)?;
+
+        self.selected = Some(key);
+        self.ready = None;
+        self.pending_bytes = self.pending_bytes.saturating_add(byte_len);
+        self.pending.push(PendingWallpaperUpload {
+            key,
+            byte_len,
+            upload,
+        });
+        Ok(())
+    }
+
+    /// Polls upload fences without blocking; only completed selected textures become visible.
+    pub(crate) fn poll(&mut self) -> Result<(), VulkanWallpaperTextureCacheError> {
+        let mut index = 0;
+        while index < self.pending.len() {
+            let complete = self.pending[index]
+                .upload
+                .is_complete()
+                .map_err(VulkanWallpaperTextureCacheError::Command)?;
+            if !complete {
+                index += 1;
+                continue;
+            }
+
+            let pending = self.pending.remove(index);
+            self.pending_bytes = self.pending_bytes.saturating_sub(pending.byte_len);
+            let texture = pending
+                .upload
+                .wait()
+                .map_err(VulkanWallpaperTextureCacheError::Command)?;
+            if self.selected == Some(pending.key) {
+                self.ready = Some((pending.key, texture));
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn texture(&self) -> Option<&VulkanWallpaperTexture> {
+        let (key, texture) = self.ready.as_ref()?;
+        (self.selected == Some(*key)).then_some(texture.as_ref())
+    }
+
+    pub(crate) fn selected_key(&self) -> Option<WallpaperTextureKey> {
+        self.selected
+    }
+
+    pub(crate) fn clear(&mut self) {
+        self.selected = None;
+        self.ready = None;
+    }
+}
