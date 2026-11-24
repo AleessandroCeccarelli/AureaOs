@@ -8,7 +8,7 @@
 use super::{DesktopSurface, WallpaperSnapshot};
 
 /// Frame-safe desktop data passed from the manager to the renderer.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DesktopSnapshot {
     surface: DesktopSurface,
     wallpaper: Option<WallpaperSnapshot>,
@@ -16,7 +16,7 @@ pub struct DesktopSnapshot {
 
 impl DesktopSnapshot {
     /// Creates a snapshot containing the desktop surface and optional wallpaper.
-    pub(crate) const fn new(
+    pub(crate) fn new(
         surface: DesktopSurface,
         wallpaper: Option<WallpaperSnapshot>,
     ) -> Self {
@@ -24,12 +24,12 @@ impl DesktopSnapshot {
     }
 
     /// Returns the desktop surface included in this snapshot.
-    pub const fn surface(self) -> DesktopSurface {
+    pub const fn surface(&self) -> DesktopSurface {
         self.surface
     }
 
     /// Returns the selected wallpaper included in this snapshot, if valid.
-    pub const fn wallpaper(self) -> Option<WallpaperSnapshot> {
+    pub fn wallpaper(&self) -> Option<&WallpaperSnapshot> {
         self.wallpaper
     }
 }
