@@ -97,6 +97,8 @@ Implemented in code but not yet verified on Fedora:
 - `VulkanWallpaperTexture` resource: sampled RGBA8 image allocation, staging upload and explicit shader-read transition; asynchronous `submit_pixels` returns a fence-backed pending upload, while `from_pixels` remains a blocking convenience wrapper.
 - Bounded per-device `VulkanWallpaperTextureCache`: asset-ID/revision key, one ready selection, at most two pending uploads and a 256 MiB pending-byte budget; frame preparation polls fences without blocking. Cache population and scene drawing are still pending.
 
+The output-local draw geometry is now implemented as a pure CPU contract: it clips destination rectangles to each output and computes the matching normalized UV rectangle, including Fill crop and Center clipping. This is not yet a Vulkan draw pass and does not display the wallpaper. The geometry contract is exported from the desktop API and has unit tests for Fill, Fit, Stretch, Center, and non-intersection. These tests have not been run locally.
+
 Not yet implemented:
 - JPEG pixel decoding and display;
 - wallpaper identity cache and draw pass below desktop surfaces;
