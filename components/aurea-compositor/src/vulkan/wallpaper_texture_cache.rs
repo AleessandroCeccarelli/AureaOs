@@ -70,6 +70,13 @@ impl VulkanWallpaperTextureCache {
         }
     }
 
+    /// Reports whether another upload of this size fits the bounded pending budget.
+    pub(crate) fn can_accept_upload(&self, byte_len: usize) -> bool {
+        self.pending.len() < MAX_PENDING_WALLPAPER_UPLOADS
+            && self.pending_bytes.checked_add(byte_len)
+                .is_some_and(|total| total <= MAX_PENDING_WALLPAPER_BYTES)
+    }
+
     /// Selects a new pixel revision and submits its upload without waiting.
     pub(crate) fn prepare(
         &mut self,
