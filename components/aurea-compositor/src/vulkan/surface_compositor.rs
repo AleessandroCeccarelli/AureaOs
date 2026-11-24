@@ -87,6 +87,10 @@ pub(super) fn render_frame(
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let background_color = scene.desktop().surface().background_color();
+    let wallpaper = scene.desktop().wallpaper();
+    surface_cache
+        .prepare_wallpaper_decode(wallpaper.map(|wallpaper| wallpaper.asset()))
+        .map_err(VulkanSurfaceCompositionError::Texture)?;
     surface_cache
         .poll_wallpaper_texture_uploads()
         .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
