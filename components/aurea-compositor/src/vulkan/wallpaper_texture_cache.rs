@@ -34,6 +34,7 @@ struct PendingWallpaperUpload {
 #[derive(Debug)]
 pub(crate) enum VulkanWallpaperTextureCacheError {
     Upload(VulkanWallpaperTextureError),
+    Decode(String),
     Command(smithay::reexports::ash::vk::Result),
     PendingBudgetExceeded,
 }
@@ -42,6 +43,7 @@ impl fmt::Display for VulkanWallpaperTextureCacheError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Upload(error) => write!(formatter, "Wallpaper texture cache upload: {error}"),
+            Self::Decode(error) => write!(formatter, "Wallpaper decode service: {error}"),
             Self::Command(error) => write!(formatter, "Wallpaper upload synchronization: {error:?}"),
             Self::PendingBudgetExceeded => formatter.write_str("Wallpaper upload queue budget exceeded"),
         }
@@ -123,6 +125,13 @@ impl VulkanWallpaperTextureCache {
 
         let upload = match VulkanWallpaperTexture::submit_pixels(Arc::clone(&self.device), pixels) {
             Ok(upload) => upload,
+            Err(VulkanWallpaperTextureError::Command(
+                smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
+            )) => {
+                let error = smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST;
+                self.synchronization_error = Some(error);
+                return Err(VulkanWallpaperTextureCacheError::Command(error));
+            }
             Err(error) => {
                 self.failed_upload = Some(key);
                 return Err(VulkanWallpaperTextureCacheError::Upload(error));
