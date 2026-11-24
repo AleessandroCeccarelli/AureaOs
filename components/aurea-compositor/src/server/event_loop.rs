@@ -156,6 +156,11 @@ impl WaylandServer {
         self.state.compositor.set_keyboard_layout(layout)
     }
 
+    /// Sets the initial desktop Trash artwork state before the event loop starts.
+    pub fn set_trash_state(&mut self, state: aurea_desktop_api::desktop::DesktopTrashState) {
+        self.state.compositor.desktop_items_mut().set_trash_state(state);
+    }
+
     /// Runs the server until shutdown is requested.
     ///
     /// KMS outputs are explicitly disabled before their GBM/Vulkan resources
