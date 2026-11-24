@@ -73,11 +73,11 @@ impl VulkanWallpaperTexture {
     /// draw submission and only expose the texture after `wait` succeeds.
     pub(crate) fn submit_pixels(
         device: Arc<VulkanLogicalDevice>,
-        pixels: WallpaperPixels,
+        pixels: &WallpaperPixels,
     ) -> Result<VulkanPendingUpload<Arc<Self>>, VulkanWallpaperTextureError> {
         let width = pixels.width();
         let height = pixels.height();
-        let rgba8 = pixels.into_rgba8();
+        let rgba8 = pixels.rgba8();
 
         let expected_len = VulkanUploadBuffer::required_byte_len(width, height)
             .map_err(VulkanWallpaperTextureError::Upload)?;
