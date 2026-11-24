@@ -998,3 +998,12 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Defined provider-neutral capability descriptors (content kinds, actions, account class, OAuth scopes, MIME/size limits, quotas, app review, commercial restrictions, confirmation requirement).
 - Added online integration architecture in EN/IT and linked it from strategy, Aurea Link/Share docs and README. Dependency registers updated.
 - No Rust/Cargo code, dependency, OAuth registration or build/test changed. API access approval remains unresolved and must be reviewed before implementation.
+
+## 2026-11-24 — Aurea Share account model
+
+- Clarified that AureaOS serves everyday users, children, older adults, creators, professionals and businesses without assuming a user persona.
+- Account linking is optional and user-initiated; no online account is required during OS setup.
+- Added an account-manager requirement with multiple accounts where provider rules allow, account class, permissions, available capabilities, disconnect and revocation.
+- Available actions depend on account, scopes, provider review, region, content and current limits.
+- Share chooser remains usable without linked accounts through supported desktop handoff.
+- Updated EN/IT Aurea Share online architecture. No code or dependency added.
