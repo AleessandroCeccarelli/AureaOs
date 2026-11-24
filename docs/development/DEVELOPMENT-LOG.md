@@ -1389,3 +1389,13 @@ References: `1807c23d`, `544036fb`, `5c35a382`, `17e7062e`, `5a08ca66`, `6048a1c
 **Remaining limitation:** the conversion is available, but the application composition root does not yet forward the service snapshot into the compositor's desktop model. No watcher or automatic refresh is implemented.
 
 No dependency was added. No build, tests, rustfmt, cargo check or CI were run.
+
+
+### Follow-up — Scale-aware raster selection
+
+- The resolver selects the smallest approved raster that covers the output's effective scale: 64 px through 1x, 96 px through 1.5x, 128 px through 2x, and 192 px above 2x.
+- Non-finite scale values conservatively fall back to the 1x asset.
+- The caller must use `RenderTarget::effective_scale()`, not only the legacy integer output scale.
+- The resolver remains disconnected from the frame renderer until RGBA8 assets have been generated and inspected.
+
+Commits: `4bb33193`, `1ca67908`. No Cargo or CI verification was run.
