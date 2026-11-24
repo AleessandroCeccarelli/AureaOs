@@ -1435,3 +1435,18 @@ Commits: `d0ea103b`, `bd5a6e28`, `bf415144`. Static review only; no build, tests
 Commits: `30397783`, `04c3aed5`, `552a342b`.
 
 Static source review only. No build, tests, rustfmt, cargo check or CI were run. Compilation remains unverified until the agreed Fedora verification block.
+
+
+## 2026-11-24 — Initial Trash state composition
+
+- Added `trash/session_state.rs` to Aurea Desktop. It reads the home Trash service snapshot and converts it to the shared `DesktopTrashState` contract.
+- The `aurea-desktop` composition root obtains this semantic value before creating the compositor. If Trash initialization or snapshot retrieval fails, it logs a warning and allows the desktop session to continue.
+- `WaylandCompositorFactory` accepts the initial state, and `WaylandServer` applies it to the shared desktop item model before entering the event loop.
+- The compositor still has no filesystem access: it receives only the service-derived Empty/PartiallyFull/Full value.
+- No dependency added. The service uses the standard home Trash location under `$HOME/.local/share/Trash`.
+
+**Explicit limitation:** this is a startup snapshot only. No watcher or in-session refresh mechanism exists yet, so the displayed state can become stale after delete/restore operations.
+
+Commits: `46d2c1d6`, `1d3f8fa4`, `611720ee`, `cc7b860e`, `5930c025`.
+
+Static interface and data-flow review only. No build, tests, rustfmt, cargo check or CI were run.
