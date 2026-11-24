@@ -1071,3 +1071,11 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - This is pipeline infrastructure only. No wallpaper descriptor is bound and no wallpaper draw is recorded yet. The decoder and selected texture population remain outstanding.
 - Commits: `e0823ebe` (vertex shader), `fa3d28e4` (fragment shader), `41b24c1c` (shader build integration), `7a742fe6` (dedicated pipeline cache).
 - No Cargo fmt/check/test/build, CI or ISO was run. Fedora local validation remains required; Debian 13 compatibility remains the target.
+
+## 2026-11-24 — Generic Vulkan textured push constants
+
+- Extended `VulkanDrawPass` with `record_textured_region_with_push_constants`, allowing dedicated textured pipelines to provide their own push-constant bytes without changing the existing surface transform ABI.
+- Existing textured surface calls retain the four-byte `u32` transform. The wallpaper shader can use its separate 16-byte UV rectangle range.
+- Added pre-record validation for non-empty, four-byte-aligned payloads up to 128 bytes, plus unit tests for the 16-byte wallpaper payload and invalid sizes.
+- Commit: `7b9b4b37` (draw-pass API), `d8a31412` (validation and tests).
+- This is draw-pass infrastructure only: wallpaper binding and draw integration are still pending. Tests were authored but not run. No Cargo fmt/check/test/build, CI or ISO was run.
