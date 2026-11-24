@@ -96,7 +96,7 @@ jobs:
             dpkg-query -L "${package}" | grep -F '.so' >/dev/null
           done
 
-      - name: Compile and link the libheif-rs security API probe
+      - name: Compile and link the libheif-rs decode API probe
         run: |
           set -eu
           mkdir -p /tmp/aurea-heif-probe/src
@@ -110,23 +110,48 @@ jobs:
           libheif-rs = { version = "=3.0.0", default-features = false, features = ["v1_20"] }
           EOF
           cat > /tmp/aurea-heif-probe/src/main.rs <<'EOF'
-          use libheif_rs::{HeifContext, SecurityLimits};
+          use libheif_rs::{
+              ColorSpace, DecodingOptions, HeifContext, ImageHandle, LibHeif, RgbChroma,
+              SecurityLimits,
+          };
 
-          fn main() {
+          fn configure_context(context: &mut HeifContext<'_>) {
               let mut limits = SecurityLimits::new();
               limits.set_max_image_size_pixels(64 * 1024 * 1024);
               limits.set_max_total_memory(256 * 1024 * 1024);
-
-              let mut context = HeifContext::new().expect("create HEIF context");
               context
                   .set_security_limits(&limits)
                   .expect("apply HEIF security limits");
               let _contains_sequence = context.has_sequence();
               let _image_ids = context.image_ids();
           }
+
+          fn decode_rgba(
+              lib_heif: &LibHeif,
+              handle: &ImageHandle,
+          ) -> Result<(), Box<dyn std::error::Error>> {
+              let mut options = DecodingOptions::new().ok_or("missing decode options")?;
+              options.set_convert_hdr_to_8bit(true);
+              let image = lib_heif.decode(
+                  handle,
+                  ColorSpace::Rgb(RgbChroma::Rgba),
+                  Some(options),
+              )?;
+              let plane = image.planes().interleaved.ok_or("missing RGBA plane")?;
+              let _row_stride = plane.stride;
+              let _plane_bytes = plane.data.len();
+              Ok(())
+          }
+
+          fn main() {
+              let _configure: fn(&mut HeifContext<'_>) = configure_context;
+              let _decode: fn(&LibHeif, &ImageHandle) -> Result<(), Box<dyn std::error::Error>> =
+                  decode_rgba;
+              let _context = HeifContext::new().expect("create HEIF context");
+              let _lib_heif = LibHeif::new();
+          }
           EOF
-          cargo build --manifest-path /tmp/aurea-heif-probe/Cargo.toml --locked || \
-            cargo build --manifest-path /tmp/aurea-heif-probe/Cargo.toml
+          cargo build --manifest-path /tmp/aurea-heif-probe/Cargo.toml
 
   build-and-test:
     name: Build and test workspace
