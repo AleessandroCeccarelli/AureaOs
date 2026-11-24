@@ -802,3 +802,38 @@ Added `ShellRuntime::set_trash_contents` as the shell-side update point for sema
 - Kept /var/lib within the rollback unit so dpkg and system service state remain aligned with installed system files; proposed preserving /home and diagnostic logs.
 - Defined target update transaction lifecycle and recovery requirements. Bootloader integration, encryption defaults, retention, cache policy and swap/hibernation remain open.
 - No installer, snapshot manager, update transaction or rollback code was implemented. No Cargo commands or tests were run.
+
+
+## 2026-11-24 — Boot architecture decision: systemd-boot
+
+### Approved decisions
+- systemd-boot is the primary boot manager for AureaOS Roma 1.0.
+- UEFI is mandatory; Legacy BIOS/CSM is unsupported. The initial target is modern amd64 PCs, approximately from the last decade, subject to actual firmware and hardware qualification.
+- Secure Boot is disabled for Roma 1.0. Microsoft signing/certification costs are not a first-release prerequisite. Future Secure Boot support remains a later objective, not a current guarantee.
+- GRUB 2 is retained only as a possible future alternative if a demonstrated requirement emerges; it is not installed or configured as the default boot manager.
+- UKI is the selected boot-artifact direction, subject to validation of Debian 13 kernel/initramfs integration.
+- The ESP stores systemd-boot and UKIs. The disk layout remains one ESP plus one Btrfs partition for the entire installed OS; no XBOOTLDR partition is planned.
+- A 1 GiB ESP is a provisional sizing target only. Final sizing requires measurements including current, previous and Aurea Recovery UKIs.
+
+### Technical research
+- Debian 13 Trixie provides systemd-boot 257, systemd-boot tools and the systemd-ukify package.
+- systemd-boot supports UEFI only, loads UKIs from ESP or XBOOTLDR, and implements boot counting with fallback behavior.
+- The boot manager cannot itself determine whether the complete desktop/session is healthy. AureaOS needs an explicit userspace success signal and update lifecycle.
+
+### Documentation and scope
+- Added bilingual systemd-boot/UKI architecture documents.
+- Replaced the earlier speculative Btrfs snapshot/subvolume proposal with the approved single-Btrfs-partition and Aurea Time-only backup direction.
+- Updated platform foundations, README, Technology and Vision references in English and Italian where applicable.
+- No Rust source, package manifest, installer, boot configuration or runtime behavior was changed.
+- No Cargo command, build, test or CI was run.
+
+### Next engineering work
+1. Audit the existing Debian bootstrap and package manifests for boot-related assumptions.
+2. Prototype UKI creation from Debian kernel packages and initramfs-tools.
+3. Measure ESP consumption and validate the provisional capacity target.
+4. Specify boot-success signaling, boot counting, rollback-to-previous-artifact and cleanup ownership.
+5. Design the independent Aurea Recovery boot image and external recovery-media path.
+6. Keep Secure Boot disabled in Roma 1.0 acceptance criteria; evaluate signing and key management separately for a future release.
+
+### Superseded Btrfs proposal
+The earlier 24 November draft proposing sibling subvolumes, snapshots, snapshot-based update transactions and rollback was not an approved project decision. It is superseded. AureaOS uses Btrfs as its selected filesystem, with one Btrfs partition for the installed OS. Aurea Time is the sole planned backup/restore system; native Btrfs snapshots are not part of the planned workflow.
