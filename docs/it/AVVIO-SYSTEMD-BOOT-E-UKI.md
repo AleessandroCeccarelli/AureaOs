@@ -103,6 +103,73 @@ L'ambiente Recovery deve essere progettato e validato separatamente per:
 
 Il boot manager non deve implementare policy di backup, gestire credenziali Passkey o orchestrare servizi desktop.
 
+## Predisposizione Secure Boot e futura attivazione
+
+Secure Boot resta disabilitato per impostazione predefinita e non è un criterio di accettazione di Roma 1.0. L'architettura di avvio deve tuttavia essere progettata affinché una release successiva possa abilitarlo senza sostituire boot manager, formato UKI, layout dell'installer o ciclo di vita degli aggiornamenti.
+
+### Direzione della catena di fiducia
+
+Debian 13 Trixie fornisce già pacchetti per un percorso Secure Boot con systemd-boot:
+- `shim-signed` fornisce un primo avviatore firmato da una Microsoft UEFI CA.
+- Debian fornisce helper shim firmati e un pacchetto systemd-boot firmato per le architetture supportate.
+- `systemd-ukify` può creare UKI e firmare l'immagine PE finale con un certificato Secure Boot.
+
+La catena futura prevista è:
+
+1. Il firmware UEFI verifica shim firmato da Microsoft, se il computer si fida della relativa Microsoft UEFI CA.
+2. Shim verifica e avvia systemd-boot firmato da Debian usando il certificato di distribuzione attendibile.
+3. La policy dello stadio successivo verifica la UKI AureaOS con un certificato di firma AureaOS esplicitamente attendibile, registrato tramite un percorso supportato.
+4. La UKI contiene kernel, initramfs e riga di comando controllata, così la firma copre l'intero payload di avvio invece di kernel e initramfs modificabile separatamente.
+
+Questo è il modello di fiducia obiettivo, non l'affermazione che la catena sia già integrata o testata. In particolare, l'interazione esatta tra systemd-boot di Trixie, database MOK di shim, verifica delle immagini UEFI e firme UKI deve essere dimostrata su firmware reali prima di scegliere il percorso definitivo di registrazione.
+
+### Opzioni per registrare la fiducia
+
+Devono essere valutati due percorsi distinti:
+
+- **Registrazione da parte del proprietario:** l'utente registra esplicitamente il certificato pubblico AureaOS nel database Secure Boot del firmware oppure tramite il flusso Machine Owner Key (MOK) di shim, se la catena selezionata lo supporta. Questo può evitare che AureaOS debba ottenere un proprio rapporto di firma Microsoft, ma richiede un passaggio chiaro e sicuro su ogni dispositivo e firmware compatibile.
+- **Distribuzione ampiamente pre-attendibile:** AureaOS ottiene un accordo di firma/distribuzione che renda il suo primo componente di avvio attendibile su un'ampia gamma di PC standard senza registrazione di una chiave personalizzata su ogni dispositivo. È una decisione futura distinta, commerciale e di rilascio; non bisogna presumere che sia gratuita, garantita o necessaria per ogni installazione Secure Boot.
+
+Lo shim Microsoft-signed di Debian è una possibile base, non una garanzia di compatibilità universale. Alcuni firmware disabilitano la Microsoft UEFI CA di terze parti, contengono generazioni differenti di CA o presentano problemi firmware/revoche. L'installer deve rilevare e spiegare gli errori della catena di fiducia, senza promettere silenziosamente supporto universale.
+
+### Architettura di firma da predisporre ora
+
+La pipeline degli artefatti di avvio deve esporre un confine di firma indipendente dalla creazione UKI:
+- Creare e validare prima la UKI; la firma è una fase distinta di finalizzazione.
+- Roma 1.0 usa un profilo esplicito di sviluppo/rilascio non firmato, dato che Secure Boot è disabilitato.
+- Un futuro profilo Secure Boot firma la UKI finale dopo ogni modifica al contenuto. Non modificare mai l'immagine PE dopo la firma.
+- Separare identità di firma di sviluppo, test e produzione.
+- Tenere le chiavi private di produzione fuori dai sistemi installati, dalle home degli utenti e dai normali log/artefatti CI. Usare custodia offline o hardware-backed controllata e accesso alla firma limitato.
+- Distribuire soltanto certificati pubblici e materiale di registrazione; mai le chiavi private.
+- Verificare firma e digest dell'artefatto prima di pubblicare o installare una UKI firmata.
+- Definire scadenza, rinnovo, rotazione, revoca d'emergenza, risposta alla compromissione e recupero prima di abilitare la funzionalità.
+- Includere e mantenere metadati SBAT dove applicabile e seguire gli aggiornamenti di revoca firmware DBX e shim.
+- Trattare firma/sealing delle policy PCR TPM come funzionalità opzionale separata; non è necessaria per abilitare Secure Boot.
+
+Aurea Update deve conservare l'ultimo artefatto firmato noto come avviabile mentre prepara e valida il sostituto. Un errore di verifica della firma deve impedire la promozione del nuovo artefatto e non deve eliminare la precedente voce funzionante. Aurea Recovery deve essere avviabile secondo la policy di fiducia scelta oppure offrire un percorso di ripristino esterno documentato separatamente.
+
+### Comportamento di Roma 1.0
+
+- Secure Boot non è richiesto e resta disabilitato nel profilo d'installazione supportato.
+- La pipeline UKI dovrebbe già usare lo stesso formato di artefatto UKI e le stesse fasi di validazione che userà il futuro profilo firmato.
+- Per Roma 1.0 non viene generata né incorporata nei PC degli utenti alcuna chiave di firma Secure Boot di produzione.
+- Non registrare chiavi AureaOS, modificare variabili firmware DB/KEK/PK o cambiare automaticamente lo stato Secure Boot.
+- Non descrivere una UKI non firmata come protetta da Secure Boot.
+
+### Verifiche necessarie prima della futura attivazione
+
+1. Verificare versioni esatte Trixie amd64 e comportamento dei pacchetti `shim-signed`, `shim-helpers-amd64-signed`, `systemd-boot`, `systemd-boot-efi-signed`, `systemd-ukify`, `mokutil` e strumenti di firma.
+2. Dimostrare la catena completa shim → systemd-boot → UKI firmata AureaOS con Secure Boot attivo su firmware rappresentativi.
+3. Confermare se la registrazione MOK è rispettata dal percorso esatto di caricamento UKI; in caso contrario usare e testare la registrazione esplicita nel DB firmware o un altro percorso supportato.
+4. Testare registrazione, annullamento, rimozione, rotazione e recupero delle chiavi, inclusi PC con Microsoft third-party CA disabilitata e database CA più recenti.
+5. Testare firme revocate/scadute, aggiornamenti DBX e SBAT, aggiornamenti UKI interrotti e fallback.
+6. Validare Aurea Recovery indipendente secondo la stessa policy Secure Boot.
+7. Decidere se la registrazione da parte del proprietario su ogni dispositivo è accettabile o se serve una distribuzione ampiamente pre-attendibile.
+8. Solo allora abilitare Secure Boot come profilo d'installazione opzionale o predefinito in una release successiva.
+
+Questa decisione documentale non modifica chiavi di firma, variabili firmware, stato Secure Boot o artefatti di avvio.
+
+
 ## Verifiche richieste prima di congelare l'implementazione
 
 1. Verificare l'esatto insieme di pacchetti Debian 13 e le interfacce systemd 257 supportate nell'immagine amd64 di destinazione.
