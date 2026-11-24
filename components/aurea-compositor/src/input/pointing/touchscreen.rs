@@ -41,7 +41,11 @@ impl TouchscreenOutputMap {
         self.assignments.remove(&device).is_some()
     }
 
-    /// Removes assignments that point to a disconnected display.
+    /// Marks devices assigned to a disconnected display as unavailable.
+    ///
+    /// The stale target is retained so a later single-output configuration
+    /// cannot silently capture the touchscreen. Reassign or unassign the
+    /// device explicitly to restore routing.
     pub fn remove_output(&mut self, output: OutputId) {
         for (device, assigned) in &self.assignments {
             if *assigned == output {
