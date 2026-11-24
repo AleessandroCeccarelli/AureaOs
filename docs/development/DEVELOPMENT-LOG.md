@@ -1646,3 +1646,13 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - This is a native package/API-baseline check only. It does not yet compile the Rust wrapper or enable HEIF/AVIF decoding in Aurea Media.
 - No Cargo manifest or lockfile changes; no Fedora build/tests performed.
 - The CI result must be inspected before selecting the wrapper integration and changing the media decoder.
+
+
+### 2026-11-24 — Implement opt-in HEIC/AVIF still-image decoding
+
+- Added an ISO-BMFF `ftyp` detector for AVIF (`avif`) and HEIC (`heic`/`heix`) still-image brands. Sequence brands (`avis`, `msf1`) and generic `mif1` alone are rejected; extended-size and malformed/truncated boxes are covered by unit tests.
+- Added optional `libheif-rs 3.0.0` integration with the explicit `v1_20` API feature. The default build remains independent of native libheif; the compositor forwards an opt-in `heif` feature.
+- The adapter applies libheif security limits before parsing, caps decoding threads, rejects sequences/multiple top-level images, validates dimensions/stride/buffer length and returns owned packed RGBA8 bytes. Format selection must match the detected container brand.
+- Wallpaper asset detection and decoding dispatch now recognize HEIC/AVIF while keeping codec APIs out of the compositor renderer. No video or animated-image support was introduced.
+- Added a Debian 13 CI job to install selected decoder-only plugins and compile/test the real Aurea Media feature. First CI attempt failed due to a private re-export and Debian Rust 1.85 being too old for `image 0.25.10` (requires Rust 1.88). Both issues were corrected; the next grouped CI run must confirm the result.
+- Rust formatting remains deferred to the grouped Fedora session. No local Fedora build/test was run. Security review, real HEIC/AVIF fixtures, Fedora package parity and runtime manifest work remain pending.
