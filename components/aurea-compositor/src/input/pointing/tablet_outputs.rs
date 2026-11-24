@@ -5,7 +5,7 @@
 
 //! Per-device tablet-to-output mapping policies.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use aurea_desktop_api::input::InputDeviceId;
 
@@ -24,6 +24,7 @@ pub enum TabletOutputTarget {
 #[derive(Debug, Clone, Default)]
 pub struct TabletOutputMap {
     assignments: HashMap<InputDeviceId, TabletOutputTarget>,
+    unavailable_devices: HashSet<InputDeviceId>,
 }
 
 impl TabletOutputMap {
@@ -34,37 +35,46 @@ impl TabletOutputMap {
 
     /// Assigns a tablet to the full desktop or one output.
     pub fn assign(&mut self, device: InputDeviceId, target: TabletOutputTarget) {
+        self.unavailable_devices.remove(&device);
         self.assignments.insert(device, target);
     }
 
     /// Removes an explicit mapping and restores full-desktop behavior.
     pub fn unassign(&mut self, device: InputDeviceId) -> bool {
+        self.unavailable_devices.remove(&device);
         self.assignments.remove(&device).is_some()
     }
 
-    /// Removes mappings that explicitly reference a disconnected output.
+    /// Marks tablets assigned to a disconnected display as unavailable.
+    ///
+    /// The stale target is retained so a later single-output configuration
+    /// cannot silently capture the tablet. Reassign or unassign the device
+    /// explicitly to restore routing.
     pub fn remove_output(&mut self, output: OutputId) {
-        self.assignments.retain(|_, target| {
-            !matches!(target, TabletOutputTarget::Output(assigned) if *assigned == output)
-        });
+        for (device, target) in &self.assignments {
+            if matches!(target, TabletOutputTarget::Output(assigned) if *assigned == output) {
+                self.unavailable_devices.insert(*device);
+            }
+        }
     }
 
     /// Removes the mapping belonging to a disconnected tablet.
     pub fn remove_device(&mut self, device: InputDeviceId) {
         self.assignments.remove(&device);
+        self.unavailable_devices.remove(&device);
     }
 
     /// Resolves the target against the currently enabled output set.
     ///
-    /// The full desktop is the default. An explicit output mapping is only
-    /// accepted while that output is enabled; it is never redirected.
+    /// A stale explicit assignment is never redirected. The full desktop is
+    /// the default only when no unavailable explicit assignment exists.
     pub fn resolve(
         &self,
         device: InputDeviceId,
         enabled_outputs: impl IntoIterator<Item = OutputId>,
     ) -> Option<TabletOutputTarget> {
         let outputs = enabled_outputs.into_iter().collect::<Vec<_>>();
-        if outputs.is_empty() {
+        if outputs.is_empty() || self.unavailable_devices.contains(&device) {
             return None;
         }
 
@@ -142,11 +152,42 @@ mod tests {
     }
 
     #[test]
-    fn removing_output_clears_only_its_explicit_assignments() {
+    fn removing_output_blocks_rerouting_until_explicit_action() {
         let mut map = TabletOutputMap::new();
         map.assign(DEVICE, TabletOutputTarget::Output(SECOND));
         map.remove_output(SECOND);
 
-        assert_eq!(map.resolve(DEVICE, [FIRST]), Some(TabletOutputTarget::All));
+        assert_eq!(map.resolve(DEVICE, [FIRST]), None);
+
+        map.assign(DEVICE, TabletOutputTarget::Output(FIRST));
+        assert_eq!(
+            map.resolve(DEVICE, [FIRST]),
+            Some(TabletOutputTarget::Output(FIRST))
+        );
+
+        map.remove_output(FIRST);
+        assert_eq!(map.resolve(DEVICE, [SECOND]), None);
+
+        assert!(map.unassign(DEVICE));
+        assert_eq!(
+            map.resolve(DEVICE, [SECOND]),
+            Some(TabletOutputTarget::All)
+        );
+    }
+
+    #[test]
+    fn removing_output_preserves_other_assignments() {
+        let mut map = TabletOutputMap::new();
+        let other_device = InputDeviceId(12);
+        map.assign(DEVICE, TabletOutputTarget::Output(SECOND));
+        map.assign(other_device, TabletOutputTarget::Output(FIRST));
+
+        map.remove_output(SECOND);
+
+        assert_eq!(map.resolve(DEVICE, [FIRST]), None);
+        assert_eq!(
+            map.resolve(other_device, [FIRST]),
+            Some(TabletOutputTarget::Output(FIRST))
+        );
     }
 }
