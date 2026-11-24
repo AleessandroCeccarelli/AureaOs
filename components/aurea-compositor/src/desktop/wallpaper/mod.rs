@@ -7,6 +7,7 @@
 
 mod animation;
 mod asset;
+mod draw_geometry;
 mod layout;
 mod manager;
 mod pixels;
@@ -18,6 +19,7 @@ pub use animation::{
     WallpaperPlaybackPolicy, WallpaperProviderError,
 };
 pub use asset::{WallpaperAsset, WallpaperDimensions, WallpaperFormat};
+pub use draw_geometry::{WallpaperDrawGeometry, WallpaperUvRect};
 pub use layout::{WallpaperFitMode, WallpaperLayout, WallpaperPixelRect};
 pub use manager::WallpaperManager;
 pub use pixels::{MAX_WALLPAPER_RGBA_BYTES, WallpaperPixels, WallpaperPixelsError};
