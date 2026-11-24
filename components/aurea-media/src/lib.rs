@@ -10,6 +10,7 @@ mod decoder;
 mod error;
 mod limits;
 mod jpeg;
+mod raster;
 mod worker;
 
 pub use decoder::{DecodedImage, ImageFormat, PixelFormat, decode};
