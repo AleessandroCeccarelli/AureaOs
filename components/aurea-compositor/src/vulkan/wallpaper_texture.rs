@@ -9,7 +9,7 @@ use std::{error::Error, fmt, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
-use crate::desktop::wallpaper::WallpaperPixels;
+use crate::desktop::WallpaperPixels;
 
 use super::{
     VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanImageViewError,
