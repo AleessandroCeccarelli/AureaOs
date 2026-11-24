@@ -94,7 +94,7 @@ pub(super) fn render_frame(
     surface_cache
         .poll_wallpaper_texture_uploads()
         .map_err(|error| match error {
-            super::VulkanWallpaperTextureCacheError::Command(
+            super::wallpaper_texture_cache::VulkanWallpaperTextureCacheError::Command(
                 smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
             ) => VulkanSurfaceCompositionError::DeviceLost(
                 smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
