@@ -95,6 +95,9 @@ pub(super) fn render_frame(
     let visible = visible_surfaces(snapshots, target)?;
     let cursor = native_cursor_geometry(scene, target);
     let wallpaper_selected = scene.desktop().wallpaper().is_some();
+    if !wallpaper_selected {
+        surface_cache.clear_wallpaper_texture();
+    }
     let texture_requests = visible
         .iter()
         .map(|surface| {
