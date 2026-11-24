@@ -1390,3 +1390,18 @@ Verifica statica dei percorsi e delle corrispondenze tra tipi. Nessuna build, te
 Commit: `46d2c1d6`, `1d3f8fa4`, `611720ee`, `cc7b860e`, `5930c025`.
 
 Solo controllo statico delle interfacce e dei punti di passaggio. Nessuna build, test, rustfmt, cargo check o CI.
+
+
+## 24 novembre 2026 — Selezione degli elementi sul desktop
+
+- Aggiunti gli eventi semantici `DesktopItemSelected { id }` e `DesktopSelectionCleared` al contratto condiviso `aurea-desktop-api`. L’enum non è più `Copy` perché la selezione trasporta un identificatore posseduto.
+- Creato `compositor/desktop_selection.rs`: converte il puntatore globale in coordinate logiche intere, applica `DesktopHitTest` agli elementi del modello con area 64×64 logical px e invia il risultato alla Shell.
+- Il percorso del click primario continua a dare precedenza alle superfici Wayland: soltanto quando non viene colpita una finestra il click viene interpretato come selezione di un elemento del desktop.
+- `ShellRuntime` aggiorna `DesktopState.selected_item_id` e gestisce anche la cancellazione della selezione. Aggiunti test per selezione e deselezione nel runtime e nello stato desktop.
+- Separata la policy di hit-testing dal gestore generale dei pulsanti, mantenendo piccolo `pointer_button.rs`.
+
+**Limite esplicito:** la selezione è ora calcolata e conservata nello stato Shell, ma il renderer non disegna ancora il bordo/evidenziazione di selezione; il doppio clic e l’attivazione/apertura degli elementi restano da implementare. Nessuna icona è ancora visibile finché gli asset RGBA8 generati non vengono prodotti e collegati al pass Vulkan.
+
+Commit principali: `edb084ba`, `57174278`, `281eeb56`, `66259fdc`, `141bb3d2`, `23eefbc5`, `52eb356e`, `1aab344d`, `738a7dca`.
+
+Inoltre corretto il dichiaratore di visibilità duplicato e non valido in `VulkanSurfacePipelineCacheError` (`2169ed40`). Nessuna build, test, rustfmt, cargo check o CI eseguiti.
