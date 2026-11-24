@@ -102,7 +102,12 @@ pub(super) fn render_and_present(
                 .expect("frame must remain Rendering until submission acceptance is resolved");
         },
     )
-    .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
+    .map_err(|error| match error {
+        crate::vulkan::surface_compositor::VulkanSurfaceCompositionError::DeviceLost(result) => {
+            VulkanScanoutError::device_lost(format!("Vulkan device lost: {result:?}"))
+        }
+        other => VulkanScanoutError::new(other.to_string()),
+    })?;
 
     if effective_display.is_some() {
         if let Some(frame) = frame_pool.get(framebuffer) {
