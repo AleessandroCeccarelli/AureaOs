@@ -55,7 +55,6 @@ impl Error for VulkanDesktopIconTextureCacheError {}
 struct CachedDesktopIconTexture {
     texture: Arc<VulkanShmTexture>,
     byte_len: usize,
-    last_used: u64,
 }
 
 struct PendingDesktopIconBatch {
@@ -71,7 +70,6 @@ pub(crate) struct VulkanDesktopIconTextureCache {
     pending_uploads: Vec<PendingDesktopIconBatch>,
     cached_bytes: usize,
     pending_bytes: usize,
-    frame: u64,
 }
 
 impl VulkanDesktopIconTextureCache {
@@ -82,7 +80,6 @@ impl VulkanDesktopIconTextureCache {
             pending_uploads: Vec::new(),
             cached_bytes: 0,
             pending_bytes: 0,
-            frame: 0,
         }
     }
 
@@ -92,8 +89,6 @@ impl VulkanDesktopIconTextureCache {
         requested: &[(DesktopIconTextureKey, ShmBufferSnapshot)],
     ) -> Result<(), VulkanDesktopIconTextureCacheError> {
         self.reap_completed_uploads()?;
-        self.frame = self.frame.wrapping_add(1);
-
         let requested_keys = requested.iter().map(|(key, _)| *key).collect::<HashSet<_>>();
         self.entries.retain(|key, _| requested_keys.contains(key));
         self.recalculate_cached_bytes();
@@ -104,9 +99,12 @@ impl VulkanDesktopIconTextureCache {
 
         let mut missing = Vec::new();
         let mut missing_bytes = 0usize;
+        let mut seen = HashSet::new();
         for (key, snapshot) in requested {
-            if let Some(entry) = self.entries.get_mut(key) {
-                entry.last_used = self.frame;
+            if !seen.insert(*key) {
+                continue;
+            }
+            if self.entries.contains_key(key) {
                 continue;
             }
 
@@ -145,7 +143,6 @@ impl VulkanDesktopIconTextureCache {
                 CachedDesktopIconTexture {
                     texture,
                     byte_len,
-                    last_used: self.frame,
                 },
             );
         }
