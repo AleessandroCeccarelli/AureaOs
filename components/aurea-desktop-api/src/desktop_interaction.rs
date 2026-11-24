@@ -64,7 +64,18 @@ impl DesktopInteractionSender {
         &self,
         interaction: DesktopInteraction,
     ) -> Result<(), SendError<DesktopInteraction>> {
-        self.sender.send(interaction)
+        let selection = match &interaction {
+            DesktopInteraction::DesktopItemSelected { id } => Some(Some(id.clone())),
+            DesktopInteraction::DesktopSelectionCleared => Some(None),
+            _ => None,
+        };
+        let result = self.sender.send(interaction);
+        if result.is_ok() {
+            if let Some(selection) = selection {
+                self.selection.set_selected_item(selection);
+            }
+        }
+        result
     }
 }
 
@@ -130,6 +141,33 @@ mod tests {
 
         compositor_selection.set_selected_item(None);
         assert_eq!(shell_selection.selected_item(), None);
+    }
+
+    #[test]
+    fn sending_selection_publishes_frame_state_without_waiting_for_shell_poll() {
+        let (sender, receiver) = desktop_interaction_channel();
+
+        sender
+            .send(DesktopInteraction::DesktopItemSelected {
+                id: "system:trash".to_owned(),
+            })
+            .unwrap();
+
+        assert_eq!(
+            sender.selection_controller().selected_item().as_deref(),
+            Some("system:trash")
+        );
+        assert_eq!(
+            receiver.try_recv(),
+            Ok(DesktopInteraction::DesktopItemSelected {
+                id: "system:trash".to_owned(),
+            })
+        );
+
+        sender
+            .send(DesktopInteraction::DesktopSelectionCleared)
+            .unwrap();
+        assert_eq!(sender.selection_controller().selected_item(), None);
     }
 
     #[test]
