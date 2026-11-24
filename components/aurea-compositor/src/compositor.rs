@@ -47,6 +47,7 @@ use crate::{
     window_manager::WindowManager,
 };
 
+mod desktop_selection;
 mod fractional_scale;
 mod frame_scheduling;
 mod keyboard;
