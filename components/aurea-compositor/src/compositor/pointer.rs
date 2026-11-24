@@ -117,4 +117,100 @@ impl AureaCompositor {
         }
         self.request_all_output_frames();
     }
+    /// Routes an absolute pointer device when the desktop has exactly one
+    /// enabled output.
+    ///
+    /// Absolute coordinates are output-local. Until AureaOS exposes an
+    /// explicit per-device output assignment, multi-output layouts are
+    /// deliberately rejected rather than guessing which monitor owns the
+    /// device. Touchscreens and tablet tools keep their dedicated paths.
+    pub fn handle_pointer_motion_absolute<E>(&mut self, event: &E, time: u32) -> bool
+    where
+        E: smithay::backend::input::AbsolutePositionEvent<
+                smithay::backend::libinput::LibinputInputBackend,
+            > + smithay::backend::input::Event<
+                smithay::backend::libinput::LibinputInputBackend,
+            >,
+    {
+        let mut enabled = self
+            .output_manager
+            .registry()
+            .iter()
+            .filter(|output| output.is_enabled());
+        let Some(output) = enabled.next() else {
+            return false;
+        };
+        if enabled.next().is_some() {
+            tracing::debug!(
+                device = ?event.device().name(),
+                sysname = ?event.device().sysname(),
+                "Absolute pointer motion ignored: output assignment required on multi-monitor desktop"
+            );
+            return false;
+        }
+
+        let Some(bounds) = self
+            .output_manager
+            .logical_bounds(output.id())
+            .ok()
+            .flatten()
+        else {
+            return false;
+        };
+        let origin = bounds.origin();
+        let size = bounds.size();
+        if size.width <= 0 || size.height <= 0 {
+            return false;
+        }
+
+        let width = size.width;
+        let height = size.height;
+        let requested = Point::from((
+            origin.x as f64 + event.x_transformed(width) / f64::from(width)
+                * f64::from(width - 1),
+            origin.y as f64 + event.y_transformed(height) / f64::from(height)
+                * f64::from(height - 1),
+        ));
+        let Some(location) = super::pointer_bounds::constrain_to_outputs(
+            requested,
+            [OutputGeometry::new(
+                origin.x as f64,
+                origin.y as f64,
+                f64::from(width),
+                f64::from(height),
+            )?],
+        ) else {
+            return false;
+        };
+
+        let Some(pointer) = self.seat.get_pointer() else {
+            return false;
+        };
+        let focus = {
+            let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
+            scene.surface_under(location).map(|(surface, surface_origin, _)| {
+                (
+                    surface,
+                    Point::from((
+                        f64::from(surface_origin.x),
+                        f64::from(surface_origin.y),
+                    )),
+                )
+            })
+        };
+
+        pointer.motion(
+            self,
+            focus,
+            &MotionEvent {
+                location,
+                serial: SERIAL_COUNTER.next_serial(),
+                time,
+            },
+        );
+        pointer.frame(self);
+        self.request_all_output_frames();
+        true
+    }
+
 }
