@@ -272,7 +272,7 @@ Questo registro è la fonte condivisa di verità per le decisioni sulle dipenden
 - **Footprint runtime:** installare soltanto i plugin decoder necessari. Non installare libheif-plugins-all, plugin encoder o plugin FFmpeg per questa funzione.
 - **Sicurezza:** decodifica di file non fidati fuori dal render thread; limiti su dimensioni, pixel, byte di output e numero di item del contenitore; verifica advisory upstream e ABI supportata.
 - **Evidenza:** metadati e descrizioni pacchetti Debian Trixie per libheif1 e libheif-plugin-libde265; https://packages.debian.org/trixie/libheif1 e https://packages.debian.org/trixie/libheif-plugin-libde265
-- **Decisione:** candidato; nessuna dipendenza o pacchetto aggiunto.
+- **Decisione:** implementazione opzionale aggiunta dietro `aurea-media/heif`; adozione runtime e approvazione produzione restano subordinate a CI, revisione sicurezza, fixture e verifica pacchetti/licenze.
 
 ### JPEG 2000
 
