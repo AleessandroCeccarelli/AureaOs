@@ -17,7 +17,7 @@ use crate::{
 use super::{
     VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
     VulkanLogicalDevice, VulkanSampler, VulkanSamplerError, VulkanShaderError, VulkanShaderModule,
-    VulkanShmTexture, VulkanTextureBindingError, VulkanTextureBindingPool,
+    VulkanPendingUpload, VulkanShmTexture, VulkanTextureBindingError, VulkanTextureBindingPool,
     VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
     surface_texture_cache::{VulkanSurfaceTextureCache, VulkanSurfaceTextureCacheError},
     wallpaper_texture_cache::{
@@ -67,6 +67,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     wallpaper_texture_cache: VulkanWallpaperTextureCache,
     wallpaper_decode_service: WallpaperDecodeService,
     native_cursor_texture: Option<VulkanShmTexture>,
+    pending_cursor_upload: Option<VulkanPendingUpload<Vec<Arc<VulkanShmTexture>>>>,
 }
 
 impl VulkanSurfacePipelineCache {
@@ -282,20 +283,61 @@ impl VulkanSurfacePipelineCache {
         self.wallpaper_texture_cache.clear();
     }
 
-    /// Lazily uploads the compositor-owned arrow once per Vulkan device.
+    /// Starts or polls the compositor-owned arrow upload without waiting for the GPU.
+    /// Returns true only after the upload fence has completed and the texture is ready to sample.
     pub(crate) fn ensure_native_cursor_texture(
         &mut self,
-    ) -> Result<(), VulkanSurfacePipelineCacheError> {
+    ) -> Result<bool, VulkanSurfacePipelineCacheError> {
         if self.native_cursor_texture.is_some() {
-            return Ok(());
+            return Ok(true);
+        }
+
+        if let Some(upload) = self.pending_cursor_upload.as_ref() {
+            let complete = upload
+                .is_complete()
+                .map_err(|error| {
+                    VulkanSurfacePipelineCacheError::CursorTexture(
+                        super::VulkanShmTextureError::Command(error),
+                    )
+                })?;
+            if !complete {
+                return Ok(false);
+            }
+
+            let upload = self
+                .pending_cursor_upload
+                .take()
+                .expect("pending cursor upload was checked above");
+            let mut textures = upload.wait().map_err(|error| {
+                VulkanSurfacePipelineCacheError::CursorTexture(
+                    super::VulkanShmTextureError::Command(error),
+                )
+            })?;
+            let texture = textures
+                .pop()
+                .ok_or_else(|| {
+                    VulkanSurfacePipelineCacheError::CursorTexture(
+                        super::VulkanShmTextureError::Command(
+                            smithay::reexports::ash::vk::Result::ERROR_UNKNOWN,
+                        ),
+                    )
+                })?;
+            self.native_cursor_texture = Some(Arc::try_unwrap(texture).map_err(|_| {
+                VulkanSurfacePipelineCacheError::CursorTexture(
+                    super::VulkanShmTextureError::Command(
+                        smithay::reexports::ash::vk::Result::ERROR_UNKNOWN,
+                    ),
+                )
+            })?);
+            return Ok(true);
         }
 
         let snapshot = crate::render::cursor::default_cursor_snapshot()
             .map_err(|error| VulkanSurfacePipelineCacheError::CursorSnapshot(error.to_string()))?;
-        let texture = VulkanShmTexture::from_snapshot(Arc::clone(&self.device), snapshot)
+        let upload = VulkanShmTexture::submit_snapshots(Arc::clone(&self.device), vec![snapshot])
             .map_err(VulkanSurfacePipelineCacheError::CursorTexture)?;
-        self.native_cursor_texture = Some(texture);
-        Ok(())
+        self.pending_cursor_upload = Some(upload);
+        Ok(false)
     }
 
     pub(crate) fn native_cursor_texture(&self) -> Option<&VulkanShmTexture> {
