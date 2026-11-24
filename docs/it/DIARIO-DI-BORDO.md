@@ -1684,3 +1684,13 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - La mappa ora conserva il fatto che l'assegnazione precedente è diventata non disponibile; il dispositivo resta senza destinazione finché non viene riassegnato o esplicitamente riportato alla modalità automatica.
 - La rimozione del dispositivo elimina anche questo stato; una nuova assegnazione lo riattiva.
 - Nessuna build, cargo check, rustfmt o test eseguiti. Verifica raggruppata su Fedora ancora in sospeso.
+
+
+### Distinzione inventario tavoletta penna / tablet pad — 24 novembre 2026
+
+- L'audit ha rilevato che un dispositivo con la sola capability `TabletPad` veniva classificato come `Tablet`.
+- Questa classificazione poteva renderlo selezionabile nelle API di calibrazione penna e assegnazione monitor, pur non avendo eventi TabletTool.
+- Aggiunto `InputDeviceKind::TabletPad` nell'API desktop e separata la rilevazione: `Tablet` richiede `TabletTool`; `TabletPad` identifica i dispositivi pad-only. Se entrambe le capability sono presenti, prevale `Tablet` e le capability pad restano nel descrittore.
+- Il registro continua a mostrare i pad-only, ma le API specifiche per penna non li accettano.
+- Non è stato aggiunto supporto agli eventi pad: il limite Smithay 0.7 resta invariato.
+- Nessuna build, cargo check, rustfmt o test eseguiti; verifica raggruppata su Fedora ancora in sospeso.
