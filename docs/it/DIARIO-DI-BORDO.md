@@ -887,3 +887,13 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Aggiunto `WallpaperPixelRect::new` con validazione delle dimensioni e pubblicati i nuovi tipi tramite l'API desktop.
 - Commit: `a5b33ccd` (geometria), `93284f76` (costruttore rettangolo), `804f9e67` (export modulo wallpaper), `96c49b75` (export desktop).
 - È solo geometria CPU: non è ancora integrata nel draw pass Vulkan e non visualizza il wallpaper. Nessun decoder aggiunto. Non sono stati eseguiti Cargo fmt/check/test/build/CI né ISO; serve la verifica locale su Fedora.
+
+
+## 24 novembre 2026 — Shader e pipeline Vulkan dedicati al wallpaper
+
+- Aggiunti gli shader separati `wallpaper_texture.vert` e `wallpaper_texture.frag`. Il vertex shader applica un rettangolo UV normalizzato ricevuto tramite quattro push constant float; il fragment shader campiona la texture dello sfondo.
+- Aggiornato `build.rs` per monitorare e compilare i due shader nelle build DRM e pubblicare i percorsi SPIR-V generati.
+- Aggiunta una cache di pipeline wallpaper per formato, separata dalla pipeline delle superfici. Riutilizza il descriptor layout per texture campionate, ma dichiara un proprio intervallo push constant da quattro float. L'ABI esistente delle superfici (`u32` per la trasformazione) resta invariata.
+- È ancora soltanto infrastruttura della pipeline: non viene ancora associato un descriptor né registrato un draw wallpaper. Decoder e popolamento della texture selezionata restano da completare.
+- Commit: `e0823ebe` (vertex shader), `fa3d28e4` (fragment shader), `41b24c1c` (build shader), `7a742fe6` (cache pipeline dedicata).
+- Non eseguiti Cargo fmt/check/test/build, CI o ISO. Serve la verifica locale su Fedora; Debian 13 resta il target.
