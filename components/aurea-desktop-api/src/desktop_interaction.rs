@@ -21,8 +21,9 @@ pub enum DesktopInteraction {
 
 /// Shared, thread-safe selection state sampled by compositor render frames.
 ///
-/// The shell is the only writer. The compositor reads an owned snapshot so
-/// rendering never holds the lock while preparing or submitting GPU work.
+/// The interaction sender publishes selection changes immediately, and the
+/// shell mirrors them into its desktop state. The compositor reads an owned
+/// snapshot so rendering never holds the lock during GPU preparation.
 #[derive(Debug, Clone, Default)]
 pub struct DesktopSelectionController {
     selected_item_id: std::sync::Arc<std::sync::RwLock<Option<String>>>,
@@ -54,7 +55,7 @@ pub struct DesktopInteractionSender {
 }
 
 impl DesktopInteractionSender {
-    /// Returns the shared shell-owned desktop selection state.
+    /// Returns the shared desktop selection projection.
     pub fn selection_controller(&self) -> DesktopSelectionController {
         self.selection.clone()
     }
