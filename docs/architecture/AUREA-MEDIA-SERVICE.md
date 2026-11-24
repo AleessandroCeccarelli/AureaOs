@@ -145,3 +145,10 @@ This service is not yet wired into `AureaCompositor::render_output` or `RenderSc
 The Vulkan surface pipeline cache now owns a lazily created `WallpaperDecodeService`. During frame preparation, the selected `WallpaperAsset` is synchronized with that service, the worker is polled once without blocking, and a completed `DecodedWallpaper` transfers its `WallpaperPixels` buffer into `VulkanWallpaperTextureCache` without cloning the pixel allocation. The cache uploads the pixels asynchronously and exposes the texture only after its fence completes and only while the matching asset/revision remains selected. Queue saturation is treated as transient and retried on a later frame. Clearing the selection invalidates decode state and clears the selected texture.
 
 The decode worker performs JPEG work off-thread. Vulkan image allocation and upload submission remain on the backend's resource-preparation path; GPU completion is polled rather than waited on by the CPU frame path.
+## Wallpaper decoder integration — 2026-11-24
+
+The compositor now owns one WallpaperDecodeService alongside its persistent Vulkan surface pipeline cache. The bounded media worker is created during cache initialization, not lazily from the frame-composition callback. Frame composition only submits/retries a bounded request, polls its one-shot receiver without waiting, and hands completed RGBA8 pixels to the bounded Vulkan upload cache.
+
+The decode service records the current asset/revision as failed when decoding, pixel validation, or worker delivery fails. Re-selecting the same asset does not submit the same failing request on every frame; selecting a different asset clears the failure state and starts a new revision. Queue saturation remains transient and is retried on a later frame.
+
+The renderer still performs GPU upload asynchronously and only exposes the texture after its fence completes and its asset/revision matches the active selection. Local Fedora visual verification remains pending; CI compilation/tests must be run after the current grouped implementation work is complete.
