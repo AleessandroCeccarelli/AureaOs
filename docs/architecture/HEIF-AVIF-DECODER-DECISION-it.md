@@ -103,9 +103,10 @@ Prima di abilitare l'adattatore nella build predefinita del workspace:
 5. Aggiungere fixture HEIC e AVIF piccole, con licenza chiara o generate, oltre a fixture malformate, troncate, fuori limite, multi-immagine e con sequenze.
 6. Eseguire i normali controlli workspace, DRM/Vulkan, audit di sicurezza e test media dopo aver raggruppato le modifiche.
 
-## Stato attuale dell'implementazione
+## Stato attuale dell'implementazione — 24 novembre 2026
 
-- JPEG, PNG, BMP, TIFF e WebP statico restano i percorsi decoder attualmente implementati per gli sfondi.
-- HEIF/HEIC e AVIF restano formati di prodotto approvati ma **non implementati**.
-- Questa decisione non modifica dipendenze Cargo, pacchetti nativi, script di build, lockfile o manifest dell'immagine runtime.
-- Il prossimo passo implementativo è completare la verifica delle dipendenze e della sicurezza Debian/Fedora, quindi aggiungere un adattatore HEIF privato dentro `aurea-media`.
+- Aggiunto un adapter HEIF/AVIF privato in `aurea-media`, basato sulla dipendenza opzionale `libheif-rs = 3.0.0` con la sola feature API `v1_20`.
+- `aurea-media` espone la feature Cargo opt-in `heif`; `aurea-compositor` la inoltra con la propria feature `heif`. Nessuna delle due è attiva per default: le build ordinarie del workspace non acquisiscono una dipendenza nativa libheif.
+- L'adapter applica limiti a input, pixel, dimensioni e memoria del decoder nativo; rifiuta sequenze e contenitori multi-immagine; verifica il formato richiesto rispetto ai brand ISO-BMFF; copia il piano RGBA riga per riga in memoria posseduta e compatta.
+- Aggiunto un job CI Debian 13 che installa header libheif e plugin decoder selezionati, quindi compila/testa Aurea Media con `heif` attivo. La prima esecuzione ha rilevato un errore di visibilità Rust e Rust 1.85 Debian troppo vecchio per `image` (MSRV 1.88). Entrambe le cause sono state corrette nel sorgente/workflow, ma serve ancora una nuova esecuzione.
+- Revisione sicurezza/manutenzione, fixture reali HEIC/AVIF, parità pacchetti Fedora e verifica manifest runtime restano gate aperti. È un'implementazione opt-in in validazione, non ancora approvata per la produzione.
