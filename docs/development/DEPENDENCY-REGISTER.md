@@ -321,3 +321,13 @@ Debian Trixie package metadata was rechecked:
 - Exact upstream license compatibility for libheif, libde265 and dav1d, ABI details, Fedora package parity and runtime plugin discovery remain to be reviewed. No native dependency has been added to Cargo.toml or the target package set.
 
 Evidence: Debian Trixie package pages for libheif-dev, libheif-plugin-libde265 and libheif-plugin-dav1d; https://packages.debian.org/trixie/libheif-dev, https://packages.debian.org/trixie/libheif-plugin-libde265, https://packages.debian.org/trixie/libheif-plugin-dav1d.
+
+## HEIF/AVIF native dependency CI gate — 24 November 2026
+
+- **CI environment:** dedicated debian:trixie container job, separate from the Ubuntu 24.04 workspace build.
+- **Build-time packages under verification:** libheif-dev and pkg-config.
+- **Decoder-only plugin packages under verification:** libheif-plugin-libde265 (HEVC still images) and libheif-plugin-dav1d (AV1 still images).
+- **API baseline:** CI requires pkg-config --atleast-version=1.20 libheif, because the planned safe wrapper integration needs the context memory-limit and sequence-detection APIs.
+- **Scope:** package installation, pkg-config version and plugin shared-library presence only. This job does not yet compile libheif-rs, link Aurea Media, or approve production adoption.
+- **Security/maintenance:** the upstream parser-risk review remains a gate. Keep native decoding isolated behind aurea-media; no native codec code may enter the compositor/render thread.
+- **Status:** CI verification pending. No Cargo dependency, lockfile, runtime image manifest or Fedora package decision has been added.
