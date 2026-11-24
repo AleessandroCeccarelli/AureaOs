@@ -9,7 +9,10 @@ use std::{collections::HashMap, error::Error, fmt, sync::Arc};
 
 use smithay::{reexports::ash::vk, reexports::wayland_server::backend::ObjectId};
 
-use crate::{desktop::WallpaperPixels, render::shm_buffer::ShmBufferSnapshot};
+use crate::{
+    desktop::{WallpaperAsset, WallpaperDecodeService, WallpaperDecodeServiceError, WallpaperPixels},
+    render::shm_buffer::ShmBufferSnapshot,
+};
 
 use super::{
     VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
@@ -56,6 +59,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     sampler: VulkanSampler<'static>,
     texture_cache: VulkanSurfaceTextureCache,
     wallpaper_texture_cache: VulkanWallpaperTextureCache,
+    wallpaper_decode_service: Option<WallpaperDecodeService>,
     native_cursor_texture: Option<VulkanShmTexture>,
 }
 
@@ -78,6 +82,7 @@ impl VulkanSurfacePipelineCache {
             sampler,
             texture_cache,
             wallpaper_texture_cache,
+            wallpaper_decode_service: None,
             native_cursor_texture: None,
         })
     }
@@ -188,8 +193,50 @@ impl VulkanSurfacePipelineCache {
         self.texture_cache.texture(surface_id)
     }
 
+    /// Advances background decoding and transfers completed pixels to the GPU upload cache.
+    ///
+    /// The media worker never blocks this frame path. Queue saturation is transient:
+    /// the same selection is retried on the next frame.
+    pub(crate) fn prepare_wallpaper_decode(
+        &mut self,
+        asset: Option<WallpaperAsset>,
+    ) -> Result<(), String> {
+        let Some(asset) = asset else {
+            self.wallpaper_texture_cache.clear();
+            if let Some(service) = self.wallpaper_decode_service.as_mut() {
+                service.select(None).map_err(|error| error.to_string())?;
+            }
+            return Ok(());
+        };
+
+        if self.wallpaper_decode_service.is_none() {
+            self.wallpaper_decode_service = Some(
+                WallpaperDecodeService::new().map_err(|error| error.to_string())?,
+            );
+        }
+        let service = self.wallpaper_decode_service.as_mut().expect("service initialized");
+        match service.select(Some(asset)) {
+            Ok(_) => {}
+            Err(WallpaperDecodeServiceError::Worker(
+                aurea_media::DecodeWorkerError::QueueFull,
+            )) => return Ok(()),
+            Err(error) => return Err(error.to_string()),
+        }
+
+        service.poll().map_err(|error| error.to_string())?;
+        if let Some(decoded) = service.take_ready() {
+            let key = WallpaperTextureKey {
+                asset_id: decoded.key().asset_id(),
+                revision: decoded.key().revision(),
+            };
+            self.wallpaper_texture_cache
+                .prepare(key, decoded.into_pixels())
+                .map_err(|error| error.to_string())?;
+        }
+        Ok(())
+    }
+
     /// Submits the selected wallpaper pixels without waiting for GPU completion.
-    #[allow(dead_code)] // Wired when the static-image decoder produces validated pixels.
     pub(crate) fn prepare_wallpaper_texture(
         &mut self,
         key: WallpaperTextureKey,
