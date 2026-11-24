@@ -1001,3 +1001,12 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Commit su main: 1c6fe1a0, 70ad0c7c, b8cb721c, 98c66183.
 - Nessuna build o batteria di test avviata per queste correzioni: le verifiche saranno raggruppate dopo il completamento del blocco di lavoro. La formattazione Rust resta affidata a Fedora.
 - Verifica visiva su Fedora ancora da eseguire; non viene dichiarato il funzionamento grafico verificato.
+
+## 24 novembre 2026 — Ownership dei pixel durante l'upload wallpaper
+
+- Modificato il confine tra decoder e texture Vulkan: `submit_pixels` riceve ora un riferimento a `WallpaperPixels` e copia i byte nel buffer di staging senza consumare in anticipo il buffer CPU.
+- La pipeline chiama `take_ready()` soltanto dopo che la cache conferma l'accettazione dell'upload. Se allocazione immagine, staging, setup comandi o submission falliscono, il risultato decodificato resta quindi disponibile nel servizio.
+- La cache memorizza la revisione il cui upload è fallito e non ripete l'operazione a ogni frame. Una nuova revisione/asset azzera il blocco; anche la rimozione dello sfondo pulisce lo stato.
+- Nessun clone completo del buffer RGBA è stato introdotto: resta soltanto la copia necessaria verso lo staging Vulkan.
+- Commit su main: `130975a6`, `3ebe773e`, `d5d69149`.
+- La conservazione dei pixel non equivale a un retry automatico: per riprovare la stessa selezione dopo un errore temporaneo servirà una politica esplicita. Nessuna build, test, rustfmt o CI avviata; verifiche raggruppate a fine blocco su Fedora/CI.
