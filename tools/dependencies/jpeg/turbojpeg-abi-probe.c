@@ -73,7 +73,8 @@ static int decode_and_check(const unsigned char *jpeg, size_t jpeg_length)
     int width = 0;
     int height = 0;
     int subsampling = TJSAMP_UNKNOWN;
-    int colorspace = TJCS_DEFAULT;
+    /* TurboJPEG 2.1 has no TJCS_DEFAULT/TJCS_UNKNOWN enum value. */
+    int colorspace = -1;
 
     if (tjDecompressHeader3(decoder, jpeg, (unsigned long)jpeg_length,
                             &width, &height, &subsampling, &colorspace) != 0) {
