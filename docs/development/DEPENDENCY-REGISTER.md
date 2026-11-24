@@ -149,3 +149,29 @@ If a required answer is unknown, keep the dependency Candidate, Conditional or N
 Review this register whenever a dependency is proposed, added, removed or upgraded; Debian stable package versions/security status change; Rust MSRV/toolchain policy changes; an advisory affects a direct/transitive dependency; or a component changes native ABI, linking or runtime requirements.
 
 This register is the shared source of truth for dependency decisions. When implementation convenience conflicts with Debian compatibility, Debian compatibility wins.
+
+## Universal desktop and multimedia strategy — 24 November 2026
+
+### Product direction
+- AureaOS is intended for children, older adults, first-time users, students, creative and office professionals, administrators and developers through one coherent desktop; no age-based editions or assumptions about ability.
+- Adopt the product principle: simple by default, capable when needed, accessible from the beginning.
+- Accessibility, multimedia and productivity are foundational requirements, not post-release polish.
+
+### Technology evaluations recorded (not added as dependencies)
+- PipeWire + WirePlumber: recommended system audio/video routing and session-policy foundation. Debian Trixie package evidence reviewed: PipeWire 1.4.2 and WirePlumber 0.5.8. Actual image inclusion and runtime integration remain to be verified.
+- GStreamer 1.x: recommended modular media pipeline for playback, capture, encoding, muxing and streaming. Debian Trixie package evidence reviewed: 1.26.2 family. Codec/plugin licensing and availability must be assessed per feature; do not install every plugin group by default.
+- XDG Desktop Portal: recommended application interoperability and permission boundary for Flatpak. Debian Trixie package evidence reviewed: xdg-desktop-portal 1.20.3. AureaOS must implement its own backend for supported interfaces rather than depending on GNOME/KDE desktop backends.
+- AT-SPI2: target Linux assistive-technology interoperability. Orca is a real screen-reader validation target. AccessKit is a candidate Rust abstraction for native widget accessibility, not a replacement for AT-SPI2 or a complete toolkit.
+- Parley and cosmic-text: candidate Rust text-layout building blocks for shaping, bidi, line breaking and font fallback. Neither is a complete UI toolkit; prototype before selection.
+- Native UI toolkit remains undecided. Any candidate must prove Wayland-only operation, Vulkan-compatible rendering, AT-SPI2/AccessKit accessibility, IME, complex text, touch, scaling, performance and Debian packaging.
+
+### Architecture boundaries
+- Keep Aurea Media and Aurea Capture as separate responsibilities: image decode returns bounded CPU-owned pixels; capture coordinates authorization/session lifecycle; PipeWire transports streams; GStreamer handles selected pipeline/encoding work; compositor owns final authorized frames and Vulkan presentation only.
+- Do not put media codecs, muxing, audio mixing or file writing in the compositor/render thread.
+- Do not introduce a monolithic media daemon. Start with libraries/adapters; reassess a restricted helper process for untrusted-media isolation when threat model and client scope justify it.
+- New/immature technologies may be prototyped in isolated crates/processes/features, but must not become base-system or boot/session dependencies before measurable benefit, security review, Debian compatibility and rollback path are established.
+
+### Documentation
+- Added docs/architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md.
+- Aligned English and Italian vision and technology-principles documents and linked the new strategy from both README entry points.
+- No dependency, Cargo manifest, lockfile, Rust source or system package was changed. No build, format, check, test or CI was run.
