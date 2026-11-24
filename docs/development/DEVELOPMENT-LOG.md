@@ -1122,3 +1122,12 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Added a unit test for direct fatal SHM texture error conversion; the cache-level test remains in place.
 - Commits: `c6e2737c`, `3d5fba86`, `d3ff57c4`.
 - No verification was run. Initial cursor setup still uses synchronous `from_snapshot`; evaluate a future asynchronous upload so the frame callback does not wait for GPU completion.
+
+
+### Follow-up — legacy Vulkan result conversion
+
+- Audited callers that still use `submit_and_wait()` and receive a `vk::Result` instead of the full `VulkanQueueSubmitError` type.
+- The legacy converter always returned `wait_error` for `CompletionUncertain`. When fence waiting returned `TIMEOUT` and the `device_wait_idle` fallback returned `ERROR_DEVICE_LOST`, the fatal error was hidden.
+- Updated `VulkanQueueSubmitError::result()` to prioritize `ERROR_DEVICE_LOST` in either field while retaining `wait_error` for ordinary failures. Added two focused unit tests.
+- Commit: `4a5ac3d2`.
+- No tests, build, formatting or CI were run.
