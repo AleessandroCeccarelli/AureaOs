@@ -287,6 +287,19 @@ mod tests {
     }
 
     #[test]
+    fn failed_decode_is_not_retried_for_the_same_selection() {
+        let asset = WallpaperAsset::default_wallpaper().unwrap();
+        let mut service = WallpaperDecodeService::new().unwrap();
+        let key = service.select(Some(asset)).unwrap().unwrap();
+
+        service.pending = None;
+        service.failed = Some(key);
+
+        assert_eq!(service.select(Some(asset)).unwrap(), Some(key));
+        assert!(service.pending_key().is_none());
+    }
+
+    #[test]
     fn selecting_the_same_asset_does_not_create_a_new_revision() {
         let asset = WallpaperAsset::default_wallpaper().unwrap();
         let mut service = WallpaperDecodeService::new().unwrap();
