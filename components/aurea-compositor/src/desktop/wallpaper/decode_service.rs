@@ -117,7 +117,16 @@ impl WallpaperDecodeService {
     ) -> Result<Option<WallpaperDecodeKey>, WallpaperDecodeServiceError> {
         let asset_id = asset.map(WallpaperAsset::id);
         if asset_id == self.requested_asset {
-            return Ok(self.ready.as_ref().map(DecodedWallpaper::key));
+            if let Some(ready) = self.ready.as_ref() {
+                return Ok(Some(ready.key()));
+            }
+            if let Some((key, _)) = self.pending.as_ref() {
+                return Ok(Some(*key));
+            }
+            if let Some(asset) = asset {
+                return self.submit(asset).map(Some);
+            }
+            return Ok(None);
         }
 
         self.revision = self
@@ -132,6 +141,13 @@ impl WallpaperDecodeService {
             return Ok(None);
         };
 
+        self.submit(asset).map(Some)
+    }
+
+    fn submit(
+        &mut self,
+        asset: WallpaperAsset,
+    ) -> Result<WallpaperDecodeKey, WallpaperDecodeServiceError> {
         let format = match asset.format() {
             WallpaperFormat::Jpeg => ImageFormat::Jpeg,
         };
@@ -141,15 +157,10 @@ impl WallpaperDecodeService {
         };
         let response = self
             .worker
-            .try_submit(
-                format,
-                asset.bytes().to_vec(),
-                DecodeLimits::default(),
-            )
+            .try_submit(format, asset.bytes().to_vec(), DecodeLimits::default())
             .map_err(WallpaperDecodeServiceError::Worker)?;
-
         self.pending = Some((key, response));
-        Ok(Some(key))
+        Ok(key)
     }
 
     /// Polls once without blocking and publishes only the current generation.
@@ -194,5 +205,59 @@ impl WallpaperDecodeService {
             Some((key, _)) => Some(*key),
             None => None,
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::WallpaperDecodeService;
+    use crate::desktop::wallpaper::WallpaperAsset;
+
+    #[test]
+    fn selected_wallpaper_decodes_off_the_calling_thread() {
+        let asset = WallpaperAsset::default_wallpaper().unwrap();
+        let mut service = WallpaperDecodeService::new().unwrap();
+        let key = service.select(Some(asset)).unwrap().unwrap();
+
+        let mut ready = None;
+        for _ in 0..10_000 {
+            if let Some(decoded) = service.poll().unwrap() {
+                ready = Some(decoded.clone());
+                break;
+            }
+            std::thread::yield_now();
+        }
+
+        let decoded = ready.expect("wallpaper decode should complete");
+        assert_eq!(decoded.key(), key);
+        assert_eq!(decoded.pixels().width(), u32::from(asset.dimensions().width()));
+        assert_eq!(decoded.pixels().height(), u32::from(asset.dimensions().height()));
+    }
+
+    #[test]
+    fn clearing_selection_invalidates_an_in_flight_decode() {
+        let asset = WallpaperAsset::default_wallpaper().unwrap();
+        let mut service = WallpaperDecodeService::new().unwrap();
+        service.select(Some(asset)).unwrap();
+        service.select(None).unwrap();
+
+        for _ in 0..10_000 {
+            assert!(service.poll().unwrap().is_none());
+            if service.pending_key().is_none() {
+                break;
+            }
+            std::thread::yield_now();
+        }
+        assert!(service.ready().is_none());
+    }
+
+    #[test]
+    fn selecting_the_same_asset_does_not_create_a_new_revision() {
+        let asset = WallpaperAsset::default_wallpaper().unwrap();
+        let mut service = WallpaperDecodeService::new().unwrap();
+        let first = service.select(Some(asset)).unwrap().unwrap();
+        let second = service.select(Some(asset)).unwrap().unwrap();
+        assert_eq!(first, second);
     }
 }
