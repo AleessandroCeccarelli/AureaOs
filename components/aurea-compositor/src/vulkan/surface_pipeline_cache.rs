@@ -66,7 +66,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     texture_cache: VulkanSurfaceTextureCache,
     wallpaper_texture_cache: VulkanWallpaperTextureCache,
     wallpaper_decode_service: WallpaperDecodeService,
-    native_cursor_texture: Option<VulkanShmTexture>,
+    native_cursor_texture: Option<Arc<VulkanShmTexture>>,
     pending_cursor_upload: Option<VulkanPendingUpload<Vec<Arc<VulkanShmTexture>>>>,
 }
 
@@ -322,13 +322,7 @@ impl VulkanSurfacePipelineCache {
                         ),
                     )
                 })?;
-            self.native_cursor_texture = Some(Arc::try_unwrap(texture).map_err(|_| {
-                VulkanSurfacePipelineCacheError::CursorTexture(
-                    super::VulkanShmTextureError::Command(
-                        smithay::reexports::ash::vk::Result::ERROR_UNKNOWN,
-                    ),
-                )
-            })?);
+            self.native_cursor_texture = Some(texture);
             return Ok(true);
         }
 
@@ -341,7 +335,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     pub(crate) fn native_cursor_texture(&self) -> Option<&VulkanShmTexture> {
-        self.native_cursor_texture.as_ref()
+        self.native_cursor_texture.as_deref()
     }
 
     pub(crate) fn pipeline(&self, format: vk::Format) -> Option<&VulkanGraphicsPipeline<'static>> {
