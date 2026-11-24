@@ -112,9 +112,11 @@ A compositor-owned descriptor module now maps the existing desktop model's Trash
 - Repository-relative generated asset path matching the host export script.
 - RGBA8 bytes are passed through the existing checked `ShmBufferSnapshot::from_rgba8` constructor before they can become a Vulkan cache request.
 
-The descriptor accepts the Trash contents state as input; it does not query the filesystem or infer fullness. The Trash service is not yet connected to this compositor input. File, Folder and Application entries deliberately return no icon descriptor because their canonical AureaOS artwork and MIME/application lookup are not yet approved or integrated.
+The visual state is now a technology-independent `DesktopTrashState` in `aurea-desktop-api`. The desktop model owns it and `DesktopItemsSnapshot` captures it for the render frame. Aurea Shell reuses the same enum, and the Trash service exposes an explicit conversion from its `TrashVisualState`. The compositor still does not query the filesystem: the application composition root must pass the service snapshot into the shared desktop model. No watcher or automatic refresh loop is claimed.
 
-This is metadata and validation infrastructure only. The 24 raw RGBA8 files have not been generated, loaded or visually inspected. No icon is drawn yet, and no state is fabricated when the Trash service is unavailable. The shared texture key lives in the desktop module so the model/asset contract remains available when the optional Vulkan feature is disabled.
+File, Folder and Application entries deliberately return no icon descriptor because their canonical AureaOS artwork and MIME/application lookup are not yet approved or integrated.
+
+This is metadata and validation infrastructure only. The 24 raw RGBA8 files have not been generated, loaded or visually inspected. No icon is drawn yet. The shared texture key lives in the desktop module so the model/asset contract remains available when the optional Vulkan feature is disabled.
 
 ## Rendering order
 
