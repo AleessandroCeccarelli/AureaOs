@@ -901,6 +901,13 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
  
 ## 24 novembre 2026 — Push constant Vulkan generiche per draw testurizzati
 
+## 24 novembre 2026 — Codifica UV wallpaper per push constant
+
+- Aggiunto `WallpaperUvRect::to_push_constant_bytes`, che serializza il rettangolo UV in quattro valori `f32` nell'ordine ABI richiesto dallo shader: minimo X, minimo Y, massimo X, massimo Y.
+- Aggiunto un test unitario che ricostruisce i quattro valori dai 16 byte e ne verifica l'ordine.
+- Commit: `f474ddfd`.
+- È solo preparazione CPU del payload: binding descriptor e draw dello sfondo non sono ancora integrati. Test scritto ma non eseguito; nessun Cargo fmt/check/test/build o CI eseguito.
+
 - Esteso `VulkanDrawPass` con `record_textured_region_with_push_constants`, così le pipeline testurizzate dedicate possono fornire il proprio payload senza modificare l'ABI della trasformazione delle superfici.
 - Le superfici continuano a usare il valore `u32` da quattro byte. Lo shader wallpaper può usare il proprio intervallo indipendente da 16 byte per il rettangolo UV.
 - Aggiunta validazione prima della registrazione dei comandi: payload non vuoto, allineato a quattro byte e massimo 128 byte, oltre a test unitari per il payload wallpaper e le dimensioni non valide.
