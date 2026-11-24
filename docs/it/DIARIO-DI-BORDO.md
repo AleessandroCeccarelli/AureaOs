@@ -1560,3 +1560,31 @@ Nessuna build, test, rustfmt o CI eseguiti. La verifica resta raggruppata su Fed
 - Il copyright Debian del sorgente libheif indica LGPL-3+ per la libreria principale. Restano da verificare in modo puntuale licenze/notice dei plugin e dei decoder libde265/dav1d, oltre al caricamento runtime dei plugin su entrambe le distribuzioni.
 - Aggiornato `docs/design/WALLPAPER-SYSTEM.md` per eliminare il vecchio ambito video/animazioni e allineare architettura, formati e sequenza di implementazione alla decisione statica.
 - Nessuna build, test, rustfmt o cargo check eseguiti. Nessuna modifica a Cargo.lock. Prossimo blocco tecnico: completare l'adapter libheif per HEIC/HEIF e AVIF, con controlli dimensioni prima dell'allocazione, output RGBA8 e test su Debian/Fedora; solo dopo abilitare le firme HEIF/AVIF nell'importer.
+ 
+
+## 24 novembre 2026 — GIF escluse dagli sfondi; TIFF mantenuto come immagine statica
+
+### Decisione prodotto
+
+- GIF rimosse completamente dai formati wallpaper supportati: non vengono accettate neppure come immagine statica del primo fotogramma.
+- Nessuna riproduzione animata per GIF, APNG, WebP animato o video. Il wallpaper service gestisce esclusivamente immagini statiche.
+- TIFF resta supportato: è un formato raster professionale usato in fotografia, scansione, prestampa e archiviazione. Può essere lossless e supportare profondità colore elevate, ma i file possono essere molto grandi.
+- TIFF multipagina viene trattato come immagine statica usando la prima pagina; non esiste una sequenza o riproduzione delle pagine.
+
+### Modifiche sorgente pubblicate su main
+
+- Rimosso `Gif` da `aurea_media::ImageFormat` e dal dispatch decoder.
+- Rimossa la feature `gif` dalla dipendenza `image`; restano solo bmp, png, tiff e webp.
+- Rimossi `WallpaperFormat::Gif`, il riconoscimento delle firme GIF e il mapping verso il decoder.
+- Rimosso il contratto di animazione wallpaper `animation.rs`, inclusi provider frame, policy di riproduzione e relativo stato in manager/snapshot.
+- Il media decoder ora descrive e tratta esplicitamente il proprio output come still-image.
+
+### Documentazione
+
+- Aggiornati `docs/design/WALLPAPER-SYSTEM.md` e `docs/architecture/AUREA-MEDIA-SERVICE.md`.
+- Questa decisione sostituisce le precedenti note del diario che proponevano GIF o provider GIF/video per gli sfondi.
+- Le GIF potranno eventualmente essere trattate da applicazioni social o strumenti dedicati, ma non dal wallpaper manager.
+
+### Verifica
+
+Nessuna build, cargo check, rustfmt o test eseguiti. Cargo.lock non è stato rigenerato. Le modifiche sorgente vanno verificate insieme al prossimo blocco concordato su Fedora.
