@@ -847,3 +847,33 @@ The earlier 24 November draft proposing sibling subvolumes, snapshots, snapshot-
 - Documented separate build/signing stages, public/private key separation, protected production key custody, signature verification, rotation/revocation, SBAT/DBX awareness and recovery requirements.
 - No signing keys were generated; no firmware state or package manifests were changed. No build, test or CI was run.
 - Updated the English and Italian systemd-boot/UKI architecture documents.
+
+
+
+## 2026-11-24 — Debian-first dependency governance
+
+### Decision
+
+Established a mandatory dependency register at `docs/development/DEPENDENCY-REGISTER.md`, with its Italian counterpart at `docs/it/REGISTRO-DIPENDENZE.md`.
+
+Debian GNU/Linux 13 (Trixie), amd64, is explicitly the target platform and compatibility authority. Fedora remains the development host only. A dependency must not be accepted because it is convenient or available on Fedora.
+
+### Register contents
+
+- Defined dependency states: Adopted, Approved, Candidate, Conditional, Rejected and Needs review.
+- Required evidence includes exact Debian package/source package and versions, Fedora development packages, Rust crate/MSRV, ABI/API and linking, amd64 support, SPDX licensing, upstream maintenance, security advisories, transitive/runtime footprint, evidence links and actual validation.
+- Recorded current architectural technologies without claiming that package integration or hardware validation is complete.
+- Added focused records for TurboJPEG, librsvg, SQLite, filesystem notifications, passkey/FIDO2 and the Smithay-to-cgmath RustSec concern.
+- Kept TurboJPEG as a Candidate pending exact Debian API/ABI, Rust binding and Fedora package verification. librsvg is rejected for the current core runtime scope; SVG masters remain canonical and raster assets are the planned direction.
+- Recorded SQLite and filesystem notifications as not yet approved, and passkey dependencies as unselected.
+- Added a mandatory approval checklist and a change procedure requiring both language versions and relevant diary/architecture updates.
+
+### Scope and limitations
+
+This is a governance/documentation change. It does not add, remove or upgrade software dependencies, modify Cargo manifests or Cargo.lock, or claim that all listed packages have been tested. Package/version fields not yet evidenced are explicitly left unverified.
+
+No Cargo formatting, build, check, tests or CI were run as part of this change.
+
+### Ongoing rule
+
+Before proposing or adding any dependency, consult and update the register. Debian compatibility wins over development-host convenience. Never infer Debian compatibility from Fedora compilation or Ubuntu CI.
