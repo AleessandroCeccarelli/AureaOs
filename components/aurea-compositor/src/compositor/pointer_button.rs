@@ -52,6 +52,7 @@ impl AureaCompositor {
             };
 
             if let Some(surface) = focused_toplevel {
+                self.desktop_click_tracker.reset();
                 self.window_manager.raise_toplevel(&surface);
                 self.focus_surface(Some(surface));
                 self.request_all_output_frames();
