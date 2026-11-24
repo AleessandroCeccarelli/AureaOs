@@ -1548,3 +1548,28 @@ Source changes on `main`:
 Updated `docs/design/WALLPAPER-SYSTEM.md` and `docs/architecture/AUREA-MEDIA-SERVICE.md`. This supersedes earlier development notes proposing GIF/video wallpaper providers.
 
 No build, tests, rustfmt, Cargo check or CI were run. Cargo.lock has not been regenerated; Fedora validation remains pending.
+
+
+## 2026-11-24 — Split libinput event routing from backend lifecycle
+
+### Scope
+
+The native input backend module mixed Calloop/libinput registration, touchpad preference application, and the dispatch of every input event family. The event router was extracted to keep the backend lifecycle module focused.
+
+### Changes committed to main
+
+- Reduced `components/aurea-compositor/src/server/input.rs` to 135 lines, covering backend registration, timestamp conversion, and touchpad preference application.
+- Added `components/aurea-compositor/src/server/input/dispatch.rs` (335 lines) for libinput event routing.
+- Preserved the existing routing paths for keyboard, pointer, pointer axes, swipe/pinch/hold gestures, touchscreen, and tablet-tool events.
+- This is a structural refactor; it does not claim new input features or complete tablet-pad support.
+
+### Verification and limitations
+
+- No build, Cargo check, rustfmt, or tests were run, per the agreed Fedora validation workflow.
+- No Cargo.toml or Cargo.lock changes were made.
+- A grouped build and test pass remains pending after pulling on Fedora.
+- Tablet-pad events and complete libinput event coverage remain an audit item; do not claim full support for additional tablet controls without checking the actual Smithay 0.7 API and event paths.
+
+### Next action
+
+Continue auditing input and interaction modules for correct event routing, lifecycle handling, and single-responsibility file boundaries.
