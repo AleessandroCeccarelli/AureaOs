@@ -868,3 +868,12 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Mantenuto `from_pixels` come wrapper bloccante per percorsi controllati di preparazione risorse; ora delega all'implementazione asincrona e attende soltanto in quel punto.
 - L'upload pendente conserva staging buffer e texture fino al completamento della fence, seguendo il modello di ownership già usato per le superfici SHM. Cache e integrazione nella scena non sono ancora state aggiunte.
 - Nessuna dipendenza o modifica ai manifest. Non eseguiti Cargo fmt/check/test/build né CI; nessuna ISO generata.
+
+
+## 24 novembre 2026 — Cache limitata delle texture Vulkan dello sfondo
+
+- Aggiunta `VulkanWallpaperTextureCache`, identificata da ID dell'asset wallpaper e numero esplicito di revisione, mai dagli ID delle superfici Wayland.
+- La cache conserva una texture selezionata pronta e fino a due upload pendenti protetti da fence, con un budget aggregato di 256 MiB per gli upload in corso. Gli upload vengono controllati senza bloccare; soltanto quello completato e corrispondente alla selezione corrente diventa visibile.
+- Integrata la cache nel ciclo di vita della `VulkanSurfacePipelineCache` per dispositivo e aggiunto il polling durante la preparazione del frame. Predisposti i punti di ingresso per preparazione, accesso e rimozione, destinati al decoder e al futuro draw pass.
+- Il decoder non produce ancora `WallpaperPixels` dall'asset selezionato: per ora la cache è infrastruttura, non contiene texture effettive e lo sfondo non viene ancora disegnato. Restano da completare draw pass e integrazione nella scena.
+- Nessuna dipendenza o modifica ai manifest. Non eseguiti Cargo fmt/check/test/build né CI; nessuna ISO generata.
