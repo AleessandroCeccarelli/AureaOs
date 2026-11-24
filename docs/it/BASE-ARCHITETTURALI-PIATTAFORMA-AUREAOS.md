@@ -126,7 +126,3 @@ La ricerca iniziale privilegia nome, percorso, MIME, metadati economici e testo 
 7. Validare su Debian 13 e hardware Fedora, incluse macchine limitate e uso offline.
 
 Questo documento non implica che le funzionalità siano implementate, compilate, testate o disponibili a runtime.
-
-
-## Proposta layout Btrfs
-Un documento dedicato propone un layout piatto di sottovolumi fratelli: @root su /, @home su /home, @snapshots su un mount dedicato e i candidati @var-log e @var-cache. Mantenere /var/lib dentro @root affinché dpkg e lo stato dei servizi restino coerenti con i file installati. Preservare /home e i log diagnostici per impostazione predefinita. Bootloader/ESP, cifratura, conservazione, policy cache e swap/ibernazione restano aperti. È una proposta da validare, non una specifica installer.
