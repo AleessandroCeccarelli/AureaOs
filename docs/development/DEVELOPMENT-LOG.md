@@ -1592,3 +1592,11 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Expanded the guard to include `TabletPad`, ensuring pad-only tablet devices participate in tablet-seat lifecycle cleanup even though Smithay 0.7 does not route pad input events.
 - Per-device mapping/calibration cleanup remains handled by the generic pointing-device removal path.
 - No build, Cargo check, rustfmt or tests run; grouped Fedora verification remains pending.
+
+### 2026-11-24 — Prevent touchscreen auto-rerouting after output disconnect
+
+- Found a routing edge case: removing an output erased a touchscreen's explicit assignment.
+- If only one output remained, the normal single-output fallback could then route that touchscreen to a different display without user intent.
+- The map now retains an unavailable-assignment state for affected devices. Routing stays blocked until the device is explicitly reassigned or unassigned to restore automatic mode.
+- Device removal clears the retained state; a new explicit assignment also restores routing.
+- No build, Cargo check, rustfmt or tests run. Grouped Fedora validation remains pending.
