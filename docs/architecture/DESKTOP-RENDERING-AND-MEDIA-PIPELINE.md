@@ -242,3 +242,8 @@ The Trash resolver and bounded Vulkan cache exist, but the 24 generated RGBA8 va
 The renderer integration must preserve the common frame order: background/wallpaper → Trash artwork and selection treatment → Wayland surfaces → pointer → display-color transform → presentation/readback. Both direct Vulkan and CPU-upload compatibility paths already share the composition path, so the icon pass must be inserted there once, not duplicated per backend.
 
 No claim is made that the Trash is visible or that the desktop is hardware-validated until the asset pipeline and draw pass are connected and the grouped Fedora visual test succeeds. Build, tests and rustfmt remain grouped into the agreed verification session rather than being run after each edit.
+
+
+### Desktop asset loader boundary
+
+Added a small loader that accepts an explicit asset root, rejects absolute/parent-traversal paths and validates loaded bytes through the existing RGBA8 snapshot constructor. The application composition root has not selected the installed runtime root and the renderer does not call this loader yet. It is staged groundwork only; no frame-loop filesystem access or new dependency was introduced. No build, tests, rustfmt or CI were run.
