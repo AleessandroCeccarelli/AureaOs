@@ -1539,3 +1539,11 @@ Nessuna build, test, rustfmt o CI eseguiti. La verifica resta raggruppata su Fed
 - Il compositor passa una copia posseduta dei byte al worker limitato; il renderer continua soltanto a interrogare risultati e gestire upload Vulkan.
 - HEIC/HEIF e AVIF non sono ancora accettati: saranno abilitati insieme ai rispettivi decoder.
 - Nessuna build, test, rustfmt o cargo check eseguiti. L'intera modifica resta da verificare su Fedora.
+
+## 24 novembre 2026 — Verifica pacchetti HEIF/AVIF Debian
+
+- Confermata la disponibilità su Debian 13 Trixie di libheif 1.23.6-2~deb13u1 nei metadati security aggiornati.
+- HEIC/HEIF richiede il plugin immagini HEVC libheif-plugin-libde265 e libde265-0.
+- AVIF richiede un decoder AV1: scelta candidata libheif-plugin-dav1d con libdav1d7.
+- Evitare libheif-plugins-all: installare soltanto i decoder effettivamente necessari.
+- Restano da verificare licenze upstream complete, ABI, caricamento plugin e pacchetti Fedora. Nessun backend nativo è stato ancora collegato.
