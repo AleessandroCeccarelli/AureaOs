@@ -135,17 +135,11 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             );
         }
         InputEvent::PointerMotionAbsolute { event } => {
-            // Absolute pointing devices need an explicit output-mapping policy.
-            // Until that policy is connected to the device settings, make the
-            // unsupported path observable instead of silently swallowing it.
-            let device = event.device();
-            tracing::debug!(
-                device = ?device.name(),
-                sysname = ?device.sysname(),
-                x = event.x(),
-                y = event.y(),
-                "Absolute pointer motion received without an output assignment"
-            );
+            // The compositor currently routes absolute pointer devices only
+            // when a single enabled output makes the target unambiguous.
+            state
+                .compositor
+                .handle_pointer_motion_absolute(&event, wayland_time(event.time()));
         }
         InputEvent::PointerMotion { event } => {
             let delta = event.delta();
