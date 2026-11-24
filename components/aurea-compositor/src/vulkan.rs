@@ -47,6 +47,7 @@ mod image_view;
 mod logical_device;
 mod logical_device_factory;
 mod memory_type;
+mod native_cursor_texture;
 mod offscreen_renderer;
 mod pending_upload;
 mod physical_device;
@@ -102,6 +103,9 @@ pub use backend::VulkanBackend;
 #[cfg(feature = "drm")]
 pub use buffer_allocator::{VulkanBufferAllocator, VulkanBufferError, VulkanRenderTargetRequest};
 pub use capture_target::{VULKAN_CAPTURE_FORMAT, VulkanCaptureTarget, VulkanCaptureTargetError};
+pub(crate) use native_cursor_texture::{
+    VulkanNativeCursorTexture, VulkanNativeCursorTextureError,
+};
 pub use capture_target_pool::{
     VulkanCaptureTargetLease, VulkanCaptureTargetPool, VulkanCaptureTargetPoolStats,
 };
