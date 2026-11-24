@@ -1242,3 +1242,34 @@ Nessuna build, test, rustfmt o CI avviati. Nessuna dipendenza runtime aggiunta. 
 2. Implementare una cache Vulkan nativa con chiavi asset, budget memoria e upload asincrono, separata dalla cache SHM e dalla cache wallpaper.
 3. Collegare le texture pronte alla geometria per-output e inserirle nel pass tra wallpaper e superfici Wayland.
 4. Collegare successivamente hit-testing e interazioni desktop, preservando la precedenza del focus Wayland.
+
+
+## 24 novembre 2026 — Cache Vulkan dedicata alle icone native
+
+### Modifiche pubblicate
+- Aggiunto `components/aurea-compositor/src/vulkan/desktop_icon_texture_cache.rs`.
+- La cache usa una chiave nativa composta da ID asset approvato, revisione e dimensione raster; non usa `ObjectId` Wayland.
+- La cache è separata sia dalla cache SHM delle superfici client sia dalla cache wallpaper.
+- Limiti espliciti: massimo 32 texture e 16 MiB residenti; massimo 2 batch di upload e 8 MiB di staging in-flight.
+- Upload tramite `VulkanShmTexture::submit_snapshots`, polling delle fence senza attesa nel normale percorso frame e completamento controllato prima di esporre le texture al renderer.
+- Validazione della dimensione quadrata rispetto alla chiave, con limite massimo di 256 pixel; gli upload pendenti mantengono le risorse vive fino al completamento.
+- Registrato il modulo in `vulkan.rs` ed esposti i metodi di preparazione, polling, completamento e accesso alla texture da `VulkanSurfacePipelineCache`.
+
+### Riferimenti
+- `02feb39e` — prima implementazione della cache.
+- `80b8cc3f` — deduplicazione delle richieste.
+- `4fed642e` — validazione identità/dimensioni e lifetime degli upload pendenti.
+- `574fece0` — registrazione del modulo Vulkan.
+- `750e9d6d` — collegamento infrastrutturale alla cache pipeline.
+
+### Stato e limiti
+- La cache è infrastruttura preparatoria: non è ancora alimentata dagli asset generati e non è collegata al draw pass né alla geometria delle icone.
+- Le 24 varianti RGBA8 non sono ancora state generate o ispezionate su Fedora; nessun binario non verificato è stato aggiunto al repository.
+- Nessuna build, test, rustfmt o CI eseguiti. La compilabilità non è dichiarata.
+- Nessuna dipendenza Cargo o runtime aggiunta.
+
+### Prossimi passi
+1. Generare e ispezionare gli asset RGBA8 sul Fedora host.
+2. Aggiungere il mapping tra item desktop, tema/stato e asset approvato.
+3. Collegare cache, geometria per-output e draw Vulkan, mantenendo l'ordine wallpaper → icone → superfici Wayland → cursore.
+4. Solo dopo passare a hit-testing, selezione e attivazione.
