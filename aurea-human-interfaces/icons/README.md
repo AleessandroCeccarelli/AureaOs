@@ -41,4 +41,4 @@ SVG masters do not imply validated exports, packaging or runtime loading. Valida
 
 
 ## Desktop Trash raster export
-The six approved Trash SVG masters remain canonical. A reproducible export script is available at `tools/assets/render-trash-icons.sh`; it targets `resvg 0.45.1` and the eight standard raster sizes documented in `generated/README.md`. The generated assets have not yet been produced or visually validated. The renderer is a developer-only tool, never a runtime dependency.
+The six approved Trash SVG masters remain canonical. The export script `tools/assets/render-trash-icons.sh` reuses the existing `rsvg-convert` host tool and produces eight standard raster sizes documented in `generated/README.md`. The generated assets have not yet been produced or visually validated. The renderer is developer-only, never a runtime dependency.
