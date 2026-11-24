@@ -1102,3 +1102,15 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Added pre-record validation for non-empty, four-byte-aligned payloads up to 128 bytes, plus unit tests for the 16-byte wallpaper payload and invalid sizes.
 - Commit: `7b9b4b37` (draw-pass API), `d8a31412` (validation and tests).
 - This is draw-pass infrastructure only: wallpaper binding and draw integration are still pending. Tests were authored but not run. No Cargo fmt/check/test/build, CI or ISO was run.
+
+
+## 2026-11-24 — SHM texture device-loss propagation
+
+- The Vulkan call-chain audit found a stale `from_vk_result` reference in the `clear_and_readback` path after the converter had been removed. Replaced it with `submit_and_wait_with` and centralized `VulkanQueueSubmitError` classification.
+- Commit: `76af94e5`.
+- Extended fatal device-loss classification to Wayland SHM texture upload submission and completion. `ERROR_DEVICE_LOST` is no longer flattened into a generic texture error in `prepare_surface_textures` and `complete_surface_texture_uploads`.
+- Added a unit test proving that device loss from the SHM texture cache becomes `VulkanSurfaceCompositionError::DeviceLost`.
+- Commits: `8feb7509`, `822e1da3`.
+- No new package or crate; no Cargo.toml/Cargo.lock changes.
+- Tests were added but not executed. No build, rustfmt, cargo check or CI was started; verification remains scheduled on Fedora under the agreed workflow.
+- Next audit: inspect remaining Vulkan entry points that may flatten `ERROR_DEVICE_LOST`, especially native cursor texture creation and diagnostic/offscreen paths. Keep the fail-stop policy; do not add device recovery before a complete device-recreation lifecycle exists.
