@@ -103,6 +103,73 @@ The recovery environment must be designed and validated separately for:
 
 The boot manager must not implement backup policy, manage Passkey credentials, or orchestrate desktop services.
 
+## Secure Boot readiness and future activation
+
+Secure Boot remains disabled by default and is not a Roma 1.0 acceptance requirement. The boot architecture must nevertheless be designed so that a later release can enable it without replacing the boot manager, UKI format, installer disk layout or update lifecycle.
+
+### Trust-chain direction
+
+Debian 13 Trixie already packages a Secure Boot path for systemd-boot:
+- `shim-signed` supplies a Microsoft-UEFI-CA-signed first-stage loader.
+- Debian supplies signed shim helper binaries and a signed systemd-boot package for supported architectures.
+- `systemd-ukify` can build UKIs and sign the final PE image with a Secure Boot certificate.
+
+The intended future chain is:
+
+1. UEFI firmware validates the Microsoft-signed shim, when the machine trusts the relevant Microsoft UEFI CA.
+2. Shim validates and launches the Debian-signed systemd-boot using its trusted distribution certificate.
+3. The next-stage boot policy validates the AureaOS UKI using an explicitly trusted AureaOS signing certificate, enrolled through a supported trust path.
+4. The UKI contains the kernel, initramfs and controlled command line, so the signature covers the complete boot payload rather than a kernel and a separately mutable initramfs.
+
+This is the target trust model, not a claim that the chain has already been integrated or tested. In particular, the exact interaction between Trixie's systemd-boot, shim's MOK database, UEFI image verification and UKI signatures must be demonstrated on real firmware before selecting the final enrollment path.
+
+### Trust enrollment options
+
+Two routes must be evaluated rather than conflated:
+
+- **Owner enrollment:** the user explicitly enrolls the AureaOS public certificate in firmware Secure Boot DB, or through shim's Machine Owner Key (MOK) flow where the selected chain supports it. This can avoid AureaOS obtaining its own Microsoft signing relationship, but requires a clear, safe, per-device enrollment step and compatible firmware.
+- **Broad pre-trusted distribution:** AureaOS obtains a signing/distribution arrangement that makes its first-stage boot component trusted by a broad range of stock PCs without a per-device custom-key enrollment. This is a separate future business and release-engineering decision; do not assume it is free, guaranteed or required for every Secure Boot deployment.
+
+Debian's Microsoft-signed shim is a possible foundation, not a guarantee of universal compatibility. Some firmware disables the Microsoft third-party UEFI CA, contains different CA generations, or has revocation/firmware defects. The installer must detect and explain trust-chain failures rather than silently promise Secure Boot support.
+
+### Signing architecture to prepare now
+
+The boot-artifact pipeline must expose a signing boundary independent of the UKI build:
+- Build and validate the UKI first; signing is a distinct finalization step.
+- Roma 1.0 uses an explicit unsigned development/release profile while Secure Boot is disabled.
+- A future Secure Boot profile signs the final UKI after every content change. Never modify the PE image after signing.
+- Keep development, test and production signing identities separate.
+- Keep production private signing keys out of installed systems, user home directories and ordinary CI logs/artifacts. Use controlled offline or hardware-backed custody and restricted signing access.
+- Distribute only public certificates and enrollment material; never distribute private keys.
+- Verify the signature and artifact digest before publishing or installing a signed UKI.
+- Define certificate expiry, renewal, rotation, emergency revocation, compromised-key response and recovery before enabling the feature.
+- Include and maintain SBAT metadata where applicable, and track firmware DBX and shim revocation updates.
+- Treat TPM PCR policy signing/sealing as a separate optional feature; it is not required merely to enable Secure Boot.
+
+Aurea Update must preserve the last known-bootable signed artifact while staging and validating a replacement. A failed signature check must prevent promotion of the new artifact and must not delete the previous known-good entry. Aurea Recovery must itself be bootable under the selected trust policy, or provide a separately documented external recovery path.
+
+### Roma 1.0 behavior
+
+- Secure Boot is not required and remains disabled in the supported installation profile.
+- The UKI build pipeline should already be structured around the same UKI artifact format and validation steps that the future signed profile will use.
+- No production Secure Boot key is generated or embedded on user machines for Roma 1.0.
+- Do not enroll AureaOS keys, alter firmware DB/KEK/PK variables, or change Secure Boot state automatically.
+- Do not describe an unsigned UKI as Secure Boot protected.
+
+### Validation gates before future activation
+
+1. Verify the exact Trixie amd64 versions and package behavior for `shim-signed`, `shim-helpers-amd64-signed`, `systemd-boot`, `systemd-boot-efi-signed`, `systemd-ukify`, `mokutil` and signing tools.
+2. Demonstrate the complete shim → systemd-boot → Aurea-signed UKI chain with Secure Boot enabled on representative firmware.
+3. Confirm whether MOK enrollment is honored by the exact UKI loading path; otherwise use and test explicit firmware DB enrollment or another supported trust path.
+4. Test key enrollment, cancellation, removal, rotation and recovery, including machines with Microsoft third-party CA disabled and newer CA databases.
+5. Test revoked/expired signatures, DBX and SBAT update behavior, interrupted UKI updates and fallback.
+6. Validate the independent Aurea Recovery path under the same Secure Boot policy.
+7. Decide whether per-device owner enrollment is acceptable or whether a broad pre-trusted distribution route is needed.
+8. Only then enable Secure Boot as an optional or default installation profile in a later release.
+
+No signing key, firmware variable, Secure Boot setting or boot artifact is changed by this documentation decision.
+
+
 ## Validation required before implementation is frozen
 
 1. Verify the exact Debian 13 package set and supported systemd 257 interfaces on the target amd64 image.
