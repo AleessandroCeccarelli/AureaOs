@@ -47,6 +47,7 @@ use crate::{
     window_manager::WindowManager,
 };
 
+mod desktop_click_tracker;
 mod desktop_selection;
 mod fractional_scale;
 mod frame_scheduling;
@@ -75,6 +76,7 @@ pub(crate) mod window_placement;
 mod workspace;
 
 use surface_output_tracking::SurfaceOutputTracker;
+use desktop_click_tracker::DesktopClickTracker;
 
 pub use frame_scheduling::CompositorFrameError;
 pub use output_configuration::CompositorOutputConfigurationError;
@@ -116,6 +118,7 @@ pub struct AureaCompositor {
     #[cfg(feature = "drm")]
     pointer_gesture_owner: pointer_gestures::PointerGestureOwner,
     desktop_interactions: DesktopInteractionSender,
+    desktop_click_tracker: DesktopClickTracker,
     pointer_shake: PointerShakeDetector,
     cursor_locate_animation: CursorLocateAnimation,
 }
@@ -185,6 +188,7 @@ impl AureaCompositor {
             #[cfg(feature = "drm")]
             pointer_gesture_owner: pointer_gestures::PointerGestureOwner::default(),
             desktop_interactions,
+            desktop_click_tracker: DesktopClickTracker::default(),
             pointer_shake: PointerShakeDetector::default(),
             cursor_locate_animation: CursorLocateAnimation::default(),
         }
