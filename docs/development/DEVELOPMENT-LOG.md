@@ -1236,3 +1236,14 @@ No build, tests, rustfmt or CI were run. No runtime dependency was added. Debian
 - Updated icon READMEs and both dependency registers. The tool remains a candidate until exports are generated and visually inspected.
 - Main commits: `be04164b` (script), `70409c7d` (PNG validation), `8c17ffc1`, `cdac2ab4`, `33ed98bd`, `67e2278b` (documentation).
 - The script, builds, tests, rustfmt and CI were not run. No PNG was generated and no runtime dependency was added.
+
+
+### Follow-up — reuse the existing SVG renderer
+
+- The first pipeline draft introduced `resvg` as a separate tool. Before treating that choice as final, inspection of `tools/assets/build_cursor_theme.py` and `cursor_rasterizer.py` showed that AureaOS already uses `rsvg-convert` to generate its cursor theme.
+- To avoid a second renderer and a new installation path, `render-trash-icons.sh` was changed to reuse `rsvg-convert`.
+- Verified packages: Debian 13 `librsvg2-bin 2.60.0+dfsg-1+deb13u1`; Fedora 45 `librsvg2-tools 2.63.2-2.fc45`. Both provide the `rsvg-convert` command.
+- The actual renderer version is recorded in `EXPORT-MANIFEST.txt`; PNG validation checks signature, square dimensions and RGBA8 format.
+- The resvg entry was replaced in the dependency register. No additional renderer or runtime package is required beyond the tool already used by the cursor asset flow.
+- The Trash pipeline has not yet been run; no PNGs have been generated or visually validated.
+- Correction commit: `e0228650`; documentation updated in commits `65705341`, `eb28e253`, `4aa8a60e`, `e9819c41`, `bc95da4b`.
