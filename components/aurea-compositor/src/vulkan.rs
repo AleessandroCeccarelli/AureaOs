@@ -16,7 +16,6 @@ mod context;
 mod device_extensions;
 mod device_owner;
 mod desktop_icon_texture_cache;
-pub(crate) use desktop_icon_texture_cache::DesktopIconTextureKey;
 #[cfg(feature = "drm")]
 mod display_color_manager;
 #[cfg(feature = "drm")]
