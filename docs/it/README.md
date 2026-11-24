@@ -20,6 +20,7 @@ Le versioni italiane sono pensate per facilitare la collaborazione e la revision
 
 - [Strategia del desktop universale e delle tecnologie](../architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md)
 - [Architettura Aurea Link e Aurea Share](ARCHITETTURA-AUREA-LINK-SHARE.md)
+- [Integrazioni online Aurea Share](ARCHITETTURA-AUREA-SHARE-ONLINE.md)
 - [Fondamenta della piattaforma AureaOS](BASE-ARCHITETTURALI-PIATTAFORMA-AUREAOS.md)
 - [Avvio systemd-boot e UKI](AVVIO-SYSTEMD-BOOT-E-UKI.md)
 - [Scelta di Btrfs e layout del disco di sistema](PROGETTAZIONE-BTRFS-E-RIPRISTINO.md)
