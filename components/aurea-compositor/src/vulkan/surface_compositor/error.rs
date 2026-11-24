@@ -25,13 +25,24 @@ pub(crate) enum VulkanSurfaceCompositionError {
 }
 
 impl VulkanSurfaceCompositionError {
+    pub(crate) fn from_shm_texture_error(
+        error: super::super::VulkanShmTextureError,
+    ) -> Self {
+        match error {
+            super::super::VulkanShmTextureError::Command(vk::Result::ERROR_DEVICE_LOST) => {
+                Self::DeviceLost(vk::Result::ERROR_DEVICE_LOST)
+            }
+            other => Self::Texture(other.to_string()),
+        }
+    }
+
     pub(crate) fn from_surface_texture_cache_error(
         error: super::super::surface_texture_cache::VulkanSurfaceTextureCacheError,
     ) -> Self {
         match error {
-            super::super::surface_texture_cache::VulkanSurfaceTextureCacheError::Texture(
-                super::super::VulkanShmTextureError::Command(vk::Result::ERROR_DEVICE_LOST),
-            ) => Self::DeviceLost(vk::Result::ERROR_DEVICE_LOST),
+            super::super::surface_texture_cache::VulkanSurfaceTextureCacheError::Texture(error) => {
+                Self::from_shm_texture_error(error)
+            }
             other => Self::Texture(other.to_string()),
         }
     }
@@ -88,6 +99,17 @@ impl Error for VulkanSurfaceCompositionError {}
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn direct_shm_texture_device_loss_is_fatal() {
+        let error = VulkanSurfaceCompositionError::from_shm_texture_error(
+            super::super::super::VulkanShmTextureError::Command(vk::Result::ERROR_DEVICE_LOST),
+        );
+        assert!(matches!(
+            error,
+            VulkanSurfaceCompositionError::DeviceLost(vk::Result::ERROR_DEVICE_LOST)
+        ));
+    }
 
     #[test]
     fn surface_texture_upload_device_loss_is_fatal() {
