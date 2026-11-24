@@ -1114,3 +1114,11 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - No new package or crate; no Cargo.toml/Cargo.lock changes.
 - Tests were added but not executed. No build, rustfmt, cargo check or CI was started; verification remains scheduled on Fedora under the agreed workflow.
 - Next audit: inspect remaining Vulkan entry points that may flatten `ERROR_DEVICE_LOST`, especially native cursor texture creation and diagnostic/offscreen paths. Keep the fail-stop policy; do not add device recovery before a complete device-recreation lifecycle exists.
+
+
+### Follow-up — typed native cursor texture errors
+
+- Extended the same classification to initial native cursor texture setup. The cache no longer converts `VulkanShmTextureError` to `String` before the compositor can recognize `ERROR_DEVICE_LOST`.
+- Added a unit test for direct fatal SHM texture error conversion; the cache-level test remains in place.
+- Commits: `c6e2737c`, `3d5fba86`, `d3ff57c4`.
+- No verification was run. Initial cursor setup still uses synchronous `from_snapshot`; evaluate a future asynchronous upload so the frame callback does not wait for GPU completion.
