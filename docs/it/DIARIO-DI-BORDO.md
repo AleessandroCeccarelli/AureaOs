@@ -905,6 +905,13 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 
 ## 24 novembre 2026 — Integrazione del draw wallpaper nel frame Vulkan
 
+## 24 novembre 2026 — Protezione identità asset nella cache wallpaper
+
+- Aggiunto `VulkanWallpaperTextureCache::texture_for_asset` e il relativo accesso nella cache del compositor.
+- Il compositor confronta ora l'ID dell'asset selezionato nello `DesktopSnapshot` con la chiave della texture GPU pronta prima di creare il binding o disegnare. Una vecchia texture non può quindi comparire dopo un cambio di sfondo mentre il nuovo upload è ancora in attesa.
+- Commit: `e5faff5a`, `337b403a`, `4bbde807`, `2c2e0e3e`.
+- Decoder e produttore dei pixel ancora assenti. Nessun Cargo fmt/check/test/build, CI o ISO eseguito.
+
 - Integrato in `surface_compositor::render_frame` il consumo della texture wallpaper selezionata e con upload completato.
 - Il frame crea il descriptor per lo sfondo, usa la pipeline wallpaper dedicata, calcola la geometria `Fill` in coordinate fisiche locali all'output usando le dimensioni della texture caricata e registra il disegno subito dopo il clear, prima delle superfici SHM e del cursore.
 - Lo sfondo pronto viene disegnato anche quando la scena non contiene finestre né cursore; il percorso rapido di sola cancellazione resta attivo se non esiste una texture pronta.
