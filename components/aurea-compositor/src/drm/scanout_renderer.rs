@@ -29,13 +29,26 @@ use crate::{
 #[derive(Debug)]
 pub(crate) struct VulkanScanoutError {
     message: String,
+    device_lost: bool,
 }
 
 impl VulkanScanoutError {
     fn new(message: impl Into<String>) -> Self {
         Self {
             message: message.into(),
+            device_lost: false,
         }
+    }
+
+    fn device_lost(message: impl Into<String>) -> Self {
+        Self {
+            message: message.into(),
+            device_lost: true,
+        }
+    }
+
+    pub(crate) fn is_device_lost(&self) -> bool {
+        self.device_lost
     }
 }
 
