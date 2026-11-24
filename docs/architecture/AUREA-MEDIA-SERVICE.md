@@ -200,3 +200,5 @@ Native cursor texture initialization now retains the typed `VulkanShmTextureErro
 ### Legacy Vulkan result conversion follow-up — 2026-11-24
 
 The compatibility conversion from `VulkanQueueSubmitError` to `vk::Result` now prioritizes `ERROR_DEVICE_LOST` whether it is reported by fence waiting or by the `device_wait_idle` fallback. This prevents older diagnostic/offscreen and frame-acquisition callers that still use `submit_and_wait()` from masking a fatal device-loss result. Two focused unit tests were added. No build, formatting, tests or CI were run.
+
+The result conversion remains a `const fn`; fatal-result selection uses pattern matching rather than non-const equality operators. Follow-up commit: `2acb358a`.
