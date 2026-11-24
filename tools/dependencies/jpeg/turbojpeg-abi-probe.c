@@ -79,7 +79,7 @@ static int decode_and_check(const unsigned char *jpeg, size_t jpeg_length)
     int width = 0;
     int height = 0;
     int subsampling = TJSAMP_UNKNOWN;
-    int colorspace = TJCS_UNKNOWN;
+    int colorspace = TJCS_DEFAULT;
 
     if (tjDecompressHeader3(decoder, jpeg, (unsigned long)jpeg_length,
                             &width, &height, &subsampling, &colorspace) != 0) {
