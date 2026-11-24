@@ -147,6 +147,12 @@ impl ShellRuntime {
             DesktopInteraction::ShowContextMenu => {
                 self.desktop.panels.show(DesktopPanel::ContextMenu);
             }
+            DesktopInteraction::DesktopItemSelected { id } => {
+                self.desktop.select_item(id);
+            }
+            DesktopInteraction::DesktopSelectionCleared => {
+                self.desktop.clear_item_selection();
+            }
         }
 
         if self.pending_desktop_interactions.len() == MAX_PENDING_DESKTOP_INTERACTIONS {
