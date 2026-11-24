@@ -1278,3 +1278,27 @@ No build, tests, rustfmt or CI were run. No runtime dependency was added. Debian
 4. Only then implement hit testing, selection and activation.
 
 No builds, tests, rustfmt or CI were started. No runtime dependency was added. Debian 13 Trixie remains the target.
+
+
+## 2026-11-24 — Desktop geometry review and module cleanup
+
+### References
+- Branch: `main`.
+- Commit `10f7e7ce607118555e09666cab23c33fb0b48de5`: removed duplicate `item_geometry` module declarations and duplicate re-exports from `components/aurea-compositor/src/desktop/mod.rs`.
+
+### Engineering review
+- Confirmed that `ShmBufferSnapshot::from_rgba8` accepts compositor-generated pixel data and `VulkanShmTexture::submit_snapshots` provides fence-backed asynchronous uploads.
+- Confirmed that the SHM cache is keyed by Wayland `ObjectId` and must not be reused for native desktop icons.
+- Confirmed that per-output desktop geometry handles global coordinates, integer/fractional scale, output transforms and clipping; it remains preparatory and is not connected to Vulkan drawing yet.
+- The current render pass draws wallpaper, Wayland surfaces and the cursor. Native desktop icons are not yet part of the pass.
+
+### Verification and limitations
+- Source inspection on `main`; no build, tests, rustfmt or CI were run.
+- RGBA8 assets have not yet been generated or visually inspected on Fedora.
+- No compilation claim is made because the agreed Cargo verification has not been run.
+
+### Next steps
+1. Generate and visually inspect the 24 Trash RGBA8 variants on Fedora before integrating them as runtime assets.
+2. Implement a native Vulkan cache with asset keys, memory budgets and asynchronous uploads, separate from SHM and wallpaper caches.
+3. Connect ready textures to per-output geometry and draw them between wallpaper and Wayland surfaces.
+4. Connect desktop hit-testing and interactions afterward, preserving Wayland focus precedence.
