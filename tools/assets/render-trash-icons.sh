@@ -59,6 +59,21 @@ for theme in "${THEMES[@]}"; do
                 printf 'Renderer output is not a PNG: %s\n' "${output}" >&2
                 exit 1
             fi
+
+            read -r w1 w2 w3 w4 h1 h2 h3 h4 bit_depth color_type _compression _filter _interlace \
+                < <(od -An -tu1 -j16 -N13 "${output}")
+            actual_width=$(( (w1 << 24) | (w2 << 16) | (w3 << 8) | w4 ))
+            actual_height=$(( (h1 << 24) | (h2 << 16) | (h3 << 8) | h4 ))
+            if [[ "${actual_width}" -ne "${size}" || "${actual_height}" -ne "${size}" ]]; then
+                printf 'Unexpected PNG dimensions for %s: %sx%s (expected %sx%s)\n' \
+                    "${output}" "${actual_width}" "${actual_height}" "${size}" "${size}" >&2
+                exit 1
+            fi
+            if [[ "${bit_depth}" -ne 8 || "${color_type}" -ne 6 ]]; then
+                printf 'Expected 8-bit RGBA PNG for %s (depth=%s, color type=%s)\n' \
+                    "${output}" "${bit_depth}" "${color_type}" >&2
+                exit 1
+            fi
         done
     done
 done
