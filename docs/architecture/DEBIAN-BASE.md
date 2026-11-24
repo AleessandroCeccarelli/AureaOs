@@ -42,7 +42,7 @@ The initial profile does not include:
 
 The package selection is maintained under `debian/packages/`.
 
-The bootstrap script reads the common package manifests and installs their packages into the target root filesystem. Optional manifests provide RAR extraction support or a selected BIOS/UEFI GRUB package.
+The bootstrap script reads the common package manifests and installs their packages into the target root filesystem. Optional manifests currently include RAR extraction and legacy GRUB boot-package scaffolding. The GRUB selection is historical bootstrap code and is not the approved AureaOS boot architecture.
 
 The profile is integrated into the build script. However, package resolution and a complete root filesystem build still need to be tested against the live Debian Trixie repositories before the profile can be considered fully validated.
 
@@ -136,15 +136,9 @@ The optional `--with-rar` flag adds:
 
 `rar-extraction-optional.list`
 
-The `--boot-mode` option accepts:
+The current `--boot-mode` option and BIOS/UEFI GRUB manifests are legacy bootstrap scaffolding. They do not represent the approved Roma 1.0 boot policy and must not be used for a release image.
 
-- `none` — default; no GRUB package is selected.
-- `bios` — adds the legacy BIOS GRUB manifest.
-- `uefi` — adds the x86-64 UEFI GRUB manifest.
-
-The BIOS and UEFI manifests are alternatives and are not installed together by default.
-
-These options select packages only. They do not configure a complete bootable system.
+The approved target is systemd-boot on UEFI only, with Secure Boot disabled for Roma 1.0. The bootstrap and installer must be migrated to the systemd-boot/UKI design before they can produce the release system. These current options select packages only and do not configure a complete bootable system.
 
 ### Final Validation
 
@@ -173,7 +167,7 @@ The package lists separate:
 - Archive and compression support.
 - Firmware and CPU microcode.
 - Kernel and initramfs packages.
-- Alternative BIOS and UEFI bootloader packages.
+- UEFI systemd-boot and UKI packages (target package set to be audited and implemented).
 
 All four Debian components are enabled consistently for the main archive and security updates.
 
@@ -240,15 +234,13 @@ Btrfs is the selected default filesystem for installed AureaOS systems.
 
 The current bootstrap installs filesystem tools but does not format or configure the final system filesystem.
 
-The following decisions and implementation work remain necessary:
+The following implementation work remains necessary:
 
-- Partition layout.
-- EFI System Partition configuration.
-- Root and user-data layout.
-- Btrfs subvolume structure.
-- Mount configuration.
-- Initramfs integration.
-- Installation and recovery behavior.
+- Implement the approved layout: one EFI System Partition and one Btrfs partition for the complete installed OS.
+- Determine and validate ESP capacity for systemd-boot, current/previous UKIs and Aurea Recovery.
+- Define mount configuration without separate /home, /var, cache, snapshot or backup partitions.
+- Validate initramfs and UKI integration.
+- Implement installation and independent recovery behavior.
 
 The final partitioning and filesystem configuration must be validated before an installable release can be produced.
 
@@ -266,9 +258,9 @@ The kernel and initramfs packages do not make a root filesystem bootable by them
 
 The image build must select a target boot mode and install and configure the matching bootloader.
 
-`boot-bios.list` and `boot-uefi.list` are alternatives, not lists to install together by default.
+The current BIOS/UEFI GRUB manifests are legacy scaffolding and must be retired or replaced as part of the systemd-boot migration.
 
-The final release boot configuration, including UEFI requirements and Secure Boot support, remains to be defined and tested.
+The approved release configuration is UEFI-only with systemd-boot. Secure Boot is disabled for Roma 1.0; future signing support is a later objective. See [systemd-boot and UKI architecture](SYSTEMD-BOOT-AND-UKI.md).
 
 ## Update Policy
 
@@ -309,7 +301,7 @@ This separation is an architectural requirement, not an already implemented upda
 - [x] Build and verify a second minimal root filesystem using the script.
 - [x] Add an initial package-manifest proposal under `debian/packages/`.
 - [x] Enable all four Debian archive components for bootstrap and configure Trixie, updates, and security APT sources.
-- [x] Integrate the common package manifests into the bootstrap script with optional RAR and BIOS/UEFI GRUB selections.
+- [x] Integrate the common package manifests into the bootstrap script with optional RAR and legacy GRUB package selections (historical scaffolding; not the release boot architecture).
 - [x] Add chroot preparation and cleanup for `/dev`, `/proc`, and `/sys`.
 - [x] Add initial final checks for Debian codename, target architecture, APT components, and fundamental package status.
 
@@ -319,10 +311,11 @@ This separation is an architectural requirement, not an already implemented upda
 - [ ] Review the installed package set and its total size.
 - [ ] Audit package versions, dependencies, licenses, and firmware coverage.
 - [ ] Define system accounts, hostname, locale, timezone, and service defaults.
-- [ ] Define the partition scheme and Btrfs subvolume/mount layout.
+- [ ] Implement the approved one-ESP plus one-Btrfs-partition layout; do not introduce snapshot/subvolume backup workflows.
 - [ ] Configure firewall defaults and test networking, DNS, and Bluetooth behavior.
-- [ ] Select the release image's boot mode and configure the appropriate bootloader.
-- [ ] Define the final UEFI and Secure Boot requirements.
+- [ ] Replace legacy GRUB bootstrap selections with systemd-boot and UKI integration for UEFI-only systems.
+- [ ] Validate ESP sizing, boot counting, success signaling, fallback and Aurea Recovery.
+- [ ] Keep Secure Boot disabled for Roma 1.0; design future signing separately.
 - [ ] Produce and test a bootable x86-64 image.
 - [ ] Design and validate Aurea Time backup and restore.
 - [ ] Implement the AureaOS system update mechanism.
