@@ -47,7 +47,7 @@ impl CompositorFactory for DesktopCompositorFactory {
     ) -> io::Result<Box<dyn CompositorService>> {
         // Read the initial Trash state in the desktop composition root.
         // The compositor receives only the semantic value, never filesystem access.
-        let compositor_factory = match crate::trash::initial_visual_state() {
+        let compositor_factory = match aurea_desktop::trash::initial_visual_state() {
             Ok(state) => self.compositor.clone().with_trash_state(state),
             Err(error) => {
                 eprintln!("Aurea Desktop: initial Trash state unavailable: {error}");

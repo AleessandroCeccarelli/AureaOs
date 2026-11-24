@@ -11,4 +11,4 @@ mod session_state;
 mod timestamp;
 
 pub use service::{TrashEntry, TrashError, TrashService, TrashSnapshot, TrashVisualState};
-pub(crate) use session_state::initial_visual_state;
+pub use session_state::initial_visual_state;
