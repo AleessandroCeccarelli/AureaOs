@@ -9,10 +9,20 @@ use aurea_desktop_api::desktop::{DesktopItem, DesktopItemKind};
 
 use crate::{
     render::shm_buffer::{ShmBufferError, ShmBufferSnapshot},
-    vulkan::DesktopIconTextureKey,
 };
 
 use super::DesktopTheme;
+
+/// Stable identity for one rasterized desktop artwork variant.
+///
+/// Revision changes when approved pixel content changes; pixel size distinguishes
+/// scale-specific variants. This key belongs to the desktop model boundary, not Vulkan.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub(crate) struct DesktopIconTextureKey {
+    pub(crate) asset_id: &'static str,
+    pub(crate) revision: u64,
+    pub(crate) pixel_size: u32,
+}
 
 /// Raster sizes generated for a 64-logical-pixel desktop icon.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
