@@ -97,7 +97,11 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 device.name(),
                 device.sysname()
             );
-            if device.has_capability(smithay::reexports::input::DeviceCapability::TabletTool) {
+            if device.has_capability(smithay::reexports::input::DeviceCapability::TabletTool)
+                || device.has_capability(smithay::reexports::input::DeviceCapability::TabletPad)
+            {
+                // A pad-only device still belongs to the tablet seat lifecycle,
+                // even though Smithay 0.7 does not expose pad input events.
                 state.compositor.remove_tablet_device(&device);
             }
             // Removal must not depend on rediscovering capabilities: libinput
