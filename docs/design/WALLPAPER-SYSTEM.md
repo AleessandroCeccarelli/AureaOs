@@ -6,24 +6,37 @@ License: GPL-3.0-or-later
 
 ## Product goal
 
-AureaOS provides a first-class wallpaper service comparable in everyday capability to the desktop wallpaper experience users expect from Windows and macOS. The already selected `aureaos-midnight-flow.jpg` remains the default AureaOS wallpaper. Supporting more formats and animated wallpapers must not change that design decision.
+AureaOS provides a first-class **static-image wallpaper service** with the everyday selection and layout capabilities users expect from Windows and macOS. The already selected `aureaos-midnight-flow.jpg` remains the default AureaOS wallpaper.
 
-The wallpaper service is independent from the Vulkan renderer. The renderer receives ready-to-display frames and per-output placement data; it does not decode image or video formats.
+This scope handles still raster images only. It does not include video wallpapers, animated-image playback, audio, GStreamer, FFmpeg playback pipelines, PipeWire media routing, or a media-player subsystem. A future time-of-day wallpaper may switch between separate still images; it must not rely on continuous video playback.
 
-## Still-image support
+The wallpaper service is independent from the Vulkan renderer. The renderer receives validated RGBA8 pixels and per-output placement data; it does not decode image formats.
 
-Planned format tiers:
+## Still-image format policy
 
-- Initial: JPEG, PNG, BMP.
-- Later: WebP and TIFF, subject to maintained decoder availability and licensing review.
-- GIF: support as an animated image format where practical, but do not make GIF the preferred format for high-resolution full-screen motion.
-- HEIF/HEIC: evaluate separately; do not promise support until a maintained decoder and distribution story are selected.
+AureaOS accepts the following user-selected raster formats:
 
-All still-image decoders normalize to the bounded `WallpaperPixels` RGBA8 contract. Decoding must validate dimensions, arithmetic, byte length, and an explicit memory budget before allocation.
+| Format | Extensions | Policy |
+|---|---|---|
+| JPEG | `.jpg`, `.jpeg`, `.jpe` | Required |
+| PNG | `.png` | Required |
+| BMP / DIB | `.bmp`, `.dib` | Required |
+| GIF | `.gif` | Required as a static image; decode the first frame only |
+| TIFF | `.tif`, `.tiff` | Required; decode the first page only |
+| WebP | `.webp` | Required |
+| HEIF / HEIC | `.heif`, `.heic` | Required; still-image decode, including HEVC-coded photos |
+| AVIF | `.avif` | Required; still-image decode |
+| JPEG 2000 | `.jp2`, `.j2k`, `.jpf`, `.jpx` | Conditional on Debian-compatible decoder, license and footprint review |
+| OpenEXR | `.exr` | Deferred pending HDR/color-management policy |
 
+PDF, SVG and camera RAW are not first-release wallpaper inputs: they require separate rasterization, vector-rendering or RAW-processing policies.
+
+Windows theme documentation lists BMP, GIF, JPEG, PNG and TIFF wallpaper assets; its theme-pack list also includes DIB. Some managed Windows configuration interfaces intentionally narrow the list to JPEG/PNG/BMP. Apple's wallpaper settings let users select an image file, a photo or a photo set; Apple's broader image tooling supports additional still-image formats. AureaOS adopts a practical superset rather than treating one narrow management interface as the full desktop capability.
+
+Extensions are chooser hints only. The importer must identify formats from file signatures/container metadata and validate the actual decoded content.
 ## Layout modes
 
-Per output, support Fill, Fit, Stretch, Center, Tile, and Span. The existing `WallpaperLayout` work covers the first four modes. Tile and Span remain planned.
+Per output, support Fill, Fit, Stretch, Center, Tile, and Span.
 
 - Fill: preserve aspect ratio and crop overflow.
 - Fit: preserve aspect ratio and leave margins.
@@ -34,58 +47,45 @@ Per output, support Fill, Fit, Stretch, Center, Tile, and Span. The existing `Wa
 
 Each output uses its own physical dimensions, scale, and local coordinate space. Span must use the combined logical arrangement and account for gaps, mixed resolutions, and output transforms.
 
-## Animated wallpaper capabilities
+## Static image collections
 
-Two distinct animated experiences are planned:
+The service may later support a collection of still images that changes on a user-configured schedule, including a day/night sequence. Every item remains a normal still image decoded through the same bounded image pipeline. There is no continuous frame playback, video decoding, animated GIF playback, or audio.
 
-1. **Looping motion wallpaper**: a video or animated image plays continuously, optionally with a configured loop and muted audio by default.
-2. **Dynamic wallpaper collection**: a set of still images or scenes changes according to a schedule, such as time of day. This can reproduce the day/night progression users associate with dynamic desktop wallpapers without requiring continuous video decoding.
-
-The service should also support per-monitor selection, shared wallpaper across monitors, and a single panoramic composition spanning a monitor group.
-
-### Playback and power policy
-
-- Pause decoding and frame production when the wallpaper is fully obscured, the output is disabled, the session is locked, or the system is suspended.
-- Resume from a defined playback position or restart according to the user's selected policy.
-- Use output refresh and frame timestamps for presentation; do not decode a new frame on every compositor repaint.
-- Keep audio disabled by default. Wallpaper playback must never unexpectedly produce sound.
-- Provide a static fallback frame when decoding fails or resources are unavailable.
-- Respect battery/power-saving mode and expose a reduced-motion/static-wallpaper preference.
-- Bound decoded frame dimensions, frame rate, queued frames, and memory use.
-- Do not block the compositor's render thread while decoding or reading media.
+The service should support per-monitor selection, a shared wallpaper across monitors, and a single panoramic composition spanning a monitor group.
 
 ## Proposed architecture boundaries
 
-- `WallpaperManager`: selection, per-output assignment, fit mode, slideshow and dynamic schedule.
+- `WallpaperManager`: selection, per-output assignment and fit mode.
 - Still-image decoder modules: format-specific decode into `WallpaperPixels`.
-- Animated media source: isolated decoder backend that yields timestamped RGBA frames; backend selection remains open pending dependency, licensing, packaging, and Fedora validation review.
-- `WallpaperFrameCache`: bounded CPU/GPU frame cache with explicit ownership and invalidation.
-- Vulkan wallpaper renderer: uploads ready frames and draws them below application surfaces and above the clear color.
-- Power/session policy: tells playback when to pause, resume, or switch to a static frame.
+- Optional still-image collection scheduler: changes the selected asset at configured intervals; it does not decode or play video.
+- `WallpaperFrameCache`: bounded CPU/GPU image cache with explicit ownership and invalidation.
+- Vulkan wallpaper renderer: uploads ready pixels and draws them below application surfaces and above the clear color.
+- Power/session policy: pauses collection scheduling when the session is locked, suspended or in power-saving mode.
 
 Do not bind the wallpaper cache to Wayland surface ObjectIds. Wallpaper assets have their own identity and lifecycle. Keep pending GPU resources alive until their submissions complete.
+## Decoder and dependency policy
 
-## Media backend decision
-
-No video-decoding backend is selected yet. Evaluate maintained options (for example GStreamer integration or a focused FFmpeg-based backend) against:
-- Fedora and target-distribution packaging;
-- codec availability and patent/licensing implications;
-- Rust API maturity and maintenance;
-- hardware decode availability and safe software fallback;
-- memory limits, timestamp handling, and zero-copy feasibility;
-- compatibility with the project's Wayland-only/Vulkan-only presentation path.
-
-Do not add a media dependency or edit Cargo.lock speculatively. The compositor must remain responsive if the decoder stalls or fails.
+- Keep `aurea-media` as the sole public image-decoding API and keep codec-specific code behind private decoder adapters.
+- Every supported decoder returns the same owned, tightly packed RGBA8 buffer with checked width, height, stride and exact byte length.
+- Preserve explicit input, axis, pixel-count and output-memory limits. Enforce dimensions and allocation limits before pixel allocation; do not rely only on post-decode validation.
+- Decode only on the bounded media worker, never on a compositor frame/render callback.
+- Reject malformed/truncated files, unsupported bit depth/color spaces, oversized dimensions, excessive frame/page counts and allocation failures with stable service errors.
+- GIF and multi-page TIFF produce one static wallpaper from the first frame/page.
+- HEIC/HEIF uses libheif with the HEVC still-image decoder plugin. This is image decoding, not HEVC video playback.
+- AVIF uses libheif with a suitable AV1 still-image decoder plugin such as dav1d.
+- Do not add codec dependencies to the compositor. Native libraries belong to `aurea-media`; only decoded RGBA8 crosses the boundary.
+- Install only required decoder plugins. Do not use broad plugin metapackages or add encoders when AureaOS only needs decoding.
+- Debian 13 Trixie is the dependency authority; Fedora is the development/validation environment.
 
 ## Implementation sequence
 
-1. Complete and validate the static JPEG path: decode, bounded RGBA8, dedicated Vulkan upload/cache, draw pass for empty and populated scenes.
-2. Add PNG and BMP decoders using maintained libraries and Cargo-generated lockfile.
-3. Complete Tile and Span layout, including multi-output geometry tests.
-4. Define the animated-frame source interface and deterministic playback clock/state tests.
-5. Select and integrate a media decoder backend after dependency, packaging, and license review.
-6. Add pause/resume policy, frame queue limits, fallback frame, reduced-motion and power-saving behavior.
-7. Add UI for choosing static, slideshow, dynamic day/night, and looping motion wallpapers.
+1. Complete and validate the JPEG path: decode, bounded RGBA8, dedicated Vulkan upload/cache, and draw pass for empty and populated scenes.
+2. Add and validate PNG, BMP, GIF, TIFF and WebP decoders.
+3. Complete owned user-selected assets and content-signature detection.
+4. Integrate HEIC/HEIF and AVIF through a Debian-compatible libheif backend and only the required decoder plugins.
+5. Complete Tile and Span layout, including multi-output geometry tests.
+6. Add an optional still-image collection scheduler and power/session policy.
+7. Add the UI for selecting static images, per-monitor assignments and still-image collections.
 
 ## Current implementation status (2026-11-24)
 
