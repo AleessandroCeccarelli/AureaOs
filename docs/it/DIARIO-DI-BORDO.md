@@ -1547,3 +1547,16 @@ Nessuna build, test, rustfmt o CI eseguiti. La verifica resta raggruppata su Fed
 - AVIF richiede un decoder AV1: scelta candidata libheif-plugin-dav1d con libdav1d7.
 - Evitare libheif-plugins-all: installare soltanto i decoder effettivamente necessari.
 - Restano da verificare licenze upstream complete, ABI, caricamento plugin e pacchetti Fedora. Nessun backend nativo è stato ancora collegato.
+
+
+## 24 novembre 2026 — Ambito wallpaper statico e verifica formati
+
+- Chiarito e fissato l'ambito: il wallpaper service gestisce immagini raster statiche. Nessun video wallpaper, playback GIF animato, audio, GStreamer, FFmpeg playback o PipeWire.
+- Una futura raccolta dinamica potrà cambiare tra immagini statiche in base all'orario o a un intervallo; non userà decodifica video continua.
+- Verificata la documentazione Microsoft: i file tema Windows elencano BMP, GIF, JPEG, PNG e TIFF; il formato tema include anche DIB. Alcune interfacce di configurazione gestita restringono i formati a JPEG/PNG/BMP.
+- Verificata la documentazione Apple: le impostazioni macOS permettono di scegliere file immagine, foto o raccolte; non viene dichiarato un elenco universale di estensioni nella pagina di supporto, quindi non attribuiamo ad Apple una whitelist non documentata.
+- La policy AureaOS resta il superset raster già definito in `AUREA-MEDIA-SERVICE.md`: JPEG, PNG, BMP/DIB, GIF statico (primo frame), TIFF statico (prima pagina), WebP, HEIF/HEIC e AVIF. JPEG 2000 resta condizionale; OpenEXR, PDF, SVG e RAW sono rinviati.
+- Verificato che Debian 13 Trixie pubblica `libheif1`, `libheif-dev`, `libheif-plugin-libde265` e `libheif-plugin-dav1d`; il pacchetto principale dichiara dipendenze runtime separate per i decoder. Fedora 45 pubblica libheif con plugin dav1d.
+- Il copyright Debian del sorgente libheif indica LGPL-3+ per la libreria principale. Restano da verificare in modo puntuale licenze/notice dei plugin e dei decoder libde265/dav1d, oltre al caricamento runtime dei plugin su entrambe le distribuzioni.
+- Aggiornato `docs/design/WALLPAPER-SYSTEM.md` per eliminare il vecchio ambito video/animazioni e allineare architettura, formati e sequenza di implementazione alla decisione statica.
+- Nessuna build, test, rustfmt o cargo check eseguiti. Nessuna modifica a Cargo.lock. Prossimo blocco tecnico: completare l'adapter libheif per HEIC/HEIF e AVIF, con controlli dimensioni prima dell'allocazione, output RGBA8 e test su Debian/Fedora; solo dopo abilitare le firme HEIF/AVIF nell'importer.
