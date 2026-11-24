@@ -66,6 +66,21 @@ Non inserire queste responsabilità in Fides, decoder media, compositor o pipeli
 - Email tramite handoff a un client standard o connettore mail autorizzato separatamente; valgono limiti allegati e policy di sicurezza account.
 - Aggiungere provider tramite rilevamento capacità e adapter espliciti, non con supposizioni su una API universale.
 
+## Modello degli account e profili utente
+
+AureaOS non deve presumere se chi lo utilizza sia un bambino, una persona anziana, un utente occasionale, un creator, un professionista o un'azienda. Aurea Share offre a tutti la stessa capacità di sistema; idoneità e operazioni disponibili dipendono dall'account collegato e dalle regole aggiornate del provider, non da una categoria utente presunta.
+
+- Il collegamento degli account è facoltativo e avviato dall'utente quando sceglie un provider.
+- Prevedere un gestore account con provider, account collegati, tipologia account, permessi concessi, stato connessione e operazioni disponibili.
+- Supportare più account per provider quando il modello API/autenticazione ufficiale lo consente (ad esempio più identità Telegram o più Pagine/account Meta idonei). Non promettere multi-account dove il provider non lo permette.
+- Isolare credenziali e token per provider e account. Consentire disconnessione/revoca e spiegarne gli effetti.
+- Rappresentare esplicitamente le classi Personale, Creator, Professional, Pagina, Business e Canale quando pertinenti.
+- Un account collegato non implica che tutte le capacità siano disponibili. Ricalcolare le capacità in base a tipo account, scope, revisione app, regione, contenuto e limiti correnti.
+- Mai imporre il collegamento account durante l'installazione né rendere obbligatori gli account online per usare il desktop.
+- Il selettore Condividi deve essere utile anche senza account collegati: mostrare gli handoff desktop supportati e proporre il collegamento solo quando l'utente sceglie un'azione che richiede API/account.
+- Accessibilità e chiarezza sono requisiti di sistema; non semplificare nascondendo permessi, destinatari o dettagli di pubblicazione.
+
+
 ## 4. Contratto degli adapter
 
 Definire un modello di capacità indipendente dal provider prima di implementare i singoli servizi. Ogni adapter dichiara:
