@@ -764,3 +764,33 @@ Added `ShellRuntime::set_trash_contents` as the shell-side update point for sema
 3. Define stable identity, metadata provenance, freshness and permission contracts.
 4. Design public contracts without adding dependencies or duplicating existing Desktop API.
 5. Continue with small modules and bilingual documentation (English/Italian).
+
+
+## 2026-11-24 — AureaOS platform foundations
+
+### Direction confirmed
+- Platform baseline: Debian 13 Trixie, Btrfs, Rust, Wayland, Smithay and Vulkan.
+- Quaero is the system-wide search and conversational entry point, with a ChatGPT-like experience integrated through Aurea Intelligence.
+- Aurea Intelligence owns orchestration, local context policy, provider boundaries and authorization. ChatGPT is an optional explicit remote provider; essential search and desktop behavior remain local/offline-capable.
+- Aurea Passkey is a system authentication capability spanning login/session unlock, privilege authorization and documented application APIs, with FIDO2/CTAP, PAM integration and optional TPM 2.0.
+- Btrfs layout, update transactions, snapshots and rollback must be designed together. Snapshots are not backups; nested subvolumes are snapshot boundaries.
+- Keep credentials outside the compositor and ordinary application configuration. Preserve recovery and fallback; no proprietary cryptographic protocol.
+- Preserve File Intelligence ownership and modular boundaries.
+
+### Technology research
+- Debian 13 packages SQLite runtime/development files; Fedora package metadata reports FTS5 enabled. Debian target builds still need an explicit FTS5 capability check.
+- notify 9 documents Linux inotify support and CC0 licensing, but current MSRV is Rust 1.91. Inspected workspace manifests use edition 2024 and do not declare rust-version. Do not add notify 9 until the project's MSRV policy is set; evaluate native inotify too.
+- Rust passkey crates differ in protocol scope. passkey-rs offers WebAuthn client and CTAP2 authenticator components; Linux FIDO libraries have distinct transport/licensing trade-offs. No dependency selected.
+- Btrfs snapshots are subvolume-based, do not recurse across nested subvolumes and are not backups.
+
+### Repository and verification
+- Branch: main. HEAD before this documentation update: 9332e26cdb936695c7dc85e6dee3f347820eb129.
+- Added bilingual platform architecture documents.
+- No Rust source, dependencies, Cargo manifests or runtime behavior changed.
+- No Cargo fmt/check/test/build or CI was run.
+
+### Next actions
+1. Design Btrfs subvolume and rollback model.
+2. Define Aurea Passkey threat model and system broker/PAM boundaries.
+3. Define Aurea Intelligence provider and action-authorization contracts.
+4. Complete SQLite FTS5 and watcher compatibility checks before adding dependencies.
