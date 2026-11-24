@@ -937,5 +937,10 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - La prima esecuzione ha individuato due problemi reali nel controllo: `TJSAMP_UNKNOWN` non è definito nell'header TurboJPEG 2.1.5 di Debian; inoltre il filtro del nome SONAME nel workflow era sovra-escapato e falliva anche quando il collegamento era corretto.
 - Corretto il valore iniziale dell'output subsampling a `-1`, che viene sostituito dalla funzione di lettura header in caso di successo; corretto il filtro SONAME usando una classe di carattere.
 - Debian 13 ha installato effettivamente `libturbojpeg0-dev` e `libturbojpeg0` versione `1:2.1.5-4`. Fedora ha installato `libjpeg-turbo-devel` e `turbojpeg-devel` versione `3.1.4.1-2.fc45`; la compilazione Fedora è riuscita nella prima esecuzione e `ldd` ha mostrato `libturbojpeg.so.0`.
-- La prima esecuzione complessiva è fallita per i due problemi sopra indicati. Le esecuzioni successive sono state avviate dopo le correzioni; risultato finale ancora da acquisire. Nessuna compatibilità ABI è dichiarata finché entrambe le prove non terminano con successo.
+- La prima esecuzione complessiva è fallita per i due problemi sopra indicati. La seconda esecuzione, GitHub Actions run `45356390011`, è terminata con successo su entrambi gli ambienti: Debian 13 Trixie e Fedora. In entrambi i job compilazione, controllo SONAME e decodifica sono passati.
+- Risultato identico nei due ambienti: `TurboJPEG legacy API: OK`; 3840 × 2160; 33.177.600 byte RGBA8; alpha opaco. Debian ha caricato `libturbojpeg.so.0` da `/lib/x86_64-linux-gnu/`, Fedora da `/lib64/`.
+- La prova convalida il percorso API/ABI esercitato dal probe nei container CI, non la totalità degli input JPEG né il funzionamento del futuro wrapper Rust. La verifica sulla Fedora locale dell'utente e la revisione di sicurezza/packaging restano aperte.
 - Nessuna dipendenza Cargo, manifest, lockfile o codice di produzione modificato. Nessuna ISO generata. Il decoder JPEG resta candidato e il crate Aurea Media non viene ancora implementato.
+
+
+- Aggiornati `docs/architecture/AUREA-MEDIA-SERVICE.md` e `docs/development/DEPENDENCY-REGISTER.md` con le versioni effettivamente testate e la distinzione tra prova CI, verifica host e approvazione del decoder.
