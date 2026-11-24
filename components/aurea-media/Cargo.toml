@@ -7,11 +7,11 @@
 name = "aurea-media"
 version = "0.1.0"
 edition = "2024"
-description = "Backend-independent image decoding service for AureaOS"
+description = "Backend-independent still-image decoding service for AureaOS"
 license = "GPL-3.0-or-later"
 
 [dependencies]
-image = { version = "0.25.10", default-features = false, features = ["bmp", "gif", "png", "tiff", "webp"] }
+image = { version = "0.25.10", default-features = false, features = ["bmp", "png", "tiff", "webp"] }
 
 [build-dependencies]
 cc = "1.11"
