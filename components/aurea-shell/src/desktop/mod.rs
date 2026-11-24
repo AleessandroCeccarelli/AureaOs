@@ -40,9 +40,25 @@ pub struct DesktopState {
     pub theme: DesktopTheme,
     pub night_light: NightLightState,
     pub trash_contents: TrashContentsState,
+    selected_item_id: Option<String>,
 }
 
 impl DesktopState {
+    /// Returns the identifier of the currently selected desktop item.
+    pub fn selected_item_id(&self) -> Option<&str> {
+        self.selected_item_id.as_deref()
+    }
+
+    /// Selects one desktop item by its stable identifier.
+    pub fn select_item(&mut self, id: impl Into<String>) {
+        self.selected_item_id = Some(id.into());
+    }
+
+    /// Clears the current desktop item selection.
+    pub fn clear_item_selection(&mut self) {
+        self.selected_item_id = None;
+    }
+
     /// Toggles the launcher without changing the current workspace.
     pub fn toggle_launcher(&mut self) {
         self.launcher.toggle();
