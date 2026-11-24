@@ -791,3 +791,12 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - OAuth: PKCE where supported, least privilege, system credential store, token revocation, no embedded confidential secrets. Always show account, destination, file and visibility before action.
 - Keep online provider adapters outside compositor, decoder and GStreamer pipeline. Begin with core contracts and one provider at a time; no daemon without a demonstrated need.
 - EN/IT architecture docs created; product catalog, universal technology strategy, dependency registers, README and diaries updated. No Rust/Cargo implementation, dependency, OAuth registration or tests were added.
+## AUREA SHARE — ACCOUNT MODEL CLARIFICATION — 2026-11-24
+
+- Do not design only for personal users or only for professionals. AureaOS must serve children, older adults, everyday users, creators, professionals and businesses without assuming persona.
+- Account linking is optional and user-initiated, never required during OS installation.
+- Build an account manager: connected accounts per provider, account class, permissions/scopes, connection state, capabilities, disconnect/revoke.
+- Support multiple accounts per provider only where official provider auth/API permits; isolate tokens by provider and account.
+- Provider capability depends on account class, scopes, app review, region, selected content and current provider limits.
+- Share chooser remains useful with zero linked accounts via supported desktop handoff; offer account connection only when an API-backed action needs it.
+- Read the account model sections in both EN/IT Aurea Share Online architecture documents before implementation.
