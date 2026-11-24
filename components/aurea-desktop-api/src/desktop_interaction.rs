@@ -19,13 +19,46 @@ pub enum DesktopInteraction {
     DesktopItemActivated { id: String },
 }
 
+/// Shared, thread-safe selection state sampled by compositor render frames.
+///
+/// The shell is the only writer. The compositor reads an owned snapshot so
+/// rendering never holds the lock while preparing or submitting GPU work.
+#[derive(Debug, Clone, Default)]
+pub struct DesktopSelectionController {
+    selected_item_id: std::sync::Arc<std::sync::RwLock<Option<String>>>,
+}
+
+impl DesktopSelectionController {
+    /// Publishes the selected desktop item, or clears selection with None.
+    pub fn set_selected_item(&self, item_id: Option<String>) {
+        *self
+            .selected_item_id
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = item_id;
+    }
+
+    /// Returns an owned selection snapshot without exposing the lock.
+    pub fn selected_item(&self) -> Option<String> {
+        self.selected_item_id
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+    }
+}
+
 /// Sends semantic interactions from the compositor to the shell.
 #[derive(Clone)]
 pub struct DesktopInteractionSender {
     sender: Sender<DesktopInteraction>,
+    selection: DesktopSelectionController,
 }
 
 impl DesktopInteractionSender {
+    /// Returns the shared shell-owned desktop selection state.
+    pub fn selection_controller(&self) -> DesktopSelectionController {
+        self.selection.clone()
+    }
+
     /// Sends one completed desktop interaction.
     pub fn send(
         &self,
@@ -38,9 +71,15 @@ impl DesktopInteractionSender {
 /// Receives semantic interactions on the shell thread.
 pub struct DesktopInteractionReceiver {
     receiver: Receiver<DesktopInteraction>,
+    selection: DesktopSelectionController,
 }
 
 impl DesktopInteractionReceiver {
+    /// Returns the shared shell-owned desktop selection state.
+    pub fn selection_controller(&self) -> DesktopSelectionController {
+        self.selection.clone()
+    }
+
     /// Receives the next interaction without blocking.
     pub fn try_recv(&self) -> Result<DesktopInteraction, TryRecvError> {
         self.receiver.try_recv()
@@ -50,9 +89,13 @@ impl DesktopInteractionReceiver {
 /// Creates the compositor-to-shell interaction channel.
 pub fn desktop_interaction_channel() -> (DesktopInteractionSender, DesktopInteractionReceiver) {
     let (sender, receiver) = mpsc::channel();
+    let selection = DesktopSelectionController::default();
     (
-        DesktopInteractionSender { sender },
-        DesktopInteractionReceiver { receiver },
+        DesktopInteractionSender {
+            sender,
+            selection: selection.clone(),
+        },
+        DesktopInteractionReceiver { receiver, selection },
     )
 }
 
@@ -74,6 +117,19 @@ mod tests {
         );
         assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::ShowOverview));
         assert_eq!(receiver.try_recv(), Err(TryRecvError::Empty));
+    }
+
+    #[test]
+    fn shell_and_compositor_share_selection_without_sharing_mutable_guards() {
+        let (sender, receiver) = desktop_interaction_channel();
+        let shell_selection = receiver.selection_controller();
+        let compositor_selection = sender.selection_controller();
+
+        shell_selection.set_selected_item(Some("system:trash".to_owned()));
+        assert_eq!(compositor_selection.selected_item().as_deref(), Some("system:trash"));
+
+        compositor_selection.set_selected_item(None);
+        assert_eq!(shell_selection.selected_item(), None);
     }
 
     #[test]
