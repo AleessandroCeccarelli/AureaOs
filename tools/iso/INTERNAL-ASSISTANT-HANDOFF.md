@@ -727,3 +727,41 @@ Ispezionare l'header `turbojpeg.h` e la tabella dei simboli esportati dai pacche
 - Aggiunta nota di compatibilità al README.
 - `TJFLAG_LIMITSCANS` è presente in 2.1.5; non va rimosso.
 - Probe non compilato né eseguito: la compatibilità effettiva resta non verificata.
+
+## DIREZIONE PRODOTTO E STRATEGIA TECNOLOGICA — 2026-11-24
+
+### Principio non negoziabile
+AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, studenti, creativi, professionisti, amministratori e sviluppatori. Un solo desktop coerente, senza edizioni stereotipate per età.
+- Formula prodotto: semplice per impostazione predefinita, potente quando serve, accessibile fin dall'inizio.
+- Accessibilità, multimedialità e produttività sono requisiti fondamentali.
+- Progressive disclosure: non imporre la complessità ai principianti e non togliere strumenti agli utenti avanzati.
+- Non confondere direzione prodotto con implementazione: documenti e catalogo devono indicare esplicitamente cosa è pianificato, candidato o verificato.
+
+### Nuova specifica
+- Leggere docs/architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md prima di proporre nuove dipendenze o scelte UI/media.
+- Tre livelli: fondamenta mature Debian; integrazione di infrastrutture Linux mature dietro UX/API AureaOS; ricerca/prototipi isolati per tecnologie nuove o acerbe.
+- Debian stable è l'autorità di compatibilità; Fedora è sviluppo rapido, non prova Debian.
+
+### Tecnologie raccomandate / da valutare
+- PipeWire + WirePlumber per trasporto/routing audio-video e policy sessione; verificata disponibilità Debian Trixie (PipeWire 1.4.2, WirePlumber 0.5.8).
+- GStreamer 1.x per pipeline media; pacchetti Debian Trixie esaminati nella famiglia 1.26.2. Non installare tutti i plugin/codec: verificare licenze e necessità per feature.
+- XDG Desktop Portal 1.20.3 in Debian Trixie come interfaccia permessi/interoperabilità Flatpak. Serve un backend AureaOS per le interfacce supportate; non dipendere dai backend GNOME/KDE.
+- AT-SPI2 come interoperabilità assistive; Orca per test reali; AccessKit come candidato per widget Rust, non sostituto di AT-SPI2.
+- Parley e cosmic-text come candidati di text layout, non UI toolkit.
+- UI toolkit nativo ancora da scegliere: prima prototipo reale con Wayland-only, Vulkan, AT-SPI2/AccessKit, IME, testo complesso, touch, scaling, performance e packaging Debian.
+
+### Confini
+- aurea-media: decode immagini e pixel CPU con limiti.
+- aurea-capture: coordinamento sessione e autorizzazioni.
+- PipeWire: trasporto/routing stream.
+- GStreamer: pipeline playback/capture/encoding/muxing selezionate.
+- aurea-compositor: superfici, frame finali autorizzati e presentazione Vulkan; mai codec, mix audio, muxing o scrittura file nel render thread.
+- Nessun daemon multimediale monolitico ora. Valutare helper ristretto per media non fidati solo quando giustificato.
+
+### Modifiche documentali del 24 novembre
+- Creato docs/architecture/UNIVERSAL-DESKTOP-TECHNOLOGY-STRATEGY.md.
+- Aggiornati VISION.md, docs/it/VISIONE.md, TECHNOLOGY.md e docs/it/PRINCIPI-TECNOLOGICI.md.
+- Collegata la strategia dai README EN/IT.
+- Aggiornati i registri dipendenze EN/IT.
+- Nessun codice Rust, manifest Cargo, lockfile o pacchetto modificato; nessun build, format, check, test o CI eseguito.
+- Continuare su main. Non fare ISO prima della data già concordata (27 novembre) e non eseguire verifiche Rust remote: l'utente le esegue su Fedora.
