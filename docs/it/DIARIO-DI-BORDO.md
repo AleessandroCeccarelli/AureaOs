@@ -641,3 +641,33 @@ La precedente bozza del 24 novembre che proponeva sottovolumi fratelli, snapshot
 - Documentate fasi separate di build/firma, separazione chiavi pubbliche/private, custodia protetta delle chiavi di produzione, verifica firme, rotazione/revoca, attenzione a SBAT/DBX e requisiti di ripristino.
 - Non sono state generate chiavi; non sono stati modificati stato firmware o manifest pacchetti. Nessun build, test o CI eseguito.
 - Aggiornati i documenti architetturali systemd-boot/UKI in inglese e italiano.
+
+
+
+## 24 novembre 2026 — Regole Debian-first per le dipendenze
+
+### Decisione
+
+Creato il registro obbligatorio delle dipendenze in `docs/development/DEPENDENCY-REGISTER.md`, con versione italiana in `docs/it/REGISTRO-DIPENDENZE.md`.
+
+Debian GNU/Linux 13 (Trixie), amd64, è esplicitamente la piattaforma target e l'autorità di compatibilità. Fedora resta esclusivamente l'ambiente di sviluppo. Una dipendenza non può essere accettata solo perché comoda o disponibile su Fedora.
+
+### Contenuto del registro
+
+- Definiti gli stati: Adottata, Approvata, Candidata, Condizionata, Respinta e Da riesaminare.
+- Resi obbligatori: pacchetto/pacchetto sorgente Debian e versioni esatte, pacchetti Fedora di sviluppo, crate Rust/MSRV, ABI/API e linking, supporto amd64, licenza SPDX, manutenzione upstream, advisory di sicurezza, footprint transitivo/runtime, fonti e validazioni realmente eseguite.
+- Registrate le tecnologie architetturali attuali senza dichiarare completata l'integrazione dei pacchetti o la validazione hardware.
+- Aggiunte schede specifiche per TurboJPEG, librsvg, SQLite, notifiche filesystem, passkey/FIDO2 e criticità RustSec di cgmath transitiva da Smithay.
+- TurboJPEG resta Candidata in attesa di verifica API/ABI Debian, binding Rust e pacchetto Fedora. librsvg è Respinta per l'attuale runtime core; gli SVG master restano gli originali canonici e la direzione prevista è la generazione di asset raster.
+- SQLite e notifiche filesystem non sono approvati; nessuna dipendenza passkey è stata selezionata.
+- Aggiunte checklist obbligatoria e procedura di modifica che richiede l'aggiornamento di entrambe le lingue e dei documenti/diari pertinenti.
+
+### Ambito e limitazioni
+
+È una modifica di governance e documentazione. Non aggiunge, rimuove o aggiorna dipendenze software, non modifica manifest Cargo o Cargo.lock e non dichiara testati tutti i pacchetti elencati. I dati non ancora supportati da evidenze sono indicati esplicitamente come non verificati.
+
+Non sono stati eseguiti Cargo formatting, build, check, test o CI.
+
+### Regola operativa
+
+Prima di proporre o aggiungere una dipendenza, consultare e aggiornare il registro. La compatibilità Debian prevale sulla comodità dell'ambiente di sviluppo. Non dedurre mai la compatibilità Debian da una compilazione Fedora o dalla CI Ubuntu.
