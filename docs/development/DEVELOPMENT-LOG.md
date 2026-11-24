@@ -682,3 +682,41 @@ Added `ShellRuntime::set_trash_contents` as the shell-side update point for sema
 4. Connect wallpaper texture upload and draw before Wayland surfaces and cursor.
 5. Add raster desktop artwork and native desktop item draw elements.
 6. Only after a visible wallpaper and pointer are ready, request the agreed Fedora build/test cycle.
+
+
+## 2026-11-24 — File Intelligence and metadata architecture
+
+### Scope and repository reference
+
+- Active branch: main.
+- Architecture decision: `docs/architecture/FILE-INTELLIGENCE-AND-METADATA.md`.
+- The design is inspired by the useful ideas found in modern desktop search/indexing systems, but does not reproduce their UI, private databases or service implementations.
+
+### Decisions recorded
+
+- Separate file cataloguing, metadata extraction, folder presentation state and desktop icon placement.
+- Define Aurea File Intelligence as the shared catalog/query capability for Fides, Quaero and other authorized clients.
+- Keep Fides responsible for file operations/navigation, Quaero responsible for search experience/ranking, Desktop responsible for desktop-specific arrangement, Aurea Media responsible for bounded media extraction, and the compositor responsible only for Wayland/Vulkan composition.
+- Do not create a hidden sidecar file in every folder as a clone of macOS Finder metadata.
+- Keep filesystem facts, format-native metadata, extracted metadata, user-authored metadata, presentation state and thumbnail cache as separate classes.
+- Use XDG/FreeDesktop conventions where applicable, without depending on GNOME Tracker, KDE Baloo, GTK or Qt.
+- Prefer a local embedded database; SQLite is the leading candidate, but its FTS5 availability, Rust binding, MSRV, packaging, WAL and recovery behavior must be verified on Debian 13 and Fedora before adding a dependency.
+- Use filesystem notifications as low-latency hints, not as the source of truth. A bounded reconciliation scanner remains authoritative.
+- Do not start with privileged fanotify, a mandatory daemon, vector database, cloud index or AI runtime.
+- Preserve future extension points for semantic search and other content providers without burdening the initial desktop.
+
+### Verification and limitations
+
+- Repository main was checked at `fae8d8ba3f2f0be6d3ae34e91adb6974e10054e5` before the documentation change.
+- The architecture document was committed directly to main as `f232abc0bb4f720b1238fff0da5bfd9c1582524f`.
+- No source code, Cargo dependency or runtime behavior was changed.
+- No build, formatting command, test, or CI workflow was run.
+- The database, watcher and metadata extraction technology choices remain subject to compatibility and resource-budget validation.
+
+### Next actions
+
+1. Audit existing file, desktop, search and media modules for overlapping ownership before defining or implementing File Intelligence APIs.
+2. Verify Debian 13 and Fedora SQLite/FTS5 packaging and Rust binding options.
+3. Compare stable notify releases with a small native inotify adapter, including overflow, watch-limit and reconciliation behavior.
+4. Define stable file identity, metadata provenance, freshness and permission-aware query contracts.
+5. Keep implementation modular and defer expensive extraction until it is justified by user-visible features.
