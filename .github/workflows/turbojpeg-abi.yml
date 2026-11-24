@@ -1,0 +1,80 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Validate the legacy TurboJPEG API against the Debian target and Fedora
+# development environment without adding a production dependency.
+
+name: TurboJPEG ABI compatibility
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/turbojpeg-abi.yml'
+      - 'tools/dependencies/jpeg/**'
+      - 'aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg'
+      - 'docs/architecture/AUREA-MEDIA-SERVICE.md'
+      - 'docs/development/DEPENDENCY-REGISTER.md'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/turbojpeg-abi.yml'
+      - 'tools/dependencies/jpeg/**'
+      - 'aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg'
+      - 'docs/architecture/AUREA-MEDIA-SERVICE.md'
+      - 'docs/development/DEPENDENCY-REGISTER.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: turbojpeg-abi-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    name: TurboJPEG probe (${{ matrix.distribution }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distribution: Debian 13 Trixie
+            image: debian:trixie
+            install: |
+              apt-get update
+              DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
+                build-essential binutils libturbojpeg0-dev
+          - distribution: Fedora
+            image: fedora:latest
+            install: |
+              dnf install --assumeyes --setopt=install_weak_deps=False \
+                gcc binutils libjpeg-turbo-devel turbojpeg-devel
+
+    container:
+      image: ${{ matrix.image }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install native development package
+        shell: bash
+        run: ${{ matrix.install }}
+
+      - name: Compile legacy TurboJPEG ABI probe
+        run: |
+          cc -std=c11 -Wall -Wextra -Werror -O2 \
+            tools/dependencies/jpeg/turbojpeg-abi-probe.c \
+            -o /tmp/aurea-turbojpeg-probe -lturbojpeg
+
+      - name: Inspect linked TurboJPEG runtime
+        run: |
+          ldd /tmp/aurea-turbojpeg-probe
+          ldd /tmp/aurea-turbojpeg-probe | grep -E 'libturbojpeg\\.so'
+
+      - name: Decode the committed AureaOS wallpaper
+        run: |
+          /tmp/aurea-turbojpeg-probe \
+            aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg
