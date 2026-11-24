@@ -903,6 +903,15 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 
 ## 24 novembre 2026 — Codifica UV wallpaper per push constant
 
+## 24 novembre 2026 — Integrazione del draw wallpaper nel frame Vulkan
+
+- Integrato in `surface_compositor::render_frame` il consumo della texture wallpaper selezionata e con upload completato.
+- Il frame crea il descriptor per lo sfondo, usa la pipeline wallpaper dedicata, calcola la geometria `Fill` in coordinate fisiche locali all'output usando le dimensioni della texture caricata e registra il disegno subito dopo il clear, prima delle superfici SHM e del cursore.
+- Lo sfondo pronto viene disegnato anche quando la scena non contiene finestre né cursore; il percorso rapido di sola cancellazione resta attivo se non esiste una texture pronta.
+- Quando la selezione wallpaper viene svuotata, viene svuotata anche la cache Vulkan, evitando che resti visibile una vecchia immagine.
+- Commit: `30582074` (integrazione nel frame), `a347fde8` (pulizia alla rimozione della selezione).
+- Limite importante: non esistono ancora decoder JPEG né produttore che fornisca pixel decodificati a `prepare_wallpaper_texture`. È stato integrato il percorso di consumo Vulkan, non è ancora dimostrata la visualizzazione dello sfondo. Nessun Cargo fmt/check/test/build, CI o ISO eseguito.
+
 - Aggiunto `WallpaperUvRect::to_push_constant_bytes`, che serializza il rettangolo UV in quattro valori `f32` nell'ordine ABI richiesto dallo shader: minimo X, minimo Y, massimo X, massimo Y.
 - Aggiunto un test unitario che ricostruisce i quattro valori dai 16 byte e ne verifica l'ordine.
 - Commit: `f474ddfd`.
