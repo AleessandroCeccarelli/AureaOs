@@ -40,5 +40,7 @@ First-party application icons use coordinated complete-tile and transparent-symb
 SVG masters do not imply validated exports, packaging or runtime loading. Validate optical alignment, scaling, contrast, transparent exports and target-shell rendering before release. Do not modify preserved legacy artwork as part of unrelated icon work.
 
 
-## Desktop Trash raster export
-The six approved Trash SVG masters remain canonical. The export script `tools/assets/render-trash-icons.sh` reuses the existing `rsvg-convert` host tool and produces eight standard raster sizes documented in `generated/README.md`. The generated assets have not yet been produced or visually validated. The renderer is developer-only, never a runtime dependency.
+
+
+## Desktop Trash RGBA8 export
+The six approved SVG masters remain canonical. `tools/assets/render-trash-icons.sh` uses the existing `rsvg-convert` host tool and `tools/assets/png_to_rgba.py` (Python standard library only) to generate tightly packed RGBA8 assets at 64, 96, 128 and 192 pixels. These correspond to 1x through 3x output scale for a 64-logical-pixel icon. The export has not yet been executed or visually validated; no runtime SVG or PNG decoder is introduced.
