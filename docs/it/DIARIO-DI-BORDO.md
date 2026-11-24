@@ -786,3 +786,31 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 ### Verifiche
 - Nessun manifest Cargo, Cargo.lock, sorgente Rust o pacchetto di sistema modificato.
 - Nessun build, format, check, test o CI eseguito.
+
+## 24 novembre 2026 — Condivisione tra dispositivi: Aurea Link e Aurea Share
+
+### Direzione prodotto
+- Aggiungere la continuità tra dispositivi alla visione: AureaOS deve scambiare file, foto, audio, video, documenti, link e testo con Android, iOS/iPadOS, macOS e altri desktop.
+- Separare **Aurea Link** (pairing, discovery peer, trasferimento locale sicuro e ciclo di ricezione) da **Aurea Share** (azione Condividi del sistema e registro destinazioni).
+- Distinguere il passaggio locale tra dispositivi dall'invio a una persona tramite Telegram/WhatsApp. AureaOS può aprire un'app installata supportata con contenuti selezionati; l'utente conferma destinatario/azione nell'app. Non automatizzare API private di messaggistica.
+- Primo obiettivo: trasferimento locale di file/link/testo, non streaming media live, relay cloud o sincronizzazione messaggi/notifiche.
+
+### Conclusione tecnologica
+- LocalSend Protocol v2.x (esaminata la specifica v2.2 corrente) è il primo candidato d'interoperabilità; non inventare un protocollo proprietario per il primo traguardo.
+- Preferire HTTPS app-to-app autenticato, approvazione esplicita, verifica integrità e streaming limitato. Discovery non equivale ad autenticazione. Prevedere fallback IP/QR manuale.
+- I client LocalSend esistenti sono riferimento multipiattaforma Linux, macOS, Windows, Android e iOS; non sono UI AureaOS né app obbligatoria da includere.
+- KDE Connect è ecosistema secondario opzionale. AirDrop/AWDL/OWL resta ricerca sperimentale, senza promesse o requisiti.
+- Futura companion mobile: Android Sharesheet e iOS Share Extensions. Companion macOS valutabile più avanti.
+
+### Sicurezza e architettura
+- Pairing e consenso espliciti; mittenti sconosciuti richiedono approvazione.
+- Mostrare mittente, file, dimensione e destinazione; niente sovrascrittura silenziosa o apertura automatica.
+- Validare percorsi/metadati, imporre limiti dimensione/sessione/frequenza/spazio, scrivere temporaneamente, verificare hash e pubblicare atomicamente.
+- Nessun downgrade silenzioso a HTTP non autenticato; nessun file server LAN illimitato sempre attivo.
+- Iniziare con piccole librerie Rust e listener limitati alle sessioni, non un daemon monolitico.
+- Tenere rete/trasferimento fuori da compositor, render thread, decoder Aurea Media e pipeline GStreamer.
+
+### Documentazione
+- Creati docs/architecture/AUREA-LINK-SHARE.md e docs/it/ARCHITETTURA-AUREA-LINK-SHARE.md.
+- Aggiornati strategia tecnologica universale, registri dipendenze EN/IT, catalogo applicazioni e README.
+- Nessuna dipendenza Cargo, manifest, lockfile o sorgente Rust modificati. Nessun build, format, check, test o CI eseguito.
