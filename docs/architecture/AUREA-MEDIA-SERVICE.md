@@ -10,7 +10,7 @@ AureaOS owns the media service, its public API, validation policy, resource limi
 
 Use a small dedicated Rust workspace crate named `aurea-media` as an in-process service/library in the first phase. Do not create a standalone daemon or IPC protocol yet. A daemon would add process lifecycle, protocol versioning, transport, permissions, and failure recovery before there are multiple independent clients that need it.
 
-The first JPEG backend candidate is the legacy TurboJPEG C API from system libjpeg-turbo, called through a very small Aurea-owned Rust FFI module. The compatibility probe has now compiled, linked and decoded the committed wallpaper in GitHub Actions containers for Debian 13 Trixie and Fedora. The tested packages were Debian `libturbojpeg0` / `libturbojpeg0-dev` `1:2.1.5-4` and Fedora `libjpeg-turbo` / `turbojpeg` `3.1.4.1-2.fc45`. Both environments resolved `libturbojpeg.so.0` at runtime and produced identical 3840 × 2160 RGBA8 output. This proves the tested legacy API surface and runtime linkage in those container images; the user's Fedora workstation still needs its own local verification before the adapter is approved.
+The first JPEG backend is the legacy TurboJPEG C API from system libjpeg-turbo, called through a very small Aurea-owned C shim and private Rust FFI module. The compatibility probe has now compiled, linked and decoded the committed wallpaper in GitHub Actions containers for Debian 13 Trixie and Fedora. The tested packages were Debian `libturbojpeg0` / `libturbojpeg0-dev` `1:2.1.5-4` and Fedora `libjpeg-turbo` / `turbojpeg` `3.1.4.1-2.fc45`. Both environments resolved `libturbojpeg.so.0` at runtime and produced identical 3840 × 2160 RGBA8 output. This proves the tested legacy API surface and runtime linkage in those container images; the user's Fedora workstation still needs its own local verification before the adapter is approved.
 
 ## Responsibilities
 
@@ -44,7 +44,7 @@ Keep each file narrowly scoped; split further if a file grows beyond the project
 - `jpeg/turbojpeg.rs`: all TurboJPEG FFI and unsafe calls, no Vulkan or compositor imports.
 - `service.rs`: request orchestration and worker-facing API, if needed; do not add a thread pool until an actual caller requires one.
 
-The compositor remains a consumer: it passes the selected wallpaper bytes to the media API and receives validated RGBA8 pixels. The existing wallpaper asset metadata and `WallpaperPixels` contract should be reused or moved only after a focused dependency-direction review. Do not duplicate the pixel buffer type.
+The first implementation now exists as the `components/aurea-media` workspace crate. Its public API exposes `decode`, `ImageFormat`, `DecodeLimits`, `DecodedImage`, `PixelFormat`, and stable `DecodeError` values. The only implemented format is JPEG. The native boundary is a narrow C shim compiled against the system `turbojpeg.h`; Rust FFI calls only Aurea-owned shim functions. TurboJPEG handles, constants and codec ABI details stay in C. The compositor remains a consumer and must convert the returned owned RGBA8 buffer into its local `WallpaperPixels` contract. `aurea-media` has no dependency on the compositor, Smithay or Vulkan.
 
 ## Decode contract — first JPEG milestone
 
@@ -73,6 +73,14 @@ Initial conservative limits:
 - decoded RGBA8: 256 MiB;
 - also enforce a pixel-count limit and checked stride/length arithmetic before allocation.
 These are initial policy values, not universal constants; the API should make limits explicit and testable.
+
+## Current implementation boundary
+
+- The API is synchronous by design. Callers must invoke it from a bounded worker; no thread pool or cancellation framework is introduced until a real caller defines those requirements.
+- Default limits are 64 MiB compressed input, 16,384 pixels per axis, 64 million pixels, and 256 MiB decoded RGBA8 output. Callers can provide stricter limits.
+- Header inspection occurs before output allocation. Rust uses checked arithmetic and `try_reserve_exact`; the C shim rechecks dimensions and exact output length before writing.
+- The C shim enables `TJFLAG_STOPONWARNING | TJFLAG_LIMITSCANS`, accepts RGB, YCbCr and grayscale, and rejects CMYK/YCCK.
+- The header is inspected twice (pre-allocation and immediately before decode). This intentionally avoids retaining a native decoder handle across the allocation boundary.
 
 ## Security and process isolation
 
