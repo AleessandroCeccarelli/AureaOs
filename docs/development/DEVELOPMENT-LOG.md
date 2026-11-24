@@ -1025,3 +1025,12 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - Added unit coverage for a minimal valid one-component frame, a truncated component table and a zero component count.
 - This is metadata validation only; it does not decode pixels or approve the TurboJPEG FFI backend. The Fedora and Debian 13 ABI probe remains a required gate before adding the Rust decoder.
 - No dependency or manifest changed. No build, format, check, test, CI or ISO was run.
+
+
+## 2026-11-24 — First Vulkan wallpaper texture resource
+
+- Added `VulkanWallpaperTexture` in `components/aurea-compositor/src/vulkan/wallpaper_texture.rs`. It consumes the validated `WallpaperPixels` RGBA8 contract, allocates an optimal-tiled sampled image, uploads through the existing host-visible staging batch, and transitions the image from UNDEFINED → TRANSFER_DST → SHADER_READ.
+- The texture owns a shared Vulkan image and an image view, so its resource lifetime is independent of a stack frame. It is exported by the Vulkan module.
+- Exposed the existing validated `WallpaperPixels` type from `desktop` so the GPU resource can consume it without coupling the media decoder to Vulkan.
+- This is the GPU upload/resource milestone only. It is not yet cached by wallpaper identity, inserted into the render scene, or drawn below desktop surfaces. The current constructor waits for its one-time upload; it must be called from a resource-preparation/background path, not a latency-sensitive render callback.
+- No JPEG decoder or dependency was added. No Cargo fmt/check/test/build or CI was run; no ISO was generated.
