@@ -794,3 +794,11 @@ Added `ShellRuntime::set_trash_contents` as the shell-side update point for sema
 2. Define Aurea Passkey threat model and system broker/PAM boundaries.
 3. Define Aurea Intelligence provider and action-authorization contracts.
 4. Complete SQLite FTS5 and watcher compatibility checks before adding dependencies.
+
+
+## 2026-11-24 — Btrfs layout and recovery design
+- Added bilingual proposed Btrfs layout/recovery documents.
+- Proposed flat sibling subvolumes to make snapshot boundaries explicit and avoid nested-subvolume omissions.
+- Kept /var/lib within the rollback unit so dpkg and system service state remain aligned with installed system files; proposed preserving /home and diagnostic logs.
+- Defined target update transaction lifecycle and recovery requirements. Bootloader integration, encryption defaults, retention, cache policy and swap/hibernation remain open.
+- No installer, snapshot manager, update transaction or rollback code was implemented. No Cargo commands or tests were run.
