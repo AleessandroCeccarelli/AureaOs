@@ -104,7 +104,7 @@ impl VulkanWallpaperTextureCache {
         // fallible allocation or submission for the new selection. Pending
         // uploads remain owned until their fences prove completion.
         if self.selected.as_ref() != Some(&key) {
-            self.selected = Some(key);
+            self.selected = Some(key.clone());
             self.ready = None;
         }
 
@@ -181,7 +181,7 @@ impl VulkanWallpaperTextureCache {
                     return Err(VulkanWallpaperTextureCacheError::Command(error));
                 }
             };
-            if self.selected == Some(pending.key) {
+            if self.selected.as_ref() == Some(&pending.key) {
                 self.ready = Some((pending.key, texture));
             }
         }
@@ -199,7 +199,7 @@ impl VulkanWallpaperTextureCache {
         asset_id: &str,
     ) -> Option<&VulkanWallpaperTexture> {
         let (key, texture) = self.ready.as_ref()?;
-        (self.selected == Some(*key) && key.asset_id == asset_id)
+        (self.selected.as_ref() == Some(key) && key.asset_id == asset_id)
             .then_some(texture.as_ref())
     }
 
