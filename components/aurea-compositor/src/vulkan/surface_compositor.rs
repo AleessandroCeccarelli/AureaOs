@@ -90,7 +90,14 @@ pub(super) fn render_frame(
     let wallpaper = scene.desktop().wallpaper();
     surface_cache
         .prepare_wallpaper_decode(wallpaper.map(|wallpaper| wallpaper.asset()))
-        .map_err(VulkanSurfaceCompositionError::Texture)?;
+        .map_err(|error| match error {
+            super::wallpaper_texture_cache::VulkanWallpaperTextureCacheError::Command(
+                smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
+            ) => VulkanSurfaceCompositionError::DeviceLost(
+                smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
+            ),
+            other => VulkanSurfaceCompositionError::Texture(other.to_string()),
+        })?;
     surface_cache
         .poll_wallpaper_texture_uploads()
         .map_err(|error| match error {
