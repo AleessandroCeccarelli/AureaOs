@@ -71,17 +71,18 @@ This table records architectural choices, not proof that every package is instal
 
 ## Component-level decisions
 
-### JPEG decoding — TurboJPEG / libjpeg-turbo
+### JPEG decoding — libjpeg-turbo / TurboJPEG compatibility API
 
-- **Status:** Native library is available on Debian; the currently reviewed Rust binding path is rejected for Debian 13 integration. Direct FFI remains unapproved.
-- **Purpose:** Decode the initial JPEG wallpaper without a general-purpose image stack.
-- **Debian evidence verified:** Debian 13 Trixie amd64 provides `libturbojpeg0` and `libturbojpeg0-dev`, both version `1:2.1.5-4`. The development package depends on the exact matching runtime package.
-- **Fedora development evidence:** Fedora publishes `libjpeg-turbo-devel` and `turbojpeg-devel`; current package pages list Fedora 43/44/45 package streams with libjpeg-turbo 3.1.x. This version difference is material and must not be hidden by testing only on Fedora.
-- **Rust binding finding:** `turbojpeg-sys` 1.1.1 and 1.2.0 expose TurboJPEG 3.0's `tj3*` API; the high-level `turbojpeg` crate 1.5.1 depends on that binding family. They cannot be assumed to link against Debian Trixie's TurboJPEG 2.1 ABI/API.
-- **Decision:** Do not add `turbojpeg` or `turbojpeg-sys` to AureaOS for the Debian 13 system library path. Reconsider only if a verified TurboJPEG 2.1 binding or a deliberately maintained Aurea-owned FFI adapter is justified and tested against Debian's headers/library.
-- **Alternative candidate:** `zune-jpeg` 0.5.15 is a pure-Rust decoder with one declared normal dependency, `zune-core ^0.5.1`; its manifest declares MSRV 1.75 and `MIT OR Apache-2.0 OR Zlib`. Fedora 45 also packages 0.5.15. However, upstream issue #496 reports a regression where valid baseline JPEGs can decode with incorrect colors in 0.5.15; upstream identifies a fix in 0.5.16-rc3. Therefore 0.5.15 is **not approved for use**, and 0.5.16-rc3 is a pre-release, not an automatic upgrade path. Keep zune-jpeg as a blocked Candidate until a stable fixed release is available and reviewed. Security advisory status and decoder limits/failure behavior still require explicit review.
-- **Architecture:** Whichever decoder is selected must sit behind a small Aurea-owned adapter and run on a bounded worker, never in the render loop. Enforce input byte, dimension, output allocation and total memory limits.
-
+- **Status:** Candidate — a focused native-library adapter is the leading option, but it is not approved for implementation until the ABI/symbol smoke test and decoder-boundary review pass on both development and target distributions.
+- **Purpose:** Decode the initial JPEG wallpaper into bounded RGBA8 pixels without introducing a general-purpose image stack.
+- **Debian evidence verified:** Debian 13 Trixie amd64 provides `libturbojpeg0` and `libturbojpeg0-dev`, version `1:2.1.5-4`. The development package depends on the matching runtime package.
+- **Fedora development evidence:** Fedora provides `libjpeg-turbo-devel` and `turbojpeg-devel`; the package streams reviewed use libjpeg-turbo 3.1.x. The exact installed Fedora package build remains to be checked on the user's machine.
+- **Compatibility finding:** Upstream libjpeg-turbo 3.x release notes explicitly describe a TurboJPEG 2.x compatibility wrapper. This makes a small adapter around the legacy API a plausible bridge between Debian's 2.1 package and Fedora's 3.1 package, but the exact exported symbols, declarations and runtime linking must be verified against both distributions' actual headers/libraries before approval.
+- **Rust binding decision:** Do not use the currently reviewed `turbojpeg` / `turbojpeg-sys` crate path: the reviewed bindings expose the TurboJPEG 3.0 `tj3*` API and cannot be assumed compatible with Debian's 2.1 system library. Do not add bindgen or a broad image crate for this one decoder.
+- **Proposed integration boundary:** A small Aurea-owned Rust adapter with all unsafe FFI isolated in one module; expose only a safe decode contract returning the existing bounded `WallpaperPixels`. Decode on a bounded worker, never on the render thread. Validate compressed input length, decoded dimensions, checked RGBA allocation, maximum pixel count and total memory budget before allocating.
+- **Alternatives reviewed:** `zune-jpeg` 0.5.15 is blocked because upstream reports incorrect colors for valid baseline JPEGs; the identified fix is only in 0.5.16-rc3, a pre-release. `jpeg-decoder` 0.3.2 is pure Rust but upstream describes it as maintenance-mode; Debian Trixie packages 0.3.0. Neither is currently selected as the primary path.
+- **Open approval checks:** Verify exact legacy API symbols and ABI on Debian 13 and Fedora; confirm the runtime package is included in the target image; review current libjpeg-turbo security advisories and BSD-style license notices; define panic/error containment and worker cancellation; test baseline/progressive, grayscale, truncated and malformed inputs plus the committed wallpaper.
+- **Validation:** No native library was installed or linked in this repository change. No Cargo manifest or lockfile was modified. No build, format, check or tests were run.
 ### SVG rasterization — librsvg
 
 - **Status:** Rejected for the current core desktop runtime scope.
