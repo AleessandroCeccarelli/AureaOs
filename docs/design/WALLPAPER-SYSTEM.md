@@ -117,4 +117,6 @@ Implemented since the CPU geometry milestone:
 
 This is pipeline preparation only: no descriptor binding or wallpaper draw is issued yet, and the decoder/cache still do not provide a ready selected texture. Local Fedora validation has not been run.
 
-The Vulkan textured draw-pass API now also accepts caller-defined push-constant payloads. It validates that payloads are non-empty, four-byte aligned, and no larger than Vulkan's guaranteed 128-byte minimum. The existing surface path still supplies its original four-byte transform; the wallpaper pipeline can supply its independent 16-byte UV rectangle. This API layer does not yet bind or draw the wallpaper.
+The Vulkan textured draw-pass API now also accepts caller-defined push-constant payloads.
+
+`WallpaperUvRect::to_push_constant_bytes` now serializes the normalized UV rectangle in the exact `vec4(min.x, min.y, max.x, max.y)` order expected by the dedicated wallpaper vertex shader. A unit test checks the byte round-trip. This remains CPU-side preparation; no descriptor binding or wallpaper draw is wired into the frame yet. It validates that payloads are non-empty, four-byte aligned, and no larger than Vulkan's guaranteed 128-byte minimum. The existing surface path still supplies its original four-byte transform; the wallpaper pipeline can supply its independent 16-byte UV rectangle. This API layer does not yet bind or draw the wallpaper.
