@@ -7,5 +7,6 @@
 
 mod metadata;
 mod service;
+mod timestamp;
 
 pub use service::{TrashEntry, TrashError, TrashService, TrashSnapshot, TrashVisualState};
