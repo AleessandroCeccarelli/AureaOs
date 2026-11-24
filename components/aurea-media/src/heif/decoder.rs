@@ -6,10 +6,16 @@
 //! Bounded HEIC/AVIF decoding through the system libheif implementation.
 
 use libheif_rs::{ColorSpace, DecodingOptions, HeifContext, LibHeif, RgbChroma, SecurityLimits};
-use crate::{DecodeError, DecodeLimits};
+use crate::{DecodeError, DecodeLimits, ImageFormat};
 
-pub(super) fn decode(input: &[u8], limits: DecodeLimits) -> Result<(u32, u32, Vec<u8>), DecodeError> {
-    if super::detect_container_format(input).is_none() {
+
+
+pub(super) fn decode(
+    expected_format: ImageFormat,
+    input: &[u8],
+    limits: DecodeLimits,
+) -> Result<(u32, u32, Vec<u8>), DecodeError> {
+    if super::detect_container_format(input) != Some(expected_format) {
         return Err(DecodeError::InvalidImage);
     }
 
