@@ -661,3 +661,41 @@ Commit:
 - `f650e00` — export API.
 
 Non è stato eseguito Cargo fmt/check/test o build remota. Nessuna verifica hardware.
+
+
+
+## STATO OPERATIVO — 2026-11-24 — RIPRESA WALLPAPER / DECODER JPEG
+
+### Repository
+- Repository: `AleessandroCeccarelli/AureaOs`.
+- Branch: `main` (unica branch restituita dalla ricerca branch).
+- HEAD osservato all'inizio della sessione: `66a0b6ce0657a8be35baa169ae1cb6d3fa5420eb`.
+- La cronologia include i commit documentali del 24 novembre relativi al blocco di zune-jpeg 0.5.15 e alla verifica compatibilità Debian. Non è stata eseguita alcuna build remota.
+
+### Priorità corrente
+Completare il percorso del wallpaper statico in quest'ordine:
+1. Selezionare un decoder JPEG stabile e compatibile con Debian 13.
+2. Definire un adapter AureaOS piccolo, isolato e sicuro.
+3. Decodificare su worker limitato in `WallpaperPixels` RGBA8.
+4. Solo dopo, creare la texture/cache Vulkan dedicata e disegnare il wallpaper sotto le finestre e sopra il clear color, anche nella scena senza finestre.
+5. Mantenere separati decoder, pixel CPU, upload/cache GPU e draw pass.
+
+Non fare ISO prima di venerdì 27 novembre 2026, salvo nuova richiesta esplicita. Non eseguire Cargo fmt/check/test/build o CI remoti: le verifiche Rust sono eseguite dall'utente su Fedora al momento concordato. Lavorare su main e non creare branch.
+
+### Decisione decoder provvisoria — non approvata
+- Debian 13 Trixie amd64 fornisce `libturbojpeg0` e `libturbojpeg0-dev` 1:2.1.5-4.
+- Fedora fornisce `libjpeg-turbo-devel` e `turbojpeg-devel`; le versioni esaminate appartengono alla serie 3.1.x.
+- Le note upstream libjpeg-turbo 3.x documentano un wrapper di compatibilità TurboJPEG 2.x. Un adapter FFI AureaOS basato sull'API legacy è una candidata plausibile tra Debian 2.1 e Fedora 3.1, ma ABI, simboli, header e linking devono essere verificati sugli ambienti reali prima dell'approvazione.
+- I binding Rust `turbojpeg` / `turbojpeg-sys` esaminati espongono API 3.0 `tj3*`: non usarli assumendo compatibilità con Debian 2.1.
+- `zune-jpeg` 0.5.15 è bloccato per regressione cromatica; la correzione identificata è in 0.5.16-rc3, pre-release.
+- `jpeg-decoder` 0.3.2 è in maintenance mode; Debian fornisce 0.3.0. Non selezionato come primario.
+- Tenere tutta la parte unsafe FFI in un solo modulo; esporre un contratto sicuro verso `WallpaperPixels`; limiti su input, dimensioni, overflow e memoria; decodifica fuori dal render thread.
+
+### Modifiche documentali di questa sessione
+- Aggiornati `docs/development/DEPENDENCY-REGISTER.md` e `docs/it/REGISTRO-DIPENDENZE.md`.
+- Aggiornati `docs/development/DEVELOPMENT-LOG.md` e `docs/it/DIARIO-DI-BORDO.md`.
+- Nessun file Rust, Cargo.toml o Cargo.lock modificato.
+- Nessun pacchetto installato; nessun build, check, format o test eseguito.
+
+### Prossima azione esatta
+Ispezionare l'header `turbojpeg.h` e la tabella dei simboli esportati dai pacchetti reali Debian 13 e Fedora, con un piccolo smoke test C/FFI solo dopo il consenso al primo ciclo di verifica locale. Non iniziare ancora la texture Vulkan.
