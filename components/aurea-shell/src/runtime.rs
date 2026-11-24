@@ -11,7 +11,9 @@ use std::{
     time::Duration,
 };
 
-use aurea_desktop_api::desktop_interaction::{\n    DesktopInteraction, DesktopInteractionReceiver, DesktopSelectionController,\n};
+use aurea_desktop_api::desktop_interaction::{
+    DesktopInteraction, DesktopInteractionReceiver, DesktopSelectionController,
+};
 use aurea_desktop_api::input::{
     InputDeviceId, TouchpadSettings, TouchpadSettingsController, touchpad_settings_channel,
 };
@@ -35,7 +37,8 @@ pub struct ShellRuntime {
     desktop: DesktopState,
     display_color: DisplayColorController,
     touchpad_settings: TouchpadSettingsController,
-    pending_desktop_interactions: VecDeque<DesktopInteraction>,\n    desktop_selection: DesktopSelectionController,
+    pending_desktop_interactions: VecDeque<DesktopInteraction>,
+    desktop_selection: DesktopSelectionController,
 }
 
 impl ShellRuntime {
@@ -61,7 +64,8 @@ impl ShellRuntime {
             desktop: DesktopState::default(),
             display_color,
             touchpad_settings,
-            pending_desktop_interactions: VecDeque::new(),\n            desktop_selection: DesktopSelectionController::default(),
+            pending_desktop_interactions: VecDeque::new(),
+            desktop_selection: DesktopSelectionController::default(),
         }
     }
 
@@ -117,6 +121,8 @@ impl ShellRuntime {
         receiver: Receiver<ShellEvent>,
         interactions: DesktopInteractionReceiver,
     ) -> Result<(), ShellError> {
+        self.desktop_selection = interactions.selection_controller();
+
         while self.state() == ShellState::Running {
             match receiver.recv_timeout(Duration::from_millis(50)) {
                 Ok(event) => self.handle_event(event)?,
@@ -149,9 +155,11 @@ impl ShellRuntime {
             }
             DesktopInteraction::DesktopItemSelected { ref id } => {
                 self.desktop.select_item(id.clone());
+                self.desktop_selection.set_selected_item(Some(id.clone()));
             }
             DesktopInteraction::DesktopSelectionCleared => {
                 self.desktop.clear_item_selection();
+                self.desktop_selection.set_selected_item(None);
             }
             DesktopInteraction::DesktopItemActivated { .. } => {
                 // Activation is retained for the desktop/file service consumer.
