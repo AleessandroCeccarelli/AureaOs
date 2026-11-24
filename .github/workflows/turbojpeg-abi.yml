@@ -72,7 +72,7 @@ jobs:
       - name: Inspect linked TurboJPEG runtime
         run: |
           ldd /tmp/aurea-turbojpeg-probe
-          ldd /tmp/aurea-turbojpeg-probe | grep -E 'libturbojpeg\\.so'
+          ldd /tmp/aurea-turbojpeg-probe | grep -E 'libturbojpeg[.]so'
 
       - name: Decode the committed AureaOS wallpaper
         run: |
