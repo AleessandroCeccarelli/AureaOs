@@ -57,6 +57,7 @@ pub(crate) struct VulkanWallpaperTextureCache {
     ready: Option<(WallpaperTextureKey, Arc<VulkanWallpaperTexture>)>,
     pending: Vec<PendingWallpaperUpload>,
     pending_bytes: usize,
+    synchronization_error: Option<smithay::reexports::ash::vk::Result>,
 }
 
 impl VulkanWallpaperTextureCache {
@@ -67,6 +68,7 @@ impl VulkanWallpaperTextureCache {
             ready: None,
             pending: Vec::new(),
             pending_bytes: 0,
+            synchronization_error: None,
         }
     }
 
@@ -115,12 +117,22 @@ impl VulkanWallpaperTextureCache {
 
     /// Polls upload fences without blocking; only completed selected textures become visible.
     pub(crate) fn poll(&mut self) -> Result<(), VulkanWallpaperTextureCacheError> {
+        if let Some(error) = self.synchronization_error {
+            return Err(VulkanWallpaperTextureCacheError::Command(error));
+        }
+
         let mut index = 0;
         while index < self.pending.len() {
-            let complete = self.pending[index]
-                .upload
-                .is_complete()
-                .map_err(VulkanWallpaperTextureCacheError::Command)?;
+            let complete = match self.pending[index].upload.is_complete() {
+                Ok(complete) => complete,
+                Err(error) => {
+                    // A fence error makes this cache unsafe to advance. Retain
+                    // pending ownership and stop polling instead of repeatedly
+                    // querying a failed device synchronization primitive.
+                    self.synchronization_error = Some(error);
+                    return Err(VulkanWallpaperTextureCacheError::Command(error));
+                }
+            };
             if !complete {
                 index += 1;
                 continue;
@@ -128,10 +140,13 @@ impl VulkanWallpaperTextureCache {
 
             let pending = self.pending.remove(index);
             self.pending_bytes = self.pending_bytes.saturating_sub(pending.byte_len);
-            let texture = pending
-                .upload
-                .wait()
-                .map_err(VulkanWallpaperTextureCacheError::Command)?;
+            let texture = match pending.upload.wait() {
+                Ok(texture) => texture,
+                Err(error) => {
+                    self.synchronization_error = Some(error);
+                    return Err(VulkanWallpaperTextureCacheError::Command(error));
+                }
+            };
             if self.selected == Some(pending.key) {
                 self.ready = Some((pending.key, texture));
             }
