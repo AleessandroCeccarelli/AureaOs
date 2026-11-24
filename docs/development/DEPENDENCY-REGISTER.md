@@ -244,3 +244,44 @@ This register is the shared source of truth for dependency decisions. When imple
 - **Classification:** host-only asset-generation tool; it is not part of Cargo manifests or the AureaOS image.
 - **Limits:** non-interlaced RGBA8 PNG, maximum 256 × 256, CRC validation, bounded decompression and PNG filter conversion 0–4.
 - **Status:** source committed; not yet run or validated on the laptop.
+
+
+## Aurea Media — static wallpaper image formats (24 November 2026)
+
+### Rust image crate
+
+- **Status:** Candidate; not yet added to Cargo manifests.
+- **Purpose:** decoder adapters for PNG, BMP, GIF, TIFF and WebP; JPEG may remain on the existing TurboJPEG backend during migration.
+- **Candidate upstream:** image 0.25.x. Its documented format feature set includes BMP, GIF, JPEG, PNG, TIFF and WebP. Use default-features = false and enable only required format features; do not inherit the default Rayon feature or unrelated codecs.
+- **AVIF:** do not assume the default avif feature enables decoding. The documented native AVIF decode path uses avif-native and libdav1d; evaluate it against libheif before selection.
+- **Debian 13:** pure Rust codec integration is expected to avoid adding system codec packages for these formats, but the exact locked crate graph, MSRV, license metadata and build behavior remain Not verified.
+- **Fedora development:** Cargo dependency; exact host build not run.
+- **License:** upstream project is dual-licensed; exact version's Cargo metadata and all enabled transitive licenses must be checked before approval.
+- **Security/limits:** decoder dimensions and allocation limits must be enforced before pixel allocation; a bounded compressed-input size alone is insufficient.
+- **Decision:** Candidate only. No source, manifest or lockfile changes authorized by this register entry.
+
+### libheif and image decoder plugins
+
+- **Status:** Candidate for HEIC/HEIF and AVIF still-image decoding; not yet linked by AureaOS.
+- **Purpose:** ISO-BMFF HEIF container parsing and dispatch to still-image codecs. HEIC uses HEVC image coding; AVIF uses AV1 image coding. This entry does not authorize video playback.
+- **Debian 13 Trixie:** package metadata confirms libheif1 and libheif-dev; current metadata surfaced during review reports 1.23.6-2~deb13u1 for the runtime package. Exact amd64 package version must be rechecked at implementation/packaging time because security updates can change it.
+- **HEIC decoder plugin:** libheif-plugin-libde265, with runtime dependency libde265-0. Debian describes this as the plugin that decodes HEVC images.
+- **AVIF decoder plugin:** choose one supported AV1 decoder plugin, preferably libheif-plugin-dav1d or libheif-plugin-aomdec, after checking the exact Trixie package and transitive license/footprint.
+- **Fedora development:** package names and versions not yet verified.
+- **Rust integration:** no Rust wrapper selected. Prefer a small audited C ABI shim or a narrowly scoped maintained wrapper; keep all unsafe/native handles inside the adapter.
+- **License:** libheif and plugin/codec license combination not yet fully reviewed against GPL-3.0-or-later distribution obligations. Not approved until reviewed.
+- **Runtime footprint:** install only the required decoder plugins. Do not install libheif-plugins-all, encoder plugins or FFmpeg plugins for this wallpaper feature.
+- **Security:** parse untrusted files off the render thread; enforce image dimension, pixel, output-byte and container item limits; inspect upstream advisories and supported ABI.
+- **Evidence:** Debian Trixie package metadata and descriptions for libheif1, libheif-plugin-libde265; https://packages.debian.org/trixie/libheif1 and https://packages.debian.org/trixie/libheif-plugin-libde265
+- **Decision:** Candidate; no dependency or package added.
+
+### JPEG 2000
+
+- **Status:** Deferred candidate.
+- **Purpose:** optional macOS interoperability for .jp2/.j2k images.
+- **Evidence:** Apple Preview documents JPEG 2000 export, but no Debian 13 decoder package, Rust adapter, license or footprint has yet been approved.
+- **Decision:** Do not claim support until a Debian-compatible backend is selected and tested.
+
+### Scope exclusion
+
+No video formats or playback libraries are selected for wallpaper support. GStreamer, FFmpeg video plugins, H.264, HEVC video and AV1 video remain outside Aurea Media's static wallpaper scope.
