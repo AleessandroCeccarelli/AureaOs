@@ -297,3 +297,13 @@ Nessun formato video o libreria di riproduzione è selezionato per gli sfondi. G
 - **Debian 13:** dipendenza Rust; questa selezione non richiede pacchetti codec di sistema. Build e comportamento runtime su Trixie non ancora verificati.
 - **Nota sicurezza:** AureaOS applica limiti sugli assi prima della decodifica e verifica separatamente pixel, byte RGBA8 e lunghezza esatta dell'output. Poiché max_alloc è non stretto per alcuni decoder, non può essere considerato da solo una barriera di memoria assoluta. La coda worker resta limitata.
 - **Da completare:** rigenerare Cargo.lock su Fedora, controllare grafo e licenze esatti, aggiungere fixture e test per formati/limiti, poi eseguire un unico ciclo pianificato di build e test.
+
+## Confine di proprietà degli asset wallpaper — 24 novembre 2026
+
+- **Stato:** implementazione sorgente aggiunta; verifica build in sospeso.
+- **Filesystem:** nessuna nuova dipendenza. L'I/O Rust standard è confinato in WallpaperAsset::from_file, che controlla la dimensione dei metadati e poi esegue una lettura limitata.
+- **Contratto thread:** il caricamento file va invocato da un'attività impostazioni/media-I/O, mai dal callback frame/render. La decodifica resta nel DecodeWorker.
+- **Identità:** ID degli asset e chiavi decode/texture sono stringhe possedute; eliminato il vincolo static per questa pipeline.
+- **Rilevamento input:** JPEG, PNG, BMP, GIF, TIFF e WebP sono identificati tramite firma. L'estensione non è attendibile per scegliere il decoder. HEIC/HEIF e AVIF non sono ancora abilitati.
+- **Memoria:** input compresso limitato a 64 MiB. I byte compressi sono condivisi in sola lettura nell'asset, poi copiati nella richiesta worker limitata. La copia temporanea va conteggiata nel budget memoria.
+- **Verifica:** nessuna build/test/rustfmt eseguiti. API ownership e call site snapshot da rivedere nel prossimo ciclo Fedora.
