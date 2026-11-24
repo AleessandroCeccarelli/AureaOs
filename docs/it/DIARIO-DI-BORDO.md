@@ -737,3 +737,20 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Il sorgente è stato revisionato staticamente e corretto per inizializzare il colorspace con il valore legacy `TJCS_DEFAULT`.
 - Il probe NON è stato compilato né eseguito; non costituisce ancora prova di compatibilità ABI. Nessun pacchetto installato e nessuna dipendenza Rust aggiunta.
 - Prossimo passo: quando l'utente torna su Fedora, compilare ed eseguire il probe sul wallpaper incluso; in seguito ripetere la stessa prova in un ambiente Debian 13 Trixie prima di approvare l'adapter.
+
+
+## 24 novembre 2026 — Decisione architetturale Aurea Media Service
+
+### Decisione
+- AureaOS deve possedere un servizio media proprio: API, limiti, validazione, gestione errori, scheduling, dispatch e integrazione.
+- Non riscrivere da zero il codec JPEG. Usare inizialmente un backend libjpeg-turbo/TurboJPEG dietro un confine FFI piccolo e privato, se la verifica su Fedora e Debian ha esito positivo.
+- Prima fase: crate Rust `aurea-media` in-process, non daemon separato. IPC e helper process verranno valutati quando esisteranno più client o l'esposizione a immagini non fidate lo renderà necessario.
+- Il servizio restituisce pixel RGBA8 CPU-owned. Nessun riferimento a Vulkan, texture o scene desktop.
+- Decodifica su worker in background, mai nel render thread.
+- Specifica: `docs/architecture/AUREA-MEDIA-SERVICE.md`.
+
+### Verifica e correzione probe
+- Consultato direttamente l'header TurboJPEG Debian 2.1.5: non definisce `TJCS_DEFAULT` né `TJCS_UNKNOWN` nel vecchio enum colorspace.
+- Corretto il probe C inizializzando il parametro di output colorspace a `-1`; la funzione header lo valorizza in caso di successo.
+- Confermato che `TJFLAG_LIMITSCANS` è disponibile nell'API 2.1.5.
+- Il probe non è stato compilato o eseguito. Nessuna compatibilità ABI è ancora dichiarata.
