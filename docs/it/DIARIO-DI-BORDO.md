@@ -833,3 +833,13 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Le operazioni disponibili dipendono da account, scope, revisione provider, regione, contenuto e limiti correnti.
 - Il selettore Condividi resta utilizzabile anche senza account collegati, tramite handoff desktop supportati.
 - Aggiornate le architetture Aurea Share online in italiano e inglese. Nessun codice o dipendenza aggiunti.
+
+
+## 24 novembre 2026 — Riduzione allocazioni nel movimento del puntatore
+
+- Verificato il percorso input mouse/touchpad esistente prima di intervenire.
+- Rimosso il vettore intermedio delle geometrie monitor dal movimento del puntatore; il calcolo dei limiti ora attraversa gli output abilitati una sola volta.
+- La funzione di vincolo non raccoglie più l'iteratore in un vettore temporaneo: restituisce subito la posizione se già dentro un monitor, altrimenti conserva soltanto il punto valido più vicino.
+- Aggiunti test per rifiutare coordinate del puntatore non finite. Restano i test esistenti su spazi tra monitor, bordi, origini negative e scale differenti.
+- Nessuna modifica intenzionale alla semantica del puntatore, al routing input, al layout monitor, alle dipendenze o all'API pubblica.
+- Modifiche pubblicate su main. Non eseguiti Cargo fmt/check/test/build né CI: resta necessaria la verifica locale su Fedora. Nessuna ISO generata.
