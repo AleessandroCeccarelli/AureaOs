@@ -72,3 +72,48 @@ impl fmt::Display for VulkanSurfaceCompositionError {
 }
 
 impl Error for VulkanSurfaceCompositionError {}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn queue_submission_device_loss_is_fatal() {
+        let error = VulkanSurfaceCompositionError::from_queue_submit_error(
+            VulkanQueueSubmitError::SubmissionUncertain(vk::Result::ERROR_DEVICE_LOST),
+        );
+        assert!(matches!(
+            error,
+            VulkanSurfaceCompositionError::DeviceLost(vk::Result::ERROR_DEVICE_LOST)
+        ));
+    }
+
+    #[test]
+    fn device_loss_during_idle_fallback_is_not_hidden() {
+        let error = VulkanSurfaceCompositionError::from_queue_submit_error(
+            VulkanQueueSubmitError::CompletionUncertain {
+                wait_error: vk::Result::TIMEOUT,
+                idle_error: vk::Result::ERROR_DEVICE_LOST,
+            },
+        );
+        assert!(matches!(
+            error,
+            VulkanSurfaceCompositionError::DeviceLost(vk::Result::ERROR_DEVICE_LOST)
+        ));
+    }
+
+    #[test]
+    fn ordinary_completion_failure_remains_a_command_error() {
+        let error = VulkanSurfaceCompositionError::from_queue_submit_error(
+            VulkanQueueSubmitError::CompletionUncertain {
+                wait_error: vk::Result::TIMEOUT,
+                idle_error: vk::Result::ERROR_UNKNOWN,
+            },
+        );
+        assert!(matches!(
+            error,
+            VulkanSurfaceCompositionError::Command(_)
+        ));
+    }
+}
