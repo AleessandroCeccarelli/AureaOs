@@ -765,3 +765,17 @@ AureaOS deve essere il desktop di tutti: bambini, anziani, principianti, student
 - Aggiornati i registri dipendenze EN/IT.
 - Nessun codice Rust, manifest Cargo, lockfile o pacchetto modificato; nessun build, format, check, test o CI eseguito.
 - Continuare su main. Non fare ISO prima della data già concordata (27 novembre) e non eseguire verifiche Rust remote: l'utente le esegue su Fedora.
+
+## CROSS-DEVICE SHARING — AUREA LINK / AUREA SHARE — 2026-11-24
+
+- Read docs/architecture/AUREA-LINK-SHARE.md before proposing implementation.
+- Aurea Link = device pairing/discovery, trusted peer identities, local transfer, receive lifecycle and safe storage.
+- Aurea Share = system Share action and destination registry; it hands selected content to Aurea Link or installed supported apps such as Telegram/WhatsApp. The user confirms the final recipient/action in the app. Never automate private messaging APIs.
+- First protocol candidate: published LocalSend Protocol v2.x (v2.2 spec reviewed), not a new proprietary wire protocol. No crate or dependency selected yet.
+- Prefer authenticated HTTPS app-to-app transfer, receiver consent, integrity verification, bounded streaming, safe temporary storage and atomic publication. Discovery is not authentication. Add manual IP/QR fallback.
+- Review current protocol license/security/upstream and Debian package/toolchain requirements before implementation. Protocol interoperability does not authorize copying the LocalSend application.
+- KDE Connect is optional secondary interoperability. AirDrop/AWDL/OWL is experimental research only; no compatibility promise.
+- Future mobile companion may integrate Android Sharesheet and iOS Share Extensions. Existing LocalSend clients can provide initial macOS/iOS/Android interoperability while Aurea companion work is deferred.
+- No always-on monolithic daemon for milestone 1. Keep network transfers outside compositor, render thread, Aurea Media decoder and GStreamer pipeline.
+- First milestone is local file/link/text transfer only. No live media streaming, cloud relay, message/notification/contact sync or automatic clipboard sharing.
+- Docs created EN/IT; strategy, dependency registers, catalog, README and diary updated. No Rust/Cargo source changes and no checks run.
