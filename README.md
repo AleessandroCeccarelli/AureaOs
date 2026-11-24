@@ -118,7 +118,7 @@ Its current technical direction includes:
 - PipeWire for multimedia infrastructure.
 - NetworkManager for network management.
 - systemd for system and service management.
-- GRUB2 as the planned bootloader.
+- systemd-boot as the UEFI-only boot manager; Secure Boot is disabled for Roma 1.0. See [systemd-boot and UKI architecture](docs/architecture/SYSTEMD-BOOT-AND-UKI.md).
 - Separate update domains for Debian base packages, AureaOS system components, and Flatpak applications.
 - Flatpak and Flathub for third-party application distribution.
 
@@ -154,6 +154,7 @@ The main documentation files are:
 - [Initial architecture](docs/architecture/INITIAL-ARCHITECTURE.md) — system layers and open decisions.
 - [Minimum hardware requirements](docs/architecture/HARDWARE-REQUIREMENTS.md) — the vendor-neutral Roma 1.0 CPU, memory, Vulkan, DRM/KMS, and GBM support floor.
 - [Debian base](docs/architecture/DEBIAN-BASE.md) — current bootstrap implementation and limitations.
+- [systemd-boot and UKI architecture](docs/architecture/SYSTEMD-BOOT-AND-UKI.md) — UEFI-only boot policy, first-release Secure Boot scope, UKI direction and recovery integration.
 - [Debian package manifests](debian/packages/README.md) — package groups and profile status.
 - [External Services Register](docs/architecture/EXTERNAL-SERVICES.md) — hosting platforms, package sources, and planned external integrations.
 - [Planned applications](docs/product/PLANNED-APPLICATIONS.md) — candidate first-party applications.
