@@ -207,3 +207,57 @@ The result conversion remains a `const fn`; fatal-result selection uses pattern 
 ### Native cursor upload is now asynchronous — 2026-11-24
 
 The first native cursor texture no longer uses the synchronous `VulkanShmTexture::from_snapshot` convenience path. The surface pipeline cache submits the cursor snapshot with `submit_snapshots`, retains the fence-backed `VulkanPendingUpload`, and polls completion on subsequent frames. Until the fence signals, the compositor skips drawing the cursor rather than blocking the frame callback or sampling an incomplete image. Once complete, the cache publishes the texture with shared `Arc` ownership. Typed Vulkan errors, including fatal `ERROR_DEVICE_LOST`, continue through the surface-composition error path. No dependencies changed. No build, formatting, tests or CI were run; local Fedora verification remains pending.
+
+
+## Desktop wallpaper image-format policy — 2026-11-24
+
+The wallpaper importer is an image feature, not a video player. No video container, video codec, GStreamer or PipeWire dependency is part of this scope.
+
+### Reference platforms
+
+- Windows theme files document JPG/JPEG, BMP/DIB, TIFF/TIF, PNG and GIF wallpaper assets. Some newer managed desktop-background configuration interfaces deliberately document the narrower JPG/JPEG/PNG subset.
+- macOS lets users select an image file, folder, photo set or Photos-library image as wallpaper. Apple's image platform documents JPEG, PNG, GIF, TIFF, HEIC and other formats; Preview also exports HEIC, JPEG, JPEG 2000, OpenEXR, PDF, PNG and TIFF.
+- AureaOS adopts a practical superset for user-selected raster wallpapers rather than copying the narrowest policy interface of either platform.
+
+### Accepted wallpaper formats
+
+| Format | Extensions / container | Policy |
+|---|---|---|
+| JPEG | .jpg, .jpeg, .jpe | Required; existing backend retained during migration |
+| PNG | .png | Required |
+| BMP / DIB | .bmp, .dib | Required |
+| GIF | .gif | Required; decode first frame only |
+| TIFF | .tif, .tiff | Required; first image/page only |
+| WebP | .webp | Required |
+| HEIF / HEIC | .heif, .heic | Required; still-image decode, including HEVC-coded Apple photos |
+| AVIF | .avif | Required |
+| JPEG 2000 | .jp2, .j2k, .jpf, .jpx | Accepted if the selected Debian-supported backend is available; otherwise report unsupported, never silently mislabel |
+| OpenEXR | .exr | Deferred; high-dynamic-range color management and memory policy need a separate decision |
+| PDF / SVG / RAW | various | Not wallpaper inputs in the first release; these require rasterization, vector rendering or camera-RAW processing policies |
+
+Format detection must inspect file content/signatures and validate the decoded container. Filename extensions are a chooser hint only, never the security boundary.
+
+### Decoder architecture and output contract
+
+- Keep aurea-media as the sole public image-decoding API and keep all codec-specific code behind private decoder adapters.
+- Every supported decoder returns the same owned, tightly packed RGBA8 buffer with checked width, height, stride and exact byte length.
+- Preserve the current input, axis, pixel-count and output-memory limits. Enforce dimensions and allocation limits before pixel allocation; do not rely only on post-decode validation.
+- Decode only on the bounded media worker, never on a compositor frame/render callback.
+- Reject malformed/truncated files, unsupported bit depth/color spaces, oversized dimensions, excessive frame/page counts and allocation failures with stable service errors.
+- GIF and multi-page TIFF produce a single static wallpaper from the first frame/page. No animation scheduling or video playback is implied.
+- HEIC/HEIF support is image decoding through libheif with an HEVC still-image decoder plugin. This is not HEVC video playback.
+- AVIF is a still-image format. Its decoder plugin/backend must be present and checked separately from HEIC's HEVC plugin.
+- Do not add a codec dependency to the compositor. Native libraries belong to aurea-media; only decoded RGBA8 crosses the boundary.
+
+### Native/user-selected wallpaper assets
+
+The current compositor WallpaperAsset is a compile-time embedded JPEG with a static ID and byte slice. This is insufficient for arbitrary user-selected files. The next implementation must replace that restriction with an owned, validated asset descriptor (stable owned ID/path metadata and owned compressed bytes or a safely opened file handle), while keeping filesystem access out of the frame loop. The decode key must use owned identity and revision data so switching files invalidates stale results safely.
+
+### Dependency decision gates
+
+- Evaluate a narrowly featured Rust image crate adapter for PNG, BMP, GIF, TIFF and WebP, with only the necessary codec features enabled and decoder limits applied before allocation.
+- Keep the existing TurboJPEG adapter until the replacement path is verified; avoid compiling two JPEG implementations indefinitely.
+- Evaluate libheif for HEIC/HEIF and AVIF, including Debian's separately packaged decoder plugins. HEVC image decoding requires the libde265 plugin; AV1 image decoding requires a suitable AV1 plugin such as dav1d or aomdec.
+- Confirm exact Debian 13 package versions, runtime dependencies, upstream licenses and plugin availability before adding native packages to the target image. Do not install every libheif plugin or encoder.
+- JPEG 2000 remains conditional on a supported decoder and its license/footprint review.
+- No video playback, HEVC video, H.264, AV1 video, GStreamer or PipeWire work is authorized by this wallpaper-format decision.
