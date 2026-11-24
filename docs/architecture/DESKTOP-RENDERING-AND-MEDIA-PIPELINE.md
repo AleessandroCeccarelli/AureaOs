@@ -102,6 +102,20 @@ These specifications do not supply a complete desktop shell or native desktop-ic
 - **Aurea Shell:** Dock, launcher, panels, notifications and user-facing controls.
 - **Aurea Compositor:** Wayland surfaces, outputs, pointer routing, hit-test handoff, Vulkan composition and presentation.
 
+### Desktop icon asset resolver
+
+A compositor-owned descriptor module now maps the existing desktop model's Trash item to the six approved SVG-derived variants:
+
+- Light/Dark appearance × Empty/PartiallyFull/Full contents.
+- Raster variants: 64, 96, 128 and 192 pixels for the 64-logical-pixel destination.
+- Stable cache identity: asset ID, content revision and raster pixel size.
+- Repository-relative generated asset path matching the host export script.
+- RGBA8 bytes are passed through the existing checked `ShmBufferSnapshot::from_rgba8` constructor before they can become a Vulkan cache request.
+
+The descriptor accepts the Trash contents state as input; it does not query the filesystem or infer fullness. The Trash service is not yet connected to this compositor input. File, Folder and Application entries deliberately return no icon descriptor because their canonical AureaOS artwork and MIME/application lookup are not yet approved or integrated.
+
+This is metadata and validation infrastructure only. The 24 raw RGBA8 files have not been generated, loaded or visually inspected. No icon is drawn yet, and no state is fabricated when the Trash service is unavailable. The shared texture key lives in the desktop module so the model/asset contract remains available when the optional Vulkan feature is disabled.
+
 ## Rendering order
 
 1. Clear output to the selected theme fallback color.
