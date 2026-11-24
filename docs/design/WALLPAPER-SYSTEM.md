@@ -49,7 +49,7 @@ Each output uses its own physical dimensions, scale, and local coordinate space.
 
 ## Static image collections
 
-The service may later support a collection of still images that changes on a user-configured schedule, including a day/night sequence. Every item remains a normal still image decoded through the same bounded image pipeline. There is no continuous frame playback, video decoding, animated GIF playback, or audio.
+The service may later support a collection of still images that changes on a user-configured schedule, including a day/night sequence. Every item remains a normal still image decoded through the same bounded image pipeline. There is no animated-image playback, video decoding, or audio.
 
 The service should support per-monitor selection, a shared wallpaper across monitors, and a single panoramic composition spanning a monitor group.
 
@@ -70,7 +70,7 @@ Do not bind the wallpaper cache to Wayland surface ObjectIds. Wallpaper assets h
 - Preserve explicit input, axis, pixel-count and output-memory limits. Enforce dimensions and allocation limits before pixel allocation; do not rely only on post-decode validation.
 - Decode only on the bounded media worker, never on a compositor frame/render callback.
 - Reject malformed/truncated files, unsupported bit depth/color spaces, oversized dimensions, excessive frame/page counts and allocation failures with stable service errors.
-- GIF and multi-page TIFF produce one static wallpaper from the first frame/page.
+- GIF is not an accepted wallpaper format. Multi-page TIFF is treated as a still image by selecting its first page.
 - HEIC/HEIF uses libheif with the HEVC still-image decoder plugin. This is image decoding, not HEVC video playback.
 - AVIF uses libheif with a suitable AV1 still-image decoder plugin such as dav1d.
 - Do not add codec dependencies to the compositor. Native libraries belong to `aurea-media`; only decoded RGBA8 crosses the boundary.
@@ -80,7 +80,7 @@ Do not bind the wallpaper cache to Wayland surface ObjectIds. Wallpaper assets h
 ## Implementation sequence
 
 1. Complete and validate the JPEG path: decode, bounded RGBA8, dedicated Vulkan upload/cache, and draw pass for empty and populated scenes.
-2. Add and validate PNG, BMP, GIF, TIFF and WebP decoders.
+2. Add and validate PNG, BMP, TIFF and WebP decoders.
 3. Complete owned user-selected assets and content-signature detection.
 4. Integrate HEIC/HEIF and AVIF through a Debian-compatible libheif backend and only the required decoder plugins.
 5. Complete Tile and Span layout, including multi-output geometry tests.
@@ -104,7 +104,7 @@ Not yet implemented:
 - wallpaper identity cache and draw pass below desktop surfaces;
 - PNG/BMP decoders;
 - Tile and Span;
-- animated image/video playback;
+- animated image/video playback (excluded by product decision);
 - dynamic time-of-day collections and UI.
 
 The Vulkan wallpaper texture upload, asynchronous submission path and cache lifecycle are not yet verified by Cargo build/tests or hardware. No Cargo build, format, test, or hardware validation is claimed by this document.
@@ -130,3 +130,10 @@ The current integration uses `WallpaperFitMode::Fill` and output-local physical 
 The frame compositor now resolves the selected asset ID from `DesktopSnapshot` and requests a ready GPU texture only when the cache's selected key has that same asset ID. This prevents a previous wallpaper texture from being drawn after the user changes selection but before the replacement upload completes. The cache still tracks revisions independently; the current immutable embedded asset identity is matched by ID at the frame boundary. It is ready to draw a populated `VulkanWallpaperTextureCache`, but the JPEG decoder and the producer that calls `prepare_wallpaper_texture` are still absent. Therefore the embedded JPEG is not yet displayed; no user-visible wallpaper is claimed.
 
 `WallpaperUvRect::to_push_constant_bytes` now serializes the normalized UV rectangle in the exact `vec4(min.x, min.y, max.x, max.y)` order expected by the dedicated wallpaper vertex shader. A unit test checks the byte round-trip. This remains CPU-side preparation; no descriptor binding or wallpaper draw is wired into the frame yet. It validates that payloads are non-empty, four-byte aligned, and no larger than Vulkan's guaranteed 128-byte minimum. The existing surface path still supplies its original four-byte transform; the wallpaper pipeline can supply its independent 16-byte UV rectangle. This API layer does not yet bind or draw the wallpaper.
+
+
+## Product clarification — GIF excluded, TIFF retained (2026-11-24)
+
+GIF is not a wallpaper format in AureaOS. The importer rejects GIF signatures; there is no GIF decoder feature in `aurea-media`, no GIF entry in `WallpaperFormat`, and no animated-frame provider or playback policy in the wallpaper manager. This is an explicit product boundary, not merely a decision to display the first GIF frame.
+
+TIFF remains supported as a still-image format. It is commonly used for high-quality photography, scanning, publishing and archival workflows. It can be lossless and support high bit depth, but files can be large. A multi-page TIFF is treated as a static wallpaper source using its first page; no page animation or slideshow behavior is implied.
