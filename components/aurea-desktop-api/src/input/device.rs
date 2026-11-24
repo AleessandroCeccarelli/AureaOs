@@ -20,6 +20,7 @@ pub enum InputDeviceKind {
     Mouse,
     Touchpad,
     Tablet,
+    TabletPad,
     Touchscreen,
     Composite,
 }
