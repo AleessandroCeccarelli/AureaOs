@@ -20,6 +20,8 @@ use visible_surfaces::visible_surfaces;
 
 use std::sync::Arc;
 
+use error::VulkanSurfaceCompositionError;
+
 use smithay::reexports::ash::vk;
 
 use crate::{
@@ -510,7 +512,7 @@ pub(super) fn render_frame(
     // All sampled texture uploads are complete before the draw submission.
     command_buffer
         .submit_and_wait_with(on_submitted)
-        .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
+        .map_err(VulkanSurfaceCompositionError::from_queue_submit_error)?;
 
     Ok(())
 }
