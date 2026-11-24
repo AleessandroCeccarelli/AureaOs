@@ -6,7 +6,7 @@
 - Version: 1.0
 - Date: 2026-11-24
 - Primary language: English
-- Italian companion: [FORMATS-MULTIMEDIALI.md](../it/FORMATS-MULTIMEDIALI.md)
+- Italian companion: [MEDIA-FORMATS-it.md](MEDIA-FORMATS-it.md)
 - Scope: formats accepted by AureaOS applications and system services. This registry is authoritative; implementation status is tracked separately.
 
 ## 1. Policy
