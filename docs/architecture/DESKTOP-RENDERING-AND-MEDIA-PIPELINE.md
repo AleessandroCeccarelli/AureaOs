@@ -102,6 +102,11 @@ These specifications do not supply a complete desktop shell or native desktop-ic
 - **Aurea Shell:** Dock, launcher, panels, notifications and user-facing controls.
 - **Aurea Compositor:** Wayland surfaces, outputs, pointer routing, hit-test handoff, Vulkan composition and presentation.
 
+
+### Trash service module boundaries
+
+The home Trash implementation keeps filesystem operations in `trash/service.rs`. Calendar conversion for the freedesktop `.trashinfo` deletion date is isolated in `trash/timestamp.rs`; metadata parsing and serialization remain in `trash/metadata.rs`. Public service behavior is covered from `components/aurea-desktop/tests/trash_service.rs`, rather than embedding a large test module inside the service implementation. This keeps the service focused on directory operations, entry lifecycle and state snapshots.
+
 ### Desktop icon asset resolver
 
 A compositor-owned descriptor module now maps the existing desktop model's Trash item to the six approved SVG-derived variants:
