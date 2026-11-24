@@ -3,7 +3,9 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-use crate::{heif, jpeg, raster, DecodeError, DecodeLimits};
+use crate::{jpeg, raster, DecodeError, DecodeLimits};
+#[cfg(feature = "heif")]
+use crate::heif;
 
 /// Encoded still-image format accepted by the media service.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
