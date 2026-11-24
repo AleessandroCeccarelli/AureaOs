@@ -52,12 +52,29 @@ pub struct VulkanWallpaperTexture {
 impl VulkanWallpaperTexture {
     /// Uploads validated pixels and waits for the one-time transfer to complete.
     ///
-    /// Call from a background/resource-preparation path, never from the
-    /// compositor's latency-sensitive render callback.
+    /// Prefer `submit_pixels` when preparing resources for the compositor.
+    /// This blocking convenience method must not run on the render callback.
     pub fn from_pixels(
         device: Arc<VulkanLogicalDevice>,
         pixels: WallpaperPixels,
     ) -> Result<Self, VulkanWallpaperTextureError> {
+        let texture = Self::submit_pixels(device, pixels)?
+            .wait()
+            .map_err(VulkanWallpaperTextureError::Command)?;
+        Arc::try_unwrap(texture).map_err(|_| {
+            VulkanWallpaperTextureError::Command(vk::Result::ERROR_UNKNOWN)
+        })
+    }
+
+    /// Starts a wallpaper upload and returns without waiting for GPU completion.
+    ///
+    /// The returned fence-backed upload retains the staging allocation and
+    /// texture until completion. A resource cache should poll it outside the
+    /// draw submission and only expose the texture after `wait` succeeds.
+    pub(crate) fn submit_pixels(
+        device: Arc<VulkanLogicalDevice>,
+        pixels: WallpaperPixels,
+    ) -> Result<VulkanPendingUpload<Arc<Self>>, VulkanWallpaperTextureError> {
         let width = pixels.width();
         let height = pixels.height();
         let rgba8 = pixels.into_rgba8();
@@ -82,7 +99,7 @@ impl VulkanWallpaperTexture {
         );
         let view = VulkanImageView::color_shared_owned(Arc::clone(&image))
             .map_err(VulkanWallpaperTextureError::ImageView)?;
-        let texture = Self { image, view };
+        let texture = Arc::new(Self { image, view });
 
         let staging = VulkanUploadBatch::new(Arc::clone(&device), expected_len)
             .map_err(VulkanWallpaperTextureError::Upload)?;
@@ -118,8 +135,6 @@ impl VulkanWallpaperTexture {
 
         pending
             .submit()
-            .map_err(VulkanWallpaperTextureError::Command)?
-            .wait()
             .map_err(VulkanWallpaperTextureError::Command)
     }
 
