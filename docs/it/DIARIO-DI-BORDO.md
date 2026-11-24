@@ -944,3 +944,14 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 
 
 - Aggiornati `docs/architecture/AUREA-MEDIA-SERVICE.md` e `docs/development/DEPENDENCY-REGISTER.md` con le versioni effettivamente testate e la distinzione tra prova CI, verifica host e approvazione del decoder.
+
+
+## 24 novembre 2026 — Primo nucleo Aurea Media
+
+- Creato `components/aurea-media` e aggiunto al workspace Rust. Il servizio è indipendente da compositor, Smithay e Vulkan.
+- API pubblica iniziale: `decode`, `ImageFormat`, `DecodeLimits`, `DecodedImage`, `PixelFormat` e `DecodeError`. Per ora il solo formato implementato è JPEG.
+- Limiti predefiniti espliciti: input compresso 64 MiB, dimensione massima per asse 16.384 pixel, 64 milioni di pixel e 256 MiB RGBA8. L'allocazione usa aritmetica controllata e `try_reserve_exact`.
+- Isolato il confine nativo: shim C Aurea compilato contro `turbojpeg.h`, con FFI Rust privata limitata a due funzioni Aurea. Costanti, handle e dichiarazioni TurboJPEG restano in C. Sono attivi `TJFLAG_STOPONWARNING` e `TJFLAG_LIMITSCANS`; CMYK/YCCK vengono rifiutati.
+- Il servizio è sincrono e non crea thread: i consumer dovranno chiamarlo da un worker limitato, mai dal thread di rendering.
+- Aggiornati workspace, lockfile e Rust CI per installare gli header TurboJPEG. La pipeline è stata avviata; compilazione e test Rust sono ancora da verificare.
+- Nessuna integrazione nel compositor ancora: prima si deve ottenere una CI verde e completare i test con JPEG validi, progressivi, grayscale, troncati e malformati. Nessuna ISO generata.
