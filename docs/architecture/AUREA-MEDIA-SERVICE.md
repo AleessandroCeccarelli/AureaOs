@@ -211,7 +211,7 @@ The first native cursor texture no longer uses the synchronous `VulkanShmTexture
 
 ## Desktop wallpaper image-format policy — 2026-11-24
 
-The authoritative and closed format list is maintained in [`MEDIA-FORMATS.md`](MEDIA-FORMATS.md), with its Italian companion at [`../it/FORMATS-MULTIMEDIALI.md`](../it/FORMATS-MULTIMEDIALI.md). Keep implementation notes in this architecture document and product acceptance decisions in the registry.
+The authoritative and closed format list is maintained in [`MEDIA-FORMATS.md`](MEDIA-FORMATS.md), with its Italian companion at [`MEDIA-FORMATS-it.md`](../it/FORMATS-MULTIMEDIALI.md). Keep implementation notes in this architecture document and product acceptance decisions in the registry.
 
 The wallpaper importer is an image feature, not a video player. No video container, video codec, GStreamer or PipeWire dependency is part of this scope.
 
