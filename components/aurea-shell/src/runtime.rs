@@ -147,8 +147,8 @@ impl ShellRuntime {
             DesktopInteraction::ShowContextMenu => {
                 self.desktop.panels.show(DesktopPanel::ContextMenu);
             }
-            DesktopInteraction::DesktopItemSelected { id } => {
-                self.desktop.select_item(id);
+            DesktopInteraction::DesktopItemSelected { ref id } => {
+                self.desktop.select_item(id.clone());
             }
             DesktopInteraction::DesktopSelectionCleared => {
                 self.desktop.clear_item_selection();
