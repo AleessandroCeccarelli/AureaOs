@@ -1627,3 +1627,13 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - When a tablet is explicitly mapped to one monitor, only that monitor's geometry participates in the constraint.
 - Reuses the geometry policy already used for relative pointer motion; touchscreen transforms and generic absolute-pointer events are unchanged.
 - No build, Cargo check, rustfmt or tests were run. Grouped Fedora validation remains pending.
+
+
+### 2026-11-24 — Initial absolute-pointer routing
+
+- Connected PointerMotionAbsolute to the compositor's pointer seat.
+- On a desktop with exactly one enabled output, absolute coordinates are transformed into that output's global logical rectangle, then routed through normal pointer focus, frame notification and redraw scheduling.
+- Multi-output layouts are deliberately rejected until an explicit per-device output assignment exists. The compositor does not guess which monitor owns an absolute device.
+- Touchscreen and tablet-tool events remain on their dedicated paths.
+- This is partial support, not complete multi-monitor absolute-device support.
+- No build, Cargo check, rustfmt or tests were run. Grouped Fedora verification remains pending; no dependency or Cargo manifest changes were made.
