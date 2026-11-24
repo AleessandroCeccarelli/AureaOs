@@ -1133,3 +1133,15 @@ Verify the actual legacy TurboJPEG headers and exported symbols supplied by Debi
 - No tests, build, formatting or CI were run.
 
 - Static follow-up: kept `result()` const-compatible by using pattern matching instead of `PartialEq` comparisons. Commit: `2acb358a`.
+
+
+## 2026-11-24 — Asynchronous native cursor texture upload
+
+- Removed the synchronous first-time upload of the compositor-owned native arrow from the Vulkan compositor.
+- The pipeline cache now starts the upload through `VulkanShmTexture::submit_snapshots` and retains a `VulkanPendingUpload` (staging allocation, command pool, command buffer and fence) until completion.
+- Each frame polls the fence without blocking. The texture becomes available to rendering only after completion; during intermediate frames the cursor is temporarily omitted, avoiding both a blocked frame callback and sampling an incomplete texture.
+- The ready texture retains shared ownership through `Arc`, consistent with the cache resource model.
+- Vulkan errors remain typed and `ERROR_DEVICE_LOST` still reaches the compositor's fatal classification.
+- No dependency added and no Cargo.toml/Cargo.lock changes.
+- Commits: `bb8ae90e`, `fd1f8a80`, `0e35bd1f`.
+- No build, rustfmt, cargo check, tests or CI were run. Verification remains scheduled for the agreed Fedora session.
