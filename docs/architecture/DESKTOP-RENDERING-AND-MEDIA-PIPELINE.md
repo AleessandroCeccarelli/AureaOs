@@ -168,3 +168,10 @@ Repository inspection and the recorded container ABI probe do not prove that the
 ### Native cursor error contract
 
 The native cursor upload lifecycle reports an explicit empty-result error rather than synthesizing a Vulkan driver error. The surface composition layer consumes the extracted `NativeCursor` cache error and retains the underlying SHM texture error classification, including device loss. This keeps upload-contract failures distinct from Vulkan command failures.
+
+
+### Initial Trash state flow
+
+At session startup, the Aurea Desktop composition root reads one snapshot from the home Trash service and passes only the resulting `DesktopTrashState` through `WaylandCompositorFactory` to the compositor’s shared desktop item model. The compositor never scans Trash directories or owns filesystem policy. If the initial service read fails, startup continues and records a warning.
+
+This is an initial snapshot only. Live refresh after file deletion/restoration still requires a session-owned watcher or polling service; the current implementation does not claim automatic updates.
