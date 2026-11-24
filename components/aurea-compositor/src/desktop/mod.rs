@@ -21,7 +21,8 @@ pub use background::DesktopBackground;
 pub use items_snapshot::DesktopItemsSnapshot;
 #[allow(unused_imports)]
 pub(crate) use icon_assets::{
-    DesktopIconAssetDescriptor, DesktopIconRasterSize, DesktopTrashContents, desktop_icon_asset,
+    DesktopIconAssetDescriptor, DesktopIconRasterSize, DesktopIconTextureKey,
+    DesktopTrashContents, desktop_icon_asset,
 };
 #[allow(unused_imports)]
 pub(crate) use item_geometry::{
