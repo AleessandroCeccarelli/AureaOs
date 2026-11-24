@@ -106,7 +106,7 @@ fn compile_shader(source: &Path, destination: &Path, stage: &str) {
         .output()
         .unwrap_or_else(|error| {
             panic!(
-                "Unable to execute glslangValidator ({error}). Install it with: sudo dnf install glslang"
+                "Unable to execute glslangValidator ({error}). Install the shader compiler (Debian: glslang-tools; Fedora: glslang)"
             )
         });
 
