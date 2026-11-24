@@ -95,3 +95,38 @@ mod tests {
         assert!(validate_dimensions(4, 3, DecodeLimits::new(1024, 4, 12, 48)).is_ok());
     }
 }
+
+#[cfg(test)]
+mod native_tests {
+    use super::decode;
+    use crate::{DecodeError, DecodeLimits};
+
+    const DEFAULT_WALLPAPER: &[u8] = include_bytes!(
+        "../../../aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg"
+    );
+
+    #[test]
+    fn decodes_the_committed_wallpaper_to_bounded_rgba8() {
+        let (width, height, pixels) = decode(DEFAULT_WALLPAPER, DecodeLimits::default()).unwrap();
+        assert_eq!((width, height), (3840, 2160));
+        assert_eq!(pixels.len(), 33_177_600);
+        assert!(pixels.chunks_exact(4).all(|pixel| pixel[3] == 255));
+    }
+
+    #[test]
+    fn rejects_truncated_jpeg_data() {
+        assert_eq!(
+            decode(&[0xFF, 0xD8, 0xFF], DecodeLimits::default()).unwrap_err(),
+            DecodeError::InvalidImage
+        );
+    }
+
+    #[test]
+    fn rejects_dimensions_over_configured_limit_before_allocation() {
+        let limits = DecodeLimits::new(64 * 1024 * 1024, 100, 64 * 1024 * 1024, 256 * 1024 * 1024);
+        assert_eq!(
+            decode(DEFAULT_WALLPAPER, limits).unwrap_err(),
+            DecodeError::InvalidDimensions
+        );
+    }
+}
