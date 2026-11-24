@@ -45,9 +45,18 @@ impl CompositorFactory for DesktopCompositorFactory {
         interactions: DesktopInteractionSender,
         touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
+        // Read the initial Trash state in the desktop composition root.
+        // The compositor receives only the semantic value, never filesystem access.
+        let compositor_factory = match crate::trash::initial_visual_state() {
+            Ok(state) => self.compositor.clone().with_trash_state(state),
+            Err(error) => {
+                eprintln!("Aurea Desktop: initial Trash state unavailable: {error}");
+                self.compositor.clone()
+            }
+        };
+
         // Creating the native service also creates and binds the Wayland socket.
-        let compositor = self
-            .compositor
+        let compositor = compositor_factory
             .create(display_color, interactions, touchpad_settings)?;
         let welcome_client = WelcomeClientProcess::spawn(DEFAULT_WAYLAND_DISPLAY_NAME)?;
 
