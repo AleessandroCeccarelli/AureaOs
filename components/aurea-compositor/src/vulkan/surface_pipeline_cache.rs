@@ -206,9 +206,15 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Returns the selected wallpaper only after its upload fence has completed.
-    #[allow(dead_code)] // Consumed by the wallpaper draw pass integration.
-    pub(crate) fn wallpaper_texture(&self) -> Option<&VulkanWallpaperTexture> {
-        self.wallpaper_texture_cache.texture()
+    /// Returns the ready texture only when it belongs to the requested asset.
+    ///
+    /// This prevents a previous wallpaper from being drawn during the interval
+    /// between a desktop selection change and completion of the replacement upload.
+    pub(crate) fn wallpaper_texture_for_asset(
+        &self,
+        asset_id: &'static str,
+    ) -> Option<&VulkanWallpaperTexture> {
+        self.wallpaper_texture_cache.texture_for_asset(asset_id)
     }
 
     #[allow(dead_code)] // Called when the desktop wallpaper selection is cleared.
