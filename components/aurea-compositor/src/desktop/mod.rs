@@ -19,4 +19,7 @@ pub use manager::DesktopManager;
 pub use snapshot::DesktopSnapshot;
 pub use surface::DesktopSurface;
 pub use theme::DesktopTheme;
-pub use wallpaper::{WallpaperAsset, WallpaperDimensions, WallpaperFormat, WallpaperManager, WallpaperSnapshot};
+pub use wallpaper::{
+    WallpaperAsset, WallpaperDimensions, WallpaperFormat, WallpaperManager, WallpaperPixels,
+    WallpaperPixelsError, WallpaperSnapshot,
+};
