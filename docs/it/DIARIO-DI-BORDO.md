@@ -929,3 +929,13 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Aggiunta validazione prima della registrazione dei comandi: payload non vuoto, allineato a quattro byte e massimo 128 byte, oltre a test unitari per il payload wallpaper e le dimensioni non valide.
 - Commit: `7b9b4b37` (API draw pass), `d8a31412` (validazione e test).
 - È ancora infrastruttura: binding e disegno effettivo dello sfondo non sono integrati. I test sono stati scritti ma non eseguiti. Nessun Cargo fmt/check/test/build, CI o ISO eseguito.
+
+
+## 24 novembre 2026 — Prima verifica ABI TurboJPEG su GitHub
+
+- Aggiunto `.github/workflows/turbojpeg-abi.yml`: esecuzione isolata in container Debian 13 Trixie e Fedora, installazione dei pacchetti di sviluppo, compilazione con warning trattati come errori, controllo del runtime linkato e decodifica del wallpaper incluso.
+- La prima esecuzione ha individuato due problemi reali nel controllo: `TJSAMP_UNKNOWN` non è definito nell'header TurboJPEG 2.1.5 di Debian; inoltre il filtro del nome SONAME nel workflow era sovra-escapato e falliva anche quando il collegamento era corretto.
+- Corretto il valore iniziale dell'output subsampling a `-1`, che viene sostituito dalla funzione di lettura header in caso di successo; corretto il filtro SONAME usando una classe di carattere.
+- Debian 13 ha installato effettivamente `libturbojpeg0-dev` e `libturbojpeg0` versione `1:2.1.5-4`. Fedora ha installato `libjpeg-turbo-devel` e `turbojpeg-devel` versione `3.1.4.1-2.fc45`; la compilazione Fedora è riuscita nella prima esecuzione e `ldd` ha mostrato `libturbojpeg.so.0`.
+- La prima esecuzione complessiva è fallita per i due problemi sopra indicati. Le esecuzioni successive sono state avviate dopo le correzioni; risultato finale ancora da acquisire. Nessuna compatibilità ABI è dichiarata finché entrambe le prove non terminano con successo.
+- Nessuna dipendenza Cargo, manifest, lockfile o codice di produzione modificato. Nessuna ISO generata. Il decoder JPEG resta candidato e il crate Aurea Media non viene ancora implementato.
