@@ -73,13 +73,14 @@ This table records architectural choices, not proof that every package is instal
 
 ### JPEG decoding — TurboJPEG / libjpeg-turbo
 
-- **Status:** Candidate; not approved for integration.
+- **Status:** Native library is available on Debian; the currently reviewed Rust binding path is rejected for Debian 13 integration. Direct FFI remains unapproved.
 - **Purpose:** Decode the initial JPEG wallpaper without a general-purpose image stack.
-- **Debian evidence recorded:** Debian 13 provides libturbojpeg0 (runtime) and libturbojpeg0-dev (development files).
-- **Fedora package/version:** Not verified in this register.
-- **Required checks:** Exact Debian package version and TurboJPEG API/ABI; Fedora development package; Rust binding/API generation; linking and runtime packaging; license, maintenance and error handling.
-- **Architecture:** A small Aurea-owned safe adapter; bounded worker thread, never the render loop; strict input dimension, output allocation and memory limits.
-- **Warning:** Do not adopt a Rust binding merely because it builds on Fedora. Bindings targeting TurboJPEG 3 APIs must not be assumed compatible with Debian 13's library before verification.
+- **Debian evidence verified:** Debian 13 Trixie amd64 provides `libturbojpeg0` and `libturbojpeg0-dev`, both version `1:2.1.5-4`. The development package depends on the exact matching runtime package.
+- **Fedora development evidence:** Fedora publishes `libjpeg-turbo-devel` and `turbojpeg-devel`; current package pages list Fedora 43/44/45 package streams with libjpeg-turbo 3.1.x. This version difference is material and must not be hidden by testing only on Fedora.
+- **Rust binding finding:** `turbojpeg-sys` 1.1.1 and 1.2.0 expose TurboJPEG 3.0's `tj3*` API; the high-level `turbojpeg` crate 1.5.1 depends on that binding family. They cannot be assumed to link against Debian Trixie's TurboJPEG 2.1 ABI/API.
+- **Decision:** Do not add `turbojpeg` or `turbojpeg-sys` to AureaOS for the Debian 13 system library path. Reconsider only if a verified TurboJPEG 2.1 binding or a deliberately maintained Aurea-owned FFI adapter is justified and tested against Debian's headers/library.
+- **Alternative candidate:** `zune-jpeg` 0.5.15 is a pure-Rust decoder with one declared normal dependency, `zune-core ^0.5.1`; its manifest declares MSRV 1.75 and `MIT OR Apache-2.0 OR Zlib`. This avoids a native codec ABI dependency, but it remains **Candidate**, not Approved: inspect its complete transitive graph, maintenance/security status, decoder limits and failure behavior before integration.
+- **Architecture:** Whichever decoder is selected must sit behind a small Aurea-owned adapter and run on a bounded worker, never in the render loop. Enforce input byte, dimension, output allocation and total memory limits.
 
 ### SVG rasterization — librsvg
 
