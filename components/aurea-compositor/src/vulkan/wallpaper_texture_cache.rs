@@ -57,6 +57,7 @@ pub(crate) struct VulkanWallpaperTextureCache {
     ready: Option<(WallpaperTextureKey, Arc<VulkanWallpaperTexture>)>,
     pending: Vec<PendingWallpaperUpload>,
     pending_bytes: usize,
+    failed_upload: Option<WallpaperTextureKey>,
     synchronization_error: Option<smithay::reexports::ash::vk::Result>,
 }
 
@@ -68,6 +69,7 @@ impl VulkanWallpaperTextureCache {
             ready: None,
             pending: Vec::new(),
             pending_bytes: 0,
+            failed_upload: None,
             synchronization_error: None,
         }
     }
@@ -83,14 +85,20 @@ impl VulkanWallpaperTextureCache {
     pub(crate) fn prepare(
         &mut self,
         key: WallpaperTextureKey,
-        pixels: WallpaperPixels,
-    ) -> Result<(), VulkanWallpaperTextureCacheError> {
+        pixels: &WallpaperPixels,
+    ) -> Result<bool, VulkanWallpaperTextureCacheError> {
         self.poll()?;
         if self.ready.as_ref().is_some_and(|(ready_key, _)| *ready_key == key)
             || self.pending.iter().any(|pending| pending.key == key)
         {
             self.selected = Some(key);
-            return Ok(());
+            return Ok(true);
+        }
+        if self.failed_upload == Some(key) {
+            return Ok(false);
+        }
+        if self.failed_upload.is_some_and(|failed| failed != key) {
+            self.failed_upload = None;
         }
 
         let byte_len = pixels.byte_len();
@@ -101,8 +109,13 @@ impl VulkanWallpaperTextureCache {
             return Err(VulkanWallpaperTextureCacheError::PendingBudgetExceeded);
         }
 
-        let upload = VulkanWallpaperTexture::submit_pixels(Arc::clone(&self.device), pixels)
-            .map_err(VulkanWallpaperTextureCacheError::Upload)?;
+        let upload = match VulkanWallpaperTexture::submit_pixels(Arc::clone(&self.device), pixels) {
+            Ok(upload) => upload,
+            Err(error) => {
+                self.failed_upload = Some(key);
+                return Err(VulkanWallpaperTextureCacheError::Upload(error));
+            }
+        };
 
         self.selected = Some(key);
         self.ready = None;
@@ -112,7 +125,7 @@ impl VulkanWallpaperTextureCache {
             byte_len,
             upload,
         });
-        Ok(())
+        Ok(true)
     }
 
     /// Polls upload fences without blocking; only completed selected textures become visible.
@@ -172,5 +185,6 @@ impl VulkanWallpaperTextureCache {
     pub(crate) fn clear(&mut self) {
         self.selected = None;
         self.ready = None;
+        self.failed_upload = None;
     }
 }
