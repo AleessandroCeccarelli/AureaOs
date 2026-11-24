@@ -1637,3 +1637,12 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Touchscreen and tablet-tool events remain on their dedicated paths.
 - This is partial support, not complete multi-monitor absolute-device support.
 - No build, Cargo check, rustfmt or tests were run. Grouped Fedora verification remains pending; no dependency or Cargo manifest changes were made.
+
+### 2026-11-24 — Add Debian 13 HEIF/AVIF native dependency gate
+
+- Added a dedicated GitHub Actions job using the Debian Trixie container; the existing Ubuntu workspace build remains independent of libheif.
+- The job installs only the libheif development package and the selected HEVC/AV1 decoder plugins (libheif-plugin-libde265 and libheif-plugin-dav1d), plus pkg-config.
+- The job verifies the discovered libheif version is at least 1.20 and checks that both decoder plugin packages install shared-library files.
+- This is a native package/API-baseline check only. It does not yet compile the Rust wrapper or enable HEIF/AVIF decoding in Aurea Media.
+- No Cargo manifest or lockfile changes; no Fedora build/tests performed.
+- The CI result must be inspected before selecting the wrapper integration and changing the media decoder.
