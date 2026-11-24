@@ -720,3 +720,47 @@ Added `ShellRuntime::set_trash_contents` as the shell-side update point for sema
 3. Compare stable notify releases with a small native inotify adapter, including overflow, watch-limit and reconciliation behavior.
 4. Define stable file identity, metadata provenance, freshness and permission-aware query contracts.
 5. Keep implementation modular and defer expensive extraction until it is justified by user-visible features.
+
+
+## 2026-11-24 — Desktop module audit and File Intelligence follow-up
+
+### Scope and repository references
+
+- Active branch: `main`.
+- File Intelligence architecture: `docs/architecture/FILE-INTELLIGENCE-AND-METADATA.md`.
+- Italian counterpart: `docs/it/ARCHITETTURA-INTELLIGENZA-FILE-METADATI.md`.
+
+### Findings from source inspection
+
+- `aurea-desktop-api::desktop` already provides technology-independent contracts: DesktopItem, DesktopItemId, DesktopItemKind, DesktopPosition, DesktopPreferences, DesktopManager, visual grouping and hit-testing.
+- The Desktop model is currently in-memory. Position persistence and a service that discovers and refreshes desktop file entries are not implemented yet.
+- `DesktopItemKind` distinguishes File, Folder, Application and Trash; file/folder references are URI strings. `file_extension()` derives an extension from a path, but this is not MIME identification and must not become the authoritative file-type source.
+- `DesktopItemsSnapshot` copies owned entries into the compositor. The native Vulkan path does not yet draw desktop icons.
+- `components/aurea-desktop/src/trash` implements a FreeDesktop-compatible home Trash service, but it is not yet connected to the composition root, a filesystem watcher or confirmation UI.
+- The current workspace has the `aurea-desktop` composition-root/services crate, but no independent Fides or Quaero application crates yet.
+- No general file catalog, global search engine or metadata/thumbnail extraction service was found in the inspected paths. Those responsibilities must not be duplicated inside existing Desktop modules.
+
+### Decisions and direction
+
+- Aurea File Intelligence owns the shared local catalog; Fides owns file navigation/operations, Quaero owns search experience, Desktop owns desktop arrangement, Aurea Media owns bounded extraction, and the compositor owns rendering/input only.
+- No per-directory hidden metadata file in the style of Finder's `.DS_Store` as AureaOS's canonical format.
+- Keep filesystem facts, format-native metadata, extracted metadata, user-authored metadata, presentation state and thumbnail cache separate.
+- SQLite is the leading initial catalog candidate, not an approved dependency. Verify FTS5, Rust binding, MSRV, Debian/Fedora packaging, WAL and recovery behavior first.
+- Filesystem notifications are low-latency hints; scanning and reconciliation remain authoritative.
+- No permanent daemon, privileged fanotify, full-disk indexing, vector database or AI runtime in the first phase.
+- Every new Markdown architecture document must be published in English and in its corresponding Italian version under `docs/it/`.
+
+### Verification and limitations
+
+- Inspected Desktop API contracts, DesktopManager, DesktopItemsSnapshot, Trash service, composition root and related architecture documents.
+- No Rust source files were modified.
+- No Cargo command, formatting, build, test or CI workflow was run.
+- This is a static repository audit; it does not establish runtime behavior or Fedora performance.
+
+### Next actions
+
+1. Verify SQLite/FTS5 availability and Debian 13/Fedora packages.
+2. Compare notify with native inotify, including overflow, watch limits, network filesystems and reconciliation.
+3. Define stable identity, metadata provenance, freshness and permission contracts.
+4. Design public contracts without adding dependencies or duplicating existing Desktop API.
+5. Continue with small modules and bilingual documentation (English/Italian).
