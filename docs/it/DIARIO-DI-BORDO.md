@@ -1073,3 +1073,15 @@ Verificare gli header e i simboli TurboJPEG legacy effettivamente forniti dai pa
 - Nessun test/build/format/CI eseguito.
 
 - Follow-up statico: mantenuta la funzione `result()` `const` usando pattern matching invece di confronti tramite `PartialEq`, così da non introdurre chiamate non-const nel percorso di compilazione. Commit: `2acb358a`.
+
+
+## 24 novembre 2026 — Upload asincrono della texture del cursore
+
+- Eliminato il caricamento sincrono iniziale della freccia nativa nel compositor Vulkan.
+- La cache pipeline ora avvia l'upload tramite `VulkanShmTexture::submit_snapshots` e conserva un `VulkanPendingUpload` con staging, command pool, command buffer e fence fino al completamento.
+- Ogni frame controlla la fence in modalità non bloccante. La texture viene pubblicata per il rendering soltanto dopo il completamento; durante i frame intermedi il cursore viene temporaneamente omesso, senza bloccare il frame callback e senza campionare una texture incompleta.
+- La texture pronta mantiene ownership condivisa tramite `Arc`, coerente con il modello di risorse della cache.
+- Gli errori Vulkan restano tipizzati e `ERROR_DEVICE_LOST` continua a raggiungere la classificazione fatale del compositor.
+- Nessuna dipendenza aggiunta e nessuna modifica a Cargo.toml/Cargo.lock.
+- Commit: `bb8ae90e`, `fd1f8a80`, `0e35bd1f`.
+- Nessuna build, rustfmt, cargo check, test o CI eseguiti. Verifica rimandata al blocco concordato su Fedora.
