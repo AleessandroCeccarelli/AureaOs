@@ -140,6 +140,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Submits the selected wallpaper pixels without waiting for GPU completion.
+    #[allow(dead_code)] // Wired when the static-image decoder produces validated pixels.
     pub(crate) fn prepare_wallpaper_texture(
         &mut self,
         key: WallpaperTextureKey,
