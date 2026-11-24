@@ -5,7 +5,7 @@
 
 //! Direct-touch display device detection and monitor assignment.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use aurea_desktop_api::input::InputDeviceId;
 use smithay::reexports::input::{Device, DeviceCapability};
@@ -20,6 +20,7 @@ use crate::output::OutputId;
 #[derive(Debug, Clone, Default)]
 pub struct TouchscreenOutputMap {
     assignments: HashMap<InputDeviceId, OutputId>,
+    unavailable_devices: HashSet<InputDeviceId>,
 }
 
 impl TouchscreenOutputMap {
@@ -30,22 +31,29 @@ impl TouchscreenOutputMap {
 
     /// Assigns a touchscreen to a specific output.
     pub fn assign(&mut self, device: InputDeviceId, output: OutputId) {
+        self.unavailable_devices.remove(&device);
         self.assignments.insert(device, output);
     }
 
     /// Removes an explicit assignment for a touchscreen.
     pub fn unassign(&mut self, device: InputDeviceId) -> bool {
+        self.unavailable_devices.remove(&device);
         self.assignments.remove(&device).is_some()
     }
 
     /// Removes assignments that point to a disconnected display.
     pub fn remove_output(&mut self, output: OutputId) {
-        self.assignments.retain(|_, assigned| *assigned != output);
+        for (device, assigned) in &self.assignments {
+            if *assigned == output {
+                self.unavailable_devices.insert(*device);
+            }
+        }
     }
 
     /// Removes every assignment belonging to a disconnected device.
     pub fn remove_device(&mut self, device: InputDeviceId) {
         self.assignments.remove(&device);
+        self.unavailable_devices.remove(&device);
     }
 
     /// Resolves an assignment against the currently enabled outputs.
@@ -58,6 +66,9 @@ impl TouchscreenOutputMap {
         enabled_outputs: impl IntoIterator<Item = OutputId>,
     ) -> Option<OutputId> {
         let outputs = enabled_outputs.into_iter().collect::<Vec<_>>();
+        if self.unavailable_devices.contains(&device) {
+            return None;
+        }
         if let Some(assigned) = self.assignments.get(&device) {
             return outputs.contains(assigned).then_some(*assigned);
         }
@@ -110,12 +121,12 @@ mod tests {
     }
 
     #[test]
-    fn removing_device_or_output_clears_assignments() {
+    fn removing_output_blocks_automatic_rerouting_until_reassigned() {
         let mut mapping = TouchscreenOutputMap::new();
         mapping.assign(DEVICE, SECOND_OUTPUT);
         mapping.remove_output(SECOND_OUTPUT);
 
-        assert_eq!(mapping.resolve(DEVICE, [FIRST_OUTPUT, SECOND_OUTPUT]), None);
+        assert_eq!(mapping.resolve(DEVICE, [FIRST_OUTPUT]), None);
 
         mapping.assign(DEVICE, FIRST_OUTPUT);
         mapping.remove_device(DEVICE);
