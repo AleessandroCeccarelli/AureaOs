@@ -1816,3 +1816,14 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Installati `PopupPointerGrab` e `PopupKeyboardGrab` sullo stesso serial. La gestione standard Smithay copre focus nel popup tree, dismiss fuori dal grab e ripristino del focus radice.
 - Modifiche sorgente su `main`; nessuna build, formattazione o test anticipato. Verifica raggruppata su Fedora ancora da eseguire.
 - Restano aperti: vincoli geometrici rispetto all'output, dismiss esplicito da tastiera e verifica runtime dei menu annidati.
+
+### 25 novembre 2026 — Posizionamento popup vincolato ai monitor
+
+- Creato `compositor/popup_placement.rs` come modulo autonomo per la geometria dei popup.
+- Il posizionamento risolve il toplevel radice e il parent reale del popup, inclusi i parent che sono a loro volta popup annidati.
+- Il monitor di riferimento viene scelto usando il punto di ancoraggio XDG in coordinate globali; se il punto cade nello spazio tra due monitor, si ripiega sul monitor che contiene il centro della finestra genitrice. Nessun fallback cieco al primo output.
+- I bounds dell'output sono convertiti nel sistema locale della window geometry del parent e passati a `PositionerState::get_unconstrained_geometry` di Smithay 0.7, che applica flip, slide e resize secondo i flag richiesti dal client.
+- La logica viene usata sia nel configure iniziale sia nelle richieste `reposition`. Il token viene confermato dopo l'aggiornamento della geometria.
+- Aggiunti test sorgente per conversione coordinate e overflow; non eseguiti.
+- Restano da implementare la riconfigurazione reattiva quando il parent si sposta o cambia monitor e la validazione runtime con più monitor, scale differenti e rotazioni.
+- Nessuna build, `cargo fmt` o test eseguiti: verifica raggruppata su Fedora.
