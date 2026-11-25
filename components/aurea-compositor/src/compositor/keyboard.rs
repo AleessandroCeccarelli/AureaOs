@@ -75,6 +75,17 @@ impl AureaCompositor {
                 }
 
                 if state == KeyState::Pressed
+                    && key.modified_sym().raw() == 0xff1b
+                    && compositor.desktop_interactions.context_menu_is_open()
+                {
+                    let _ = compositor.desktop_interactions.send(
+                        aurea_desktop_api::desktop_interaction::DesktopInteraction::DismissContextMenu,
+                    );
+                    compositor.consumed_shortcut_keys.insert(keycode);
+                    return FilterResult::Intercept(());
+                }
+
+                if state == KeyState::Pressed
                     && compositor.consumed_shortcut_keys.contains(&keycode)
                 {
                     // Ignore key-repeat events for a shortcut already consumed.
