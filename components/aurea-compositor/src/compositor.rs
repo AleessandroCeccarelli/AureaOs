@@ -254,6 +254,14 @@ impl AureaCompositor {
         self.pointer_manager.devices()
     }
 
+    /// Registers a discovered pointing device and reconciles its per-device preferences.
+    pub fn register_pointing_device(
+        &mut self,
+        descriptor: aurea_desktop_api::input::InputDeviceDescriptor,
+    ) -> bool {
+        self.pointer_manager.connect(descriptor)
+    }
+
     /// Initializes the Wayland touch capability when a touchscreen is present.
     pub fn sync_touchscreen_capability(&mut self) {
         let connected = self
