@@ -1694,3 +1694,13 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Added focused profile tests for upward direction and minimum distance. Existing two-finger scroll, natural-scrolling preference and Wayland pinch/swipe forwarding remain the basis of the touchpad experience.
 - Recorded the macOS-inspired behavior as a design direction, not a claim of complete macOS parity. Downward App Exposé, Launchpad-style gestures and user-facing gesture customization remain future work.
 - No build, Cargo check, rustfmt or tests were run; all changes are queued for grouped validation.
+
+
+### 2026-11-25 — Add keyboard navigation fallback for touchpad gestures
+
+- Extended the existing global shortcut resolver so a mouse-and-keyboard setup can use the same desktop navigation actions as the touchpad.
+- Default bindings: `Super + Ctrl + Left/Right` for previous/next virtual workspace, `Super + Ctrl + Up` for Overview and `Super + Ctrl + Down` for App Exposé.
+- Workspace changes continue through the compositor's workspace-switch operation; Overview and App Exposé use the existing compositor-to-shell interaction channel.
+- Expanded shortcut resolver unit coverage for all four directions. The matching key press/repeat/release interception remains handled by the existing keyboard event filter.
+- Updated the input coverage audit. The shell panel state is wired, but finished visual Overview/App Exposé surfaces remain separate work.
+- No build, Cargo check, rustfmt or tests were run. Grouped validation remains pending.
