@@ -38,7 +38,7 @@ impl PointerManager {
     }
 
     /// Registers or refreshes a discovered pointing device.
-    pub fn connect(&mut self, descriptor: InputDeviceDescriptor) -> bool {
+    pub(crate) fn connect(&mut self, descriptor: InputDeviceDescriptor) -> bool {
         let id = descriptor.id;
         let kind = descriptor.kind;
         if !self.devices.connect(descriptor) {
@@ -49,7 +49,10 @@ impl PointerManager {
     }
 
     /// Removes a device from the inventory.
-    pub fn disconnect(&self, device: InputDeviceId) -> bool {
+    /// Removes a device after the compositor has synthesized protocol releases.
+    pub(crate) fn disconnect(&mut self, device: InputDeviceId) -> bool {
+        self.settings.remove(device);
+        self.pressed_buttons.remove(&device);
         self.devices.disconnect(device)
     }
 
