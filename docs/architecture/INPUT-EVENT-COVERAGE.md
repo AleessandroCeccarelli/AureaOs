@@ -144,3 +144,12 @@ No build, Cargo check, rustfmt, test execution or hardware validation was run. G
 - Device IDs are deterministic hashes of the current kernel input sysname. They are session/runtime identifiers, not persistent physical-device identities: event-node numbering may change across reboot or reconnect. Per-device overrides are runtime state and must not be treated as durable hardware profiles.
 - Focused source tests cover deterministic ID derivation for equal sysnames and distinct IDs for the current test sysnames, plus PointerManager button/preference isolation and cleanup. Hash collisions remain theoretically possible, as with any 64-bit hash; no persistent identity guarantee is made.
 - No build, Cargo check, rustfmt, test execution or hardware hot-unplug/reconnect validation was run. Grouped validation remains pending.
+
+
+## Pointing-device reclassification and lifecycle ownership — 2026-11-25
+
+- Discovery now registers devices through the compositor's `PointerManager` boundary; the raw registry mutation methods are crate-private so server dispatch cannot bypass per-device preference reconciliation.
+- When an existing sysname is re-announced with a different device kind, `PointerManager` reconciles overrides: mouse pointer preferences may remain valid when a touchpad becomes a mouse, touchpad-only preferences and apply reports are cleared, and pointer preferences are cleared when the device is no longer a mouse/touchpad.
+- A unified compositor disconnect method first clears compositor/protocol state (including pending button releases and active contacts/gestures), then the manager removes preferences, button bookkeeping and the inventory entry. The server subsequently drops cached touchpad handles/reports and reconciles the seat touch capability.
+- Added focused source tests for preference reconciliation, stale touchpad report removal and manager disconnect cleanup. These tests are not yet compiled or executed.
+- No build, Cargo check, rustfmt, test execution or hardware hotplug validation was run. Grouped validation remains pending.
