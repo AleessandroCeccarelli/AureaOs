@@ -114,6 +114,27 @@ fn stable_hardware_identity(device: &Device) -> Option<String> {
         hash.iter().map(|byte| format!("{byte:02x}")).collect::<String>()))
 }
 
+
+/// Hashes stable hardware metadata and the physical sysfs path. The kernel
+/// event number is deliberately excluded so profiles survive reboot/hotplug.
+fn stable_hardware_identity_from_parts(
+    vendor: u32,
+    product: u32,
+    name: &str,
+    physical_path: &[u8],
+) -> String {
+    let mut digest = Sha256::new();
+    digest.update(vendor.to_le_bytes());
+    digest.update(product.to_le_bytes());
+    digest.update(name.as_bytes());
+    digest.update(physical_path);
+    let hash = digest.finalize();
+    format!(
+        "libinput:{vendor:04x}:{product:04x}:{}",
+        hash.iter().map(|byte| format!("{byte:02x}")).collect::<String>()
+    )
+}
+
 /// Hashes the current kernel input sysname into a deterministic session ID.
 ///
 /// `/dev/input/eventN` numbering may change across boots or reconnects, so this
@@ -127,7 +148,7 @@ fn stable_device_id(value: &str) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use super::{has_pointer_side_buttons, stable_device_id};
+    use super::{has_pointer_side_buttons, stable_device_id, stable_hardware_identity_from_parts};
 
     #[test]
     fn recognizes_each_standard_auxiliary_or_navigation_button() {
@@ -139,6 +160,31 @@ mod tests {
     #[test]
     fn does_not_report_side_buttons_when_none_are_present() {
         assert!(!has_pointer_side_buttons(|_| false));
+    }
+
+    #[test]
+    fn hardware_identity_ignores_event_number_but_tracks_physical_path() {
+        let first = stable_hardware_identity_from_parts(
+            0x06cb,
+            0x00f9,
+            "Synaptics Touchpad",
+            b"/sys/devices/platform/i2c-ELAN/input",
+        );
+        let reconnected = stable_hardware_identity_from_parts(
+            0x06cb,
+            0x00f9,
+            "Synaptics Touchpad",
+            b"/sys/devices/platform/i2c-ELAN/input",
+        );
+        let other_port = stable_hardware_identity_from_parts(
+            0x06cb,
+            0x00f9,
+            "Synaptics Touchpad",
+            b"/sys/devices/platform/i2c-ELAN/input-other",
+        );
+        assert_eq!(first, reconnected);
+        assert_ne!(first, other_port);
+        assert!(!first.contains("event"));
     }
 
     #[test]
