@@ -126,6 +126,8 @@ pub struct AureaCompositor {
     desktop_interactions: DesktopInteractionSender,
     desktop_selection: aurea_desktop_api::desktop_interaction::DesktopSelectionController,
     desktop_click_tracker: DesktopClickTracker,
+    /// Pointer buttons consumed by the compositor-owned desktop context menu.
+    context_menu_consumed_buttons: HashSet<u32>,
     pointer_shake: PointerShakeDetector,
     cursor_locate_animation: CursorLocateAnimation,
 }
@@ -199,6 +201,7 @@ impl AureaCompositor {
             desktop_selection: desktop_interactions.selection_controller(),
             desktop_interactions,
             desktop_click_tracker: DesktopClickTracker::default(),
+            context_menu_consumed_buttons: HashSet::new(),
             pointer_shake: PointerShakeDetector::default(),
             cursor_locate_animation: CursorLocateAnimation::default(),
         }
