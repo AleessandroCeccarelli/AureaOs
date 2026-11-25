@@ -742,6 +742,8 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 
 **Esito fase Shell/desktop:** i modelli Shell, il lifecycle del compositor, il rendering delle superfici Wayland, il focus/raise al click e una parte della gestione workspace sono presenti. Il prodotto desktop visibile resta però incompleto: la factory avvia Welcome, non una shell nativa completa; popup XDG sono ignorati; icone e attivazione desktop non arrivano a un servizio applicazioni; le principali operazioni di window management e le superfici Dock/Launcher/pannelli devono ancora essere integrate. Nessuna modifica al codice, build, rustfmt o test eseguiti in questa fase.
 
+| AUD-043 | Alta | Popup XDG tracciati ma non ancora renderizzati/interattivi | Integrazione parziale | Aggiungere placement vincolato all'output, grab coordinati, scena e hit testing |
+
 ## 23. Avanzamento — primo lifecycle XDG popup (25 novembre 2026)
 
 ### 23.1 Modifica applicata
@@ -765,3 +767,11 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 3. Includere popup e relativi surface tree nella scena, nell'ordine corretto sopra il parent, con coordinate globali logiche.
 4. Includere popup nell'hit testing e nel focus pointer, rispettando i grab e la chiusura protocol-level.
 5. Solo dopo questi passaggi dichiarare completo il supporto popup XDG.
+
+## 24. Avanzamento — registry dei popup XDG (25 novembre 2026)
+
+- Aggiunto `smithay::desktop::PopupManager` allo stato del compositor.
+- `new_popup` registra il popup come `PopupKind::Xdg`; il commit delle superfici aggiorna il tree parent/child e ripulisce le risorse non più vive.
+- La gestione usa l'API di Smithay 0.7 e non introduce dipendenze aggiuntive.
+- Questo passaggio non abilita ancora grab, rendering, hit testing o constraint rispetto all'output. La registrazione del tree è prerequisito, non completamento del menu.
+- Nessuna build, rustfmt, cargo check o test eseguiti.
