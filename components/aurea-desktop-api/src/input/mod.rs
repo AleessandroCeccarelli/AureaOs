@@ -23,7 +23,10 @@ pub use pointer::{
     PointerAccelerationProfile, PointerButton, PointerSettings, PointerSettingsError,
     PointerSettingsProvider,
 };
-pub use touchpad::{TouchpadApplyReport, TouchpadClickMethod, TouchpadSettingStatus, TouchpadSettings};
+pub use touchpad::{
+    TouchpadApplyReport, TouchpadClickMethod, TouchpadSendEventsMode, TouchpadSettingStatus,
+    TouchpadSettings, TouchpadTapButtonMap,
+};
 pub use touchpad_controller::{
     TouchpadSettingsCommand, TouchpadSettingsController, touchpad_settings_channel,
 };
