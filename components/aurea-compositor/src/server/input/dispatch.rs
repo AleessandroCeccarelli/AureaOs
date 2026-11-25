@@ -80,8 +80,7 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 );
                 state
                     .compositor
-                    .pointing_devices()
-                    .connect(descriptor.clone());
+                    .register_pointing_device(descriptor.clone());
                 if descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchpad {
                     state.touchpad_devices.insert(device_id, device.clone());
                 } else {
