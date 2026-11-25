@@ -29,30 +29,28 @@ fn wayland_time(microseconds: u64) -> u32 {
 impl AureaCompositor {
     /// Drops the advertised tablet when its physical libinput device disappears.
     pub fn remove_tablet_device(&mut self, device: &smithay::reexports::input::Device) {
-        let tablet_seat = self.seat.tablet_seat();
-        tablet_seat.remove_tablet(&TabletDescriptor::from(device));
         let device_id = id_for(device);
-        let removed_tools = self
-            .tablet_tool_owners
-            .remove(&device_id)
-            .unwrap_or_default();
+        let tablet_seat = self.seat.tablet_seat();
 
-        // A uniquely identified pen can be used with more than one tablet.
-        // Keep its Wayland tool object until its last associated tablet is gone.
-        for tool in removed_tools {
-            let still_owned = self
-                .tablet_tool_owners
-                .values()
-                .any(|tools| tools.contains(&tool));
-            if !still_owned {
-                tablet_seat.remove_tool(&tool);
+        // End proximity before removing the tablet/tool resources. Smithay's
+        // tool handle synthesizes releases for a held pen button and tip.
+        for removed in self.tablet_tools.remove_device(device_id) {
+            if let Some(time) = removed.active_time {
+                if let Some(tool) = tablet_seat.get_tool(&removed.descriptor) {
+                    tool.proximity_out(time);
+                }
+            }
+            if !removed.still_owned {
+                tablet_seat.remove_tool(&removed.descriptor);
             }
         }
 
+        tablet_seat.remove_tablet(&TabletDescriptor::from(device));
         if tablet_seat.count_tablets() == 0 {
             tablet_seat.clear_tools();
-            self.tablet_tool_owners.clear();
+            self.tablet_tools.clear();
         }
+        self.request_all_output_frames();
     }
 
     fn tablet_area(
@@ -217,27 +215,53 @@ impl AureaCompositor {
     {
         let tool_descriptor = event.tool();
         let device_id = id_for(&event.device());
-        self.tablet_tool_owners
-            .entry(device_id)
-            .or_default()
-            .insert(tool_descriptor.clone());
-        let tablet_descriptor = TabletDescriptor::from(&event.device());
-        let tablet = self.ensure_tablet(&tablet_descriptor);
-        let tool = self.ensure_tablet_tool(&tool_descriptor);
         let time = wayland_time(event.time());
 
         match event.state() {
             smithay::backend::input::ProximityState::In => {
+                self.tablet_tools.observe(device_id, tool_descriptor.clone());
                 let Some(location) = self.tablet_location(&event) else {
                     return;
                 };
-                Self::apply_tablet_axes(&tool, &event);
-                if let Some(focus) = self.tablet_focus(location) {
-                    tool.proximity_in(location, focus, &tablet, SERIAL_COUNTER.next_serial(), time);
+                let tablet_descriptor = TabletDescriptor::from(&event.device());
+                let tablet = self.ensure_tablet(&tablet_descriptor);
+                let tool = self.ensure_tablet_tool(&tool_descriptor);
+
+                // A uniquely identified pen may move between tablets. Close
+                // its previous source before activating the new physical one.
+                if let Some((previous_device, previous_time)) = self
+                    .tablet_tools
+                    .activate(device_id, tool_descriptor.clone(), time)
+                {
+                    if let Some(previous_tool) =
+                        self.seat.tablet_seat().get_tool(&tool_descriptor)
+                    {
+                        previous_tool.proximity_out(previous_time);
+                    }
+                    tracing::debug!(
+                        previous_device_id = previous_device.0,
+                        device_id = device_id.0,
+                        "Tablet tool changed physical source"
+                    );
                 }
+
+                Self::apply_tablet_axes(&tool, &event);
+                tool.proximity_in(
+                    location,
+                    self.tablet_focus(location),
+                    &tablet,
+                    SERIAL_COUNTER.next_serial(),
+                    time,
+                );
             }
             smithay::backend::input::ProximityState::Out => {
-                tool.proximity_out(time);
+                if !self.tablet_tools.is_active_on(device_id, &tool_descriptor) {
+                    return;
+                }
+                if let Some(tool) = self.seat.tablet_seat().get_tool(&tool_descriptor) {
+                    tool.proximity_out(time);
+                }
+                self.tablet_tools.deactivate(device_id, &tool_descriptor);
             }
         }
         self.request_all_output_frames();
@@ -248,14 +272,21 @@ impl AureaCompositor {
         E: TabletToolAxisEvent<LibinputInputBackend>,
     {
         let tool_descriptor = event.tool();
-        let tablet_descriptor = TabletDescriptor::from(&event.device());
-        let tablet = self.ensure_tablet(&tablet_descriptor);
+        let device_id = id_for(&event.device());
+        if !self.tablet_tools.is_active_on(device_id, &tool_descriptor) {
+            return;
+        }
         let Some(location) = self.tablet_location(&event) else {
+            return;
+        };
+        let tablet_descriptor = TabletDescriptor::from(&event.device());
+        let Some(tablet) = self.seat.tablet_seat().get_tablet(&tablet_descriptor) else {
             return;
         };
         let Some(tool) = self.seat.tablet_seat().get_tool(&tool_descriptor) else {
             return;
         };
+        let time = wayland_time(event.time());
 
         Self::apply_tablet_axes(&tool, &event);
         tool.motion(
@@ -263,8 +294,9 @@ impl AureaCompositor {
             self.tablet_focus(location),
             &tablet,
             SERIAL_COUNTER.next_serial(),
-            wayland_time(event.time()),
+            time,
         );
+        self.tablet_tools.update_time(device_id, &tool_descriptor, time);
         self.request_all_output_frames();
     }
 
@@ -273,6 +305,10 @@ impl AureaCompositor {
         E: TabletToolTipEvent<LibinputInputBackend>,
     {
         let descriptor = event.tool();
+        let device_id = id_for(&event.device());
+        if !self.tablet_tools.is_active_on(device_id, &descriptor) {
+            return;
+        }
         let Some(tool) = self.seat.tablet_seat().get_tool(&descriptor) else {
             return;
         };
@@ -285,6 +321,7 @@ impl AureaCompositor {
             }
             smithay::backend::input::TabletToolTipState::Up => tool.tip_up(time),
         }
+        self.tablet_tools.update_time(device_id, &descriptor, time);
         self.request_all_output_frames();
     }
 
@@ -293,16 +330,22 @@ impl AureaCompositor {
         E: TabletToolButtonEvent<LibinputInputBackend>,
     {
         let descriptor = event.tool();
+        let device_id = id_for(&event.device());
+        if !self.tablet_tools.is_active_on(device_id, &descriptor) {
+            return;
+        }
         let Some(tool) = self.seat.tablet_seat().get_tool(&descriptor) else {
             return;
         };
+        let time = wayland_time(event.time());
 
         tool.button(
             event.button(),
             event.button_state(),
             SERIAL_COUNTER.next_serial(),
-            wayland_time(event.time()),
+            time,
         );
+        self.tablet_tools.update_time(device_id, &descriptor, time);
         self.request_all_output_frames();
     }
 }
