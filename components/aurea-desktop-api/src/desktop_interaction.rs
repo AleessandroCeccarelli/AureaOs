@@ -130,6 +130,7 @@ pub fn desktop_interaction_channel() -> (DesktopInteractionSender, DesktopIntera
         DesktopInteractionSender {
             sender,
             selection: selection.clone(),
+            context_menu_open: context_menu_open.clone(),
         },
         DesktopInteractionReceiver { receiver, selection },
     )
