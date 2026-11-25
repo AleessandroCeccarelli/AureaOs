@@ -264,3 +264,27 @@ Smithay 0.7's tablet abstraction does not implement tablet-pad input. The
 tablet-tool path supports pen/eraser buttons, but pad buttons, rings and strips
 are not yet routed. They must remain reported as unsupported until a backend
 and protocol implementation is added.
+
+
+## Mouse baseline and session lifecycle
+
+The native libinput backend is registered in the Calloop event loop, and the
+Wayland seat pointer is initialized during compositor startup. A discovered
+mouse is registered in the shared pointing-device inventory before its events
+are accepted. Relative motion is applied in global logical coordinates and
+constrained to enabled outputs; button events are delivered through the shared
+seat pointer, and vertical/horizontal axis data (including high-resolution
+v120 values and source/direction metadata) is forwarded as one scroll frame.
+The primary button also performs click-to-focus/raise on the surface beneath
+the pointer.
+
+Physical button holds are aggregated across connected mice and touchpads. On
+device removal, only buttons no remaining device holds are released. On native
+session pause (for example, a VT switch), AureaOS now releases all remaining
+logical pointer buttons while the session is still active, preventing stuck
+buttons when libinput cannot report the physical release.
+
+This describes implemented source paths, not proof of hardware compatibility.
+Build/test validation and physical mouse checks (movement, left/right/middle
+buttons, wheel, horizontal wheel where present, unplug/reconnect and VT
+switching) remain pending.
