@@ -825,3 +825,10 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - La Shell chiude esclusivamente `ContextMenu`; la richiesta di chiusura non elimina Overview o App Exposé.
 - Aggiunti test sorgente per stato condiviso, chiusura selettiva e propagazione Shell. Non eseguiti.
 - Limite ancora presente: non esiste una superficie grafica del menu né hit-testing delle sue voci; finché non esiste il renderer nativo dei pannelli, il menu è solo stato semantico. Nessuna build, fmt, check o test eseguiti.
+
+### Desktop context-menu geometry contract — 25 novembre 2026
+
+- Aggiunto in `aurea-desktop-api` il modello immutabile `DesktopContextMenuLayout`, con quattro comandi semantici iniziali: crea cartella, cambia sfondo, impostazioni schermo e personalizzazione.
+- La geometria è espressa in coordinate logiche, dimensionata a 248 × 160 unità, con righe da 36 e padding verticale da 8. Il posizionamento riusa `DesktopPanelPlacement` per vincolare il menu all'output che contiene il puntatore.
+- `command_at` distingue le righe attive dal padding; `contains` identifica l'intero pannello. Aggiunti test sorgente per ordine comandi, bordi output, padding e output troppo piccoli.
+- Il contratto è preparatorio: non è ancora collegato allo stato condiviso del compositor, al renderer Vulkan o all'esecuzione dei comandi. Nessuna build, fmt, check o test eseguiti.
