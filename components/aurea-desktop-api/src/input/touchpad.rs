@@ -96,7 +96,7 @@ impl TouchpadSettings {
             tap_and_drag,
             edge_scrolling: false,
             tap_drag_lock: false,
-            click_method: TouchpadClickMethod::Clickfinger,
+            click_method: TouchpadClickMethod::DeviceDefault,
             tap_button_map: TouchpadTapButtonMap::LeftRightMiddle,
             left_handed: false,
             middle_button_emulation: false,
