@@ -157,6 +157,7 @@ mod tests {
             name: format!("Pointing device {id}"),
             vendor_id: None,
             product_id: None,
+            persistent_id: None,
             capabilities: InputDeviceCapabilities::default(),
         }
     }
