@@ -12,3 +12,4 @@ description = "Shared contracts between AureaOS desktop components"
 license = "GPL-3.0-or-later"
 
 [dependencies]
+serde = { version = "1", features = ["derive"] }
