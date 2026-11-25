@@ -86,12 +86,14 @@ impl DesktopInteractionSender {
             DesktopInteraction::DesktopSelectionCleared => Some(None),
             _ => None,
         };
-        match &interaction {
-            DesktopInteraction::ShowContextMenu { .. } => self.context_menu_open.store(true, std::sync::atomic::Ordering::Release),
-            DesktopInteraction::DismissContextMenu => self.context_menu_open.store(false, std::sync::atomic::Ordering::Release),
-            _ => {}
+        let result = self.sender.send(interaction.clone());
+        if result.is_ok() {
+            match interaction {
+                DesktopInteraction::ShowContextMenu { .. } => self.context_menu_open.store(true, std::sync::atomic::Ordering::Release),
+                DesktopInteraction::DismissContextMenu => self.context_menu_open.store(false, std::sync::atomic::Ordering::Release),
+                _ => {}
+            }
         }
-        let result = self.sender.send(interaction);
         if result.is_ok() {
             if let Some(selection) = selection {
                 self.selection.set_selected_item(selection);
@@ -105,7 +107,6 @@ impl DesktopInteractionSender {
 pub struct DesktopInteractionReceiver {
     receiver: Receiver<DesktopInteraction>,
     selection: DesktopSelectionController,
-    context_menu_open: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl DesktopInteractionReceiver {
