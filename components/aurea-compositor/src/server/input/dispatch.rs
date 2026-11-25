@@ -85,6 +85,21 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 state
                     .compositor
                     .register_pointing_device(descriptor.clone());
+
+                // Apply the effective acceleration profile as soon as the
+                // physical pointer is discovered, before its first motion.
+                // The motion path also refreshes it, so settings changed at
+                // runtime continue to take effect without retaining mouse
+                // handles in the compositor state.
+                if matches!(
+                    descriptor.kind,
+                    aurea_desktop_api::input::InputDeviceKind::Mouse
+                        | aurea_desktop_api::input::InputDeviceKind::Touchpad
+                ) {
+                    let settings = state.compositor.pointer_settings_for(device_id);
+                    crate::input::pointer_acceleration::apply(&mut device, settings);
+                }
+
                 if descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchpad {
                     state.touchpad_devices.insert(device_id, device.clone());
                 } else {
