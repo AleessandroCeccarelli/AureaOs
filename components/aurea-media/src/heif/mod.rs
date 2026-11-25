@@ -11,4 +11,4 @@ mod decoder;
 pub use container::detect_container_format;
 
 #[cfg(feature = "heif")]
-pub(super) use decoder::decode;
+pub(crate) use decoder::decode;

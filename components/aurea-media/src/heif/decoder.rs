@@ -10,7 +10,7 @@ use crate::{DecodeError, DecodeLimits, ImageFormat};
 
 
 
-pub(super) fn decode(
+pub(crate) fn decode(
     expected_format: ImageFormat,
     input: &[u8],
     limits: DecodeLimits,
