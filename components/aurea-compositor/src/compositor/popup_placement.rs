@@ -53,7 +53,7 @@ pub(crate) fn constrain_geometry(
         };
         let parent_geometry = parent_popup.geometry();
         (
-            root_window_origin + parent_offset + parent_geometry.loc,
+            root_window_origin + parent_offset,
             parent_geometry.size,
         )
     };
