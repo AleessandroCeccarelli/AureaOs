@@ -97,6 +97,8 @@ pub struct AureaCompositor {
     touch: Option<TouchHandle<Self>>,
     consumed_shortcut_keys: HashSet<Keycode>,
     window_manager: WindowManager,
+    /// Tracks nested XDG popup trees and protocol popup grabs.
+    popup_manager: smithay::desktop::PopupManager,
     desktop_manager: DesktopManager,
     desktop_items: DesktopItemsManager,
     output_manager: OutputManager,
@@ -169,6 +171,7 @@ impl AureaCompositor {
             touch: None,
             consumed_shortcut_keys: HashSet::new(),
             window_manager: WindowManager::new(),
+            popup_manager: smithay::desktop::PopupManager::default(),
             desktop_manager: DesktopManager::default(),
             desktop_items: DesktopItemsManager::default(),
             output_manager: OutputManager::new(),
@@ -236,6 +239,17 @@ impl AureaCompositor {
     /// Returns the window manager.
     pub fn window_manager(&mut self) -> &mut WindowManager {
         &mut self.window_manager
+    }
+
+    /// Returns mutable access to Smithay's nested popup registry.
+    pub(crate) fn popup_manager(&mut self) -> &mut smithay::desktop::PopupManager {
+        &mut self.popup_manager
+    }
+
+    /// Updates popup lifecycle bookkeeping after a surface commit.
+    pub(crate) fn commit_popup_surface(&mut self, surface: &WlSurface) {
+        self.popup_manager.commit(surface);
+        self.popup_manager.cleanup();
     }
 
     /// Returns the cursor image currently requested by the focused Wayland client.
