@@ -21,22 +21,8 @@ impl AureaCompositor {
         state: ButtonState,
         time: u32,
     ) {
-        match state {
-            ButtonState::Pressed => {
-                self.pressed_pointer_buttons
-                    .entry(device)
-                    .or_default()
-                    .insert(button);
-            }
-            ButtonState::Released => {
-                if let Some(buttons) = self.pressed_pointer_buttons.get_mut(&device) {
-                    buttons.remove(&button);
-                    if buttons.is_empty() {
-                        self.pressed_pointer_buttons.remove(&device);
-                    }
-                }
-            }
-        }
+        self.pointer_manager
+            .update_button(device, button, state == ButtonState::Pressed);
 
         let Some(pointer) = self.seat.get_pointer() else {
             return;
@@ -75,9 +61,10 @@ impl AureaCompositor {
 
     /// Synthesizes releases for buttons still held by a device being removed.
     pub(super) fn release_pointer_buttons_for_device(&mut self, device: InputDeviceId, time: u32) {
-        let Some(buttons) = self.pressed_pointer_buttons.remove(&device) else {
+        let buttons = self.pointer_manager.take_pressed_buttons(device);
+        if buttons.is_empty() {
             return;
-        };
+        }
         let Some(pointer) = self.seat.get_pointer() else {
             return;
         };
