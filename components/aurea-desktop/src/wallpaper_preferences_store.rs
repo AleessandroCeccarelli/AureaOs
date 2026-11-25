@@ -112,7 +112,7 @@ fn parse_preferences(content: &str) -> Option<WallpaperPreferences> {
         }
     }
     let mut preferences = WallpaperPreferences::default();
-    preferences.set_image_path(path?);
+    preferences.set_image_path(Some(path?));
     preferences.set_scale_mode(mode?);
     Some(preferences)
 }
