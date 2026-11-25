@@ -108,6 +108,7 @@ mod tests {
             name: format!("Device {id}"),
             vendor_id: None,
             product_id: None,
+            persistent_id: None,
             capabilities: InputDeviceCapabilities::default(),
         }
     }
