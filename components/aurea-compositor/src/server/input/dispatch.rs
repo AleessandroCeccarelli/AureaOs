@@ -17,7 +17,7 @@ use smithay::backend::{
     libinput::LibinputInputBackend,
 };
 
-use aurea_desktop_api::input::InputDeviceProvider;
+use aurea_desktop_api::input::{InputDeviceId, InputDeviceProvider};
 
 use crate::input::pointing;
 
@@ -25,6 +25,10 @@ use super::{refresh_touchpad_settings, wayland_time};
 use super::super::state::WaylandState;
 
 static POINTER_MOTION_EVENTS: AtomicU64 = AtomicU64::new(0);
+
+fn is_registered_pointing_device(state: &WaylandState, device: InputDeviceId) -> bool {
+    state.compositor.pointing_devices().device(device).is_some()
+}
 
 pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut WaylandState) {
     // Do not forward stale or queued input while libseat has paused this
@@ -155,6 +159,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             );
         }
         InputEvent::PointerMotionAbsolute { event } => {
+            if !is_registered_pointing_device(state, pointing::id_for(&event.device())) {
+                return;
+            }
             // The compositor currently routes absolute pointer devices only
             // when a single enabled output makes the target unambiguous.
             state
@@ -178,6 +185,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             let unaccelerated_delta = event.delta_unaccel();
 
             let mut device = event.device();
+            if !is_registered_pointing_device(state, pointing::id_for(&device)) {
+                return;
+            }
             refresh_touchpad_settings(state, &mut device);
             let settings = state
                 .compositor
@@ -198,9 +208,13 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 event.state()
             );
             let mut device = event.device();
+            let device_id = pointing::id_for(&device);
+            if !is_registered_pointing_device(state, device_id) {
+                return;
+            }
             refresh_touchpad_settings(state, &mut device);
             state.compositor.handle_pointer_button(
-                pointing::id_for(&event.device()),
+                device_id,
                 event.button_code(),
                 event.state(),
                 wayland_time(event.time()),
@@ -216,6 +230,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 event.source()
             );
             let mut device = event.device();
+            if !is_registered_pointing_device(state, pointing::id_for(&device)) {
+                return;
+            }
             refresh_touchpad_settings(state, &mut device);
             state.compositor.handle_pointer_axis(
                 event.amount(Axis::Horizontal),
@@ -230,6 +247,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::GestureSwipeBegin { event } => {
             let mut input_device = event.device();
+            if !is_registered_pointing_device(state, pointing::id_for(&input_device)) {
+                return;
+            }
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
             state.compositor.handle_swipe_begin(
@@ -240,6 +260,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::GestureSwipeUpdate { event } => {
             let mut input_device = event.device();
+            if !is_registered_pointing_device(state, pointing::id_for(&input_device)) {
+                return;
+            }
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
             state.compositor.handle_swipe_update(
@@ -251,6 +274,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::GestureSwipeEnd { event } => {
             let mut input_device = event.device();
+            if !is_registered_pointing_device(state, pointing::id_for(&input_device)) {
+                return;
+            }
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
             state.compositor.handle_swipe_end(
@@ -261,6 +287,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::GesturePinchBegin { event } => {
             let mut input_device = event.device();
+            if !is_registered_pointing_device(state, pointing::id_for(&input_device)) {
+                return;
+            }
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
             state.compositor.handle_pinch_begin(
@@ -271,6 +300,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::GesturePinchUpdate { event } => {
             let mut input_device = event.device();
+            if !is_registered_pointing_device(state, pointing::id_for(&input_device)) {
+                return;
+            }
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
             state.compositor.handle_pinch_update(
@@ -284,6 +316,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::GesturePinchEnd { event } => {
             let mut input_device = event.device();
+            if !is_registered_pointing_device(state, pointing::id_for(&input_device)) {
+                return;
+            }
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
             state.compositor.handle_pinch_end(
@@ -294,6 +329,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::GestureHoldBegin { event } => {
             let mut input_device = event.device();
+            if !is_registered_pointing_device(state, pointing::id_for(&input_device)) {
+                return;
+            }
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
             state
@@ -302,6 +340,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::GestureHoldEnd { event } => {
             let mut input_device = event.device();
+            if !is_registered_pointing_device(state, pointing::id_for(&input_device)) {
+                return;
+            }
             refresh_touchpad_settings(state, &mut input_device);
             let device = pointing::id_for(&input_device);
             state
@@ -310,6 +351,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::TouchDown { event } => {
             let device = pointing::id_for(&event.device());
+            if !is_registered_pointing_device(state, device) {
+                return;
+            }
             if let Some((width, height)) = state.compositor.touchscreen_extent(device) {
                 state.compositor.handle_touch_down(
                     device,
@@ -322,6 +366,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::TouchMotion { event } => {
             let device = pointing::id_for(&event.device());
+            if !is_registered_pointing_device(state, device) {
+                return;
+            }
             if let Some((width, height)) = state.compositor.touchscreen_extent(device) {
                 state.compositor.handle_touch_motion(
                     device,
@@ -334,12 +381,18 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::TouchUp { event } => {
             let device = pointing::id_for(&event.device());
+            if !is_registered_pointing_device(state, device) {
+                return;
+            }
             state
                 .compositor
                 .handle_touch_up(device, event.slot(), wayland_time(event.time()));
         }
         InputEvent::TouchCancel { event } => {
             let device = pointing::id_for(&event.device());
+            if !is_registered_pointing_device(state, device) {
+                return;
+            }
             state
                 .compositor
                 .handle_touch_cancel(device, wayland_time(event.time()));
