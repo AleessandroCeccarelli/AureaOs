@@ -816,3 +816,12 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - I popup non reattivi non vengono riconfigurati arbitrariamente: si rispetta il contratto XDG. I popup annidati sono mantenuti in ordine di registrazione, parent prima dei figli; dopo l'ACK/commit del parent la successiva riconciliazione ricalcola anche i figli con la nuova geometria.
 - L'API di movimento del compositor è ora il percorso richiesto per futuri move/drag; non esiste ancora un gestore interattivo completo di trascinamento finestre, quindi non va dichiarato completato.
 - Nessuna build, `cargo fmt`, check o test eseguiti. Le verifiche rimangono raggruppate su Fedora.
+ 
+### Desktop context-menu dismissal input — 25 novembre 2026
+
+- Esteso il contratto compositor/Shell con `DismissContextMenu`; il canale mantiene anche un flag atomico condiviso per sapere se il menu desktop è richiesto, senza introdurre dipendenze dal modello Shell nel compositor.
+- `Esc` viene intercettato solo quando il menu contestuale desktop è aperto. Press, repeat e release seguono il filtro esistente: il tasto viene consumato e non raggiunge l'applicazione. Se il menu non è aperto, Esc continua al client Wayland.
+- Un click sinistro sul desktop, un altro pulsante sul canvas, oppure un click sopra una superficie applicativa chiude il menu. Un nuovo click destro sul desktop aggiorna la posizione e mantiene il menu richiesto. I menu contestuali delle applicazioni restano di proprietà dei client.
+- La Shell chiude esclusivamente `ContextMenu`; la richiesta di chiusura non elimina Overview o App Exposé.
+- Aggiunti test sorgente per stato condiviso, chiusura selettiva e propagazione Shell. Non eseguiti.
+- Limite ancora presente: non esiste una superficie grafica del menu né hit-testing delle sue voci; finché non esiste il renderer nativo dei pannelli, il menu è solo stato semantico. Nessuna build, fmt, check o test eseguiti.
