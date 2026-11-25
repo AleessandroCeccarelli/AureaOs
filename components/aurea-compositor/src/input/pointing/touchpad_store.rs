@@ -15,6 +15,8 @@ use std::{
 use aurea_desktop_api::input::TouchpadSettings;
 use serde::{Deserialize, Serialize};
 
+const FORMAT_VERSION: u32 = 1;
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(default)]
 struct StoredProfiles {
@@ -26,32 +28,48 @@ struct StoredProfiles {
 pub struct TouchpadProfileStore {
     path: Option<PathBuf>,
     profiles: HashMap<String, TouchpadSettings>,
+    writable: bool,
 }
 
 impl Default for TouchpadProfileStore {
     fn default() -> Self {
-        let path = default_store_path();
-        let profiles = path
-            .as_deref()
-            .and_then(|path| match load_profiles(path) {
-                Ok(profiles) => Some(profiles),
-                Err(error) => {
-                    tracing::warn!(path = %path.display(), %error, "Could not load touchpad preferences");
-                    None
-                }
-            })
-            .unwrap_or_default();
-
-        Self { path, profiles }
+        match default_store_path() {
+            Some(path) => Self::open(path),
+            None => Self {
+                path: None,
+                profiles: HashMap::new(),
+                writable: true,
+            },
+        }
     }
 }
 
 impl TouchpadProfileStore {
     fn with_path(path: PathBuf) -> Self {
-        let profiles = load_profiles(&path).unwrap_or_default();
-        Self {
-            path: Some(path),
-            profiles,
+        Self::open(path)
+    }
+
+    fn open(path: PathBuf) -> Self {
+        match load_profiles(&path) {
+            Ok(profiles) => Self {
+                path: Some(path),
+                profiles,
+                writable: true,
+            },
+            Err(error) => {
+                // Preserve unreadable, malformed and newer-version files. A
+                // later preference change must never replace unknown user data.
+                tracing::warn!(
+                    path = %path.display(),
+                    %error,
+                    "Touchpad preferences opened read-only; original file will be preserved"
+                );
+                Self {
+                    path: Some(path),
+                    profiles: HashMap::new(),
+                    writable: false,
+                }
+            }
         }
     }
 
@@ -59,7 +77,7 @@ impl TouchpadProfileStore {
         self.profiles.get(identity).copied()
     }
 
-    /// Updates memory first and atomically persists the complete profile set.
+    /// Updates the in-memory profile and persists it when the store is writable.
     pub fn set(&mut self, identity: String, settings: TouchpadSettings) -> io::Result<()> {
         self.profiles.insert(identity, settings);
         self.persist()
@@ -74,6 +92,12 @@ impl TouchpadProfileStore {
     }
 
     fn persist(&self) -> io::Result<()> {
+        if !self.writable {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "touchpad preferences were not loaded safely; refusing to overwrite the original file",
+            ));
+        }
         let Some(path) = self.path.as_deref() else {
             return Ok(());
         };
@@ -83,7 +107,7 @@ impl TouchpadProfileStore {
         fs::create_dir_all(parent)?;
 
         let document = StoredProfiles {
-            format_version: 1,
+            format_version: FORMAT_VERSION,
             devices: self.profiles.clone(),
         };
         let encoded = toml::to_string_pretty(&document)
@@ -133,10 +157,13 @@ fn load_profiles(path: &Path) -> io::Result<HashMap<String, TouchpadSettings>> {
     let content = fs::read_to_string(path)?;
     let stored: StoredProfiles = toml::from_str(&content)
         .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
-    if stored.format_version > 1 {
+    if stored.format_version != FORMAT_VERSION {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            "touchpad settings file uses a newer unsupported format",
+            format!(
+                "unsupported touchpad settings format {}; expected {}",
+                stored.format_version, FORMAT_VERSION
+            ),
         ));
     }
     Ok(stored.devices)
@@ -150,16 +177,16 @@ mod tests {
     };
     use std::{fs, path::PathBuf};
 
-    fn test_path() -> PathBuf {
+    fn test_path(suffix: &str) -> PathBuf {
         std::env::temp_dir().join(format!(
-            "aurea-touchpad-profiles-{}.toml",
+            "aurea-touchpad-profiles-{}-{suffix}.toml",
             std::process::id()
         ))
     }
 
     #[test]
     fn profiles_survive_store_recreation_and_keep_devices_separate() {
-        let path = test_path();
+        let path = test_path("roundtrip");
         let _ = fs::remove_file(&path);
         let mut first = TouchpadProfileStore::with_path(path.clone());
         let profile_a = TouchpadSettings::default()
@@ -175,6 +202,30 @@ mod tests {
         assert_eq!(second.get("physical-a"), Some(profile_a));
         assert_eq!(second.get("physical-b"), Some(profile_b));
         assert_eq!(second.len(), 2);
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn malformed_profile_file_is_never_overwritten() {
+        let path = test_path("malformed");
+        let original = "this is not valid TOML = [";
+        fs::write(&path, original).unwrap();
+
+        let mut store = TouchpadProfileStore::with_path(path.clone());
+        assert!(store.set("physical-a".into(), TouchpadSettings::default()).is_err());
+        assert_eq!(fs::read_to_string(&path).unwrap(), original);
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn newer_profile_format_is_never_overwritten() {
+        let path = test_path("future");
+        let original = "format_version = 99\n[devices]\n";
+        fs::write(&path, original).unwrap();
+
+        let mut store = TouchpadProfileStore::with_path(path.clone());
+        assert!(store.set("physical-a".into(), TouchpadSettings::default()).is_err());
+        assert_eq!(fs::read_to_string(&path).unwrap(), original);
         let _ = fs::remove_file(path);
     }
 }
