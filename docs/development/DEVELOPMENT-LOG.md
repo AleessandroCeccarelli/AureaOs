@@ -1903,3 +1903,11 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - This is a source-level correction only. No Cargo build, rustfmt, tests or physical mouse validation were run; grouped Fedora validation and a real mouse test remain mandatory before calling the mouse complete.
 
 - Pointer acceleration is now applied at device discovery as well as during motion dispatch, so the selected profile is active before the first movement rather than waiting for the first motion event.
+
+
+### 2026-11-25 — Mouse right-click on desktop
+
+- Added a dedicated secondary-button path: right-clicking an empty desktop selects the item under the pointer (or clears selection) and sends the existing ShowContextMenu semantic interaction to Aurea Shell.
+- Right-clicks over application windows remain normal Wayland pointer-button events, preserving application-owned context menus.
+- Right-click does not participate in the desktop double-click activation tracker.
+- No build, Cargo check, rustfmt, tests or physical mouse validation were run.
