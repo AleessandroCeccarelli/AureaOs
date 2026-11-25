@@ -15,10 +15,32 @@ pub enum TouchpadClickMethod {
     Clickfinger,
 }
 
+/// Finger-tap to mouse-button mapping.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TouchpadTapButtonMap {
+    /// One/two/three fingers map to left/right/middle.
+    #[default]
+    LeftRightMiddle,
+    /// One/two/three fingers map to left/middle/right.
+    LeftMiddleRight,
+}
+
+/// Whether libinput should forward events from the touchpad.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TouchpadSendEventsMode {
+    /// Normal operation.
+    #[default]
+    Enabled,
+    /// Disable this touchpad until explicitly re-enabled.
+    Disabled,
+    /// Disable this touchpad while an external pointer is connected.
+    DisabledOnExternalMouse,
+}
+
 /// User-configurable touchpad behavior.
 ///
 /// The five-argument constructor is kept stable for existing callers. More
-/// advanced preferences are opt-in through the builder-style methods.
+/// advanced preferences are opt-in through builder-style methods.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TouchpadSettings {
     tap_to_click: bool,
@@ -27,10 +49,13 @@ pub struct TouchpadSettings {
     disable_while_typing: bool,
     tap_and_drag: bool,
     edge_scrolling: bool,
+    tap_drag_lock: bool,
     click_method: TouchpadClickMethod,
+    tap_button_map: TouchpadTapButtonMap,
     left_handed: bool,
     middle_button_emulation: bool,
     pointer_speed_percent: i8,
+    send_events_mode: TouchpadSendEventsMode,
 }
 
 impl Default for TouchpadSettings {
@@ -42,10 +67,13 @@ impl Default for TouchpadSettings {
             disable_while_typing: true,
             tap_and_drag: true,
             edge_scrolling: false,
+            tap_drag_lock: false,
             click_method: TouchpadClickMethod::Clickfinger,
+            tap_button_map: TouchpadTapButtonMap::LeftRightMiddle,
             left_handed: false,
             middle_button_emulation: false,
             pointer_speed_percent: 0,
+            send_events_mode: TouchpadSendEventsMode::Enabled,
         }
     }
 }
@@ -65,10 +93,13 @@ impl TouchpadSettings {
             disable_while_typing,
             tap_and_drag,
             edge_scrolling: false,
+            tap_drag_lock: false,
             click_method: TouchpadClickMethod::Clickfinger,
+            tap_button_map: TouchpadTapButtonMap::LeftRightMiddle,
             left_handed: false,
             middle_button_emulation: false,
             pointer_speed_percent: 0,
+            send_events_mode: TouchpadSendEventsMode::Enabled,
         }
     }
 
@@ -77,8 +108,18 @@ impl TouchpadSettings {
         self
     }
 
+    pub const fn with_tap_drag_lock(mut self, enabled: bool) -> Self {
+        self.tap_drag_lock = enabled;
+        self
+    }
+
     pub const fn with_click_method(mut self, method: TouchpadClickMethod) -> Self {
         self.click_method = method;
+        self
+    }
+
+    pub const fn with_tap_button_map(mut self, map: TouchpadTapButtonMap) -> Self {
+        self.tap_button_map = map;
         self
     }
 
@@ -92,7 +133,6 @@ impl TouchpadSettings {
         self
     }
 
-    /// Set pointer speed as a percentage in the inclusive range [-100, 100].
     pub const fn with_pointer_speed_percent(mut self, percent: i8) -> Self {
         self.pointer_speed_percent = if percent < -100 {
             -100
@@ -104,16 +144,24 @@ impl TouchpadSettings {
         self
     }
 
+    pub const fn with_send_events_mode(mut self, mode: TouchpadSendEventsMode) -> Self {
+        self.send_events_mode = mode;
+        self
+    }
+
     pub const fn tap_to_click(self) -> bool { self.tap_to_click }
     pub const fn two_finger_scroll(self) -> bool { self.two_finger_scroll && !self.edge_scrolling }
     pub const fn natural_scrolling(self) -> bool { self.natural_scrolling }
     pub const fn disable_while_typing(self) -> bool { self.disable_while_typing }
     pub const fn tap_and_drag(self) -> bool { self.tap_and_drag }
     pub const fn edge_scrolling(self) -> bool { self.edge_scrolling }
+    pub const fn tap_drag_lock(self) -> bool { self.tap_drag_lock }
     pub const fn click_method(self) -> TouchpadClickMethod { self.click_method }
+    pub const fn tap_button_map(self) -> TouchpadTapButtonMap { self.tap_button_map }
     pub const fn left_handed(self) -> bool { self.left_handed }
     pub const fn middle_button_emulation(self) -> bool { self.middle_button_emulation }
     pub const fn pointer_speed_percent(self) -> i8 { self.pointer_speed_percent }
+    pub const fn send_events_mode(self) -> TouchpadSendEventsMode { self.send_events_mode }
 }
 
 /// Outcome of applying one setting to one physical touchpad.
@@ -128,50 +176,62 @@ pub enum TouchpadSettingStatus {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TouchpadApplyReport {
     pub tap_to_click: TouchpadSettingStatus,
+    pub tap_and_drag: TouchpadSettingStatus,
+    pub tap_drag_lock: TouchpadSettingStatus,
+    pub tap_button_map: TouchpadSettingStatus,
     pub two_finger_scroll: TouchpadSettingStatus,
     pub edge_scrolling: TouchpadSettingStatus,
     pub natural_scrolling: TouchpadSettingStatus,
     pub disable_while_typing: TouchpadSettingStatus,
-    pub tap_and_drag: TouchpadSettingStatus,
     pub click_method: TouchpadSettingStatus,
     pub left_handed: TouchpadSettingStatus,
     pub middle_button_emulation: TouchpadSettingStatus,
     pub pointer_speed: TouchpadSettingStatus,
+    pub send_events_mode: TouchpadSettingStatus,
 }
 
 impl TouchpadApplyReport {
     pub const fn all_applied(self) -> bool {
         matches!(self.tap_to_click, TouchpadSettingStatus::Applied)
+            && matches!(self.tap_and_drag, TouchpadSettingStatus::Applied)
+            && matches!(self.tap_drag_lock, TouchpadSettingStatus::Applied)
+            && matches!(self.tap_button_map, TouchpadSettingStatus::Applied)
             && matches!(self.two_finger_scroll, TouchpadSettingStatus::Applied)
             && matches!(self.edge_scrolling, TouchpadSettingStatus::Applied)
             && matches!(self.natural_scrolling, TouchpadSettingStatus::Applied)
             && matches!(self.disable_while_typing, TouchpadSettingStatus::Applied)
-            && matches!(self.tap_and_drag, TouchpadSettingStatus::Applied)
             && matches!(self.click_method, TouchpadSettingStatus::Applied)
             && matches!(self.left_handed, TouchpadSettingStatus::Applied)
             && matches!(self.middle_button_emulation, TouchpadSettingStatus::Applied)
             && matches!(self.pointer_speed, TouchpadSettingStatus::Applied)
+            && matches!(self.send_events_mode, TouchpadSettingStatus::Applied)
     }
 
     /// Returns true when libinput rejected at least one supported setting.
     /// Unsupported settings are hardware capability limitations, not failures.
     pub const fn has_failures(self) -> bool {
         matches!(self.tap_to_click, TouchpadSettingStatus::Failed)
+            || matches!(self.tap_and_drag, TouchpadSettingStatus::Failed)
+            || matches!(self.tap_drag_lock, TouchpadSettingStatus::Failed)
+            || matches!(self.tap_button_map, TouchpadSettingStatus::Failed)
             || matches!(self.two_finger_scroll, TouchpadSettingStatus::Failed)
             || matches!(self.edge_scrolling, TouchpadSettingStatus::Failed)
             || matches!(self.natural_scrolling, TouchpadSettingStatus::Failed)
             || matches!(self.disable_while_typing, TouchpadSettingStatus::Failed)
-            || matches!(self.tap_and_drag, TouchpadSettingStatus::Failed)
             || matches!(self.click_method, TouchpadSettingStatus::Failed)
             || matches!(self.left_handed, TouchpadSettingStatus::Failed)
             || matches!(self.middle_button_emulation, TouchpadSettingStatus::Failed)
             || matches!(self.pointer_speed, TouchpadSettingStatus::Failed)
+            || matches!(self.send_events_mode, TouchpadSettingStatus::Failed)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{TouchpadApplyReport, TouchpadClickMethod, TouchpadSettingStatus, TouchpadSettings};
+    use super::{
+        TouchpadApplyReport, TouchpadClickMethod, TouchpadSendEventsMode,
+        TouchpadSettingStatus, TouchpadSettings, TouchpadTapButtonMap,
+    };
 
     #[test]
     fn defaults_enable_common_touchpad_behaviors() {
@@ -182,38 +242,50 @@ mod tests {
         assert!(!settings.natural_scrolling());
         assert!(settings.disable_while_typing());
         assert!(settings.tap_and_drag());
+        assert!(!settings.tap_drag_lock());
         assert_eq!(settings.click_method(), TouchpadClickMethod::Clickfinger);
+        assert_eq!(settings.tap_button_map(), TouchpadTapButtonMap::LeftRightMiddle);
         assert_eq!(settings.pointer_speed_percent(), 0);
+        assert_eq!(settings.send_events_mode(), TouchpadSendEventsMode::Enabled);
     }
 
     #[test]
     fn advanced_preferences_are_bounded_and_select_one_scroll_mode() {
         let settings = TouchpadSettings::default()
             .with_edge_scrolling(true)
+            .with_tap_drag_lock(true)
             .with_left_handed(true)
             .with_middle_button_emulation(true)
             .with_pointer_speed_percent(120)
-            .with_click_method(TouchpadClickMethod::ButtonAreas);
+            .with_click_method(TouchpadClickMethod::ButtonAreas)
+            .with_tap_button_map(TouchpadTapButtonMap::LeftMiddleRight)
+            .with_send_events_mode(TouchpadSendEventsMode::DisabledOnExternalMouse);
         assert!(settings.edge_scrolling());
         assert!(!settings.two_finger_scroll());
+        assert!(settings.tap_drag_lock());
         assert!(settings.left_handed());
         assert!(settings.middle_button_emulation());
         assert_eq!(settings.pointer_speed_percent(), 100);
         assert_eq!(settings.click_method(), TouchpadClickMethod::ButtonAreas);
+        assert_eq!(settings.tap_button_map(), TouchpadTapButtonMap::LeftMiddleRight);
+        assert_eq!(settings.send_events_mode(), TouchpadSendEventsMode::DisabledOnExternalMouse);
     }
 
     fn report(status: TouchpadSettingStatus) -> TouchpadApplyReport {
         TouchpadApplyReport {
             tap_to_click: status,
+            tap_and_drag: status,
+            tap_drag_lock: status,
+            tap_button_map: status,
             two_finger_scroll: status,
             edge_scrolling: status,
             natural_scrolling: status,
             disable_while_typing: status,
-            tap_and_drag: status,
             click_method: status,
             left_handed: status,
             middle_button_emulation: status,
             pointer_speed: status,
+            send_events_mode: status,
         }
     }
 
