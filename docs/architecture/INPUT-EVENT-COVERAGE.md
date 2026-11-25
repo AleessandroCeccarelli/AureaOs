@@ -4,7 +4,7 @@
 
 **Status:** source/API audit, not runtime validation  
 **Backend baseline:** Smithay 0.7 / libinput  
-**Last reviewed:** 24 November 2026
+**Last reviewed:** 25 November 2026
 
 ## Purpose
 
@@ -179,3 +179,13 @@ Pointer motion, buttons, axes, swipe/pinch/hold gestures, and touchscreen contac
 - This covers tablet-tool lifecycle only. Smithay 0.7 explicitly does not implement tablet-pad support in its tablet abstraction; pad buttons, rings and strips remain unavailable through the current backend and must not be advertised as working.
 - No build, Cargo check, rustfmt, test execution or physical-device validation was run. Grouped validation remains pending.
 
+
+
+### Touchpad capability classification — 2026-11-25
+
+- Touchpad discovery now considers libinput scroll-method support in addition to gesture events, tap configuration and disable-while-typing support.
+- This prevents scroll-only touchpads from being misclassified as ordinary mice when a driver exposes no tap/DWT/gesture capability.
+- The backend configuration path reuses the same discovery predicate, avoiding disagreement between inventory classification and setting application.
+- Added focused source tests for scroll-only recognition and rejection of devices with no touchpad-specific configuration.
+- Commits: `f6c9cf8` (classification), `ff722e3` (shared policy), `908a00c` (explicit configuration result type).
+- No build, Cargo check, rustfmt, test execution or hardware validation was performed; grouped validation remains pending.
