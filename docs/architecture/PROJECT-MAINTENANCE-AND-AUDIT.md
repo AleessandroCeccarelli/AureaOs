@@ -828,7 +828,7 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 
 ### Desktop context-menu geometry contract — 25 novembre 2026
 
-- Aggiunto in `aurea-desktop-api` il modello immutabile `DesktopContextMenuLayout`, con quattro comandi semantici iniziali: crea cartella, cambia sfondo, impostazioni schermo e personalizzazione.
+- Aggiunto in `aurea-desktop-api` il modello immutabile `DesktopContextMenuLayout`, con quattro comandi semantici iniziali: crea cartella, usa come sfondo, impostazioni schermo e personalizzazione.
 - La geometria è espressa in coordinate logiche, dimensionata a 248 × 160 unità, con righe da 36 e padding verticale da 8. Il posizionamento riusa `DesktopPanelPlacement` per vincolare il menu all'output che contiene il puntatore.
 - `command_at` distingue le righe attive dal padding; `contains` identifica l'intero pannello. Aggiunti test sorgente per ordine comandi, bordi output, padding e output troppo piccoli.
 - Il contratto è preparatorio: non è ancora collegato allo stato condiviso del compositor, al renderer Vulkan o all'esecuzione dei comandi. Nessuna build, fmt, check o test eseguiti.
@@ -839,3 +839,12 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - Esteso il contratto compositor/Shell con `ContextMenuCommandSelected { command }`. Il sender aggiorna lo stato condiviso del menu a chiuso quando il comando viene selezionato.
 - ShellRuntime chiude il pannello e conserva l'interazione nella coda semantica per il servizio proprietario dell'azione. Non esegue direttamente operazioni filesystem o impostazioni: il dispatcher dei servizi resta da collegare.
 - Aggiunto test sorgente sul passaggio del comando e sulla chiusura del menu. Nessuna build, fmt, check o test eseguiti.
+
+
+### Context-menu pointer routing and Noto Sans artwork — 25 novembre 2026
+
+- Il sender condiviso conserva ora anche l'ancora logica del menu, non soltanto il flag aperto/chiuso. L'ancora viene azzerata sia alla chiusura sia alla selezione di un comando.
+- Il compositor ricostruisce il layout vincolato al monitor che contiene l'ancora. Il click sinistro su una riga invia il comando tipizzato; il padding chiude il menu senza attivare azioni; un click esterno chiude il menu e prosegue nel normale routing desktop/Wayland.
+- Press e release del pulsante usato sul pannello vengono consumati dal compositor, evitando che il click raggiunga una finestra sottostante. La selezione del comando chiude il pannello Shell.
+- Aggiunte le SVG Light/Dark del menu e lo script host tools/assets/render-context-menu.sh. Scelta tipografica: Noto Sans di Google Fonts, OFL 1.1; font richiesto solo sull'host durante la rasterizzazione, nessuna dipendenza runtime.
+- Limite: gli asset RGBA non sono ancora stati generati/ispezionati; RenderScene e Vulkan non disegnano ancora il pannello. Il menu è ora predisposto per l'hit-test semantico, ma non è ancora visibile. Nessuna build, fmt, check o test eseguiti.
