@@ -14,6 +14,8 @@ pub mod surface_tree;
 
 use surface_tree::{SurfaceTreeSnapshot, collect_surface_tree_ids, collect_surface_tree_snapshots};
 
+use aurea_desktop_api::desktop::DesktopContextMenuLayout;
+
 use crate::desktop::{DesktopItemsSnapshot, DesktopSnapshot};
 
 use smithay::{
@@ -37,6 +39,7 @@ use crate::window_manager::WindowManager;
 pub struct RenderScene<'a> {
     desktop: DesktopSnapshot,
     desktop_items: DesktopItemsSnapshot,
+    context_menu: Option<DesktopContextMenuLayout>,
     toplevels: Vec<RenderToplevel<'a>>,
     cursor_surface: Option<(WlSurface, Point<i32, Logical>, Point<i32, Logical>)>,
     native_cursor_location: Option<Point<i32, Logical>>,
@@ -59,6 +62,7 @@ impl<'a> RenderScene<'a> {
                 None,
             ),
             desktop_items: DesktopItemsSnapshot::default(),
+            context_menu: None,
             toplevels: window_manager
                 .mapped_toplevels_with_location()
                 .map(|(surface, location)| RenderToplevel { surface, location })
@@ -89,6 +93,17 @@ impl<'a> RenderScene<'a> {
     /// Returns the owned desktop-entry snapshot captured for this frame.
     pub fn desktop_items(&self) -> &DesktopItemsSnapshot {
         &self.desktop_items
+    }
+
+    /// Adds the compositor-owned desktop context-menu geometry for this frame.
+    pub fn with_context_menu(mut self, menu: Option<DesktopContextMenuLayout>) -> Self {
+        self.context_menu = menu;
+        self
+    }
+
+    /// Returns the context-menu geometry captured for this frame, if open.
+    pub fn context_menu(&self) -> Option<&DesktopContextMenuLayout> {
+        self.context_menu.as_ref()
     }
 
     /// Adds the client-provided cursor surface at the pointer's global location.
