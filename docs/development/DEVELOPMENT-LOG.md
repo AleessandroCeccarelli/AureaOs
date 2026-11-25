@@ -1752,3 +1752,6 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Added regression coverage for builder defaults, bounded pointer speed, mutually exclusive edge/two-finger selection and the expanded report shape. Updated the compatibility matrix and report fixtures.
 - Audited the relevant Smithay/input 0.7 API signatures against the versioned source documentation. This is source-level API verification, not a successful compile.
 - No build, Cargo check, rustfmt, test execution or hardware validation was run. Continue batching validation until the pointing-device block is complete.
+
+- Follow-up audit against the exact locked `input 0.9.1` source corrected the send-events integration to use its bitflags API (the later 0.10 API has different signatures). The settings now preserve each device's default clickpad method and acceleration profile unless the user explicitly chooses another one. Touchpad discovery also recognizes clickpad-only capability sets. Commit: `d3c0903`, `2f3dbe5`, `565bc5b`, `edf3a1a`, `4ef0a6f`, `4e91ef7`, `9cea047`, `106ad02`.
+- Identified a real version boundary: Smithay 0.7.0 activates input's `libinput_1_19` feature, so DWTP (available in input 0.9.1 only behind `libinput_1_21`) is not wired yet. This remains explicit in the compatibility document rather than being falsely advertised.
