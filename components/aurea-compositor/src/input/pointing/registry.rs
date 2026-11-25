@@ -248,7 +248,11 @@ mod tests {
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
-        };
+        }click_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }pointer_speed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }};
 
         assert!(service.connect(descriptor(24, InputDeviceKind::Touchpad)));
         assert!(service.set_touchpad_report(id, report));
@@ -268,7 +272,11 @@ mod tests {
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
-        };
+        }click_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }pointer_speed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }};
 
         assert!(!service.set_touchpad_report(id, report));
         assert!(service.connect(descriptor(21, InputDeviceKind::Touchpad)));
@@ -287,7 +295,11 @@ mod tests {
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
-        };
+        }click_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }pointer_speed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }};
 
         service.connect(descriptor(22, InputDeviceKind::Touchpad));
         assert!(service.set_touchpad_report(id, report));
@@ -306,7 +318,11 @@ mod tests {
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
-        };
+        }click_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }pointer_speed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+        }};
 
         service.connect(descriptor(23, InputDeviceKind::Mouse));
         assert!(!service.set_touchpad_report(id, report));
