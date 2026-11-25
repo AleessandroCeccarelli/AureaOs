@@ -272,6 +272,34 @@ mod tests {
     }
 
     #[test]
+    fn reconnecting_same_id_after_disconnect_starts_with_clean_runtime_state() {
+        let mut manager = PointerManager::new();
+        let device = InputDeviceId(15);
+        assert!(manager.connect(descriptor(15, InputDeviceKind::Touchpad)));
+
+        let pointer = PointerSettings::new(PointerAccelerationProfile::Flat, 0.5, false)
+            .expect("valid pointer profile");
+        let touchpad = TouchpadSettings::new(false, true, false, true, false);
+        assert!(manager.set_pointer_settings(device, pointer));
+        assert!(manager.set_touchpad_settings(device, touchpad));
+        manager.update_button(device, 0x110, true);
+
+        // Disconnect consumes the runtime state; a new connection with the
+        // same kernel-derived ID must not inherit the previous session's data.
+        assert_eq!(manager.take_pressed_buttons(device), vec![0x110]);
+        assert!(manager.disconnect(device));
+        assert!(manager.connect(descriptor(15, InputDeviceKind::Touchpad)));
+
+        assert_eq!(
+            manager.pointer_settings(device, PointerSettings::default()),
+            PointerSettings::default()
+        );
+        assert_eq!(manager.touchpad_settings(device), TouchpadSettings::default());
+        assert!(manager.take_pressed_buttons(device).is_empty());
+        assert_eq!(manager.devices().device(device).unwrap().kind, InputDeviceKind::Touchpad);
+    }
+
+    #[test]
     fn touchpad_preferences_reject_mouse_devices() {
         let mut manager = PointerManager::new();
         let mouse = InputDeviceId(12);
