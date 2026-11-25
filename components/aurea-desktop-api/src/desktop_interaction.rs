@@ -21,6 +21,8 @@ pub enum DesktopInteraction {
     ShowOverview,
     ShowAppExpose,
     ShowContextMenu { position: DesktopPosition },
+    /// Dismisses the desktop context menu without affecting other panels.
+    DismissContextMenu,
     DesktopItemSelected { id: String },
     DesktopSelectionCleared,
     /// Activates a desktop item after a recognized double-click.
@@ -60,12 +62,18 @@ impl DesktopSelectionController {
 pub struct DesktopInteractionSender {
     sender: Sender<DesktopInteraction>,
     selection: DesktopSelectionController,
+    context_menu_open: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl DesktopInteractionSender {
     /// Returns the shared desktop selection projection.
     pub fn selection_controller(&self) -> DesktopSelectionController {
         self.selection.clone()
+    }
+
+    /// Returns whether the desktop context menu is currently requested.
+    pub fn context_menu_is_open(&self) -> bool {
+        self.context_menu_open.load(std::sync::atomic::Ordering::Acquire)
     }
 
     /// Sends one completed desktop interaction.
@@ -78,6 +86,11 @@ impl DesktopInteractionSender {
             DesktopInteraction::DesktopSelectionCleared => Some(None),
             _ => None,
         };
+        match &interaction {
+            DesktopInteraction::ShowContextMenu { .. } => self.context_menu_open.store(true, std::sync::atomic::Ordering::Release),
+            DesktopInteraction::DismissContextMenu => self.context_menu_open.store(false, std::sync::atomic::Ordering::Release),
+            _ => {}
+        }
         let result = self.sender.send(interaction);
         if result.is_ok() {
             if let Some(selection) = selection {
@@ -92,6 +105,7 @@ impl DesktopInteractionSender {
 pub struct DesktopInteractionReceiver {
     receiver: Receiver<DesktopInteraction>,
     selection: DesktopSelectionController,
+    context_menu_open: std::sync::Arc<std::sync::atomic::AtomicBool>,
 }
 
 impl DesktopInteractionReceiver {
@@ -110,6 +124,7 @@ impl DesktopInteractionReceiver {
 pub fn desktop_interaction_channel() -> (DesktopInteractionSender, DesktopInteractionReceiver) {
     let (sender, receiver) = mpsc::channel();
     let selection = DesktopSelectionController::default();
+    let context_menu_open = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
     (
         DesktopInteractionSender {
             sender,
