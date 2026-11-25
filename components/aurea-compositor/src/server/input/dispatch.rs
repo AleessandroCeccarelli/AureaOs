@@ -184,7 +184,11 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             // when a single enabled output makes the target unambiguous.
             state
                 .compositor
-                .handle_pointer_motion_absolute(&event, wayland_time(event.time()));
+                .handle_pointer_motion_absolute(
+                    pointing::id_for(&event.device()),
+                    &event,
+                    wayland_time(event.time()),
+                );
         }
         InputEvent::PointerMotion { event } => {
             let delta = event.delta();

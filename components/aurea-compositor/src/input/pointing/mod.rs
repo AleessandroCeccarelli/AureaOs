@@ -5,6 +5,7 @@
 
 //! Coordinated pointing-device services.
 
+mod absolute_pointer_outputs;
 mod applied_settings;
 mod device_settings;
 mod discovery;
@@ -23,6 +24,7 @@ mod touchscreen_calibration;
 mod touchscreen_slots;
 pub mod touchscreen_transform;
 
+pub use absolute_pointer_outputs::AbsolutePointerOutputMap;
 pub use applied_settings::AppliedTouchpadSettings;
 pub use device_settings::PointingDeviceSettings;
 pub(crate) use discovery::{describe, id_for};

@@ -125,7 +125,12 @@ impl AureaCompositor {
     /// explicit per-device output assignment, multi-output layouts are
     /// deliberately rejected rather than guessing which monitor owns the
     /// device. Touchscreens and tablet tools keep their dedicated paths.
-    pub fn handle_pointer_motion_absolute<E>(&mut self, event: &E, time: u32) -> bool
+    pub fn handle_pointer_motion_absolute<E>(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+        event: &E,
+        time: u32,
+    ) -> bool
     where
         E: smithay::backend::input::AbsolutePositionEvent<
                 smithay::backend::libinput::LibinputInputBackend,
@@ -133,32 +138,11 @@ impl AureaCompositor {
                 smithay::backend::libinput::LibinputInputBackend,
             >,
     {
-        // Resolve the sole enabled output inside a short borrow scope. The
-        // output iterator borrows the manager and must be dropped before
-        // Smithay dispatches pointer events through the mutable compositor.
-        let bounds = {
-            let mut enabled = self
-                .output_manager
-                .registry()
-                .iter()
-                .filter(|output| output.is_enabled());
-            let Some(output) = enabled.next() else {
-                return false;
-            };
-            if enabled.next().is_some() {
-                tracing::debug!(
-                    device = ?event.device().name(),
-                    sysname = ?event.device().sysname(),
-                    "Absolute pointer motion ignored: output assignment required on multi-monitor desktop"
-                );
-                return false;
-            }
-
-            self.output_manager
-                .logical_bounds(output.id())
-                .ok()
-                .flatten()
+        let Some(output_id) = self.absolute_pointer_output(device) else {
+            tracing::debug!(device_id = device.0, "Absolute pointer motion ignored: explicit output assignment required");
+            return false;
         };
+        let bounds = self.output_manager.logical_bounds(output_id).ok().flatten();
         let Some(bounds) = bounds else {
             return false;
         };

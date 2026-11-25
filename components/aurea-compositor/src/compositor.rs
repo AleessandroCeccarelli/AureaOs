@@ -38,7 +38,7 @@ use crate::{
         pointer_settings::PointerSettings,
         pointer_shake::PointerShakeDetector,
         pointing::{
-            PointerManager, PointingDeviceService, TabletCalibrationMap, TabletOutputMap,
+            AbsolutePointerOutputMap, PointerManager, PointingDeviceService, TabletCalibrationMap, TabletOutputMap,
             TabletToolRegistry,
             TouchscreenCalibration, TouchscreenCalibrationError, TouchscreenCalibrationMap,
             TouchscreenOutputMap, TouchscreenSlotMap,
@@ -109,6 +109,7 @@ pub struct AureaCompositor {
     _tablet_manager_state: TabletManagerState,
     pointer_manager: PointerManager,
     touchscreen_outputs: TouchscreenOutputMap,
+    absolute_pointer_outputs: AbsolutePointerOutputMap,
     tablet_outputs: TabletOutputMap,
     /// Physical tablet ownership and active-source arbitration for each pen/tool.
     tablet_tools: TabletToolRegistry,
@@ -180,6 +181,7 @@ impl AureaCompositor {
             _tablet_manager_state: tablet_manager_state,
             pointer_manager: PointerManager::new(),
             touchscreen_outputs: TouchscreenOutputMap::new(),
+            absolute_pointer_outputs: AbsolutePointerOutputMap::new(),
             tablet_outputs: TabletOutputMap::new(),
             tablet_tools: TabletToolRegistry::default(),
             tablet_calibrations: TabletCalibrationMap::default(),
@@ -273,6 +275,41 @@ impl AureaCompositor {
     ) -> bool {
         self.clear_pointing_device_state(device);
         self.pointer_manager.disconnect(device)
+    }
+
+    /// Assigns an absolute pointer-capable device to one enabled display.
+    pub fn assign_absolute_pointer_output(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+        output: OutputId,
+    ) -> bool {
+        use aurea_desktop_api::input::{InputDeviceProvider, StandardInputCapability};
+        if !self.pointer_manager.devices().device(device).is_some_and(|descriptor| {
+            descriptor.capabilities.supports(StandardInputCapability::PointerMotion)
+        }) || !self.output_manager.registry().get(output).is_some_and(|display| display.is_enabled()) {
+            return false;
+        }
+        self.absolute_pointer_outputs.assign(device, output);
+        true
+    }
+
+    /// Removes an explicit absolute-pointer mapping; single-output fallback applies.
+    pub fn unassign_absolute_pointer_output(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> bool {
+        self.absolute_pointer_outputs.unassign(device)
+    }
+
+    /// Resolves the output without guessing on multi-monitor desktops.
+    pub fn absolute_pointer_output(
+        &self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> Option<OutputId> {
+        let enabled = self.output_manager.registry().iter()
+            .filter(|output| output.is_enabled())
+            .map(|output| output.id());
+        self.absolute_pointer_outputs.resolve(device, enabled)
     }
 
     /// Initializes the Wayland touch capability when a touchscreen is present.
@@ -416,6 +453,7 @@ impl AureaCompositor {
     pub fn forget_output_membership(&mut self, output_id: OutputId) {
         self.surface_output_tracker.remove_output(output_id);
         self.touchscreen_outputs.remove_output(output_id);
+        self.absolute_pointer_outputs.remove_output(output_id);
         self.tablet_outputs.remove_output(output_id);
     }
 
@@ -436,6 +474,7 @@ impl AureaCompositor {
         self.release_pointer_buttons_for_device(device, time);
         self.interaction_engine.remove_device(device);
         self.touchscreen_outputs.remove_device(device);
+        self.absolute_pointer_outputs.remove_device(device);
         self.tablet_outputs.remove_device(device);
         self.tablet_calibrations.remove_device(device);
         self.touchscreen_calibrations.remove_device(device);
