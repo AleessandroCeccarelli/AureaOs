@@ -151,10 +151,16 @@ fn default_store_path() -> Option<PathBuf> {
 }
 
 fn load_profiles(path: &Path) -> io::Result<HashMap<String, TouchpadSettings>> {
-    if !path.exists() {
-        return Ok(HashMap::new());
-    }
-    let content = fs::read_to_string(path)?;
+    // Treat only an actual NotFound result as a first-run configuration.
+    // Path::exists() suppresses metadata errors, which could otherwise make
+    // an unreadable existing file look like an empty profile store.
+    let content = match fs::read_to_string(path) {
+        Ok(content) => content,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            return Ok(HashMap::new());
+        }
+        Err(error) => return Err(error),
+    };
     let stored: StoredProfiles = toml::from_str(&content)
         .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
     if stored.format_version != FORMAT_VERSION {
