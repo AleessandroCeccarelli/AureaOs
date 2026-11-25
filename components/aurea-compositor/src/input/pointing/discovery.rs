@@ -100,7 +100,7 @@ fn stable_device_id(value: &str) -> u64 {
 
 #[cfg(test)]
 mod tests {
-    use super::has_pointer_side_buttons;
+    use super::{has_pointer_side_buttons, stable_device_id};
 
     #[test]
     fn recognizes_each_standard_auxiliary_or_navigation_button() {
@@ -112,5 +112,17 @@ mod tests {
     #[test]
     fn does_not_report_side_buttons_when_none_are_present() {
         assert!(!has_pointer_side_buttons(|_| false));
+    }
+
+    #[test]
+    fn device_id_is_stable_for_the_same_sysname() {
+        let first = stable_device_id("event4");
+        let second = stable_device_id("event4");
+        assert_eq!(first, second);
+    }
+
+    #[test]
+    fn different_sysnames_produce_different_device_ids() {
+        assert_ne!(stable_device_id("event4"), stable_device_id("event5"));
     }
 }
