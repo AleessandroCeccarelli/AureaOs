@@ -1989,6 +1989,6 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 ### 2026-11-25 — Desktop context-menu layout contract
 
 - Added `DesktopContextMenuLayout` and typed `DesktopContextMenuCommand` values to `aurea-desktop-api`.
-- The initial desktop menu contract contains Create Folder, Change Wallpaper, Display Settings and Personalization. Geometry is logical (248 × 160), with 36-unit rows and 8-unit vertical padding.
+- The initial desktop menu contract contains Create Folder, Use as Wallpaper, Display Settings and Personalization. Geometry is logical (248 × 160), with 36-unit rows and 8-unit vertical padding.
 - Placement reuses output-constrained `DesktopPanelPlacement`; hit testing returns commands only for rows and distinguishes panel padding. Added focused source tests for command order, edge placement, padding and undersized outputs.
 - This is not yet wired to the compositor's shared menu state, Vulkan panel renderer or command dispatcher. No build, rustfmt, check or tests were run.
