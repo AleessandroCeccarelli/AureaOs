@@ -91,6 +91,10 @@ fn nonzero_id(value: u32) -> Option<u16> {
     (value != 0).then_some(value as u16)
 }
 
+/// Hashes the current kernel input sysname into a deterministic session ID.
+///
+/// `/dev/input/eventN` numbering may change across boots or reconnects, so this
+/// value must not be used as a persistent physical-device identifier.
 fn stable_device_id(value: &str) -> u64 {
     // FNV-1a: deterministic across runs, unlike DefaultHasher.
     value.bytes().fold(0xcbf29ce484222325, |hash, byte| {
