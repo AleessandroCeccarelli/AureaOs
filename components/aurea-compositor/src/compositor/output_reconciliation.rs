@@ -87,6 +87,7 @@ impl AureaCompositor {
                 // pointer focus and repaint surviving outputs even when the
                 // attempted reconciliation is rejected.
                 self.refresh_pointer_focus_at_current_location();
+                self.reconstrain_reactive_popups();
                 self.request_all_output_frames();
 
                 return Err(OutputReconciliationError {
@@ -106,6 +107,7 @@ impl AureaCompositor {
         // desktop even when pointer recentering is skipped (for example while
         // a client owns an active pointer grab).
         self.refresh_pointer_focus_at_current_location();
+        self.reconstrain_reactive_popups();
         self.request_all_output_frames();
 
         Ok(())
