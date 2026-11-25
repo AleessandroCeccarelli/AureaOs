@@ -21,15 +21,27 @@ impl AureaCompositor {
             return false;
         };
 
-        let current = self.window_manager.active_workspace();
-        let count = crate::window_manager::WindowManager::WORKSPACE_COUNT;
+        match action {
+            ShortcutAction::PreviousWorkspace | ShortcutAction::NextWorkspace => {
+                let current = self.window_manager.active_workspace();
+                let count = crate::window_manager::WindowManager::WORKSPACE_COUNT;
+                let next = match action {
+                    ShortcutAction::PreviousWorkspace => (current + count - 1) % count,
+                    ShortcutAction::NextWorkspace => (current + 1) % count,
+                    ShortcutAction::ShowOverview | ShortcutAction::ShowAppExpose => unreachable!(),
+                };
 
-        let next = match action {
-            ShortcutAction::PreviousWorkspace => (current + count - 1) % count,
-            ShortcutAction::NextWorkspace => (current + 1) % count,
-        };
-
-        // Use the compositor-level operation so keyboard focus is updated too.
-        self.switch_workspace(next)
+                // Use the compositor-level operation so keyboard focus is updated too.
+                self.switch_workspace(next)
+            }
+            ShortcutAction::ShowOverview => self
+                .desktop_interactions
+                .send(aurea_desktop_api::desktop_interaction::DesktopInteraction::ShowOverview)
+                .is_ok(),
+            ShortcutAction::ShowAppExpose => self
+                .desktop_interactions
+                .send(aurea_desktop_api::desktop_interaction::DesktopInteraction::ShowAppExpose)
+                .is_ok(),
+        }
     }
 }
