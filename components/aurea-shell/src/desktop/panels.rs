@@ -9,6 +9,7 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DesktopPanel {
     Overview,
+    AppExpose,
     ContextMenu,
 }
 
