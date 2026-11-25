@@ -7,7 +7,7 @@
 
 use std::sync::mpsc::Receiver;
 
-use super::TouchpadApplyReport;
+use super::{TouchpadApplyReport, TouchpadAccelerationProfile};
 
 /// Session-scoped identifier assigned by the AureaOS input-device discovery layer.
 ///
@@ -55,12 +55,32 @@ pub enum StandardInputCapability {
     BatteryStatus,
 }
 
+/// Detailed configuration capabilities exposed by one touchpad through libinput.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct TouchpadCapabilities {
+    pub max_tap_fingers: u32,
+    pub two_finger_scroll: bool,
+    pub edge_scrolling: bool,
+    pub natural_scrolling: bool,
+    pub button_areas: bool,
+    pub clickfinger: bool,
+    pub disable_while_typing: bool,
+    pub disable_while_trackpointing: bool,
+    pub gestures: bool,
+    pub left_handed: bool,
+    pub middle_button_emulation: bool,
+    pub pointer_acceleration: bool,
+    pub flat_acceleration: bool,
+    pub adaptive_acceleration: bool,
+}
+
 /// Snapshot of capabilities discovered from descriptors and supported interfaces.
 ///
 /// This is not a prediction based on a product name or vendor identifier.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct InputDeviceCapabilities {
     capabilities: Vec<StandardInputCapability>,
+    touchpad: Option<TouchpadCapabilities>,
 }
 
 impl InputDeviceCapabilities {
@@ -74,7 +94,19 @@ impl InputDeviceCapabilities {
         }
         Self {
             capabilities: values,
+            touchpad: None,
         }
+    }
+
+    /// Attaches detailed touchpad capabilities to this snapshot.
+    pub fn with_touchpad(mut self, capabilities: TouchpadCapabilities) -> Self {
+        self.touchpad = Some(capabilities);
+        self
+    }
+
+    /// Returns detailed touchpad capabilities, if this is a touchpad.
+    pub fn touchpad(&self) -> Option<&TouchpadCapabilities> {
+        self.touchpad.as_ref()
     }
 
     /// Returns true only for a capability discovered on this device.
@@ -126,7 +158,7 @@ pub trait InputDeviceProvider: Send + Sync {
 
 #[cfg(test)]
 mod tests {
-    use super::{InputDeviceCapabilities, StandardInputCapability};
+    use super::{InputDeviceCapabilities, StandardInputCapability, TouchpadCapabilities};
 
     #[test]
     fn capability_snapshots_deduplicate_verified_features() {
@@ -139,5 +171,19 @@ mod tests {
         assert!(capabilities.supports(StandardInputCapability::PointerMotion));
         assert_eq!(capabilities.iter().count(), 2);
         assert!(!capabilities.supports(StandardInputCapability::Keyboard));
+        assert!(capabilities.touchpad().is_none());
+    }
+
+    #[test]
+    fn detailed_touchpad_capabilities_are_optional_and_preserved() {
+        let details = TouchpadCapabilities {
+            max_tap_fingers: 3,
+            two_finger_scroll: true,
+            natural_scrolling: true,
+            gestures: true,
+            ..TouchpadCapabilities::default()
+        };
+        let capabilities = InputDeviceCapabilities::default().with_touchpad(details.clone());
+        assert_eq!(capabilities.touchpad(), Some(&details));
     }
 }
