@@ -5,6 +5,8 @@
 
 //! State for transient desktop presentation surfaces.
 
+use aurea_desktop_api::desktop_interaction::DesktopPosition;
+
 /// A transient desktop surface requested by an input or shell action.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DesktopPanel {
@@ -69,6 +71,19 @@ mod tests {
         panels.show(DesktopPanel::ContextMenu);
 
         assert_eq!(panels.active(), Some(DesktopPanel::ContextMenu));
+    }
+
+    #[test]
+    fn context_menu_retains_pointer_position_and_close_clears_it() {
+        let mut panels = DesktopPanelState::default();
+        let position = DesktopPosition { x: 640, y: 360 };
+
+        panels.show_context_menu(position);
+        assert_eq!(panels.active(), Some(DesktopPanel::ContextMenu));
+        assert_eq!(panels.context_menu_position(), Some(position));
+
+        panels.close();
+        assert_eq!(panels.context_menu_position(), None);
     }
 
     #[test]
