@@ -89,9 +89,7 @@ pub(crate) fn center_first_mapped_window(compositor: &mut AureaCompositor, surfa
         return;
     };
 
-    compositor
-        .window_manager
-        .set_toplevel_location(surface, location);
+    compositor.set_toplevel_location(surface, location);
 }
 
 fn centered_window_origin(
