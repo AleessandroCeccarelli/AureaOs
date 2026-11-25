@@ -1665,3 +1665,11 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - The Debian Live hook now builds the desktop with `--features heif`, installs only `libheif1`, `libheif-plugin-libde265` and `libheif-plugin-dav1d` for HEVC/AV1 still images, and removes `libheif-dev` after compilation.
 - Added a Debian 13 CI step to compile the complete `aurea-desktop` dependency graph with HEIF enabled, in addition to the media crate tests.
 - No local Fedora build, Cargo check, test or rustfmt was run. The next CI run must verify the production feature graph and package integration. Security/licence review and real HEIC/AVIF fixtures remain open gates.
+
+
+### 2026-11-25 — Audit TouchCancel semantics
+
+- Reviewed the complete libinput input dispatcher and the touchscreen event path.
+- Found that `InputEvent::TouchCancel` currently calls `handle_touch_cancel`, which releases that device's slot IDs and emits ordinary `TouchHandle::up` events. This is not equivalent to the Wayland `wl_touch.cancel` protocol event.
+- Verified Smithay 0.7 exposes `TouchHandle::cancel`, but it cancels the seat's active touch session rather than accepting a device or slot filter. Using it for one device can therefore cancel contacts belonging to another touchscreen.
+- No source behavior changed: a safe correction needs an explicit seat-wide cancellation policy and slot-map reset, rather than silently changing multi-touch behavior. No build or tests run.
