@@ -1976,3 +1976,12 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Non-reactive popups are deliberately left unchanged per XDG semantics. Nested popup descendants are recalculated again after their parent acknowledges and commits its new geometry.
 - The move/drag gesture itself is not yet implemented; this change establishes the required compositor API for future move handlers and does not claim interactive window dragging is complete.
 - No Cargo build, `cargo fmt`, check, tests or hardware validation were run. Keep verification grouped on Fedora.
+ 
+### 2026-11-25 — Context-menu dismissal semantics
+
+- Added `DismissContextMenu` to the compositor/Shell interaction contract and a shared atomic open-state flag owned by the interaction sender.
+- Escape is intercepted only while the desktop context menu is requested; the matching release and repeat are consumed by the existing key filter. Otherwise Escape is forwarded to the focused Wayland client.
+- A primary click on the desktop canvas, other non-secondary canvas button presses, or any click over an application surface dismisses the desktop menu. A secondary click on the desktop repositions it.
+- Shell dismissal is scoped to `ContextMenu` and cannot close Overview or App Exposé.
+- Added source tests for shared visibility state, panel isolation and runtime dismissal. Tests have not been run.
+- The menu remains a semantic request only: native panel rendering and menu-item hit testing/actions are still missing. No Cargo build, fmt, check or tests were run.
