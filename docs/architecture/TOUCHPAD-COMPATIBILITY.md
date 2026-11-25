@@ -143,3 +143,23 @@ Source changes have been committed but not compiled or tested. Do not treat the 
 
 
 Kernel source references used for the driver-family audit: Linux input/mouse driver tree (including ALPS, ELAN I2C, Synaptics, psmouse and bcm5974): https://kernel.googlesource.com/pub/scm/linux/kernel/git/sailus/linux/+/refs/heads/for-next/drivers/input/mouse/ . The driver inventory is upstream-source evidence, not a guarantee that every driver is enabled in a given Debian kernel configuration.
+
+
+## Detailed tap and device-disable capabilities
+
+The per-device capability snapshot also reports whether tap-to-click controls are
+available (maximum tap finger count greater than zero), including tap-and-drag,
+drag lock and tap button mapping. These are configuration surfaces exposed by
+libinput for tapping devices; they are not inferred from a manufacturer name.
+
+The snapshot records whether libinput offers the two optional send-events modes:
+disable the device, and disable it while an external mouse is present. The
+always-available enabled mode is not represented as an optional capability.
+This keeps the settings UI aligned with the modes the active kernel/udev/libinput
+stack actually exposes. The values are capability indicators, not the current
+enabled state.
+
+The Rust `input 0.9.1` API used by AureaOS exposes the tap getters/setters and
+send-events mode bitflags. Three-finger drag is intentionally not advertised
+yet: it is not present in the pinned `input 0.9.1` Device API, and must not be
+claimed based on newer libinput documentation alone.
