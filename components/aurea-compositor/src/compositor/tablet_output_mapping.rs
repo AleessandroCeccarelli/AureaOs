@@ -21,7 +21,7 @@ impl AureaCompositor {
         target: TabletOutputTarget,
     ) -> bool {
         if !self
-            .pointing_devices
+            .pointing_devices()
             .device(device)
             .is_some_and(|descriptor| descriptor.kind == InputDeviceKind::Tablet)
         {
