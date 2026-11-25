@@ -74,7 +74,7 @@ impl PointerGestureOwner {
 
 impl AureaCompositor {
     /// Drops any unfinished gesture sequence owned by a disconnected device.
-    pub fn clear_pointing_device_state(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
+    pub(crate) fn clear_pointing_device_state(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
         self.pointer_gesture_owner.remove_device(device);
         self.remove_pointing_device_state(device);
     }
