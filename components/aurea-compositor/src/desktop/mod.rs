@@ -25,7 +25,7 @@ pub use items_snapshot::DesktopItemsSnapshot;
 pub(crate) use icon_asset_loader::{DesktopIconAssetLoadError, load_desktop_icon_snapshot};
 pub(crate) use icon_assets::{
     DesktopIconAssetDescriptor, DesktopIconRasterSize, DesktopIconTextureKey,
-    desktop_icon_asset,
+    desktop_context_menu_asset, desktop_icon_asset,
 };
 #[allow(unused_imports)]
 pub(crate) use item_geometry::{
