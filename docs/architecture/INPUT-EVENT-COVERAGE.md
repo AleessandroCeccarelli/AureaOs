@@ -323,3 +323,10 @@ This is source-level API groundwork only. The compositor does not yet consume th
 The shared desktop interaction contract now carries a typed `ContextMenuCommandSelected` event. The command exposes a canonical Italian label (`Usa come sfondo` for wallpaper selection). ShellRuntime closes the menu and queues the command for its owning service; it does not perform filesystem or settings operations itself.
 
 This establishes semantic dispatch only. Pointer hit-testing against the visible menu and the actual command services are still pending. Source tests were added but not executed; no build/fmt/check was run.
+
+
+### Context-menu row hit-testing — 2026-11-25
+
+The compositor now shares the menu's global logical anchor and reconstructs its output-constrained DesktopContextMenuLayout during pointer input. A left press over an actionable row sends ContextMenuCommandSelected; a press in menu padding dismisses without action. A press outside dismisses the menu and continues through normal pointer routing. The press and matching release are consumed whenever the menu itself is hit, preventing click-through to a mapped Wayland surface.
+
+This is semantic input routing only. The menu has light/dark SVG masters and a Noto Sans host-rasterization script, but the RGBA assets have not been generated/inspected and the Vulkan frame renderer does not yet draw the panel. The menu remains invisible until that renderer and asset-loading path are integrated. No build/fmt/check/tests were run.
