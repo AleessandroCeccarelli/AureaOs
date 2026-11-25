@@ -82,10 +82,9 @@ impl TouchscreenSlotMap {
             .collect()
     }
 
-    /// Clears every active contact after a seat-wide Wayland touch cancellation.
-    ///
-    /// Smithay's TouchHandle::cancel cancels the complete seat touch session, so
-    /// the physical-device-to-seat-slot map must be reset as one operation.
+    /// Clears every active contact after a true seat-wide Wayland cancellation.
+    /// Device-specific cancellation should use `remove_device` and release only
+    /// the returned seat slots, preserving contacts owned by other devices.
     pub fn clear_all(&mut self) -> usize {
         let released = self.active.drain().map(|(_, id)| id).collect::<Vec<_>>();
         let cleared = released.len();
