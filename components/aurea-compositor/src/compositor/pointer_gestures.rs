@@ -100,6 +100,9 @@ impl AureaCompositor {
                 crate::input::interaction::PointingInteraction::Overview => {
                     Some(DesktopInteraction::ShowOverview)
                 }
+                crate::input::interaction::PointingInteraction::AppExpose => {
+                    Some(DesktopInteraction::ShowAppExpose)
+                }
                 crate::input::interaction::PointingInteraction::ContextMenu => {
                     Some(DesktopInteraction::ShowContextMenu)
                 }
