@@ -1901,3 +1901,5 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Added a session-pause cleanup path that releases all logically held pointer buttons before libseat marks the session inactive. This prevents a client from retaining a stuck button when a physical release is lost during a VT switch.
 - Releases are aggregated across physical devices: if two mice hold the same button, pausing the session emits one final release, not duplicate releases.
 - This is a source-level correction only. No Cargo build, rustfmt, tests or physical mouse validation were run; grouped Fedora validation and a real mouse test remain mandatory before calling the mouse complete.
+
+- Pointer acceleration is now applied at device discovery as well as during motion dispatch, so the selected profile is active before the first movement rather than waiting for the first motion event.
