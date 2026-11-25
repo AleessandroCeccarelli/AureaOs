@@ -246,13 +246,15 @@ impl AureaCompositor {
                 }
 
                 Self::apply_tablet_axes(&tool, &event);
-                tool.proximity_in(
-                    location,
-                    self.tablet_focus(location),
-                    &tablet,
-                    SERIAL_COUNTER.next_serial(),
-                    time,
-                );
+                if let Some(focus) = self.tablet_focus(location) {
+                    tool.proximity_in(
+                        location,
+                        focus,
+                        &tablet,
+                        SERIAL_COUNTER.next_serial(),
+                        time,
+                    );
+                }
             }
             smithay::backend::input::ProximityState::Out => {
                 if !self.tablet_tools.is_active_on(device_id, &tool_descriptor) {
