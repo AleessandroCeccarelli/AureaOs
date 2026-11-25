@@ -1704,3 +1704,10 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Expanded shortcut resolver unit coverage for all four directions. The matching key press/repeat/release interception remains handled by the existing keyboard event filter.
 - Updated the input coverage audit. The shell panel state is wired, but finished visual Overview/App Exposé surfaces remain separate work.
 - No build, Cargo check, rustfmt or tests were run. Grouped validation remains pending.
+
+
+### 2026-11-25 — Harden pointing-device disconnect bookkeeping
+
+- Made synthesized pointer-button releases deterministic by sorting the outstanding Linux button codes before dispatch.
+- Added focused PointerManager unit tests for per-device button isolation, stable multi-button release ordering, individual button release, per-device preference isolation and cleanup, and rejection of touchpad-only preferences on a mouse.
+- No build, Cargo check, rustfmt or test execution was run. These tests are queued for the agreed grouped validation pass.
