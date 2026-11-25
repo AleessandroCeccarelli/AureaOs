@@ -564,3 +564,7 @@ La risoluzione richiede esattamente Super e Ctrl; Alt o Shift aggiuntivi fanno r
 - `PointerManager::connect` reconciles stored overrides whenever a device descriptor is refreshed. Touchpad-only settings are removed when a device is no longer a touchpad; pointer overrides are retained only for mouse/touchpad classes. A stale touchpad apply report is also removed on registry reclassification.
 - `disconnect_pointing_device` clears active compositor/protocol state before `PointerManager::disconnect` removes per-device preferences, pressed-button bookkeeping and the inventory record. Server-side libinput handles and applied-setting cache are then removed, followed by touchscreen capability reconciliation.
 - Added source-level tests for reclassification and disconnect cleanup. No build, Cargo check, rustfmt, test execution or hardware validation has been performed.
+
+## 19. Unsupported pointing-device re-announcement
+
+The `DeviceAdded` path now handles a descriptor transition from a supported pointing kind to an unsupported kind. If the sysname-derived ID is already registered, the compositor performs the same ordered disconnect used by `DeviceRemoved`, clears cached touchpad handles and applied settings, and recalculates touchscreen seat capability. This prevents stale inventory and runtime state when a device is re-announced with changed capabilities. A same-ID disconnect/reconnect regression test verifies that runtime buttons and preferences start clean. Validation remains pending; no build, test execution, or rustfmt was run.
