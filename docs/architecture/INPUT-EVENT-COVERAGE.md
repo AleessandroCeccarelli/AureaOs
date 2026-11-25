@@ -299,3 +299,5 @@ the pointer (or clears selection on empty space) and asks the shell to show its
 desktop context menu. Right-clicks over application surfaces remain ordinary
 Wayland pointer-button events so applications retain their own context menus.
 Secondary clicks reset, rather than advance, the desktop double-click tracker.
+
+Implementation note — 2026-11-25: `pointer_button.rs` now calls the desktop hit-test path for primary clicks on empty space and for secondary clicks before requesting the context menu. Window surfaces still take precedence. The shell currently stores the context-menu request and logical pointer position only; the actual graphical menu surface and its actions are not implemented yet. Source commit: `80483c23`.
