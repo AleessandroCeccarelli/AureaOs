@@ -79,6 +79,7 @@ jobs:
           apt-get update
           DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
             ca-certificates \
+            curl \
             libheif-dev \
             libheif-plugin-libde265 \
             libheif-plugin-dav1d \
