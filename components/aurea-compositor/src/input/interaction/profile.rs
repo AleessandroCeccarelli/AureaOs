@@ -19,8 +19,10 @@ pub struct GestureBinding {
 pub struct GestureProfile {
     pub workspace_swipe_fingers: u32,
     pub overview_pinch_fingers: u32,
+    pub overview_swipe_fingers: u32,
     pub context_hold_fingers: u32,
     pub horizontal_threshold: f64,
+    pub vertical_threshold: f64,
     pub pinch_scale_threshold: f64,
 }
 
@@ -29,8 +31,10 @@ impl Default for GestureProfile {
         Self {
             workspace_swipe_fingers: 3,
             overview_pinch_fingers: 4,
+            overview_swipe_fingers: 3,
             context_hold_fingers: 1,
             horizontal_threshold: 48.0,
+            vertical_threshold: 48.0,
             pinch_scale_threshold: 0.08,
         }
     }
@@ -55,6 +59,16 @@ impl GestureProfile {
                 } else {
                     Some(PointingInteraction::PreviousWorkspace)
                 }
+            }
+            PointingGesture::Swipe { fingers, delta_x, delta_y }
+                if fingers == self.overview_swipe_fingers
+                    && delta_x.is_finite()
+                    && delta_y.is_finite()
+                    && delta_y.abs() >= self.vertical_threshold
+                    && delta_y.abs() > delta_x.abs()
+                    && delta_y.is_sign_negative() =>
+            {
+                Some(PointingInteraction::Overview)
             }
             PointingGesture::Pinch { fingers, scale, .. }
                 if fingers == self.overview_pinch_fingers
@@ -112,6 +126,40 @@ mod tests {
                 fingers: 3,
                 delta_x: 20.0,
                 delta_y: 1.0,
+            }),
+            None
+        );
+    }
+
+    #[test]
+    fn three_finger_up_swipe_opens_overview() {
+        let profile = GestureProfile::default();
+        assert_eq!(
+            profile.resolve(PointingGesture::Swipe {
+                fingers: 3,
+                delta_x: 2.0,
+                delta_y: -64.0,
+            }),
+            Some(PointingInteraction::Overview)
+        );
+    }
+
+    #[test]
+    fn downward_or_short_vertical_swipes_do_not_open_overview() {
+        let profile = GestureProfile::default();
+        assert_eq!(
+            profile.resolve(PointingGesture::Swipe {
+                fingers: 3,
+                delta_x: 0.0,
+                delta_y: 64.0,
+            }),
+            None
+        );
+        assert_eq!(
+            profile.resolve(PointingGesture::Swipe {
+                fingers: 3,
+                delta_x: 0.0,
+                delta_y: -20.0,
             }),
             None
         );
