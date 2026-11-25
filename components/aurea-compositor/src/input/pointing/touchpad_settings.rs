@@ -6,10 +6,11 @@
 //! Applies per-device touchpad preferences through libinput.
 
 use aurea_desktop_api::input::{
-    TouchpadApplyReport, TouchpadClickMethod, TouchpadSettingStatus, TouchpadSettings,
+    TouchpadApplyReport, TouchpadClickMethod, TouchpadSendEventsMode, TouchpadSettingStatus,
+    TouchpadSettings, TouchpadTapButtonMap,
 };
 use smithay::reexports::input::{
-    ClickMethod, Device, DeviceConfigError, ScrollMethod,
+    ClickMethod, Device, DeviceConfigError, ScrollMethod, SendEventsMode, TapButtonMap,
 };
 
 use super::touchpad;
@@ -43,6 +44,20 @@ pub(super) fn apply(
     };
     let tap_and_drag = if tap_fingers > 0 {
         status(device.config_tap_set_drag_enabled(settings.tap_and_drag()))
+    } else {
+        TouchpadSettingStatus::Unsupported
+    };
+    let tap_drag_lock = if tap_fingers > 0 {
+        status(device.config_tap_set_drag_lock_enabled(settings.tap_drag_lock()))
+    } else {
+        TouchpadSettingStatus::Unsupported
+    };
+    let tap_button_map = if tap_fingers > 0 {
+        let map = match settings.tap_button_map() {
+            TouchpadTapButtonMap::LeftRightMiddle => TapButtonMap::LeftRightMiddle,
+            TouchpadTapButtonMap::LeftMiddleRight => TapButtonMap::LeftMiddleRight,
+        };
+        status(device.config_tap_set_button_map(map))
     } else {
         TouchpadSettingStatus::Unsupported
     };
@@ -110,16 +125,33 @@ pub(super) fn apply(
         TouchpadSettingStatus::Unsupported
     };
 
+    let send_events_mode = match settings.send_events_mode() {
+        TouchpadSendEventsMode::Enabled => SendEventsMode::Enabled,
+        TouchpadSendEventsMode::Disabled => SendEventsMode::Disabled,
+        TouchpadSendEventsMode::DisabledOnExternalMouse => {
+            SendEventsMode::DisabledOnExternalMouse
+        }
+    };
+    let available_send_events_modes = device.config_send_events_modes();
+    let send_events_mode = if available_send_events_modes.contains(&send_events_mode) {
+        status(device.config_send_events_set_mode(&[send_events_mode]))
+    } else {
+        TouchpadSettingStatus::Unsupported
+    };
+
     Some(TouchpadApplyReport {
         tap_to_click,
+        tap_and_drag,
+        tap_drag_lock,
+        tap_button_map,
         two_finger_scroll,
         edge_scrolling,
         natural_scrolling,
         disable_while_typing,
-        tap_and_drag,
         click_method,
         left_handed,
         middle_button_emulation,
         pointer_speed,
+        send_events_mode,
     })
 }
