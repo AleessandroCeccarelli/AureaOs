@@ -1818,3 +1818,19 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Failed or unsupported settings remain represented in the per-setting report;
   incomplete profiles are not marked fully applied and can be retried later.
 - No build, rustfmt, tests or physical-device validation performed.
+
+
+### 2026-11-25 — Enforce non-exclusive multi-device pointing
+
+- Corrected the session-resume path to invalidate and reapply each touchpad
+  profile independently. A touchpad needing recovery no longer clears the
+  successful apply-cache entries of other connected touchpads.
+- Added a PointerManager regression test registering mouse, touchpad,
+  touchscreen, tablet and tablet pad simultaneously, then disconnecting only
+  the touchpad and asserting all other devices remain registered.
+- Documented the shared Wayland seat model: events from all registered pointing
+  devices feed the same desktop pointer/seat while preferences, button state,
+  touch contacts, tablet state and cleanup remain device-scoped where the
+  protocol supports it. Multi-monitor direct-touch mapping remains explicit.
+- No build, rustfmt, tests or physical-device validation performed; grouped
+  Fedora validation remains pending.
