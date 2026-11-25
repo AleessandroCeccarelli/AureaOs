@@ -212,25 +212,34 @@ impl AureaCompositor {
         self.request_all_output_frames();
     }
 
-    /// Cancels the seat-wide touch sequence after a device reports cancellation.
+    /// Ends only the contacts owned by a device that reports cancellation.
     ///
-    /// Smithay 0.7 exposes seat-wide cancellation only. If the cancelling device
-    /// owns an active contact, all seat contacts are cancelled and every physical
-    /// slot mapping is cleared so other devices cannot retain stale contacts.
+    /// Wayland's wl_touch.cancel and Smithay 0.7's TouchHandle::cancel operate
+    /// on the entire seat, not one physical touchscreen. To preserve contacts
+    /// from other active devices, synthesize per-contact up events for this
+    /// device instead of cancelling the shared seat sequence.
     pub fn handle_touch_cancel(
         &mut self,
         device: aurea_desktop_api::input::InputDeviceId,
-        _time: u32,
+        time: u32,
     ) {
         let cancelled_device_slots = self.touchscreen_slots.remove_device(device);
         if cancelled_device_slots.is_empty() {
             return;
         }
 
-        self.touchscreen_slots.clear_all();
-
         if let Some(touch) = self.touch.clone() {
-            touch.cancel(self);
+            for slot in cancelled_device_slots {
+                touch.up(
+                    self,
+                    &UpEvent {
+                        slot,
+                        serial: SERIAL_COUNTER.next_serial(),
+                        time,
+                    },
+                );
+            }
+            touch.frame(self);
             self.request_all_output_frames();
         }
     }
