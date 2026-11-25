@@ -161,3 +161,12 @@ When libinput re-announces a sysname whose capabilities no longer classify it as
 ### Ignore queued events after device removal — 2026-11-25
 
 Pointer motion, buttons, axes, swipe/pinch/hold gestures, and touchscreen contact events are now dispatched only while their sysname-derived device ID remains in the pointing-device inventory. This prevents a late queued event from recreating pressed-button or gesture state after `DeviceRemoved` has completed cleanup. Keyboard and tablet-tool paths remain owned by their separate lifecycle handlers. Source changes are committed; runtime validation remains pending.
+
+### Tablet-tool hot-unplug filtering — 2026-11-25
+
+- Tablet-tool proximity, axis, tip and button events are now checked against the live pointing-device inventory before they reach Smithay. Queued events arriving after removal are discarded, so they cannot recreate tablet/tool state.
+- Tablet seat removal now uses the device kind captured in the registered descriptor at connection time. It no longer relies on tablet capabilities being present again in the `DeviceRemoved` payload, which may already have lost metadata.
+- Commits: `e77f86a` (stale tablet-tool event filtering), `48a55af` (registered identity for tablet removal).
+- Smithay 0.7 documentation confirms that touch focus is established on `TouchHandle::down`; the focus passed to `motion` is for drag-and-drop targeting and does not retarget the active contact. The existing touchscreen motion path therefore remains unchanged.
+- No build, Cargo check, rustfmt, test execution or physical-device hot-unplug validation was run. Grouped validation remains pending.
+
