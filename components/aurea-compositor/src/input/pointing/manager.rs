@@ -38,8 +38,14 @@ impl PointerManager {
     }
 
     /// Registers or refreshes a discovered pointing device.
-    pub fn connect(&self, descriptor: InputDeviceDescriptor) -> bool {
-        self.devices.connect(descriptor)
+    pub fn connect(&mut self, descriptor: InputDeviceDescriptor) -> bool {
+        let id = descriptor.id;
+        let kind = descriptor.kind;
+        if !self.devices.connect(descriptor) {
+            return false;
+        }
+        self.settings.reconcile_kind(id, kind);
+        true
     }
 
     /// Removes a device from the inventory.
