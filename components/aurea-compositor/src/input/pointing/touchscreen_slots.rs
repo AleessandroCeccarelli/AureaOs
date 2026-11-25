@@ -137,4 +137,16 @@ mod tests {
         assert_eq!(slots.remove_device(InputDeviceId(1)).len(), 2);
         assert_eq!(slots.active_count(), 1);
     }
+
+    #[test]
+    fn seat_wide_cancel_clears_contacts_from_every_device() {
+        let mut slots = TouchscreenSlotMap::new();
+        slots.acquire(InputDeviceId(1), slot(0)).unwrap();
+        slots.acquire(InputDeviceId(2), slot(0)).unwrap();
+
+        assert_eq!(slots.clear_all(), 2);
+        assert_eq!(slots.active_count(), 0);
+        assert_eq!(slots.get(InputDeviceId(1), slot(0)), None);
+        assert_eq!(slots.get(InputDeviceId(2), slot(0)), None);
+    }
 }
