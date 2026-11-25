@@ -288,3 +288,14 @@ This describes implemented source paths, not proof of hardware compatibility.
 Build/test validation and physical mouse checks (movement, left/right/middle
 buttons, wheel, horizontal wheel where present, unplug/reconnect and VT
 switching) remain pending.
+
+
+## Mouse desktop context-menu behavior
+
+A primary click on the empty desktop selects the item under the pointer or
+clears the selection; a same-item double-click emits the existing activation
+intent. A secondary (right) click on the empty desktop selects the item under
+the pointer (or clears selection on empty space) and asks the shell to show its
+desktop context menu. Right-clicks over application surfaces remain ordinary
+Wayland pointer-button events so applications retain their own context menus.
+Secondary clicks reset, rather than advance, the desktop double-click tracker.
