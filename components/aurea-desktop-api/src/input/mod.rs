@@ -16,7 +16,7 @@ mod touchpad_controller;
 pub use action::InputAction;
 pub use device::{
     InputDeviceCapabilities, InputDeviceDescriptor, InputDeviceEvent, InputDeviceId,
-    InputDeviceKind, InputDeviceProvider, StandardInputCapability,
+    InputDeviceKind, InputDeviceProvider, StandardInputCapability, TouchpadCapabilities,
 };
 pub use extension::{ExtensionCapability, ExtensionPermission, PeripheralExtensionDescriptor};
 pub use pointer::{
