@@ -35,7 +35,7 @@ use smithay::{
 
 use crate::window_manager::WindowManager;
 
-/// A snapshot of the mapped toplevels and pointer image for one rendering pass.
+/// Immutable desktop, context-menu, mapped-surface and pointer state for one rendering pass.
 pub struct RenderScene<'a> {
     desktop: DesktopSnapshot,
     desktop_items: DesktopItemsSnapshot,
