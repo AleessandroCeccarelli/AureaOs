@@ -96,6 +96,17 @@ pub(super) fn apply(
         TouchpadSettingStatus::Unsupported
     };
 
+    #[cfg(feature = "drm")]
+    let disable_while_trackpointing = if device.config_dwtp_is_available() {
+        status(device.config_dwtp_set_enabled(
+            settings.disable_while_trackpointing(),
+        ))
+    } else {
+        TouchpadSettingStatus::Unsupported
+    };
+    #[cfg(not(feature = "drm"))]
+    let disable_while_trackpointing = TouchpadSettingStatus::Unsupported;
+
     let click_methods = device.config_click_methods();
     let click_method = match settings.click_method() {
         TouchpadClickMethod::DeviceDefault if !click_methods.is_empty() => {
@@ -181,6 +192,7 @@ pub(super) fn apply(
         edge_scrolling,
         natural_scrolling,
         disable_while_typing,
+        disable_while_trackpointing,
         click_method,
         left_handed,
         middle_button_emulation,
