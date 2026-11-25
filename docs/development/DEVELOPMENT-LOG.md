@@ -1985,3 +1985,10 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Shell dismissal is scoped to `ContextMenu` and cannot close Overview or App Exposé.
 - Added source tests for shared visibility state, panel isolation and runtime dismissal. Tests have not been run.
 - The menu remains a semantic request only: native panel rendering and menu-item hit testing/actions are still missing. No Cargo build, fmt, check or tests were run.
+
+### 2026-11-25 — Desktop context-menu layout contract
+
+- Added `DesktopContextMenuLayout` and typed `DesktopContextMenuCommand` values to `aurea-desktop-api`.
+- The initial desktop menu contract contains Create Folder, Change Wallpaper, Display Settings and Personalization. Geometry is logical (248 × 160), with 36-unit rows and 8-unit vertical padding.
+- Placement reuses output-constrained `DesktopPanelPlacement`; hit testing returns commands only for rows and distinguishes panel padding. Added focused source tests for command order, edge placement, padding and undersized outputs.
+- This is not yet wired to the compositor's shared menu state, Vulkan panel renderer or command dispatcher. No build, rustfmt, check or tests were run.
