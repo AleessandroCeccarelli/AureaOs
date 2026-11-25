@@ -150,6 +150,9 @@ impl ShellRuntime {
             DesktopInteraction::ShowOverview => {
                 self.desktop.panels.show(DesktopPanel::Overview);
             }
+            DesktopInteraction::ShowAppExpose => {
+                self.desktop.panels.show(DesktopPanel::AppExpose);
+            }
             DesktopInteraction::ShowContextMenu => {
                 self.desktop.panels.show(DesktopPanel::ContextMenu);
             }
