@@ -89,7 +89,12 @@ pub(crate) fn center_first_mapped_window(compositor: &mut AureaCompositor, surfa
         return;
     };
 
-    compositor.set_toplevel_location(surface, location);
+    // No popup tree can exist before the first toplevel is mapped. Keep this
+    // initial placement on the manager path; interactive moves use the
+    // compositor-level API so reactive popup trees are reconstrained.
+    compositor
+        .window_manager
+        .set_toplevel_location(surface, location);
 }
 
 fn centered_window_origin(
