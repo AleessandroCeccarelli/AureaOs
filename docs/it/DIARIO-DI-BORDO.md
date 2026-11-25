@@ -1872,3 +1872,11 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Create le SVG Light/Dark con le quattro etichette italiane e icone essenziali. Font scelto: Noto Sans di Google Fonts, licenza OFL 1.1, già conservato in Human Interfaces (`fonts/source/google-fonts/noto-sans/NotoSans-Variable.ttf`).
 - Aggiornato `tools/assets/render-context-menu.sh`: usa il font direttamente dal repository tramite una configurazione Fontconfig temporanea. Non richiede l'installazione di Noto Sans sull'host; restano necessari Fedora `librsvg2-tools` o Debian `librsvg2-bin` e Python 3.
 - Da completare: generare e ispezionare gli asset su Fedora, collegare asset root/cache e inserirli nel frame Vulkan sopra le finestre e sotto il puntatore. Il menu non è ancora visibile. Nessuna build, fmt, check o test eseguiti.
+
+### 25 novembre 2026 — Handoff del menu alla RenderScene
+
+- `RenderScene` ora conserva un `DesktopContextMenuLayout` opzionale insieme agli snapshot del desktop.
+- `AureaCompositor::render_scene` legge l'ancora condivisa, individua l'output abilitato che la contiene e inserisce nella scena la geometria vincolata. Hit-testing del puntatore e futura presentazione grafica usano così lo stesso contratto, senza duplicare il posizionamento.
+- Corretto anche il percorso tipografico: Noto Sans è già presente in Human Interfaces e lo script usa quel file direttamente tramite una configurazione Fontconfig temporanea. Non serve installare un secondo pacchetto font su Fedora o Debian.
+- Questo passaggio trasporta soltanto la geometria: asset RGBA, texture Vulkan e draw pass non sono ancora collegati. Il menu non è ancora visibile.
+- Nessuna build, `cargo fmt`, check o test eseguiti, in linea con la decisione di accumulare le modifiche prima della verifica su Fedora.
