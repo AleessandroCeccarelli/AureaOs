@@ -323,6 +323,32 @@ mod tests {
     }
 
     #[test]
+    fn all_pointing_device_classes_can_coexist_without_exclusive_ownership() {
+        let mut manager = PointerManager::new();
+        let devices = [
+            (InputDeviceId(21), InputDeviceKind::Mouse),
+            (InputDeviceId(22), InputDeviceKind::Touchpad),
+            (InputDeviceId(23), InputDeviceKind::Touchscreen),
+            (InputDeviceId(24), InputDeviceKind::Tablet),
+            (InputDeviceId(25), InputDeviceKind::TabletPad),
+        ];
+
+        for (id, kind) in devices {
+            assert!(manager.connect(descriptor(id.0, kind)));
+        }
+        for (id, kind) in devices {
+            assert_eq!(manager.devices().device(id).unwrap().kind, kind);
+        }
+
+        // Removing one device must not invalidate any other connected device.
+        assert!(manager.disconnect(InputDeviceId(22)));
+        assert!(manager.devices().device(InputDeviceId(21)).is_some());
+        assert!(manager.devices().device(InputDeviceId(23)).is_some());
+        assert!(manager.devices().device(InputDeviceId(24)).is_some());
+        assert!(manager.devices().device(InputDeviceId(25)).is_some());
+    }
+
+    #[test]
     fn touchpad_preferences_reject_mouse_devices() {
         let mut manager = PointerManager::new();
         let mouse = InputDeviceId(12);
