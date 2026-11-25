@@ -12,4 +12,8 @@ pub enum ShortcutAction {
     PreviousWorkspace,
     /// Move to the next virtual workspace.
     NextWorkspace,
+    /// Open the desktop overview.
+    ShowOverview,
+    /// Open the overview of all application windows.
+    ShowAppExpose,
 }
