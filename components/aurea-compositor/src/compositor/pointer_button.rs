@@ -6,6 +6,7 @@
 //! Pointer button delivery and click-to-focus policy.
 
 use aurea_desktop_api::{
+    desktop::{DesktopContextMenuLayout, DesktopPoint, DesktopRect},
     desktop_interaction::{DesktopInteraction, DesktopPosition},
     input::{InputDeviceId, InputDeviceProvider},
 };
@@ -28,6 +29,9 @@ impl AureaCompositor {
         let seat_transition = self
             .pointer_manager
             .update_button(device, button, state == ButtonState::Pressed);
+        if state == ButtonState::Released && self.context_menu_consumed_buttons.remove(&button) {
+            return;
+        }
         if !seat_transition {
             return;
         }
@@ -37,14 +41,33 @@ impl AureaCompositor {
         };
 
         if state == ButtonState::Pressed && self.desktop_interactions.context_menu_is_open() {
-            let clicked_application_surface = {
-                let location = pointer.current_location();
-                let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
-                scene.surface_under(location).is_some()
-            };
-            if clicked_application_surface || button != BTN_RIGHT {
-                let _ = self.desktop_interactions.send(DesktopInteraction::DismissContextMenu);
+            let location = pointer.current_location();
+            let logical = DesktopPoint::new(location.x.round() as i32, location.y.round() as i32);
+            let menu_layout = self.desktop_interactions
+                .context_menu_position()
+                .and_then(|anchor| self.context_menu_layout(anchor));
+
+            if let Some(layout) = menu_layout.filter(|layout| layout.contains(logical)) {
+                let interaction = if button == BTN_LEFT {
+                    layout.command_at(logical).map(|command| {
+                        DesktopInteraction::ContextMenuCommandSelected { command }
+                    })
+                } else {
+                    None
+                };
+                let interaction = interaction.unwrap_or(DesktopInteraction::DismissContextMenu);
+                if self.desktop_interactions.send(interaction).is_err() {
+                    tracing::debug!("Shell context-menu receiver is no longer available");
+                }
+                self.context_menu_consumed_buttons.insert(button);
+                self.request_all_output_frames();
+                return;
             }
+
+            // A click outside the menu dismisses it, then continues through
+            // normal Wayland/desktop routing. A secondary click on empty
+            // desktop can therefore open a new menu at the new anchor.
+            let _ = self.desktop_interactions.send(DesktopInteraction::DismissContextMenu);
         }
 
         if state == ButtonState::Pressed && matches!(button, BTN_LEFT | BTN_RIGHT) {
@@ -104,6 +127,30 @@ impl AureaCompositor {
             },
         );
         pointer.frame(self);
+    }
+
+
+    /// Resolves the menu's output from its global logical anchor and builds
+    /// the same constrained geometry used by the visual presentation layer.
+    fn context_menu_layout(
+        &self,
+        anchor: DesktopPosition,
+    ) -> Option<DesktopContextMenuLayout> {
+        let anchor_point = DesktopPoint::new(anchor.x, anchor.y);
+        let output = self.output_manager.registry().iter()
+            .filter(|output| output.is_enabled())
+            .find_map(|output| {
+                let bounds = self.output_manager.logical_bounds(output.id()).ok().flatten()?;
+                let origin = bounds.origin();
+                let size = bounds.size();
+                let origin = DesktopPoint::new(
+                    i32::try_from(origin.x).ok()?,
+                    i32::try_from(origin.y).ok()?,
+                );
+                let rect = DesktopRect::new(origin, size.width, size.height)?;
+                rect.contains(anchor_point).then_some(rect)
+            })?;
+        DesktopContextMenuLayout::at(anchor_point, output)
     }
 
     /// Releases every button still held by any physical pointer before the
