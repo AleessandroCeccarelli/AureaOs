@@ -697,7 +697,8 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - Sono presenti registrazione, mapping, cambio workspace, spostamento tra workspace, raise, posizione e richiesta resize con handshake XDG configure.
 - Il click primario su un toplevel lo porta in cima e gli assegna keyboard focus; il click sul desktop vuoto passa al sistema di selezione desktop.
 - La scena renderizza le superfici toplevel mappate e il puntatore; il renderer Wayland non equivale ancora a un window manager desktop completo.
-- `XdgShellHandler::new_popup` ignora il popup; `grab` e `reposition_request` sono no-op. Questo impedisce di considerare completo il supporto a menu contestuali e popup XDG richiesti dalle applicazioni.
+- `XdgShellHandler::new_popup` ora conserva il `PositionerState`, calcola la geometria iniziale con `PositionerState::get_geometry()` e invia il primo configure; `reposition_request` aggiorna lo stato e risponde con `send_repositioned(token)`. È il minimo lifecycle protocol-level per permettere ai client di completare configure/commit, non ancora un popup manager completo.
+- Il posizionamento corrente non applica ancora `constraint_adjustment` rispetto all'area utile dell'output: popup vicino ai bordi può uscire dallo schermo. `grab` resta intenzionalmente non implementato finché non viene introdotto un `PopupManager` per seat con pointer/keyboard grab coerenti. I popup inoltre non sono ancora raccolti nella scena Vulkan né inclusi nell'hit testing.
 - Non sono dimostrati controlli grafici di move/resize, maximize, minimize, close, tiling, decorazioni e Alt+Tab. Le API isolate di resize o workspace non provano l'intero flusso interattivo.
 - Non è dimostrata una policy completa di activation token/focus-stealing per nuove finestre; il codice evita che il semplice mapping rubi focus a un client già attivo.
 
@@ -714,7 +715,7 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 | ID | Priorità | Elemento | Classificazione | Azione |
 |---|---|---|---|---|
 | AUD-034 | Critica | Factory avvia compositor e Welcome, ma non Dock/Launcher/Settings/Quick Settings/Notifications come superfici native | Integrazione desktop mancante | Definire primo client shell nativo e lifecycle delle superfici |
-| AUD-035 | Alta | XDG popup, grab e reposition sono ignorati | Protocollo incompleto | Implementare popup lifecycle, posizionamento, grab e dismiss |
+| AUD-035 | Alta | XDG popup: configure/reposition iniziali ora gestiti; output constraints, PopupManager/grab, dismiss e rendering/hit-test restano mancanti | Protocollo e presentazione parziali | Integrare PopupManager per seat, constrain su output, scene/render/hit-test e dismiss annidato |
 | AUD-036 | Alta | DesktopItemActivated viene accodato ma non consumato; nessun launch service Fides/app | Integrazione servizio mancante | Collegare intent a un servizio applicazioni/file con policy e feedback |
 | AUD-037 | Alta | Icone desktop e selezione non sono disegnate nel frame Vulkan | Rendering mancante | Collegare raster assets/cache/geometry al frame pass e test visuale |
 | AUD-038 | Media | DockMode::Intelligent equivale attualmente ad AlwaysVisible | Policy incompleta | Definire comportamento intelligente o rinominare/limitare l'opzione |
@@ -740,3 +741,27 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - `docs/architecture/DESKTOP-RENDERING-AND-MEDIA-PIPELINE.md`
 
 **Esito fase Shell/desktop:** i modelli Shell, il lifecycle del compositor, il rendering delle superfici Wayland, il focus/raise al click e una parte della gestione workspace sono presenti. Il prodotto desktop visibile resta però incompleto: la factory avvia Welcome, non una shell nativa completa; popup XDG sono ignorati; icone e attivazione desktop non arrivano a un servizio applicazioni; le principali operazioni di window management e le superfici Dock/Launcher/pannelli devono ancora essere integrate. Nessuna modifica al codice, build, rustfmt o test eseguiti in questa fase.
+
+## 23. Avanzamento — primo lifecycle XDG popup (25 novembre 2026)
+
+### 23.1 Modifica applicata
+
+- `components/aurea-compositor/src/xdg_shell.rs` ora implementa il configure iniziale di un popup: conserva il `PositionerState`, calcola la geometria protocol-level con `get_geometry()` e invia `send_configure()`.
+- Le richieste di reposition aggiornano sia `positioner` sia `geometry` nello stato pending e rispondono con `send_repositioned(token)`.
+- Entrambi i percorsi richiedono un nuovo frame per gli output.
+- Se l'invio del configure iniziale fallisce, viene registrato un warning e il callback termina senza fingere che il popup sia stato configurato.
+
+### 23.2 Limiti mantenuti espliciti
+
+- `PositionerState::get_geometry()` non applica il constraint adjustment. Serve ancora calcolare il target rectangle relativo al parent e usare `get_unconstrained_geometry()` con l'area utile dell'output.
+- `grab` resta intenzionalmente non implementato: non va simulato con un pointer grab isolato. Occorre integrare `smithay::desktop::PopupManager`, la gestione dei grab annidati e il ripristino del focus di tastiera/puntatore.
+- La scena `RenderScene`, il rendering SHM/Vulkan e l'hit testing continuano a includere soltanto i toplevel; i popup non sono ancora visibili né interattivi nel frame.
+- Nessuna build, `cargo check`, rustfmt, test o prova hardware è stata eseguita, in accordo con la regola di accumulare le modifiche prima della verifica su Fedora.
+
+### 23.3 Prossima sequenza tecnica
+
+1. Aggiungere un piccolo modulo popup owner nel compositor che usa `PopupManager` di Smithay 0.7 per registrazione, relazioni parent/child e grab.
+2. Calcolare il rettangolo di constraint nel sistema di coordinate del parent a partire dall'output che contiene il parent; gestire output mancanti senza inventare bounds.
+3. Includere popup e relativi surface tree nella scena, nell'ordine corretto sopra il parent, con coordinate globali logiche.
+4. Includere popup nell'hit testing e nel focus pointer, rispettando i grab e la chiusura protocol-level.
+5. Solo dopo questi passaggi dichiarare completo il supporto popup XDG.
