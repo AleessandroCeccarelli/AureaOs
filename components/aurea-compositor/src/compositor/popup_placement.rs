@@ -167,7 +167,7 @@ impl PopupPlacementRegistry {
 
     pub(crate) fn update(&mut self, popup: PopupSurface, positioner: PositionerState) {
         self.entries.retain(|(entry, _)| entry.alive());
-        if let Some((_, current)) = self.entries.iter_mut().find(|(entry, _)| entry == &popup) {
+        if let Some((_, current)) = self.entries.iter_mut().find(|(entry, _)| entry.wl_surface() == popup.wl_surface()) {
             *current = positioner;
         } else {
             self.entries.push((popup, positioner));
