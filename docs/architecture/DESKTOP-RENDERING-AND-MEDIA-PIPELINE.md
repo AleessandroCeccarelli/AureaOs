@@ -273,3 +273,10 @@ The desktop context menu now follows the compositor-owned native artwork path ra
 - The menu is still conditional on the generated light/dark RGBA files. Run `tools/assets/render-context-menu.sh` before launching the compositor. Missing artwork is reported once and leaves the menu artwork undisplayed; it does not abort compositor startup.
 - Source-level geometry tests cover 1x, 2x and unrelated-monitor clipping. No Cargo build, rustfmt, check, tests or visual validation have been run. The next grouped Fedora session must generate the RGBA assets, run the agreed verification suite, and inspect both themes at mixed output scales.
 - The shared PNG exporter converts PNG's straight alpha to premultiplied RGBA8 to match the existing Vulkan blend state (`ONE`, `ONE_MINUS_SRC_ALPHA`). This applies consistently to compositor-owned icon artwork, not only the context menu.
+
+
+## Native pointer rendering
+
+The compositor owns a small high-contrast 32×32 RGBA arrow for the default named cursor. RenderScene derives its top-left origin from the seat pointer location and the arrow hotspot; output geometry applies each monitor's logical origin, integer or fractional scale, transform and clipping. A client-provided Wayland cursor surface instead follows its committed hotspot and is composited above desktop overlays; the compositor-owned arrow is drawn last when the cursor status is a named cursor.
+
+The native arrow texture is initialized once and cached for the Vulkan device lifetime. Its first upload is completed before the first frame that requires it, ensuring the startup pointer-centering frame cannot omit the arrow while waiting for another input event. The cursor is positioned by the same seat pointer location updated by libinput motion, and each accepted relative motion requests output frames. These are source-level guarantees; physical movement, click, wheel, multi-monitor and hotplug behavior still require the grouped Fedora validation.
