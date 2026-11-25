@@ -253,3 +253,12 @@ Added a small loader that accepts an explicit asset root, rejects absolute/paren
 The native pointer-button handler now routes clicks on the empty desktop through `select_desktop_item_at`. Primary click selects/clears and retains the existing same-item double-click activation intent. Secondary click selects/clears first, then sends `ShowContextMenu` with global logical pointer coordinates. Mapped Wayland windows keep precedence and continue to own their context menus.
 
 The Shell model records `DesktopPanel::ContextMenu` and its requested position, but there is not yet a rendered menu surface or actionable menu entries. Do not claim the context menu is visible. The selection visual treatment also remains pending in the Vulkan desktop-item draw pass. Commit: `80483c23`.
+
+
+### Desktop context menu placement and presentation boundary
+
+The compositor-to-shell interaction now carries the pointer anchor in global logical coordinates, and the shell retains it while the context-menu panel is active. The shared desktop API also provides output-constrained placement: the presentation layer supplies the measured menu size and the logical bounds of the output under the pointer; placement keeps the complete menu visible by shifting it left/up at right/bottom edges. It rejects zero-sized or oversized layouts rather than returning clipped or overflowing geometry.
+
+This is deliberately geometry only. The current `aurea-shell` crate is a state/runtime library and does not create a Wayland client or render native surfaces. The compositor's Vulkan path draws wallpaper, mapped Wayland SHM surfaces and the pointer, but has no native panel/text renderer. Consequently, the context menu is **not yet visible**. Do not claim otherwise or add placeholder menu commands.
+
+The next implementation boundary is a real shell presentation surface: Aurea Shell must own menu content, theme and interaction lifecycle; a dedicated native Wayland shell client should present it as a layer surface, while the compositor continues to own output composition and Vulkan resources. This avoids embedding shell policy or text layout in the compositor. Before adding dependencies, verify Debian 13 availability and keep the client/rendering modules small. The first visible menu must contain only working actions; an empty desktop currently has no implemented desktop commands, so no decorative entries should be shown.

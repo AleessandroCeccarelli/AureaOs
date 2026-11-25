@@ -8,6 +8,7 @@
 mod item;
 mod layout;
 mod manager;
+mod panel_geometry;
 mod preferences;
 mod stacks;
 mod trash_state;
@@ -15,6 +16,7 @@ mod wallpaper_preferences;
 
 pub use item::{DesktopItem, DesktopItemId, DesktopItemKind, DesktopPosition};
 pub use layout::{DesktopHitTest, DesktopPoint, DesktopRect};
+pub use panel_geometry::DesktopPanelPlacement;
 pub use manager::{DesktopManager, DesktopManagerError};
 pub use preferences::{DesktopPreferences, StackGrouping};
 pub use stacks::{DesktopStack, DesktopStackCategory, DesktopStackId};

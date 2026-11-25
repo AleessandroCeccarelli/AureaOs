@@ -36,6 +36,12 @@ impl DesktopRect {
         Self::new(DesktopPoint::new(position.x, position.y), width, height)
     }
 
+    pub const fn origin(self) -> DesktopPoint { self.origin }
+
+    pub const fn width(self) -> u32 { self.width }
+
+    pub const fn height(self) -> u32 { self.height }
+
     /// Uses a left/top-inclusive and right/bottom-exclusive hit region.
     pub fn contains(self, point: DesktopPoint) -> bool {
         let x = i64::from(point.x);
