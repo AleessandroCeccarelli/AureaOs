@@ -1749,3 +1749,11 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Individuato che `InputEvent::TouchCancel` richiama `handle_touch_cancel`, che libera gli slot del dispositivo e invia normali eventi `TouchHandle::up`. Questo comunica al client un normale sollevamento delle dita, non la cancellazione della sessione touch prevista da Wayland.
 - Verificato che Smithay 0.7 espone `TouchHandle::cancel`, ma l'API cancella la sessione touch attiva del seat e non accetta un filtro per dispositivo o slot. Usarla per un solo dispositivo può quindi interrompere anche i contatti di un secondo touchscreen.
 - Nessuna modifica al comportamento in questo passaggio: prima serve una policy esplicita per la cancellazione seat-wide e il reset coerente della mappa slot. Nessuna build o test eseguiti.
+
+
+### 25 novembre 2026 — Robustezza del mouse durante il cambio sessione
+
+- Riesaminato il percorso nativo libinput → Calloop → compositor: movimento relativo, pulsanti, rotellina verticale/orizzontale, registrazione del dispositivo e inizializzazione del puntatore Wayland.
+- Individuato un caso concreto di stato bloccato: se il mouse tiene premuto un pulsante durante un cambio VT, il rilascio fisico può non arrivare mentre la sessione è sospesa.
+- Aggiunta la liberazione di tutti i pulsanti logici prima che libseat sospenda la sessione. La logica aggregata evita doppi rilasci quando più mouse tengono premuto lo stesso pulsante.
+- Non dichiaro ancora il mouse completato: mancano build/test raggruppati su Fedora e prova fisica di movimento, clic, rotellina, scollegamento/ricollegamento e cambio VT.
