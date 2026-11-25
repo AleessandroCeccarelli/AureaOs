@@ -74,6 +74,11 @@ pub(crate) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
         }
     }
 
+    let mut capabilities = InputDeviceCapabilities::new(capabilities);
+    if kind == InputDeviceKind::Touchpad {
+        capabilities = capabilities.with_touchpad(touchpad::capabilities(device));
+    }
+
     Some(InputDeviceDescriptor {
         id: id_for(device),
         name: device.name().to_string(),
@@ -81,7 +86,7 @@ pub(crate) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
         product_id: nonzero_id(device.id_product()),
         persistent_id: stable_hardware_identity(device),
         kind,
-        capabilities: InputDeviceCapabilities::new(capabilities),
+        capabilities,
     })
 }
 
