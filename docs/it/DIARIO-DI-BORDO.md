@@ -1799,3 +1799,12 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - I popup XDG vengono registrati alla creazione; a ogni commit il manager aggiorna le relazioni parent/child e ripulisce le risorse distrutte.
 - È il primo collegamento del lifecycle popup al compositor, non ancora la visualizzazione del menu: constraint per monitor, grab coordinati, rendering Vulkan, hit testing e dismiss restano da implementare.
 - Nessuna build, cargo check, rustfmt o test eseguiti: continuiamo ad accumulare modifiche per la verifica raggruppata su Fedora.
+
+
+### 25 novembre 2026 — Popup XDG nella scena Vulkan
+
+- `RenderScene` raccoglie ora anche i surface tree dei popup registrati in `PopupManager`.
+- Le coordinate vengono convertite in posizione globale logica; i popup entrano nel normale percorso snapshot SHM e quindi nella composizione Vulkan, con clipping per output.
+- Corretto l'ordine di composizione: finestra genitrice prima, popup dopo, così il popup resta visivamente sopra la finestra. Gli ID dei popup sono inclusi nella gestione della cache texture.
+- L'hit testing controlla i popup prima del toplevel, rispettando la sovrapposizione e instradando il puntatore sulla superficie popup.
+- Restano constraint ai bordi del monitor, grab coordinati di mouse/tastiera, dismiss e prove visive multi-monitor. Nessuna build o test eseguiti.
