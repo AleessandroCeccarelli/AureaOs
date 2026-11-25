@@ -97,18 +97,35 @@ fn nonzero_id(value: u32) -> Option<u16> {
 
 /// Returns a stable hardware identity without reading or storing serial numbers.
 fn stable_hardware_identity(device: &Device) -> Option<String> {
-    let event_path = Path::new("/sys/class/input")
-        .join(device.sysname())
-        .join("device");
-    let physical_path = fs::canonicalize(event_path).ok()?;
-    // The final input/inputN components identify a Linux input interface,
-    // not the physical controller. Remove them so event numbering is irrelevant.
-    let physical_path = physical_path.parent()?.parent()?;
+    #[cfg(feature = "drm")]
+    let physical_path = udev::Device::from_subsystem_sysname(
+        "input".to_string(),
+        device.sysname().to_string(),
+    )
+    .ok()
+    .and_then(|udev_device| {
+        udev_device
+            .property_value("ID_PATH")
+            .map(|value| value.to_string_lossy().into_owned())
+    });
+
+    #[cfg(not(feature = "drm"))]
+    let physical_path: Option<String> = None;
+
+    let physical_path = physical_path.or_else(|| {
+        let event_path = Path::new("/sys/class/input")
+            .join(device.sysname())
+            .join("device");
+        let resolved = fs::canonicalize(event_path).ok()?;
+        let physical = resolved.parent()?.parent()?;
+        Some(physical.to_string_lossy().into_owned())
+    })?;
+
     Some(stable_hardware_identity_from_parts(
         device.id_vendor(),
         device.id_product(),
         device.name(),
-        physical_path.as_os_str().as_encoded_bytes(),
+        physical_path.as_bytes(),
     ))
 }
 
