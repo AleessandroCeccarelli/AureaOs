@@ -1911,3 +1911,6 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Right-clicks over application windows remain normal Wayland pointer-button events, preserving application-owned context menus.
 - Right-click does not participate in the desktop double-click activation tracker.
 - No build, Cargo check, rustfmt, tests or physical mouse validation were run.
+
+
+- Added a manager regression test proving duplicate physical press/release notifications from one mouse cannot generate duplicate Wayland seat transitions. Test source added but not executed.
