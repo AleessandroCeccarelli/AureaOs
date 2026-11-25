@@ -20,7 +20,7 @@ pub enum TouchpadClickMethod {
 }
 
 /// Preferred pointer acceleration curve.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum TouchpadAccelerationProfile {
     /// Preserve the profile selected by libinput for this device.
     #[default]
@@ -32,7 +32,7 @@ pub enum TouchpadAccelerationProfile {
 }
 
 /// Finger-tap to mouse-button mapping.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum TouchpadTapButtonMap {
     /// One/two/three fingers map to left/right/middle.
     #[default]
@@ -42,7 +42,7 @@ pub enum TouchpadTapButtonMap {
 }
 
 /// Whether libinput should forward events from the touchpad.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum TouchpadSendEventsMode {
     /// Normal operation.
     #[default]
@@ -285,6 +285,7 @@ mod tests {
         assert!(!settings.edge_scrolling());
         assert!(!settings.natural_scrolling());
         assert!(settings.disable_while_typing());
+        assert!(!settings.disable_while_trackpointing());
         assert!(settings.tap_and_drag());
         assert!(!settings.tap_drag_lock());
         assert_eq!(settings.click_method(), TouchpadClickMethod::DeviceDefault);
@@ -299,6 +300,7 @@ mod tests {
         let settings = TouchpadSettings::default()
             .with_edge_scrolling(true)
             .with_tap_drag_lock(true)
+            .with_disable_while_trackpointing(true)
             .with_left_handed(true)
             .with_middle_button_emulation(true)
             .with_pointer_speed_percent(120)
@@ -309,6 +311,7 @@ mod tests {
         assert!(settings.edge_scrolling());
         assert!(!settings.two_finger_scroll());
         assert!(settings.tap_drag_lock());
+        assert!(settings.disable_while_trackpointing());
         assert!(settings.left_handed());
         assert!(settings.middle_button_emulation());
         assert_eq!(settings.pointer_speed_percent(), 100);
