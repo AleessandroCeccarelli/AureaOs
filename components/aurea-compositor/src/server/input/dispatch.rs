@@ -400,7 +400,11 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 .compositor
                 .handle_touch_cancel(device, wayland_time(event.time()));
         }
-        InputEvent::TouchFrame { .. } => {
+        InputEvent::TouchFrame { event } => {
+            let device = pointing::id_for(&event.device());
+            if !is_registered_pointing_device(state, device) {
+                return;
+            }
             state.compositor.handle_touch_frame();
         }
         InputEvent::SwitchToggle { event } => {
