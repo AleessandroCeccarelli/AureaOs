@@ -5,7 +5,7 @@
 
 //! Core Wayland compositor state and module coordination.
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use aurea_desktop_api::{
     desktop::DesktopManager as DesktopItemsManager,
@@ -109,6 +109,8 @@ pub struct AureaCompositor {
     pointer_manager: PointerManager,
     touchscreen_outputs: TouchscreenOutputMap,
     tablet_outputs: TabletOutputMap,
+    /// Physical tablets that have been observed using each Wayland tool.
+    tablet_tool_owners: HashMap<aurea_desktop_api::input::InputDeviceId, HashSet<smithay::backend::input::TabletToolDescriptor>>,
     tablet_calibrations: TabletCalibrationMap,
     touchscreen_calibrations: TouchscreenCalibrationMap,
     touchscreen_slots: TouchscreenSlotMap,
@@ -178,6 +180,7 @@ impl AureaCompositor {
             pointer_manager: PointerManager::new(),
             touchscreen_outputs: TouchscreenOutputMap::new(),
             tablet_outputs: TabletOutputMap::new(),
+            tablet_tool_owners: HashMap::new(),
             tablet_calibrations: TabletCalibrationMap::default(),
             touchscreen_calibrations: TouchscreenCalibrationMap::default(),
             touchscreen_slots: TouchscreenSlotMap::new(),
