@@ -1765,3 +1765,11 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Sulle finestre applicative il clic destro continua a essere consegnato normalmente al client Wayland, che mantiene il proprio menu contestuale.
 - Il clic destro non altera il riconoscimento del doppio clic sinistro.
 - Modifica sorgente e documentazione; nessuna build, cargo check, rustfmt, test o prova con mouse fisico eseguiti.
+
+### 25 novembre 2026 — Limiti di sicurezza per il caricamento delle icone desktop
+
+- Rafforzato `desktop/icon_asset_loader.rs`: accetta solo percorsi relativi normalizzati, risolve il percorso reale e rifiuta file/symlink che escano dalla root esplicita degli asset.
+- Verifica la dimensione RGBA8 attesa dal descrittore prima di allocare e leggere il contenuto, con limite pixel già vincolato a 256 × 256.
+- Aggiunti test sorgente per caricamento valido, traversal `..`, dimensione non conforme e symlink esterno.
+- Commit `6cbc2669`. Il loader resta preparatorio: la root runtime non è ancora fornita dalla composition root e il rendering delle icone non è collegato.
+- Nessun `cargo fmt`, `cargo check`, test, build o prova hardware eseguiti. Verifica raggruppata su Fedora ancora in sospeso.
