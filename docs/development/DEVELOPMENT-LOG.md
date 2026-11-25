@@ -1769,3 +1769,12 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - No build, Cargo check, rustfmt, test execution or hardware validation was run. All validation remains grouped as requested.
 
 - Dependency bookkeeping note: the new direct `serde`, `toml` and optional `udev` manifest entries are not yet reflected in `Cargo.lock`. Do not use `--locked` until the grouped Fedora Cargo run refreshes the lockfile. This was intentionally left for the planned validation batch; no GitHub build was started.
+
+
+### 2026-11-25 — Protect persistent touchpad settings
+
+- The touchpad profile store now opens malformed, unreadable or unsupported-version files in read-only mode. A later settings change returns an error instead of replacing the original file with an empty or downgraded profile set.
+- The store now accepts only the explicitly supported format version, rather than treating a missing/zero version as compatible.
+- Added focused source tests for malformed TOML and future format versions, including assertions that the original bytes remain unchanged after a rejected write.
+- Runtime settings can still be applied for the current session; persistence failure is reported through the existing warning path. The user's original file remains intact for recovery or a future migration.
+- No build, Cargo check, rustfmt, test execution or hardware validation was run. Grouped validation remains pending.
