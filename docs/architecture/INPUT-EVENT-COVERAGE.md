@@ -119,3 +119,19 @@ Horizontal navigation is already resolved by `GestureProfile`: a negative accumu
 The compositor applies workspace changes directly. Overview and App Exposé are sent to the shell as semantic requests; the shell currently stores the requested panel state. The finished visual panel surfaces are a separate presentation task and are not claimed complete. User-configurable gesture counts and sensitivity remain future work.
 
 No build, Cargo check, rustfmt or tests were run; grouped validation remains pending.
+
+
+## Keyboard fallback for touchpad navigation — 2026-11-25
+
+Desktop navigation is available without a touchpad. The global keyboard resolver uses the same semantic actions as the touchpad interaction path:
+
+- `Super + Ctrl + Left`: previous virtual workspace.
+- `Super + Ctrl + Right`: next virtual workspace.
+- `Super + Ctrl + Up`: request AureaOS Overview.
+- `Super + Ctrl + Down`: request App Exposé.
+
+The compositor consumes recognized press, repeat and matching release events so these global combinations are not leaked to the focused application. Unrecognized combinations continue through the normal Wayland keyboard path. The workspace bindings call the compositor workspace switch operation; Overview and App Exposé are sent to the shell using the existing desktop-interaction channel.
+
+This provides equivalent keyboard access for a mouse-and-keyboard setup. The visible Overview and App Exposé surfaces remain separate shell presentation work. The bindings are defaults; a user-facing shortcut customization interface is not yet implemented.
+
+No build, Cargo check, rustfmt, test execution or hardware validation was run. Grouped validation remains pending.
