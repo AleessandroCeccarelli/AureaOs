@@ -96,6 +96,20 @@ mod tests {
     }
 
     #[test]
+    fn context_menu_dismissal_does_not_close_other_panels() {
+        let mut panels = DesktopPanelState::default();
+        panels.show(DesktopPanel::Overview);
+
+        assert!(!panels.close_context_menu());
+        assert_eq!(panels.active(), Some(DesktopPanel::Overview));
+
+        panels.show_context_menu(DesktopPosition { x: 10, y: 20 });
+        assert!(panels.close_context_menu());
+        assert_eq!(panels.active(), None);
+        assert_eq!(panels.context_menu_position(), None);
+    }
+
+    #[test]
     fn closing_panels_clears_the_active_surface() {
         let mut panels = DesktopPanelState::default();
         panels.show(DesktopPanel::Overview);
