@@ -197,6 +197,27 @@ mod tests {
     }
 
     #[test]
+    fn context_menu_open_state_tracks_show_and_dismiss_interactions() {
+        let (sender, receiver) = desktop_interaction_channel();
+        let position = DesktopPosition { x: 40, y: 80 };
+
+        assert!(!sender.context_menu_is_open());
+        sender.send(DesktopInteraction::ShowContextMenu { position }).unwrap();
+        assert!(sender.context_menu_is_open());
+        assert_eq!(
+            receiver.try_recv(),
+            Ok(DesktopInteraction::ShowContextMenu { position })
+        );
+
+        sender.send(DesktopInteraction::DismissContextMenu).unwrap();
+        assert!(!sender.context_menu_is_open());
+        assert_eq!(
+            receiver.try_recv(),
+            Ok(DesktopInteraction::DismissContextMenu)
+        );
+    }
+
+    #[test]
     fn receiver_reports_disconnected_sender() {
         let (sender, receiver) = desktop_interaction_channel();
         drop(sender);
