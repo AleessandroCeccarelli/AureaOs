@@ -1858,3 +1858,24 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Device removal releases only buttons no other connected device continues to
   hold. Added regression tests for overlapping holds and disconnect isolation.
 - No build, rustfmt, tests or physical-device validation performed.
+
+
+### 2026-11-25 — Isolate Wacom pen source and hot-unplug lifecycle
+
+- Added a dedicated TabletToolRegistry separating physical tablet ownership
+  from the currently active proximity source of each unique pen/tool.
+- Axis, tip and tool-button events are now accepted only from the tablet that
+  owns that tool's active proximity session. A uniquely identified pen can
+  move between compatible tablets; the previous source is closed before the
+  new one becomes active.
+- Tablet removal now ends active pen proximity first (allowing Smithay to
+  synthesize releases for held pen buttons and tip contact), then removes the
+  tablet and retires tools only after their last owning tablet disconnects.
+- Added registry tests for independent pens, shared pen identity across
+  tablets, source handoff, and device-specific removal.
+- Confirmed from Smithay 0.7 API documentation that TabletToolDescriptor
+  exposes pen/eraser type and pressure, distance, tilt, rotation, slider and
+  wheel capabilities. Smithay 0.7 explicitly does not implement tablet-pad
+  input; pad buttons, rings and strips remain documented as unsupported.
+- No build, Cargo check, rustfmt, test execution or physical Wacom validation
+  was run. Grouped Fedora validation remains pending.
