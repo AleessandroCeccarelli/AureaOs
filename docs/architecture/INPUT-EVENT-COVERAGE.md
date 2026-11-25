@@ -102,7 +102,7 @@ AureaOS adopts a macOS-inspired touchpad profile while keeping the behavior nati
 - Four-finger pinch remains an Overview shortcut as an additional gesture.
 - Tap-to-click, tap-and-drag and disable-while-typing remain per-device libinput settings, with capability-aware status reporting.
 
-The three-finger upward Overview binding is now part of `GestureProfile` and has focused unit tests for direction and threshold. Downward swipe/App Exposé, Launchpad-style gesture, configurable finger counts, gesture sensitivity UI and per-device gesture profiles are intentionally not claimed as implemented yet. They need explicit shell actions and settings contracts before being added.
+The three-finger upward swipe requests Overview, and the three-finger downward swipe requests App Exposé. Both bindings are part of `GestureProfile` and have focused tests for direction, dominant axis and minimum movement threshold. The compositor routes these semantic requests through the existing shell interaction channel; the shell currently stores the requested panel state, while the finished visual panel surfaces remain separate presentation work. Launchpad-style gestures, configurable finger counts, gesture sensitivity UI and user-editable per-device gesture profiles are not yet implemented.
 
 Mouse handling remains standards-based: left/right/middle and additional buttons where exposed, relative/absolute motion, vertical/horizontal wheel axes, acceleration profile/speed and per-device settings. Gaming-specific DPI buttons, vendor macros or aim-assist features are not assumed; those are hardware/vendor-specific and should only appear when reliably exposed by libinput.
 
