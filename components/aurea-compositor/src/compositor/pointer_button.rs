@@ -11,6 +11,7 @@ use smithay::{backend::input::ButtonState, input::pointer::ButtonEvent, utils::S
 use super::AureaCompositor;
 
 const BTN_LEFT: u32 = 0x110;
+const BTN_RIGHT: u32 = 0x111;
 
 impl AureaCompositor {
     /// Sends a physical button event and focuses/raises the clicked toplevel.
@@ -32,7 +33,7 @@ impl AureaCompositor {
             return;
         };
 
-        if state == ButtonState::Pressed && button == BTN_LEFT {
+        if state == ButtonState::Pressed && matches!(button, BTN_LEFT | BTN_RIGHT) {
             let location = pointer.current_location();
             let focused_toplevel = {
                 let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
@@ -41,13 +42,33 @@ impl AureaCompositor {
                     .map(|(_, _, toplevel)| toplevel.wl_surface().clone())
             };
 
-            if let Some(surface) = focused_toplevel {
-                self.desktop_click_tracker.reset();
-                self.window_manager.raise_toplevel(&surface);
-                self.focus_surface(Some(surface));
-                self.request_all_output_frames();
-            } else {
-                self.select_desktop_item_at(location);
+            match (button, focused_toplevel) {
+                (BTN_LEFT, Some(surface)) => {
+                    self.desktop_click_tracker.reset();
+                    self.window_manager.raise_toplevel(&surface);
+                    self.focus_surface(Some(surface));
+                    self.request_all_output_frames();
+                }
+                (BTN_LEFT, None) => self.select_desktop_item_at(location, true),
+                (BTN_RIGHT, Some(_)) => {
+                    // A window owns its own context-menu interaction. Do not
+                    // replace it with the desktop shell menu.
+                    self.desktop_click_tracker.reset();
+                }
+                (BTN_RIGHT, None) => {
+                    // Right-click selects the item under the pointer (or
+                    // clears selection on empty desktop) before opening the
+                    // desktop context menu.
+                    self.select_desktop_item_at(location, false);
+                    if self
+                        .desktop_interactions
+                        .send(aurea_desktop_api::desktop_interaction::DesktopInteraction::ShowContextMenu)
+                        .is_err()
+                    {
+                        tracing::debug!("Shell context-menu receiver is no longer available");
+                    }
+                }
+                _ => {}
             }
         }
 
