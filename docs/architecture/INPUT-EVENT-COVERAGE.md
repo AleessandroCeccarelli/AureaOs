@@ -241,3 +241,26 @@ the seat release is emitted only after the final device releases it. Disconnect
 cleanup likewise releases only buttons no remaining device holds. This prevents
 one mouse from releasing a left/right/middle button that another mouse is
 still physically holding.
+
+
+## Wacom pen and eraser lifecycle
+
+Tablet tools are tracked independently from their physical tablet devices. The
+tool descriptor identifies the tool type (including pen, pencil, brush,
+airbrush, mouse, lens and eraser) and its optional axes: pressure, distance,
+tilt, rotation, slider and wheel. AureaOS forwards the axes reported by
+libinput and preserves the Wayland tablet-tool stream independently of the
+ordinary mouse pointer.
+
+A unique pen may be observed on more than one compatible tablet over time.
+The tool registry therefore distinguishes physical ownership from the active
+proximity source: only the tablet currently reporting proximity may send axis,
+tip and tool-button events for that pen. Moving a pen to another tablet closes
+the previous proximity session before activating the new source. Removing a
+tablet closes only the active pen sessions originating from that tablet and
+keeps a shared tool advertised while another tablet still owns it.
+
+Smithay 0.7's tablet abstraction does not implement tablet-pad input. The
+tablet-tool path supports pen/eraser buttons, but pad buttons, rings and strips
+are not yet routed. They must remain reported as unsupported until a backend
+and protocol implementation is added.
