@@ -1848,3 +1848,10 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Aggiunti test sorgente per canale, stato e comportamento della Shell; non eseguiti.
 - Il menu non è ancora disegnato: la richiesta e la chiusura sono operative a livello semantico, ma manca ancora il renderer nativo dei pannelli e quindi non possiamo dichiarare completata la visualizzazione o la selezione delle voci.
 - Nessuna build, cargo fmt, check o test: verifica cumulativa su Fedora.
+
+### 25 novembre 2026 — Contratto geometrico del menu contestuale
+
+- Creato `aurea-desktop-api/src/desktop/context_menu.rs`: modello indipendente dalla grafica per i comandi e le aree cliccabili del menu desktop.
+- Il menu standard prevede inizialmente quattro voci: Crea cartella, Cambia sfondo, Impostazioni schermo e Personalizzazione. Dimensioni logiche 248 × 160, righe da 36 e padding superiore/inferiore da 8.
+- Il layout usa il posizionamento già presente per mantenersi dentro l'output corretto, anche con coordinate globali e configurazioni multi-monitor. Il test di hit-testing non considera il padding come comando.
+- Esportato il nuovo contratto dal modulo `desktop` dell'API. È ancora un modello: rendering, sincronizzazione del layout con il compositor e dispatch dei comandi non sono collegati. Nessuna build, `cargo fmt`, check o test eseguiti.
