@@ -153,3 +153,7 @@ No build, Cargo check, rustfmt, test execution or hardware validation was run. G
 - A unified compositor disconnect method first clears compositor/protocol state (including pending button releases and active contacts/gestures), then the manager removes preferences, button bookkeeping and the inventory entry. The server subsequently drops cached touchpad handles/reports and reconciles the seat touch capability.
 - Added focused source tests for preference reconciliation, stale touchpad report removal and manager disconnect cleanup. These tests are not yet compiled or executed.
 - No build, Cargo check, rustfmt, test execution or hardware hotplug validation was run. Grouped validation remains pending.
+
+### Unsupported re-announcement cleanup — 2026-11-25
+
+When libinput re-announces a sysname whose capabilities no longer classify it as a supported pointing device, the dispatch path now retires any prior pointing registration through `disconnect_pointing_device`. It also removes cached touchpad handles and applied-setting state, then refreshes seat touchscreen capability. This closes the stale-registration case where `DeviceAdded` previously produced no descriptor and therefore skipped lifecycle cleanup. A manager regression test covers disconnecting and reconnecting the same session ID and verifies that button and per-device preference state do not leak into the new connection. Source tests added; not executed in this change.
