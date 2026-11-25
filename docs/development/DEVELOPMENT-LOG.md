@@ -1792,3 +1792,16 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - USB and Bluetooth HID touchpads remain in scope; persistent profiles use available physical udev/sysfs identity and are deliberately not guessed when no stable path exists.
 - Static repository search found no external struct-literal construction of `InputDeviceCapabilities`; callers use its constructors/default. This was a source search, not a compiler check.
 - No build, Cargo check, rustfmt, tests or physical-device validation was run. Grouped Fedora validation remains pending.
+
+
+## 2026-11-25 — Expanded touchpad capability snapshot
+
+- Extended the shared desktop API with tap-to-click, tap-and-drag, drag-lock,
+  tap-button-map, disable-events and disable-on-external-mouse capability flags.
+- The compositor derives these flags from the pinned Rust `input 0.9.1`
+  libinput API and the device's reported send-events modes.
+- Deliberately did not expose three-finger drag: it is absent from the pinned
+  `input 0.9.1` Device API, so newer upstream libinput documentation is not
+  sufficient evidence that the pinned dependency can support it.
+- No Cargo build, formatting, test suite or hardware validation was run; these
+  changes remain queued for the grouped Fedora validation pass.
