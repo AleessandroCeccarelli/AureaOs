@@ -18,6 +18,8 @@ pub(super) fn resolve(keysym: u32, modifiers: ModifiersState) -> Option<Shortcut
     match keysym {
         keysyms::KEY_Left => Some(ShortcutAction::PreviousWorkspace),
         keysyms::KEY_Right => Some(ShortcutAction::NextWorkspace),
+        keysyms::KEY_Up => Some(ShortcutAction::ShowOverview),
+        keysyms::KEY_Down => Some(ShortcutAction::ShowAppExpose),
         _ => None,
     }
 }
@@ -43,7 +45,8 @@ mod tests {
             resolve(keysyms::KEY_Right, modifiers),
             Some(ShortcutAction::NextWorkspace)
         );
-        assert_eq!(resolve(keysyms::KEY_Up, modifiers), None);
+        assert_eq!(resolve(keysyms::KEY_Up, modifiers), Some(ShortcutAction::ShowOverview));
+        assert_eq!(resolve(keysyms::KEY_Down, modifiers), Some(ShortcutAction::ShowAppExpose));
     }
 
     #[test]
