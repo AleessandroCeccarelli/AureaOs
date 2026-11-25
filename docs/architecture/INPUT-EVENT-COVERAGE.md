@@ -76,7 +76,10 @@ When a tablet is mapped to the full desktop, the rectangular calibration extent 
 
 ## Touch cancellation semantics — 2026-11-25
 
-- Static review found that libinput `TouchCancel` currently removes the affected device's slots and emits a synthetic Wayland `touch.up` for each one. This reports ordinary finger lift, not cancellation of the touch sequence.
-- Smithay 0.7 exposes `TouchHandle::cancel`, which sends the Wayland touch-cancel event, but its public API cancels the active touch session for the seat; it does not provide a per-device/per-slot cancellation operation.
-- Calling the seat-wide cancel for one device would also interrupt active contacts from other touchscreens. Replacing the current behavior therefore needs an explicit policy for simultaneous devices and a consistent reset of the seat-wide slot map.
-- No code change is made in this audit pass. Keep this as an input correctness issue until a per-device-safe policy is selected; do not describe `TouchCancel` as fully routed yet.
+- Smithay 0.7 provides `TouchHandle::cancel` as a seat-wide operation; it does not expose per-device cancellation.
+- AureaOS now applies an explicit **seat-wide cancellation policy**: a `TouchCancel` is acted on only when the originating device owns at least one active slot. The compositor then clears every active physical-to-seat slot mapping and emits exactly one `TouchHandle::cancel` for the seat.
+- This intentionally cancels concurrent contacts from other touchscreens too. That is required to keep the server's aggregated Wayland seat state consistent with the protocol event. Their physical contacts may still be down, but no stale slot remains; subsequent motion/up events are ignored until a fresh down allocates a new slot.
+- A cancel from a device with no active slot is ignored, so a spurious/late event cannot cancel another device's live sequence.
+- Device removal reuses the same cancellation path before clearing the remaining per-device settings and mappings.
+- The slot registry exposes `clear_all` to make the seat-wide reset explicit and has a unit test proving that contacts from all devices are removed.
+- This is a source-level correction only. No build, Cargo check, rustfmt, test execution or hardware validation was performed; grouped validation remains pending.
