@@ -5,7 +5,10 @@
 
 //! Pointer button delivery and click-to-focus policy.
 
-use aurea_desktop_api::input::{InputDeviceId, InputDeviceProvider};
+use aurea_desktop_api::{
+    desktop_interaction::{DesktopInteraction, DesktopPosition},
+    input::{InputDeviceId, InputDeviceProvider},
+};
 use smithay::{backend::input::ButtonState, input::pointer::ButtonEvent, utils::SERIAL_COUNTER};
 
 use super::AureaCompositor;
@@ -55,7 +58,20 @@ impl AureaCompositor {
                     // replace it with the desktop shell menu.
                     self.desktop_click_tracker.reset();
                 }
-                (BTN_RIGHT, None) => self.desktop_click_tracker.reset(),
+                (BTN_RIGHT, None) => {
+                    self.desktop_click_tracker.reset();
+                    let position = DesktopPosition {
+                        x: location.x.round() as i32,
+                        y: location.y.round() as i32,
+                    };
+                    if self
+                        .desktop_interactions
+                        .send(DesktopInteraction::ShowContextMenu { position })
+                        .is_err()
+                    {
+                        tracing::debug!("Shell context-menu receiver is no longer available");
+                    }
+                },
                 _ => {}
             }
         }

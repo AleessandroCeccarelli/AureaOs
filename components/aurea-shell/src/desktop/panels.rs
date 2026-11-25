@@ -17,6 +17,7 @@ pub enum DesktopPanel {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct DesktopPanelState {
     active: Option<DesktopPanel>,
+    context_menu_position: Option<DesktopPosition>,
 }
 
 impl DesktopPanelState {
@@ -28,11 +29,26 @@ impl DesktopPanelState {
     /// Opens a transient surface, replacing any other active surface.
     pub fn show(&mut self, panel: DesktopPanel) {
         self.active = Some(panel);
+        if panel != DesktopPanel::ContextMenu {
+            self.context_menu_position = None;
+        }
+    }
+
+    /// Opens the desktop context menu at the pointer's logical position.
+    pub fn show_context_menu(&mut self, position: DesktopPosition) {
+        self.active = Some(DesktopPanel::ContextMenu);
+        self.context_menu_position = Some(position);
+    }
+
+    /// Returns the position requested for the active context menu.
+    pub fn context_menu_position(&self) -> Option<DesktopPosition> {
+        self.context_menu_position
     }
 
     /// Closes the active transient surface.
     pub fn close(&mut self) {
         self.active = None;
+        self.context_menu_position = None;
     }
 
     /// Reports whether a transient surface is currently requested.
@@ -44,6 +60,7 @@ impl DesktopPanelState {
 #[cfg(test)]
 mod tests {
     use super::{DesktopPanel, DesktopPanelState};
+    use aurea_desktop_api::desktop_interaction::DesktopPosition;
 
     #[test]
     fn showing_a_panel_replaces_the_previous_panel() {

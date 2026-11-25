@@ -50,7 +50,8 @@ fn overview_and_context_menu_interactions_are_preserved_for_presentation() {
 
     let mut runtime = ShellRuntime::new();
     runtime.handle_desktop_interaction(DesktopInteraction::ShowOverview);
-    runtime.handle_desktop_interaction(DesktopInteraction::ShowContextMenu);
+    let position = aurea_desktop_api::desktop_interaction::DesktopPosition { x: 640, y: 360 };
+    runtime.handle_desktop_interaction(DesktopInteraction::ShowContextMenu { position });
 
     assert_eq!(
         runtime.take_desktop_interaction(),
@@ -58,12 +59,13 @@ fn overview_and_context_menu_interactions_are_preserved_for_presentation() {
     );
     assert_eq!(
         runtime.take_desktop_interaction(),
-        Some(DesktopInteraction::ShowContextMenu)
+        Some(DesktopInteraction::ShowContextMenu { position })
     );
     assert_eq!(
         runtime.desktop_state().panels.active(),
         Some(crate::desktop::DesktopPanel::ContextMenu)
     );
+    assert_eq!(runtime.desktop_state().panels.context_menu_position(), Some(position));
 
     runtime.dismiss_desktop_panel();
     assert_eq!(runtime.desktop_state().panels.active(), None);

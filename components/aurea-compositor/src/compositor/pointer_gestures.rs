@@ -14,7 +14,7 @@ use smithay::{
     utils::SERIAL_COUNTER,
 };
 
-use aurea_desktop_api::desktop_interaction::DesktopInteraction;
+use aurea_desktop_api::desktop_interaction::{DesktopInteraction, DesktopPosition};
 
 use super::AureaCompositor;
 
@@ -104,7 +104,15 @@ impl AureaCompositor {
                     Some(DesktopInteraction::ShowAppExpose)
                 }
                 crate::input::interaction::PointingInteraction::ContextMenu => {
-                    Some(DesktopInteraction::ShowContextMenu)
+                    self.seat.get_pointer().map(|pointer| {
+                        let location = pointer.current_location();
+                        DesktopInteraction::ShowContextMenu {
+                            position: DesktopPosition {
+                                x: location.x.round() as i32,
+                                y: location.y.round() as i32,
+                            },
+                        }
+                    })
                 }
             };
             if let Some(desktop_interaction) = desktop_interaction {

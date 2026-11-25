@@ -7,13 +7,20 @@
 
 use std::sync::mpsc::{self, Receiver, SendError, Sender, TryRecvError};
 
+/// A desktop position expressed in logical output coordinates.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct DesktopPosition {
+    pub x: i32,
+    pub y: i32,
+}
+
 /// A desktop-level intent resolved from a physical input gesture.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum DesktopInteraction {
     WorkspaceChanged { index: u8 },
     ShowOverview,
     ShowAppExpose,
-    ShowContextMenu,
+    ShowContextMenu { position: DesktopPosition },
     DesktopItemSelected { id: String },
     DesktopSelectionCleared,
     /// Activates a desktop item after a recognized double-click.

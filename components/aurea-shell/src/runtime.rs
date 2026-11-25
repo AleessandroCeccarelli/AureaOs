@@ -153,8 +153,8 @@ impl ShellRuntime {
             DesktopInteraction::ShowAppExpose => {
                 self.desktop.panels.show(DesktopPanel::AppExpose);
             }
-            DesktopInteraction::ShowContextMenu => {
-                self.desktop.panels.show(DesktopPanel::ContextMenu);
+            DesktopInteraction::ShowContextMenu { position } => {
+                self.desktop.panels.show_context_menu(position);
             }
             DesktopInteraction::DesktopItemSelected { ref id } => {
                 self.desktop.select_item(id.clone());
