@@ -72,7 +72,7 @@ impl fmt::Display for VulkanSurfaceCompositionError {
             Self::Pipeline(error) => {
                 write!(formatter, "Surface pipeline initialization failed: {error}")
             }
-            Self::Texture(error) => write!(formatter, "Wayland SHM texture upload failed: {error}"),
+            Self::Texture(error) => write!(formatter, "Texture preparation failed: {error}"),
             Self::Descriptor(error) => write!(
                 formatter,
                 "Surface texture descriptor creation failed: {error}"
