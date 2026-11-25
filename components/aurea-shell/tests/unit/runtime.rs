@@ -70,6 +70,23 @@ fn overview_and_context_menu_interactions_are_preserved_for_presentation() {
 }
 
 #[test]
+fn app_expose_interaction_activates_the_app_expose_panel() {
+    use aurea_desktop_api::desktop_interaction::DesktopInteraction;
+
+    let mut runtime = ShellRuntime::new();
+    runtime.handle_desktop_interaction(DesktopInteraction::ShowAppExpose);
+
+    assert_eq!(
+        runtime.desktop_state().panels.active(),
+        Some(crate::desktop::DesktopPanel::AppExpose)
+    );
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::ShowAppExpose)
+    );
+}
+
+#[test]
 fn runtime_starts_in_created_state() {
     let runtime = ShellRuntime::new();
 
