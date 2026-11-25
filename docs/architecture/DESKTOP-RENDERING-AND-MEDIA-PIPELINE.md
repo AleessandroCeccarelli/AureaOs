@@ -247,3 +247,9 @@ No claim is made that the Trash is visible or that the desktop is hardware-valid
 ### Desktop asset loader boundary
 
 Added a small loader that accepts an explicit asset root, rejects absolute/parent-traversal paths and validates loaded bytes through the existing RGBA8 snapshot constructor. The application composition root has not selected the installed runtime root and the renderer does not call this loader yet. It is staged groundwork only; no frame-loop filesystem access or new dependency was introduced. No build, tests, rustfmt or CI were run.
+
+### Pointer selection and context-menu status — 25 November 2026
+
+The native pointer-button handler now routes clicks on the empty desktop through `select_desktop_item_at`. Primary click selects/clears and retains the existing same-item double-click activation intent. Secondary click selects/clears first, then sends `ShowContextMenu` with global logical pointer coordinates. Mapped Wayland windows keep precedence and continue to own their context menus.
+
+The Shell model records `DesktopPanel::ContextMenu` and its requested position, but there is not yet a rendered menu surface or actionable menu entries. Do not claim the context menu is visible. The selection visual treatment also remains pending in the Vulkan desktop-item draw pass. Commit: `80483c23`.
