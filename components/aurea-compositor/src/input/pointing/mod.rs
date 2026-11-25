@@ -16,6 +16,7 @@ mod tablet_calibration;
 mod tablet_outputs;
 mod touchpad;
 mod touchpad_settings;
+mod touchpad_store;
 mod touchscreen;
 mod touchscreen_calibration;
 mod touchscreen_slots;
