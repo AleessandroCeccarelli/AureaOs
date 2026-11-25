@@ -9,7 +9,10 @@ use std::sync::mpsc::Receiver;
 
 use super::TouchpadApplyReport;
 
-/// Stable identifier assigned by the AureaOS input-device discovery layer.
+/// Session-scoped identifier assigned by the AureaOS input-device discovery layer.
+///
+/// The current libinput backend derives it from the kernel input sysname. It is
+/// deterministic for that sysname, but is not a persistent hardware identity.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct InputDeviceId(pub u64);
 
