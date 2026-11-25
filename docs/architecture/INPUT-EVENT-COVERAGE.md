@@ -195,3 +195,23 @@ Pointer motion, buttons, axes, swipe/pinch/hold gestures, and touchscreen contac
 - Added focused source tests for scroll-only recognition and rejection of devices with no touchpad-specific configuration.
 - Commits: `f6c9cf8` (classification), `ff722e3` (shared policy), `908a00c` (explicit configuration result type).
 - No build, Cargo check, rustfmt, test execution or hardware validation was performed; grouped validation remains pending.
+
+
+## Simultaneous pointing devices and shared pointer seat
+
+AureaOS uses one Wayland seat/pointer stream while retaining independent
+physical-device identities and per-device state. Mouse, touchpad, touchscreen,
+tablet tool and tablet pad discovery must not select an exclusive "active"
+device. Events from every registered source are accepted and merged through
+the compositor's seat; device-specific settings, pressed-button bookkeeping,
+touch contacts, tablet tools and lifecycle cleanup remain scoped to their
+originating device wherever the protocol permits.
+
+Disconnecting or reclassifying one device must not remove another device or
+reset its configuration. Touchpad profile reapplication after session resume
+invalidates and retries each touchpad independently; a successful profile on
+one device is not discarded merely because another device needs recovery.
+
+Direct-touch routing is intentionally separate from relative pointer motion:
+with multiple displays, each touchscreen requires an explicit display
+assignment rather than guessing which monitor should receive its coordinates.
