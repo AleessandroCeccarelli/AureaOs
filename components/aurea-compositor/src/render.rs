@@ -24,7 +24,7 @@ use smithay::{
             surface::{WaylandSurfaceRenderElement, render_elements_from_surface_tree},
         },
     },
-    desktop::{WindowSurfaceType, utils::under_from_surface_tree},
+    desktop::{PopupManager, WindowSurfaceType, utils::under_from_surface_tree},
     input::pointer::{CursorImageStatus, CursorImageSurfaceData},
     reexports::wayland_server::protocol::wl_surface::WlSurface,
     utils::{IsAlive, Logical, Physical, Point},
@@ -170,8 +170,25 @@ impl<'a> RenderScene<'a> {
         point: Point<f64, Logical>,
     ) -> Option<(WlSurface, Point<i32, Logical>, &'a ToplevelSurface)> {
         for toplevel in self.toplevels.iter().rev() {
+            let root = toplevel.surface.wl_surface();
+            let popups = PopupManager::popups_for_surface(root).collect::<Vec<_>>();
+
+            // Popup trees are stacked above their parent. Test the newest/deepest
+            // entries first so overlapping popup surfaces receive pointer focus.
+            for (popup, popup_offset) in popups.into_iter().rev() {
+                let popup_origin = toplevel.location + popup_offset - popup.geometry().loc;
+                if let Some((surface, location)) = under_from_surface_tree(
+                    popup.wl_surface(),
+                    point,
+                    popup_origin,
+                    WindowSurfaceType::POPUP | WindowSurfaceType::SUBSURFACE,
+                ) {
+                    return Some((surface, location, toplevel.surface));
+                }
+            }
+
             if let Some((surface, location)) = under_from_surface_tree(
-                toplevel.surface.wl_surface(),
+                root,
                 point,
                 toplevel.location,
                 WindowSurfaceType::TOPLEVEL | WindowSurfaceType::SUBSURFACE,
@@ -213,9 +230,29 @@ impl<'a> RenderScene<'a> {
             .to_physical(scale)
             .to_i32_round();
 
+            let root = toplevel.surface.wl_surface();
+            for (popup, popup_offset) in PopupManager::popups_for_surface(root) {
+                let popup_origin = toplevel.location + popup_offset - popup.geometry().loc;
+                let popup_location: Point<i32, Physical> = Point::<f64, Logical>::from((
+                    f64::from(popup_origin.x) - f64::from(output_origin.0),
+                    f64::from(popup_origin.y) - f64::from(output_origin.1),
+                ))
+                .to_physical(scale)
+                .to_i32_round();
+
+                elements.extend(render_elements_from_surface_tree(
+                    renderer,
+                    popup.wl_surface(),
+                    popup_location,
+                    scale,
+                    1.0,
+                    Kind::Unspecified,
+                ));
+            }
+
             elements.extend(render_elements_from_surface_tree(
                 renderer,
-                toplevel.surface.wl_surface(),
+                root,
                 location,
                 scale,
                 1.0,
@@ -231,11 +268,14 @@ impl<'a> RenderScene<'a> {
     /// Unlike shm_snapshots, this includes surfaces that currently have no
     /// attached SHM buffer and therefore cannot produce a render snapshot.
     pub fn surface_ids(&self) -> Vec<smithay::reexports::wayland_server::backend::ObjectId> {
-        let mut surface_ids = self
-            .toplevels
-            .iter()
-            .flat_map(|toplevel| collect_surface_tree_ids(toplevel.surface.wl_surface()))
-            .collect::<Vec<_>>();
+        let mut surface_ids = Vec::new();
+        for toplevel in &self.toplevels {
+            let root = toplevel.surface.wl_surface();
+            surface_ids.extend(collect_surface_tree_ids(root));
+            for (popup, _) in PopupManager::popups_for_surface(root) {
+                surface_ids.extend(collect_surface_tree_ids(popup.wl_surface()));
+            }
+        }
 
         if let Some((surface, _, _)) = &self.cursor_surface {
             surface_ids.extend(collect_surface_tree_ids(surface));
@@ -250,13 +290,18 @@ impl<'a> RenderScene<'a> {
     /// above application windows. Output clipping naturally handles monitors
     /// that do not intersect the cursor rectangle.
     pub fn shm_snapshots(&self) -> Vec<SurfaceTreeSnapshot> {
-        let mut snapshots = self
-            .toplevels
-            .iter()
-            .flat_map(|toplevel| {
-                collect_surface_tree_snapshots(toplevel.surface.wl_surface(), toplevel.location)
-            })
-            .collect::<Vec<_>>();
+        let mut snapshots = Vec::new();
+        for toplevel in &self.toplevels {
+            let root = toplevel.surface.wl_surface();
+            for (popup, popup_offset) in PopupManager::popups_for_surface(root) {
+                let popup_origin = toplevel.location + popup_offset - popup.geometry().loc;
+                snapshots.extend(collect_surface_tree_snapshots(
+                    popup.wl_surface(),
+                    popup_origin,
+                ));
+            }
+            snapshots.extend(collect_surface_tree_snapshots(root, toplevel.location));
+        }
 
         if let Some((surface, location, cursor_anchor)) = &self.cursor_surface {
             let mut cursor_snapshots = collect_surface_tree_snapshots(surface, *location);
