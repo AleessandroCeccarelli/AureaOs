@@ -53,7 +53,8 @@ pub(crate) fn constrain_geometry(
         };
         let parent_geometry = parent_popup.geometry();
         (
-            root_window_origin + parent_offset,
+            Point::<i32, Logical>::from(toplevel_location) + parent_offset
+                - parent_geometry.loc,
             parent_geometry.size,
         )
     };
@@ -231,6 +232,8 @@ impl AureaCompositor {
             return false;
         }
 
+        self.reconcile_surface_outputs();
+        self.refresh_pointer_focus_at_current_location();
         self.reconstrain_reactive_popups();
         self.request_all_output_frames();
         true
