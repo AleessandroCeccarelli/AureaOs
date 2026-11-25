@@ -21,8 +21,12 @@ impl AureaCompositor {
         state: ButtonState,
         time: u32,
     ) {
-        self.pointer_manager
+        let seat_transition = self
+            .pointer_manager
             .update_button(device, button, state == ButtonState::Pressed);
+        if !seat_transition {
+            return;
+        }
 
         let Some(pointer) = self.seat.get_pointer() else {
             return;
@@ -61,7 +65,7 @@ impl AureaCompositor {
 
     /// Synthesizes releases for buttons still held by a device being removed.
     pub(super) fn release_pointer_buttons_for_device(&mut self, device: InputDeviceId, time: u32) {
-        let buttons = self.pointer_manager.take_pressed_buttons(device);
+        let buttons = self.pointer_manager.take_buttons_released_by_device(device);
         if buttons.is_empty() {
             return;
         }
