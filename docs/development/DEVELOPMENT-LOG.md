@@ -1999,3 +1999,12 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Added `ContextMenuCommandSelected { command }` to the compositor/Shell interaction contract. Sending a selected command clears the shared open-state flag.
 - ShellRuntime closes the context-menu panel and retains the semantic command for the owning desktop service. Filesystem and settings operations are intentionally not executed inside the shell event loop.
 - Added source coverage for command handoff and panel dismissal. No build, rustfmt, check or tests were run.
+
+
+### 2026-11-25 — Context-menu pointer hit testing and Noto Sans artwork
+
+- The compositor/Shell interaction sender now retains the context-menu anchor in shared logical coordinates and clears it on dismissal or command selection.
+- Pointer presses resolve the output containing the anchor and use the same output-constrained DesktopContextMenuLayout as the menu model. A primary click on a row sends a typed command; padding dismisses without activating; an outside click dismisses and continues normal desktop/Wayland routing.
+- The menu press and matching release are consumed so the click cannot leak through to a window underneath.
+- Added light/dark SVG masters for the four menu labels and simple line icons, plus tools/assets/render-context-menu.sh. Noto Sans (Google Fonts, SIL OFL 1.1) is used only by the host rasterizer. Debian/Fedora host package names are documented; no runtime font or Rust dependency was added.
+- Generated RGBA8 assets still need to be produced and visually inspected on Fedora. RenderScene, texture upload and Vulkan overlay drawing are not connected yet, so the menu is not visible. No build, rustfmt, check or tests were run.
