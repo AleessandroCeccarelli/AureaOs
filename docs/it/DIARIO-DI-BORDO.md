@@ -1827,3 +1827,14 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Aggiunti test sorgente per conversione coordinate e overflow; non eseguiti.
 - Restano da implementare la riconfigurazione reattiva quando il parent si sposta o cambia monitor e la validazione runtime con più monitor, scale differenti e rotazioni.
 - Nessuna build, `cargo fmt` o test eseguiti: verifica raggruppata su Fedora.
+
+### 25 novembre 2026 — Popup reattivi e cambiamenti della geometria desktop
+
+- Introdotta una registry dedicata che conserva il positioner XDG dell'ultimo configure per ogni popup vivo, lo aggiorna con `reposition` e rimuove le risorse distrutte.
+- La selezione del monitor usa ora l'anchor point reale calcolato da Smithay, inclusi anchor edges e gravity, non il semplice centro del rettangolo di ancoraggio.
+- I popup marcati `reactive` vengono ricalcolati dopo commit delle superfici, modifiche alla topologia/configurazione dei monitor e spostamento di una finestra tramite `AureaCompositor::set_toplevel_location`.
+- Per inviare aggiornamenti si usa `send_pending_configure`: nessun evento viene spedito se la geometria non è cambiata; Smithay continua a verificare versione del protocollo e flag reactive.
+- L'API di spostamento aggiorna anche l'appartenenza delle superfici agli output e il focus del puntatore. I futuri gestori di move/drag dovranno passare da questa API invece di modificare direttamente il `WindowManager`.
+- I popup non reactive restano invariati secondo il protocollo. I figli annidati vengono ricalcolati nuovamente quando il parent conferma la nuova geometria.
+- Il trascinamento interattivo delle finestre non è ancora implementato: è predisposto il punto di integrazione, non il gesto completo.
+- Nessuna build, `cargo fmt`, check o test eseguiti; verifica cumulativa su Fedora.
