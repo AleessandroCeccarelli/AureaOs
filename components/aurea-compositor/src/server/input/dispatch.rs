@@ -130,7 +130,6 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             // Cancel active protocol/input state before dropping the device
             // descriptor. This keeps cleanup independent of inventory lookups
             // and ensures held buttons/contacts are released while the seat is live.
-            state.compositor.clear_pointing_device_state(id);
             state.compositor.disconnect_pointing_device(id);
             state.applied_touchpad_settings.remove(id);
             state.touchpad_devices.remove(&id);
