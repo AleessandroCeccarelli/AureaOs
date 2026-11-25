@@ -1862,3 +1862,13 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Aggiunto `ContextMenuCommandSelected` al contratto di interazione tra compositor e Shell. La selezione chiude lo stato condiviso del menu e la Shell chiude il pannello contestuale.
 - Il comando selezionato resta nella coda semantica per essere consumato dal servizio competente. Non abbiamo messo operazioni filesystem o impostazioni dentro ShellRuntime.
 - Aggiunti test sorgente per il trasferimento del comando e la chiusura del menu; non eseguiti. Nessuna build, `cargo fmt` o check.
+
+
+### 25 novembre 2026 — Hit-testing del menu e grafica Noto Sans
+
+- Il canale compositor/Shell conserva ora l'ancora globale del menu insieme allo stato aperto/chiuso. La posizione viene eliminata alla chiusura o quando viene selezionato un comando.
+- Il compositor individua il monitor dell'ancora e ricostruisce il layout limitato a quell'output. Un click sinistro su una riga produce ContextMenuCommandSelected; il padding chiude senza eseguire; il click esterno chiude e continua il routing normale.
+- Il pulsante premuto sul menu e il relativo rilascio vengono consumati, così il click non trapassa verso una finestra sottostante.
+- Create le SVG Light/Dark con le quattro etichette italiane e icone essenziali. Font scelto: Noto Sans di Google Fonts, licenza OFL 1.1. Il font viene usato solo sull'host per generare RGBA8; il runtime non deve caricare font o dipendenze Pango/Cairo.
+- Aggiunto tools/assets/render-context-menu.sh, che riusa rsvg-convert e il convertitore PNG→RGBA8 già presente. Pacchetti host: Fedora google-noto-sans-fonts e librsvg2-tools; Debian fonts-noto-core e librsvg2-bin.
+- Da completare: generare e ispezionare gli asset su Fedora, collegare asset root/cache e inserirli nel frame Vulkan sopra le finestre e sotto il puntatore. Il menu non è ancora visibile. Nessuna build, fmt, check o test eseguiti.
