@@ -8,10 +8,12 @@
 /// Preferred software clickpad behavior.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TouchpadClickMethod {
+    /// Preserve the hardware/libinput default for this device.
+    #[default]
+    DeviceDefault,
     /// Use the physical/software button areas exposed by the device.
     ButtonAreas,
     /// Infer left/right/middle click from the number of fingers.
-    #[default]
     Clickfinger,
 }
 
@@ -68,7 +70,7 @@ impl Default for TouchpadSettings {
             tap_and_drag: true,
             edge_scrolling: false,
             tap_drag_lock: false,
-            click_method: TouchpadClickMethod::Clickfinger,
+            click_method: TouchpadClickMethod::DeviceDefault,
             tap_button_map: TouchpadTapButtonMap::LeftRightMiddle,
             left_handed: false,
             middle_button_emulation: false,
@@ -243,7 +245,7 @@ mod tests {
         assert!(settings.disable_while_typing());
         assert!(settings.tap_and_drag());
         assert!(!settings.tap_drag_lock());
-        assert_eq!(settings.click_method(), TouchpadClickMethod::Clickfinger);
+        assert_eq!(settings.click_method(), TouchpadClickMethod::DeviceDefault);
         assert_eq!(settings.tap_button_map(), TouchpadTapButtonMap::LeftRightMiddle);
         assert_eq!(settings.pointer_speed_percent(), 0);
         assert_eq!(settings.send_events_mode(), TouchpadSendEventsMode::Enabled);
