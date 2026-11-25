@@ -1893,3 +1893,11 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Added the same live-device inventory guard to `TouchFrame` that already protects touch down, motion, up and cancel events.
 - A queued frame notification arriving after physical touchscreen removal is now ignored instead of being forwarded to the shared Wayland touch seat.
 - Updated the input coverage audit. Source change only; no build, Cargo check, rustfmt or tests were run.
+
+
+### 2026-11-25 — Mouse input lifecycle hardening
+
+- Re-audited the native libinput → Calloop → compositor path for relative mouse motion, button transitions, vertical/horizontal scroll and device hot-unplug. The seat pointer is initialized during server construction and centered after enabled outputs are published.
+- Added a session-pause cleanup path that releases all logically held pointer buttons before libseat marks the session inactive. This prevents a client from retaining a stuck button when a physical release is lost during a VT switch.
+- Releases are aggregated across physical devices: if two mice hold the same button, pausing the session emits one final release, not duplicate releases.
+- This is a source-level correction only. No Cargo build, rustfmt, tests or physical mouse validation were run; grouped Fedora validation and a real mouse test remain mandatory before calling the mouse complete.
