@@ -785,3 +785,12 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - `surface_under` verifica prima i popup (dal più alto/deepest al più basso) e poi il toplevel. I percorsi pointer che usano `RenderScene` ereditano così il nuovo hit testing.
 - Restano da implementare e verificare i constraint rispetto all'area utile dell'output, i grab coordinati pointer/keyboard, il dismiss e i test visivi multi-monitor. Non si dichiara ancora completato il menu contestuale.
 - Nessuna build, cargo check, rustfmt o test eseguiti.
+
+### XDG popup grabs — 25 novembre 2026
+
+- Il compositor risolve il `WlSeat` ricevuto dal protocollo con `Seat::from_resource`: il grab non viene applicato implicitamente al seat sbagliato.
+- Prima di accettare la richiesta verifica che il seat disponga sia di puntatore sia di tastiera; quindi risolve la superficie toplevel radice con `find_popup_root_surface` e delega la validazione del serial e della gerarchia a `PopupManager::grab_popup`.
+- Applica `PopupPointerGrab` e `PopupKeyboardGrab` allo stesso serial. I gestori Smithay mantengono l'interazione nel popup tree, chiudono i popup quando il puntatore esce dal grab e ripristinano il focus radice.
+- I popup annidati restano soggetti alla validazione della gerarchia e al serial precedente gestiti da Smithay.
+- Questo è collegamento sorgente verificato rispetto alle API Smithay 0.7. Non è ancora una validazione compilata o runtime. Restano da completare il posizionamento vincolato all'output, la verifica del focus iniziale, i casi di dismiss da tastiera e i test su più monitor.
+- Nessuna build, `cargo fmt`, check o test è stata eseguita: le verifiche restano raggruppate su Fedora.
