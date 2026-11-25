@@ -72,6 +72,27 @@ fn overview_and_context_menu_interactions_are_preserved_for_presentation() {
 }
 
 #[test]
+fn context_menu_dismiss_interaction_closes_only_the_context_menu() {
+    use aurea_desktop_api::desktop_interaction::DesktopInteraction;
+
+    let mut runtime = ShellRuntime::new();
+    let position = aurea_desktop_api::desktop_interaction::DesktopPosition { x: 120, y: 90 };
+    runtime.handle_desktop_interaction(DesktopInteraction::ShowContextMenu { position });
+    runtime.handle_desktop_interaction(DesktopInteraction::DismissContextMenu);
+
+    assert_eq!(runtime.desktop_state().panels.active(), None);
+    assert_eq!(runtime.desktop_state().panels.context_menu_position(), None);
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::ShowContextMenu { position })
+    );
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::DismissContextMenu)
+    );
+}
+
+#[test]
 fn app_expose_interaction_activates_the_app_expose_panel() {
     use aurea_desktop_api::desktop_interaction::DesktopInteraction;
 
