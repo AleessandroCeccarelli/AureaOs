@@ -1886,3 +1886,10 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Audited `GestureProfile` and its tests against the input coverage document. Three-finger swipe up already resolves to Overview; three-finger swipe down already resolves to App Exposé, with dominant-axis and minimum-distance checks.
 - Corrected the architecture document so it no longer describes the downward gesture as unimplemented. The shell interaction state is wired; the finished visual panels remain separate presentation work.
 - Documentation-only correction. No build, Cargo check, rustfmt or tests were run.
+
+
+### 2026-11-25 — Filter stale touchscreen frame notifications
+
+- Added the same live-device inventory guard to `TouchFrame` that already protects touch down, motion, up and cancel events.
+- A queued frame notification arriving after physical touchscreen removal is now ignored instead of being forwarded to the shared Wayland touch seat.
+- Updated the input coverage audit. Source change only; no build, Cargo check, rustfmt or tests were run.
