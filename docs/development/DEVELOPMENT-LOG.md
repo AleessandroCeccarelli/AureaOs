@@ -1673,3 +1673,14 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Found that `InputEvent::TouchCancel` currently calls `handle_touch_cancel`, which releases that device's slot IDs and emits ordinary `TouchHandle::up` events. This is not equivalent to the Wayland `wl_touch.cancel` protocol event.
 - Verified Smithay 0.7 exposes `TouchHandle::cancel`, but it cancels the seat's active touch session rather than accepting a device or slot filter. Using it for one device can therefore cancel contacts belonging to another touchscreen.
 - No source behavior changed: a safe correction needs an explicit seat-wide cancellation policy and slot-map reset, rather than silently changing multi-touch behavior. No build or tests run.
+
+
+### 2026-11-25 — Implement seat-wide TouchCancel semantics
+
+- Replaced the previous synthetic per-contact `TouchHandle::up` sequence with Smithay 0.7's protocol-level `TouchHandle::cancel`.
+- Smithay cancellation is seat-wide, so the policy is explicit: only a cancel from a device with at least one active contact triggers cancellation; then all physical-device-to-seat slot mappings are cleared.
+- A late/spurious cancel from a device without active contacts is ignored and cannot interrupt another touchscreen's sequence.
+- Added `TouchscreenSlotMap::clear_all` and a unit test proving that contacts from every device are cleared after seat cancellation.
+- Updated `docs/architecture/INPUT-EVENT-COVERAGE.md` with the exact semantics and remaining validation requirements.
+- This deliberately means a cancel on one active touchscreen interrupts concurrent touch contacts from other devices. Their later motion/up events are ignored until a new down event; no stale Wayland slot remains.
+- No local build, Cargo check, rustfmt or tests were run, per the grouped-validation rule. Runtime behavior and device hot-unplug/reconnect still require validation.
