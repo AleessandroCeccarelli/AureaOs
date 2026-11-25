@@ -1731,3 +1731,7 @@ Continue auditing input and interaction modules for correct event routing, lifec
 ### 2026-11-25 — Clean up unsupported pointing-device re-announcements
 
 Audited the `DeviceAdded` path for capability changes. If a previously registered pointing device is re-announced under the same sysname but no longer yields a supported pointing descriptor, AureaOS now disconnects it through the compositor lifecycle boundary, clears touchpad runtime caches, and synchronizes touchscreen capability. Added a PointerManager regression test proving that a same-ID reconnect does not inherit the previous connection's pressed buttons or per-device preferences. Source-level tests added but not executed; no build or rustfmt run, in accordance with the grouped validation plan.
+
+### 2026-11-25 — Reject stale pointing events after hot-unplug
+
+Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/hold gestures, and touchscreen contacts. Late queued events for a removed device are ignored rather than forwarded into compositor state. Keyboard and tablet-tool handling remain separate. Validation is deferred to the planned grouped session; no build, test execution, or rustfmt run.
