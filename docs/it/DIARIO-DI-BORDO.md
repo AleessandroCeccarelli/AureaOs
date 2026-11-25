@@ -1773,3 +1773,11 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Aggiunti test sorgente per caricamento valido, traversal `..`, dimensione non conforme e symlink esterno.
 - Commit `6cbc2669`. Il loader resta preparatorio: la root runtime non è ancora fornita dalla composition root e il rendering delle icone non è collegato.
 - Nessun `cargo fmt`, `cargo check`, test, build o prova hardware eseguiti. Verifica raggruppata su Fedora ancora in sospeso.
+
+### 25 novembre 2026 — Collegamento dei clic alla selezione desktop
+
+- Collegato il click sinistro sull'area desktop libera a `select_desktop_item_at`: seleziona l'elemento sotto il puntatore, riconosce il doppio clic già previsto e deseleziona quando si clicca sullo spazio vuoto.
+- Collegato anche il click destro: aggiorna prima la selezione (o la cancella sullo spazio vuoto), poi invia `ShowContextMenu` con la posizione logica del puntatore.
+- I clic sopra superfici Wayland continuano a rispettare la precedenza delle finestre; il click destro resta consegnato all'applicazione.
+- Commit `80483c23`. Il modello Shell conserva già pannello e posizione del menu, ma non esiste ancora una superficie grafica che lo disegni: il menu non è quindi ancora visibile.
+- Nessuna build, cargo check, test, rustfmt o prova hardware eseguiti; verifica raggruppata su Fedora.
