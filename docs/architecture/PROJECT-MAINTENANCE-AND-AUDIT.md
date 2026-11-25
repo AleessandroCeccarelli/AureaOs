@@ -572,3 +572,94 @@ The `DeviceAdded` path now handles a descriptor transition from a supported poin
 ## 20. Reject stale pointing events after hot-unplug
 
 The libinput dispatch path now checks the pointing-device inventory before forwarding pointer motion, pointer buttons, pointer axes, touchpad gestures, and touchscreen contact events. Events delivered after the corresponding device has been removed are ignored, so stale queue entries cannot recreate per-device state or emit protocol input from a disconnected device. Keyboard and tablet-tool paths are intentionally unaffected because they use separate lifecycle paths. No build, tests, or rustfmt were run.
+
+## 21. Audit approfondito — input, dispositivi e scorciatoie (25 novembre 2026)
+
+### 21.1 Quadro generale
+
+L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono dispatch libinput, inventario dei dispositivi, stato per-device, gestione dei pulsanti, touch slot, gesti, routing touchscreen/tablet e filtro delle scorciatoie. La copertura è però disomogenea e non equivale ancora a un'esperienza desktop completa né a una validazione hardware.
+
+### 21.2 Mouse e pointing-device lifecycle
+
+- `server/input/dispatch.rs` inoltra movimento relativo/assoluto, pulsanti e assi verticali/orizzontali solo se il dispositivo è registrato.
+- Il percorso relativo applica le preferenze di accelerazione; il percorso pulsanti conserva lo stato per dispositivo e il disconnect sintetizza i rilasci ancora pendenti in ordine deterministico.
+- `PointerManager` centralizza inventario, preferenze, stato dei pulsanti e cleanup. La riconciliazione di un dispositivo che cambia classificazione elimina le preferenze non più valide.
+- Gli eventi pointing/gesture/touch tardivi dopo la rimozione vengono filtrati tramite inventario.
+- I Device ID derivano dall'attuale sysname kernel: sono chiavi runtime, non identità hardware persistenti. Non usarli per profili durevoli.
+- DPI vendor-specifici, macro e controlli gaming non sono esposti in modo universale da libinput e non vanno simulati.
+
+### 21.3 Touchpad e gesti
+
+- Le preferenze libinput applicate quando supportate sono tap-to-click, tap-and-drag, scroll a due dita, natural scrolling e disable-while-typing. Ogni opzione restituisce uno stato Applied/Unsupported/Failed.
+- I controlli sono capability-aware; un mouse generico o una tavoletta non deve ricevere impostazioni touchpad.
+- Le gesture pinch/swipe continuano a essere inoltrate ai client tramite il protocollo Wayland pointer-gestures; alcune gesture sono inoltre interpretate come azioni desktop.
+- Profilo predefinito osservato: swipe a tre dita sinistra/destra per workspace, swipe in alto per Overview, swipe in basso per App Exposé, pinch a quattro dita per Overview e hold a un dito per richiesta menu contestuale.
+- Le preferenze per-device attuali sono stato runtime. La persistenza durevole legata a un'identità fisica stabile e una UI completa per sensibilità/gesture non sono dimostrate.
+- Overview e App Exposé aggiornano lo stato del pannello nella Shell, ma la superficie grafica finale non è ancora dimostrata.
+
+### 21.4 Touchscreen
+
+- Gli slot fisici libinput vengono tradotti in slot univoci per il seat Wayland, evitando collisioni quando due touchscreen usano lo stesso numero di slot.
+- Mapping automatico limitato a un solo output; su più monitor è necessaria un'assegnazione esplicita del dispositivo.
+- Sono presenti trasformazione per rotazione output, calibrazione, down/motion/up e gestione di TouchCancel.
+- Smithay 0.7 espone cancellazione touch a livello di seat, non per dispositivo. Se il dispositivo che cancella possiede contatti attivi, AureaOS cancella l'intero seat e azzera tutte le mappature; è una scelta esplicita, non una cancellazione isolata.
+- I test sorgente coprono allocazione slot, collisioni tra dispositivi, rilascio e reset globale; non sono ancora stati eseguiti.
+
+### 21.5 Pen tablet e tablet pad
+
+- Il percorso tablet-tool gestisce proximity in/out, movimento, tip down/up, pulsanti, pressione, distanza, inclinazione, rotazione, slider e wheel quando gli eventi libinput li espongono.
+- Mapping a output, calibrazione e contenimento della penna nei rettangoli reali degli output sono presenti a livello sorgente.
+- I dispositivi tablet-pad sono rilevati nell'inventario, ma Smithay 0.7 non espone nel percorso InputEvent esaminato gli eventi dei pad. La presenza del dispositivo non equivale al supporto di ring, strip o tasti pad.
+- **Lacuna lifecycle da correggere:** il dispatch dei quattro eventi TabletTool (Proximity, Axis, Tip, Button) non verifica che il dispositivo sia ancora presente nell'inventario prima di invocare il compositor. I rispettivi handler possono creare/recuperare tablet e tool dal seat; un evento in coda dopo DeviceRemoved potrebbe quindi ricreare stato per un dispositivo scollegato. Il filtro già applicato agli eventi pointing/touch deve essere esteso ai tablet-tool, usando un controllo coerente con l'identità del device/tool e senza bloccare eventi validi.
+- La rimozione tablet attualmente è avviata in base alle capability ancora visibili su DeviceRemoved; verificare il comportamento quando libinput ha già ritirato metadata e il descriptor tablet non è più ricostruibile.
+
+### 21.6 Tastiera e scorciatoie
+
+- La tastiera Wayland viene inizializzata con XKB; il layout software validato può essere applicato al seat.
+- Il filtro intercetta solo le combinazioni globali riconosciute; gli altri tasti sono inoltrati al client con focus. Press, repeat e release di una scorciatoia consumata sono gestiti per non esporre eventi parziali alle applicazioni.
+- Attualmente il resolver implementa Super+Ctrl+Left/Right per workspace e Super+Ctrl+Up/Down per Overview/App Exposé.
+- Super da solo per Launcher, Alt+Tab, Alt+F4, Super+E/I/S e le altre combinazioni della policy Windows restano pianificate e non devono essere dichiarate operative.
+- Le azioni Overview/App Exposé raggiungono il modello Shell, ma la UI visibile è ancora da completare.
+- Non esiste ancora una UI utente per personalizzare le scorciatoie.
+
+### 21.7 Punti da verificare prima di dichiarare input completo
+
+1. Verificare la semantica Smithay di `TouchHandle::motion`: `handle_touch_motion` passa nuovamente il risultato di `touchscreen_focus(location)`, mentre il commento dichiara che il contatto conserva il focus acquisito al down. Accertare se Smithay ignora il focus successivo per uno slot già attivo oppure se il codice può cambiare destinatario durante il contatto; correggere solo dopo aver verificato l'API 0.7 e aggiungere un test.
+2. Aggiungere guardie lifecycle agli eventi TabletTool per ignorare code tardive dopo hot-unplug e test di regressione.
+3. Verificare la rimozione tablet quando le capability del device sono già mutate/ritirate.
+4. Verificare il routing absolute-pointer su singolo output e l'assegnazione esplicita multi-output; oggi non va assunto che una tavoletta/touchscreen si mappi automaticamente a più monitor.
+5. Verificare persistenza e riapplicazione delle preferenze dopo riavvio, distinguendo i default globali dai profili per dispositivo e senza usare sysname/eventN come identità permanente.
+6. Testare press/release, repeat, focus e cambio layout con più tastiere collegate; verificare che la rimozione di una tastiera non lasci tasti/modificatori logicamente premuti.
+7. Eseguire test hardware su mouse, touchpad, touchscreen e tablet; i test unitari non dimostrano comportamento reale del firmware/libinput.
+
+### 21.8 Registro audit — input
+
+| ID | Priorità | Elemento | Classificazione | Azione |
+|---|---|---|---|---|
+| AUD-026 | Alta | TabletTool events non verificano l'inventario dopo DeviceRemoved e possono ricreare stato tablet/tool | Lifecycle/hot-unplug | Filtrare Proximity/Axis/Tip/Button e aggiungere test evento tardivo |
+| AUD-027 | Media | Focus touchscreen durante motion va confrontato con la semantica TouchHandle Smithay 0.7 | Da verificare | Ispezionare API e testare contatto che attraversa superfici |
+| AUD-028 | Media | Preferenze per-device e gesture non hanno ancora persistenza hardware durevole dimostrata | Integrazione mancante | Definire identità persistente, storage e riapplicazione senza sysname |
+| AUD-029 | Alta | Tablet-pad inventariato ma senza eventi pad nel percorso Smithay 0.7 esaminato | Limite API | Non dichiarare ring/strip/pad buttons; valutare API futura o adapter separato |
+| AUD-030 | Alta | Touchscreen/absolute pointer su multi-monitor richiede assegnazione esplicita | Funzionalità parziale | Contratto UI/API di assegnazione per-device e test 1–4 output |
+| AUD-031 | Alta | Super/Launcher, Alt+Tab e scorciatoie desktop comuni sono ancora pianificate | Funzionalità mancante | Implementare quando Shell/window activation consumer sono pronti |
+| AUD-032 | Alta | Overview/App Exposé aggiornano stato Shell ma non hanno superfici grafiche finali dimostrate | Integrazione UI mancante | Collegare stato pannello a superfici e test end-to-end |
+| AUD-033 | Media | Multi-keyboard, key state dopo hot-unplug e focus non verificati su hardware | Non verificato | Test con due tastiere, press/release e rimozione durante tasto premuto |
+
+### 21.9 File esaminati
+
+- `components/aurea-compositor/src/server/input/dispatch.rs`
+- `components/aurea-compositor/src/compositor/keyboard.rs`
+- `components/aurea-compositor/src/compositor/keyboard_shortcuts.rs`
+- `components/aurea-compositor/src/compositor/tablet.rs`
+- `components/aurea-compositor/src/compositor/touchscreen.rs`
+- `components/aurea-compositor/src/input/pointing/manager.rs`
+- `components/aurea-compositor/src/input/pointing/touchpad_settings.rs`
+- `components/aurea-compositor/src/input/pointing/touchscreen_slots.rs`
+- `components/aurea-compositor/src/input/shortcuts/mod.rs`
+- `components/aurea-compositor/src/input/shortcuts/action.rs`
+- `components/aurea-compositor/src/input/shortcuts/workspace.rs`
+- `components/aurea-compositor/src/input/interaction/profile.rs`
+- `docs/architecture/INPUT-EVENT-COVERAGE.md`
+- `docs/product/KEYBOARD-SHORTCUT-POLICY.md`
+
+**Esito fase input:** mouse, touchpad, gesture, touchscreen, pen-tablet e scorciatoie workspace hanno percorsi sorgente reali e test mirati. È stata individuata una lacuna concreta nel filtro hot-unplug degli eventi tablet-tool; focus touchscreen durante motion richiede verifica della semantica Smithay. Tablet-pad, profili persistenti, shortcut desktop principali e superfici Overview/App Exposé restano incompleti. Nessuna modifica al codice, build, rustfmt o test eseguiti in questa fase.
