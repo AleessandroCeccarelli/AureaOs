@@ -26,6 +26,8 @@ drm = [
     "smithay/backend_drm",
     "smithay/backend_gbm",
     "smithay/backend_libinput",
+    "dep:input",
+    "input/libinput_1_21",
     "smithay/backend_udev",
     "smithay/backend_session_libseat",
     "vulkan",
@@ -38,6 +40,9 @@ vulkan = ["smithay/backend_vulkan"]
 aurea-desktop-api = { path = "../aurea-desktop-api" }
 aurea-media = { path = "../aurea-media" }
 tracing = "0.1"
+sha2 = "0.10"
+toml = "0.8"
+input = { version = "=0.9.1", default-features = false, optional = true, features = ["libinput_1_21"] }
 
 [dependencies.smithay]
 version = "0.7"
