@@ -304,6 +304,9 @@ fn runtime_event_loop_receives_compositor_interactions() {
     interaction_sender
         .send(DesktopInteraction::ShowOverview)
         .unwrap();
+    interaction_sender
+        .send(DesktopInteraction::ShowAppExpose)
+        .unwrap();
     event_bus.publish(ShellEvent::ShutdownRequested).unwrap();
 
     runtime
@@ -313,7 +316,7 @@ fn runtime_event_loop_receives_compositor_interactions() {
     assert_eq!(runtime.desktop_state().workspaces.active(), 3);
     assert_eq!(
         runtime.desktop_state().panels.active(),
-        Some(crate::desktop::DesktopPanel::Overview)
+        Some(crate::desktop::DesktopPanel::AppExpose)
     );
     assert_eq!(
         runtime.take_desktop_interaction(),
@@ -322,6 +325,10 @@ fn runtime_event_loop_receives_compositor_interactions() {
     assert_eq!(
         runtime.take_desktop_interaction(),
         Some(DesktopInteraction::ShowOverview)
+    );
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::ShowAppExpose)
     );
 }
 
