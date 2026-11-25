@@ -65,6 +65,7 @@ mod pointer_button;
 mod pointer_gestures;
 mod pointer_placement;
 mod pointer_settings;
+mod popup_placement;
 mod rendering;
 mod surface_output_reconciliation;
 mod surface_output_tracking;
