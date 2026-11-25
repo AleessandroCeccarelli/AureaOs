@@ -67,6 +67,7 @@ impl CompositorHandler for AureaCompositor {
     }
 
     fn commit(&mut self, surface: &WlSurface) {
+        self.commit_popup_surface(surface);
         let mapped = with_states(surface, |states| {
             let mut cached_state = states.cached_state.get::<SurfaceAttributes>();
             let current = cached_state.current();
