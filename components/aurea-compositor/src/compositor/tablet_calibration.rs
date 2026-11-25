@@ -24,7 +24,7 @@ impl AureaCompositor {
         device_aspect_ratio: f64,
     ) -> Result<(), TabletCalibrationError> {
         if !self
-            .pointing_devices
+            .pointing_devices()
             .device(device)
             .is_some_and(|descriptor| descriptor.kind == InputDeviceKind::Tablet)
         {
