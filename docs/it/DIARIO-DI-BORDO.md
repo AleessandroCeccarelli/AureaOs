@@ -1880,3 +1880,12 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Corretto anche il percorso tipografico: Noto Sans è già presente in Human Interfaces e lo script usa quel file direttamente tramite una configurazione Fontconfig temporanea. Non serve installare un secondo pacchetto font su Fedora o Debian.
 - Questo passaggio trasporta soltanto la geometria: asset RGBA, texture Vulkan e draw pass non sono ancora collegati. Il menu non è ancora visibile.
 - Nessuna build, `cargo fmt`, check o test eseguiti, in linea con la decisione di accumulare le modifiche prima della verifica su Fedora.
+
+### 25 novembre 2026 — Overlay Vulkan del menu contestuale
+
+- La scena di rendering ora trasporta anche il tema attivo del desktop insieme al layout geometrico del menu.
+- Il `VulkanSurfacePipelineCache` carica gli RGBA Light/Dark una sola volta al primo utilizzo, con il loader che valida percorso, dimensioni e contenuto. La texture viene mantenuta nella cache artwork Vulkan; il frame loop non legge file dal disco.
+- Aggiunto il draw pass del menu nel compositor Vulkan. L'overlay usa la pipeline testurizzata con alpha già esistente, viene disegnato sopra le finestre e sotto il puntatore e viene ritagliato per ogni output usando origine logica e scala effettiva del monitor.
+- Le superfici cursore fornite dai client Wayland sono ora distinte dalle normali finestre nella composizione, così restano sopra il menu. Anche il cursore nativo continua a essere disegnato per ultimo.
+- Asset root in sviluppo: variabile `AUREA_HUMAN_INTERFACES_ROOT` puntata alla directory `aurea-human-interfaces`. Installazione prevista: `/usr/share/aureaos/human-interfaces`. In assenza dei file RGBA il compositor segnala l'asset mancante una volta e non interrompe l'avvio.
+- Aggiunti test sorgente per coordinate 1x/2x e monitor non interessati. Gli asset binari non sono ancora generati/ispezionati; nessuna build, `cargo fmt`, check o test eseguiti.
