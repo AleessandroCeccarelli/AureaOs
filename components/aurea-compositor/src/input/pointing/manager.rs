@@ -234,6 +234,17 @@ mod tests {
     }
 
     #[test]
+    fn duplicate_physical_button_events_do_not_duplicate_seat_transitions() {
+        let mut manager = PointerManager::new();
+        let mouse = InputDeviceId(30);
+
+        assert!(manager.update_button(mouse, 0x110, true));
+        assert!(!manager.update_button(mouse, 0x110, true));
+        assert!(manager.update_button(mouse, 0x110, false));
+        assert!(!manager.update_button(mouse, 0x110, false));
+    }
+
+    #[test]
     fn overlapping_button_holds_are_aggregated_across_devices() {
         let mut manager = PointerManager::new();
         let first = InputDeviceId(31);
