@@ -1834,3 +1834,17 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
   protocol supports it. Multi-monitor direct-touch mapping remains explicit.
 - No build, rustfmt, tests or physical-device validation performed; grouped
   Fedora validation remains pending.
+
+
+### 2026-11-25 — Isolate touchscreen cancellation by physical device
+
+- Fixed a cross-device isolation issue: a TouchCancel from one touchscreen
+  previously invoked Smithay's seat-wide touch cancel and cleared every active
+  contact, including contacts originating from other screens.
+- The compositor now removes only the cancelling device's physical-to-seat
+  slot mappings, emits up events for those contacts and frames the shared seat.
+  Other touchscreens keep their active contacts and slot mappings.
+- Documented the Wayland limitation: wl_touch.cancel is seat-wide, so per-device
+  cancellation is represented as per-contact completion to avoid cancelling
+  unrelated users' active touches.
+- No build, rustfmt, tests or physical-device validation performed.
