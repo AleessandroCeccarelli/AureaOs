@@ -39,6 +39,7 @@ use crate::{
         pointer_shake::PointerShakeDetector,
         pointing::{
             PointerManager, PointingDeviceService, TabletCalibrationMap, TabletOutputMap,
+            TabletToolRegistry,
             TouchscreenCalibration, TouchscreenCalibrationError, TouchscreenCalibrationMap,
             TouchscreenOutputMap, TouchscreenSlotMap,
         },
@@ -109,8 +110,8 @@ pub struct AureaCompositor {
     pointer_manager: PointerManager,
     touchscreen_outputs: TouchscreenOutputMap,
     tablet_outputs: TabletOutputMap,
-    /// Physical tablets that have been observed using each Wayland tool.
-    tablet_tool_owners: HashMap<aurea_desktop_api::input::InputDeviceId, HashSet<smithay::backend::input::TabletToolDescriptor>>,
+    /// Physical tablet ownership and active-source arbitration for each pen/tool.
+    tablet_tools: TabletToolRegistry,
     tablet_calibrations: TabletCalibrationMap,
     touchscreen_calibrations: TouchscreenCalibrationMap,
     touchscreen_slots: TouchscreenSlotMap,
@@ -180,7 +181,7 @@ impl AureaCompositor {
             pointer_manager: PointerManager::new(),
             touchscreen_outputs: TouchscreenOutputMap::new(),
             tablet_outputs: TabletOutputMap::new(),
-            tablet_tool_owners: HashMap::new(),
+            tablet_tools: TabletToolRegistry::default(),
             tablet_calibrations: TabletCalibrationMap::default(),
             touchscreen_calibrations: TouchscreenCalibrationMap::default(),
             touchscreen_slots: TouchscreenSlotMap::new(),
