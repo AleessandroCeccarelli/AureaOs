@@ -30,6 +30,7 @@ pub(super) struct VisibleSurface {
     pub(super) geometry: SurfaceGeometry,
     pub(super) scissor: SurfaceScissor,
     pub(super) texture_transform: u32,
+    pub(super) is_cursor: bool,
 }
 
 pub(super) fn visible_surfaces(
@@ -110,6 +111,7 @@ pub(super) fn visible_surfaces(
             snapshot: Arc::clone(&snapshot.snapshot),
             geometry,
             scissor,
+            is_cursor: snapshot.cursor_anchor.is_some(),
             texture_transform: surface_transform_index(
                 compose_surface_transforms(snapshot.buffer_transform, target.transform())
                     .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
