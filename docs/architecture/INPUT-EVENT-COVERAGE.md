@@ -72,3 +72,11 @@ Pen-tablet output mappings now follow the same no-surprise rule as touchscreen m
 ## Pen-tablet motion and monitor gaps — 2026-11-24
 
 When a tablet is mapped to the full desktop, the rectangular calibration extent can span empty gaps between non-adjacent or offset monitors. Tablet coordinates are now constrained against the actual enabled output rectangles after calibration. A point falling in a gap is moved to the nearest valid output edge, following the same geometry policy already used by relative pointer motion. For a tablet explicitly mapped to one output, the candidate geometry is restricted to that output, so the pen cannot escape its assigned display. This does not change touchscreen transforms. Generic absolute-pointer routing is now available only on single-output desktops; multi-output routing still awaits explicit assignment.
+
+
+## Touch cancellation semantics — 2026-11-25
+
+- Static review found that libinput `TouchCancel` currently removes the affected device's slots and emits a synthetic Wayland `touch.up` for each one. This reports ordinary finger lift, not cancellation of the touch sequence.
+- Smithay 0.7 exposes `TouchHandle::cancel`, which sends the Wayland touch-cancel event, but its public API cancels the active touch session for the seat; it does not provide a per-device/per-slot cancellation operation.
+- Calling the seat-wide cancel for one device would also interrupt active contacts from other touchscreens. Replacing the current behavior therefore needs an explicit policy for simultaneous devices and a consistent reset of the seat-wide slot map.
+- No code change is made in this audit pass. Keep this as an input correctness issue until a per-device-safe policy is selected; do not describe `TouchCancel` as fully routed yet.
