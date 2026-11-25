@@ -230,3 +230,14 @@ This is an intentional compatibility compromise: Wayland has no per-device
 `wl_touch.cancel` event. Synthesized up events preserve unrelated contacts,
 although a client may observe them as ordinary contact completion rather than
 a device-specific cancellation.
+
+
+## Shared physical pointer-button aggregation
+
+The Wayland seat exposes one pointer button state even when several physical
+mice or touchpads are connected. AureaOS now aggregates held buttons across
+physical devices: the first device pressing a button emits the seat press, and
+the seat release is emitted only after the final device releases it. Disconnect
+cleanup likewise releases only buttons no remaining device holds. This prevents
+one mouse from releasing a left/right/middle button that another mouse is
+still physically holding.
