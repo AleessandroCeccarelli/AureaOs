@@ -130,29 +130,59 @@ impl PointerManager {
     }
 
     /// Tracks a physical button transition for its originating device.
-    pub fn update_button(&mut self, device: InputDeviceId, button: u32, pressed: bool) {
+    /// Updates one physical button and reports whether the shared seat state changed.
+    ///
+    /// If two devices hold the same button, only the first press and final
+    /// release are forwarded to the single Wayland seat pointer.
+    pub fn update_button(&mut self, device: InputDeviceId, button: u32, pressed: bool) -> bool {
+        let was_pressed = self
+            .pressed_buttons
+            .values()
+            .any(|buttons| buttons.contains(&button));
+
         if pressed {
-            self.pressed_buttons
+            let inserted = self
+                .pressed_buttons
                 .entry(device)
                 .or_default()
                 .insert(button);
-        } else if let Some(buttons) = self.pressed_buttons.get_mut(&device) {
-            buttons.remove(&button);
-            if buttons.is_empty() {
-                self.pressed_buttons.remove(&device);
-            }
+            inserted && !was_pressed
+        } else {
+            let removed = if let Some(buttons) = self.pressed_buttons.get_mut(&device) {
+                let removed = buttons.remove(&button);
+                if buttons.is_empty() {
+                    self.pressed_buttons.remove(&device);
+                }
+                removed
+            } else {
+                false
+            };
+            removed
+                && !self
+                    .pressed_buttons
+                    .values()
+                    .any(|buttons| buttons.contains(&button))
         }
     }
 
-    /// Takes all still-pressed buttons when a physical device is disconnected.
-    pub fn take_pressed_buttons(&mut self, device: InputDeviceId) -> Vec<u32> {
-        let mut buttons: Vec<_> = self
+    /// Removes a device's held buttons and returns only seat buttons no other
+    /// connected device still holds.
+    pub fn take_buttons_released_by_device(&mut self, device: InputDeviceId) -> Vec<u32> {
+        let removed = self
             .pressed_buttons
             .remove(&device)
-            .map(|buttons| buttons.into_iter().collect())
             .unwrap_or_default();
-        buttons.sort_unstable();
-        buttons
+        let mut released = removed
+            .into_iter()
+            .filter(|button| {
+                !self
+                    .pressed_buttons
+                    .values()
+                    .any(|buttons| buttons.contains(button))
+            })
+            .collect::<Vec<_>>();
+        released.sort_unstable();
+        released
     }
 
     /// Clears preferences and button state associated with a disconnected device.
@@ -196,11 +226,35 @@ mod tests {
         manager.update_button(second, 0x110, true);
 
         assert_eq!(
-            manager.take_pressed_buttons(first),
+            manager.take_buttons_released_by_device(first),
             vec![0x110, 0x111, 0x112]
         );
-        assert_eq!(manager.take_pressed_buttons(first), Vec::<u32>::new());
-        assert_eq!(manager.take_pressed_buttons(second), vec![0x110]);
+        assert_eq!(manager.take_buttons_released_by_device(first), Vec::<u32>::new());
+        assert_eq!(manager.take_buttons_released_by_device(second), vec![0x110]);
+    }
+
+    #[test]
+    fn overlapping_button_holds_are_aggregated_across_devices() {
+        let mut manager = PointerManager::new();
+        let first = InputDeviceId(31);
+        let second = InputDeviceId(32);
+
+        assert!(manager.update_button(first, 0x110, true));
+        assert!(!manager.update_button(second, 0x110, true));
+        assert!(!manager.update_button(first, 0x110, false));
+        assert!(manager.update_button(second, 0x110, false));
+    }
+
+    #[test]
+    fn disconnecting_one_holder_does_not_release_button_still_held_by_another() {
+        let mut manager = PointerManager::new();
+        let first = InputDeviceId(33);
+        let second = InputDeviceId(34);
+        manager.update_button(first, 0x110, true);
+        manager.update_button(second, 0x110, true);
+
+        assert!(manager.take_buttons_released_by_device(first).is_empty());
+        assert!(manager.update_button(second, 0x110, false));
     }
 
     #[test]
@@ -212,7 +266,7 @@ mod tests {
         manager.update_button(device, 0x111, true);
         manager.update_button(device, 0x110, false);
 
-        assert_eq!(manager.take_pressed_buttons(device), vec![0x111]);
+        assert_eq!(manager.take_buttons_released_by_device(device), vec![0x111]);
     }
 
     #[test]
@@ -245,7 +299,7 @@ mod tests {
             manager.pointer_settings(mouse, PointerSettings::default()),
             PointerSettings::default()
         );
-        assert!(manager.take_pressed_buttons(mouse).is_empty());
+        assert!(manager.take_buttons_released_by_device(mouse).is_empty());
         assert_eq!(manager.touchpad_settings(touchpad), touchpad_profile);
     }
 
@@ -283,7 +337,7 @@ mod tests {
         manager.update_button(device, 0x110, true);
 
         // The compositor drains this list into Wayland releases before disconnect.
-        assert_eq!(manager.take_pressed_buttons(device), vec![0x110]);
+        assert_eq!(manager.take_buttons_released_by_device(device), vec![0x110]);
         assert!(manager.disconnect(device));
 
         assert!(manager.devices().device(device).is_none());
@@ -291,7 +345,7 @@ mod tests {
             manager.pointer_settings(device, PointerSettings::default()),
             PointerSettings::default()
         );
-        assert!(manager.take_pressed_buttons(device).is_empty());
+        assert!(manager.take_buttons_released_by_device(device).is_empty());
     }
 
     #[test]
