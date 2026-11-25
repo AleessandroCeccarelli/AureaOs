@@ -124,7 +124,6 @@ fn stable_hardware_identity(device: &Device) -> Option<String> {
     Some(stable_hardware_identity_from_parts(
         device.id_vendor(),
         device.id_product(),
-        device.name(),
         physical_path.as_bytes(),
     ))
 }
@@ -135,13 +134,11 @@ fn stable_hardware_identity(device: &Device) -> Option<String> {
 fn stable_hardware_identity_from_parts(
     vendor: u32,
     product: u32,
-    name: &str,
     physical_path: &[u8],
 ) -> String {
     let mut digest = Sha256::new();
     digest.update(vendor.to_le_bytes());
     digest.update(product.to_le_bytes());
-    digest.update(name.as_bytes());
     digest.update(physical_path);
     let hash = digest.finalize();
     format!(
@@ -182,7 +179,6 @@ mod tests {
         let first = stable_hardware_identity_from_parts(
             0x06cb,
             0x00f9,
-            "Synaptics Touchpad",
             b"/sys/devices/platform/i2c-ELAN/input",
         );
         let reconnected = stable_hardware_identity_from_parts(
@@ -194,7 +190,6 @@ mod tests {
         let other_port = stable_hardware_identity_from_parts(
             0x06cb,
             0x00f9,
-            "Synaptics Touchpad",
             b"/sys/devices/platform/i2c-ELAN/input-other",
         );
         assert_eq!(first, reconnected);
