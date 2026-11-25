@@ -5,7 +5,10 @@
 
 //! Pointer button delivery and click-to-focus policy.
 
-use aurea_desktop_api::input::{InputDeviceId, InputDeviceProvider};
+use aurea_desktop_api::{
+    desktop_interaction::DesktopInteraction,
+    input::{InputDeviceId, InputDeviceProvider},
+};
 use smithay::{backend::input::ButtonState, input::pointer::ButtonEvent, utils::SERIAL_COUNTER};
 
 use super::AureaCompositor;
@@ -62,10 +65,7 @@ impl AureaCompositor {
                     self.select_desktop_item_at(location, false);
                     if self
                         .desktop_interactions
-                        .send(
-                            aurea_desktop_api::desktop_interaction::DesktopInteraction
-                                ::ShowContextMenu,
-                        )
+                        .send(DesktopInteraction::ShowContextMenu)
                         .is_err()
                     {
                         tracing::debug!("Shell context-menu receiver is no longer available");
