@@ -11,7 +11,7 @@ use super::{DesktopPanelPlacement, DesktopPoint, DesktopRect};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DesktopContextMenuCommand {
     CreateFolder,
-    ChangeWallpaper,
+    UseAsWallpaper,
     OpenDisplaySettings,
     OpenPersonalization,
 }
@@ -65,7 +65,7 @@ impl DesktopContextMenuLayout {
         let first_row_y = origin.y.checked_add(Self::VERTICAL_PADDING as i32)?;
         let commands = [
             DesktopContextMenuCommand::CreateFolder,
-            DesktopContextMenuCommand::ChangeWallpaper,
+            DesktopContextMenuCommand::UseAsWallpaper,
             DesktopContextMenuCommand::OpenDisplaySettings,
             DesktopContextMenuCommand::OpenPersonalization,
         ];
