@@ -644,3 +644,58 @@ pub(super) fn render_frame(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod context_menu_geometry_tests {
+    use aurea_desktop_api::desktop::{DesktopPoint, DesktopRect};
+
+    use super::context_menu_geometry;
+    use crate::{
+        desktop::DesktopContextMenuLayout,
+        output::{DisplayOutput, OutputMode},
+        renderer::RenderTarget,
+    };
+
+    fn target(origin: (i32, i32), scale: u32) -> RenderTarget {
+        let mode = OutputMode::new(1920, 1080, 60_000).expect("valid mode");
+        let output = DisplayOutput::new(1, "DP-1", vec![mode], mode, scale)
+            .expect("valid output");
+        RenderTarget::from_output(&output, origin).expect("enabled output target")
+    }
+
+    #[test]
+    fn positions_menu_in_output_local_physical_coordinates() {
+        let output = DesktopRect::new(DesktopPoint::new(0, 0), 1920, 1080).unwrap();
+        let menu = DesktopContextMenuLayout::at(DesktopPoint::new(500, 300), output).unwrap();
+        let (viewport, scissor) =
+            context_menu_geometry(&menu, &target((0, 0), 1)).expect("visible menu");
+
+        assert_eq!((viewport.x, viewport.y), (500.0, 300.0));
+        assert_eq!((viewport.width, viewport.height), (256.0, 256.0));
+        assert_eq!(scissor.offset.x, 500);
+        assert_eq!(scissor.offset.y, 300);
+        assert_eq!(scissor.extent.width, 256);
+        assert_eq!(scissor.extent.height, 256);
+    }
+
+    #[test]
+    fn scales_menu_for_hidpi_outputs() {
+        let output = DesktopRect::new(DesktopPoint::new(0, 0), 1920, 1080).unwrap();
+        let menu = DesktopContextMenuLayout::at(DesktopPoint::new(500, 300), output).unwrap();
+        let (viewport, scissor) =
+            context_menu_geometry(&menu, &target((0, 0), 2)).expect("visible menu");
+
+        assert_eq!((viewport.x, viewport.y), (1000.0, 600.0));
+        assert_eq!((viewport.width, viewport.height), (512.0, 512.0));
+        assert_eq!(scissor.extent.width, 512);
+        assert_eq!(scissor.extent.height, 512);
+    }
+
+    #[test]
+    fn menu_is_not_drawn_on_an_unrelated_monitor() {
+        let output = DesktopRect::new(DesktopPoint::new(0, 0), 1920, 1080).unwrap();
+        let menu = DesktopContextMenuLayout::at(DesktopPoint::new(500, 300), output).unwrap();
+
+        assert!(context_menu_geometry(&menu, &target((1920, 0), 1)).is_none());
+    }
+}
