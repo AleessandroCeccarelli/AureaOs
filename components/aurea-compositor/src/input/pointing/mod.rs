@@ -8,6 +8,7 @@
 mod applied_settings;
 mod device_settings;
 mod discovery;
+mod manager;
 mod mouse;
 mod registry;
 mod tablet;
@@ -23,6 +24,7 @@ pub mod touchscreen_transform;
 pub use applied_settings::AppliedTouchpadSettings;
 pub use device_settings::PointingDeviceSettings;
 pub(crate) use discovery::{describe, id_for};
+pub use manager::PointerManager;
 pub use registry::PointingDeviceService;
 pub use tablet_outputs::{TabletOutputMap, TabletOutputTarget};
 pub use touchscreen::TouchscreenOutputMap;
