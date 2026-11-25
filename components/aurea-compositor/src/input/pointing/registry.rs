@@ -46,7 +46,7 @@ impl PointingDeviceService {
     /// Keyboard-only and composite devices are not classified as pointing
     /// devices by this service; their lifecycle belongs to other input
     /// services.
-    pub fn connect(&self, descriptor: InputDeviceDescriptor) -> bool {
+    pub(crate) fn connect(&self, descriptor: InputDeviceDescriptor) -> bool {
         if !is_pointing_device(descriptor.kind) {
             return false;
         }
@@ -72,7 +72,7 @@ impl PointingDeviceService {
     }
 
     /// Removes a device and notifies subscribers when it was registered.
-    pub fn disconnect(&self, id: InputDeviceId) -> bool {
+    pub(crate) fn disconnect(&self, id: InputDeviceId) -> bool {
         let Ok(mut state) = self.state.lock() else {
             return false;
         };
