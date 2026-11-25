@@ -5,6 +5,8 @@
 
 //! Backend-independent touchpad preferences and capability reporting.
 
+use serde::{Deserialize, Serialize};
+
 /// Preferred software clickpad behavior.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum TouchpadClickMethod {
@@ -62,6 +64,7 @@ pub struct TouchpadSettings {
     two_finger_scroll: bool,
     natural_scrolling: bool,
     disable_while_typing: bool,
+    disable_while_trackpointing: bool,
     tap_and_drag: bool,
     edge_scrolling: bool,
     tap_drag_lock: bool,
@@ -81,6 +84,7 @@ impl Default for TouchpadSettings {
             two_finger_scroll: true,
             natural_scrolling: false,
             disable_while_typing: true,
+            disable_while_trackpointing: false,
             tap_and_drag: true,
             edge_scrolling: false,
             tap_drag_lock: false,
@@ -108,6 +112,7 @@ impl TouchpadSettings {
             two_finger_scroll,
             natural_scrolling,
             disable_while_typing,
+            disable_while_trackpointing: false,
             tap_and_drag,
             edge_scrolling: false,
             tap_drag_lock: false,
@@ -123,6 +128,11 @@ impl TouchpadSettings {
 
     pub const fn with_edge_scrolling(mut self, enabled: bool) -> Self {
         self.edge_scrolling = enabled;
+        self
+    }
+
+    pub const fn with_disable_while_trackpointing(mut self, enabled: bool) -> Self {
+        self.disable_while_trackpointing = enabled;
         self
     }
 
@@ -179,6 +189,7 @@ impl TouchpadSettings {
     pub const fn two_finger_scroll(self) -> bool { self.two_finger_scroll && !self.edge_scrolling }
     pub const fn natural_scrolling(self) -> bool { self.natural_scrolling }
     pub const fn disable_while_typing(self) -> bool { self.disable_while_typing }
+    pub const fn disable_while_trackpointing(self) -> bool { self.disable_while_trackpointing }
     pub const fn tap_and_drag(self) -> bool { self.tap_and_drag }
     pub const fn edge_scrolling(self) -> bool { self.edge_scrolling }
     pub const fn tap_drag_lock(self) -> bool { self.tap_drag_lock }
@@ -210,6 +221,7 @@ pub struct TouchpadApplyReport {
     pub edge_scrolling: TouchpadSettingStatus,
     pub natural_scrolling: TouchpadSettingStatus,
     pub disable_while_typing: TouchpadSettingStatus,
+    pub disable_while_trackpointing: TouchpadSettingStatus,
     pub click_method: TouchpadSettingStatus,
     pub left_handed: TouchpadSettingStatus,
     pub middle_button_emulation: TouchpadSettingStatus,
@@ -228,6 +240,7 @@ impl TouchpadApplyReport {
             && matches!(self.edge_scrolling, TouchpadSettingStatus::Applied)
             && matches!(self.natural_scrolling, TouchpadSettingStatus::Applied)
             && matches!(self.disable_while_typing, TouchpadSettingStatus::Applied)
+            && matches!(self.disable_while_trackpointing, TouchpadSettingStatus::Applied)
             && matches!(self.click_method, TouchpadSettingStatus::Applied)
             && matches!(self.left_handed, TouchpadSettingStatus::Applied)
             && matches!(self.middle_button_emulation, TouchpadSettingStatus::Applied)
@@ -247,6 +260,7 @@ impl TouchpadApplyReport {
             || matches!(self.edge_scrolling, TouchpadSettingStatus::Failed)
             || matches!(self.natural_scrolling, TouchpadSettingStatus::Failed)
             || matches!(self.disable_while_typing, TouchpadSettingStatus::Failed)
+            || matches!(self.disable_while_trackpointing, TouchpadSettingStatus::Failed)
             || matches!(self.click_method, TouchpadSettingStatus::Failed)
             || matches!(self.left_handed, TouchpadSettingStatus::Failed)
             || matches!(self.middle_button_emulation, TouchpadSettingStatus::Failed)
@@ -314,6 +328,7 @@ mod tests {
             edge_scrolling: status,
             natural_scrolling: status,
             disable_while_typing: status,
+            disable_while_trackpointing: status,
             click_method: status,
             left_handed: status,
             middle_button_emulation: status,
