@@ -20,10 +20,11 @@ use visible_surfaces::visible_surfaces;
 
 use std::sync::Arc;
 
+use aurea_desktop_api::desktop::DesktopContextMenuLayout;
 use smithay::reexports::ash::vk;
 
 use crate::{
-    desktop::{DesktopContextMenuLayout, WallpaperDrawGeometry, WallpaperFitMode, WallpaperLayout},
+    desktop::{WallpaperDrawGeometry, WallpaperFitMode, WallpaperLayout},
     render::{
         RenderScene,
         geometry::{
