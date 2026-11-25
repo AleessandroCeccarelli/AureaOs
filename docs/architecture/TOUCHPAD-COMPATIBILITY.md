@@ -85,17 +85,20 @@ A missing shell surface must not be confused with missing hardware gesture suppo
 - The compositor applies each option only when the installed Smithay/libinput device reports that capability. Every option returns an explicit Applied, Unsupported or Failed status.
 - The existing five-argument TouchpadSettings constructor remains source-compatible; advanced options use builder-style methods.
 - Clickpad method, tap mapping, drag-lock, acceleration profile/speed and send-events configuration are implemented against the pinned Smithay 0.7.0 / input 0.9.1 API. The send-events API uses input 0.9.1 bitflags (not the later input 0.10 enum/vector signatures); this was checked and corrected against the exact crate source.
-- Disable-while-trackpointing (DWTP) is documented as a desired capability but is not yet wired: Smithay 0.7.0 enables input's libinput_1_19 feature, while the DWTP methods in input 0.9.1 are gated behind libinput_1_21. Do not call these methods until the dependency feature strategy and Debian minimum libinput version are deliberately resolved.
+- Disable-while-trackpointing (DWTP) is now wired when the native `drm` backend is built. Smithay 0.7.0 resolves `input` 0.9.1; the compositor adds that exact crate as an optional direct dependency and enables `input/libinput_1_21` only with the native backend. Cargo feature unification exposes the DWTP methods on the same `input` crate instance re-exported by Smithay. Devices without the capability report Unsupported.
 - The gesture lifecycle has now been source-audited: swipe, pinch and hold begin/update/end events are forwarded to Wayland pointer-gesture clients; cancelled sequences do not trigger AureaOS actions; per-device active sequences and queued actions are cleared on device removal. The Wayland seat stream is serialized to one owner at a time.
-- Persistent stable hardware identity and durable per-device preference storage remain future work.
+- Persistent touchpad preferences are stored by a SHA-256 identity derived from vendor/product IDs, device name and the normalized physical sysfs path; the kernel event node and serial numbers are excluded. If sysfs cannot provide a physical path, persistence is skipped rather than falling back to a collision-prone identity.
+- Profiles are saved atomically to `$XDG_CONFIG_HOME/aureaos/input/touchpads.toml` or `~/.config/aureaos/input/touchpads.toml`, with private file permissions. Profiles are restored when the matching device reconnects. External USB devices moved to another physical port may receive a different identity because serial numbers are deliberately not collected.
+- Smithay is pinned to crates.io release `=0.7.0`; Cargo downloads it and its transitive crates normally and `Cargo.lock` records the resolved versions. No Smithay source is copied into AureaOS and no fork is currently necessary.
+- Debian 13 (trixie) provides libinput 1.28.1 and Debian 12 (bookworm) provides 1.22.1, both above the 1.21 API floor required for DWTP. Older systems below 1.21 are outside this native backend's current build baseline. <https://packages.debian.org/trixie/libinput-dev> <https://packages.debian.org/bookworm/libinput-dev>
 - No build, Cargo check, rustfmt, unit tests or physical-hardware validation has been run yet; validation remains deliberately grouped.
 
 ## Next implementation sequence
 
 1. Audit gesture begin/update/end/cancel handling and map only gestures actually emitted by libinput, including cancellation and device removal.
-2. Add durable per-device preferences keyed by stable physical identity (vendor/product plus libinput device group/udev identity as available), not event node or transient runtime ID.
-3. Extend capability reporting to include gesture counts and device metadata needed by the Settings UI.
-4. Verify Debian target kernel/libinput versions and their input-driver coverage for representative Synaptics, ELAN, ALPS, Apple and generic HID devices.
+2. Add detailed capability reporting (tap finger count, supported scroll/click methods, gesture support and DWT/DWTP) for the Settings UI.
+3. Verify stable identity behavior on real I2C, PS/2, USB and Bluetooth devices, especially USB port changes and composite input devices.
+4. Verify Debian target kernel driver coverage for representative Synaptics, ELAN, ALPS, Apple and generic HID devices.
 5. Test internal and external USB/Bluetooth HID touchpads, hotplug, suspend/resume and reconnect.
 6. Perform grouped build, formatting, unit tests and hardware validation after the pointing-device work is complete.
 
