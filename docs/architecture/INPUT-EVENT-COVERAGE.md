@@ -135,3 +135,12 @@ The compositor consumes recognized press, repeat and matching release events so 
 This provides equivalent keyboard access for a mouse-and-keyboard setup. The visible Overview and App Exposé surfaces remain separate shell presentation work. The bindings are defaults; a user-facing shortcut customization interface is not yet implemented.
 
 No build, Cargo check, rustfmt, test execution or hardware validation was run. Grouped validation remains pending.
+
+
+## Pointing-device hot-unplug ordering and identity — 2026-11-25
+
+- On `DeviceRemoved`, AureaOS now clears active gesture ownership, cancels any active touchscreen contacts, synthesizes releases for buttons still held by that device, removes interaction/calibration/output-routing state and clears per-device pointer/touchpad preferences before removing the device from the live inventory.
+- The backend then removes the cached touchpad apply record and retained libinput handle, and finally reconciles the seat's touchscreen capability. This ordering avoids relying on an inventory entry that has already been deleted while protocol state is being cleaned up.
+- Device IDs are deterministic hashes of the current kernel input sysname. They are session/runtime identifiers, not persistent physical-device identities: event-node numbering may change across reboot or reconnect. Per-device overrides are runtime state and must not be treated as durable hardware profiles.
+- Focused source tests cover deterministic ID derivation for equal sysnames and distinct IDs for the current test sysnames, plus PointerManager button/preference isolation and cleanup. Hash collisions remain theoretically possible, as with any 64-bit hash; no persistent identity guarantee is made.
+- No build, Cargo check, rustfmt, test execution or hardware hot-unplug/reconnect validation was run. Grouped validation remains pending.
