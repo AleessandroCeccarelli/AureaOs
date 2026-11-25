@@ -101,3 +101,21 @@ The three-finger upward Overview binding is now part of `GestureProfile` and has
 Mouse handling remains standards-based: left/right/middle and additional buttons where exposed, relative/absolute motion, vertical/horizontal wheel axes, acceleration profile/speed and per-device settings. Gaming-specific DPI buttons, vendor macros or aim-assist features are not assumed; those are hardware/vendor-specific and should only appear when reliably exposed by libinput.
 
 No build, Cargo check, rustfmt or test execution was performed for this source update; grouped validation remains pending.
+
+
+## Touchpad gesture map — 2026-11-25
+
+The default navigation gestures are:
+
+- **Three fingers, swipe left:** move to the next virtual desktop/workspace.
+- **Three fingers, swipe right:** move to the previous virtual desktop/workspace.
+- **Three fingers, swipe up:** request AureaOS Overview.
+- **Three fingers, swipe down:** request the App Exposé-style panel.
+- **Four fingers, pinch:** request AureaOS Overview as an alternative.
+- **Two fingers, scroll:** scroll content vertically or horizontally; it does not switch workspaces.
+
+Horizontal navigation is already resolved by `GestureProfile`: a negative accumulated horizontal delta selects `NextWorkspace`, while a positive delta selects `PreviousWorkspace`. Vertical gestures are distinguished by their dominant axis and minimum movement threshold, so an ordinary diagonal or short scroll should not trigger a desktop action.
+
+The compositor applies workspace changes directly. Overview and App Exposé are sent to the shell as semantic requests; the shell currently stores the requested panel state. The finished visual panel surfaces are a separate presentation task and are not claimed complete. User-configurable gesture counts and sensitivity remain future work.
+
+No build, Cargo check, rustfmt or tests were run; grouped validation remains pending.
