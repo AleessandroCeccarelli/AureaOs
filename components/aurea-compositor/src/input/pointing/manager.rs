@@ -197,6 +197,7 @@ mod tests {
     use super::PointerManager;
     use aurea_desktop_api::input::{
         InputDeviceCapabilities, InputDeviceDescriptor, InputDeviceId, InputDeviceKind,
+        InputDeviceProvider,
         PointerAccelerationProfile, PointerSettings, TouchpadSettings,
     };
 
