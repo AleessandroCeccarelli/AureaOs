@@ -38,7 +38,7 @@ use crate::{
         pointer_settings::PointerSettings,
         pointer_shake::PointerShakeDetector,
         pointing::{
-            PointerManager, TabletCalibrationMap, TabletOutputMap,
+            PointerManager, PointingDeviceService, TabletCalibrationMap, TabletOutputMap,
             TouchscreenCalibration, TouchscreenCalibrationError, TouchscreenCalibrationMap,
             TouchscreenOutputMap, TouchscreenSlotMap,
         },
@@ -257,7 +257,7 @@ impl AureaCompositor {
     /// Initializes the Wayland touch capability when a touchscreen is present.
     pub fn sync_touchscreen_capability(&mut self) {
         let connected = self
-            .pointing_devices
+            .pointer_manager.devices()
             .has_kind(aurea_desktop_api::input::InputDeviceKind::Touchscreen);
 
         if connected && self.touch.is_none() {
@@ -277,7 +277,7 @@ impl AureaCompositor {
         output: OutputId,
     ) -> bool {
         if !self
-            .pointing_devices
+            .pointer_manager.devices()
             .device(device)
             .is_some_and(|descriptor| {
                 descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchscreen
@@ -304,7 +304,7 @@ impl AureaCompositor {
         coefficients: [f64; 6],
     ) -> Result<(), TouchscreenCalibrationError> {
         if !self
-            .pointing_devices
+            .pointer_manager.devices()
             .device(device)
             .is_some_and(|descriptor| {
                 descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchscreen
