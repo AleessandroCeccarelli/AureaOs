@@ -775,3 +775,13 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - La gestione usa l'API di Smithay 0.7 e non introduce dipendenze aggiuntive.
 - Questo passaggio non abilita ancora grab, rendering, hit testing o constraint rispetto all'output. La registrazione del tree è prerequisito, non completamento del menu.
 - Nessuna build, rustfmt, cargo check o test eseguiti.
+
+
+## 25. Avanzamento — popup XDG nella scena Vulkan e nell'hit testing (25 novembre 2026)
+
+- `RenderScene` ora interroga `PopupManager::popups_for_surface` per ogni toplevel e raccoglie anche i surface tree dei popup.
+- I popup sono convertiti in coordinate globali logiche usando l'offset restituito da Smithay e la geometria del popup; il percorso di snapshot SHM li consegna quindi al compositore Vulkan, che li ritaglia per ciascun output come le altre superfici.
+- Gli snapshot sono ordinati parent prima dei popup: il renderer Vulkan disegna in sequenza e il popup deve quindi rimanere sopra la finestra proprietaria. Anche la lista degli identificativi attivi include i popup, così la cache texture non li considera risorse estranee.
+- `surface_under` verifica prima i popup (dal più alto/deepest al più basso) e poi il toplevel. I percorsi pointer che usano `RenderScene` ereditano così il nuovo hit testing.
+- Restano da implementare e verificare i constraint rispetto all'area utile dell'output, i grab coordinati pointer/keyboard, il dismiss e i test visivi multi-monitor. Non si dichiara ancora completato il menu contestuale.
+- Nessuna build, cargo check, rustfmt o test eseguiti.
