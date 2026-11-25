@@ -52,14 +52,21 @@ impl AureaCompositor {
                     self.focus_surface(Some(surface));
                     self.request_all_output_frames();
                 }
-                (BTN_LEFT, None) => self.desktop_click_tracker.reset(),
+                (BTN_LEFT, None) => {
+                    // The desktop canvas owns selection only when no mapped
+                    // Wayland surface is under the pointer.
+                    self.select_desktop_item_at(location, true);
+                }
                 (BTN_RIGHT, Some(_)) => {
                     // A window owns its own context-menu interaction. Do not
                     // replace it with the desktop shell menu.
                     self.desktop_click_tracker.reset();
                 }
                 (BTN_RIGHT, None) => {
-                    self.desktop_click_tracker.reset();
+                    // Right-click selects the item under the pointer (or
+                    // clears selection on empty space) before opening the
+                    // desktop-owned context menu.
+                    self.select_desktop_item_at(location, false);
                     let position = DesktopPosition {
                         x: location.x.round() as i32,
                         y: location.y.round() as i32,
