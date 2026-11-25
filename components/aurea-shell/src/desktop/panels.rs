@@ -47,6 +47,15 @@ impl DesktopPanelState {
         self.context_menu_position
     }
 
+    /// Closes the context menu without dismissing another active panel.
+    pub fn close_context_menu(&mut self) -> bool {
+        if self.active != Some(DesktopPanel::ContextMenu) {
+            return false;
+        }
+        self.close();
+        true
+    }
+
     /// Closes the active transient surface.
     pub fn close(&mut self) {
         self.active = None;
