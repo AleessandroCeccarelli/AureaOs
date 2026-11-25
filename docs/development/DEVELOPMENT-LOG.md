@@ -2008,3 +2008,11 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - The menu press and matching release are consumed so the click cannot leak through to a window underneath.
 - Added light/dark SVG masters for the four menu labels and simple line icons, plus `tools/assets/render-context-menu.sh`. Noto Sans (Google Fonts, SIL OFL 1.1) is already retained in Human Interfaces at `fonts/source/google-fonts/noto-sans/NotoSans-Variable.ttf`; the script now points Fontconfig directly at that repository font through a temporary configuration. No host font package or runtime font dependency is required; only the host SVG rasterizer and Python 3 are needed.
 - Generated RGBA8 assets still need to be produced and visually inspected on Fedora. RenderScene, texture upload and Vulkan overlay drawing are not connected yet, so the menu is not visible. No build, rustfmt, check or tests were run.
+
+### 2026-11-25 — Context-menu render-scene handoff
+
+- `RenderScene` now carries an optional immutable `DesktopContextMenuLayout` alongside desktop snapshots.
+- `AureaCompositor::render_scene` reads the shared anchor, resolves it against the enabled output layout, and attaches the constrained geometry to the frame scene. Pointer hit testing and future visual placement now share one geometry contract.
+- Noto Sans is already retained in Human Interfaces; the export script now uses that repository font through a temporary Fontconfig configuration. No separate host font package is required.
+- This is geometry handoff only. RGBA asset loading, Vulkan texture binding and overlay drawing remain outstanding; the menu is not yet visible.
+- No build, rustfmt, check or tests were run, preserving the agreed batched Fedora verification workflow.
