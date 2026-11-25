@@ -129,8 +129,8 @@ fn stable_hardware_identity(device: &Device) -> Option<String> {
 }
 
 
-/// Hashes stable hardware metadata and the physical sysfs path. The kernel
-/// event number is deliberately excluded so profiles survive reboot/hotplug.
+/// Hashes hardware IDs and a stable udev/sysfs physical path. The kernel event
+/// number, display name and serial numbers are deliberately excluded.
 fn stable_hardware_identity_from_parts(
     vendor: u32,
     product: u32,
@@ -184,7 +184,6 @@ mod tests {
         let reconnected = stable_hardware_identity_from_parts(
             0x06cb,
             0x00f9,
-            "Synaptics Touchpad",
             b"/sys/devices/platform/i2c-ELAN/input",
         );
         let other_port = stable_hardware_identity_from_parts(
