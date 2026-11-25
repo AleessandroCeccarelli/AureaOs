@@ -62,7 +62,9 @@ impl AureaCompositor {
                     self.select_desktop_item_at(location, false);
                     if self
                         .desktop_interactions
-                        .send(aurea_desktop_api::desktop_interaction::DesktopInteraction::ShowContextMenu)
+                        .send(
+                            aurea_desktop_api::desktop_interaction::DesktopInteraction::ShowContextMenu,
+                        )
                         .is_err()
                     {
                         tracing::debug!("Shell context-menu receiver is no longer available");
