@@ -166,7 +166,7 @@ When libinput re-announces a sysname whose capabilities no longer classify it as
 
 ### Ignore queued events after device removal — 2026-11-25
 
-Pointer motion, buttons, axes, swipe/pinch/hold gestures, and touchscreen contact events are now dispatched only while their sysname-derived device ID remains in the pointing-device inventory. This prevents a late queued event from recreating pressed-button or gesture state after `DeviceRemoved` has completed cleanup. Keyboard and tablet-tool paths remain owned by their separate lifecycle handlers. Source changes are committed; runtime validation remains pending.
+Pointer motion, buttons, axes, swipe/pinch/hold gestures, touchscreen contact events and touch-frame notifications are now dispatched only while their sysname-derived device ID remains in the pointing-device inventory. This prevents a late queued event from recreating pressed-button or gesture state after `DeviceRemoved` has completed cleanup. Keyboard and tablet-tool paths remain owned by their separate lifecycle handlers. Source changes are committed; runtime validation remains pending.
 
 ### Tablet-tool hot-unplug filtering — 2026-11-25
 
