@@ -157,3 +157,7 @@ No build, Cargo check, rustfmt, test execution or hardware validation was run. G
 ### Unsupported re-announcement cleanup — 2026-11-25
 
 When libinput re-announces a sysname whose capabilities no longer classify it as a supported pointing device, the dispatch path now retires any prior pointing registration through `disconnect_pointing_device`. It also removes cached touchpad handles and applied-setting state, then refreshes seat touchscreen capability. This closes the stale-registration case where `DeviceAdded` previously produced no descriptor and therefore skipped lifecycle cleanup. A manager regression test covers disconnecting and reconnecting the same session ID and verifies that button and per-device preference state do not leak into the new connection. Source tests added; not executed in this change.
+
+### Ignore queued events after device removal — 2026-11-25
+
+Pointer motion, buttons, axes, swipe/pinch/hold gestures, and touchscreen contact events are now dispatched only while their sysname-derived device ID remains in the pointing-device inventory. This prevents a late queued event from recreating pressed-button or gesture state after `DeviceRemoved` has completed cleanup. Keyboard and tablet-tool paths remain owned by their separate lifecycle handlers. Source changes are committed; runtime validation remains pending.
