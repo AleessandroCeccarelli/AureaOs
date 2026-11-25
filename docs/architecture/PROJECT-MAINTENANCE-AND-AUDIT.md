@@ -832,3 +832,10 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - La geometria è espressa in coordinate logiche, dimensionata a 248 × 160 unità, con righe da 36 e padding verticale da 8. Il posizionamento riusa `DesktopPanelPlacement` per vincolare il menu all'output che contiene il puntatore.
 - `command_at` distingue le righe attive dal padding; `contains` identifica l'intero pannello. Aggiunti test sorgente per ordine comandi, bordi output, padding e output troppo piccoli.
 - Il contratto è preparatorio: non è ancora collegato allo stato condiviso del compositor, al renderer Vulkan o all'esecuzione dei comandi. Nessuna build, fmt, check o test eseguiti.
+
+### Desktop context-menu command handoff — 25 novembre 2026
+
+- I comandi del menu ora espongono etichette italiane canoniche tramite `DesktopContextMenuCommand::label()`, inclusa la dicitura corretta `Usa come sfondo`.
+- Esteso il contratto compositor/Shell con `ContextMenuCommandSelected { command }`. Il sender aggiorna lo stato condiviso del menu a chiuso quando il comando viene selezionato.
+- ShellRuntime chiude il pannello e conserva l'interazione nella coda semantica per il servizio proprietario dell'azione. Non esegue direttamente operazioni filesystem o impostazioni: il dispatcher dei servizi resta da collegare.
+- Aggiunto test sorgente sul passaggio del comando e sulla chiusura del menu. Nessuna build, fmt, check o test eseguiti.
