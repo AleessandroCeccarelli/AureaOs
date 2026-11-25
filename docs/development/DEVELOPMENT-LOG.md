@@ -1757,3 +1757,13 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Identified a real version boundary: Smithay 0.7.0 activates input's `libinput_1_19` feature, so DWTP (available in input 0.9.1 only behind `libinput_1_21`) is not wired yet. This remains explicit in the compatibility document rather than being falsely advertised.
 
 - Audited the existing gesture path end to end: swipe, pinch and hold phases are dispatched to the Wayland pointer-gestures protocol; the AureaOS interaction engine accumulates swipe movement, tracks pinch scale/rotation and resolves completed gestures; cancellation suppresses shell actions; device removal clears active gestures and queued actions. The seat-level Wayland gesture stream is deliberately single-owner, while the internal engine remains device-scoped. No additional gesture patch was necessary in this pass.
+
+### 2026-11-25 — Persistent touchpad profiles and DWTP support
+
+- Added a privacy-preserving persistent identity to input descriptors. It hashes vendor/product IDs, device name and the normalized physical sysfs path; it deliberately excludes eventN numbering and serial numbers. If a physical sysfs path cannot be established, the profile is not persisted.
+- Added an atomic TOML profile store at `$XDG_CONFIG_HOME/aureaos/input/touchpads.toml` (fallback: `~/.config/aureaos/input/touchpads.toml`). Writes use a temporary file, fsync/rename and 0600 permissions. Profiles are restored for matching touchpads on connect and saved when settings change.
+- Added serializable touchpad preference types and an explicit disable-while-trackpointing setting.
+- Smithay 0.7.0 remains the compositor framework and is pinned exactly to the audited crates.io release. Cargo already downloads it; no source vendoring or fork is needed.
+- Enabled the `input 0.9.1` `libinput_1_21` feature through an optional direct dependency activated by the native `drm` feature. Cargo feature unification makes the newer DWTP API available on Smithay's re-exported input crate. The compositor now applies DWTP when advertised by the device.
+- Debian package metadata checked: Debian 13 ships libinput 1.28.1 and Debian 12 ships 1.22.1; both satisfy the 1.21 minimum for DWTP. Devices/build environments with older libinput will need a compatibility build profile or an explicit minimum-version check.
+- No build, Cargo check, rustfmt, test execution or hardware validation was run. All validation remains grouped as requested.
