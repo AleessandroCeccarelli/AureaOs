@@ -12,6 +12,7 @@ use std::sync::mpsc::{self, Receiver, SendError, Sender, TryRecvError};
 pub enum DesktopInteraction {
     WorkspaceChanged { index: u8 },
     ShowOverview,
+    ShowAppExpose,
     ShowContextMenu,
     DesktopItemSelected { id: String },
     DesktopSelectionCleared,
