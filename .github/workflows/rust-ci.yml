@@ -85,6 +85,15 @@ jobs:
             libheif-plugin-libde265 \
             libheif-plugin-dav1d \
             libturbojpeg0-dev \
+            libdrm-dev \
+            libgbm-dev \
+            libinput-dev \
+            libseat-dev \
+            libudev-dev \
+            libvulkan-dev \
+            libwayland-dev \
+            libxkbcommon-dev \
+            glslang-tools \
             pkg-config
 
       - name: Install stable Rust
