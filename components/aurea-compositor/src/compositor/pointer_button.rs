@@ -36,6 +36,17 @@ impl AureaCompositor {
             return;
         };
 
+        if state == ButtonState::Pressed && self.desktop_interactions.context_menu_is_open() {
+            let clicked_application_surface = {
+                let location = pointer.current_location();
+                let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
+                scene.surface_under(location).is_some()
+            };
+            if clicked_application_surface || button == BTN_LEFT {
+                let _ = self.desktop_interactions.send(DesktopInteraction::DismissContextMenu);
+            }
+        }
+
         if state == ButtonState::Pressed && matches!(button, BTN_LEFT | BTN_RIGHT) {
             let location = pointer.current_location();
             let focused_toplevel = {
