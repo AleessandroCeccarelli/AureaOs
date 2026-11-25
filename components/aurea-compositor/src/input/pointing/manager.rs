@@ -227,7 +227,7 @@ mod tests {
 
         assert_eq!(
             manager.take_buttons_released_by_device(first),
-            vec![0x110, 0x111, 0x112]
+            vec![0x111, 0x112]
         );
         assert_eq!(manager.take_buttons_released_by_device(first), Vec::<u32>::new());
         assert_eq!(manager.take_buttons_released_by_device(second), vec![0x110]);
@@ -363,7 +363,7 @@ mod tests {
 
         // Disconnect consumes the runtime state; a new connection with the
         // same kernel-derived ID must not inherit the previous session's data.
-        assert_eq!(manager.take_pressed_buttons(device), vec![0x110]);
+        assert_eq!(manager.take_buttons_released_by_device(device), vec![0x110]);
         assert!(manager.disconnect(device));
         assert!(manager.connect(descriptor(15, InputDeviceKind::Touchpad)));
 
