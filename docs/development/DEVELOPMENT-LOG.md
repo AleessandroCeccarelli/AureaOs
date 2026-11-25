@@ -1781,3 +1781,14 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 
 
 - Follow-up hardening: profile loading now treats only an actual filesystem `NotFound` result as a first-run empty store. Permission and other I/O errors remain read-only failures; they cannot be mistaken for an absent file and then replaced.
+
+
+### 2026-11-25 — Per-device touchpad capability snapshots
+
+- Added the public Desktop API type `TouchpadCapabilities`, attached optionally to each `InputDeviceCapabilities` snapshot.
+- Discovery now captures maximum tap-finger count; two-finger and edge scrolling; natural-scroll availability; button-area/clickfinger methods; DWT/DWTP; gesture support; left-handed mode; middle-button emulation; acceleration availability and flat/adaptive profiles.
+- The compositor reports what the active libinput device actually exposes. It does not infer capabilities from Synaptics, ELAN, ALPS, Goodix or other vendor names.
+- Updated the compatibility matrix: kernel transport drivers and upstream libinput quirks remain responsible for hardware protocol differences. AureaOS consumes the normalized capabilities and does not add vendor-specific protocol drivers.
+- USB and Bluetooth HID touchpads remain in scope; persistent profiles use available physical udev/sysfs identity and are deliberately not guessed when no stable path exists.
+- Static repository search found no external struct-literal construction of `InputDeviceCapabilities`; callers use its constructors/default. This was a source search, not a compiler check.
+- No build, Cargo check, rustfmt, tests or physical-device validation was run. Grouped Fedora validation remains pending.
