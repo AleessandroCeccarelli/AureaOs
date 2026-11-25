@@ -1740,3 +1740,7 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Reworked touchscreen seat-slot allocation to recycle released IDs after touch-up, device removal and seat-wide cancellation. This prevents a long-lived session from exhausting the monotonically increasing slot counter during normal use. Added source tests for slot reuse and isolation between simultaneous devices. Commit: `505e284`.
 - Expanded touchpad discovery to recognize devices that expose scroll methods even when tap-to-click, disable-while-typing and gesture capabilities are absent. The configuration path now shares the same discovery predicate. Added focused source tests. Commits: `f6c9cf8`, `ff722e3`, `908a00c`.
 - No build, Cargo check, rustfmt, test execution or hardware validation was run. Validation remains grouped until the pointing-device block is complete.
+
+
+- Added `docs/architecture/TOUCHPAD-COMPATIBILITY.md`: research baseline and feature matrix for Synaptics, ELAN, ALPS, Apple, generic HID/Precision Touchpad, Goodix, Cypress and external USB/Bluetooth touchpads. It separates kernel transport drivers, libinput normalization/gesture recognition, and AureaOS settings/action mapping; records hardware-dependent feature limits and the staged implementation plan. Commit: `12886b9`.
+- Research references include the Linux Touchpad Dev Guide and current libinput documentation for gestures, configuration, features, and device quirks. No build, Cargo check, rustfmt, test execution or hardware validation was performed.
