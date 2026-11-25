@@ -20,6 +20,7 @@ This file records third-party code, assets, fonts, icons, and other components i
 | serde | Serde project | https://github.com/serde-rs/serde | MIT OR Apache-2.0 | Cargo dependency (`aurea-desktop-api`, `aurea-compositor`) | Serialization of persistent touchpad preferences |
 | TOML 0.8 | TOML project | https://github.com/toml-rs/toml | MIT | Cargo dependency (`aurea-compositor`) | Durable touchpad preference file format |
 | sha2 0.10 | RustCrypto | https://github.com/RustCrypto/hashes | MIT OR Apache-2.0 | Cargo dependency (`aurea-compositor`) | Privacy-preserving stable physical input identity hash |
+| udev 0.9 | Smithay project | https://github.com/Smithay/udev-rs | MIT | Cargo dependency (`aurea-compositor`, optional native DRM backend) | Read stable udev ID_PATH metadata for physical input identity |
 
 ## License handling
 
