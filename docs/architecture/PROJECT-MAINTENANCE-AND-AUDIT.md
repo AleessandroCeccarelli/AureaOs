@@ -485,3 +485,36 @@ Il modello supporta `Transform` e la geometria logica considera le trasformazion
 6. Solo dopo stabilizzare il backend, esporre le scelte nella UI Impostazioni > Schermi.
 
 **Stato:** audit del modello e della scoperta completato a livello sorgente; applicazione KMS reale, precisione completa dei timing e trasformazione fisica end-to-end ancora da implementare/verificare. Nessuna build locale eseguita.
+
+
+## 14. Audit approfondito — cancellazione touchscreen (25 novembre 2026)
+
+### Problema corretto
+Il precedente `handle_touch_cancel` rimuoveva gli slot del dispositivo e inviava un `TouchHandle::up` per ogni contatto. Un rilascio ordinario non equivale a `wl_touch.cancel`: i client potevano interpretare una cancellazione hardware come se l'utente avesse sollevato normalmente ogni dito.
+
+### Vincolo Smithay 0.7
+L'API pubblica `TouchHandle::cancel` cancella la sessione touch aggregata del seat e non accetta un filtro per dispositivo o slot. Non è quindi corretto chiamarla per un dispositivo e lasciare attivi nel registro gli slot degli altri touchscreen.
+
+### Politica implementata
+- Se il dispositivo che segnala `TouchCancel` non possiede contatti attivi, l'evento viene ignorato: un cancel tardivo non deve interrompere un altro touchscreen.
+- Se possiede almeno un contatto attivo, AureaOS cancella la sessione touch dell'intero seat con `TouchHandle::cancel`.
+- Contestualmente vengono azzerate tutte le associazioni fisiche → slot Wayland, comprese quelle degli altri dispositivi.
+- I successivi eventi motion/up relativi ai vecchi contatti non trovano più uno slot e vengono ignorati. Un nuovo contatto deve iniziare con un nuovo down.
+- La rimozione fisica di un dispositivo riutilizza lo stesso percorso, evitando slot orfani.
+
+Questa scelta interrompe intenzionalmente anche i contatti simultanei degli altri touchscreen. È il compromesso coerente con l'API Smithay 0.7 e con il singolo seat Wayland condiviso; non fingiamo di offrire una cancellazione isolata che l'API non consente.
+
+### File e modifiche
+- `components/aurea-compositor/src/compositor/touchscreen.rs`: invia il vero evento di cancellazione Smithay.
+- `components/aurea-compositor/src/input/pointing/touchscreen_slots.rs`: aggiunge `clear_all` e il test di reset globale.
+- `docs/architecture/INPUT-EVENT-COVERAGE.md`: aggiorna semantica e stato della copertura input.
+- `docs/development/DEVELOPMENT-LOG.md`: registra la modifica e i limiti di verifica.
+
+### Stato di verifica
+**Modifica sorgente e documentazione registrate su main; non ancora validate in compilazione o su hardware.** Non sono stati eseguiti build, Cargo check, rustfmt o test locali. Restano obbligatori nella prossima sessione di verifica raggruppata:
+1. test del registro slot, inclusi due dispositivi con lo stesso slot fisico;
+2. TouchCancel su un device con contatti simultanei su due touchscreen;
+3. cancel tardivo da un device senza slot attivi;
+4. rimozione dispositivo durante un contatto;
+5. riconnessione e nuovo down dopo la cancellazione;
+6. verifica del comportamento dei client Wayland che ricevono `wl_touch.cancel`.
