@@ -116,10 +116,13 @@ impl PointerManager {
 
     /// Takes all still-pressed buttons when a physical device is disconnected.
     pub fn take_pressed_buttons(&mut self, device: InputDeviceId) -> Vec<u32> {
-        self.pressed_buttons
+        let mut buttons: Vec<_> = self
+            .pressed_buttons
             .remove(&device)
             .map(|buttons| buttons.into_iter().collect())
-            .unwrap_or_default()
+            .unwrap_or_default();
+        buttons.sort_unstable();
+        buttons
     }
 
     /// Clears preferences and button state associated with a disconnected device.
@@ -129,3 +132,97 @@ impl PointerManager {
     }
 }
 
+
+
+#[cfg(test)]
+mod tests {
+    use super::PointerManager;
+    use aurea_desktop_api::input::{
+        InputDeviceCapabilities, InputDeviceDescriptor, InputDeviceId, InputDeviceKind,
+        PointerAccelerationProfile, PointerSettings, TouchpadSettings,
+    };
+
+    fn descriptor(id: u64, kind: InputDeviceKind) -> InputDeviceDescriptor {
+        InputDeviceDescriptor {
+            id: InputDeviceId(id),
+            kind,
+            name: format!("Pointing device {id}"),
+            vendor_id: None,
+            product_id: None,
+            capabilities: InputDeviceCapabilities::default(),
+        }
+    }
+
+    #[test]
+    fn pressed_buttons_are_isolated_and_released_in_stable_order() {
+        let mut manager = PointerManager::new();
+        let first = InputDeviceId(1);
+        let second = InputDeviceId(2);
+
+        manager.update_button(first, 0x112, true);
+        manager.update_button(first, 0x110, true);
+        manager.update_button(first, 0x111, true);
+        manager.update_button(second, 0x110, true);
+
+        assert_eq!(
+            manager.take_pressed_buttons(first),
+            vec![0x110, 0x111, 0x112]
+        );
+        assert_eq!(manager.take_pressed_buttons(first), Vec::<u32>::new());
+        assert_eq!(manager.take_pressed_buttons(second), vec![0x110]);
+    }
+
+    #[test]
+    fn releasing_one_button_preserves_other_pressed_buttons() {
+        let mut manager = PointerManager::new();
+        let device = InputDeviceId(7);
+
+        manager.update_button(device, 0x110, true);
+        manager.update_button(device, 0x111, true);
+        manager.update_button(device, 0x110, false);
+
+        assert_eq!(manager.take_pressed_buttons(device), vec![0x111]);
+    }
+
+    #[test]
+    fn device_preferences_are_scoped_and_removed_with_device_state() {
+        let mut manager = PointerManager::new();
+        let mouse = InputDeviceId(10);
+        let touchpad = InputDeviceId(11);
+        assert!(manager.connect(descriptor(10, InputDeviceKind::Mouse)));
+        assert!(manager.connect(descriptor(11, InputDeviceKind::Touchpad)));
+
+        let pointer = PointerSettings::new(PointerAccelerationProfile::Flat, 0.6, false)
+            .expect("valid pointer profile");
+        let touchpad_profile = TouchpadSettings::new(false, true, false, true, false);
+        assert!(manager.set_pointer_settings(mouse, pointer));
+        assert!(manager.set_touchpad_settings(touchpad, touchpad_profile));
+        assert_eq!(
+            manager.pointer_settings(mouse, PointerSettings::default()),
+            pointer
+        );
+        assert_eq!(manager.touchpad_settings(touchpad), touchpad_profile);
+        assert_eq!(
+            manager.pointer_settings(touchpad, PointerSettings::default()),
+            PointerSettings::default()
+        );
+
+        manager.update_button(mouse, 0x110, true);
+        manager.remove_device_state(mouse);
+
+        assert_eq!(
+            manager.pointer_settings(mouse, PointerSettings::default()),
+            PointerSettings::default()
+        );
+        assert!(manager.take_pressed_buttons(mouse).is_empty());
+        assert_eq!(manager.touchpad_settings(touchpad), touchpad_profile);
+    }
+
+    #[test]
+    fn touchpad_preferences_reject_mouse_devices() {
+        let mut manager = PointerManager::new();
+        let mouse = InputDeviceId(12);
+        assert!(manager.connect(descriptor(12, InputDeviceKind::Mouse)));
+        assert!(!manager.set_touchpad_settings(mouse, TouchpadSettings::default()));
+    }
+}
