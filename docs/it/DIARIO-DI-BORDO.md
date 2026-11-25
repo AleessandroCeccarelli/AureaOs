@@ -1781,3 +1781,13 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - I clic sopra superfici Wayland continuano a rispettare la precedenza delle finestre; il click destro resta consegnato all'applicazione.
 - Commit `80483c23`. Il modello Shell conserva già pannello e posizione del menu, ma non esiste ancora una superficie grafica che lo disegni: il menu non è quindi ancora visibile.
 - Nessuna build, cargo check, test, rustfmt o prova hardware eseguiti; verifica raggruppata su Fedora.
+
+
+### 25 novembre 2026 — Primo configure dei popup XDG
+
+- In `aurea-compositor/src/xdg_shell.rs` il callback `new_popup` ora salva il `PositionerState`, calcola la geometria iniziale con `get_geometry()` e invia `send_configure()`.
+- `reposition_request` aggiorna lo stato pending e risponde con `send_repositioned(token)`, richiedendo un nuovo frame.
+- Questo consente ai client di completare il primo ciclo configure/commit e di ricevere una risposta alle richieste di riposizionamento.
+- Non è ancora un menu contestuale grafico: mancano constraint rispetto ai bordi degli output, PopupManager e grab di tastiera/puntatore, integrazione nella scena Vulkan e hit testing dei popup.
+- `grab` resta intenzionalmente non implementato: non viene simulato un grab parziale che violerebbe il comportamento Wayland.
+- Nessuna build, cargo check, rustfmt, test o prova hardware eseguiti. Verifica raggruppata su Fedora, come concordato.
