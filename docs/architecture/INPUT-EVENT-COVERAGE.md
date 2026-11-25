@@ -215,3 +215,18 @@ one device is not discarded merely because another device needs recovery.
 Direct-touch routing is intentionally separate from relative pointer motion:
 with multiple displays, each touchscreen requires an explicit display
 assignment rather than guessing which monitor should receive its coordinates.
+
+
+## Device-scoped touchscreen cancellation
+
+A libinput TouchCancel or touchscreen disconnect must not cancel contacts from
+every other touchscreen. Smithay 0.7 exposes Wayland touch cancellation at seat
+scope, while libinput reports cancellation per physical device. AureaOS now
+removes only the affected device's slot mappings and emits per-contact Wayland
+up events for those slots, then sends one touch frame. Contacts belonging to
+other physical devices remain active and retain their seat-wide slot IDs.
+
+This is an intentional compatibility compromise: Wayland has no per-device
+`wl_touch.cancel` event. Synthesized up events preserve unrelated contacts,
+although a client may observe them as ordinary contact completion rather than
+a device-specific cancellation.
