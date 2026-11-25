@@ -54,6 +54,7 @@ cat > "${fontconfig_file}" <<EOF
 EOF
 
 export FONTCONFIG_FILE="${fontconfig_file}"
+export FONTCONFIG_PATH="/etc/fonts"
 
 manifest="${OUTPUT_ROOT}/EXPORT-MANIFEST.txt"
 {
