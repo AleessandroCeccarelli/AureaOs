@@ -173,9 +173,9 @@ impl<'a> RenderScene<'a> {
             let root = toplevel.surface.wl_surface();
             let popups = PopupManager::popups_for_surface(root).collect::<Vec<_>>();
 
-            // Popup trees are stacked above their parent. Test the newest/deepest
-            // entries first so overlapping popup surfaces receive pointer focus.
-            for (popup, popup_offset) in popups.into_iter().rev() {
+            // Smithay yields nested children before their parents; preserve that
+            // order here so the deepest/topmost popup wins hit testing.
+            for (popup, popup_offset) in popups {
                 let popup_origin = toplevel.location + popup_offset - popup.geometry().loc;
                 if let Some((surface, location)) = under_from_surface_tree(
                     popup.wl_surface(),
