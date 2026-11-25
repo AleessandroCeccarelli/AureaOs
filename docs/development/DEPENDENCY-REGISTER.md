@@ -331,3 +331,13 @@ Evidence: Debian Trixie package pages for libheif-dev, libheif-plugin-libde265 a
 - **Scope:** package installation, pkg-config version and plugin shared-library presence only. This job does not yet compile libheif-rs, link Aurea Media, or approve production adoption.
 - **Security/maintenance:** the upstream parser-risk review remains a gate. Keep native decoding isolated behind aurea-media; no native codec code may enter the compositor/render thread.
 - **Status:** CI verification pending. No Cargo dependency, lockfile, runtime image manifest or Fedora package decision has been added.
+
+
+## Noto Sans — desktop context-menu typography — 25 November 2026
+
+- **Selection:** Noto Sans from Google Fonts / The Noto Project, Regular 500 weight for the initial desktop context menu.
+- **License:** SIL Open Font License 1.1 (OFL-1.1). The font family may be used and redistributed with software under the OFL conditions; preserve the upstream copyright and license notice if font files are ever bundled. See the [Noto usage and license guidance](https://notofonts.github.io/noto-docs/website/use/).
+- **Build-time use:** SVG masters declare font-family=Noto Sans; the host rsvg-convert rasterizes them into RGBA8. The font file is not linked by Rust and is not required at runtime once the raster assets are packaged.
+- **Host packages:** Debian 13 fonts-noto-core; Fedora google-noto-sans-fonts. Existing host rasterizer packages remain Debian librsvg2-bin and Fedora librsvg2-tools.
+- **Runtime impact:** no Cargo dependency, no fontconfig/Pango/Cairo/GLib dependency added to AureaOS runtime. No external font download or network access occurs at runtime.
+- **Status:** SVG source masters and the deterministic export script are committed. Raster generation and visual inspection are pending on Fedora.
