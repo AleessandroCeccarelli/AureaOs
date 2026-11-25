@@ -1791,3 +1791,11 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Non è ancora un menu contestuale grafico: mancano constraint rispetto ai bordi degli output, PopupManager e grab di tastiera/puntatore, integrazione nella scena Vulkan e hit testing dei popup.
 - `grab` resta intenzionalmente non implementato: non viene simulato un grab parziale che violerebbe il comportamento Wayland.
 - Nessuna build, cargo check, rustfmt, test o prova hardware eseguiti. Verifica raggruppata su Fedora, come concordato.
+
+
+### 25 novembre 2026 — Registry e albero dei popup XDG
+
+- Integrato `smithay::desktop::PopupManager` nello stato del compositor.
+- I popup XDG vengono registrati alla creazione; a ogni commit il manager aggiorna le relazioni parent/child e ripulisce le risorse distrutte.
+- È il primo collegamento del lifecycle popup al compositor, non ancora la visualizzazione del menu: constraint per monitor, grab coordinati, rendering Vulkan, hit testing e dismiss restano da implementare.
+- Nessuna build, cargo check, rustfmt o test eseguiti: continuiamo ad accumulare modifiche per la verifica raggruppata su Fedora.
