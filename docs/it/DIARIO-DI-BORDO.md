@@ -1852,6 +1852,6 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 ### 25 novembre 2026 — Contratto geometrico del menu contestuale
 
 - Creato `aurea-desktop-api/src/desktop/context_menu.rs`: modello indipendente dalla grafica per i comandi e le aree cliccabili del menu desktop.
-- Il menu standard prevede inizialmente quattro voci: Crea cartella, Cambia sfondo, Impostazioni schermo e Personalizzazione. Dimensioni logiche 248 × 160, righe da 36 e padding superiore/inferiore da 8.
+- Il menu standard prevede inizialmente quattro voci: Crea cartella, Usa come sfondo, Impostazioni schermo e Personalizzazione. Dimensioni logiche 248 × 160, righe da 36 e padding superiore/inferiore da 8.
 - Il layout usa il posizionamento già presente per mantenersi dentro l'output corretto, anche con coordinate globali e configurazioni multi-monitor. Il test di hit-testing non considera il padding come comando.
 - Esportato il nuovo contratto dal modulo `desktop` dell'API. È ancora un modello: rendering, sincronizzazione del layout con il compositor e dispatch dei comandi non sono collegati. Nessuna build, `cargo fmt`, check o test eseguiti.
