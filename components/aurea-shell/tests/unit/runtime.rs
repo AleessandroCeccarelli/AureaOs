@@ -416,3 +416,34 @@ fn desktop_item_activation_is_retained_as_a_semantic_action() {
         })
     );
 }
+
+
+#[test]
+fn selected_context_menu_command_closes_menu_and_is_retained_for_service_dispatch() {
+    use aurea_desktop_api::{
+        desktop::DesktopContextMenuCommand,
+        desktop_interaction::{DesktopInteraction, DesktopPosition},
+    };
+
+    let mut runtime = ShellRuntime::new();
+    runtime.handle_desktop_interaction(DesktopInteraction::ShowContextMenu {
+        position: DesktopPosition { x: 120, y: 90 },
+    });
+    runtime.handle_desktop_interaction(DesktopInteraction::ContextMenuCommandSelected {
+        command: DesktopContextMenuCommand::UseAsWallpaper,
+    });
+
+    assert_eq!(runtime.desktop_state().panels.active(), None);
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::ShowContextMenu {
+            position: DesktopPosition { x: 120, y: 90 },
+        })
+    );
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::ContextMenuCommandSelected {
+            command: DesktopContextMenuCommand::UseAsWallpaper,
+        })
+    );
+}
