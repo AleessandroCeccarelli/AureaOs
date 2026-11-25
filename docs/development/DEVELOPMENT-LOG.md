@@ -1939,3 +1939,11 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Newly created XDG popups are registered as `PopupKind::Xdg`; surface commits update the parent/child popup tree and clean up dead resources.
 - This establishes popup ownership and lifecycle tracking, but does not yet implement output-constrained placement, coordinated pointer/keyboard grabs, scene rendering, hit testing or dismissal.
 - No build, Cargo check, rustfmt or tests were run; grouped Fedora validation remains pending.
+
+
+### 2026-11-25 — Include XDG popups in Vulkan scene and hit testing
+
+- `RenderScene` now collects popup surface trees registered with Smithay's `PopupManager`, computes their global logical origins from Smithay's popup offsets and geometry, and includes them in SHM snapshots consumed by the Vulkan compositor.
+- Parent surfaces are emitted before popup surfaces because AureaOS Vulkan composition draws snapshots in sequence; this keeps popups visually above their owning toplevel. Popup object IDs are included in active surface tracking for texture-cache lifecycle.
+- Pointer hit testing checks popup surfaces before their parent toplevel, so existing pointer motion/focus paths can target popup content.
+- Output-constrained placement, coordinated pointer/keyboard grabs, dismissal and multi-monitor visual validation remain open. No build, Cargo check, rustfmt or tests were run.
