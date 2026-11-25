@@ -132,7 +132,7 @@ impl AureaCompositor {
 
     /// Resolves the menu's output from its global logical anchor and builds
     /// the same constrained geometry used by the visual presentation layer.
-    fn context_menu_layout(
+    pub(super) fn context_menu_layout(
         &self,
         anchor: DesktopPosition,
     ) -> Option<DesktopContextMenuLayout> {
