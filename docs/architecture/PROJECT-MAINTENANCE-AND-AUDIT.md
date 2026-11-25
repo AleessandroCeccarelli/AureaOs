@@ -568,3 +568,7 @@ La risoluzione richiede esattamente Super e Ctrl; Alt o Shift aggiuntivi fanno r
 ## 19. Unsupported pointing-device re-announcement
 
 The `DeviceAdded` path now handles a descriptor transition from a supported pointing kind to an unsupported kind. If the sysname-derived ID is already registered, the compositor performs the same ordered disconnect used by `DeviceRemoved`, clears cached touchpad handles and applied settings, and recalculates touchscreen seat capability. This prevents stale inventory and runtime state when a device is re-announced with changed capabilities. A same-ID disconnect/reconnect regression test verifies that runtime buttons and preferences start clean. Validation remains pending; no build, test execution, or rustfmt was run.
+
+## 20. Reject stale pointing events after hot-unplug
+
+The libinput dispatch path now checks the pointing-device inventory before forwarding pointer motion, pointer buttons, pointer axes, touchpad gestures, and touchscreen contact events. Events delivered after the corresponding device has been removed are ignored, so stale queue entries cannot recreate per-device state or emit protocol input from a disconnected device. Keyboard and tablet-tool paths are intentionally unaffected because they use separate lifecycle paths. No build, tests, or rustfmt were run.
