@@ -159,6 +159,11 @@ impl ShellRuntime {
             DesktopInteraction::DismissContextMenu => {
                 self.desktop.panels.close_context_menu();
             }
+            DesktopInteraction::ContextMenuCommandSelected { .. } => {
+                self.desktop.panels.close_context_menu();
+                // The selected command remains queued for the owning desktop service.
+                // Filesystem and settings operations are not executed by the shell loop.
+            }
             DesktopInteraction::DesktopItemSelected { ref id } => {
                 self.desktop.select_item(id.clone());
                 self.desktop_selection.set_selected_item(Some(id.clone()));
