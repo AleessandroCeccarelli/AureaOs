@@ -94,15 +94,19 @@ pub(super) fn apply(
         TouchpadSettingStatus::Unsupported
     };
 
-    let requested_click_method = match settings.click_method() {
-        TouchpadClickMethod::ButtonAreas => ClickMethod::ButtonAreas,
-        TouchpadClickMethod::Clickfinger => ClickMethod::Clickfinger,
-    };
     let click_methods = device.config_click_methods();
-    let click_method = if click_methods.contains(&requested_click_method) {
-        status(device.config_click_set_method(requested_click_method))
-    } else {
-        TouchpadSettingStatus::Unsupported
+    let click_method = match settings.click_method() {
+        TouchpadClickMethod::DeviceDefault if !click_methods.is_empty() => {
+            TouchpadSettingStatus::Applied
+        }
+        TouchpadClickMethod::DeviceDefault => TouchpadSettingStatus::Unsupported,
+        TouchpadClickMethod::ButtonAreas if click_methods.contains(&ClickMethod::ButtonAreas) => {
+            status(device.config_click_set_method(ClickMethod::ButtonAreas))
+        }
+        TouchpadClickMethod::Clickfinger if click_methods.contains(&ClickMethod::Clickfinger) => {
+            status(device.config_click_set_method(ClickMethod::Clickfinger))
+        }
+        _ => TouchpadSettingStatus::Unsupported,
     };
 
     let left_handed = if device.config_left_handed_is_available() {
@@ -133,7 +137,9 @@ pub(super) fn apply(
         }
     };
     let available_send_events_modes = device.config_send_events_modes();
-    let send_events_mode = if available_send_events_modes.contains(&send_events_mode) {
+    let send_events_mode = if send_events_mode == SendEventsMode::Enabled
+        || available_send_events_modes.contains(&send_events_mode)
+    {
         status(device.config_send_events_set_mode(&[send_events_mode]))
     } else {
         TouchpadSettingStatus::Unsupported
