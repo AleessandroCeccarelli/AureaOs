@@ -59,14 +59,10 @@ pub(crate) fn constrain_geometry(
     };
 
     let parent_size = positioner.parent_size.unwrap_or(actual_parent_size);
-    let anchor = positioner.anchor_rect;
+    let anchor = positioner.get_anchor_point();
     let anchor_point = LogicalPoint {
-        x: i64::from(parent_origin.x)
-            + i64::from(anchor.loc.x)
-            + i64::from(anchor.size.w / 2),
-        y: i64::from(parent_origin.y)
-            + i64::from(anchor.loc.y)
-            + i64::from(anchor.size.h / 2),
+        x: i64::from(parent_origin.x) + i64::from(anchor.x),
+        y: i64::from(parent_origin.y) + i64::from(anchor.y),
     };
     let parent_center = LogicalPoint {
         x: i64::from(parent_origin.x) + i64::from(parent_size.w / 2),
@@ -154,3 +150,90 @@ mod tests {
         assert!(target_relative_to_parent(bounds, (i32::MIN, 0).into()).is_none());
     }
 }
+
+/// Tracks the last client positioner for each live popup. Smithay exposes the
+/// committed popup geometry, while this registry retains the positioner needed
+/// to recompute reactive popups after parent/output geometry changes.
+#[derive(Default)]
+pub(crate) struct PopupPlacementRegistry {
+    entries: Vec<(PopupSurface, PositionerState)>,
+}
+
+impl PopupPlacementRegistry {
+    pub(crate) fn register(&mut self, popup: PopupSurface, positioner: PositionerState) {
+        self.update(popup, positioner);
+    }
+
+    pub(crate) fn update(&mut self, popup: PopupSurface, positioner: PositionerState) {
+        self.entries.retain(|(entry, _)| entry.alive());
+        if let Some((_, current)) = self.entries.iter_mut().find(|(entry, _)| *entry == popup) {
+            *current = positioner;
+        } else {
+            self.entries.push((popup, positioner));
+        }
+    }
+
+    pub(crate) fn remove(&mut self, popup: &PopupSurface) {
+        self.entries.retain(|(entry, _)| entry.alive() && entry != popup);
+    }
+
+    fn reactive_popups(&mut self) -> Vec<(PopupSurface, PositionerState)> {
+        self.entries.retain(|(popup, _)| popup.alive());
+        self.entries
+            .iter()
+            .filter(|(_, positioner)| positioner.reactive)
+            .cloned()
+            .collect()
+    }
+}
+
+impl AureaCompositor {
+    /// Recomputes all live reactive XDG popups after their parent or output
+    /// geometry changes. Configure events are sent only when geometry changed.
+    pub(crate) fn reconstrain_reactive_popups(&mut self) {
+        let popups = self.popup_placement_registry.reactive_popups();
+        let mut changed = false;
+
+        for (popup, positioner) in popups {
+            let geometry = constrain_geometry(self, &popup, positioner);
+            popup.with_pending_state(|state| {
+                state.positioner = positioner;
+                state.geometry = geometry;
+            });
+
+            match popup.send_pending_configure() {
+                Ok(Some(_serial)) => changed = true,
+                Ok(None) => {}
+                Err(error) => {
+                    tracing::debug!(
+                        ?error,
+                        "Reactive XDG popup could not be reconfigured"
+                    );
+                }
+            }
+        }
+
+        if changed {
+            self.request_all_output_frames();
+        }
+    }
+
+    /// Moves a managed toplevel and immediately reconstrains its reactive popups.
+    ///
+    /// Window move/drag implementations should use this compositor-level entry
+    /// point rather than mutating WindowManager directly.
+    pub fn set_toplevel_location(
+        &mut self,
+        surface: &smithay::reexports::wayland_server::protocol::wl_surface::WlSurface,
+        location: (i32, i32),
+    ) -> bool {
+        if !self.window_manager.set_toplevel_location(surface, location) {
+            return false;
+        }
+
+        self.reconstrain_reactive_popups();
+        self.request_all_output_frames();
+        true
+    }
+}
+
