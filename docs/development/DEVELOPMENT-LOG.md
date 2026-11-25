@@ -1966,3 +1966,13 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Invalid/dead parent chains, unavailable output targets and unrepresentable coordinate conversions preserve the protocol's unconstrained geometry instead of overflowing or guessing an output.
 - Added source tests for global-to-parent target conversion and overflow rejection. Tests were not executed.
 - Reactive reconfiguration after parent movement/output topology changes and physical multi-monitor validation remain open. No Cargo build, `cargo fmt`, check, test run or hardware validation was performed; grouped Fedora validation remains the plan.
+
+### 2026-11-25 — Reactive popup reconstraining lifecycle
+
+- Added `PopupPlacementRegistry` to retain the latest client `PositionerState` for each live XDG popup. It is updated on `reposition` and cleaned up when popup resources are destroyed or no longer alive.
+- Output selection now uses Smithay's `PositionerState::get_anchor_point()`, honoring the client's anchor edges instead of approximating the anchor rectangle center.
+- Added `reconstrain_reactive_popups`. It recomputes only popups whose positioner requested `reactive`, updates pending geometry, and uses `send_pending_configure` so no configure is sent when state did not change and Smithay still enforces protocol-version/reactivity rules.
+- Hooked reconstraining into surface commits, output topology/configuration reconciliation, and the compositor-level `AureaCompositor::set_toplevel_location` movement entry point. The movement API also refreshes surface/output membership and pointer focus.
+- Non-reactive popups are deliberately left unchanged per XDG semantics. Nested popup descendants are recalculated again after their parent acknowledges and commits its new geometry.
+- The move/drag gesture itself is not yet implemented; this change establishes the required compositor API for future move handlers and does not claim interactive window dragging is complete.
+- No Cargo build, `cargo fmt`, check, tests or hardware validation were run. Keep verification grouped on Fedora.
