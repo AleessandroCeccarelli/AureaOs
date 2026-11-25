@@ -46,10 +46,10 @@ impl XdgShellHandler for AureaCompositor {
         self.request_all_output_frames();
     }
 
-    fn grab(&mut self, _surface: PopupSurface, _seat: wl_seat::WlSeat, _serial: Serial) {
-        // Popup grabs require a seat-owned PopupManager and coordinated pointer
-        // and keyboard grabs. They are deliberately not emulated with a partial
-        // pointer-only grab; that integration is tracked separately.
+    fn grab(&mut self, surface: PopupSurface, seat: wl_seat::WlSeat, serial: Serial) {
+        if let Err(error) = self.start_popup_grab(PopupKind::Xdg(surface), &seat, serial) {
+            tracing::warn!(?error, "Unable to start coordinated XDG popup grab");
+        }
     }
 
     fn reposition_request(
