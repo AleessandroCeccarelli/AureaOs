@@ -80,22 +80,22 @@ A missing shell surface must not be confused with missing hardware gesture suppo
 
 - libinput is integrated through Smithay.
 - Touchpad detection/configuration and per-device settings/reporting exist.
-- Current exposed touchpad preferences include tap-to-click, two-finger scrolling, natural scrolling, disable-while-typing and tap-and-drag.
-- Discovery was expanded to recognize scroll-only devices even when tap, DWT and gesture capability are absent.
-- Pointer gesture dispatch and AureaOS gesture routing already exist, but the end-to-end action/UI coverage still needs an audit.
-- The current touchpad settings API does not yet expose the full matrix above.
-- Stable persistent identity and durable per-device preference storage still require work.
+- Touchpad detection uses libinput capabilities rather than vendor-name heuristics and recognizes scroll-only devices even when tap, DWT and gesture capability are absent.
+- The shared Desktop API now exposes tap-to-click, tap-and-drag, drag lock, tap-button mapping, two-finger/edge scrolling, natural scrolling, disable-while-typing, clickpad method, left-handed mode, middle-button emulation, pointer speed and send-events mode.
+- The compositor applies each option only when the installed Smithay/libinput device reports that capability. Every option returns an explicit Applied, Unsupported or Failed status.
+- The existing five-argument TouchpadSettings constructor remains source-compatible; advanced options use builder-style methods.
+- Clickpad method, tap mapping, drag-lock and send-events configuration are implemented against Smithay 0.7's input API. The exact backend calls were checked against the versioned Smithay/input API documentation.
+- Gesture dispatch and AureaOS gesture action routing still need an end-to-end lifecycle audit; persistent stable hardware identity and durable per-device preference storage remain future work.
+- No build, Cargo check, rustfmt, unit tests or physical-hardware validation has been run yet; validation remains deliberately grouped.
 
 ## Next implementation sequence
 
-1. Audit the exact Smithay/libinput version and every configuration method it exposes in the Debian build.
-2. Extend the shared desktop API with capability reporting and settings for click method, scroll method, middle-button emulation, left-handed mode, acceleration and send-events mode where the backend supports them.
-3. Keep the existing settings constructor source-compatible; add validated builder methods or a versioned settings type rather than breaking callers.
-4. Audit gesture begin/update/end/cancel handling and map only gestures actually emitted by libinput.
-5. Add a device capability report so Settings can show unavailable options accurately.
-6. Design stable per-device identity and persistent settings, including duplicate devices and reconnect behavior.
-7. Test with representative hardware from each transport family, including at least one external USB and one Bluetooth HID touchpad where available.
-8. Perform grouped build, formatting, unit tests and hardware validation after the pointing-device work is complete.
+1. Audit gesture begin/update/end/cancel handling and map only gestures actually emitted by libinput, including cancellation and device removal.
+2. Add durable per-device preferences keyed by stable physical identity (vendor/product plus libinput device group/udev identity as available), not event node or transient runtime ID.
+3. Extend capability reporting to include gesture counts and device metadata needed by the Settings UI.
+4. Verify Debian target kernel/libinput versions and their input-driver coverage for representative Synaptics, ELAN, ALPS, Apple and generic HID devices.
+5. Test internal and external USB/Bluetooth HID touchpads, hotplug, suspend/resume and reconnect.
+6. Perform grouped build, formatting, unit tests and hardware validation after the pointing-device work is complete.
 
 ## Research references
 
