@@ -225,6 +225,29 @@ mod tests {
     }
 
     #[test]
+    fn reclassification_reconciles_per_device_preferences() {
+        let mut manager = PointerManager::new();
+        let device = InputDeviceId(13);
+        assert!(manager.connect(descriptor(13, InputDeviceKind::Touchpad)));
+
+        let pointer = PointerSettings::new(PointerAccelerationProfile::Flat, 0.55, false)
+            .expect("valid pointer profile");
+        let touchpad = TouchpadSettings::new(false, true, false, true, false);
+        assert!(manager.set_pointer_settings(device, pointer));
+        assert!(manager.set_touchpad_settings(device, touchpad));
+
+        assert!(manager.connect(descriptor(13, InputDeviceKind::Mouse)));
+        assert_eq!(manager.pointer_settings(device, PointerSettings::default()), pointer);
+        assert_eq!(manager.touchpad_settings(device), TouchpadSettings::default());
+
+        assert!(manager.connect(descriptor(13, InputDeviceKind::Tablet)));
+        assert_eq!(
+            manager.pointer_settings(device, PointerSettings::default()),
+            PointerSettings::default()
+        );
+    }
+
+    #[test]
     fn touchpad_preferences_reject_mouse_devices() {
         let mut manager = PointerManager::new();
         let mouse = InputDeviceId(12);
