@@ -27,8 +27,8 @@ use crate::{
     render::{
         RenderScene,
         geometry::{
-            surface_geometry, surface_geometry_with_fractional_scale,
-            transform_geometry_for_output,
+            compose_surface_transforms, surface_geometry, surface_geometry_with_fractional_scale,
+            surface_transform_index, transform_geometry_for_output,
         },
     },
     renderer::RenderTarget,
@@ -51,7 +51,7 @@ pub(super) const MAX_COMPOSITED_SHM_BYTES: usize = 256 * 1024 * 1024;
 fn context_menu_geometry(
     menu: &DesktopContextMenuLayout,
     target: &RenderTarget,
-) -> Option<(vk::Viewport, vk::Rect2D)> {
+) -> Option<(vk::Viewport, vk::Rect2D, u32)> {
     let origin = menu.placement().bounds().origin();
     let logical_origin = target.logical_origin();
     let geometry = if let Some(scale) = target.fractional_scale() {
@@ -80,6 +80,10 @@ fn context_menu_geometry(
         target.transform(),
     )?;
     let scissor = geometry.scissor(target.width(), target.height())?;
+    let texture_transform = surface_transform_index(compose_surface_transforms(
+        smithay::utils::Transform::Normal,
+        target.transform(),
+    )?)?;
 
     Some((
         vk::Viewport {
@@ -100,6 +104,7 @@ fn context_menu_geometry(
                 height: scissor.height,
             },
         },
+        texture_transform,
     ))
 }
 
@@ -558,7 +563,7 @@ pub(super) fn render_frame(
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
 
-    if let (Some((viewport, scissor)), Some(binding)) =
+    if let (Some((viewport, scissor, texture_transform)), Some(binding)) =
         (context_menu_draw, context_menu_binding.as_ref())
     {
         VulkanDrawPass::record_textured_region(
@@ -572,7 +577,7 @@ pub(super) fn render_frame(
             VulkanColorLoad::Load,
             viewport,
             scissor,
-            0,
+            texture_transform,
         )
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
@@ -729,7 +734,7 @@ mod context_menu_geometry_tests {
     fn positions_menu_in_output_local_physical_coordinates() {
         let output = DesktopRect::new(DesktopPoint::new(0, 0), 1920, 1080).unwrap();
         let menu = DesktopContextMenuLayout::at(DesktopPoint::new(500, 300), output).unwrap();
-        let (viewport, scissor) =
+        let (viewport, scissor, _) =
             context_menu_geometry(&menu, &target((0, 0), 1)).expect("visible menu");
 
         assert_eq!((viewport.x, viewport.y), (500.0, 300.0));
@@ -744,7 +749,7 @@ mod context_menu_geometry_tests {
     fn scales_menu_for_hidpi_outputs() {
         let output = DesktopRect::new(DesktopPoint::new(0, 0), 1920, 1080).unwrap();
         let menu = DesktopContextMenuLayout::at(DesktopPoint::new(500, 300), output).unwrap();
-        let (viewport, scissor) =
+        let (viewport, scissor, _) =
             context_menu_geometry(&menu, &target((0, 0), 2)).expect("visible menu");
 
         assert_eq!((viewport.x, viewport.y), (1000.0, 600.0));
@@ -757,7 +762,7 @@ mod context_menu_geometry_tests {
     fn clips_transparent_canvas_margin_at_the_output_edge() {
         let output = DesktopRect::new(DesktopPoint::new(0, 0), 1920, 1080).unwrap();
         let menu = DesktopContextMenuLayout::at(DesktopPoint::new(1910, 100), output).unwrap();
-        let (viewport, scissor) =
+        let (viewport, scissor, _) =
             context_menu_geometry(&menu, &target((0, 0), 1)).expect("edge menu");
 
         assert_eq!(viewport.width, 256.0);
