@@ -411,15 +411,29 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             );
         }
         InputEvent::TabletToolProximity { event } => {
+            // Tablet-tool events may already be queued when DeviceRemoved is
+            // dispatched. Never let a stale event recreate seat tablet/tool state.
+            if !is_registered_pointing_device(state, pointing::id_for(&event.device())) {
+                return;
+            }
             state.compositor.handle_tablet_proximity(event);
         }
         InputEvent::TabletToolAxis { event } => {
+            if !is_registered_pointing_device(state, pointing::id_for(&event.device())) {
+                return;
+            }
             state.compositor.handle_tablet_axis(event);
         }
         InputEvent::TabletToolTip { event } => {
+            if !is_registered_pointing_device(state, pointing::id_for(&event.device())) {
+                return;
+            }
             state.compositor.handle_tablet_tip(event);
         }
         InputEvent::TabletToolButton { event } => {
+            if !is_registered_pointing_device(state, pointing::id_for(&event.device())) {
+                return;
+            }
             state.compositor.handle_tablet_button(event);
         }
         _ => {}
