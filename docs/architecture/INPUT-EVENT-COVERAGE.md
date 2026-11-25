@@ -311,3 +311,9 @@ Absolute pointer motion now resolves the originating device through a dedicated 
 The desktop context-menu request now has a shared open-state bit and a dedicated `DismissContextMenu` interaction. Escape is intercepted only while that menu is open, including its matching key release; otherwise Escape is forwarded to the focused Wayland client. A primary click on the desktop canvas or any click on an application surface dismisses the desktop menu. A secondary click on the desktop updates its anchor position. The Shell closes only the ContextMenu panel, not Overview/App Exposé.
 
 This is input/state behavior, not a rendered menu. The native panel renderer and menu-item hit testing/actions remain unimplemented. Source tests were added but not executed; no build/fmt/check was run.
+
+### Desktop context-menu layout contract — 2026-11-25
+
+A technology-independent menu layout contract now defines the initial four desktop commands and logical row hit regions. `DesktopContextMenuLayout::command_at` resolves only actionable rows; padding remains part of the panel but does not activate an item. Placement is constrained to the target output using the shared desktop panel geometry helper.
+
+This is source-level API groundwork only. The compositor does not yet consume this layout for pointer hit testing, and selecting a row does not yet dispatch a shell command. The Vulkan panel renderer and visible menu remain incomplete. Tests were added but not executed; no build, fmt or check was run.
