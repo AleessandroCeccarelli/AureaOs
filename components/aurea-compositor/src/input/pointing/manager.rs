@@ -192,8 +192,6 @@ impl PointerManager {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::PointerManager;
@@ -402,7 +400,10 @@ mod tests {
             assert!(manager.connect(descriptor(id.0, kind)));
         }
         for (id, kind) in devices {
-            assert_eq!(manager.devices().device(id).unwrap().kind, kind);
+            assert_eq!(
+            manager.devices().device(id).unwrap().kind,
+            kind
+        );
         }
 
         // Removing one device must not invalidate any other connected device.
