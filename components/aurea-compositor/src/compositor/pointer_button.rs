@@ -5,10 +5,7 @@
 
 //! Pointer button delivery and click-to-focus policy.
 
-use aurea_desktop_api::{
-    desktop_interaction::DesktopInteraction,
-    input::{InputDeviceId, InputDeviceProvider},
-};
+use aurea_desktop_api::input::{InputDeviceId, InputDeviceProvider};
 use smithay::{backend::input::ButtonState, input::pointer::ButtonEvent, utils::SERIAL_COUNTER};
 
 use super::AureaCompositor;
@@ -52,25 +49,13 @@ impl AureaCompositor {
                     self.focus_surface(Some(surface));
                     self.request_all_output_frames();
                 }
-                (BTN_LEFT, None) => self.select_desktop_item_at(location, true),
+                (BTN_LEFT, None) => self.desktop_click_tracker.reset(),
                 (BTN_RIGHT, Some(_)) => {
                     // A window owns its own context-menu interaction. Do not
                     // replace it with the desktop shell menu.
                     self.desktop_click_tracker.reset();
                 }
-                (BTN_RIGHT, None) => {
-                    // Right-click selects the item under the pointer (or
-                    // clears selection on empty desktop) before opening the
-                    // desktop context menu.
-                    self.select_desktop_item_at(location, false);
-                    if self
-                        .desktop_interactions
-                        .send(DesktopInteraction::ShowContextMenu)
-                        .is_err()
-                    {
-                        tracing::debug!("Shell context-menu receiver is no longer available");
-                    }
-                }
+                (BTN_RIGHT, None) => self.desktop_click_tracker.reset(),
                 _ => {}
             }
         }
