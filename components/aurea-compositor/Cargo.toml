@@ -46,6 +46,6 @@ serde = { version = "1", features = ["derive"] }
 input = { version = "=0.9.1", default-features = false, optional = true, features = ["libinput_1_21"] }
 
 [dependencies.smithay]
-version = "0.7"
+version = "=0.7.0"
 default-features = false
 features = ["wayland_frontend", "desktop"]
