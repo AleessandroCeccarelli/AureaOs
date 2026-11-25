@@ -231,6 +231,15 @@ impl<'a> RenderScene<'a> {
             .to_i32_round();
 
             let root = toplevel.surface.wl_surface();
+            elements.extend(render_elements_from_surface_tree(
+                renderer,
+                root,
+                location,
+                scale,
+                1.0,
+                Kind::Unspecified,
+            ));
+
             for (popup, popup_offset) in PopupManager::popups_for_surface(root) {
                 let popup_origin = toplevel.location + popup_offset - popup.geometry().loc;
                 let popup_location: Point<i32, Physical> = Point::<f64, Logical>::from((
@@ -249,15 +258,6 @@ impl<'a> RenderScene<'a> {
                     Kind::Unspecified,
                 ));
             }
-
-            elements.extend(render_elements_from_surface_tree(
-                renderer,
-                root,
-                location,
-                scale,
-                1.0,
-                Kind::Unspecified,
-            ));
         }
 
         elements
@@ -293,6 +293,9 @@ impl<'a> RenderScene<'a> {
         let mut snapshots = Vec::new();
         for toplevel in &self.toplevels {
             let root = toplevel.surface.wl_surface();
+            // The Vulkan compositor draws snapshots in vector order. Keep the
+            // parent tree first so every popup is composited above its owner.
+            snapshots.extend(collect_surface_tree_snapshots(root, toplevel.location));
             for (popup, popup_offset) in PopupManager::popups_for_surface(root) {
                 let popup_origin = toplevel.location + popup_offset - popup.geometry().loc;
                 snapshots.extend(collect_surface_tree_snapshots(
@@ -300,7 +303,6 @@ impl<'a> RenderScene<'a> {
                     popup_origin,
                 ));
             }
-            snapshots.extend(collect_surface_tree_snapshots(root, toplevel.location));
         }
 
         if let Some((surface, location, cursor_anchor)) = &self.cursor_surface {
