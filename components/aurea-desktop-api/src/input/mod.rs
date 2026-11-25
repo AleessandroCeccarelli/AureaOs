@@ -24,7 +24,8 @@ pub use pointer::{
     PointerSettingsProvider,
 };
 pub use touchpad::{
-    TouchpadApplyReport, TouchpadClickMethod, TouchpadSendEventsMode, TouchpadSettingStatus,
+    TouchpadAccelerationProfile, TouchpadApplyReport, TouchpadClickMethod,
+    TouchpadSendEventsMode, TouchpadSettingStatus,
     TouchpadSettings, TouchpadTapButtonMap,
 };
 pub use touchpad_controller::{
