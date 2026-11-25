@@ -1931,3 +1931,11 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - This is protocol lifecycle progress only. Output-aware constraint adjustment, per-seat PopupManager and coordinated pointer/keyboard grabs, popup rendering, popup hit testing and dismissal behavior remain incomplete.
 - `grab` intentionally remains unimplemented rather than emulating an incorrect partial grab.
 - No build, Cargo check, rustfmt, tests or hardware validation were run. Grouped Fedora verification remains pending.
+
+
+### 2026-11-25 — Track nested XDG popup lifecycle
+
+- Added Smithay 0.7 `PopupManager` to compositor state.
+- Newly created XDG popups are registered as `PopupKind::Xdg`; surface commits update the parent/child popup tree and clean up dead resources.
+- This establishes popup ownership and lifecycle tracking, but does not yet implement output-constrained placement, coordinated pointer/keyboard grabs, scene rendering, hit testing or dismissal.
+- No build, Cargo check, rustfmt or tests were run; grouped Fedora validation remains pending.
