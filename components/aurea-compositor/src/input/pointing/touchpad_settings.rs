@@ -9,7 +9,7 @@ use aurea_desktop_api::input::{
     TouchpadApplyReport, TouchpadClickMethod, TouchpadSettingStatus, TouchpadSettings,
 };
 use smithay::reexports::input::{
-    AccelProfile, ClickMethod, Device, DeviceConfigError, ScrollMethod,
+    ClickMethod, Device, DeviceConfigError, ScrollMethod,
 };
 
 use super::touchpad;
@@ -61,9 +61,9 @@ pub(super) fn apply(
         TouchpadSettingStatus::Unsupported
     };
     let (two_finger_scroll, edge_scrolling) = match requested_scroll_method {
-        ScrollMethod::TwoFinger => (selected_scroll_status, TouchpadSettingStatus::Unsupported),
-        ScrollMethod::Edge => (TouchpadSettingStatus::Unsupported, selected_scroll_status),
-        ScrollMethod::NoScroll => (selected_scroll_status, TouchpadSettingStatus::Unsupported),
+        ScrollMethod::TwoFinger => (selected_scroll_status, TouchpadSettingStatus::Applied),
+        ScrollMethod::Edge => (TouchpadSettingStatus::Applied, selected_scroll_status),
+        ScrollMethod::NoScroll => (TouchpadSettingStatus::Applied, TouchpadSettingStatus::Applied),
         _ => (TouchpadSettingStatus::Unsupported, TouchpadSettingStatus::Unsupported),
     };
 
@@ -109,12 +109,6 @@ pub(super) fn apply(
     } else {
         TouchpadSettingStatus::Unsupported
     };
-
-    // Keep a stable adaptive profile when supported. The user's speed slider
-    // remains independent and is applied above.
-    if device.config_accel_profiles().contains(&AccelProfile::Adaptive) {
-        let _ = device.config_accel_set_profile(AccelProfile::Adaptive);
-    }
 
     Some(TouchpadApplyReport {
         tap_to_click,
