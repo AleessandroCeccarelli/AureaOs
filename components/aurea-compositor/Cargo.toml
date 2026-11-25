@@ -27,6 +27,7 @@ drm = [
     "smithay/backend_gbm",
     "smithay/backend_libinput",
     "dep:input",
+    "dep:udev",
     "input/libinput_1_21",
     "smithay/backend_udev",
     "smithay/backend_session_libseat",
@@ -44,6 +45,7 @@ sha2 = "0.10"
 toml = "0.8"
 serde = { version = "1", features = ["derive"] }
 input = { version = "=0.9.1", default-features = false, optional = true, features = ["libinput_1_21"] }
+udev = { version = "0.9", optional = true }
 
 [dependencies.smithay]
 version = "=0.7.0"
