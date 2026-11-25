@@ -31,6 +31,11 @@ impl AppliedTouchpadSettings {
         self.profiles.remove(&device).is_some()
     }
 
+    /// Invalidates every cached profile after the input backend may have reset.
+    pub fn invalidate_all(&mut self) {
+        self.profiles.clear();
+    }
+
     /// Number of devices with a known applied profile.
     pub fn len(&self) -> usize {
         self.profiles.len()
@@ -44,6 +49,22 @@ impl AppliedTouchpadSettings {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn invalidating_all_profiles_requires_reapplication_for_each_device() {
+        let mut applied = AppliedTouchpadSettings::default();
+        let settings = TouchpadSettings::default();
+        let first = InputDeviceId(1);
+        let second = InputDeviceId(2);
+        applied.mark_applied(first, settings);
+        applied.mark_applied(second, settings);
+
+        applied.invalidate_all();
+
+        assert!(applied.is_empty());
+        assert!(applied.needs_apply(first, settings));
+        assert!(applied.needs_apply(second, settings));
+    }
 
     #[test]
     fn new_or_changed_profile_requires_application() {
