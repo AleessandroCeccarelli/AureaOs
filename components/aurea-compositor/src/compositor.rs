@@ -255,7 +255,7 @@ impl AureaCompositor {
     }
 
     /// Registers a discovered pointing device and reconciles its per-device preferences.
-    pub fn register_pointing_device(
+    pub(crate) fn register_pointing_device(
         &mut self,
         descriptor: aurea_desktop_api::input::InputDeviceDescriptor,
     ) -> bool {
