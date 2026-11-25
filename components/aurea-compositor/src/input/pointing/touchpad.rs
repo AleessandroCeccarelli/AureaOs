@@ -44,6 +44,10 @@ pub(super) fn capabilities(device: &Device) -> TouchpadCapabilities {
 
     TouchpadCapabilities {
         max_tap_fingers: device.config_tap_finger_count(),
+        tap_to_click: device.config_tap_finger_count() > 0,
+        tap_and_drag: device.config_tap_finger_count() > 0,
+        tap_drag_lock: device.config_tap_finger_count() > 0,
+        tap_button_map_configurable: device.config_tap_finger_count() > 0,
         two_finger_scroll: scroll_methods.contains(&ScrollMethod::TwoFinger),
         edge_scrolling: scroll_methods.contains(&ScrollMethod::Edge),
         natural_scrolling: device.config_scroll_has_natural_scroll(),
@@ -57,6 +61,8 @@ pub(super) fn capabilities(device: &Device) -> TouchpadCapabilities {
         pointer_acceleration: device.config_accel_is_available(),
         flat_acceleration: acceleration_profiles.contains(&AccelProfile::Flat),
         adaptive_acceleration: acceleration_profiles.contains(&AccelProfile::Adaptive),
+        disable_events: device.config_send_events_modes().contains(smithay::reexports::input::SendEventsMode::DISABLED),
+        disable_on_external_mouse: device.config_send_events_modes().contains(smithay::reexports::input::SendEventsMode::DISABLED_ON_EXTERNAL_MOUSE),
     }
 }
 
