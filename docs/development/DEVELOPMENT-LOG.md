@@ -1684,3 +1684,13 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Updated `docs/architecture/INPUT-EVENT-COVERAGE.md` with the exact semantics and remaining validation requirements.
 - This deliberately means a cancel on one active touchscreen interrupts concurrent touch contacts from other devices. Their later motion/up events are ignored until a new down event; no stale Wayland slot remains.
 - No local build, Cargo check, rustfmt or tests were run, per the grouped-validation rule. Runtime behavior and device hot-unplug/reconnect still require validation.
+
+
+### 2026-11-25 — Introduce modular pointer manager and macOS-inspired touchpad gesture
+
+- Added `input/pointing/manager.rs` as the owner of pointing-device inventory, per-device pointer/touchpad preferences and physical pressed-button bookkeeping; compositor protocol delivery remains in its focused modules.
+- Routed compositor device lookups, per-device pointer/touchpad settings and button-release bookkeeping through `PointerManager`.
+- Added the three-finger upward swipe as an Overview shortcut, preserving three-finger horizontal workspace switching and four-finger pinch as an additional Overview shortcut.
+- Added focused profile tests for upward direction and minimum distance. Existing two-finger scroll, natural-scrolling preference and Wayland pinch/swipe forwarding remain the basis of the touchpad experience.
+- Recorded the macOS-inspired behavior as a design direction, not a claim of complete macOS parity. Downward App Exposé, Launchpad-style gestures and user-facing gesture customization remain future work.
+- No build, Cargo check, rustfmt or tests were run; all changes are queued for grouped validation.
