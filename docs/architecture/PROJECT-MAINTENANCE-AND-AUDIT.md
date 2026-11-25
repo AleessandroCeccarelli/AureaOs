@@ -794,3 +794,15 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - I popup annidati restano soggetti alla validazione della gerarchia e al serial precedente gestiti da Smithay.
 - Questo è collegamento sorgente verificato rispetto alle API Smithay 0.7. Non è ancora una validazione compilata o runtime. Restano da completare il posizionamento vincolato all'output, la verifica del focus iniziale, i casi di dismiss da tastiera e i test su più monitor.
 - Nessuna build, `cargo fmt`, check o test è stata eseguita: le verifiche restano raggruppate su Fedora.
+
+### Output-aware XDG popup placement — 25 novembre 2026
+
+- Aggiunto un modulo dedicato `compositor/popup_placement.rs` per non concentrare la logica geometrica nel gestore di protocollo.
+- Il compositor risolve il toplevel radice del popup e la sua posizione globale, quindi identifica il parent effettivo: finestra radice oppure popup genitore. Per i popup annidati usa gli offset della gerarchia mantenuta da Smithay.
+- Il punto di ancoraggio XDG viene convertito in coordinate logiche globali. Il vincolo viene applicato all'output attivo che contiene l'ancoraggio; se l'ancoraggio cade in un gap tra monitor, viene usato l'output che contiene il centro della finestra genitrice. Non viene scelto arbitrariamente il primo monitor.
+- I bounds globali dell'output vengono convertiti nello spazio locale della window geometry del parent, come richiesto da `PositionerState::get_unconstrained_geometry`. Smithay applica quindi gli aggiustamenti XDG flip, slide e resize abilitati dal client.
+- La stessa pipeline è usata per il configure iniziale e per `xdg_popup.reposition`; il token di reposition viene confermato dopo aver aggiornato la geometria pendente.
+- Se il parent non è più mappato, la gerarchia non è risolvibile, nessun output attivo contiene né l'ancoraggio né il centro del parent, oppure una conversione supera i limiti rappresentabili, si conserva la geometria XDG non vincolata: nessun overflow o monitor inventato.
+- Aggiunti test sorgente per conversione global-to-parent e rifiuto dell'overflow. Non eseguiti.
+- Limiti residui: riconfigurazione reattiva quando il parent si sposta o cambia output; verifica di geometrie reali con scale miste e rotazioni; build e test runtime multi-monitor.
+- Nessuna build, `cargo fmt`, check o test è stata eseguita. La verifica resta raggruppata su Fedora.
