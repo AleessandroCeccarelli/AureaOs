@@ -1744,3 +1744,11 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 
 - Added `docs/architecture/TOUCHPAD-COMPATIBILITY.md`: research baseline and feature matrix for Synaptics, ELAN, ALPS, Apple, generic HID/Precision Touchpad, Goodix, Cypress and external USB/Bluetooth touchpads. It separates kernel transport drivers, libinput normalization/gesture recognition, and AureaOS settings/action mapping; records hardware-dependent feature limits and the staged implementation plan. Commit: `12886b9`.
 - Research references include the Linux Touchpad Dev Guide and current libinput documentation for gestures, configuration, features, and device quirks. No build, Cargo check, rustfmt, test execution or hardware validation was performed.
+
+### 2026-11-25 — Expand libinput touchpad configuration
+
+- Expanded the shared Desktop API while preserving the existing five-argument `TouchpadSettings::new` constructor. Added clickpad method, tap-button mapping, tap drag-lock, edge scrolling, left-handed mode, middle-button emulation, pointer speed and send-events preferences.
+- The compositor applies each setting through the Smithay 0.7/libinput API only when that capability is advertised; per-setting reports distinguish Applied, Unsupported and Failed.
+- Added regression coverage for builder defaults, bounded pointer speed, mutually exclusive edge/two-finger selection and the expanded report shape. Updated the compatibility matrix and report fixtures.
+- Audited the relevant Smithay/input 0.7 API signatures against the versioned source documentation. This is source-level API verification, not a successful compile.
+- No build, Cargo check, rustfmt, test execution or hardware validation was run. Continue batching validation until the pointing-device block is complete.
