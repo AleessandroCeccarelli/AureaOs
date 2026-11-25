@@ -9,7 +9,7 @@ use smithay::input::keyboard::{ModifiersState, keysyms};
 
 use super::action::ShortcutAction;
 
-/// Resolves Super + Ctrl + Left/Right without consuming modified variants.
+/// Resolves Super + Ctrl + arrow-key desktop navigation without consuming modified variants.
 pub(super) fn resolve(keysym: u32, modifiers: ModifiersState) -> Option<ShortcutAction> {
     if !modifiers.logo || !modifiers.ctrl || modifiers.alt || modifiers.shift {
         return None;
