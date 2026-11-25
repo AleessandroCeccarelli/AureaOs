@@ -1808,3 +1808,11 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Corretto l'ordine di composizione: finestra genitrice prima, popup dopo, così il popup resta visivamente sopra la finestra. Gli ID dei popup sono inclusi nella gestione della cache texture.
 - L'hit testing controlla i popup prima del toplevel, rispettando la sovrapposizione e instradando il puntatore sulla superficie popup.
 - Restano constraint ai bordi del monitor, grab coordinati di mouse/tastiera, dismiss e prove visive multi-monitor. Nessuna build o test eseguiti.
+
+### 25 novembre 2026 — Grab coordinati per popup XDG
+
+- Collegata la richiesta `xdg_popup.grab` al seat effettivamente associato alla risorsa `wl_seat` ricevuta, usando `Seat::from_resource` e rifiutando il caso in cui manchino le capability di puntatore o tastiera.
+- Il compositor individua la superficie radice del popup e chiede a Smithay `PopupManager::grab_popup` di validare serial e gerarchia.
+- Installati `PopupPointerGrab` e `PopupKeyboardGrab` sullo stesso serial. La gestione standard Smithay copre focus nel popup tree, dismiss fuori dal grab e ripristino del focus radice.
+- Modifiche sorgente su `main`; nessuna build, formattazione o test anticipato. Verifica raggruppata su Fedora ancora da eseguire.
+- Restano aperti: vincoli geometrici rispetto all'output, dismiss esplicito da tastiera e verifica runtime dei menu annidati.
