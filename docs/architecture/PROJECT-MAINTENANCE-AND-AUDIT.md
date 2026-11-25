@@ -556,3 +556,11 @@ La risoluzione richiede esattamente Super e Ctrl; Alt o Shift aggiuntivi fanno r
 - `InputDeviceId` is a deterministic hash of the current kernel input sysname. It is valid as a runtime/session key only; `/dev/input/eventN` numbering is not a persistent hardware identity and must not key durable user profiles.
 - Source tests cover ID determinism for equal sysnames and separation for the selected test sysnames. PointerManager tests cover held-button and preference isolation/cleanup. The 64-bit hash is not collision-proof.
 - No build, Cargo check, rustfmt, test execution or physical hot-unplug/reconnect test has been run.
+
+
+## 18. PointerManager lifecycle boundary and reclassification — 25 November 2026
+
+- Device discovery now enters through `Compositor::register_pointing_device`; disconnect enters through `Compositor::disconnect_pointing_device`. Registry mutation methods are crate-private, preventing server dispatch from bypassing manager policy.
+- `PointerManager::connect` reconciles stored overrides whenever a device descriptor is refreshed. Touchpad-only settings are removed when a device is no longer a touchpad; pointer overrides are retained only for mouse/touchpad classes. A stale touchpad apply report is also removed on registry reclassification.
+- `disconnect_pointing_device` clears active compositor/protocol state before `PointerManager::disconnect` removes per-device preferences, pressed-button bookkeeping and the inventory record. Server-side libinput handles and applied-setting cache are then removed, followed by touchscreen capability reconciliation.
+- Added source-level tests for reclassification and disconnect cleanup. No build, Cargo check, rustfmt, test execution or hardware validation has been performed.
