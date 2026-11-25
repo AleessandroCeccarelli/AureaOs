@@ -168,8 +168,8 @@ pub(super) fn render_frame(
     surface_cache
         .poll_desktop_icon_texture_uploads()
         .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
-    let context_menu_draw = scene
-        .context_menu()
+    let context_menu_draw = context_menu_key
+        .and_then(|_| scene.context_menu())
         .and_then(|menu| context_menu_geometry(menu, target));
     let active_surface_ids = scene.surface_ids();
     let snapshots = scene.shm_snapshots();
