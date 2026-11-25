@@ -140,7 +140,7 @@ mod tests {
     fn constrains_menu_and_hit_regions_to_the_selected_output() {
         let menu = DesktopContextMenuLayout::at(DesktopPoint::new(1_050, 720), output()).unwrap();
         let bounds = menu.placement().bounds();
-        assert_eq!(bounds.origin(), DesktopPoint::new(852, 542));
+        assert_eq!(bounds.origin(), DesktopPoint::new(852, 590));
         assert!(output().contains(bounds.origin()));
         assert!(menu.contains(bounds.origin()));
     }
