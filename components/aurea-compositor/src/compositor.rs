@@ -100,6 +100,7 @@ pub struct AureaCompositor {
     window_manager: WindowManager,
     /// Tracks nested XDG popup trees and protocol popup grabs.
     popup_manager: smithay::desktop::PopupManager,
+    popup_placement_registry: popup_placement::PopupPlacementRegistry,
     desktop_manager: DesktopManager,
     desktop_items: DesktopItemsManager,
     output_manager: OutputManager,
@@ -173,6 +174,7 @@ impl AureaCompositor {
             consumed_shortcut_keys: HashSet::new(),
             window_manager: WindowManager::new(),
             popup_manager: smithay::desktop::PopupManager::default(),
+            popup_placement_registry: popup_placement::PopupPlacementRegistry::default(),
             desktop_manager: DesktopManager::default(),
             desktop_items: DesktopItemsManager::default(),
             output_manager: OutputManager::new(),
