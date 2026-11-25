@@ -48,7 +48,6 @@ impl PointerManager {
         true
     }
 
-    /// Removes a device from the inventory.
     /// Removes a device after the compositor has synthesized protocol releases.
     pub(crate) fn disconnect(&mut self, device: InputDeviceId) -> bool {
         self.settings.remove(device);
