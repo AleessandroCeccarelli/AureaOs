@@ -37,6 +37,8 @@ impl XdgShellHandler for AureaCompositor {
             tracing::warn!(?error, "Unable to register new XDG popup");
             return;
         }
+        self.popup_placement_registry
+            .register(surface.clone(), positioner);
 
         if let Err(error) = surface.send_configure() {
             tracing::warn!(?error, "Unable to configure new XDG popup");
@@ -66,9 +68,15 @@ impl XdgShellHandler for AureaCompositor {
             state.positioner = positioner;
             state.geometry = geometry;
         });
+        self.popup_placement_registry
+            .update(surface.clone(), positioner);
 
         surface.send_repositioned(token);
         self.request_all_output_frames();
+    }
+    
+    fn popup_destroyed(&mut self, surface: PopupSurface) {
+        self.popup_placement_registry.remove(&surface);
     }
 }
 
