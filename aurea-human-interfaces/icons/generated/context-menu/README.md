@@ -22,6 +22,6 @@ The compositor loads the generated RGBA8 artwork once, on first menu use, and re
 AUREA_HUMAN_INTERFACES_ROOT="$PWD/aurea-human-interfaces" <aureaos-launch-command>
 ```
 
-Installed packages place the contents of this Human Interfaces directory under `/usr/share/aureaos/human-interfaces`, which is the compositor default. The root can be overridden with `AUREA_HUMAN_INTERFACES_ROOT`.
+Installed packages place the contents of this Human Interfaces directory under `/usr/share/aureaos/human-interfaces`, which is the compositor default. The root can be overridden with `AUREA_HUMAN_INTERFACES_ROOT`. If the compositor has already attempted to open the menu while the generated files were missing, restart AureaOS after exporting them so the per-device cache retries the asset load.
 
 The texture canvas is 256 × 256 pixels. The visible menu occupies the top-left 248 × 160 pixels; the remaining area is transparent. PNG alpha is premultiplied by the shared converter to match the compositor's Vulkan blend state. The compositor scales the canvas for each output and clips it to that output. Generated binaries must be exported and visually inspected on Fedora before the menu can be considered validated.
