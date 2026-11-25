@@ -27,7 +27,7 @@ use crate::{
     render::{
         RenderScene,
         geometry::{
-            SurfaceGeometry, surface_geometry, surface_geometry_with_fractional_scale,
+            surface_geometry, surface_geometry_with_fractional_scale,
             transform_geometry_for_output,
         },
     },
