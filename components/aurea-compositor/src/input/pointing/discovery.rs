@@ -104,14 +104,12 @@ fn stable_hardware_identity(device: &Device) -> Option<String> {
     // The final input/inputN components identify a Linux input interface,
     // not the physical controller. Remove them so event numbering is irrelevant.
     let physical_path = physical_path.parent()?.parent()?;
-    let mut digest = Sha256::new();
-    digest.update(device.id_vendor().to_le_bytes());
-    digest.update(device.id_product().to_le_bytes());
-    digest.update(device.name().as_bytes());
-    digest.update(physical_path.as_os_str().as_encoded_bytes());
-    let hash = digest.finalize();
-    Some(format!("libinput:{:04x}:{:04x}:{}", device.id_vendor(), device.id_product(),
-        hash.iter().map(|byte| format!("{byte:02x}")).collect::<String>()))
+    Some(stable_hardware_identity_from_parts(
+        device.id_vendor(),
+        device.id_product(),
+        device.name(),
+        physical_path.as_os_str().as_encoded_bytes(),
+    ))
 }
 
 
