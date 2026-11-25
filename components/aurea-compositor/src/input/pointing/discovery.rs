@@ -5,6 +5,9 @@
 
 //! Translate libinput device metadata into AureaOS pointing-device descriptors.
 
+use sha2::{Digest, Sha256};
+use std::{fs, path::Path};
+
 use aurea_desktop_api::input::{
     InputDeviceCapabilities, InputDeviceDescriptor, InputDeviceId, InputDeviceKind,
     StandardInputCapability,
@@ -76,6 +79,7 @@ pub(crate) fn describe(device: &Device) -> Option<InputDeviceDescriptor> {
         name: device.name().to_string(),
         vendor_id: nonzero_id(device.id_vendor()),
         product_id: nonzero_id(device.id_product()),
+        persistent_id: stable_hardware_identity(device),
         kind,
         capabilities: InputDeviceCapabilities::new(capabilities),
     })
@@ -89,6 +93,25 @@ fn has_pointer_side_buttons(mut supports: impl FnMut(u32) -> bool) -> bool {
 
 fn nonzero_id(value: u32) -> Option<u16> {
     (value != 0).then_some(value as u16)
+}
+
+/// Returns a stable hardware identity without reading or storing serial numbers.
+fn stable_hardware_identity(device: &Device) -> Option<String> {
+    let event_path = Path::new("/sys/class/input")
+        .join(device.sysname())
+        .join("device");
+    let physical_path = fs::canonicalize(event_path).ok()?;
+    // The final input/inputN components identify a Linux input interface,
+    // not the physical controller. Remove them so event numbering is irrelevant.
+    let physical_path = physical_path.parent()?.parent()?;
+    let mut digest = Sha256::new();
+    digest.update(device.id_vendor().to_le_bytes());
+    digest.update(device.id_product().to_le_bytes());
+    digest.update(device.name().as_bytes());
+    digest.update(physical_path.as_os_str().as_encoded_bytes());
+    let hash = digest.finalize();
+    Some(format!("libinput:{:04x}:{:04x}:{}", device.id_vendor(), device.id_product(),
+        hash.iter().map(|byte| format!("{byte:02x}")).collect::<String>()))
 }
 
 /// Hashes the current kernel input sysname into a deterministic session ID.
