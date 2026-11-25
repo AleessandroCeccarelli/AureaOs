@@ -1848,3 +1848,13 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
   cancellation is represented as per-contact completion to avoid cancelling
   unrelated users' active touches.
 - No build, rustfmt, tests or physical-device validation performed.
+
+
+### 2026-11-25 — Aggregate simultaneous pointer-button holds
+
+- Changed physical button bookkeeping to report only shared seat transitions.
+  Multiple mice/touchpads holding the same button now produce one Wayland press
+  and one final release, rather than one press/release per physical device.
+- Device removal releases only buttons no other connected device continues to
+  hold. Added regression tests for overlapping holds and disconnect isolation.
+- No build, rustfmt, tests or physical-device validation performed.
