@@ -305,3 +305,9 @@ Implementation note — 2026-11-25: `pointer_button.rs` now calls the desktop hi
 ## Absolute pointer display assignment — 2026-11-25
 
 Absolute pointer motion now resolves the originating device through a dedicated per-device output map. On a single-output desktop, an unassigned device retains the safe automatic fallback. On multi-monitor desktops, an explicit assignment is required; events are ignored rather than routed to an arbitrary display. The compositor exposes assign, unassign and resolve operations, validates that the device advertises pointer motion and that the selected output is enabled, and removes mappings when the device or output is removed. A stale output assignment is not silently redirected. Focused map tests cover single-output fallback, explicit assignment, stale-output handling, reassignment, unassignment and device removal. These tests are source additions only and have not been compiled or executed; physical absolute-pointer testing remains pending.
+ 
+### Desktop context-menu dismissal — 2026-11-25
+
+The desktop context-menu request now has a shared open-state bit and a dedicated `DismissContextMenu` interaction. Escape is intercepted only while that menu is open, including its matching key release; otherwise Escape is forwarded to the focused Wayland client. A primary click on the desktop canvas or any click on an application surface dismisses the desktop menu. A secondary click on the desktop updates its anchor position. The Shell closes only the ContextMenu panel, not Overview/App Exposé.
+
+This is input/state behavior, not a rendered menu. The native panel renderer and menu-item hit testing/actions remain unimplemented. Source tests were added but not executed; no build/fmt/check was run.
