@@ -450,3 +450,38 @@ Il percorso KMS di presentazione usa `commit_pending` per il modeset iniziale, m
 - `components/aurea-compositor/src/compositor/surface_output_reconciliation.rs`
 
 **Esito fase output:** discovery, identità transitoria/fisica, registry, geometria, fractional scale e pubblicazione Wayland sono presenti con test unitari. La configurazione grafica non è ancora collegata a un modeset DRM/KMS runtime verificato; layout persistente e prove fisiche multi-monitor restano aperti. Nessuna modifica al codice e nessuna build locale eseguita.
+
+## 13. Audit display: modalità, frequenze e orientamento (25 novembre 2026)
+
+### Requisito prodotto confermato
+AureaOS non deve codificare risoluzioni, rapporti d'aspetto o frequenze predefiniti. Deve enumerare le modalità realmente esposte da ogni output DRM/KMS e consentire configurazioni indipendenti per ciascun monitor. Sono inclusi monitor standard, ultrawide, ad alta frequenza e monitor ruotati in verticale (90°/270°), oltre a configurazioni miste.
+
+### Codice già presente e verificato
+- `drm/discovery.rs`: enumera i connector DRM connessi, legge le modalità restituite dal kernel, sceglie la modalità marcata PREFERRED come modalità iniziale (fallback: prima modalità disponibile) e prova a leggere EDID. EDID assente o non valido non blocca la scoperta.
+- `drm/output.rs`: mantiene separati descrittore logico e handle DRM nativi; converte le modalità nel modello del compositor.
+- `output.rs`: conserva l'elenco delle modalità, la modalità corrente, scaling intero/frazionario e trasformazione per singolo output.
+- `output/scale.rs`: usa fattori razionali basati su 120, evitando drift floating point nelle conversioni.
+- `output/manager/geometry.rs`: scambia larghezza/altezza per trasformazioni a 90°/270° e calcola i limiti logici per output.
+- `compositor/output_configuration.rs`: applica modifiche al modello e ripubblica lo stato Wayland, con rollback del modello se fallisce la pubblicazione.
+
+### Lacuna critica confermata: configurazione fisica
+`compositor/output_configuration.rs::configure_output` dichiara esplicitamente che aggiorna stato compositor/protocollo ma **non esegue il modeset DRM/KMS**. Quindi oggi una richiesta di cambio risoluzione/frequenza può aggiornare il modello e ciò che viene annunciato ai client senza dimostrare che il monitor sia stato realmente riconfigurato. Non presentare questa API come cambio fisico del display.
+
+### Precisione delle frequenze: verifica necessaria
+`drm/discovery.rs` converte `mode.vrefresh()` in millihertz moltiplicando il valore intero per 1000. Questa rappresentazione perde la distinzione tra frequenze vicine/non intere (ad esempio timing nominali 59,94 Hz e 60,00 Hz) se il valore restituito dal binding è intero. Prima di dichiarare supporto fedele a tutte le frequenze, il modello DRM deve conservare il timing nativo completo oppure calcolare millihertz dai parametri del mode DRM con gestione corretta di interlace, doublescan e vscan. Non correggere con una formula semplificata senza test e senza verificare l'API della versione drm nel Cargo.lock.
+
+### Identità delle modalità
+`OutputMode` identifica una modalità soltanto con larghezza, altezza e refresh in millihertz. Due timing DRM distinti con gli stessi tre valori possono quindi collassare nella stessa identità logica; `DrmOutputDescriptor::into_display_output` attualmente rifiuta duplicati. Valutare un identificatore di modalità che mantenga il riferimento/indice del timing DRM nativo, senza perdere la validazione del modello logico.
+
+### Orientamento verticale
+Il modello supporta `Transform` e la geometria logica considera le trasformazioni che scambiano gli assi. Resta da verificare end-to-end che la trasformazione venga applicata anche al KMS plane/CRTC e al rendering, non soltanto pubblicata in Wayland o riflessa nei limiti logici. I test devono coprire rotazioni 90°/270°, mirror, input/puntatore e layout multi-monitor.
+
+### Piano di correzione (ordine obbligatorio)
+1. Separare chiaramente **modalità rilevate**, **configurazione desiderata** e **configurazione effettivamente applicata**.
+2. Introdurre un contratto backend DRM/KMS per testare atomicamente mode + connector/CRTC + plane + transform, con test di validazione/test-only quando supportati.
+3. Applicare la configurazione fisica prima di pubblicare il nuovo stato ai client; in caso di errore mantenere/ripristinare la configurazione precedente e non mentire ai client.
+4. Conservare timing DRM nativo e frequenza precisa, evitando identificazioni basate solo su width/height/refresh arrotondato.
+5. Aggiungere test per risoluzioni non standard, ultrawide, 59,94/60 Hz, frequenze elevate, portrait, mixed-DPI, hotplug e rollback.
+6. Solo dopo stabilizzare il backend, esporre le scelte nella UI Impostazioni > Schermi.
+
+**Stato:** audit del modello e della scoperta completato a livello sorgente; applicazione KMS reale, precisione completa dei timing e trasformazione fisica end-to-end ancora da implementare/verificare. Nessuna build locale eseguita.
