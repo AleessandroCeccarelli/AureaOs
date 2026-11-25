@@ -244,6 +244,7 @@ mod tests {
         let report = TouchpadApplyReport {
             tap_to_click: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             two_finger_scroll: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            edge_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
@@ -263,6 +264,7 @@ mod tests {
         let report = TouchpadApplyReport {
             tap_to_click: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             two_finger_scroll: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            edge_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
@@ -281,6 +283,7 @@ mod tests {
         let report = TouchpadApplyReport {
             tap_to_click: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             two_finger_scroll: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            edge_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
@@ -299,6 +302,7 @@ mod tests {
         let report = TouchpadApplyReport {
             tap_to_click: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             two_finger_scroll: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            edge_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
