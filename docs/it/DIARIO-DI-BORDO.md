@@ -1741,3 +1741,11 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Il hook Debian Live compila ora il desktop con `--features heif`, installa soltanto `libheif1`, `libheif-plugin-libde265` e `libheif-plugin-dav1d` per immagini statiche HEVC/AV1 e rimuove `libheif-dev` dopo la compilazione.
 - Aggiunto un controllo CI Debian 13 che compila l'intera catena di dipendenze di `aurea-desktop` con HEIF attivo, oltre ai test del crate media.
 - Nessuna build, cargo check, test o rustfmt locale Fedora eseguiti. La prossima CI deve verificare la feature di produzione e l'integrazione dei pacchetti. Revisione sicurezza/licenze e fixture HEIC/AVIF reali restano da completare.
+
+
+### Audit semantica TouchCancel — 25 novembre 2026
+
+- Revisionato il dispatcher completo degli eventi libinput e il percorso touchscreen.
+- Individuato che `InputEvent::TouchCancel` richiama `handle_touch_cancel`, che libera gli slot del dispositivo e invia normali eventi `TouchHandle::up`. Questo comunica al client un normale sollevamento delle dita, non la cancellazione della sessione touch prevista da Wayland.
+- Verificato che Smithay 0.7 espone `TouchHandle::cancel`, ma l'API cancella la sessione touch attiva del seat e non accetta un filtro per dispositivo o slot. Usarla per un solo dispositivo può quindi interrompere anche i contatti di un secondo touchscreen.
+- Nessuna modifica al comportamento in questo passaggio: prima serve una policy esplicita per la cancellazione seat-wide e il reset coerente della mappa slot. Nessuna build o test eseguiti.
