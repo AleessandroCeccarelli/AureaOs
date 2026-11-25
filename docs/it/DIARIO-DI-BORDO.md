@@ -1838,3 +1838,13 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - I popup non reactive restano invariati secondo il protocollo. I figli annidati vengono ricalcolati nuovamente quando il parent conferma la nuova geometria.
 - Il trascinamento interattivo delle finestre non è ancora implementato: è predisposto il punto di integrazione, non il gesto completo.
 - Nessuna build, `cargo fmt`, check o test eseguiti; verifica cumulativa su Fedora.
+ 
+### 25 novembre 2026 — Chiusura del menu contestuale con Esc e click esterno
+
+- Aggiunto l'evento semantico `DismissContextMenu` e uno stato atomico condiviso tra compositor e Shell che segnala se il menu desktop è aperto.
+- Premendo `Esc`, il compositor chiude il menu e consuma anche repeat/rilascio; quando il menu non è aperto, `Esc` continua a essere consegnato normalmente alle applicazioni.
+- Il click sinistro sul desktop, il click con altri pulsanti sul canvas e qualsiasi click sopra una finestra applicativa chiudono il menu. Il click destro sul desktop lo riposiziona.
+- La Shell chiude soltanto il menu contestuale, senza interferire con Overview o App Exposé.
+- Aggiunti test sorgente per canale, stato e comportamento della Shell; non eseguiti.
+- Il menu non è ancora disegnato: la richiesta e la chiusura sono operative a livello semantico, ma manca ancora il renderer nativo dei pannelli e quindi non possiamo dichiarare completata la visualizzazione o la selezione delle voci.
+- Nessuna build, cargo fmt, check o test: verifica cumulativa su Fedora.
