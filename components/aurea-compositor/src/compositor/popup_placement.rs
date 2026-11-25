@@ -7,7 +7,6 @@
 
 use smithay::{
     desktop::{PopupKind, PopupManager, Window, find_popup_root_surface},
-    reexports::wayland_server::protocol::wl_surface::WlSurface,
     utils::{Logical, Point, Rectangle, Size},
     wayland::shell::xdg::{PopupSurface, PositionerState},
 };
@@ -77,8 +76,10 @@ pub(crate) fn constrain_geometry(
     let Some(bounds) = select_constraint_output(compositor, anchor_point, parent_center) else {
         return fallback;
     };
-    target_relative_to_parent(bounds, parent_origin).unwrap_or(fallback)
-        .pipe(|target| positioner.get_unconstrained_geometry(target))
+    let Some(target) = target_relative_to_parent(bounds, parent_origin) else {
+        return fallback;
+    };
+    positioner.get_unconstrained_geometry(target)
 }
 
 fn select_constraint_output(
