@@ -20,6 +20,7 @@ pub(super) fn supports(device: &Device) -> bool {
             device.config_tap_finger_count() > 0,
             device.config_dwt_is_available(),
             !device.config_scroll_methods().is_empty(),
+            !device.config_click_methods().is_empty(),
         )
 }
 
@@ -31,11 +32,13 @@ fn exposes_touchpad_configuration(
     has_tap_configuration: bool,
     has_disable_while_typing: bool,
     has_scroll_methods: bool,
+    has_click_methods: bool,
 ) -> bool {
     has_gesture_events
         || has_tap_configuration
         || has_disable_while_typing
         || has_scroll_methods
+        || has_click_methods
 }
 
 #[cfg(test)]
@@ -44,18 +47,19 @@ mod tests {
 
     #[test]
     fn recognizes_scroll_only_touchpads() {
-        assert!(exposes_touchpad_configuration(false, false, false, true));
+        assert!(exposes_touchpad_configuration(false, false, false, true, false));
     }
 
     #[test]
     fn recognizes_each_other_touchpad_capability_independently() {
-        assert!(exposes_touchpad_configuration(true, false, false, false));
-        assert!(exposes_touchpad_configuration(false, true, false, false));
-        assert!(exposes_touchpad_configuration(false, false, true, false));
+        assert!(exposes_touchpad_configuration(true, false, false, false, false));
+        assert!(exposes_touchpad_configuration(false, true, false, false, false));
+        assert!(exposes_touchpad_configuration(false, false, true, false, false));
+        assert!(exposes_touchpad_configuration(false, false, false, false, true));
     }
 
     #[test]
     fn rejects_devices_without_touchpad_specific_configuration() {
-        assert!(!exposes_touchpad_configuration(false, false, false, false));
+        assert!(!exposes_touchpad_configuration(false, false, false, false, false));
     }
 }
