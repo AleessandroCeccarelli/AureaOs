@@ -67,6 +67,7 @@ pub struct DesktopInteractionSender {
     sender: Sender<DesktopInteraction>,
     selection: DesktopSelectionController,
     context_menu_open: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    context_menu_position: std::sync::Arc<std::sync::RwLock<Option<DesktopPosition>>>,
 }
 
 impl DesktopInteractionSender {
@@ -78,6 +79,11 @@ impl DesktopInteractionSender {
     /// Returns whether the desktop context menu is currently requested.
     pub fn context_menu_is_open(&self) -> bool {
         self.context_menu_open.load(std::sync::atomic::Ordering::Acquire)
+    }
+
+    /// Returns the global logical anchor of the currently open desktop menu.
+    pub fn context_menu_position(&self) -> Option<DesktopPosition> {
+        *self.context_menu_position.read().unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     /// Sends one completed desktop interaction.
@@ -93,9 +99,15 @@ impl DesktopInteractionSender {
         let result = self.sender.send(interaction.clone());
         if result.is_ok() {
             match interaction {
-                DesktopInteraction::ShowContextMenu { .. } => self.context_menu_open.store(true, std::sync::atomic::Ordering::Release),
+                DesktopInteraction::ShowContextMenu { position } => {
+                    *self.context_menu_position.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(position);
+                    self.context_menu_open.store(true, std::sync::atomic::Ordering::Release);
+                }
                 DesktopInteraction::DismissContextMenu
-                | DesktopInteraction::ContextMenuCommandSelected { .. } => self.context_menu_open.store(false, std::sync::atomic::Ordering::Release),
+                | DesktopInteraction::ContextMenuCommandSelected { .. } => {
+                    *self.context_menu_position.write().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+                    self.context_menu_open.store(false, std::sync::atomic::Ordering::Release);
+                }
                 _ => {}
             }
         }
@@ -131,11 +143,13 @@ pub fn desktop_interaction_channel() -> (DesktopInteractionSender, DesktopIntera
     let (sender, receiver) = mpsc::channel();
     let selection = DesktopSelectionController::default();
     let context_menu_open = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let context_menu_position = std::sync::Arc::new(std::sync::RwLock::new(None));
     (
         DesktopInteractionSender {
             sender,
             selection: selection.clone(),
             context_menu_open: context_menu_open.clone(),
+            context_menu_position: context_menu_position.clone(),
         },
         DesktopInteractionReceiver { receiver, selection },
     )
@@ -209,6 +223,7 @@ mod tests {
         assert!(!sender.context_menu_is_open());
         sender.send(DesktopInteraction::ShowContextMenu { position }).unwrap();
         assert!(sender.context_menu_is_open());
+        assert_eq!(sender.context_menu_position(), Some(position));
         assert_eq!(
             receiver.try_recv(),
             Ok(DesktopInteraction::ShowContextMenu { position })
