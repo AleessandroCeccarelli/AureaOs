@@ -848,3 +848,12 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - Press e release del pulsante usato sul pannello vengono consumati dal compositor, evitando che il click raggiunga una finestra sottostante. La selezione del comando chiude il pannello Shell.
 - Aggiunte le SVG Light/Dark del menu e lo script host tools/assets/render-context-menu.sh. Scelta tipografica: Noto Sans di Google Fonts, OFL 1.1; font richiesto solo sull'host durante la rasterizzazione, nessuna dipendenza runtime.
 - Limite: gli asset RGBA non sono ancora stati generati/ispezionati; RenderScene e Vulkan non disegnano ancora il pannello. Il menu è ora predisposto per l'hit-test semantico, ma non è ancora visibile. Nessuna build, fmt, check o test eseguiti.
+
+### Render-scene handoff for the desktop context menu — 25 November 2026
+
+- `RenderScene` now carries an optional immutable `DesktopContextMenuLayout` alongside the desktop and desktop-item snapshots.
+- `AureaCompositor::render_scene` reads the shared menu anchor, resolves it against the enabled output layout, and attaches the constrained geometry to each frame scene. Pointer hit testing and visual placement therefore consume the same geometry contract.
+- The resolver is shared within the compositor rather than duplicated in the renderer.
+- This is scene preparation only: no RGBA asset is loaded into the scene, no texture is bound, and no Vulkan overlay draw has been issued. The menu remains invisible until the asset lifecycle and draw pass are connected.
+- Noto Sans is loaded from the existing Human Interfaces repository font source by the export script; no separate host font package is required.
+- No build, rustfmt, check or tests were run.
