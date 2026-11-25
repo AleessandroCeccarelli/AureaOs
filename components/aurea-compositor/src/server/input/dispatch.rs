@@ -119,19 +119,22 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 device.name(),
                 device.sysname()
             );
-            if device.has_capability(smithay::reexports::input::DeviceCapability::TabletTool)
-                || device.has_capability(smithay::reexports::input::DeviceCapability::TabletPad)
-            {
+            // Use the descriptor captured at DeviceAdded, not capabilities
+            // re-read from the removal event: libinput may already have
+            // withdrawn tablet metadata when DeviceRemoved is delivered.
+            let id = pointing::id_for(&device);
+            let descriptor = state.compositor.pointing_devices().device(id);
+            if descriptor.as_ref().is_some_and(|registered| {
+                matches!(
+                    registered.kind,
+                    aurea_desktop_api::input::InputDeviceKind::Tablet
+                        | aurea_desktop_api::input::InputDeviceKind::TabletPad
+                )
+            }) {
                 // A pad-only device still belongs to the tablet seat lifecycle,
                 // even though Smithay 0.7 does not expose pad input events.
                 state.compositor.remove_tablet_device(&device);
             }
-            // Removal must not depend on rediscovering capabilities: libinput
-            // may already have withdrawn some metadata by the time this event
-            // is delivered. The sysname-derived ID is sufficient to clean up
-            // every registry and compositor-owned entry deterministically.
-            let id = pointing::id_for(&device);
-            let descriptor = state.compositor.pointing_devices().device(id);
 
             if let Some(descriptor) = descriptor {
                 tracing::info!(
