@@ -108,8 +108,11 @@ Percorso osservato:
 ### 5.2 Tastiera e shortcut
 - `components/aurea-compositor/src/compositor/keyboard.rs` inizializza XKB, inoltra gli eventi e filtra shortcut globali.
 - `components/aurea-compositor/src/input/shortcuts/` risolve gli shortcut registrati.
-- Attualmente la risoluzione documentata nel codice copre Super+Ctrl+Freccia sinistra/destra per i workspace.
-- Super per Launcher, Alt+Tab e gli altri shortcut richiesti non risultano implementati in questo registry.
+- Il registry globale risolve `Super + Ctrl + Left/Right` per i workspace, `Super + Ctrl + Up` per Overview e `Super + Ctrl + Down` per App Exposé.
+- Le quattro combinazioni sono filtrate dal compositor prima dell'inoltro al client Wayland; press, repeat e release della combinazione riconosciuta vengono consumati dal filtro tastiera.
+- I cambi workspace usano l'operazione compositor che aggiorna anche il focus; Overview e App Exposé passano dal canale semantico compositor-shell e attivano i rispettivi stati pannello.
+- Le gesture restano eventi touchpad: su un sistema senza touchpad non vengono generate. Le scorciatoie sono l'alternativa indipendente per mouse e tastiera.
+- Super per Launcher e Alt+Tab non risultano ancora implementati in questo registry.
 - I client Wayland focalizzati ricevono gli eventi non intercettati.
 
 ### 5.3 Touchpad
@@ -518,3 +521,21 @@ Questa scelta interrompe intenzionalmente anche i contatti simultanei degli altr
 4. rimozione dispositivo durante un contatto;
 5. riconnessione e nuovo down dopo la cancellazione;
 6. verifica del comportamento dei client Wayland che ricevono `wl_touch.cancel`.
+
+
+## 15. Navigazione desktop da tastiera — 25 novembre 2026
+
+**Scorciatoie predefinite registrate su `main`:**
+
+| Combinazione | Azione | Percorso |
+|---|---|---|
+| `Super + Ctrl + Left` | Workspace precedente | Compositor `switch_workspace` |
+| `Super + Ctrl + Right` | Workspace successivo | Compositor `switch_workspace` |
+| `Super + Ctrl + Up` | Overview / Panorama | DesktopInteraction → Shell panel state |
+| `Super + Ctrl + Down` | App Exposé | DesktopInteraction → Shell panel state |
+
+La risoluzione richiede esattamente Super e Ctrl; Alt o Shift aggiuntivi fanno rifiutare la combinazione. Le sequenze riconosciute vengono consumate dal filtro tastiera, incluse ripetizioni e rilascio del tasto già intercettato. Le gesture del touchpad restano separate e vengono generate solo dai dispositivi che le supportano.
+
+**Stato reale:** il resolver e il dispatch delle quattro scorciatoie sono implementati; il runtime shell riceve Overview e App Exposé e aggiorna `DesktopPanelState`. I test sorgente coprono la risoluzione delle quattro frecce e l'attivazione del pannello App Exposé. Non esiste ancora una UI grafica finale per Overview/App Exposé: il modello di stato non equivale a una superficie visibile.
+
+**Verifica:** modifiche registrate su `main`; nessuna build, Cargo check, rustfmt o esecuzione test effettuata, in accordo con la verifica raggruppata. La CI e la verifica su hardware restano da eseguire.
