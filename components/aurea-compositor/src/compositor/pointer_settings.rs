@@ -20,8 +20,8 @@ impl AureaCompositor {
         &self,
         device: aurea_desktop_api::input::InputDeviceId,
     ) -> PointerSettings {
-        self.pointing_settings
-            .pointer(device, self.pointer_settings)
+        self.pointer_manager
+            .pointer_settings(device, self.pointer_settings)
     }
 
     /// Updates the default pointer preferences.
@@ -35,8 +35,7 @@ impl AureaCompositor {
         device: aurea_desktop_api::input::InputDeviceId,
         settings: PointerSettings,
     ) -> bool {
-        self.pointing_settings
-            .set_pointer(&self.pointing_devices, device, settings)
+        self.pointer_manager.set_pointer_settings(device, settings)
     }
 
     /// Returns touchpad preferences for one device, falling back to defaults.
@@ -44,7 +43,7 @@ impl AureaCompositor {
         &self,
         device: aurea_desktop_api::input::InputDeviceId,
     ) -> aurea_desktop_api::input::TouchpadSettings {
-        self.pointing_settings.touchpad(device)
+        self.pointer_manager.touchpad_settings(device)
     }
 
     /// Returns the latest hardware configuration report for one touchpad.
@@ -52,7 +51,7 @@ impl AureaCompositor {
         &self,
         device: aurea_desktop_api::input::InputDeviceId,
     ) -> Option<aurea_desktop_api::input::TouchpadApplyReport> {
-        self.pointing_devices.touchpad_report(device)
+        self.pointer_manager.touchpad_report(device)
     }
 
     /// Records a touchpad configuration report for trusted settings clients.
@@ -61,7 +60,7 @@ impl AureaCompositor {
         device: aurea_desktop_api::input::InputDeviceId,
         report: aurea_desktop_api::input::TouchpadApplyReport,
     ) -> bool {
-        self.pointing_devices.set_touchpad_report(device, report)
+        self.pointer_manager.set_touchpad_report(device, report)
     }
 
     /// Sets touchpad preferences for one connected touchpad.
@@ -70,7 +69,6 @@ impl AureaCompositor {
         device: aurea_desktop_api::input::InputDeviceId,
         settings: aurea_desktop_api::input::TouchpadSettings,
     ) -> bool {
-        self.pointing_settings
-            .set_touchpad(&self.pointing_devices, device, settings)
+        self.pointer_manager.set_touchpad_settings(device, settings)
     }
 }
