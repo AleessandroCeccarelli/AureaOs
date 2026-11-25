@@ -12,6 +12,7 @@ mod manager;
 mod mouse;
 mod registry;
 mod tablet;
+mod tablet_tools;
 mod tablet_calibration;
 mod tablet_outputs;
 mod touchpad;
@@ -28,6 +29,7 @@ pub(crate) use discovery::{describe, id_for};
 pub use manager::PointerManager;
 pub use registry::PointingDeviceService;
 pub use tablet_outputs::{TabletOutputMap, TabletOutputTarget};
+pub use tablet_tools::{RemovedTabletTool, TabletToolRegistry};
 pub use touchscreen::TouchscreenOutputMap;
 pub use touchscreen_calibration::{
     TouchscreenCalibration, TouchscreenCalibrationError, TouchscreenCalibrationMap,
