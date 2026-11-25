@@ -2016,3 +2016,12 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Noto Sans is already retained in Human Interfaces; the export script now uses that repository font through a temporary Fontconfig configuration. No separate host font package is required.
 - This is geometry handoff only. RGBA asset loading, Vulkan texture binding and overlay drawing remain outstanding; the menu is not yet visible.
 - No build, rustfmt, check or tests were run, preserving the agreed batched Fedora verification workflow.
+
+### 2026-11-25 — Vulkan context-menu overlay
+
+- Extended the immutable render scene with the active desktop theme, so Light/Dark artwork selection is frame-consistent.
+- Added lazy, one-time RGBA8 loading through the existing explicit-root asset loader. The selected snapshot is retained by the per-device pipeline cache and uploaded through the bounded desktop-artwork texture cache; no filesystem access is performed per frame.
+- Added the Vulkan overlay draw using the existing alpha-blended textured pipeline. The panel is composited after application surfaces and before cursor imagery, with output-local geometry derived from the logical output origin and effective scale, plus per-output scissor clipping.
+- Marked client-provided cursor surface snapshots separately and draw them after the menu, preserving pointer stacking. Native cursor rendering remains last.
+- Runtime asset root: `AUREA_HUMAN_INTERFACES_ROOT`; development points it at `aurea-human-interfaces`, installed systems default to `/usr/share/aureaos/human-interfaces`. Missing assets are reported once and do not abort compositor startup.
+- Added source tests for 1x/2x geometry and unrelated monitor clipping. Generated RGBA assets still need export and visual inspection. No build, rustfmt, check or tests were run.
