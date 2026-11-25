@@ -1767,3 +1767,5 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Enabled the `input 0.9.1` `libinput_1_21` feature through an optional direct dependency activated by the native `drm` feature. Cargo feature unification makes the newer DWTP API available on Smithay's re-exported input crate. The compositor now applies DWTP when advertised by the device.
 - Debian package metadata checked: Debian 13 ships libinput 1.28.1 and Debian 12 ships 1.22.1; both satisfy the 1.21 minimum for DWTP. Devices/build environments with older libinput will need a compatibility build profile or an explicit minimum-version check.
 - No build, Cargo check, rustfmt, test execution or hardware validation was run. All validation remains grouped as requested.
+
+- Dependency bookkeeping note: the new direct `serde`, `toml` and optional `udev` manifest entries are not yet reflected in `Cargo.lock`. Do not use `--locked` until the grouped Fedora Cargo run refreshes the lockfile. This was intentionally left for the planned validation batch; no GitHub build was started.
