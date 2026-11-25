@@ -31,7 +31,11 @@ Do not duplicate a vendor protocol in the compositor when the kernel already sup
 | Goodix, Cypress and other controller vendors | Commonly I2C or HID paths depending on model | Treat as capability-driven devices; verify kernel support per exact hardware rather than assume one universal vendor driver |
 | External touchpads | Usually USB HID or Bluetooth HID; model-dependent | Support standard HID multitouch where the kernel exposes it; hotplug and reconnect must work |
 
-The vendor name alone does not identify the transport or feature set. The same vendor can ship devices using different protocols, and different vendors can expose the same standardized HID interface.
+The vendor name alone does not identify the transport or feature set. The same vendor can ship devices using different protocols, and different vendors can expose the same standardized HID interface. In particular, Goodix is widely represented in Linux as a touchscreen-controller family; a Goodix vendor/controller label must not cause AureaOS to classify a device as a touchpad without pointer/touchpad evidence.
+
+## Relevant upstream Linux driver families
+
+The kernel source contains separate paths for legacy and modern hardware, including `psmouse`/`synaptics`/`alps`/`elantech` for PS/2-family devices, `elan_i2c_core` and its I2C/SMBus transports, Synaptics RMI4 core with I2C/SMBus/SPI transports, generic `i2c-hid`, and HID multitouch for compatible HID devices. Apple USB touchpads have device-specific support such as `bcm5974`. These are kernel implementation families, not dependencies AureaOS should link directly; the compositor consumes their normalized libinput devices. Exact device IDs and firmware still determine whether a particular model works.
 
 ## Feature matrix
 
@@ -136,3 +140,6 @@ The shared Desktop API now carries optional TouchpadCapabilities metadata alongs
 The snapshot is intentionally independent of the settings values. It lets Aurea Settings decide which controls to show while the existing TouchpadApplyReport continues to report whether a requested value was actually applied.
 
 Source changes have been committed but not compiled or tested. Do not treat the API integration as build-verified until the grouped Fedora validation.
+
+
+Kernel source references used for the driver-family audit: Linux input/mouse driver tree (including ALPS, ELAN I2C, Synaptics, psmouse and bcm5974): https://kernel.googlesource.com/pub/scm/linux/kernel/git/sailus/linux/+/refs/heads/for-next/drivers/input/mouse/ . The driver inventory is upstream-source evidence, not a guarantee that every driver is enabled in a given Debian kernel configuration.
