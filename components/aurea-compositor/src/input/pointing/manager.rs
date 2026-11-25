@@ -251,6 +251,28 @@ mod tests {
     }
 
     #[test]
+    fn disconnect_removes_inventory_and_all_per_device_state() {
+        let mut manager = PointerManager::new();
+        let device = InputDeviceId(14);
+        assert!(manager.connect(descriptor(14, InputDeviceKind::Mouse)));
+        let pointer = PointerSettings::new(PointerAccelerationProfile::Flat, 0.45, false)
+            .expect("valid pointer profile");
+        assert!(manager.set_pointer_settings(device, pointer));
+        manager.update_button(device, 0x110, true);
+
+        // The compositor drains this list into Wayland releases before disconnect.
+        assert_eq!(manager.take_pressed_buttons(device), vec![0x110]);
+        assert!(manager.disconnect(device));
+
+        assert!(manager.devices().device(device).is_none());
+        assert_eq!(
+            manager.pointer_settings(device, PointerSettings::default()),
+            PointerSettings::default()
+        );
+        assert!(manager.take_pressed_buttons(device).is_empty());
+    }
+
+    #[test]
     fn touchpad_preferences_reject_mouse_devices() {
         let mut manager = PointerManager::new();
         let mouse = InputDeviceId(12);
