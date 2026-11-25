@@ -8,7 +8,7 @@
     </filter>
   </defs>
   <g filter="url(#shadow)">
-    <rect x="4" y="4" width="240" height="152" rx="14" fill="#1b2638" fill-opacity=".98" stroke="#35445b"/>
+    <rect x="1" y="1" width="246" height="158" rx="14" fill="#1b2638" fill-opacity=".98" stroke="#35445b"/>
   </g>
   <g fill="none" stroke="#a9bad2" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
     <path d="M15 26h7l3 3h9v13H15z"/>
