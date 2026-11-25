@@ -63,7 +63,8 @@ impl AureaCompositor {
                     if self
                         .desktop_interactions
                         .send(
-                            aurea_desktop_api::desktop_interaction::DesktopInteraction::ShowContextMenu,
+                            aurea_desktop_api::desktop_interaction::DesktopInteraction
+                                ::ShowContextMenu,
                         )
                         .is_err()
                     {
