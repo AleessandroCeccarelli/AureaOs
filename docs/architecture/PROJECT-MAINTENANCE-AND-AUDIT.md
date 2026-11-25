@@ -806,3 +806,13 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - Aggiunti test sorgente per conversione global-to-parent e rifiuto dell'overflow. Non eseguiti.
 - Limiti residui: riconfigurazione reattiva quando il parent si sposta o cambia output; verifica di geometrie reali con scale miste e rotazioni; build e test runtime multi-monitor.
 - Nessuna build, `cargo fmt`, check o test è stata eseguita. La verifica resta raggruppata su Fedora.
+
+### Reactive popup reconstraining — 25 novembre 2026
+
+- Aggiunto `PopupPlacementRegistry` per conservare, per ogni popup XDG vivo, l'ultimo `PositionerState` del client. La registry viene aggiornata anche nelle richieste `reposition` e pulita alla distruzione del popup o quando la risorsa non è più viva.
+- Il punto usato per scegliere il monitor ora deriva da `PositionerState::get_anchor_point()`, quindi rispetta gli anchor edges effettivi del protocollo invece di approssimare sempre il centro dell'anchor rectangle.
+- `reconstrain_reactive_popups` ricalcola i popup per cui il client ha impostato `reactive`. Aggiorna la geometria pendente e usa `send_pending_configure`: Smithay invia un nuovo configure solo se lo stato è cambiato e applica i vincoli di versione/reactivity del protocollo.
+- La riconfigurazione è collegata a: commit di superfici (copre cambi di geometria del parent e dei popup genitori), riconciliazione/riconfigurazione degli output e al nuovo entry point `AureaCompositor::set_toplevel_location` per spostamenti di finestre. Quest'ultimo aggiorna anche membership output e focus del puntatore.
+- I popup non reattivi non vengono riconfigurati arbitrariamente: si rispetta il contratto XDG. I popup annidati sono mantenuti in ordine di registrazione, parent prima dei figli; dopo l'ACK/commit del parent la successiva riconciliazione ricalcola anche i figli con la nuova geometria.
+- L'API di movimento del compositor è ora il percorso richiesto per futuri move/drag; non esiste ancora un gestore interattivo completo di trascinamento finestre, quindi non va dichiarato completato.
+- Nessuna build, `cargo fmt`, check o test eseguiti. Le verifiche rimangono raggruppate su Fedora.
