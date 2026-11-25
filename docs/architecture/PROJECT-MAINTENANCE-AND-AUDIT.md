@@ -385,3 +385,68 @@ Il codice separa correttamente, almeno a livello di modello:
 - `docs/architecture/HARDWARE-REQUIREMENTS.md`
 
 **Esito fase GPU/Vulkan:** architettura e percorsi principali ricostruiti staticamente; nessuna modifica al codice e nessuna build locale eseguita. Audit di ogni resource pool e prova fisica ancora da completare.
+
+
+## 13. Audit approfondito — output, monitor e geometrie multi-display (25 novembre 2026)
+
+### 13.1 Identificazione e discovery
+- `drm/discovery.rs` enumera connector DRM connessi e ignora connector disconnessi o senza mode.
+- `OutputId` è un identificatore runtime composto da DRM device ID e connector ID. È stabile rispetto all'ordine di enumerazione, ma non è un'identità persistente del monitor.
+- La scelta della modalità iniziale usa il flag DRM PREFERRED, altrimenti la prima modalità esposta dal connector.
+- EDID mancante o non valido non blocca l'output: in quel caso non si crea automaticamente identità fisica persistente.
+- L'identità fisica combina EDID validato e percorso sysfs canonicalizzato GPU/connector; senza seriale unitario il dato rimane da sottoporre a revisione manuale.
+- `DrmDisplayIdentityRegistry` mantiene evidenza associata agli OutputId correnti e sostituisce gli elementi per device durante reconciliation.
+
+### 13.2 Modello e geometria
+- `OutputManager` mantiene registry e layout logico.
+- Registrazione batch e configurazione sono transazionali: validano duplicati, numero massimo di output, scala, mode e overflow prima di committare.
+- `OutputManager::reconcile_outputs` preserva posizione, scala, trasformazione, stato enabled e mode ancora supportato per gli output mantenuti.
+- Nuovi output vengono posizionati a destra dell'output più a destra; non viene applicata automaticamente una disposizione verticale o una topologia preferita.
+- I bounds usano coordinate globali logiche, rettangoli half-open, scale intere/frazionarie e dimensioni scambiate per rotazioni di 90/270 gradi.
+- `SurfaceOutputTracker` calcola enter/leave delle superfici rispetto agli output e pubblica la scala frazionaria preferita; se una superficie interseca più output sceglie la scala massima tra quelli intersecati.
+- La pubblicazione Wayland usa `wl_output` e il protocollo fractional-scale; il manager pubblica mode, transform, scale e posizione.
+- Il limite massimo di output attivi è preso dal contratto API condiviso, non duplicato localmente.
+
+### 13.3 Lacuna concreta: configurazione non equivale a modeset
+`AureaCompositor::configure_output` applica la configurazione a `OutputManager`, aggiorna il global Wayland e ridisegna. Il commento del metodo dice esplicitamente che il modeset DRM/KMS resta responsabilità del backend attivo. Nell'audit del codice di output e dei backend DRM non è stato trovato un percorso che riceva una richiesta di cambio mode/transform/enable dalla configurazione desktop e la traduca in una nuova configurazione atomica KMS, con TEST_ONLY, commit, rollback e aggiornamento dei frame pool.
+
+Il percorso KMS di presentazione usa `commit_pending` per il modeset iniziale, ma questo non è prova di una procedura generale per modificare la modalità dopo l'avvio.
+
+**Classificazione:** lacuna di integrazione ad alta priorità, non errore del calcolo geometrico. La UI Display Settings non deve esporre controlli mode/enable come se fossero operativi finché la richiesta non attraversa il backend DRM/KMS e la transazione non viene confermata.
+
+### 13.4 Altri limiti da verificare
+- Il posizionamento automatico dei nuovi output è solo orizzontale; il layout desiderato dall'utente e la persistenza non sono ancora dimostrati.
+- `OutputId` non deve essere usato come chiave di persistenza. Le preferenze per monitor devono usare l'identità fisica con gestione dei casi EDID duplicato/assente, MST, dock e cambio GPU.
+- La discovery converte `vrefresh()` in millihertz moltiplicando per 1000: la frequenza può essere arrotondata rispetto al pixel clock/htotal/vtotal reali. Verificare se il valore serve solo per UI o se deve distinguere modalità ad alta precisione (es. 59.94 Hz).
+- La riconciliazione dei global Wayland è transazionale sul modello, ma va testato il comportamento reale dei client quando un output viene sostituito e il global precedente rimosso.
+- I controlli di overflow e le geometrie negative sono coperti da test unitari; mancano prove multi-monitor fisiche e con hotplug ripetuto.
+
+### 13.5 Registro audit — monitor/output
+
+| ID | Priorità | Elemento | Classificazione | Azione |
+|---|---|---|---|---|
+| AUD-021 | Alta | Cambio mode/enable/transform aggiorna modello e Wayland ma non è dimostrato un modeset DRM/KMS runtime | Integrazione mancante | Progettare DisplayConfiguration transaction → DRM TEST_ONLY → commit → rollback → publish |
+| AUD-022 | Media | I nuovi monitor vengono collocati sempre a destra | Limite UX | Implementare editor disposizione e persistenza layout, mantenendo coordinate globali |
+| AUD-023 | Alta | Identità monitor dipende da EDID e sysfs validi; seriale può mancare o duplicarsi | Limite identità | Resolver con revisione manuale, duplicate detection e fallback non ambiguo |
+| AUD-024 | Media | Frequenza mode ricavata da `vrefresh()` può perdere precisione | Precisione dati | Valutare refresh millihertz derivato dal timing DRM completo |
+| AUD-025 | Alta | Nessun test fisico di hotplug, modeset, rotazione e fractional scale multi-monitor | Non verificato | Matrice 1–4 monitor, connector, dock/MST, risoluzioni e scale |
+
+### 13.6 File di riferimento
+- `components/aurea-compositor/src/drm/discovery.rs`
+- `components/aurea-compositor/src/drm/outputs.rs`
+- `components/aurea-compositor/src/drm/identity.rs`
+- `components/aurea-compositor/src/drm/identity_registry.rs`
+- `components/aurea-compositor/src/drm/connector_identity.rs`
+- `components/aurea-compositor/src/output.rs`
+- `components/aurea-compositor/src/output/manager.rs`
+- `components/aurea-compositor/src/output/manager/configuration.rs`
+- `components/aurea-compositor/src/output/manager/reconciliation.rs`
+- `components/aurea-compositor/src/output/manager/geometry.rs`
+- `components/aurea-compositor/src/output/coordinates.rs`
+- `components/aurea-compositor/src/output/scale.rs`
+- `components/aurea-compositor/src/output/wayland.rs`
+- `components/aurea-compositor/src/compositor/output_configuration.rs`
+- `components/aurea-compositor/src/compositor/output_reconciliation.rs`
+- `components/aurea-compositor/src/compositor/surface_output_reconciliation.rs`
+
+**Esito fase output:** discovery, identità transitoria/fisica, registry, geometria, fractional scale e pubblicazione Wayland sono presenti con test unitari. La configurazione grafica non è ancora collegata a un modeset DRM/KMS runtime verificato; layout persistente e prove fisiche multi-monitor restano aperti. Nessuna modifica al codice e nessuna build locale eseguita.
