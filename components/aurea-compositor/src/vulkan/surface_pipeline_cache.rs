@@ -5,12 +5,16 @@
 
 //! Persistent Vulkan resources for SHM surface composition.
 
-use std::{collections::HashMap, error::Error, fmt, sync::Arc};
+use std::{collections::HashMap, error::Error, fmt, path::PathBuf, sync::Arc};
 
 use smithay::{reexports::ash::vk, reexports::wayland_server::backend::ObjectId};
 
 use crate::{
-    desktop::{DesktopIconTextureKey, WallpaperAsset, WallpaperDecodeService, WallpaperDecodeServiceError, WallpaperPixels},
+    desktop::{
+        DesktopIconTextureKey, DesktopTheme, WallpaperAsset, WallpaperDecodeService,
+        WallpaperDecodeServiceError, WallpaperPixels, desktop_context_menu_asset,
+        load_desktop_icon_snapshot,
+    },
     render::shm_buffer::ShmBufferSnapshot,
 };
 
@@ -66,6 +70,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     texture_cache: VulkanSurfaceTextureCache,
     wallpaper_texture_cache: VulkanWallpaperTextureCache,
     desktop_icon_texture_cache: VulkanDesktopIconTextureCache,
+    context_menu_assets: HashMap<DesktopIconTextureKey, Option<ShmBufferSnapshot>>,
     wallpaper_decode_service: WallpaperDecodeService,
     native_cursor_texture: VulkanNativeCursorTexture,
 }
@@ -93,6 +98,7 @@ impl VulkanSurfacePipelineCache {
             texture_cache,
             wallpaper_texture_cache,
             desktop_icon_texture_cache,
+            context_menu_assets: HashMap::new(),
             wallpaper_decode_service,
             native_cursor_texture: VulkanNativeCursorTexture::new(),
         })
@@ -231,6 +237,40 @@ impl VulkanSurfacePipelineCache {
         key: DesktopIconTextureKey,
     ) -> Option<&VulkanShmTexture> {
         self.desktop_icon_texture_cache.texture(key)
+    }
+
+    /// Loads the selected context-menu artwork once and prepares its cached GPU texture.
+    ///
+    /// The asset root is configurable for development packages; installed systems
+    /// default to the Human Interfaces payload beneath /usr/share/aureaos.
+    pub(crate) fn prepare_context_menu_texture(
+        &mut self,
+        theme: DesktopTheme,
+    ) -> Result<Option<DesktopIconTextureKey>, String> {
+        let descriptor = desktop_context_menu_asset(theme);
+        let key = descriptor.key;
+        if !self.context_menu_assets.contains_key(&key) {
+            let asset_root = std::env::var_os("AUREA_HUMAN_INTERFACES_ROOT")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("/usr/share/aureaos/human-interfaces"));
+            let loaded = load_desktop_icon_snapshot(&asset_root, &descriptor);
+            let snapshot = match loaded {
+                Ok((_, snapshot)) => Some(snapshot),
+                Err(error) => {
+                    eprintln!("AureaOS: context-menu artwork unavailable: {error}");
+                    None
+                }
+            };
+            self.context_menu_assets.insert(key, snapshot);
+        }
+
+        let Some(snapshot) = self.context_menu_assets.get(&key).and_then(Option::as_ref) else {
+            return Ok(None);
+        };
+        self.desktop_icon_texture_cache
+            .prepare(&[(key, snapshot.clone())])
+            .map_err(|error| error.to_string())?;
+        Ok(Some(key))
     }
 
     /// Advances background decoding and transfers completed pixels to the GPU upload cache.
