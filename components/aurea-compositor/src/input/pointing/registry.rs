@@ -243,15 +243,18 @@ mod tests {
         let id = InputDeviceId(24);
         let report = TouchpadApplyReport {
             tap_to_click: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            tap_drag_lock: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            tap_button_map: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             two_finger_scroll: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             edge_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
-            tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             click_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             pointer_speed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            send_events_mode: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
         };
 
         assert!(service.connect(descriptor(24, InputDeviceKind::Touchpad)));
@@ -267,15 +270,18 @@ mod tests {
         let id = InputDeviceId(21);
         let report = TouchpadApplyReport {
             tap_to_click: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            tap_drag_lock: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            tap_button_map: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             two_finger_scroll: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             edge_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
-            tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             click_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             pointer_speed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            send_events_mode: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
         };
 
         assert!(!service.set_touchpad_report(id, report));
@@ -290,15 +296,18 @@ mod tests {
         let id = InputDeviceId(22);
         let report = TouchpadApplyReport {
             tap_to_click: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            tap_drag_lock: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            tap_button_map: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             two_finger_scroll: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             edge_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
-            tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             click_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             pointer_speed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            send_events_mode: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
         };
 
         service.connect(descriptor(22, InputDeviceKind::Touchpad));
@@ -313,15 +322,18 @@ mod tests {
         let id = InputDeviceId(23);
         let report = TouchpadApplyReport {
             tap_to_click: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            tap_drag_lock: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            tap_button_map: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             two_finger_scroll: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             edge_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
-            tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             click_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             pointer_speed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            send_events_mode: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
         };
 
         service.connect(descriptor(23, InputDeviceKind::Mouse));
