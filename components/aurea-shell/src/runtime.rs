@@ -156,6 +156,9 @@ impl ShellRuntime {
             DesktopInteraction::ShowContextMenu { position } => {
                 self.desktop.panels.show_context_menu(position);
             }
+            DesktopInteraction::DismissContextMenu => {
+                self.desktop.panels.close_context_menu();
+            }
             DesktopInteraction::DesktopItemSelected { ref id } => {
                 self.desktop.select_item(id.clone());
                 self.desktop_selection.set_selected_item(Some(id.clone()));
