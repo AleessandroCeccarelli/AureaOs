@@ -1889,3 +1889,4 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Le superfici cursore fornite dai client Wayland sono ora distinte dalle normali finestre nella composizione, così restano sopra il menu. Anche il cursore nativo continua a essere disegnato per ultimo.
 - Asset root in sviluppo: variabile `AUREA_HUMAN_INTERFACES_ROOT` puntata alla directory `aurea-human-interfaces`. Installazione prevista: `/usr/share/aureaos/human-interfaces`. In assenza dei file RGBA il compositor segnala l'asset mancante una volta e non interrompe l'avvio.
 - Aggiunti test sorgente per coordinate 1x/2x e monitor non interessati. Gli asset binari non sono ancora generati/ispezionati; nessuna build, `cargo fmt`, check o test eseguiti.
+- Il convertitore PNG→RGBA condiviso ora converte l'alpha PNG non premoltiplicato in RGBA premoltiplicato, necessario per il blend Vulkan `ONE / ONE_MINUS_SRC_ALPHA` e per evitare aloni sui bordi trasparenti.
