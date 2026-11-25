@@ -8,7 +8,7 @@
 use std::collections::{HashMap, HashSet};
 
 use aurea_desktop_api::input::{
-    InputDeviceDescriptor, InputDeviceId, PointerSettings, TouchpadApplyReport, TouchpadSettings,
+    InputDeviceDescriptor, InputDeviceId, InputDeviceProvider, PointerSettings, TouchpadApplyReport, TouchpadSettings,
 };
 
 use super::{PointingDeviceService, PointingDeviceSettings};
