@@ -754,6 +754,18 @@ mod context_menu_geometry_tests {
     }
 
     #[test]
+    fn clips_transparent_canvas_margin_at_the_output_edge() {
+        let output = DesktopRect::new(DesktopPoint::new(0, 0), 1920, 1080).unwrap();
+        let menu = DesktopContextMenuLayout::at(DesktopPoint::new(1910, 100), output).unwrap();
+        let (viewport, scissor) =
+            context_menu_geometry(&menu, &target((0, 0), 1)).expect("edge menu");
+
+        assert_eq!(viewport.width, 256.0);
+        assert_eq!(scissor.offset.x, 1672);
+        assert_eq!(scissor.extent.width, 248);
+    }
+
+    #[test]
     fn menu_is_not_drawn_on_an_unrelated_monitor() {
         let output = DesktopRect::new(DesktopPoint::new(0, 0), 1920, 1080).unwrap();
         let menu = DesktopContextMenuLayout::at(DesktopPoint::new(500, 300), output).unwrap();
