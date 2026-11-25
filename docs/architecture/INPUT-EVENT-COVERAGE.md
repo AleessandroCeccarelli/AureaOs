@@ -170,3 +170,12 @@ Pointer motion, buttons, axes, swipe/pinch/hold gestures, and touchscreen contac
 - Smithay 0.7 documentation confirms that touch focus is established on `TouchHandle::down`; the focus passed to `motion` is for drag-and-drop targeting and does not retarget the active contact. The existing touchscreen motion path therefore remains unchanged.
 - No build, Cargo check, rustfmt, test execution or physical-device hot-unplug validation was run. Grouped validation remains pending.
 
+### Multi-tablet tool ownership — 2026-11-25
+
+- The compositor now records which physical tablet devices have been observed using each Wayland tablet-tool descriptor.
+- On device removal, a tool is removed only after its last associated tablet disconnects. This avoids leaving stale pen/eraser tools advertised after unplug, while preserving a uniquely identified pen that is still associated with another connected tablet.
+- Tool ownership is cleared when the tablet seat becomes empty.
+- Commits: `7272e04` (ownership state), `35cf3b5` (disconnect cleanup).
+- This covers tablet-tool lifecycle only. Smithay 0.7 explicitly does not implement tablet-pad support in its tablet abstraction; pad buttons, rings and strips remain unavailable through the current backend and must not be advertised as working.
+- No build, Cargo check, rustfmt, test execution or physical-device validation was run. Grouped validation remains pending.
+
