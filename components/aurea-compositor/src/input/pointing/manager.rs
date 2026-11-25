@@ -12,6 +12,7 @@ use aurea_desktop_api::input::{
 };
 
 use super::{PointingDeviceService, PointingDeviceSettings};
+use super::touchpad_store::TouchpadProfileStore;
 
 /// Owns the policy state shared by mouse, touchpad, touchscreen, and tablet paths.
 ///
@@ -23,6 +24,7 @@ use super::{PointingDeviceService, PointingDeviceSettings};
 pub struct PointerManager {
     devices: PointingDeviceService,
     settings: PointingDeviceSettings,
+    persistent_touchpads: TouchpadProfileStore,
     pressed_buttons: HashMap<InputDeviceId, HashSet<u32>>,
 }
 
@@ -41,10 +43,18 @@ impl PointerManager {
     pub(crate) fn connect(&mut self, descriptor: InputDeviceDescriptor) -> bool {
         let id = descriptor.id;
         let kind = descriptor.kind;
+        let persistent_id = descriptor.persistent_id.clone();
         if !self.devices.connect(descriptor) {
             return false;
         }
         self.settings.reconcile_kind(id, kind);
+        if kind == aurea_desktop_api::input::InputDeviceKind::Touchpad {
+            if let Some(identity) = persistent_id {
+                if let Some(profile) = self.persistent_touchpads.get(&identity) {
+                    self.settings.set_touchpad(&self.devices, id, profile);
+                }
+            }
+        }
         true
     }
 
@@ -94,7 +104,19 @@ impl PointerManager {
         device: InputDeviceId,
         settings: TouchpadSettings,
     ) -> bool {
-        self.settings.set_touchpad(&self.devices, device, settings)
+        if !self.settings.set_touchpad(&self.devices, device, settings) {
+            return false;
+        }
+        if let Some(identity) = self
+            .devices
+            .device(device)
+            .and_then(|descriptor| descriptor.persistent_id)
+        {
+            if let Err(error) = self.persistent_touchpads.set(identity, settings) {
+                tracing::warn!(device_id = device.0, %error, "Could not persist touchpad preferences");
+            }
+        }
+        true
     }
 
     /// Stores the result of applying touchpad settings to hardware.
