@@ -1855,3 +1855,10 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Il menu standard prevede inizialmente quattro voci: Crea cartella, Usa come sfondo, Impostazioni schermo e Personalizzazione. Dimensioni logiche 248 × 160, righe da 36 e padding superiore/inferiore da 8.
 - Il layout usa il posizionamento già presente per mantenersi dentro l'output corretto, anche con coordinate globali e configurazioni multi-monitor. Il test di hit-testing non considera il padding come comando.
 - Esportato il nuovo contratto dal modulo `desktop` dell'API. È ancora un modello: rendering, sincronizzazione del layout con il compositor e dispatch dei comandi non sono collegati. Nessuna build, `cargo fmt`, check o test eseguiti.
+
+### 25 novembre 2026 — Etichette e passaggio dei comandi contestuali
+
+- Ogni comando del menu espone ora la propria etichetta italiana canonica. La seconda voce è `Usa come sfondo`.
+- Aggiunto `ContextMenuCommandSelected` al contratto di interazione tra compositor e Shell. La selezione chiude lo stato condiviso del menu e la Shell chiude il pannello contestuale.
+- Il comando selezionato resta nella coda semantica per essere consumato dal servizio competente. Non abbiamo messo operazioni filesystem o impostazioni dentro ShellRuntime.
+- Aggiunti test sorgente per il trasferimento del comando e la chiusura del menu; non eseguiti. Nessuna build, `cargo fmt` o check.
