@@ -101,6 +101,7 @@ impl CompositorHandler for AureaCompositor {
         }
 
         self.reconcile_surface_outputs();
+        self.reconstrain_reactive_popups();
         self.request_all_output_frames();
     }
 }
