@@ -301,3 +301,7 @@ Wayland pointer-button events so applications retain their own context menus.
 Secondary clicks reset, rather than advance, the desktop double-click tracker.
 
 Implementation note — 2026-11-25: `pointer_button.rs` now calls the desktop hit-test path for primary clicks on empty space and for secondary clicks before requesting the context menu. Window surfaces still take precedence. The shell currently stores the context-menu request and logical pointer position only; the actual graphical menu surface and its actions are not implemented yet. Source commit: `80483c23`.
+
+## Absolute pointer display assignment — 2026-11-25
+
+Absolute pointer motion now resolves the originating device through a dedicated per-device output map. On a single-output desktop, an unassigned device retains the safe automatic fallback. On multi-monitor desktops, an explicit assignment is required; events are ignored rather than routed to an arbitrary display. The compositor exposes assign, unassign and resolve operations, validates that the device advertises pointer motion and that the selected output is enabled, and removes mappings when the device or output is removed. A stale output assignment is not silently redirected. Focused map tests cover single-output fallback, explicit assignment, stale-output handling, reassignment, unassignment and device removal. These tests are source additions only and have not been compiled or executed; physical absolute-pointer testing remains pending.
