@@ -647,11 +647,10 @@ pub(super) fn render_frame(
 
 #[cfg(test)]
 mod context_menu_geometry_tests {
-    use aurea_desktop_api::desktop::{DesktopPoint, DesktopRect};
+    use aurea_desktop_api::desktop::{DesktopContextMenuLayout, DesktopPoint, DesktopRect};
 
     use super::context_menu_geometry;
     use crate::{
-        desktop::DesktopContextMenuLayout,
         output::{DisplayOutput, OutputMode},
         renderer::RenderTarget,
     };
