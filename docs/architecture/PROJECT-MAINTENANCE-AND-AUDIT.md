@@ -857,3 +857,11 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - This is scene preparation only: no RGBA asset is loaded into the scene, no texture is bound, and no Vulkan overlay draw has been issued. The menu remains invisible until the asset lifecycle and draw pass are connected.
 - Noto Sans is loaded from the existing Human Interfaces repository font source by the export script; no separate host font package is required.
 - No build, rustfmt, check or tests were run.
+
+### Vulkan context-menu overlay — 25 novembre 2026
+
+- La `RenderScene` trasporta layout e tema del menu contestuale; il posizionamento deriva dallo stesso contratto geometrico usato dall'hit-testing.
+- `VulkanSurfacePipelineCache` risolve l'asset selezionato tramite `AUREA_HUMAN_INTERFACES_ROOT` (default installato `/usr/share/aureaos/human-interfaces`), lo carica una volta con il loader validante e conserva lo snapshot per il riuso. Le texture vengono caricate nella cache artwork Vulkan; nessun accesso al filesystem avviene nel normale draw per frame.
+- `surface_compositor` usa la pipeline alpha-blended già esistente per disegnare il pannello dopo le superfici applicative e prima delle superfici cursore e del cursore nativo. Viewport e scissor sono calcolati per output, con origine logica, scala effettiva e clipping multi-monitor.
+- Le superfici cursore client sono marcate nei relativi snapshot per non essere coperte dal menu.
+- I test sorgente aggiunti coprono scala 1x/2x e monitor non interessati. Non sono stati eseguiti build, rustfmt, check o test; gli RGBA devono ancora essere generati e verificati visivamente su Fedora.
