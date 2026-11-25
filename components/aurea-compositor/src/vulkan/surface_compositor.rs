@@ -23,7 +23,7 @@ use std::sync::Arc;
 use smithay::reexports::ash::vk;
 
 use crate::{
-    desktop::{WallpaperDrawGeometry, WallpaperFitMode, WallpaperLayout},
+    desktop::{DesktopContextMenuLayout, WallpaperDrawGeometry, WallpaperFitMode, WallpaperLayout},
     render::RenderScene,
     renderer::RenderTarget,
 };
@@ -39,6 +39,53 @@ use super::{
 
 pub(super) const MAX_COMPOSITED_SURFACES: usize = 128;
 pub(super) const MAX_COMPOSITED_SHM_BYTES: usize = 256 * 1024 * 1024;
+
+/// Converts global logical menu bounds to an output-local physical viewport
+/// and clips the 256px artwork canvas to this output.
+fn context_menu_geometry(
+    menu: &DesktopContextMenuLayout,
+    target: &RenderTarget,
+) -> Option<(vk::Viewport, vk::Rect2D)> {
+    let origin = menu.placement().bounds().origin();
+    let (output_x, output_y) = target.logical_origin();
+    let scale = target.effective_scale();
+    if !scale.is_finite() || scale <= 0.0 {
+        return None;
+    }
+
+    let x = (i64::from(origin.x) - i64::from(output_x)) as f64 * scale;
+    let y = (i64::from(origin.y) - i64::from(output_y)) as f64 * scale;
+    let width = 256.0 * scale;
+    let height = 256.0 * scale;
+    let left = x.floor().max(0.0) as u32;
+    let top = y.floor().max(0.0) as u32;
+    let right = (x + width).ceil().min(f64::from(target.width())) as u32;
+    let bottom = (y + height).ceil().min(f64::from(target.height())) as u32;
+    if left >= right || top >= bottom {
+        return None;
+    }
+
+    Some((
+        vk::Viewport {
+            x: x as f32,
+            y: y as f32,
+            width: width as f32,
+            height: height as f32,
+            min_depth: 0.0,
+            max_depth: 1.0,
+        },
+        vk::Rect2D {
+            offset: vk::Offset2D {
+                x: i32::try_from(left).ok()?,
+                y: i32::try_from(top).ok()?,
+            },
+            extent: vk::Extent2D {
+                width: right - left,
+                height: bottom - top,
+            },
+        },
+    ))
+}
 
 /// Records and submits one complete SHM-composited frame, releasing the
 /// scanout image to the foreign KMS queue only after all sampled resources
@@ -110,6 +157,20 @@ pub(super) fn render_frame(
             ),
             other => VulkanSurfaceCompositionError::Texture(other.to_string()),
         })?;
+
+    let context_menu_key = if scene.context_menu().is_some() {
+        surface_cache
+            .prepare_context_menu_texture(scene.context_menu_theme())
+            .map_err(VulkanSurfaceCompositionError::Texture)?
+    } else {
+        None
+    };
+    surface_cache
+        .poll_desktop_icon_texture_uploads()
+        .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+    let context_menu_draw = scene
+        .context_menu()
+        .and_then(|menu| context_menu_geometry(menu, target));
     let active_surface_ids = scene.surface_ids();
     let snapshots = scene.shm_snapshots();
     let visible = visible_surfaces(snapshots, target)?;
@@ -135,6 +196,7 @@ pub(super) fn render_frame(
 
     if visible.is_empty()
         && cursor.is_none()
+        && context_menu_draw.is_none()
         && wallpaper_asset_id.is_none_or(|asset_id| {
             surface_cache.wallpaper_texture_for_asset(asset_id).is_none()
         })
@@ -194,6 +256,9 @@ pub(super) fn render_frame(
     surface_cache
         .complete_surface_texture_uploads()
         .map_err(VulkanSurfaceCompositionError::from_surface_texture_cache_error)?;
+    surface_cache
+        .complete_desktop_icon_texture_uploads()
+        .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
 
     let (composition_view, composition_previous_state) = match display_color {
         Some((_, _, intermediate_view, intermediate_state)) => {
@@ -224,6 +289,9 @@ pub(super) fn render_frame(
     let wallpaper_ready = wallpaper_asset_id.is_some_and(|asset_id| {
         surface_cache.wallpaper_texture_for_asset(asset_id).is_some()
     });
+    let context_menu_ready = context_menu_key.is_some_and(|key| {
+        surface_cache.desktop_icon_texture(key).is_some()
+    });
     if wallpaper_ready {
         surface_cache
             .ensure_wallpaper_pipeline(composition_view.format())
@@ -243,7 +311,10 @@ pub(super) fn render_frame(
     // frame-scoped until submit_and_wait confirms GPU completion.
     let binding_pool = surface_cache
         .create_texture_binding_pool(
-            visible.len() as u32 + u32::from(cursor_texture_ready) + u32::from(wallpaper_ready),
+            visible.len() as u32
+                + u32::from(cursor_texture_ready)
+                + u32::from(wallpaper_ready)
+                + u32::from(context_menu_ready),
         )
         .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?;
     let views = visible
@@ -279,6 +350,27 @@ pub(super) fn render_frame(
             .ok_or_else(|| {
             VulkanSurfaceCompositionError::Texture(
                 "The selected wallpaper texture was not ready after upload polling".to_owned(),
+            )
+        })?;
+        Some(
+            VulkanTextureBinding::new_in_pool(
+                device,
+                &binding_pool,
+                &descriptor_layout,
+                texture.view(),
+                &sampler,
+            )
+            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?,
+        )
+    } else {
+        None
+    };
+
+    let context_menu_binding = if context_menu_ready {
+        let key = context_menu_key.expect("ready context menu has a texture key");
+        let texture = surface_cache.desktop_icon_texture(key).ok_or_else(|| {
+            VulkanSurfaceCompositionError::Texture(
+                "The context-menu texture disappeared before binding".to_owned(),
             )
         })?;
         Some(
@@ -443,6 +535,25 @@ pub(super) fn render_frame(
             viewport,
             scissor,
             surface.texture_transform,
+        )
+        .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+    }
+
+    if let (Some((viewport, scissor)), Some(binding)) =
+        (context_menu_draw, context_menu_binding.as_ref())
+    {
+        VulkanDrawPass::record_textured_region(
+            command_buffer.handle(),
+            composition_view,
+            &pipeline,
+            binding,
+            0,
+            VulkanImageState::General,
+            VulkanImageState::General,
+            VulkanColorLoad::Load,
+            viewport,
+            scissor,
+            0,
         )
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
