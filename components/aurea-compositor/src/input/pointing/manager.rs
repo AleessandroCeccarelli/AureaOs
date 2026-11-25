@@ -372,7 +372,7 @@ mod tests {
             PointerSettings::default()
         );
         assert_eq!(manager.touchpad_settings(device), TouchpadSettings::default());
-        assert!(manager.take_pressed_buttons(device).is_empty());
+        assert!(manager.take_buttons_released_by_device(device).is_empty());
         assert_eq!(manager.devices().device(device).unwrap().kind, InputDeviceKind::Touchpad);
     }
 
