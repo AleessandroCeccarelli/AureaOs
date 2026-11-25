@@ -7,6 +7,7 @@ This directory contains the operational record of AureaOS development.
 ## Documents
 
 - [Development log](DEVELOPMENT-LOG.md) — dated entries recording repository milestones, engineering decisions, validation results, known limitations, and next actions.
+- [Project maintenance and audit handbook](../architecture/PROJECT-MAINTENANCE-AND-AUDIT.md) — operational inventory, architecture links, verified status, known risks, and grouped maintenance procedures.
 
 ## Recording rules
 
