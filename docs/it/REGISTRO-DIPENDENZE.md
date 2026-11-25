@@ -326,7 +326,7 @@ Evidenza: pagine pacchetto Debian Trixie libheif-dev, libheif-plugin-libde265 e 
 
 - **Scelta:** Noto Sans di Google Fonts / The Noto Project, peso Regular 500 per il menu contestuale iniziale.
 - **Licenza:** SIL Open Font License 1.1 (OFL-1.1). La famiglia può essere usata e redistribuita insieme al software rispettando le condizioni OFL; se in futuro i file font verranno inclusi, mantenere copyright e licenza upstream. Riferimento: [guida Noto a uso e licenza](https://notofonts.github.io/noto-docs/website/use/).
-- **Uso in generazione:** le SVG dichiarano font-family=Noto Sans; rsvg-convert sull'host le rasterizza in RGBA8. Il font non viene linkato dal codice Rust e non serve a runtime una volta installati gli asset raster.
-- **Pacchetti host:** Debian 13 fonts-noto-core; Fedora google-noto-sans-fonts. I renderer host già previsti restano Debian librsvg2-bin e Fedora librsvg2-tools.
+- **Uso in generazione:** le SVG dichiarano font-family=Noto Sans; `tools/assets/render-context-menu.sh` risolve direttamente il file `aurea-human-interfaces/fonts/source/google-fonts/noto-sans/NotoSans-Variable.ttf` tramite una configurazione Fontconfig temporanea. Non serve installare il font sull'host né scaricarlo.
+- **Pacchetti host:** Debian 13 `librsvg2-bin`; Fedora `librsvg2-tools`. Python 3 è usato dal convertitore PNG→RGBA già presente.
 - **Impatto runtime:** nessuna dipendenza Cargo e nessuna dipendenza fontconfig/Pango/Cairo/GLib aggiunta al runtime AureaOS. Nessun download font o accesso alla rete durante l'esecuzione.
 - **Stato:** sorgenti SVG e script di esportazione committati. Generazione RGBA8 e controllo visivo ancora da eseguire su Fedora.
