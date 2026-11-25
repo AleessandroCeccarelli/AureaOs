@@ -59,6 +59,10 @@ pub enum StandardInputCapability {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct TouchpadCapabilities {
     pub max_tap_fingers: u32,
+    pub tap_to_click: bool,
+    pub tap_and_drag: bool,
+    pub tap_drag_lock: bool,
+    pub tap_button_map_configurable: bool,
     pub two_finger_scroll: bool,
     pub edge_scrolling: bool,
     pub natural_scrolling: bool,
@@ -72,6 +76,8 @@ pub struct TouchpadCapabilities {
     pub pointer_acceleration: bool,
     pub flat_acceleration: bool,
     pub adaptive_acceleration: bool,
+    pub disable_events: bool,
+    pub disable_on_external_mouse: bool,
 }
 
 /// Snapshot of capabilities discovered from descriptors and supported interfaces.
