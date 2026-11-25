@@ -5,7 +5,10 @@
 
 //! Touchpad-class device detection using libinput's capabilities.
 
-use smithay::reexports::input::{Device, DeviceCapability};
+use aurea_desktop_api::input::TouchpadCapabilities;
+use smithay::reexports::input::{
+    AccelProfile, ClickMethod, Device, DeviceCapability, ScrollMethod,
+};
 
 pub(super) fn supports(device: &Device) -> bool {
     let has_pointer = device.has_capability(DeviceCapability::Pointer);
@@ -22,6 +25,39 @@ pub(super) fn supports(device: &Device) -> bool {
             !device.config_scroll_methods().is_empty(),
             !device.config_click_methods().is_empty(),
         )
+}
+
+
+/// Captures the exact configuration surface libinput exposes for this device.
+///
+/// The result is suitable for a settings UI: it describes the connected
+/// hardware/driver combination, not a vendor-wide promise.
+pub(super) fn capabilities(device: &Device) -> TouchpadCapabilities {
+    let scroll_methods = device.config_scroll_methods();
+    let click_methods = device.config_click_methods();
+    let acceleration_profiles = device.config_accel_profiles();
+
+    #[cfg(feature = "drm")]
+    let disable_while_trackpointing = device.config_dwtp_is_available();
+    #[cfg(not(feature = "drm"))]
+    let disable_while_trackpointing = false;
+
+    TouchpadCapabilities {
+        max_tap_fingers: device.config_tap_finger_count(),
+        two_finger_scroll: scroll_methods.contains(&ScrollMethod::TwoFinger),
+        edge_scrolling: scroll_methods.contains(&ScrollMethod::Edge),
+        natural_scrolling: device.config_scroll_has_natural_scroll(),
+        button_areas: click_methods.contains(&ClickMethod::ButtonAreas),
+        clickfinger: click_methods.contains(&ClickMethod::Clickfinger),
+        disable_while_typing: device.config_dwt_is_available(),
+        disable_while_trackpointing,
+        gestures: device.has_capability(DeviceCapability::Gesture),
+        left_handed: device.config_left_handed_is_available(),
+        middle_button_emulation: device.config_middle_emulation_is_available(),
+        pointer_acceleration: device.config_accel_is_available(),
+        flat_acceleration: acceleration_profiles.contains(&AccelProfile::Flat),
+        adaptive_acceleration: acceleration_profiles.contains(&AccelProfile::Adaptive),
+    }
 }
 
 /// libinput exposes different touchpad configuration features depending on
