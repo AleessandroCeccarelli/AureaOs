@@ -663,3 +663,80 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - `docs/product/KEYBOARD-SHORTCUT-POLICY.md`
 
 **Esito fase input:** mouse, touchpad, gesture, touchscreen, pen-tablet e scorciatoie workspace hanno percorsi sorgente reali e test mirati. È stata individuata una lacuna concreta nel filtro hot-unplug degli eventi tablet-tool; focus touchscreen durante motion richiede verifica della semantica Smithay. Tablet-pad, profili persistenti, shortcut desktop principali e superfici Overview/App Exposé restano incompleti. Nessuna modifica al codice, build, rustfmt o test eseguiti in questa fase.
+
+## 22. Audit approfondito — Shell, finestre e desktop nativo (25 novembre 2026)
+
+### 22.1 Avvio effettivo della sessione
+
+- `aurea-desktop/src/main.rs` avvia la composition root, inizializza diagnostica e carica il layout tastiera.
+- `aurea-shell/src/app.rs` crea ShellRuntime, canali display/input/interazioni e il thread proprietario del compositor.
+- `aurea-desktop/src/compositor_factory.rs` crea il server Wayland e avvia `WelcomeClientProcess`.
+- Il client Welcome è al momento il primo client grafico esplicito avviato dalla factory.
+- Non è stata trovata nella factory una composizione/registrazione di Dock, Launcher, pannelli, Quick Settings o notification center come superfici native. Il fatto che esistano i modelli di stato Shell non prova che esista la relativa UI.
+
+### 22.2 Shell: stato e canali
+
+- `DesktopState` contiene DockState, LauncherState, WorkspaceManager, DesktopPanelState, tema, Night Light, stato Cestino e selezione desktop.
+- `ShellRuntime` riceve le interazioni semantiche del compositor e aggiorna il modello per workspace, Overview, App Exposé, Context Menu e selezione.
+- Gli eventi DesktopItemActivated vengono conservati nella coda semantica ma non avviano file o applicazioni: il consumer Files/Shell non è collegato.
+- Il canale touchpad e il controller display sono collegati alla runtime production path. Il costruttore secondario `with_display_color` continua a creare e scartare il receiver touchpad; evitare di usarlo quando si richiede controllo touchpad.
+- `run_event_loop` senza receiver esplicito crea un canale interazioni e scarta il sender: è un percorso di test/uso limitato. Il percorso di produzione usa `run_event_loop_with_interactions`; non sostituirlo accidentalmente.
+- Il runtime conserva fino a 32 interazioni pendenti, eliminando la più vecchia quando la coda è piena. Il consumer di presentazione deve svuotare la coda e non trattarla come event log durevole.
+
+### 22.3 Dock, Launcher e pannelli
+
+- DockState implementa le policy Intelligent, AlwaysVisible e AutoHide; il comportamento AutoHide considera bordo, puntatore sopra il Dock e reveal da tastiera.
+- Al momento `Intelligent` e `AlwaysVisible` restituiscono entrambi sempre visibile: non esiste ancora una policy intelligente basata su finestre/occlusione. Non presentare Intelligent come comportamento distinto finché non viene implementato.
+- LauncherState conserva apertura e query; chiusura azzera la query. Il modello non costituisce una superficie, un catalogo applicazioni o un motore di ricerca.
+- DesktopPanelState memorizza una sola richiesta attiva tra Overview, AppExpose e ContextMenu. Le superfici visuali non sono ancora collegate.
+- Super da solo per aprire Launcher non è implementato nel resolver globale; il pulsante A del Dock non è dimostrato da una UI attiva.
+
+### 22.4 Finestre Wayland e interazione
+
+- WindowManager conserva toplevel XDG, stato mapped, posizione logica, workspace e stacking order.
+- Sono presenti registrazione, mapping, cambio workspace, spostamento tra workspace, raise, posizione e richiesta resize con handshake XDG configure.
+- Il click primario su un toplevel lo porta in cima e gli assegna keyboard focus; il click sul desktop vuoto passa al sistema di selezione desktop.
+- La scena renderizza le superfici toplevel mappate e il puntatore; il renderer Wayland non equivale ancora a un window manager desktop completo.
+- `XdgShellHandler::new_popup` ignora il popup; `grab` e `reposition_request` sono no-op. Questo impedisce di considerare completo il supporto a menu contestuali e popup XDG richiesti dalle applicazioni.
+- Non sono dimostrati controlli grafici di move/resize, maximize, minimize, close, tiling, decorazioni e Alt+Tab. Le API isolate di resize o workspace non provano l'intero flusso interattivo.
+- Non è dimostrata una policy completa di activation token/focus-stealing per nuove finestre; il codice evita che il semplice mapping rubi focus a un client già attivo.
+
+### 22.5 Desktop items, Cestino e applicazioni
+
+- Il compositor riceve uno snapshot semantico dei desktop item e può hit-testare File, Folder, Application e Trash.
+- La selezione è propagata al modello Shell; il doppio clic genera un intento di attivazione.
+- Il percorso Vulkan non disegna ancora le icone native desktop e non consuma il flag visuale di selezione: niente icone visibili o highlight può essere dichiarato completato.
+- Il servizio Cestino legge lo stato iniziale e lo passa al compositor; watcher, aggiornamenti live, conferme e UI non sono collegati alla composition root.
+- Non esistono ancora crate/applicazioni indipendenti Fides o Quaero nel workspace; l'avvio file/applicazioni dal desktop resta mancante.
+
+### 22.6 Registro audit — Shell e desktop
+
+| ID | Priorità | Elemento | Classificazione | Azione |
+|---|---|---|---|---|
+| AUD-034 | Critica | Factory avvia compositor e Welcome, ma non Dock/Launcher/Settings/Quick Settings/Notifications come superfici native | Integrazione desktop mancante | Definire primo client shell nativo e lifecycle delle superfici |
+| AUD-035 | Alta | XDG popup, grab e reposition sono ignorati | Protocollo incompleto | Implementare popup lifecycle, posizionamento, grab e dismiss |
+| AUD-036 | Alta | DesktopItemActivated viene accodato ma non consumato; nessun launch service Fides/app | Integrazione servizio mancante | Collegare intent a un servizio applicazioni/file con policy e feedback |
+| AUD-037 | Alta | Icone desktop e selezione non sono disegnate nel frame Vulkan | Rendering mancante | Collegare raster assets/cache/geometry al frame pass e test visuale |
+| AUD-038 | Media | DockMode::Intelligent equivale attualmente ad AlwaysVisible | Policy incompleta | Definire comportamento intelligente o rinominare/limitare l'opzione |
+| AUD-039 | Alta | WindowManager non dimostra move/resize interattivo, maximize/minimize/close e Alt+Tab end-to-end | Gestione finestre parziale | Definire request, hit regions, focus, stacking e azioni testabili |
+| AUD-040 | Alta | Cestino ha solo stato iniziale; watcher e aggiornamenti live non sono collegati | Integrazione mancante | Collegare servizio notifiche filesystem → API semantica → Shell/compositor |
+| AUD-041 | Media | `ShellRuntime::run_event_loop` crea un receiver interazioni con sender scartato | API d'uso ambiguo | Documentare come test-only o rimuovere/limitare il percorso alternativo |
+| AUD-042 | Media | Nessun catalogo applicazioni/ricerca Launcher dimostrato | Servizio mancante | Definire registry desktop entry, ricerca e lancio processi |
+
+### 22.7 File esaminati
+
+- `components/aurea-desktop/src/main.rs`
+- `components/aurea-desktop/src/compositor_factory.rs`
+- `components/aurea-shell/src/app.rs`
+- `components/aurea-shell/src/runtime.rs`
+- `components/aurea-shell/src/desktop/mod.rs`
+- `components/aurea-shell/src/desktop/dock.rs`
+- `components/aurea-shell/src/desktop/launcher.rs`
+- `components/aurea-shell/src/desktop/panels.rs`
+- `components/aurea-compositor/src/window_manager.rs`
+- `components/aurea-compositor/src/compositor/pointer_button.rs`
+- `components/aurea-compositor/src/xdg_shell.rs`
+- `components/aurea-compositor/src/render.rs`
+- `docs/architecture/DESKTOP-RENDERING-AND-MEDIA-PIPELINE.md`
+
+**Esito fase Shell/desktop:** i modelli Shell, il lifecycle del compositor, il rendering delle superfici Wayland, il focus/raise al click e una parte della gestione workspace sono presenti. Il prodotto desktop visibile resta però incompleto: la factory avvia Welcome, non una shell nativa completa; popup XDG sono ignorati; icone e attivazione desktop non arrivano a un servizio applicazioni; le principali operazioni di window management e le superfici Dock/Launcher/pannelli devono ancora essere integrate. Nessuna modifica al codice, build, rustfmt o test eseguiti in questa fase.
