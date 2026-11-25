@@ -7,6 +7,8 @@
 
 use std::sync::mpsc::{self, Receiver, SendError, Sender, TryRecvError};
 
+use crate::desktop::DesktopContextMenuCommand;
+
 /// A desktop position expressed in logical output coordinates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DesktopPosition {
@@ -23,6 +25,8 @@ pub enum DesktopInteraction {
     ShowContextMenu { position: DesktopPosition },
     /// Dismisses the desktop context menu without affecting other panels.
     DismissContextMenu,
+    /// Activates a command selected from the desktop context menu.
+    ContextMenuCommandSelected { command: DesktopContextMenuCommand },
     DesktopItemSelected { id: String },
     DesktopSelectionCleared,
     /// Activates a desktop item after a recognized double-click.
@@ -90,7 +94,8 @@ impl DesktopInteractionSender {
         if result.is_ok() {
             match interaction {
                 DesktopInteraction::ShowContextMenu { .. } => self.context_menu_open.store(true, std::sync::atomic::Ordering::Release),
-                DesktopInteraction::DismissContextMenu => self.context_menu_open.store(false, std::sync::atomic::Ordering::Release),
+                DesktopInteraction::DismissContextMenu
+                | DesktopInteraction::ContextMenuCommandSelected { .. } => self.context_menu_open.store(false, std::sync::atomic::Ordering::Release),
                 _ => {}
             }
         }
@@ -208,6 +213,14 @@ mod tests {
             receiver.try_recv(),
             Ok(DesktopInteraction::ShowContextMenu { position })
         );
+
+        sender.send(DesktopInteraction::ContextMenuCommandSelected {
+            command: DesktopContextMenuCommand::UseAsWallpaper,
+        }).unwrap();
+        assert!(!sender.context_menu_is_open());
+        assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::ContextMenuCommandSelected {
+            command: DesktopContextMenuCommand::UseAsWallpaper,
+        }));
 
         sender.send(DesktopInteraction::DismissContextMenu).unwrap();
         assert!(!sender.context_menu_is_open());
