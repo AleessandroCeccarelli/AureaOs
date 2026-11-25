@@ -51,5 +51,5 @@ The six approved SVG masters remain canonical. `tools/assets/render-trash-icons.
 - Canonical masters: source/system/context-menu/light.svg and source/system/context-menu/dark.svg.
 - Typography: Noto Sans Variable, Google Fonts / The Noto Project, SIL OFL 1.1. The canonical font is retained at `../fonts/source/google-fonts/noto-sans/NotoSans-Variable.ttf`; the export script uses this repository copy and does not require a host-installed font.
 - Export: bash tools/assets/render-context-menu.sh; generated outputs belong in generated/context-menu/.
-- The 256 × 256 RGBA8 canvas contains a 248 × 160 visible menu panel at its top-left. The transparent remainder allows reuse of the existing bounded square artwork upload contract.
+- The 256 × 256 premultiplied RGBA8 canvas contains a 248 × 160 visible menu panel at its top-left. The transparent remainder allows reuse of the existing bounded square artwork upload contract.
 - The compositor now resolves these generated RGBA files from the Human Interfaces asset root, caches the selected theme texture and draws the menu after Wayland surfaces but before the pointer. Export and visual validation on Fedora are still required before calling the menu verified.
