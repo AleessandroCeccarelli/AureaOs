@@ -29,7 +29,7 @@ impl AureaCompositor {
         let seat_transition = self
             .pointer_manager
             .update_button(device, button, state == ButtonState::Pressed);
-        if state == ButtonState::Released && self.context_menu_consumed_buttons.remove(&button) {
+        if state == ButtonState::Released && self.context_menu_consumed_buttons.remove(&(device, button)) {
             return;
         }
         if !seat_transition {
@@ -59,7 +59,7 @@ impl AureaCompositor {
                 if self.desktop_interactions.send(interaction).is_err() {
                     tracing::debug!("Shell context-menu receiver is no longer available");
                 }
-                self.context_menu_consumed_buttons.insert(button);
+                self.context_menu_consumed_buttons.insert((device, button));
                 self.request_all_output_frames();
                 return;
             }
@@ -182,6 +182,9 @@ impl AureaCompositor {
         };
 
         for button in buttons {
+            if self.context_menu_consumed_buttons.remove(&(device, button)) {
+                continue;
+            }
             pointer.button(
                 self,
                 &ButtonEvent {
