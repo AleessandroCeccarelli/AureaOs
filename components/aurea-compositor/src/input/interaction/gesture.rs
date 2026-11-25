@@ -37,5 +37,6 @@ pub enum PointingInteraction {
     PreviousWorkspace,
     NextWorkspace,
     Overview,
+    AppExpose,
     ContextMenu,
 }
