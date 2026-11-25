@@ -44,6 +44,33 @@ fn refresh_touchpad_settings(
     }
 }
 
+/// Reapplies saved touchpad profiles after a libseat session becomes active.
+///
+/// The input backend can retain device handles across VT switches while the
+/// underlying kernel devices and libinput configuration may have been reset.
+/// Invalidate the cache first, then configure every retained touchpad handle.
+pub(super) fn reapply_touchpad_settings(state: &mut WaylandState) {
+    state.applied_touchpad_settings.invalidate_all();
+    let devices = state.touchpad_devices.keys().copied().collect::<Vec<_>>();
+
+    for id in devices {
+        let settings = state.compositor.touchpad_settings_for(id);
+        let Some(device) = state.touchpad_devices.get_mut(&id) else {
+            continue;
+        };
+        let Some(report) = pointing::configure_touchpad(device, settings) else {
+            tracing::warn!(device_id = id.0, "Touchpad could not be reconfigured after session activation");
+            continue;
+        };
+
+        state.compositor.record_touchpad_configuration(id, report);
+        if !report.has_failures() {
+            state.applied_touchpad_settings.mark_applied(id, settings);
+        }
+        tracing::info!(device_id = id.0, ?report, "Restored touchpad preferences after session activation");
+    }
+}
+
 /// Drains shell requests and applies them to retained live libinput devices.
 pub(super) fn apply_pending_touchpad_settings(state: &mut WaylandState) {
     loop {
