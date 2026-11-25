@@ -2026,3 +2026,11 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Runtime asset root: `AUREA_HUMAN_INTERFACES_ROOT`; development points it at `aurea-human-interfaces`, installed systems default to `/usr/share/aureaos/human-interfaces`. Missing assets are reported once and do not abort compositor startup.
 - Added source tests for 1x/2x geometry and unrelated monitor clipping. Generated RGBA assets still need export and visual inspection. No build, rustfmt, check or tests were run.
 - Updated the shared PNG-to-RGBA converter to premultiply PNG's straight alpha, matching the Vulkan pipeline's `ONE / ONE_MINUS_SRC_ALPHA` blend factors and avoiding bright fringes around antialiased transparent artwork.
+
+
+### 2026-11-25 — Native cursor first-frame guarantee
+
+- Found a first-frame presentation gap in the asynchronous native-arrow upload: the startup-centering frame could finish without drawing the cursor, and no follow-up frame was guaranteed when no further input arrived.
+- The 32×32 RGBA cursor texture is now uploaded and completed once before the first frame that needs it. The texture remains cached for the Vulkan device lifetime, so later frames do not repeat the upload.
+- This prevents an idle desktop from remaining cursor-less after startup. It is a source-level fix, not a claim of physical movement validation.
+- No build, rustfmt, check or tests were run, as agreed; grouped Fedora validation remains pending.
