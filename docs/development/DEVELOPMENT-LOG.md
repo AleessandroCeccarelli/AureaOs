@@ -1735,3 +1735,8 @@ Audited the `DeviceAdded` path for capability changes. If a previously registere
 ### 2026-11-25 — Reject stale pointing events after hot-unplug
 
 Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/hold gestures, and touchscreen contacts. Late queued events for a removed device are ignored rather than forwarded into compositor state. Keyboard and tablet-tool handling remain separate. Validation is deferred to the planned grouped session; no build, test execution, or rustfmt run.
+
+
+- Reworked touchscreen seat-slot allocation to recycle released IDs after touch-up, device removal and seat-wide cancellation. This prevents a long-lived session from exhausting the monotonically increasing slot counter during normal use. Added source tests for slot reuse and isolation between simultaneous devices. Commit: `505e284`.
+- Expanded touchpad discovery to recognize devices that expose scroll methods even when tap-to-click, disable-while-typing and gesture capabilities are absent. The configuration path now shares the same discovery predicate. Added focused source tests. Commits: `f6c9cf8`, `ff722e3`, `908a00c`.
+- No build, Cargo check, rustfmt, test execution or hardware validation was run. Validation remains grouped until the pointing-device block is complete.
