@@ -1914,3 +1914,11 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 
 
 - Added a manager regression test proving duplicate physical press/release notifications from one mouse cannot generate duplicate Wayland seat transitions. Test source added but not executed.
+
+### 2026-11-25 — Connect desktop pointer clicks to selection
+
+- Wired primary clicks on the empty desktop to `select_desktop_item_at`: the item under the pointer is selected, the existing double-click tracker can emit activation, and empty space clears selection.
+- Wired secondary clicks on the empty desktop to update/clear selection before sending `ShowContextMenu` with the pointer's logical position.
+- Mapped Wayland surfaces retain precedence; right-clicks over application windows are still delivered to the client.
+- Commit: `80483c23`. Shell already stores the requested panel and position, but no graphical menu surface is implemented yet; the menu is not visually displayed at this stage.
+- No build, Cargo check, rustfmt, tests or physical mouse validation were run. Grouped Fedora verification remains pending.
