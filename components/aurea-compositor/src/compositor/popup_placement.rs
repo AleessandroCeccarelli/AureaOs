@@ -196,6 +196,18 @@ impl AureaCompositor {
         let mut changed = false;
 
         for (popup, positioner) in popups {
+            let popup_kind = PopupKind::Xdg(popup.clone());
+            let Ok(root) = find_popup_root_surface(&popup_kind) else {
+                continue;
+            };
+            if !self
+                .window_manager
+                .mapped_toplevels_with_location()
+                .any(|(toplevel, _)| toplevel.wl_surface() == &root)
+            {
+                continue;
+            }
+
             let geometry = constrain_geometry(self, &popup, positioner);
             popup.with_pending_state(|state| {
                 state.positioner = positioner;
