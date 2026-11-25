@@ -1711,3 +1711,11 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Made synthesized pointer-button releases deterministic by sorting the outstanding Linux button codes before dispatch.
 - Added focused PointerManager unit tests for per-device button isolation, stable multi-button release ordering, individual button release, per-device preference isolation and cleanup, and rejection of touchpad-only preferences on a mouse.
 - No build, Cargo check, rustfmt or test execution was run. These tests are queued for the agreed grouped validation pass.
+
+
+### 2026-11-25 — Order pointing-device hot-unplug cleanup
+
+- Reordered libinput `DeviceRemoved` handling so gesture ownership, active touch contacts, held pointer buttons, interaction state, routing/calibration state and per-device preferences are cleared before the pointing-device inventory entry is removed.
+- Removed touchpad apply-cache and retained libinput handle after compositor state cleanup, then reconciled touchscreen capability.
+- Added source tests for deterministic current-sysname ID derivation and clarified that `InputDeviceId` is session-scoped, not a persistent physical-device identity. Per-device settings remain runtime overrides.
+- No build, Cargo check, rustfmt, test execution or hardware validation was run; grouped validation remains pending.
