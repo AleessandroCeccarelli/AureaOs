@@ -1778,3 +1778,6 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Added focused source tests for malformed TOML and future format versions, including assertions that the original bytes remain unchanged after a rejected write.
 - Runtime settings can still be applied for the current session; persistence failure is reported through the existing warning path. The user's original file remains intact for recovery or a future migration.
 - No build, Cargo check, rustfmt, test execution or hardware validation was run. Grouped validation remains pending.
+
+
+- Follow-up hardening: profile loading now treats only an actual filesystem `NotFound` result as a first-run empty store. Permission and other I/O errors remain read-only failures; they cannot be mistaken for an absent file and then replaced.
