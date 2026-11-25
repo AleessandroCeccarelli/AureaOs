@@ -60,6 +60,12 @@ impl PointingDeviceService {
         } else {
             InputDeviceEvent::Connected(descriptor.clone())
         };
+        // A device can be re-announced with changed capabilities or a changed
+        // classification. Never expose a stale touchpad apply report as if it
+        // described a device that is no longer a touchpad.
+        if descriptor.kind != InputDeviceKind::Touchpad {
+            state.touchpad_reports.remove(&descriptor.id);
+        }
         state.devices.insert(descriptor.id, descriptor);
         publish(&mut state, event);
         true
@@ -229,6 +235,25 @@ mod tests {
         );
         assert_eq!(service.device(InputDeviceId(8)), Some(updated));
         assert_eq!(service.device_count(), 1);
+    }
+
+    #[test]
+    fn reclassification_away_from_touchpad_clears_old_touchpad_report() {
+        let service = PointingDeviceService::new();
+        let id = InputDeviceId(24);
+        let report = TouchpadApplyReport {
+            tap_to_click: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            two_finger_scroll: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+            tap_and_drag: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
+        };
+
+        assert!(service.connect(descriptor(24, InputDeviceKind::Touchpad)));
+        assert!(service.set_touchpad_report(id, report));
+        assert!(service.connect(descriptor(24, InputDeviceKind::Mouse)));
+        assert_eq!(service.device(id).unwrap().kind, InputDeviceKind::Mouse);
+        assert_eq!(service.touchpad_report(id), None);
     }
 
     #[test]
