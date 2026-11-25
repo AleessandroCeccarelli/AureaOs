@@ -185,6 +185,7 @@ mod tests {
             name: format!("Test device {id}"),
             vendor_id: None,
             product_id: None,
+            persistent_id: None,
             capabilities: InputDeviceCapabilities::new([StandardInputCapability::PointerMotion]),
         }
     }
