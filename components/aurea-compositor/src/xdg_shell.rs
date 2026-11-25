@@ -24,13 +24,13 @@ impl XdgShellHandler for AureaCompositor {
     }
 
     fn new_popup(&mut self, surface: PopupSurface, positioner: PositionerState) {
-        // Configure the popup using the geometry prescribed by xdg_positioner.
-        // Output-aware constraint adjustment is handled by the popup placement
-        // integration; this initial protocol step must still happen so clients
-        // can complete their initial configure/commit sequence.
+        // Resolve the output containing the popup anchor, then apply the
+        // XDG flip/slide/resize constraint-adjustment policy in parent space.
+        let geometry =
+            crate::compositor::popup_placement::constrain_geometry(self, &surface, positioner);
         surface.with_pending_state(|state| {
             state.positioner = positioner;
-            state.geometry = positioner.get_geometry();
+            state.geometry = geometry;
         });
 
         if let Err(error) = self.popup_manager().track_popup(PopupKind::Xdg(surface.clone())) {
@@ -58,12 +58,13 @@ impl XdgShellHandler for AureaCompositor {
         positioner: PositionerState,
         token: u32,
     ) {
-        // Preserve the protocol-provided positioner and acknowledge the request.
-        // The final geometry will gain output-aware constraint adjustment when
-        // popup placement is integrated with the output layout.
+        // Re-run output selection and XDG constraints for the replacement
+        // positioner before acknowledging the client's reposition token.
+        let geometry =
+            crate::compositor::popup_placement::constrain_geometry(self, &surface, positioner);
         surface.with_pending_state(|state| {
             state.positioner = positioner;
-            state.geometry = positioner.get_geometry();
+            state.geometry = geometry;
         });
 
         surface.send_repositioned(token);
