@@ -5,7 +5,7 @@
 
 //! Pointer button delivery and click-to-focus policy.
 
-use aurea_desktop_api::input::InputDeviceId;
+use aurea_desktop_api::input::{InputDeviceId, InputDeviceProvider};
 use smithay::{backend::input::ButtonState, input::pointer::ButtonEvent, utils::SERIAL_COUNTER};
 
 use super::AureaCompositor;
@@ -61,6 +61,24 @@ impl AureaCompositor {
             },
         );
         pointer.frame(self);
+    }
+
+    /// Releases every button still held by any physical pointer before the
+    /// native session is paused. This prevents a client from retaining a
+    /// logically pressed button across a VT switch when libinput cannot
+    /// deliver the corresponding physical release event.
+    pub(crate) fn release_all_pointer_buttons(&mut self, time: u32) {
+        let devices = self
+            .pointer_manager
+            .devices()
+            .devices()
+            .into_iter()
+            .map(|device| device.id)
+            .collect::<Vec<_>>();
+
+        for device in devices {
+            self.release_pointer_buttons_for_device(device, time);
+        }
     }
 
     /// Synthesizes releases for buttons still held by a device being removed.
