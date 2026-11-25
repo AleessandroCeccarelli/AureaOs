@@ -1719,3 +1719,11 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Removed touchpad apply-cache and retained libinput handle after compositor state cleanup, then reconciled touchscreen capability.
 - Added source tests for deterministic current-sysname ID derivation and clarified that `InputDeviceId` is session-scoped, not a persistent physical-device identity. Per-device settings remain runtime overrides.
 - No build, Cargo check, rustfmt, test execution or hardware validation was run; grouped validation remains pending.
+
+
+### 2026-11-25 — Centralize pointing-device lifecycle and reclassification
+
+- Routed device discovery and disconnect through compositor methods backed by `PointerManager`; registry mutation is now crate-private.
+- Reconciled per-device settings when a device is re-announced with a changed kind, preserving only compatible pointer settings and clearing touchpad-only state/report data when appropriate.
+- Unified disconnect ordering: clear compositor/protocol state first, then remove manager preferences, pressed-button bookkeeping and inventory; the libinput backend then drops retained handles and applied-setting cache.
+- Added source-level tests for reclassification, stale touchpad report cleanup and disconnect state removal. No build, Cargo check, rustfmt, tests or hardware validation were run; grouped validation remains pending.
