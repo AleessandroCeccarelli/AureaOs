@@ -80,7 +80,7 @@ impl AureaCompositor {
             .context_menu_position()
             .and_then(|anchor| self.context_menu_layout(anchor));
         RenderScene::from_window_manager(&self.window_manager)
-            .with_context_menu(context_menu)
+            .with_context_menu(context_menu, self.desktop_manager.theme())
             .with_desktop(self.desktop_manager.snapshot())
             .with_desktop_items(
                 crate::desktop::DesktopItemsSnapshot::capture(&self.desktop_items)
