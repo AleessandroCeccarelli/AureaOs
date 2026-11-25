@@ -240,7 +240,7 @@ impl<'a> RenderScene<'a> {
                 Kind::Unspecified,
             ));
 
-            for (popup, popup_offset) in PopupManager::popups_for_surface(root) {
+            for (popup, popup_offset) in PopupManager::popups_for_surface(root).collect::<Vec<_>>().into_iter().rev() {
                 let popup_origin = toplevel.location + popup_offset - popup.geometry().loc;
                 let popup_location: Point<i32, Physical> = Point::<f64, Logical>::from((
                     f64::from(popup_origin.x) - f64::from(output_origin.0),
