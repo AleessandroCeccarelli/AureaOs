@@ -106,6 +106,9 @@ jobs:
       - name: Test the AureaOS media decoder with HEIF enabled
         run: cargo test -p aurea-media --features heif
 
+      - name: Compile the production desktop with HEIF enabled
+        run: cargo check -p aurea-desktop --features heif
+
       - name: Compile and link the libheif-rs decode API probe
         run: |
           set -eu

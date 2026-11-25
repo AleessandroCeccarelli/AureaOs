@@ -1732,3 +1732,12 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Rilevamento asset wallpaper e dispatch decoder riconoscono ora HEIC/AVIF, mantenendo le API codec fuori dal renderer compositor. Nessun supporto video o immagini animate è stato introdotto.
 - Aggiunto un job CI Debian 13 per installare i soli plugin decoder selezionati e compilare/testare la feature reale Aurea Media. Il primo tentativo si è fermato per un re-export Rust privato e perché Rust 1.85 Debian è troppo vecchio per `image 0.25.10` (richiede Rust 1.88). Entrambi i problemi sono stati corretti; la prossima esecuzione raggruppata deve confermare il risultato.
 - Rust formatting resta rinviato alla sessione Fedora raggruppata. Nessuna build/test locale Fedora eseguiti. Restano da completare revisione sicurezza, fixture HEIC/AVIF reali, parità pacchetti Fedora e manifest runtime.
+
+
+### 2026-11-25 — Abilitazione HEIC/AVIF nell'immagine desktop di produzione
+
+- La revisione del sorgente ha confermato che worker media, servizio di decodifica wallpaper, cache texture Vulkan e renderer sono già collegati. Il collegamento mancante era nella build dell'ISO: il hook compilava `aurea-desktop` senza attivare la feature HEIF opzionale e l'immagine target non installava i plugin runtime libheif.
+- Aggiunta la feature opt-in `heif` ad `aurea-desktop`, inoltrata a `aurea-compositor/heif`. La build workspace predefinita resta indipendente da libheif nativo.
+- Il hook Debian Live compila ora il desktop con `--features heif`, installa soltanto `libheif1`, `libheif-plugin-libde265` e `libheif-plugin-dav1d` per immagini statiche HEVC/AV1 e rimuove `libheif-dev` dopo la compilazione.
+- Aggiunto un controllo CI Debian 13 che compila l'intera catena di dipendenze di `aurea-desktop` con HEIF attivo, oltre ai test del crate media.
+- Nessuna build, cargo check, test o rustfmt locale Fedora eseguiti. La prossima CI deve verificare la feature di produzione e l'integrazione dei pacchetti. Revisione sicurezza/licenze e fixture HEIC/AVIF reali restano da completare.

@@ -3,7 +3,7 @@
 # AureaOS ISO Factory
 
 **Status:** operating procedure and target specification  
-**Last reviewed:** 2026-11-23  
+**Last reviewed:** 2026-11-25  
 **Repository:** `AleessandroCeccarelli/AureaOs`  
 **Primary branch:** `main`  
 **Target platform:** Debian GNU/Linux 13 (Trixie), amd64
@@ -201,6 +201,8 @@ The repository already has a working foundation, but ISO Factory is not yet a fu
 ### Implemented in the repository as inspected on 2026-11-23
 
 - Debian Trixie amd64 live-build configuration.
+- Production desktop build enables the opt-in `heif` feature, while ordinary development builds remain free of a mandatory native libheif dependency.
+- The target image installs `libheif1` and only the HEVC/AV1 still-image decoder plugins; `libheif-dev` is removed after compilation.
 - Podman wrapper using a Debian Trixie container.
 - Persistent live-build workspace and workspace serialization with `flock`.
 - Resume path for an interrupted build.

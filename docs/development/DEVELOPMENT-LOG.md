@@ -1656,3 +1656,12 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Wallpaper asset detection and decoding dispatch now recognize HEIC/AVIF while keeping codec APIs out of the compositor renderer. No video or animated-image support was introduced.
 - Added a Debian 13 CI job to install selected decoder-only plugins and compile/test the real Aurea Media feature. First CI attempt failed due to a private re-export and Debian Rust 1.85 being too old for `image 0.25.10` (requires Rust 1.88). Both issues were corrected; the next grouped CI run must confirm the result.
 - Rust formatting remains deferred to the grouped Fedora session. No local Fedora build/test was run. Security review, real HEIC/AVIF fixtures, Fedora package parity and runtime manifest work remain pending.
+
+
+### 2026-11-25 — Enable HEIC/AVIF in the production desktop image
+
+- Source review confirmed the wallpaper decode worker, wallpaper decode service, Vulkan texture cache and frame renderer are already connected. The remaining integration gap was the production ISO build: it compiled `aurea-desktop` without enabling the optional HEIF feature, and the target image did not include libheif runtime plugins.
+- Added an opt-in `heif` feature to `aurea-desktop`, forwarding to `aurea-compositor/heif`. The default workspace build remains independent of native libheif.
+- The Debian Live hook now builds the desktop with `--features heif`, installs only `libheif1`, `libheif-plugin-libde265` and `libheif-plugin-dav1d` for HEVC/AV1 still images, and removes `libheif-dev` after compilation.
+- Added a Debian 13 CI step to compile the complete `aurea-desktop` dependency graph with HEIF enabled, in addition to the media crate tests.
+- No local Fedora build, Cargo check, test or rustfmt was run. The next CI run must verify the production feature graph and package integration. Security/licence review and real HEIC/AVIF fixtures remain open gates.

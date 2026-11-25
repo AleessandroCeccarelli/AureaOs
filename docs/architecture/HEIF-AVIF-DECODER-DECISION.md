@@ -110,3 +110,12 @@ Before enabling the adapter in the default workspace build:
 - The adapter applies input, pixel, dimension and native decoder memory limits; rejects sequence/multi-image input; verifies the requested format against ISO-BMFF brands; and copies the RGBA plane row-by-row into owned tightly packed memory.
 - A dedicated Debian 13 CI job installs libheif development headers and selected decoder plugins, then compiles/tests Aurea Media with `heif` enabled. Its first run exposed a Rust visibility error and Debian's distro Rust 1.85 being too old for the resolved `image` crate (MSRV 1.88). Both causes have been addressed in source/workflow, but the corrected run is still required.
 - Parser security/maintenance review, actual HEIC/AVIF fixture tests, Fedora package parity and runtime package manifest review remain open gates. This is an opt-in implementation under validation, not yet production approval.
+
+
+## Production desktop integration — 25 November 2026
+
+- `aurea-desktop` now exposes an opt-in `heif` feature that forwards to `aurea-compositor/heif`; the default development workspace remains independent of native libheif.
+- The Debian Live build hook explicitly enables `--features heif` when compiling the production desktop binary.
+- The target image installs `libheif1`, `libheif-plugin-libde265` and `libheif-plugin-dav1d` as runtime-only decoder packages. `libheif-dev` is used during compilation and purged before the image is finalized.
+- Debian 13 CI now checks the full `aurea-desktop` feature graph with HEIF enabled, not only the standalone media crate.
+- This closes the source-to-production-build wiring gap; it does not close the parser security, licensing, real-fixture or physical-hardware validation gates.

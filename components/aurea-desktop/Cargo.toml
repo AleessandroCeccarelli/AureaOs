@@ -11,6 +11,11 @@ edition = "2024"
 description = "Desktop entry point and composition root for AureaOS"
 license = "GPL-3.0-or-later"
 
+[features]
+default = []
+# Enable decoder-only HEIC/AVIF support in the production desktop image.
+heif = ["aurea-compositor/heif"]
+
 [dependencies]
 aurea-desktop-api = { path = "../aurea-desktop-api" }
 aurea-shell = { path = "../aurea-shell" }

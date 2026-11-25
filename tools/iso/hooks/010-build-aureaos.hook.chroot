@@ -41,6 +41,7 @@ rustc +stable --version
 cargo +stable build \
     --manifest-path "$SOURCE/Cargo.toml" \
     --release --locked \
+    --features heif \
     --package aurea-desktop \
     --bin aurea-desktop
 
@@ -64,7 +65,7 @@ systemctl --root=/ set-default multi-user.target
 DEBIAN_FRONTEND=noninteractive apt-get purge -y -- \
     curl build-essential pkg-config glslang-tools \
     libvulkan-dev libudev-dev libinput-dev libseat-dev libgbm-dev \
-    libdrm-dev libxkbcommon-dev libwayland-dev
+    libdrm-dev libxkbcommon-dev libwayland-dev libheif-dev
 
 # Rebuild and inspect the initramfs after all package installation and cleanup.
 # This catches a missing live-boot backend before live-build assembles the ISO.
