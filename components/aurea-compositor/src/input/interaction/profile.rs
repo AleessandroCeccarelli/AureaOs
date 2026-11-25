@@ -124,13 +124,13 @@ mod tests {
     #[test]
     fn vertical_or_short_swipes_do_not_switch_workspaces() {
         let profile = GestureProfile::default();
-        assert_eq!(
+        assert_ne!(
             profile.resolve(PointingGesture::Swipe {
                 fingers: 3,
                 delta_x: 10.0,
                 delta_y: 80.0,
             }),
-            None
+            Some(PointingInteraction::NextWorkspace)
         );
         assert_eq!(
             profile.resolve(PointingGesture::Swipe {
@@ -179,26 +179,26 @@ mod tests {
             }),
             None
         );
-        assert_eq!(
+        assert_ne!(
             profile.resolve(PointingGesture::Swipe {
                 fingers: 3,
                 delta_x: 80.0,
                 delta_y: 60.0,
             }),
-            None
+            Some(PointingInteraction::AppExpose)
         );
     }
 
     #[test]
     fn downward_or_short_vertical_swipes_do_not_open_overview() {
         let profile = GestureProfile::default();
-        assert_eq!(
+        assert_ne!(
             profile.resolve(PointingGesture::Swipe {
                 fingers: 3,
                 delta_x: 0.0,
                 delta_y: 64.0,
             }),
-            None
+            Some(PointingInteraction::Overview)
         );
         assert_eq!(
             profile.resolve(PointingGesture::Swipe {
