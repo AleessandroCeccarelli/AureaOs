@@ -98,6 +98,9 @@ pub struct InputDeviceDescriptor {
     pub name: String,
     pub vendor_id: Option<u16>,
     pub product_id: Option<u16>,
+    /// Stable, privacy-preserving physical identity for persistent preferences.
+    /// This is absent when the backend cannot establish a reliable identity.
+    pub persistent_id: Option<String>,
     pub capabilities: InputDeviceCapabilities,
 }
 
