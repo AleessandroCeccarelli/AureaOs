@@ -500,6 +500,9 @@ pub(super) fn render_frame(
     }
 
     for (surface, binding) in visible.iter().zip(bindings.iter()) {
+        if surface.is_cursor {
+            continue;
+        }
         let geometry = surface.geometry;
         let scissor = surface.scissor;
         let viewport = vk::Viewport {
@@ -554,6 +557,50 @@ pub(super) fn render_frame(
             viewport,
             scissor,
             0,
+        )
+        .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+    }
+
+    // Client-provided cursor surfaces are kept above the desktop menu.
+    for (surface, binding) in visible.iter().zip(bindings.iter()) {
+        if !surface.is_cursor {
+            continue;
+        }
+        let geometry = surface.geometry;
+        let scissor = surface.scissor;
+        let viewport = vk::Viewport {
+            x: geometry.x() as f32,
+            y: geometry.y() as f32,
+            width: geometry.width() as f32,
+            height: geometry.height() as f32,
+            min_depth: 0.0,
+            max_depth: 1.0,
+        };
+        let scissor = vk::Rect2D {
+            offset: vk::Offset2D {
+                x: i32::try_from(scissor.x)
+                    .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                y: i32::try_from(scissor.y)
+                    .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+            },
+            extent: vk::Extent2D {
+                width: scissor.width,
+                height: scissor.height,
+            },
+        };
+
+        VulkanDrawPass::record_textured_region(
+            command_buffer.handle(),
+            composition_view,
+            &pipeline,
+            binding,
+            0,
+            VulkanImageState::General,
+            VulkanImageState::General,
+            VulkanColorLoad::Load,
+            viewport,
+            scissor,
+            surface.texture_transform,
         )
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
