@@ -79,6 +79,27 @@ impl DesktopIconAssetDescriptor {
     }
 }
 
+/// Resolves the pre-rasterized desktop context-menu artwork for the active theme.
+pub(crate) fn desktop_context_menu_asset(
+    theme: DesktopTheme,
+) -> DesktopIconAssetDescriptor {
+    let (theme_name, asset_id) = match theme {
+        DesktopTheme::Light => ("light", "system:context-menu:light"),
+        DesktopTheme::Dark => ("dark", "system:context-menu:dark"),
+    };
+
+    DesktopIconAssetDescriptor {
+        key: DesktopIconTextureKey {
+            asset_id,
+            revision: 1,
+            pixel_size: 256,
+        },
+        relative_path: format!(
+            "aurea-human-interfaces/icons/generated/context-menu/context-menu-{theme_name}-256.rgba"
+        ),
+    }
+}
+
 /// Resolves the approved Trash artwork for the current appearance and contents.
 ///
 /// Other item kinds deliberately return no asset until their canonical artwork
@@ -134,6 +155,19 @@ mod tests {
     };
     use crate::desktop::DesktopTheme;
     use aurea_desktop_api::desktop::DesktopManager;
+
+    #[test]
+    fn resolves_context_menu_artwork_from_the_shared_human_interfaces_library() {
+        let light = super::desktop_context_menu_asset(DesktopTheme::Light);
+        let dark = super::desktop_context_menu_asset(DesktopTheme::Dark);
+
+        assert_eq!(light.key.asset_id, "system:context-menu:light");
+        assert_eq!(dark.key.asset_id, "system:context-menu:dark");
+        assert_eq!(light.key.pixel_size, 256);
+        assert_eq!(dark.key.pixel_size, 256);
+        assert!(light.relative_path.ends_with("context-menu-light-256.rgba"));
+        assert!(dark.relative_path.ends_with("context-menu-dark-256.rgba"));
+    }
 
     #[test]
     fn resolves_every_approved_theme_and_trash_state() {
