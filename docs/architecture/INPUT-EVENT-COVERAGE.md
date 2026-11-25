@@ -317,3 +317,9 @@ This is input/state behavior, not a rendered menu. The native panel renderer and
 A technology-independent menu layout contract now defines the initial four desktop commands and logical row hit regions. `DesktopContextMenuLayout::command_at` resolves only actionable rows; padding remains part of the panel but does not activate an item. Placement is constrained to the target output using the shared desktop panel geometry helper.
 
 This is source-level API groundwork only. The compositor does not yet consume this layout for pointer hit testing, and selecting a row does not yet dispatch a shell command. The Vulkan panel renderer and visible menu remain incomplete. Tests were added but not executed; no build, fmt or check was run.
+
+### Context-menu command handoff — 2026-11-25
+
+The shared desktop interaction contract now carries a typed `ContextMenuCommandSelected` event. The command exposes a canonical Italian label (`Usa come sfondo` for wallpaper selection). ShellRuntime closes the menu and queues the command for its owning service; it does not perform filesystem or settings operations itself.
+
+This establishes semantic dispatch only. Pointer hit-testing against the visible menu and the actual command services are still pending. Source tests were added but not executed; no build/fmt/check was run.
