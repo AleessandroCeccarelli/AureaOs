@@ -16,6 +16,18 @@ pub enum DesktopContextMenuCommand {
     OpenPersonalization,
 }
 
+impl DesktopContextMenuCommand {
+    /// Returns the user-facing Italian label for this command.
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::CreateFolder => "Crea cartella",
+            Self::UseAsWallpaper => "Usa come sfondo",
+            Self::OpenDisplaySettings => "Impostazioni schermo",
+            Self::OpenPersonalization => "Personalizzazione",
+        }
+    }
+}
+
 /// One actionable row in the desktop context menu.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DesktopContextMenuItem {
@@ -118,13 +130,14 @@ mod tests {
     fn lays_out_four_rows_with_stable_commands() {
         let menu = DesktopContextMenuLayout::at(DesktopPoint::new(300, 200), output()).unwrap();
         assert_eq!(menu.items().len(), 4);
+        assert_eq!(menu.items()[1].command().label(), "Usa come sfondo");
         assert_eq!(
             menu.command_at(DesktopPoint::new(310, 220)),
             Some(DesktopContextMenuCommand::CreateFolder)
         );
         assert_eq!(
             menu.command_at(DesktopPoint::new(310, 256)),
-            Some(DesktopContextMenuCommand::ChangeWallpaper)
+            Some(DesktopContextMenuCommand::UseAsWallpaper)
         );
         assert_eq!(
             menu.command_at(DesktopPoint::new(310, 292)),
