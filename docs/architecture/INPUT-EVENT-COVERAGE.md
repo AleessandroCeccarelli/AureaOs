@@ -83,3 +83,21 @@ When a tablet is mapped to the full desktop, the rectangular calibration extent 
 - Device removal reuses the same cancellation path before clearing the remaining per-device settings and mappings.
 - The slot registry exposes `clear_all` to make the seat-wide reset explicit and has a unit test proving that contacts from all devices are removed.
 - This is a source-level correction only. No build, Cargo check, rustfmt, test execution or hardware validation was performed; grouped validation remains pending.
+
+
+## Touchpad interaction profile — 2026-11-25
+
+AureaOS adopts a macOS-inspired touchpad profile while keeping the behavior native to Linux/libinput and Wayland rather than emulating macOS drivers:
+
+- One-finger movement controls the pointer; ordinary mouse buttons and wheel events retain standard libinput semantics.
+- Two-finger scrolling is handled by the existing axis path. Natural scrolling remains a per-device preference and is applied only when the hardware/driver supports it.
+- Pinch and swipe sequences continue to be forwarded through the Wayland pointer-gestures protocol to applications that support them.
+- Three-finger horizontal swipes switch workspaces; three-finger upward swipes open AureaOS Overview. Direction and minimum-distance checks prevent short or predominantly vertical movement from accidentally switching workspaces.
+- Four-finger pinch remains an Overview shortcut as an additional gesture.
+- Tap-to-click, tap-and-drag and disable-while-typing remain per-device libinput settings, with capability-aware status reporting.
+
+The three-finger upward Overview binding is now part of `GestureProfile` and has focused unit tests for direction and threshold. Downward swipe/App Exposé, Launchpad-style gesture, configurable finger counts, gesture sensitivity UI and per-device gesture profiles are intentionally not claimed as implemented yet. They need explicit shell actions and settings contracts before being added.
+
+Mouse handling remains standards-based: left/right/middle and additional buttons where exposed, relative/absolute motion, vertical/horizontal wheel axes, acceleration profile/speed and per-device settings. Gaming-specific DPI buttons, vendor macros or aim-assist features are not assumed; those are hardware/vendor-specific and should only appear when reliably exposed by libinput.
+
+No build, Cargo check, rustfmt or test execution was performed for this source update; grouped validation remains pending.
