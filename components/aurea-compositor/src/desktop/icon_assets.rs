@@ -95,7 +95,7 @@ pub(crate) fn desktop_context_menu_asset(
             pixel_size: 256,
         },
         relative_path: format!(
-            "aurea-human-interfaces/icons/generated/context-menu/context-menu-{theme_name}-256.rgba"
+            "icons/generated/context-menu/context-menu-{theme_name}-256.rgba"
         ),
     }
 }
