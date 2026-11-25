@@ -15,7 +15,7 @@ use aurea_desktop_api::{
 
 use smithay::{
     backend::input::Keycode,
-    input::{Seat, SeatHandler, SeatState, pointer::CursorImageStatus, touch::TouchHandle},
+    input::{Seat, SeatHandler, SeatState, pointer::{CursorImageStatus, Focus}, touch::TouchHandle},
     output::Output,
     reexports::wayland_server::{
         DisplayHandle,
@@ -250,6 +250,37 @@ impl AureaCompositor {
     pub(crate) fn commit_popup_surface(&mut self, surface: &WlSurface) {
         self.popup_manager.commit(surface);
         self.popup_manager.cleanup();
+    }
+
+    /// Starts the protocol-mandated pointer and keyboard grabs for an XDG popup.
+    pub(crate) fn start_popup_grab(
+        &mut self,
+        popup: smithay::desktop::PopupKind,
+        seat_resource: &smithay::reexports::wayland_server::protocol::wl_seat::WlSeat,
+        serial: smithay::utils::Serial,
+    ) -> Result<(), smithay::desktop::PopupGrabError> {
+        use smithay::desktop::{
+            PopupKeyboardGrab, PopupPointerGrab, find_popup_root_surface,
+        };
+
+        let Some(seat) = Seat::<Self>::from_resource(seat_resource) else {
+            return Err(smithay::desktop::PopupGrabError::InvalidGrab);
+        };
+        let (Some(pointer), Some(keyboard)) = (seat.get_pointer(), seat.get_keyboard()) else {
+            return Err(smithay::desktop::PopupGrabError::InvalidGrab);
+        };
+
+        let root = find_popup_root_surface(&popup)?;
+        let grab = self
+            .popup_manager
+            .grab_popup::<Self>(root, popup, &seat, serial)?;
+
+        // Both capabilities share the same PopupGrab serial. Smithay's default
+        // handlers keep focus inside the popup tree, dismiss on outside clicks,
+        // and restore the root surface when the grab ends.
+        keyboard.set_grab(self, PopupKeyboardGrab::new(&grab), serial);
+        pointer.set_grab(self, PopupPointerGrab::new(&grab), serial, Focus::Keep);
+        Ok(())
     }
 
     /// Returns the cursor image currently requested by the focused Wayland client.
