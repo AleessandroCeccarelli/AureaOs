@@ -1757,3 +1757,11 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Individuato un caso concreto di stato bloccato: se il mouse tiene premuto un pulsante durante un cambio VT, il rilascio fisico può non arrivare mentre la sessione è sospesa.
 - Aggiunta la liberazione di tutti i pulsanti logici prima che libseat sospenda la sessione. La logica aggregata evita doppi rilasci quando più mouse tengono premuto lo stesso pulsante.
 - Non dichiaro ancora il mouse completato: mancano build/test raggruppati su Fedora e prova fisica di movimento, clic, rotellina, scollegamento/ricollegamento e cambio VT.
+
+
+### 25 novembre 2026 — Menu contestuale con tasto destro del mouse
+
+- Aggiunto il comportamento standard del clic destro sul desktop: seleziona l'elemento sotto il puntatore (oppure deseleziona se si clicca sullo spazio vuoto) e invia alla Shell la richiesta di apertura del menu contestuale.
+- Sulle finestre applicative il clic destro continua a essere consegnato normalmente al client Wayland, che mantiene il proprio menu contestuale.
+- Il clic destro non altera il riconoscimento del doppio clic sinistro.
+- Modifica sorgente e documentazione; nessuna build, cargo check, rustfmt, test o prova con mouse fisico eseguiti.
