@@ -6,6 +6,7 @@
 use crate::AureaCompositor;
 use smithay::{
     delegate_xdg_shell,
+    desktop::PopupKind,
     reexports::wayland_server::protocol::wl_seat,
     utils::Serial,
     wayland::shell::xdg::{
@@ -31,6 +32,11 @@ impl XdgShellHandler for AureaCompositor {
             state.positioner = positioner;
             state.geometry = positioner.get_geometry();
         });
+
+        if let Err(error) = self.popup_manager().track_popup(PopupKind::Xdg(surface.clone())) {
+            tracing::warn!(?error, "Unable to register new XDG popup");
+            return;
+        }
 
         if let Err(error) = surface.send_configure() {
             tracing::warn!(?error, "Unable to configure new XDG popup");
