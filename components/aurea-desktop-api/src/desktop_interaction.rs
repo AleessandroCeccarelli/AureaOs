@@ -239,6 +239,7 @@ mod tests {
 
         sender.send(DesktopInteraction::DismissContextMenu).unwrap();
         assert!(!sender.context_menu_is_open());
+        assert_eq!(sender.context_menu_position(), None);
         assert_eq!(
             receiver.try_recv(),
             Ok(DesktopInteraction::DismissContextMenu)
