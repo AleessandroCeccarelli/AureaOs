@@ -6,7 +6,7 @@
 //! Backend-independent touchpad preferences and capability reporting.
 
 /// Preferred software clickpad behavior.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum TouchpadClickMethod {
     /// Preserve the hardware/libinput default for this device.
     #[default]
@@ -55,7 +55,8 @@ pub enum TouchpadSendEventsMode {
 ///
 /// The five-argument constructor is kept stable for existing callers. More
 /// advanced preferences are opt-in through builder-style methods.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct TouchpadSettings {
     tap_to_click: bool,
     two_finger_scroll: bool,
