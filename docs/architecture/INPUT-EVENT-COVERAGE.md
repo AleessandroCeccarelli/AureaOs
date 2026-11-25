@@ -3,7 +3,7 @@
 # AureaOS — Input Event Coverage Audit
 
 **Status:** source/API audit, not runtime validation  
-**Backend baseline:** Smithay 0.7 / libinput  
+**Backend baseline:** Smithay 0.7.0 / input 0.9.1 / libinput 1.21 API minimum  
 **Last reviewed:** 25 November 2026
 
 ## Purpose
@@ -42,6 +42,12 @@ Smithay 0.7 `backend::input::InputEvent` includes:
 | Switch toggle | State-change diagnostic only; no lid/tablet-mode policy | Not implemented |
 | Tablet pad controls | No corresponding Smithay 0.7 InputEvent path | Not available through this event API |
 | Special backend events | No AureaOS policy | Ignored |
+
+## Native input dependency policy — 2026-11-25
+
+- Smithay is an ordinary crates.io Rust dependency, pinned to `=0.7.0`; Cargo fetches it and records the exact resolved crate graph in `Cargo.lock`. AureaOS does not copy Smithay source into its repository.
+- The compositor activates Smithay's `backend_libinput` only for the native DRM backend. An optional direct dependency on the exact locked `input 0.9.1` crate enables its `libinput_1_21` feature under the same backend feature. Cargo unifies that feature with Smithay's re-exported input dependency, exposing DWTP without forking Smithay.
+- Debian 13's packaged libinput 1.28.1 and Debian 12's 1.22.1 both exceed the 1.21 API minimum. This is the current native-backend build baseline; older libinput versions need a separate compatibility build strategy.
 
 ## Source changes in this audit
 
