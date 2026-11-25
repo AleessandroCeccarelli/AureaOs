@@ -3,13 +3,11 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Asynchronous lifetime management for the compositor-owned native cursor.
+//! One-time GPU initialization for the compositor-owned native cursor.
 
 use std::{error::Error, fmt, sync::Arc};
 
-use super::{
-    VulkanLogicalDevice, VulkanPendingUpload, VulkanShmTexture, VulkanShmTextureError,
-};
+use super::{VulkanLogicalDevice, VulkanShmTexture, VulkanShmTextureError};
 
 /// Errors produced while creating or uploading the native cursor texture.
 #[derive(Debug)]
@@ -31,21 +29,21 @@ impl fmt::Display for VulkanNativeCursorTextureError {
 
 impl Error for VulkanNativeCursorTextureError {}
 
-/// Owns the native cursor texture and its in-flight upload until its fence signals.
+/// Owns the built-in arrow texture for the lifetime of the Vulkan device.
+///
+/// The arrow is only 32×32 RGBA pixels. Its one-time upload is completed before
+/// the first frame that needs it, so the initial desktop frame cannot silently
+/// omit the pointer while waiting for a later input event to trigger a redraw.
 pub(crate) struct VulkanNativeCursorTexture {
     texture: Option<Arc<VulkanShmTexture>>,
-    pending_upload: Option<VulkanPendingUpload<Vec<Arc<VulkanShmTexture>>>>,
 }
 
 impl VulkanNativeCursorTexture {
     pub(crate) fn new() -> Self {
-        Self {
-            texture: None,
-            pending_upload: None,
-        }
+        Self { texture: None }
     }
 
-    /// Starts an upload or promotes its completed result without blocking a frame.
+    /// Initializes the arrow texture once and returns whether it is ready.
     pub(crate) fn ensure(
         &mut self,
         device: Arc<VulkanLogicalDevice>,
@@ -54,40 +52,18 @@ impl VulkanNativeCursorTexture {
             return Ok(true);
         }
 
-        if let Some(upload) = self.pending_upload.as_ref() {
-            let complete = upload
-                .is_complete()
-                .map_err(|error| {
-                    VulkanNativeCursorTextureError::Texture(
-                        VulkanShmTextureError::Command(error),
-                    )
-                })?;
-            if !complete {
-                return Ok(false);
-            }
-
-            let upload = self
-                .pending_upload
-                .take()
-                .expect("pending cursor upload was checked above");
-            let mut textures = upload.wait().map_err(|error| {
-                VulkanNativeCursorTextureError::Texture(
-                    VulkanShmTextureError::Command(error),
-                )
-            })?;
-            let texture = textures
-                .pop()
-                .ok_or(VulkanNativeCursorTextureError::EmptyUpload)?;
-            self.texture = Some(texture);
-            return Ok(true);
-        }
-
         let snapshot = crate::render::cursor::default_cursor_snapshot()
             .map_err(|error| VulkanNativeCursorTextureError::Snapshot(error.to_string()))?;
         let upload = VulkanShmTexture::submit_snapshots(device, vec![snapshot])
             .map_err(VulkanNativeCursorTextureError::Texture)?;
-        self.pending_upload = Some(upload);
-        Ok(false)
+        let mut textures = upload.wait().map_err(|error| {
+            VulkanNativeCursorTextureError::Texture(VulkanShmTextureError::Command(error))
+        })?;
+        let texture = textures
+            .pop()
+            .ok_or(VulkanNativeCursorTextureError::EmptyUpload)?;
+        self.texture = Some(texture);
+        Ok(true)
     }
 
     pub(crate) fn texture(&self) -> Option<&VulkanShmTexture> {
