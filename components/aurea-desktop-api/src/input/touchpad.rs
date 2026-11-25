@@ -64,7 +64,11 @@ impl TouchpadSettings {
             natural_scrolling,
             disable_while_typing,
             tap_and_drag,
-            ..Self::default()
+            edge_scrolling: false,
+            click_method: TouchpadClickMethod::Clickfinger,
+            left_handed: false,
+            middle_button_emulation: false,
+            pointer_speed_percent: 0,
         }
     }
 
