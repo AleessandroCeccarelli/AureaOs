@@ -1805,3 +1805,16 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
   sufficient evidence that the pinned dependency can support it.
 - No Cargo build, formatting, test suite or hardware validation was run; these
   changes remain queued for the grouped Fedora validation pass.
+
+
+## 2026-11-25 — Restore touchpad preferences after session activation
+
+- Added an explicit invalidation operation for the runtime cache of applied
+  touchpad profiles.
+- On successful libseat session activation, AureaOS now reapplies the saved
+  profile to each retained touchpad libinput handle after graphics/device
+  restoration. This covers VT pause/resume without treating it as a physical
+  disconnect and preserves persistent hardware identity.
+- Failed or unsupported settings remain represented in the per-setting report;
+  incomplete profiles are not marked fully applied and can be retried later.
+- No build, rustfmt, tests or physical-device validation performed.
