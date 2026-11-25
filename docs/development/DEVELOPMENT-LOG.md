@@ -1727,3 +1727,7 @@ Continue auditing input and interaction modules for correct event routing, lifec
 - Reconciled per-device settings when a device is re-announced with a changed kind, preserving only compatible pointer settings and clearing touchpad-only state/report data when appropriate.
 - Unified disconnect ordering: clear compositor/protocol state first, then remove manager preferences, pressed-button bookkeeping and inventory; the libinput backend then drops retained handles and applied-setting cache.
 - Added source-level tests for reclassification, stale touchpad report cleanup and disconnect state removal. No build, Cargo check, rustfmt, tests or hardware validation were run; grouped validation remains pending.
+
+### 2026-11-25 — Clean up unsupported pointing-device re-announcements
+
+Audited the `DeviceAdded` path for capability changes. If a previously registered pointing device is re-announced under the same sysname but no longer yields a supported pointing descriptor, AureaOS now disconnects it through the compositor lifecycle boundary, clears touchpad runtime caches, and synchronizes touchscreen capability. Added a PointerManager regression test proving that a same-ID reconnect does not inherit the previous connection's pressed buttons or per-device preferences. Source-level tests added but not executed; no build or rustfmt run, in accordance with the grouped validation plan.
