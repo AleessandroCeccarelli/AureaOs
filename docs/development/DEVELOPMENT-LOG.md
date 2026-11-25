@@ -1922,3 +1922,12 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Mapped Wayland surfaces retain precedence; right-clicks over application windows are still delivered to the client.
 - Commit: `80483c23`. Shell already stores the requested panel and position, but no graphical menu surface is implemented yet; the menu is not visually displayed at this stage.
 - No build, Cargo check, rustfmt, tests or physical mouse validation were run. Grouped Fedora verification remains pending.
+
+
+### 2026-11-25 — Initial XDG popup configure and reposition
+
+- Implemented the initial XDG popup configure path in `aurea-compositor/src/xdg_shell.rs`: preserve the supplied `PositionerState`, derive the protocol geometry with `get_geometry()`, and send `send_configure()`.
+- Implemented the reposition response: update pending positioner/geometry state and acknowledge with `send_repositioned(token)`. Both paths request output frames.
+- This is protocol lifecycle progress only. Output-aware constraint adjustment, per-seat PopupManager and coordinated pointer/keyboard grabs, popup rendering, popup hit testing and dismissal behavior remain incomplete.
+- `grab` intentionally remains unimplemented rather than emulating an incorrect partial grab.
+- No build, Cargo check, rustfmt, tests or hardware validation were run. Grouped Fedora verification remains pending.
