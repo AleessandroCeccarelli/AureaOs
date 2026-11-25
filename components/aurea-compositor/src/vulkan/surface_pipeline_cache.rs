@@ -267,9 +267,11 @@ impl VulkanSurfacePipelineCache {
         let Some(snapshot) = self.context_menu_assets.get(&key).and_then(Option::as_ref) else {
             return Ok(None);
         };
-        self.desktop_icon_texture_cache
-            .prepare(&[(key, snapshot.clone())])
-            .map_err(|error| error.to_string())?;
+        if self.desktop_icon_texture_cache.texture(key).is_none() {
+            self.desktop_icon_texture_cache
+                .prepare(&[(key, snapshot.clone())])
+                .map_err(|error| error.to_string())?;
+        }
         Ok(Some(key))
     }
 
