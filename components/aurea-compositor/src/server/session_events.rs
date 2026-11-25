@@ -88,6 +88,16 @@ pub(super) fn register_session_events(
         .insert_source(notifier, |event, _, state| {
             let is_pause = matches!(event, SessionEvent::PauseSession);
 
+            if is_pause {
+                // Release logical seat buttons while the session is still
+                // active. Physical release events may be lost while another
+                // VT owns the input devices.
+                let time = smithay::utils::Clock::<smithay::utils::Monotonic>::new()
+                    .now()
+                    .as_millis() as u32;
+                state.compositor.release_all_pointer_buttons(time);
+            }
+
             let cleanup_error = if is_pause {
                 // Disable KMS planes while DRM access is still valid.
                 // GBM/Vulkan resources are dependencies of active scanout and
