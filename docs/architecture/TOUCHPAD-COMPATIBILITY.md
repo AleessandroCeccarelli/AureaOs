@@ -163,3 +163,17 @@ The Rust `input 0.9.1` API used by AureaOS exposes the tap getters/setters and
 send-events mode bitflags. Three-finger drag is intentionally not advertised
 yet: it is not present in the pinned `input 0.9.1` Device API, and must not be
 claimed based on newer libinput documentation alone.
+
+
+## Session pause and resume
+
+On a libseat/VT pause, AureaOS stops forwarding queued input. On activation,
+the compositor now invalidates its cache of applied touchpad profiles and
+reapplies each saved profile to the retained live libinput device handles.
+This is deliberately separate from device discovery: a VT switch is not
+treated as a physical unplug/replug, so stable per-device identity and saved
+preferences remain intact.
+
+If libinput reports an individual setting as unsupported or failed, the
+per-setting application report remains visible and the profile is not marked
+fully applied. A later input event can retry through the normal refresh path.
