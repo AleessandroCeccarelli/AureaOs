@@ -31,8 +31,27 @@ impl AureaCompositor {
     pub fn remove_tablet_device(&mut self, device: &smithay::reexports::input::Device) {
         let tablet_seat = self.seat.tablet_seat();
         tablet_seat.remove_tablet(&TabletDescriptor::from(device));
+        let device_id = id_for(device);
+        let removed_tools = self
+            .tablet_tool_owners
+            .remove(&device_id)
+            .unwrap_or_default();
+
+        // A uniquely identified pen can be used with more than one tablet.
+        // Keep its Wayland tool object until its last associated tablet is gone.
+        for tool in removed_tools {
+            let still_owned = self
+                .tablet_tool_owners
+                .values()
+                .any(|tools| tools.contains(&tool));
+            if !still_owned {
+                tablet_seat.remove_tool(&tool);
+            }
+        }
+
         if tablet_seat.count_tablets() == 0 {
             tablet_seat.clear_tools();
+            self.tablet_tool_owners.clear();
         }
     }
 
@@ -197,6 +216,11 @@ impl AureaCompositor {
         E: TabletToolProximityEvent<LibinputInputBackend>,
     {
         let tool_descriptor = event.tool();
+        let device_id = id_for(&event.device());
+        self.tablet_tool_owners
+            .entry(device_id)
+            .or_default()
+            .insert(tool_descriptor.clone());
         let tablet_descriptor = TabletDescriptor::from(&event.device());
         let tablet = self.ensure_tablet(&tablet_descriptor);
         let tool = self.ensure_tablet_tool(&tool_descriptor);
