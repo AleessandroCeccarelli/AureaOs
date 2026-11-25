@@ -254,6 +254,7 @@ mod tests {
             left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             pointer_speed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            acceleration_profile: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             send_events_mode: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
         };
 
@@ -281,6 +282,7 @@ mod tests {
             left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             pointer_speed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            acceleration_profile: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             send_events_mode: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
         };
 
@@ -307,6 +309,7 @@ mod tests {
             left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             pointer_speed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            acceleration_profile: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             send_events_mode: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
         };
 
@@ -333,6 +336,7 @@ mod tests {
             left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             pointer_speed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            acceleration_profile: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             send_events_mode: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
         };
 
