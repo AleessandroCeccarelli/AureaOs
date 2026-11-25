@@ -24,7 +24,13 @@ use smithay::reexports::ash::vk;
 
 use crate::{
     desktop::{DesktopContextMenuLayout, WallpaperDrawGeometry, WallpaperFitMode, WallpaperLayout},
-    render::RenderScene,
+    render::{
+        RenderScene,
+        geometry::{
+            SurfaceGeometry, surface_geometry, surface_geometry_with_fractional_scale,
+            transform_geometry_for_output,
+        },
+    },
     renderer::RenderTarget,
 };
 
@@ -40,48 +46,58 @@ use super::{
 pub(super) const MAX_COMPOSITED_SURFACES: usize = 128;
 pub(super) const MAX_COMPOSITED_SHM_BYTES: usize = 256 * 1024 * 1024;
 
-/// Converts global logical menu bounds to an output-local physical viewport
-/// and clips the 256px artwork canvas to this output.
+/// Converts the menu's logical artwork canvas into output-local physical geometry.
+/// This deliberately reuses the same scale and transform rules as Wayland surfaces.
 fn context_menu_geometry(
     menu: &DesktopContextMenuLayout,
     target: &RenderTarget,
 ) -> Option<(vk::Viewport, vk::Rect2D)> {
     let origin = menu.placement().bounds().origin();
-    let (output_x, output_y) = target.logical_origin();
-    let scale = target.effective_scale();
-    if !scale.is_finite() || scale <= 0.0 {
-        return None;
-    }
-
-    let x = (i64::from(origin.x) - i64::from(output_x)) as f64 * scale;
-    let y = (i64::from(origin.y) - i64::from(output_y)) as f64 * scale;
-    let width = 256.0 * scale;
-    let height = 256.0 * scale;
-    let left = x.floor().max(0.0) as u32;
-    let top = y.floor().max(0.0) as u32;
-    let right = (x + width).ceil().min(f64::from(target.width())) as u32;
-    let bottom = (y + height).ceil().min(f64::from(target.height())) as u32;
-    if left >= right || top >= bottom {
-        return None;
-    }
+    let logical_origin = target.logical_origin();
+    let geometry = if let Some(scale) = target.fractional_scale() {
+        surface_geometry_with_fractional_scale(
+            (origin.x, origin.y),
+            (256, 256),
+            1,
+            smithay::utils::Transform::Normal,
+            logical_origin,
+            scale,
+        )?
+    } else {
+        surface_geometry(
+            (origin.x, origin.y),
+            (256, 256),
+            1,
+            smithay::utils::Transform::Normal,
+            logical_origin,
+            target.scale(),
+        )?
+    };
+    let geometry = transform_geometry_for_output(
+        geometry,
+        target.width(),
+        target.height(),
+        target.transform(),
+    )?;
+    let scissor = geometry.scissor(target.width(), target.height())?;
 
     Some((
         vk::Viewport {
-            x: x as f32,
-            y: y as f32,
-            width: width as f32,
-            height: height as f32,
+            x: geometry.x() as f32,
+            y: geometry.y() as f32,
+            width: geometry.width() as f32,
+            height: geometry.height() as f32,
             min_depth: 0.0,
             max_depth: 1.0,
         },
         vk::Rect2D {
             offset: vk::Offset2D {
-                x: i32::try_from(left).ok()?,
-                y: i32::try_from(top).ok()?,
+                x: i32::try_from(scissor.x).ok()?,
+                y: i32::try_from(scissor.y).ok()?,
             },
             extent: vk::Extent2D {
-                width: right - left,
-                height: bottom - top,
+                width: scissor.width,
+                height: scissor.height,
             },
         },
     ))
