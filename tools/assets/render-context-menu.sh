@@ -64,7 +64,7 @@ manifest="${OUTPUT_ROOT}/EXPORT-MANIFEST.txt"
     printf 'Font source: aurea-human-interfaces/fonts/source/google-fonts/noto-sans/NotoSans-Variable.ttf\n'
     printf 'Font role: host-side SVG rasterization only; no runtime font dependency\n'
     printf 'Dimensions: %s x %s\n' "${SIZE}" "${SIZE}"
-    printf 'Format: tightly packed RGBA8, row-major, no row padding\n'
+    printf 'Format: tightly packed premultiplied RGBA8, row-major, no row padding\n'
 } > "${manifest}"
 
 for theme in light dark; do
