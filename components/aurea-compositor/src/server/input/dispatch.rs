@@ -84,6 +84,11 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                     .connect(descriptor.clone());
                 if descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchpad {
                     state.touchpad_devices.insert(device_id, device.clone());
+                } else {
+                    // DeviceAdded may refresh an existing sysname with a new
+                    // classification. Drop touchpad-only runtime state then.
+                    state.touchpad_devices.remove(&device_id);
+                    state.applied_touchpad_settings.remove(device_id);
                 }
                 if let Some(report) = touchpad_report {
                     state
