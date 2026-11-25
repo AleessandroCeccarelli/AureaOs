@@ -86,7 +86,8 @@ A missing shell surface must not be confused with missing hardware gesture suppo
 - The existing five-argument TouchpadSettings constructor remains source-compatible; advanced options use builder-style methods.
 - Clickpad method, tap mapping, drag-lock, acceleration profile/speed and send-events configuration are implemented against the pinned Smithay 0.7.0 / input 0.9.1 API. The send-events API uses input 0.9.1 bitflags (not the later input 0.10 enum/vector signatures); this was checked and corrected against the exact crate source.
 - Disable-while-trackpointing (DWTP) is documented as a desired capability but is not yet wired: Smithay 0.7.0 enables input's libinput_1_19 feature, while the DWTP methods in input 0.9.1 are gated behind libinput_1_21. Do not call these methods until the dependency feature strategy and Debian minimum libinput version are deliberately resolved.
-- Gesture dispatch and AureaOS gesture action routing still need an end-to-end lifecycle audit; persistent stable hardware identity and durable per-device preference storage remain future work.
+- The gesture lifecycle has now been source-audited: swipe, pinch and hold begin/update/end events are forwarded to Wayland pointer-gesture clients; cancelled sequences do not trigger AureaOS actions; per-device active sequences and queued actions are cleared on device removal. The Wayland seat stream is serialized to one owner at a time.
+- Persistent stable hardware identity and durable per-device preference storage remain future work.
 - No build, Cargo check, rustfmt, unit tests or physical-hardware validation has been run yet; validation remains deliberately grouped.
 
 ## Next implementation sequence
