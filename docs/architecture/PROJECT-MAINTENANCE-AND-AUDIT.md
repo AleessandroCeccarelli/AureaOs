@@ -539,3 +539,11 @@ La risoluzione richiede esattamente Super e Ctrl; Alt o Shift aggiuntivi fanno r
 **Stato reale:** il resolver e il dispatch delle quattro scorciatoie sono implementati; il runtime shell riceve Overview e App Exposé e aggiorna `DesktopPanelState`. I test sorgente coprono la risoluzione delle quattro frecce e l'attivazione del pannello App Exposé. Non esiste ancora una UI grafica finale per Overview/App Exposé: il modello di stato non equivale a una superficie visibile.
 
 **Verifica:** modifiche registrate su `main`; nessuna build, Cargo check, rustfmt o esecuzione test effettuata, in accordo con la verifica raggruppata. La CI e la verifica su hardware restano da eseguire.
+
+
+## 16. Pointing-device lifecycle bookkeeping — 25 November 2026
+
+- `PointerManager` owns the per-device pressed-button sets and pointer/touchpad preference overrides. The disconnect path first synthesizes releases for any still-pressed buttons, then removes the device's settings and remaining state.
+- Outstanding button codes are now sorted before synthetic release delivery, making disconnect behavior deterministic when multiple buttons were held.
+- Unit tests were added for button-state isolation across devices, stable release order, individual button release, per-device preference isolation/cleanup, and rejecting touchpad settings for a mouse.
+- These are source-level tests only. They have not yet been compiled or executed; grouped validation and physical-device testing remain pending.
