@@ -2025,3 +2025,4 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Marked client-provided cursor surface snapshots separately and draw them after the menu, preserving pointer stacking. Native cursor rendering remains last.
 - Runtime asset root: `AUREA_HUMAN_INTERFACES_ROOT`; development points it at `aurea-human-interfaces`, installed systems default to `/usr/share/aureaos/human-interfaces`. Missing assets are reported once and do not abort compositor startup.
 - Added source tests for 1x/2x geometry and unrelated monitor clipping. Generated RGBA assets still need export and visual inspection. No build, rustfmt, check or tests were run.
+- Updated the shared PNG-to-RGBA converter to premultiply PNG's straight alpha, matching the Vulkan pipeline's `ONE / ONE_MINUS_SRC_ALPHA` blend factors and avoiding bright fringes around antialiased transparent artwork.
