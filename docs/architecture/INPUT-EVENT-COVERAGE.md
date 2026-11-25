@@ -330,3 +330,8 @@ This establishes semantic dispatch only. Pointer hit-testing against the visible
 The compositor now shares the menu's global logical anchor and reconstructs its output-constrained DesktopContextMenuLayout during pointer input. A left press over an actionable row sends ContextMenuCommandSelected; a press in menu padding dismisses without action. A press outside dismisses the menu and continues through normal pointer routing. The press and matching release are consumed whenever the menu itself is hit, preventing click-through to a mapped Wayland surface.
 
 This is semantic input routing only. The menu has light/dark SVG masters and a Noto Sans host-rasterization script, but the RGBA assets have not been generated/inspected and the Vulkan frame renderer does not yet draw the panel. The menu remains invisible until that renderer and asset-loading path are integrated. No build/fmt/check/tests were run.
+
+
+## Native cursor first-frame guarantee — 2026-11-25
+
+The compositor-owned arrow texture is a required part of the desktop's initial pointer presentation. Its 32×32 RGBA upload is now completed once before the first frame that needs it, rather than leaving an upload fence pending and relying on a later mouse event to request another frame. This prevents the startup-centering frame from clearing the output without drawing the arrow when the pointer is otherwise idle. The texture remains cached for the Vulkan device lifetime; subsequent frames do not upload it again. This is a source-level correction only. The grouped Fedora build/check/test and physical pointer validation remain pending.
