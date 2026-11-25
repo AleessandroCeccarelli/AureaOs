@@ -547,3 +547,12 @@ La risoluzione richiede esattamente Super e Ctrl; Alt o Shift aggiuntivi fanno r
 - Outstanding button codes are now sorted before synthetic release delivery, making disconnect behavior deterministic when multiple buttons were held.
 - Unit tests were added for button-state isolation across devices, stable release order, individual button release, per-device preference isolation/cleanup, and rejecting touchpad settings for a mouse.
 - These are source-level tests only. They have not yet been compiled or executed; grouped validation and physical-device testing remain pending.
+
+
+## 17. Device hot-unplug ordering and identity — 25 November 2026
+
+- `DeviceRemoved` now clears gesture ownership and all compositor-owned state (touch cancellation, held pointer-button releases, interaction engine state, output routing, calibration, slots and per-device preferences) before deleting the device from the pointing-device inventory.
+- The backend then removes the applied-touchpad-settings cache and retained libinput handle, followed by touchscreen-capability reconciliation.
+- `InputDeviceId` is a deterministic hash of the current kernel input sysname. It is valid as a runtime/session key only; `/dev/input/eventN` numbering is not a persistent hardware identity and must not key durable user profiles.
+- Source tests cover ID determinism for equal sysnames and separation for the selected test sysnames. PointerManager tests cover held-button and preference isolation/cleanup. The 64-bit hash is not collision-proof.
+- No build, Cargo check, rustfmt, test execution or physical hot-unplug/reconnect test has been run.
