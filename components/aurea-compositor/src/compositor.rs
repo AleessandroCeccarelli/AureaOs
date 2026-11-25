@@ -262,6 +262,15 @@ impl AureaCompositor {
         self.pointer_manager.connect(descriptor)
     }
 
+    /// Clears protocol state and unregisters a disconnected pointing device.
+    pub(crate) fn disconnect_pointing_device(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> bool {
+        self.clear_pointing_device_state(device);
+        self.pointer_manager.disconnect(device)
+    }
+
     /// Initializes the Wayland touch capability when a touchscreen is present.
     pub fn sync_touchscreen_capability(&mut self) {
         let connected = self
