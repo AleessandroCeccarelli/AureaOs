@@ -6,16 +6,14 @@
 //! Applies per-device touchpad preferences through libinput.
 
 use aurea_desktop_api::input::{TouchpadApplyReport, TouchpadSettingStatus, TouchpadSettings};
-use smithay::reexports::input::{Device, DeviceCapability, ScrollMethod};
+use smithay::reexports::input::{Device, DeviceConfigError, DeviceConfigResult, DeviceCapability, ScrollMethod};
 
-fn status(
-    result: Result<(), smithay::reexports::input::DeviceConfigError>,
-) -> TouchpadSettingStatus {
+use super::touchpad;
+
+fn status(result: DeviceConfigResult) -> TouchpadSettingStatus {
     match result {
         Ok(()) => TouchpadSettingStatus::Applied,
-        Err(smithay::reexports::input::DeviceConfigError::Unsupported) => {
-            TouchpadSettingStatus::Unsupported
-        }
+        Err(DeviceConfigError::Unsupported) => TouchpadSettingStatus::Unsupported,
         Err(_) => TouchpadSettingStatus::Failed,
     }
 }
@@ -29,22 +27,15 @@ pub(super) fn apply(
     device: &mut Device,
     settings: TouchpadSettings,
 ) -> Option<TouchpadApplyReport> {
-    // A pen tablet can expose pointer-like capabilities, but it is not a
-    // touchpad. Never apply tap/scroll/DWT preferences to tablet tools or pads.
-    if !device.has_capability(DeviceCapability::Pointer)
-        || device.has_capability(DeviceCapability::Touch)
-        || device.has_capability(DeviceCapability::TabletTool)
-        || device.has_capability(DeviceCapability::TabletPad)
-    {
+    // Share the exact discovery predicate so a scroll-only touchpad is not
+    // classified as a touchpad in one path and rejected in the other.
+    if !touchpad::supports(device) {
         return None;
     }
 
     // A generic mouse also exposes Pointer. Require at least one libinput
-    // touchpad-specific capability before attempting touchpad configuration.
-    let is_touchpad = device.has_capability(DeviceCapability::Gesture)
-        || device.config_tap_finger_count() > 0
-        || device.config_dwt_is_available();
-    if !is_touchpad {
+    // touchpad-specific configuration capability before attempting settings.
+    if !device.has_capability(DeviceCapability::Pointer) {
         return None;
     }
 
