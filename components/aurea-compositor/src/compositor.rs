@@ -5,7 +5,7 @@
 
 //! Core Wayland compositor state and module coordination.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 
 use aurea_desktop_api::{
     desktop::DesktopManager as DesktopItemsManager,
@@ -38,7 +38,7 @@ use crate::{
         pointer_settings::PointerSettings,
         pointer_shake::PointerShakeDetector,
         pointing::{
-            PointingDeviceService, PointingDeviceSettings, TabletCalibrationMap, TabletOutputMap,
+            PointerManager, TabletCalibrationMap, TabletOutputMap,
             TouchscreenCalibration, TouchscreenCalibrationError, TouchscreenCalibrationMap,
             TouchscreenOutputMap, TouchscreenSlotMap,
         },
@@ -104,11 +104,9 @@ pub struct AureaCompositor {
     surface_output_tracker: SurfaceOutputTracker,
     cursor_image: CursorImageStatus,
     pointer_settings: PointerSettings,
-    pressed_pointer_buttons: HashMap<aurea_desktop_api::input::InputDeviceId, HashSet<u32>>,
     _pointer_gestures_state: smithay::wayland::pointer_gestures::PointerGesturesState,
     _tablet_manager_state: TabletManagerState,
-    pointing_devices: PointingDeviceService,
-    pointing_settings: PointingDeviceSettings,
+    pointer_manager: PointerManager,
     touchscreen_outputs: TouchscreenOutputMap,
     tablet_outputs: TabletOutputMap,
     tablet_calibrations: TabletCalibrationMap,
@@ -175,11 +173,9 @@ impl AureaCompositor {
             surface_output_tracker: SurfaceOutputTracker::new(),
             cursor_image: CursorImageStatus::default_named(),
             pointer_settings: PointerSettings::default(),
-            pressed_pointer_buttons: HashMap::new(),
             _pointer_gestures_state: pointer_gestures_state,
             _tablet_manager_state: tablet_manager_state,
-            pointing_devices: PointingDeviceService::new(),
-            pointing_settings: PointingDeviceSettings::default(),
+            pointer_manager: PointerManager::new(),
             touchscreen_outputs: TouchscreenOutputMap::new(),
             tablet_outputs: TabletOutputMap::new(),
             tablet_calibrations: TabletCalibrationMap::default(),
@@ -255,7 +251,7 @@ impl AureaCompositor {
 
     /// Returns the seat-wide registry of connected pointing devices.
     pub fn pointing_devices(&self) -> &PointingDeviceService {
-        &self.pointing_devices
+        self.pointer_manager.devices()
     }
 
     /// Initializes the Wayland touch capability when a touchscreen is present.
@@ -423,7 +419,7 @@ impl AureaCompositor {
         self.tablet_calibrations.remove_device(device);
         self.touchscreen_calibrations.remove_device(device);
         self.touchscreen_slots.remove_device(device);
-        self.pointing_settings.remove(device);
+        self.pointer_manager.remove_device_state(device);
     }
 
     /// Releases tracker entries for destroyed Wayland surfaces.
