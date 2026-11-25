@@ -5,6 +5,7 @@
 
 //! Technology-independent contracts for the user's desktop space.
 
+mod context_menu;
 mod item;
 mod layout;
 mod manager;
@@ -14,6 +15,9 @@ mod stacks;
 mod trash_state;
 mod wallpaper_preferences;
 
+pub use context_menu::{
+    DesktopContextMenuCommand, DesktopContextMenuItem, DesktopContextMenuLayout,
+};
 pub use item::{DesktopItem, DesktopItemId, DesktopItemKind, DesktopPosition};
 pub use layout::{DesktopHitTest, DesktopPoint, DesktopRect};
 pub use panel_geometry::DesktopPanelPlacement;
