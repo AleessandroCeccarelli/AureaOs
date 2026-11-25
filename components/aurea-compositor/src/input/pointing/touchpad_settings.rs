@@ -6,11 +6,13 @@
 //! Applies per-device touchpad preferences through libinput.
 
 use aurea_desktop_api::input::{
-    TouchpadApplyReport, TouchpadClickMethod, TouchpadSendEventsMode, TouchpadSettingStatus,
+    TouchpadAccelerationProfile, TouchpadApplyReport, TouchpadClickMethod,
+    TouchpadSendEventsMode, TouchpadSettingStatus,
     TouchpadSettings, TouchpadTapButtonMap,
 };
 use smithay::reexports::input::{
-    ClickMethod, Device, DeviceConfigError, ScrollMethod, SendEventsMode, TapButtonMap,
+    AccelProfile, ClickMethod, Device, DeviceConfigError, ScrollMethod, SendEventsMode,
+    TapButtonMap,
 };
 
 use super::touchpad;
@@ -129,6 +131,23 @@ pub(super) fn apply(
         TouchpadSettingStatus::Unsupported
     };
 
+    let acceleration_profiles = device.config_accel_profiles();
+    let acceleration_profile = match settings.acceleration_profile() {
+        TouchpadAccelerationProfile::DeviceDefault if !acceleration_profiles.is_empty() => {
+            TouchpadSettingStatus::Applied
+        }
+        TouchpadAccelerationProfile::DeviceDefault => TouchpadSettingStatus::Unsupported,
+        TouchpadAccelerationProfile::Flat if acceleration_profiles.contains(&AccelProfile::Flat) => {
+            status(device.config_accel_set_profile(AccelProfile::Flat))
+        }
+        TouchpadAccelerationProfile::Adaptive
+            if acceleration_profiles.contains(&AccelProfile::Adaptive) =>
+        {
+            status(device.config_accel_set_profile(AccelProfile::Adaptive))
+        }
+        _ => TouchpadSettingStatus::Unsupported,
+    };
+
     let send_events_mode = match settings.send_events_mode() {
         TouchpadSendEventsMode::Enabled => SendEventsMode::ENABLED,
         TouchpadSendEventsMode::Disabled => SendEventsMode::DISABLED,
@@ -166,6 +185,7 @@ pub(super) fn apply(
         left_handed,
         middle_button_emulation,
         pointer_speed,
+        acceleration_profile,
         send_events_mode,
     })
 }
