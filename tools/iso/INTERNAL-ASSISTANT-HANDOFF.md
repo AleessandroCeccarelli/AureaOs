@@ -913,3 +913,12 @@ The implementation on `main` has removed:
 TIFF remains a still-image input for professional photography, scans and publishing. It can be lossless/high-bit-depth and large; multi-page TIFF is treated as a static image from its first page.
 
 Current raster decoder set: PNG, BMP, TIFF and WebP, alongside the existing JPEG backend. HEIC/HEIF and AVIF remain pending. No build, test, rustfmt, Cargo check or CI was run for the GIF-removal changes; validate as a grouped block on Fedora and regenerate Cargo.lock there.
+
+## DESKTOP POINTER SELECTION / CONTEXT MENU INPUT — 2026-11-25
+
+- Commit `80483c23ea50ae1649fe9f2f553445a3b38018d7` wires `pointer_button.rs` into the existing `select_desktop_item_at` path.
+- Primary click on empty desktop now selects the hit item, emits the existing activation intent on a recognized double click, or clears selection on empty space.
+- Secondary click on empty desktop now selects/clears first and sends `ShowContextMenu` with global logical pointer coordinates. Window surfaces retain precedence; application right-clicks remain delivered to their Wayland clients.
+- `DesktopPanelState` already retains panel kind and menu position, but there is no graphical context-menu surface or actionable entries yet. Do not claim it is visually displayed.
+- Selection state reaches the frame snapshot, but Vulkan selection highlighting is not yet drawn. Trash icon rendering is also still gated on generating/visually inspecting the 24 RGBA8 assets and connecting the asset loader/cache.
+- No Cargo fmt/check/test/build, CI or physical-device validation was run. Continue accumulating changes and leave grouped verification to Fedora; do not build after each correction.
