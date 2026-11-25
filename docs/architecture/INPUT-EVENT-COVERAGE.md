@@ -38,7 +38,7 @@ Smithay 0.7 `backend::input::InputEvent` includes:
 | Swipe/pinch/hold | Gesture handlers | Routed |
 | Touchscreen | Calibrated output extent and touch handlers | Routed |
 | Tablet tool | Proximity, axes, tip and tool buttons | Routed |
-| Absolute pointer motion | Output-local mapping on exactly one enabled output; multi-output layouts are safely ignored pending explicit assignment | Partially routed |
+| Absolute pointer motion | Per-device output assignment; automatic fallback only with one enabled output; multi-output routing requires an explicit assignment | Routed with configuration requirement |
 | Switch toggle | State-change diagnostic only; no lid/tablet-mode policy | Not implemented |
 | Tablet pad controls | No corresponding Smithay 0.7 InputEvent path | Not available through this event API |
 | Special backend events | No AureaOS policy | Ignored |
@@ -57,7 +57,7 @@ Smithay 0.7 `backend::input::InputEvent` includes:
 
 ## Follow-up implementation sequence
 
-1. Add an explicit per-device output assignment contract for absolute pointers so multi-monitor routing can be enabled without guessing.
+1. Expose the existing per-device absolute-pointer output assignment through trusted display/input settings and persist the user's selection; do not guess a monitor on multi-output desktops.
 2. Define ownership and policy for lid-close and tablet-mode switches in the session/power-management layer; the compositor should consume resulting state, not own power policy.
 3. Revisit tablet-pad support only if Smithay adds a supported event path or AureaOS adopts a separately verified libinput integration that does not fork/patch blindly.
 4. Keep tool buttons distinct from tablet-pad buttons: current tablet-tool button routing does not imply pad support.
