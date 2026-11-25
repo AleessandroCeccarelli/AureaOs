@@ -160,8 +160,7 @@ mod tests {
         let profile_a = TouchpadSettings::default()
             .with_left_handed(true)
             .with_click_method(TouchpadClickMethod::ButtonAreas);
-        let profile_b = TouchpadSettings::default()
-            .with_natural_scrolling_for_test()
+        let profile_b = TouchpadSettings::new(true, true, true, true, true)
             .with_send_events_mode(TouchpadSendEventsMode::DisabledOnExternalMouse);
 
         first.set("physical-a".into(), profile_a).unwrap();
