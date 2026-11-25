@@ -1947,3 +1947,11 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Parent surfaces are emitted before popup surfaces because AureaOS Vulkan composition draws snapshots in sequence; this keeps popups visually above their owning toplevel. Popup object IDs are included in active surface tracking for texture-cache lifecycle.
 - Pointer hit testing checks popup surfaces before their parent toplevel, so existing pointer motion/focus paths can target popup content.
 - Output-constrained placement, coordinated pointer/keyboard grabs, dismissal and multi-monitor visual validation remain open. No build, Cargo check, rustfmt or tests were run.
+
+### 2026-11-25 — Coordinate XDG popup pointer and keyboard grabs
+
+- Implemented the `xdg_popup.grab` path using the actual `WlSeat` resource to recover its Smithay `Seat`. Requests are rejected if the resource is not managed or either pointer/keyboard capability is unavailable.
+- Resolve the popup's toplevel root and let `PopupManager::grab_popup` validate the serial and nested-popup hierarchy.
+- Install Smithay's `PopupPointerGrab` and `PopupKeyboardGrab` with the same serial. Their standard behavior confines interaction to the popup tree, dismisses grabs on outside pointer input, and restores root focus when the grab ends.
+- Source/API integration only; no Cargo build, `cargo fmt`, check, tests or hardware validation were run. Keep verification grouped on Fedora as agreed.
+- Remaining work: output-aware popup constraints, explicit keyboard-dismiss coverage, initial focus/runtime validation and multi-monitor testing.
