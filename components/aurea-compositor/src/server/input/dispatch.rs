@@ -95,6 +95,18 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                         .record_touchpad_configuration(device_id, report);
                 }
                 state.compositor.sync_touchscreen_capability();
+            } else if state.compositor.pointing_devices().device(device_id).is_some() {
+                // A sysname can be re-announced with capabilities that no
+                // longer describe a supported pointing device. Retire the
+                // previous registration instead of leaving stale seat state.
+                tracing::info!(
+                    id = device_id.0,
+                    "Re-announced device is no longer a supported pointing device"
+                );
+                state.compositor.disconnect_pointing_device(device_id);
+                state.applied_touchpad_settings.remove(device_id);
+                state.touchpad_devices.remove(&device_id);
+                state.compositor.sync_touchscreen_capability();
             }
         }
         InputEvent::DeviceRemoved { device } => {
