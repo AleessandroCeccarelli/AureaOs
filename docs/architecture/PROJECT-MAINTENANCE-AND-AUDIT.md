@@ -289,3 +289,99 @@ I test hardware e Vulkan fisici sono separati e richiedono la macchina e i dispo
 ---
 
 **Nota di affidabilità:** questo documento registra una prima ricognizione del ramo `main` al commit indicato. Le conclusioni su funzioni non testate sono marcate come statiche o non verificate. Non costituisce una certificazione di release né una dichiarazione che AureaOS sia pronta per l'uso quotidiano.
+
+
+## 12. Audit approfondito — GPU, Vulkan e presentazione DRM/KMS (25 novembre 2026)
+
+### 12.1 Percorso di inizializzazione verificato
+
+Percorso staticamente ricostruito:
+1. `server/vulkan_lifecycle.rs::initialize_vulkan_backends` enumera ogni DRM node aperto.
+2. Per ogni node prova `VulkanBackend::new_for_drm_node`, che crea un `VulkanContext`, cerca una GPU Vulkan associata al DRM node e crea il logical device.
+3. Se la GPU abbinata non è utilizzabile, prova `VulkanBackend::new_software_fallback`, che seleziona un dispositivo Vulkan CPU (es. lavapipe).
+4. Se anche il fallback CPU non è disponibile, il backend non viene registrato per quel node.
+5. Il renderer aggiorna il metadata hardware/software della GPU e inserisce il backend nella mappa keyed by DRM node.
+6. `server/rendering.rs` sceglie per ogni output una GPU di rendering inizializzata e una GPU di presentazione. Se coincidono e tutte le capability sono presenti, sceglie direct Vulkan; altrimenti tenta la composizione Vulkan + readback CPU + upload GBM/KMS.
+7. Direct Vulkan può essere disabilitato per output dopo un errore pre-presentazione; se il frame è già pending o il device è lost, non viene tentato un retry potenzialmente insicuro.
+
+Questo percorso è più maturo di un semplice renderer offscreen: il codice ha un dispatch per output e una via CPU-readback. Rimane tuttavia una verifica statica; l'effettiva affidabilità di ogni combinazione GPU/driver/connector richiede hardware reale.
+
+### 12.2 Requisito Vulkan 1.3: scelta esplicita, impatto rilevante
+
+I seguenti punti rendono il requisito Vulkan 1.3 un vincolo reale, non solo una preferenza:
+- `vulkan/context.rs` crea l'istanza con `Version::VERSION_1_3`.
+- `vulkan/rendering_features.rs` rifiuta GPU sotto Vulkan 1.3 e richiede `dynamicRendering` e `synchronization2`.
+- `vulkan/logical_device_factory.rs` abilita queste feature nel logical device.
+- Shader e pass principali sono compilati/documentati per Vulkan 1.3.
+- `HARDWARE-REQUIREMENTS.md` esclude esplicitamente GPU senza Vulkan 1.3 e tali feature.
+
+**Decisione attuale nel repository:** Roma 1.0 richiede hardware Vulkan 1.3. Il desiderio espresso in una fase precedente di coprire Vulkan 1.0–1.4 non è compatibile con questa decisione attuale. Non abbassare il requisito senza un progetto di backend alternativo: servirebbero feature negotiation, fallback render pass tradizionale o altro backend, shader target differenziati e una matrice hardware/driver dedicata. Il requisito 1.3 riduce il parco macchine supportato ma semplifica il renderer iniziale.
+
+**Rischio di prodotto:** il portatile Fedora AMD A9/Stoney menzionato nei log precedenti deve essere trattato come hardware da verificare, non come prova di supporto. L'utente ha già osservato Vulkan loader 1.4, ma ciò non dimostra che la GPU esponga Vulkan 1.3 o le due feature richieste. La CI lavapipe verde non sostituisce la prova su quella GPU.
+
+### 12.3 Direct scanout e fallback
+
+- Il percorso direct richiede atomic KMS, GPU di rendering uguale alla GPU di presentazione, estensioni DMA-BUF, formato/modifier compatibile e `VK_EXT_queue_family_foreign`.
+- `VK_EXT_image_drm_format_modifier` è opzionale nel piano estensioni; il codice di `VulkanFormatCapabilities::query` però restituisce una lista vuota se l'estensione non è esposta. Non sintetizza il modifier LINEAR dai flag generici di tiling, scelta prudente per non scambiare linear image support per DMA-BUF esportabile.
+- Il percorso CPU compatibility usa rendering Vulkan, readback in memoria host e upload su GBM/KMS. Non equivale a rendering CPU puro: il fallback software richiede un dispositivo Vulkan CPU compatibile con il requisito 1.3.
+- Il codice non tenta fallback dopo `VK_ERROR_DEVICE_LOST`, né dopo una submission/presentazione di stato incerto. Questa è una scelta di sicurezza della ownership, non un difetto da rimuovere con un retry generico.
+- Se una GPU non ha un renderer hardware compatibile ma non esiste un device Vulkan CPU 1.3 funzionante, il backend per quel DRM node non viene creato e il rendering per quell'output non è disponibile.
+
+### 12.4 Incongruenza documentale da risolvere
+
+`VULKAN-DEVICE-FOUNDATION.md` afferma che, quando `VK_EXT_image_drm_format_modifier` manca, l'implementazione può interrogare il percorso core linear-tiling. Il codice attuale in `vulkan/format_capabilities.rs` interroga i modifier solo quando l'estensione è presente e restituisce altrimenti una lista vuota; inoltre commenta espressamente che non deve inventare `DRM_FORMAT_MOD_LINEAR`. Aggiornare la documentazione per distinguere:
+- query Vulkan core per immagini lineari locali;
+- export DMA-BUF con modifier e layout verificati;
+- effettiva importabilità GBM/KMS.
+
+Non si deve modificare il codice per “far combaciare” la documentazione senza prima provare la semantica corretta delle API e del driver.
+
+### 12.5 Lifecycle, sincronizzazione e recovery
+
+Il codice separa correttamente, almeno a livello di modello:
+- completamento del lavoro GPU;
+- proprietà temporanea dell'immagine da parte della foreign queue/KMS;
+- page-flip completion;
+- reacquire Vulkan;
+- retirement della risorsa.
+
+`DrmOutputFrameCoordinator` e `DrmPresentationLifecycle` tracciano questi passaggi. La distruzione di `VulkanLogicalDevice` attende `device_wait_idle`; se l'attesa fallisce, il codice conserva intenzionalmente viva l'istanza invece di distruggere risorse potenzialmente ancora usate.
+
+**Limite deliberato:** il device-loss è fail-stop. Non esiste ancora ricreazione completa di Vulkan device, cache texture, pool frame, binding output e pipeline. La sessione può terminare in caso di device loss. Non aggiungere un retry locale: occorre un lifecycle di ricostruzione transazionale.
+
+### 12.6 Test e limiti
+
+- Sono presenti test unitari per selezione GPU, output, format/modifier, frame pool, frame coordinator, readback e rendering offscreen.
+- CI esegue check/test workspace, feature DRM/Vulkan, shader compilation e smoke test lavapipe.
+- Non risulta un test end-to-end che crei una finestra Wayland client reale, la componga e la presenti su display fisico.
+- Nessun test CI può certificare hot-unplug, suspend/resume, multi-GPU ibrida, driver NVIDIA, scanout atomic reale o recupero da device-loss.
+
+### 12.7 Nuovi elementi del registro audit
+
+| ID | Priorità | Elemento | Classificazione | Azione |
+|---|---|---|---|---|
+| AUD-015 | Alta | Requisito Vulkan 1.3 non allineato al precedente obiettivo 1.0–1.4 | Decisione di prodotto da confermare; il repository attuale è esplicito | Mantenere il requisito 1.3 per Roma 1.0 salvo decisione nuova e progetto tecnico |
+| AUD-016 | Media | Descrizione del fallback linear-tiling in `VULKAN-DEVICE-FOUNDATION.md` non corrisponde al codice attuale | Documentazione incoerente | Correggere la distinzione core linear vs DMA-BUF modifier |
+| AUD-017 | Alta | Il fallback software richiede comunque Vulkan CPU 1.3 | Limite di compatibilità | Documentare come requisito; verificare lavapipe Trixie e CPU reali |
+| AUD-018 | Alta | Nessuna ricreazione del renderer dopo `VK_ERROR_DEVICE_LOST` | Mancanza deliberata di recovery | Progettare in futuro un lifecycle globale; non tentare retry parziali |
+| AUD-019 | Alta | Mancano prove di scanout su GPU/driver fisici rappresentativi | Non verificato | Piano hardware AMD/Intel/NVIDIA, laptop ibridi e multi-monitor |
+| AUD-020 | Media | Il percorso direct è disabilitato per output dopo un errore recuperabile | Fallback per-output presente | Verificare che la disabilitazione venga resettata solo quando il modo/device cambia e non perda opportunità di riattivazione |
+
+### 12.8 File di riferimento del sottosistema
+
+- `components/aurea-compositor/src/server/vulkan_lifecycle.rs`
+- `components/aurea-compositor/src/server/rendering.rs`
+- `components/aurea-compositor/src/vulkan/context.rs`
+- `components/aurea-compositor/src/vulkan/physical_device.rs`
+- `components/aurea-compositor/src/vulkan/rendering_features.rs`
+- `components/aurea-compositor/src/vulkan/logical_device_factory.rs`
+- `components/aurea-compositor/src/vulkan/logical_device.rs`
+- `components/aurea-compositor/src/vulkan/format_capabilities.rs`
+- `components/aurea-compositor/src/vulkan/drm_compatibility.rs`
+- `components/aurea-compositor/src/drm/scanout_renderer.rs`
+- `components/aurea-compositor/src/drm/cpu_presentation_backend.rs`
+- `components/aurea-compositor/src/drm/frame_coordinator.rs`
+- `docs/architecture/VULKAN-DEVICE-FOUNDATION.md`
+- `docs/architecture/HARDWARE-REQUIREMENTS.md`
+
+**Esito fase GPU/Vulkan:** architettura e percorsi principali ricostruiti staticamente; nessuna modifica al codice e nessuna build locale eseguita. Audit di ogni resource pool e prova fisica ancora da completare.
