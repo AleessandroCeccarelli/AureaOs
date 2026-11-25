@@ -1890,3 +1890,11 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Asset root in sviluppo: variabile `AUREA_HUMAN_INTERFACES_ROOT` puntata alla directory `aurea-human-interfaces`. Installazione prevista: `/usr/share/aureaos/human-interfaces`. In assenza dei file RGBA il compositor segnala l'asset mancante una volta e non interrompe l'avvio.
 - Aggiunti test sorgente per coordinate 1x/2x e monitor non interessati. Gli asset binari non sono ancora generati/ispezionati; nessuna build, `cargo fmt`, check o test eseguiti.
 - Il convertitore PNG→RGBA condiviso ora converte l'alpha PNG non premoltiplicato in RGBA premoltiplicato, necessario per il blend Vulkan `ONE / ONE_MINUS_SRC_ALPHA` e per evitare aloni sui bordi trasparenti.
+
+
+### 25 novembre 2026 — Primo frame garantito del puntatore nativo
+
+- Individuato un problema nel caricamento asincrono iniziale della freccia: il primo frame poteva terminare senza disegnarla e non era garantito un secondo frame se nel frattempo non arrivavano altri eventi input.
+- La texture Vulkan della freccia (32×32 RGBA) viene ora caricata e completata una sola volta prima del primo frame che la utilizza. Dopo l'inizializzazione resta in cache per tutta la vita del dispositivo Vulkan; i frame successivi non ripetono l'upload.
+- La modifica evita che il puntatore resti invisibile sul desktop fermo subito dopo l'avvio. Non sostituisce la verifica fisica del movimento: quella resta da eseguire su Fedora.
+- Nessuna build, cargo fmt, check o test eseguiti, come concordato.
