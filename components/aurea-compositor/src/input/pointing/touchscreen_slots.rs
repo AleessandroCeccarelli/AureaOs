@@ -14,10 +14,12 @@ use smithay::backend::input::TouchSlot;
 ///
 /// libinput slot identifiers are scoped to their originating device. A single
 /// Wayland seat therefore needs a translation layer when several touchscreens
-/// are active simultaneously.
+/// are active simultaneously. Released seat slots are recycled so a long-lived
+/// session cannot exhaust its slot counter through ordinary touch activity.
 #[derive(Debug, Default)]
 pub struct TouchscreenSlotMap {
     active: HashMap<(InputDeviceId, TouchSlot), u32>,
+    free_slots: Vec<u32>,
     next_slot: u32,
 }
 
@@ -33,8 +35,14 @@ impl TouchscreenSlotMap {
             return Some(TouchSlot::from(Some(*id)));
         }
 
-        let id = self.next_slot;
-        self.next_slot = self.next_slot.checked_add(1)?;
+        let id = match self.free_slots.pop() {
+            Some(id) => id,
+            None => {
+                let id = self.next_slot;
+                self.next_slot = self.next_slot.checked_add(1)?;
+                id
+            }
+        };
         self.active.insert((device, slot), id);
         Some(TouchSlot::from(Some(id)))
     }
@@ -49,9 +57,9 @@ impl TouchscreenSlotMap {
 
     /// Releases one touch point after its up event.
     pub fn release(&mut self, device: InputDeviceId, slot: TouchSlot) -> Option<TouchSlot> {
-        self.active
-            .remove(&(device, slot))
-            .map(|id| TouchSlot::from(Some(id)))
+        let id = self.active.remove(&(device, slot))?;
+        self.free_slots.push(id);
+        Some(TouchSlot::from(Some(id)))
     }
 
     /// Releases all active touch points belonging to a disconnected device.
@@ -63,8 +71,13 @@ impl TouchscreenSlotMap {
             .copied()
             .collect::<Vec<_>>();
 
-        keys.into_iter()
+        let released = keys
+            .into_iter()
             .filter_map(|key| self.active.remove(&key))
+            .collect::<Vec<_>>();
+        self.free_slots.extend(released.iter().copied());
+        released
+            .into_iter()
             .map(|id| TouchSlot::from(Some(id)))
             .collect()
     }
@@ -74,8 +87,9 @@ impl TouchscreenSlotMap {
     /// Smithay's TouchHandle::cancel cancels the complete seat touch session, so
     /// the physical-device-to-seat-slot map must be reset as one operation.
     pub fn clear_all(&mut self) -> usize {
-        let cleared = self.active.len();
-        self.active.clear();
+        let released = self.active.drain().map(|(_, id)| id).collect::<Vec<_>>();
+        let cleared = released.len();
+        self.free_slots.extend(released);
         cleared
     }
 
@@ -116,15 +130,30 @@ mod tests {
     }
 
     #[test]
-    fn release_allows_a_new_touch_to_receive_a_fresh_slot() {
+    fn released_seat_slots_are_reused() {
         let mut slots = TouchscreenSlotMap::new();
         let device = InputDeviceId(1);
 
         let first = slots.acquire(device, slot(0)).unwrap();
         assert_eq!(slots.release(device, slot(0)), Some(first));
 
-        let second = slots.acquire(device, slot(0)).unwrap();
-        assert_ne!(first, second);
+        let second = slots.acquire(device, slot(1)).unwrap();
+        assert_eq!(first, second);
+        assert_eq!(slots.active_count(), 1);
+    }
+
+    #[test]
+    fn release_allows_a_new_touch_to_receive_a_fresh_slot_when_not_recycled() {
+        let mut slots = TouchscreenSlotMap::new();
+        let device = InputDeviceId(1);
+
+        let first = slots.acquire(device, slot(0)).unwrap();
+        let second = slots.acquire(device, slot(1)).unwrap();
+        assert_eq!(slots.release(device, slot(0)), Some(first));
+
+        let third = slots.acquire(device, slot(2)).unwrap();
+        assert_eq!(third, first);
+        assert_ne!(third, second);
     }
 
     #[test]
@@ -132,21 +161,34 @@ mod tests {
         let mut slots = TouchscreenSlotMap::new();
         slots.acquire(InputDeviceId(1), slot(0)).unwrap();
         slots.acquire(InputDeviceId(1), slot(1)).unwrap();
-        slots.acquire(InputDeviceId(2), slot(0)).unwrap();
+        let other = slots.acquire(InputDeviceId(2), slot(0)).unwrap();
 
         assert_eq!(slots.remove_device(InputDeviceId(1)).len(), 2);
         assert_eq!(slots.active_count(), 1);
+        assert_eq!(slots.get(InputDeviceId(2), slot(0)), Some(other));
+
+        let recycled = slots.acquire(InputDeviceId(2), slot(1)).unwrap();
+        assert_ne!(recycled, other);
+        assert_eq!(slots.active_count(), 2);
     }
 
     #[test]
-    fn seat_wide_cancel_clears_contacts_from_every_device() {
+    fn seat_wide_cancel_clears_contacts_and_recycles_their_slots() {
         let mut slots = TouchscreenSlotMap::new();
-        slots.acquire(InputDeviceId(1), slot(0)).unwrap();
-        slots.acquire(InputDeviceId(2), slot(0)).unwrap();
+        let first = slots.acquire(InputDeviceId(1), slot(0)).unwrap();
+        let second = slots.acquire(InputDeviceId(2), slot(0)).unwrap();
 
         assert_eq!(slots.clear_all(), 2);
         assert_eq!(slots.active_count(), 0);
         assert_eq!(slots.get(InputDeviceId(1), slot(0)), None);
         assert_eq!(slots.get(InputDeviceId(2), slot(0)), None);
+
+        let recycled_first = slots.acquire(InputDeviceId(3), slot(0)).unwrap();
+        let recycled_second = slots.acquire(InputDeviceId(4), slot(0)).unwrap();
+        assert_ne!(recycled_first, recycled_second);
+        assert!(
+            [first, second].contains(&recycled_first)
+                && [first, second].contains(&recycled_second)
+        );
     }
 }
