@@ -130,17 +130,25 @@ pub(super) fn apply(
     };
 
     let send_events_mode = match settings.send_events_mode() {
-        TouchpadSendEventsMode::Enabled => SendEventsMode::Enabled,
-        TouchpadSendEventsMode::Disabled => SendEventsMode::Disabled,
+        TouchpadSendEventsMode::Enabled => SendEventsMode::ENABLED,
+        TouchpadSendEventsMode::Disabled => SendEventsMode::DISABLED,
         TouchpadSendEventsMode::DisabledOnExternalMouse => {
-            SendEventsMode::DisabledOnExternalMouse
+            SendEventsMode::DISABLED_ON_EXTERNAL_MOUSE
         }
     };
     let available_send_events_modes = device.config_send_events_modes();
-    let send_events_mode = if send_events_mode == SendEventsMode::Enabled
-        || available_send_events_modes.contains(&send_events_mode)
-    {
-        status(device.config_send_events_set_mode(&[send_events_mode]))
+    let send_events_supported = match settings.send_events_mode() {
+        // ENABLED is the zero-valued placeholder and is valid for every device.
+        TouchpadSendEventsMode::Enabled => true,
+        TouchpadSendEventsMode::Disabled => {
+            available_send_events_modes.contains(SendEventsMode::DISABLED)
+        }
+        TouchpadSendEventsMode::DisabledOnExternalMouse => {
+            available_send_events_modes.contains(SendEventsMode::DISABLED_ON_EXTERNAL_MOUSE)
+        }
+    };
+    let send_events_mode = if send_events_supported {
+        status(device.config_send_events_set_mode(send_events_mode))
     } else {
         TouchpadSettingStatus::Unsupported
     };
