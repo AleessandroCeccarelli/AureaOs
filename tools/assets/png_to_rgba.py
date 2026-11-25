@@ -117,9 +117,24 @@ def main() -> int:
     args = parser.parse_args()
 
     width, height, rgba = decode_rgba8(args.source.read_bytes())
+
+    # AureaOS's textured compositor pipeline uses premultiplied-alpha blending
+    # (ONE, ONE_MINUS_SRC_ALPHA). PNG stores unassociated alpha, so convert here
+    # before producing the runtime artwork payload.
+    premultiplied = bytearray(rgba)
+    for offset in range(0, len(premultiplied), 4):
+        alpha = premultiplied[offset + 3]
+        for channel in range(3):
+            premultiplied[offset + channel] = (
+                premultiplied[offset + channel] * alpha + 127
+            ) // 255
+
     args.destination.parent.mkdir(parents=True, exist_ok=True)
-    args.destination.write_bytes(rgba)
-    print(f"{width}x{height} RGBA8 ({len(rgba)} bytes): {args.destination}")
+    args.destination.write_bytes(premultiplied)
+    print(
+        f"{width}x{height} premultiplied RGBA8 "
+        f"({len(premultiplied)} bytes): {args.destination}"
+    )
     return 0
 
 
