@@ -42,7 +42,7 @@ impl AureaCompositor {
                 let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
                 scene.surface_under(location).is_some()
             };
-            if clicked_application_surface || button == BTN_LEFT {
+            if clicked_application_surface || button != BTN_RIGHT {
                 let _ = self.desktop_interactions.send(DesktopInteraction::DismissContextMenu);
             }
         }
