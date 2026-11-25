@@ -262,3 +262,15 @@ The compositor-to-shell interaction now carries the pointer anchor in global log
 This is deliberately geometry only. The current `aurea-shell` crate is a state/runtime library and does not create a Wayland client or render native surfaces. The compositor's Vulkan path draws wallpaper, mapped Wayland SHM surfaces and the pointer, but has no native panel/text renderer. Consequently, the context menu is **not yet visible**. Do not claim otherwise or add placeholder menu commands.
 
 The next implementation boundary is a real shell presentation surface: Aurea Shell must own menu content, theme and interaction lifecycle; a dedicated native Wayland shell client should present it as a layer surface, while the compositor continues to own output composition and Vulkan resources. This avoids embedding shell policy or text layout in the compositor. Before adding dependencies, verify Debian 13 availability and keep the client/rendering modules small. The first visible menu must contain only working actions; an empty desktop currently has no implemented desktop commands, so no decorative entries should be shown.
+
+
+### Desktop context-menu Vulkan overlay — 25 November 2026
+
+The desktop context menu now follows the compositor-owned native artwork path rather than creating a client Wayland surface:
+
+- `RenderScene` carries the output-constrained logical menu layout and the current desktop theme.
+- `VulkanSurfacePipelineCache` loads the selected RGBA8 asset lazily on first use from `AUREA_HUMAN_INTERFACES_ROOT` (default `/usr/share/aureaos/human-interfaces`). The file is validated by the existing explicit-root asset loader, retained as a CPU snapshot, and uploaded through the bounded desktop-artwork Vulkan cache. Frame rendering does not read the filesystem.
+- The existing premultiplied-alpha textured pipeline is reused. The overlay is drawn after mapped Wayland surfaces and before the cursor, with output-local physical coordinates derived from each target's logical origin and effective scale. The scissor clips the 256px artwork canvas to the current output.
+- Development checkouts must set `AUREA_HUMAN_INTERFACES_ROOT` to the repository's `aurea-human-interfaces` directory. Installed packages use `/usr/share/aureaos/human-interfaces`.
+- The menu is still conditional on the generated light/dark RGBA files. Run `tools/assets/render-context-menu.sh` before launching the compositor. Missing artwork is reported once and leaves the menu artwork undisplayed; it does not abort compositor startup.
+- Source-level geometry tests cover 1x, 2x and unrelated-monitor clipping. No Cargo build, rustfmt, check, tests or visual validation have been run. The next grouped Fedora session must generate the RGBA assets, run the agreed verification suite, and inspect both themes at mixed output scales.
