@@ -65,6 +65,19 @@ AureaOS must distinguish:
 
 A missing shell surface must not be confused with missing hardware gesture support. Conversely, do not advertise a gesture action until its complete action path exists.
 
+## Vendor and transport detection policy
+
+AureaOS deliberately does not map a vendor ID such as Synaptics, ELAN, ALPS or Goodix directly to a fixed feature list. The same manufacturer may ship PS/2, RMI4, I2C-HID, SMBus, USB HID and Bluetooth HID products with different firmware and multitouch limits.
+
+The kernel and libinput remain the compatibility authority:
+- Kernel transport drivers enumerate the hardware and expose evdev capabilities.
+- udev/libinput classify the device and apply upstream model quirks.
+- AureaOS reads the resulting libinput capability/configuration surface and publishes it as a per-device snapshot.
+- A setting is offered only when the relevant configuration API reports support. A missing tap interface does not disqualify a device if it exposes other touchpad-specific behavior, such as scrolling or gestures.
+- No AureaOS quirk is added based only on a vendor name. Model-specific fixes must be tied to a reproducible device identity and preferably contributed upstream to libinput.
+
+For USB and Bluetooth touchpads, the same capability-driven path is used as for internal devices. Hotplug and reconnect use the existing device lifecycle. Persistent profiles depend on the physical path available from udev/sysfs; moving a USB device to another port may create a distinct profile. If a stable path cannot be established, AureaOS skips persistence rather than guessing.
+
 ## Implementation requirements
 
 1. Use the Debian target kernel's supported input drivers and Debian-packaged libinput. Fedora is a development host only.
@@ -83,6 +96,7 @@ A missing shell surface must not be confused with missing hardware gesture suppo
 - Touchpad detection uses libinput capabilities rather than vendor-name heuristics and recognizes scroll-only and clickpad-only devices even when tap, DWT and gesture capability are absent.
 - The shared Desktop API now exposes tap-to-click, tap-and-drag, drag lock, tap-button mapping, two-finger/edge scrolling, natural scrolling, disable-while-typing, clickpad method, left-handed mode, middle-button emulation, pointer acceleration profile/speed and send-events mode.
 - The compositor applies each option only when the installed Smithay/libinput device reports that capability. Every option returns an explicit Applied, Unsupported or Failed status.
+- Device discovery now publishes a detailed TouchpadCapabilities snapshot through the shared Desktop API: maximum tap-finger count, two-finger/edge scrolling, natural-scroll support, click methods, DWT/DWTP, gestures, left-handed mode, middle-button emulation and acceleration profiles. The Settings UI can therefore hide or disable controls based on the actual connected device rather than vendor guesses.
 - The existing five-argument TouchpadSettings constructor remains source-compatible; advanced options use builder-style methods.
 - Clickpad method, tap mapping, drag-lock, acceleration profile/speed and send-events configuration are implemented against the pinned Smithay 0.7.0 / input 0.9.1 API. The send-events API uses input 0.9.1 bitflags (not the later input 0.10 enum/vector signatures); this was checked and corrected against the exact crate source.
 - Disable-while-trackpointing (DWTP) is now wired when the native `drm` backend is built. Smithay 0.7.0 resolves `input` 0.9.1; the compositor adds that exact crate as an optional direct dependency and enables `input/libinput_1_21` only with the native backend. Cargo feature unification exposes the DWTP methods on the same `input` crate instance re-exported by Smithay. Devices without the capability report Unsupported.
@@ -113,3 +127,12 @@ A missing shell surface must not be confused with missing hardware gesture suppo
 - Linux kernel mouse/input drivers: https://code.googlesource.com/linux/torvalds/linux/+/master/drivers/input/mouse/
 
 Research note: vendor and transport coverage varies by exact device ID, kernel version and firmware. The matrix is a compatibility target, not a claim that every device model has been hardware-tested.
+
+
+## Capability snapshot API — 2026-11-25
+
+The shared Desktop API now carries optional TouchpadCapabilities metadata alongside the standard input capability list. The compositor fills it only for devices classified as touchpads. It reports maximum tap-finger count, supported scroll/click methods, natural-scroll availability, DWT/DWTP, gesture support, handedness, middle-button emulation and acceleration profiles. This snapshot is a live observation from the installed kernel/libinput stack; it is not a vendor catalogue and is not persisted as a hardware promise.
+
+The snapshot is intentionally independent of the settings values. It lets Aurea Settings decide which controls to show while the existing TouchpadApplyReport continues to report whether a requested value was actually applied.
+
+Source changes have been committed but not compiled or tested. Do not treat the API integration as build-verified until the grouped Fedora validation.
