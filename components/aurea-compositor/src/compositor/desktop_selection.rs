@@ -21,7 +21,11 @@ use super::AureaCompositor;
 /// presentation and later activation policy; the compositor only performs
 /// logical-coordinate hit testing and emits a semantic interaction.
 impl AureaCompositor {
-    pub(super) fn select_desktop_item_at(&mut self, location: Point<f64, Logical>) {
+    pub(super) fn select_desktop_item_at(
+        &mut self,
+        location: Point<f64, Logical>,
+        track_activation: bool,
+    ) {
         let logical = location.to_i32_round::<i32>();
         let selected = DesktopHitTest::item_id_at(
             self.desktop_items.items(),
@@ -33,12 +37,17 @@ impl AureaCompositor {
         match selected {
             Some(id) => {
                 let id = id.as_str().to_owned();
-                let activated = self.desktop_click_tracker.record(
-                    &id,
-                    location.x,
-                    location.y,
-                    Instant::now(),
-                );
+                let activated = if track_activation {
+                    self.desktop_click_tracker.record(
+                        &id,
+                        location.x,
+                        location.y,
+                        Instant::now(),
+                    )
+                } else {
+                    self.desktop_click_tracker.reset();
+                    false
+                };
 
                 if self
                     .desktop_interactions
