@@ -382,7 +382,10 @@ mod tests {
         );
         assert_eq!(manager.touchpad_settings(device), TouchpadSettings::default());
         assert!(manager.take_buttons_released_by_device(device).is_empty());
-        assert_eq!(manager.devices().device(device).unwrap().kind, InputDeviceKind::Touchpad);
+        assert_eq!(
+            manager.devices().device(device).unwrap().kind,
+            InputDeviceKind::Touchpad
+        );
     }
 
     #[test]
@@ -400,10 +403,7 @@ mod tests {
             assert!(manager.connect(descriptor(id.0, kind)));
         }
         for (id, kind) in devices {
-            assert_eq!(
-            manager.devices().device(id).unwrap().kind,
-            kind
-        );
+            assert_eq!(manager.devices().device(id).unwrap().kind, kind);
         }
 
         // Removing one device must not invalidate any other connected device.
