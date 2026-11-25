@@ -1955,3 +1955,14 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Install Smithay's `PopupPointerGrab` and `PopupKeyboardGrab` with the same serial. Their standard behavior confines interaction to the popup tree, dismisses grabs on outside pointer input, and restores root focus when the grab ends.
 - Source/API integration only; no Cargo build, `cargo fmt`, check, tests or hardware validation were run. Keep verification grouped on Fedora as agreed.
 - Remaining work: output-aware popup constraints, explicit keyboard-dismiss coverage, initial focus/runtime validation and multi-monitor testing.
+
+### 2026-11-25 — Output-aware XDG popup constraint placement
+
+- Added a dedicated `compositor/popup_placement.rs` module. The protocol handler now delegates placement rather than embedding geometry policy in `xdg_shell.rs`.
+- Resolve the toplevel root, mapped window geometry and actual popup parent. Nested popup parents use Smithay's tracked popup-tree offsets, so the target rectangle is expressed in the correct parent window-geometry coordinate space.
+- Select the enabled output containing the XDG anchor point in global logical coordinates. If the anchor lies in a monitor gap, fall back to the output containing the parent window center; do not silently choose an arbitrary first output.
+- Translate the selected output's global logical bounds into parent-local coordinates and pass them to Smithay 0.7 `PositionerState::get_unconstrained_geometry`. Smithay applies the client's requested XDG flip, slide and resize adjustments.
+- Reuse the same path for initial popup configure and `xdg_popup.reposition`; acknowledge the reposition token only after updating pending geometry.
+- Invalid/dead parent chains, unavailable output targets and unrepresentable coordinate conversions preserve the protocol's unconstrained geometry instead of overflowing or guessing an output.
+- Added source tests for global-to-parent target conversion and overflow rejection. Tests were not executed.
+- Reactive reconfiguration after parent movement/output topology changes and physical multi-monitor validation remain open. No Cargo build, `cargo fmt`, check, test run or hardware validation was performed; grouped Fedora validation remains the plan.
