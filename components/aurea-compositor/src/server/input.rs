@@ -139,6 +139,30 @@ pub(super) fn apply_pending_touchpad_settings(state: &mut WaylandState) {
 }
 
 
+
+/// Reapplies acceleration profiles after libseat reactivates the input session.
+/// libinput may reset device configuration while a different VT owns the seat.
+pub(super) fn reapply_pointer_acceleration(state: &mut WaylandState) {
+    let mouse_ids = state.mouse_devices.keys().copied().collect::<Vec<_>>();
+    for id in mouse_ids {
+        let settings = state.compositor.pointer_settings_for(id);
+        if let Some(device) = state.mouse_devices.get_mut(&id) {
+            pointing::apply_pointer_acceleration(device, settings);
+            tracing::info!(device_id = id.0, "Restored mouse acceleration after session activation");
+        }
+    }
+
+    // Touchpads share the acceleration adapter but retain their own handles
+    // and profile ownership in the touchpad registry.
+    let touchpad_ids = state.touchpad_devices.keys().copied().collect::<Vec<_>>();
+    for id in touchpad_ids {
+        let settings = state.compositor.pointer_settings_for(id);
+        if let Some(device) = state.touchpad_devices.get_mut(&id) {
+            pointing::apply_pointer_acceleration(device, settings);
+        }
+    }
+}
+
 /// Drains shell requests and updates the selected mouse profile.
 /// The libinput acceleration adapter samples this profile on the next motion
 /// event, avoiding retention of stale mouse handles across hot-unplug.
@@ -172,11 +196,16 @@ pub(super) fn apply_pending_pointer_settings(state: &mut WaylandState) {
             );
             continue;
         }
+        let Some(device) = state.mouse_devices.get_mut(&command.device) else {
+            tracing::warn!(device_id = command.device.0, "Mouse has no live libinput handle");
+            continue;
+        };
+        crate::input::pointer_acceleration::apply(device, command.settings);
         tracing::info!(
             device_id = command.device.0,
             profile = ?command.settings.profile(),
             speed = command.settings.speed(),
-            "Updated live mouse preferences; libinput will apply them on the next motion event"
+            "Applied live mouse preferences to libinput"
         );
     }
 }
