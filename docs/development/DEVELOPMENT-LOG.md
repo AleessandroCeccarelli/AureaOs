@@ -2242,3 +2242,7 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - The event loop now keeps 16 ms output scheduling active for the animated `busy` cursor and during a three-second first-use warm-up window. This gives asynchronous decoding/upload time to finish even when no further pointer event arrives.
 - **Not yet complete:** cache memory/LRU limits across cursor names and multiple output scales, reduced-motion behavior, possible `left_ptr_watch` animation, and full visual validation.
 - **Not verified in execution:** no Cargo formatting, build, check, tests, shell validation or ISO build has been run. Continue accumulating source changes before the planned Fedora verification.
+
+- Follow-up: added bounded native cursor texture residency (32 assets / 16 MiB) with least-recently-used eviction. A single animation is limited to 4 MiB; oversized animation data retains its first frame rather than exhausting the shared GPU texture budget.
+- Added pure timing tests for Xcursor per-frame delays, exact frame boundaries, wraparound and zero-delay handling.
+- Verified from the cursor manifest that `busy` defines 12 frames / 1100 ms, while `left_ptr_watch` is currently a static artwork asset; only `busy` is therefore scheduled continuously.
