@@ -2272,3 +2272,11 @@ Extended the locate-trail implementation from input history into render-scene sn
 - Review found a startup timing gap: the three-second asynchronous Xcursor warm-up was initially started in AureaCompositor::new(), before DRM discovery, Vulkan initialization and output publication. On slower hardware those steps could consume the entire window; the first requested frame could then clear the desktop while the cursor texture was still decoding, with no further frame scheduled if the pointer remained idle.
 - Added begin_cursor_asset_warmup() and call it only after active outputs are published and the pointer is successfully centered. It resets the three-second window and requests output frames immediately, so the decode worker and Vulkan upload can complete without requiring a mouse/trackpad event.
 - This is a source-level startup fix. No build, rustfmt, Cargo check, tests or physical boot validation were run.
+
+
+### 2026-11-26 — Immediate native pointer fallback
+
+- The native cursor renderer previously withheld the compositor-owned cursor until the selected Xcursor theme file had been read, decoded and uploaded. A slow first load could therefore leave the first desktop frames without any visible pointer.
+- Added a tiny built-in high-contrast arrow texture, uploaded once per requested raster size and retained in a bounded four-size fallback cache. It is drawn immediately while the themed cursor loads asynchronously; once the theme upload completes, the selected Xcursor asset takes precedence without changing pointer coordinates or hotspot handling.
+- If the decode worker cannot be started or its queue is temporarily unavailable, the built-in arrow remains available instead of suppressing the pointer. The one-time fallback upload is synchronous and intentionally limited to a small cursor texture; themed file I/O and decoding remain on the worker.
+- No build, formatting, tests or physical boot validation were run.
