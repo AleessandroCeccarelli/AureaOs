@@ -84,6 +84,20 @@ for theme in light dark; do
     }
 done
 
+for theme in AureaOS-Light AureaOS-Dark; do
+    theme_root="/usr/share/icons/$theme"
+    [ -s "$theme_root/index.theme" ] || {
+        echo "AureaOS cursor theme index is missing: $theme" >&2
+        exit 1
+    }
+    for cursor in default pointer text vertical-text crosshair help busy left_ptr_watch not-allowed copy alias grab grabbing move all-scroll ew-resize ns-resize resize-nesw resize-nwse pencil up-arrow pin person zoom-in zoom-out context-menu; do
+        [ -s "$theme_root/cursors/$cursor" ] || {
+            echo "AureaOS cursor asset is missing: $theme/$cursor" >&2
+            exit 1
+        }
+    done
+done
+
 # Catch missing runtime libraries while still inside the Debian target rootfs.
 # This is especially important because Cargo only guarantees a successful link
 # against the build container's libraries, not the final Live image contents.
@@ -128,7 +142,7 @@ DEBIAN_FRONTEND=noninteractive apt-get purge -y -- \
     curl build-essential pkg-config glslang-tools \
     libvulkan-dev libudev-dev libinput-dev libseat-dev libgbm-dev \
     libdrm-dev libxkbcommon-dev libwayland-dev libheif-dev \
-    libturbojpeg0-dev
+    libturbojpeg0-dev librsvg2-bin xcursorgen
 
 # Keep build sources, Rust toolchains and Cargo caches out of the live system.
 rm -rf "$SOURCE" "$CARGO_HOME" "$RUSTUP_HOME"
