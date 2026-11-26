@@ -313,19 +313,20 @@ pub(super) fn render_frame(
     } else {
         false
     };
-    let cursor_asset = if cursor_texture_ready {
-        surface_cache.native_cursor_asset(cursor_name, cursor_theme, requested_cursor_size)
+    let cursor = if cursor_texture_ready {
+        surface_cache
+            .native_cursor_asset(cursor_name, cursor_theme, requested_cursor_size)
+            .and_then(|asset| {
+                native_cursor_geometry(
+                    scene,
+                    target,
+                    (asset.width(), asset.height()),
+                    (asset.hotspot_x(), asset.hotspot_y()),
+                )
+            })
     } else {
         None
     };
-    let cursor = cursor_asset.and_then(|asset| {
-        native_cursor_geometry(
-            scene,
-            target,
-            (asset.width(), asset.height()),
-            (asset.hotspot_x(), asset.hotspot_y()),
-        )
-    });
 
     surface_cache
         .ensure_pipeline(composition_view.format())
@@ -432,7 +433,8 @@ pub(super) fn render_frame(
     };
 
     let cursor_binding = if cursor_texture_ready {
-        let texture = cursor_asset
+        let texture = surface_cache
+            .native_cursor_asset(cursor_name, cursor_theme, requested_cursor_size)
             .and_then(|asset| asset.texture())
             .ok_or_else(|| {
                 VulkanSurfaceCompositionError::Texture(
