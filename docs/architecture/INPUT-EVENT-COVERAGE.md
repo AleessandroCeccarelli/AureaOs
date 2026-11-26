@@ -382,3 +382,7 @@ The locate gesture records up to three recent global logical pointer positions. 
 ## Desktop double-click timing control — 2026-11-26
 
 The desktop click tracker no longer hard-codes its interval in the comparison path. It now stores an interval per compositor instance, defaults to 400 ms, and exposes compositor setter/getter methods in milliseconds. Values are clamped to 150–1000 ms; changing the interval clears a pending first click so two clicks measured under different policies cannot be combined. The spatial threshold remains 4 logical pixels. Unit tests were added for runtime interval changes and clamping. This is a compositor control surface, not yet a Settings UI or persisted user preference. No build or tests were run.
+
+## Global desktop pointer behavior preferences — 2026-11-26
+
+Added a dedicated `DesktopPointerBehaviorSettings` API and channel, separate from per-device mouse/touchpad profiles. The Shell runtime now sends global behavior updates through the desktop composition root to the compositor event loop. The compositor persists the double-click interval in `$XDG_CONFIG_HOME/aureaos/input/desktop-pointer.toml` (or `~/.config/aureaos/input/desktop-pointer.toml`), using versioned TOML, restrictive file permissions and atomic replacement. The default remains 400 ms; values are clamped to 150–1000 ms. The saved preference is restored during compositor startup. Settings UI and physical hardware validation remain pending. No build or tests were run.
