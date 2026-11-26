@@ -251,12 +251,17 @@ cd "$BUILD_ROOT"
 echo "Building Debian Trixie amd64 Live ISO..."
 sudo lb build
 
-ISO_PATH="$(find "$BUILD_ROOT" -maxdepth 1 -type f -name '*.iso' -print -quit)"
-if [[ -z "$ISO_PATH" || ! -s "$ISO_PATH" ]]; then
-    echo "Live Build completed without producing a non-empty ISO." >&2
+mapfile -t ISO_FILES < <(find "$BUILD_ROOT" -maxdepth 1 -type f -name '*.iso' -print | sort)
+if (("${#ISO_FILES[@]}" != 1)); then
+    echo "Expected exactly one live-build ISO artifact; found ${#ISO_FILES[@]}." >&2
     find "$BUILD_ROOT" -maxdepth 3 -type f -name '*.iso' -print >&2
     exit 1
 fi
+ISO_PATH="${ISO_FILES[0]}"
+[[ -s "$ISO_PATH" ]] || {
+    echo "Live Build produced an empty ISO: $ISO_PATH" >&2
+    exit 1
+}
 
 # Record build provenance before the isolated UKI assembly snapshot is prepared.
 BUILD_TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
