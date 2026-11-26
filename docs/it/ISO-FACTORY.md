@@ -123,7 +123,7 @@ Nel repository sono presenti un preflight del chroot, un generatore UKI/ISO e un
 
 - `tools/iso/tests/validate-chroot-boot.sh` — controlla nel chroot i pacchetti di boot richiesti e l'integrazione initramfs di live-boot, rigenera l'initramfs e verifica la presenza di `scripts/live`.
 - `tools/iso/scripts/build-systemd-boot-live-iso.sh` — genera una UKI dalla coppia kernel/initramfs Debian esatta, crea un'immagine EFI FAT con systemd-boot e le voci UKI, rimuove il payload GRUB intermedio e rimasterizza la ISO UEFI-only.
-- `tools/iso/tests/validate-live-image.sh` — controlla immagine EFI, percorso fallback systemd-boot, voce di avvio, sezioni UKI e parametro `boot=live`, oltre al vero rootfs SquashFS: binario desktop, launcher, unit systemd, definizione PAM, link di abilitazione e 26 asset RGBA8 con dimensioni esatte; verifica anche il catalogo El Torito EFI.
+- `tools/iso/tests/validate-live-image.sh` — controlla immagine EFI, percorso fallback systemd-boot, voce di avvio, sezioni UKI e parametro `boot=live`, oltre al vero rootfs SquashFS: binario desktop, launcher, unit systemd, definizione PAM, link di abilitazione e entrambi gli asset RGBA8 del menu contestuale con dimensioni esatte; verifica anche il catalogo El Torito EFI.
 
 Il coordinatore installa esplicitamente il validatore boot del chroot in `/usr/local/libexec/aureaos/` prima dell'esecuzione di live-build. L'hook lo richiama dopo l'installazione e la pulizia dei pacchetti. Il coordinatore genera poi UKI/immagine EFI e valida sia il tree binary sia la ISO copiata.
 
