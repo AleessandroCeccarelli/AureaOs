@@ -2460,3 +2460,14 @@ Reviewed discovery, reconnect, reclassification, disconnect and libseat session-
 Session pause releases logical seat buttons and cancels active gestures. After session activation, touchpad profiles and mouse acceleration are reapplied to the retained live handles. No duplicate libinput functionality or additional functional fix was identified in this pass. Corrected two stale source comments: mouse acceleration is no longer reapplied in the motion path, and retained mouse handles support live preference updates and session restoration.
 
 No build or tests were run. Grouped Fedora validation and physical mouse/touchpad testing remain pending.
+
+
+## 2026-11-26 — Reject settings updates on persistence failure
+
+The Shell-to-compositor audit found that `PointerManager` updated the in-memory per-device profile before attempting durable storage. When the profile store rejected a write (for example, because an existing file was malformed or from a newer format version), the manager logged a warning but still returned success. The live request could therefore appear accepted even though it would not survive reconnect.
+
+Changed both mouse and touchpad update paths to validate the registered device class, persist the profile first when a stable physical identity is available, and mutate runtime settings only after persistence succeeds. A failed write now returns rejection and leaves the previous runtime profile unchanged. Devices without a trustworthy persistent identity remain session-configurable; no synthetic identity is introduced.
+
+Reset semantics were also checked: callers can submit the normal `PointerSettings::default()` or `TouchpadSettings::default()` value. This is stored as an explicit default-valued profile for that physical device, not interpreted as deletion of its identity/profile. No reset UI or delete-profile operation was added.
+
+Source change committed on main. No rustfmt, build, Cargo check or tests were run; grouped Fedora validation and physical mouse/touchpad testing remain pending.
