@@ -178,8 +178,17 @@ If libinput reports an individual setting as unsupported or failed, the
 per-setting application report remains visible and the profile is not marked
 fully applied. A later input event can retry through the normal refresh path.
 
-## Shake-to-locate pointer gesture
+## Shake-to-locate and pointer trail
 
-The macOS-style locate gesture is available in principle on touchpads through the same libinput relative pointer-motion events used for ordinary cursor movement. AureaOS feeds the unaccelerated relative deltas into the per-device shake detector, rather than treating a Wayland swipe/pinch gesture as a locate command. The detector looks for rapid alternating movement; users do not need to trace a circle.
+The macOS-style locate gesture is available on touchpads through the same libinput relative pointer-motion events used for ordinary cursor movement. AureaOS feeds unaccelerated relative deltas into the per-device shake detector rather than treating a Wayland swipe/pinch gesture as a locate command. The detector looks for rapid alternating movement; users do not need to trace a circle.
 
-Apple Support documents this feature for both mouse and trackpad, describing a quick movement of the mouse or finger to temporarily enlarge the pointer. AureaOS currently implements the enlargement response; the requested fading pointer trail is a separate compositor-rendering feature and is not yet implemented. Physical tests across different touchpad vendors/drivers are still required.
+The compositor implements temporary pointer enlargement and a separate fading trail for the native cursor. The trail is a rendering effect, not a libinput feature; it is drawn behind the compositor-owned cursor and does not apply to client-provided Wayland cursor surfaces. Physical tests across different touchpad vendors/drivers are still required.
+
+
+## Follow-up audit — 26 November 2026
+
+The DeviceAdded path now registers the discovered device before applying touchpad preferences. Registration restores the profile keyed by the stable physical identity; the compositor then configures libinput from that restored profile. This avoids first applying defaults and waiting for the first input event to refresh the device to its saved preferences.
+
+The runtime audit confirms that touchpad settings are capability-gated and each setting reports Applied, Unsupported or Failed. Device removal clears transient per-device state and active gesture ownership; persisted profiles remain available for reconnection. Session activation invalidates the applied-settings cache and reapplies profiles to retained live handles.
+
+Still outstanding: grouped compile/format/test validation, physical hardware testing, and verification of the Settings UI read/write path. Gesture recognition and shell action execution must also be distinguished: libinput events are forwarded to Wayland pointer-gesture clients, while completed AureaOS desktop actions are dispatched through the compositor-to-shell interaction channel. No claim of hardware validation is made.
