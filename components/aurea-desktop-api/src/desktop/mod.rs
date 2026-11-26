@@ -14,6 +14,7 @@ mod preferences;
 mod stacks;
 mod trash_state;
 mod wallpaper_preferences;
+mod window_preview_layout;
 
 pub use context_menu::{
     DesktopContextMenuCommand, DesktopContextMenuItem, DesktopContextMenuLayout,
@@ -26,3 +27,4 @@ pub use preferences::{DesktopPreferences, StackGrouping};
 pub use stacks::{DesktopStack, DesktopStackCategory, DesktopStackId};
 pub use trash_state::DesktopTrashState;
 pub use wallpaper_preferences::{WallpaperPreferences, WallpaperScaleMode};
+pub use window_preview_layout::{DesktopWindowPreview, DesktopWindowPreviewInput, DesktopWindowPreviewLayout};
