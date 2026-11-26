@@ -325,3 +325,13 @@ The capability snapshot and apply report are retained as integration data for th
 future Settings UI and trusted desktop clients. They are not a second hardware
 capability detector: all values originate from the active libinput device. Do not
 add further status layers or parallel device discovery.
+
+
+## Explicit result for the selected scroll mode
+
+The apply report distinguishes the selected libinput scroll mode from the two
+mutually exclusive UI toggles. `two_finger_scroll` and `edge_scrolling` remain
+`NotRequested` when `NoScroll` is selected, while the separate `scroll_method`
+field records whether libinput accepted `NoScroll`. This prevents a rejected
+configuration from being hidden by two inactive toggle statuses; `all_applied()`
+and `has_failures()` include the selected-mode result.
