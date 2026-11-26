@@ -190,9 +190,6 @@ impl AureaCompositor {
         fingers: u32,
         time: u32,
     ) {
-        let Some(pointer) = self.seat.get_pointer() else {
-            return;
-        };
         if !self
             .pointer_gesture_owner
             .begin(device, PointerGestureKind::Swipe)
@@ -200,6 +197,9 @@ impl AureaCompositor {
             return;
         }
         self.interaction_engine.begin_swipe(device, fingers);
+        let Some(pointer) = self.seat.get_pointer() else {
+            return;
+        };
         pointer.gesture_swipe_begin(
             self,
             &GestureSwipeBeginEvent {
@@ -279,9 +279,6 @@ impl AureaCompositor {
         fingers: u32,
         time: u32,
     ) {
-        let Some(pointer) = self.seat.get_pointer() else {
-            return;
-        };
         if !self
             .pointer_gesture_owner
             .begin(device, PointerGestureKind::Pinch)
@@ -289,6 +286,9 @@ impl AureaCompositor {
             return;
         }
         self.interaction_engine.begin_pinch(device, fingers);
+        let Some(pointer) = self.seat.get_pointer() else {
+            return;
+        };
         pointer.gesture_pinch_begin(
             self,
             &GesturePinchBeginEvent {
@@ -376,9 +376,6 @@ impl AureaCompositor {
         fingers: u32,
         time: u32,
     ) {
-        let Some(pointer) = self.seat.get_pointer() else {
-            return;
-        };
         if !self
             .pointer_gesture_owner
             .begin(device, PointerGestureKind::Hold)
@@ -386,6 +383,9 @@ impl AureaCompositor {
             return;
         }
         self.interaction_engine.begin_hold(device, fingers);
+        let Some(pointer) = self.seat.get_pointer() else {
+            return;
+        };
         pointer.gesture_hold_begin(
             self,
             &GestureHoldBeginEvent {
