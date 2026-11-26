@@ -259,6 +259,7 @@ mod tests {
             assert!(store
                 .set("physical-a".into(), PointerSettings::default())
                 .is_err());
+            assert_eq!(store.get("physical-a"), None);
             assert_eq!(fs::read_to_string(&path).unwrap(), original);
             let _ = fs::remove_file(path);
         }
