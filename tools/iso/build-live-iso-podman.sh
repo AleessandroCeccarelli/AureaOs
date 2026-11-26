@@ -42,7 +42,7 @@ if (($#)); then
     case "$1" in --help|-h) usage; exit 0 ;; *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;; esac
 fi
 
-for command_name in podman git realpath flock; do
+for command_name in podman git realpath flock sudo; do
     command -v "$command_name" >/dev/null 2>&1 || {
         echo "Required host command not found: $command_name" >&2
         exit 1
