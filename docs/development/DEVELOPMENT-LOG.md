@@ -2104,3 +2104,15 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Audited the tablet path: Smithay tablet-tool updates already forward pressure, distance, tilt, rotation, slider and wheel changes when reported by libinput; tablet-tool events are routed separately from mouse acceleration.
 - Added `docs/development/INPUT-PRECISION.md` with professional peripheral requirements, current implementation boundaries and a Fedora hardware-validation matrix.
 - No Cargo build, `cargo fmt`, `cargo check`, unit tests, benchmarks or physical-device validation were run. Keep verification grouped on Fedora as agreed.
+
+
+### 2026-11-26 — Durable pen-tablet calibration profiles
+
+- Added `TabletProfileStore` in `input/pointing/tablet_store.rs`, keyed by the existing privacy-preserving physical tablet identity rather than session `InputDeviceId` or kernel event number.
+- Persisted active area, rotation, aspect mode and device aspect ratio in `aureaos/input/tablets.toml` under the user's XDG configuration directory.
+- Integrated restore into tablet discovery/reconnection and persistence into the existing set/reset calibration API.
+- Added format-version validation, calibration revalidation on load, owner-only Unix permissions, atomic replacement, file/directory sync, and read-only preservation of malformed, invalid or future-version files.
+- Failed writes roll back the store's in-memory mutation. Devices without reliable physical identity remain configurable for the current session without guessed persistence.
+- Added store tests for profile round-trip, per-device isolation, malformed/future format preservation, invalid calibration rejection and reset persistence.
+- **Monitor assignment is not yet persisted.** Runtime `OutputId` is explicitly not a persistent monitor identity, and the current logical output registry does not retain the validated DRM connector identity evidence. Persisting `OutputId` would risk silently assigning a tablet to the wrong screen after reboot or topology changes. See `docs/development/TABLET-PROFILES.md` for the safe follow-up architecture.
+- No Cargo build, `cargo fmt`, `cargo check`, unit tests or hardware validation were run. Keep verification grouped on Fedora as agreed.
