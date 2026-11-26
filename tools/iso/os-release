@@ -1,0 +1,9 @@
+ID=aureaos
+NAME="AureaOS"
+PRETTY_NAME="AureaOS Roma 1.0 Live"
+VERSION="1.0 Roma Live"
+VERSION_ID="1.0"
+VERSION_CODENAME=roma
+ANSI_COLOR="0;34"
+HOME_URL="https://github.com/AleessandroCeccarelli/AureaOs"
+SUPPORT_URL="https://github.com/AleessandroCeccarelli/AureaOs/issues"
