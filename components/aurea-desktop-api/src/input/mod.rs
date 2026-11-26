@@ -31,7 +31,10 @@ pub use touchpad::{
     TouchpadSettings, TouchpadTapButtonMap,
 };
 pub use pointer_controller::{PointerSettingsCommand, PointerSettingsController, pointer_settings_channel};
-pub use desktop_pointer_behavior::{\n    DesktopPointerBehaviorCommand, DesktopPointerBehaviorController,\n    DesktopPointerBehaviorSettings, desktop_pointer_behavior_channel,\n};
+pub use desktop_pointer_behavior::{
+    DesktopPointerBehaviorCommand, DesktopPointerBehaviorController,
+    DesktopPointerBehaviorSettings, desktop_pointer_behavior_channel,
+};
 pub use touchpad_controller::{
     TouchpadSettingsCommand, TouchpadSettingsController, touchpad_settings_channel,
 };
