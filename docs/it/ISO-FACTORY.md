@@ -129,7 +129,7 @@ Il coordinatore installa esplicitamente il validatore boot del chroot in `/usr/l
 
 I livelli di validazione devono coprire almeno:
 
-1. Stato dei pacchetti nel chroot: `live-boot`, `live-boot-initramfs-tools`, `live-config`, `initramfs-tools` e il pacchetto kernel previsto.
+1. Stato dei pacchetti nel chroot: `live-boot`, `live-boot-initramfs-tools`, `live-config`, il backend esplicito `live-config-systemd`, `systemd-sysv`, `initramfs-tools` e il pacchetto kernel previsto.
 2. Presenza ed esecuzione dell'hook initramfs di live-boot e dello script di avvio anticipato.
 3. Generazione corretta dell'initramfs per il kernel installato.
 4. Presenza di `scripts/live` in ogni initramfs selezionato.
