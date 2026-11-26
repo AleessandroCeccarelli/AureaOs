@@ -8,7 +8,6 @@
 pub mod cursor_animation;
 pub mod cursor_theme;
 pub mod cursor_trail;
-pub mod cursor_trail_animation;
 pub mod interaction;
 #[cfg(feature = "drm")]
 pub mod pointer_acceleration;
