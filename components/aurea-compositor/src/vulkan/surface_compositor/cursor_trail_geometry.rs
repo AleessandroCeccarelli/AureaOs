@@ -28,7 +28,7 @@ pub(super) fn cursor_trail_draws(
     image_size: (u32, u32),
     hotspot: (u32, u32),
 ) -> Vec<CursorTrailDraw> {
-    scene.cursor_trail().iter().filter_map(|sample| {
+    scene.cursor_trail().iter().rev().filter_map(|sample| {
         let (geometry, scissor, texture_transform) = native_cursor_geometry_at(
             sample.position(),
             target,
