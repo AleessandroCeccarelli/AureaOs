@@ -123,16 +123,16 @@ Nel repository sono presenti un preflight del chroot, un generatore UKI/ISO e un
 
 - `tools/iso/tests/validate-chroot-boot.sh` — controlla nel chroot i pacchetti di boot richiesti e l'integrazione initramfs di live-boot, rigenera l'initramfs e verifica la presenza di `scripts/live`.
 - `tools/iso/scripts/build-systemd-boot-live-iso.sh` — genera una UKI dalla coppia kernel/initramfs Debian esatta, crea un'immagine EFI FAT con systemd-boot e le voci UKI, rimuove il payload GRUB intermedio e rimasterizza la ISO UEFI-only.
-- `tools/iso/tests/validate-live-image.sh` — controlla immagine EFI, percorso fallback systemd-boot, voce di avvio, sezioni UKI e parametro `boot=live`, oltre al vero rootfs SquashFS: binario desktop, launcher, unit systemd, definizione PAM, link di abilitazione e entrambi gli asset RGBA8 del menu contestuale con dimensioni esatte; verifica anche il catalogo El Torito EFI.
+- `tools/iso/tests/validate-live-image.sh` — verifica che il vero rootfs SquashFS sia Debian 13 Trixie con systemd PID 1 e pacchetti Debian Live necessari; controlla l'integrazione della sessione e gli asset; ispeziona ogni UKI ed estrae il suo initramfs incorporato per dimostrare che proprio quel payload contiene `scripts/live`; controlla infine loader EFI, voci systemd-boot e catalogo El Torito.
 
-Il coordinatore installa esplicitamente il validatore boot del chroot in `/usr/local/libexec/aureaos/` prima dell'esecuzione di live-build. L'hook lo richiama dopo l'installazione e la pulizia dei pacchetti. Il coordinatore genera poi UKI/immagine EFI e valida sia il tree binary sia la ISO copiata.
+Il coordinatore installa esplicitamente il validatore boot del chroot in `/usr/local/libexec/aureaos/` prima dell'esecuzione di live-build. L'hook rigenera e controlla l'initramfs prima di rimuovere le dipendenze di compilazione. Il generatore UKI lavora su una copia isolata tramite hard link sullo stesso filesystem: kernel/initramfs separati e file GRUB vengono rimossi soltanto da questa copia, mai dal workspace live-build da riprendere. La copia viene validata prima di creare la ISO; il coordinatore valida poi la ISO esatta e la candidata copiata.
 
 I livelli di validazione devono coprire almeno:
 
 1. Stato dei pacchetti nel chroot: `live-boot`, `live-boot-initramfs-tools`, `live-config`, il backend esplicito `live-config-systemd`, `systemd-sysv`, `initramfs-tools` e il pacchetto kernel previsto.
 2. Presenza ed esecuzione dell'hook initramfs di live-boot e dello script di avvio anticipato.
 3. Generazione corretta dell'initramfs per il kernel installato.
-4. Presenza di `scripts/live` in ogni initramfs selezionato.
+4. Presenza di `scripts/live` in ogni initramfs selezionato e, indipendentemente, nella sezione `.initrd` estratta da ogni UKI finale.
 5. Immagine filesystem Live non vuota in `/live/filesystem.squashfs`, con binario desktop e integrazione della sessione realmente presenti al suo interno.
 6. Immagine EFI FAT con `EFI/BOOT/BOOTX64.EFI`, systemd-boot e configurazione loader.
 7. Una o più UKI con kernel, initramfs, metadati os-release AureaOS e parametro `boot=live` incorporato.
@@ -140,6 +140,8 @@ I livelli di validazione devono coprire almeno:
 9. Assenza di GRUB e di kernel/initramfs separati nell'immagine finale.
 10. Leggibilità della ISO e catalogo El Torito EFI che punta all'immagine systemd-boot.
 11. Checksum SHA-256 e report di validazione leggibile anche da strumenti automatici.
+
+**Confine di responsabilità:** il controllo del sistema base termina quando Debian 13 Trixie ha montato il root filesystem Live SquashFS, systemd PID 1 è in esecuzione e pacchetti Live/initramfs sono stati verificati. Il successivo servizio desktop, la sessione PAM, il compositor, Vulkan e il desktop visibile appartengono all'integrazione AureaOS: non sono prove del corretto avvio di Debian Live.
 
 Un controllo non implementato o non eseguito deve risultare in sospeso, non essere considerato superato per supposizione.
 
