@@ -2186,3 +2186,5 @@ Separata in `compositor/pointer.rs` la fase finale comune ai movimenti relativi 
 - Corretto `disconnect_pointing_device`: prima di cancellare inventario e stato del dispositivo, ora invia i rilasci dei pulsanti ancora premuti usando il timestamp monotono; il `PointerManager` continua a preservare un pulsante se un altro dispositivo fisico lo tiene ancora premuto.
 - Questo evita che un'applicazione mantenga un click logicamente premuto dopo lo scollegamento del mouse o del touchpad.
 - Commit: `90dec90c`. Nessuna build o test eseguiti: le verifiche restano raggruppate come concordato.
+
+- Esteso il fix anche alla riclassificazione dello stesso dispositivo da parte di libinput: se un sysname viene riannunciato con una classe diversa, il compositor chiude prima il vecchio ciclo di vita, sintetizza eventuali rilasci e azzera stato/gesti prima di registrare la nuova classe. Commit: `a99c0b60`.
