@@ -999,3 +999,6 @@ Poi ispezionare checksum/El Torito/ESP e avviare da Ventoy su hardware. Registra
 - **No verification has yet been performed for this publication change:** do not claim the script passes shell syntax checks, UKI generation, ISO validation, QEMU/OVMF or physical boot until those checks are actually run. The previous `/scripts/live` kernel panic is still an open hardware-validation issue.
 - The current ESP image sizing is deliberately guarded. If the UKI does not fit, fail with the explicit size diagnostic; do not silently truncate the UKI or publish an image without it. Measure real Trixie kernel/initramfs/UKI sizes before changing the EFI image sizing strategy.
 - Keep work focused on getting the current desktop and pointer visible in Live mode. No fake/demo desktop and no speculative new applications.
+
+- Follow-up hardening: the Podman wrapper now derives its default build-parent name from the checked-out source commit and refuses a dirty/untracked repository. This prevents `RESUME=1` from silently reusing a completed live-build chroot containing an older desktop binary after a new commit. Resume only the same clean commit; a new commit gets a fresh workspace.
+- The ISO validator's `--iso` mode now extracts `/boot/efi.img` to `$TEMP_DIR/boot/efi.img`, matching its later inspection path. Static fix only; still requires runtime validation.
