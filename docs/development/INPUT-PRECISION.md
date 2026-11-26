@@ -31,7 +31,7 @@ AureaOS must support ordinary desktop pointing devices and professional digitize
 - Preserve absolute coordinates, pressure, distance, tilt, rotation, slider/wheel values and tool button transitions when the backend reports changes.
 - Keep pen tip and barrel-button state associated with the originating physical tablet; close proximity and synthesize releases on disconnect.
 - Keep per-tablet output assignment and calibration independent. A disconnected display must not silently redirect a tablet to another monitor.
-- The current code already has per-device calibration/output mapping and a tablet-tool ownership registry. Durable physical-device keyed tablet profile storage remains future work.
+- The current code has per-device calibration/output mapping, a tablet-tool ownership registry and durable physical-device keyed calibration profiles. Persisting tablet-to-monitor assignment is intentionally separate because runtime output IDs are not stable physical monitor identities.
 - Verify eraser and per-tool capabilities from the actual tablet tool descriptor before exposing them in Settings; do not guess from vendor/product strings.
 
 ### Multiple devices
@@ -42,15 +42,16 @@ AureaOS must support ordinary desktop pointing devices and professional digitize
 
 ## Work completed in this block
 
-- Removed periodic synchronous stderr logging from the relative pointer-motion hot path in the compositor and libinput dispatch.
+- Removed synchronous stderr logging from relative motion, pointer-button and scroll-event hot paths in the compositor/libinput dispatch. Device discovery/removal diagnostics remain event-scoped.
 - Added finite-value validation for accelerated and unaccelerated motion samples. Valid sub-pixel floating-point values remain untouched.
 - Made the dispatch path explicitly apply pointer acceleration only to registered mouse and touchpad devices. Tablet and touchscreen classes cannot inherit this policy accidentally.
+- Made pointer and touchpad profile stores roll back their in-memory change when persistence fails, so the live profile cache cannot diverge from the on-disk profile. Added assertions for this failure path.
 - Confirmed the existing scroll dispatch passes horizontal/vertical continuous values, horizontal/vertical v120 values, source and relative direction to the compositor's axis-frame implementation.
 - Confirmed the tablet path already forwards pressure, distance, tilt, rotation, slider and wheel changes through Smithay's tablet tool handle.
 
 ## Verification still required
 
-No build, formatter, unit test, hardware test or benchmark was run for this block. Run these together on the Fedora development machine as requested.
+No build, formatter, unit test, hardware test or benchmark was run for this block. Run these together on the Fedora development machine as requested. The source-level work is still under the pointer/input block; do not treat this as permission to move on to unrelated desktop features.
 
 Hardware validation matrix:
 1. Logitech MX Master 4 (including high-resolution horizontal/vertical wheel behavior and side buttons).
