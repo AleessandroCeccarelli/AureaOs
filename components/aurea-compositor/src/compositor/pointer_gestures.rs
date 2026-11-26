@@ -41,7 +41,7 @@ impl PointerGestureOwner {
                 self.0 = Some((device, kind));
                 true
             }
-            Some(owner) => owner == (device, kind),
+            Some(_) => false,
         }
     }
 
@@ -65,14 +65,19 @@ impl PointerGestureOwner {
         true
     }
 
-    fn remove_device(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
-        if self.0.is_some_and(|(owner, _)| owner == device) {
-            self.0 = None;
-        }
-    }
-
     fn take(&mut self) -> Option<(aurea_desktop_api::input::InputDeviceId, PointerGestureKind)> {
         self.0.take()
+    }
+
+    fn take_device(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+    ) -> Option<PointerGestureKind> {
+        if self.0.is_some_and(|(owner, _)| owner == device) {
+            self.0.take().map(|(_, kind)| kind)
+        } else {
+            None
+        }
     }
 }
 
@@ -80,14 +85,32 @@ impl AureaCompositor {
     /// Cancels the active Wayland gesture stream when the native session pauses.
     ///
     /// A VT switch can interrupt libinput without delivering the matching end
-    /// event. Clear both the semantic gesture accumulator and the protocol
-    /// stream so a later activation cannot complete a stale desktop action.
+    /// event. Clear both the semantic gesture accumulator and protocol stream.
     #[cfg(feature = "drm")]
     pub(crate) fn cancel_active_pointer_gesture(&mut self, time: u32) {
-        let Some((device, kind)) = self.pointer_gesture_owner.take() else {
-            return;
-        };
+        if let Some((device, kind)) = self.pointer_gesture_owner.take() {
+            self.cancel_pointer_gesture(device, kind, time);
+        }
+    }
 
+    /// Cancels an unfinished gesture before its physical device is unregistered.
+    pub(crate) fn clear_pointing_device_state(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+        time: u32,
+    ) {
+        if let Some(kind) = self.pointer_gesture_owner.take_device(device) {
+            self.cancel_pointer_gesture(device, kind, time);
+        }
+        self.remove_pointing_device_state(device);
+    }
+
+    fn cancel_pointer_gesture(
+        &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
+        kind: PointerGestureKind,
+        time: u32,
+    ) {
         match kind {
             PointerGestureKind::Swipe => self.interaction_engine.end_swipe(device, true),
             PointerGestureKind::Pinch => self.interaction_engine.end_pinch(device, true),
@@ -113,12 +136,6 @@ impl AureaCompositor {
             ),
         }
         pointer.frame(self);
-    }
-
-    /// Drops any unfinished gesture sequence owned by a disconnected device.
-    pub(crate) fn clear_pointing_device_state(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
-        self.pointer_gesture_owner.remove_device(device);
-        self.remove_pointing_device_state(device);
     }
 
     fn publish_completed_interactions(&mut self) {
@@ -449,6 +466,26 @@ mod owner_tests {
 
         assert!(owner.begin(retained, PointerGestureKind::Pinch));
         assert!(owner.owns(retained, PointerGestureKind::Pinch));
+    }
+
+    #[test]
+    fn duplicate_begin_for_same_sequence_is_rejected() {
+        let mut owner = PointerGestureOwner::default();
+        let device = InputDeviceId(7);
+        assert!(owner.begin(device, PointerGestureKind::Swipe));
+        assert!(!owner.begin(device, PointerGestureKind::Swipe));
+        assert!(!owner.begin(device, PointerGestureKind::Pinch));
+        assert_eq!(owner.take(), Some((device, PointerGestureKind::Swipe)));
+    }
+
+    #[test]
+    fn device_removal_takes_only_its_active_gesture_owner() {
+        let mut owner = PointerGestureOwner::default();
+        let device = InputDeviceId(10);
+        assert!(owner.begin(device, PointerGestureKind::Hold));
+        assert_eq!(owner.take_device(InputDeviceId(11)), None);
+        assert_eq!(owner.take_device(device), Some(PointerGestureKind::Hold));
+        assert_eq!(owner.take(), None);
     }
 
     #[test]
