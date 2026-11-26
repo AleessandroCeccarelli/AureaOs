@@ -90,7 +90,6 @@ for KERNEL in "${KERNELS[@]}"; do
         --initrd="$INITRD" \
         --cmdline="$CMDLINE" \
         --os-release="@$OS_RELEASE" \
-        --stub="$UKI_STUB" \
         --output="$UKI_PATH"
 
     [[ -s "$UKI_PATH" ]] || fail "ukify did not create $UKI_PATH"
