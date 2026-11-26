@@ -6,6 +6,7 @@
 //! Input policy and routing for desktop interactions.
 
 pub mod cursor_animation;
+pub mod cursor_theme;
 pub mod interaction;
 #[cfg(feature = "drm")]
 pub mod pointer_acceleration;
