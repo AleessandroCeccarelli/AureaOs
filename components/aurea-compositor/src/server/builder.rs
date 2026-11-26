@@ -232,7 +232,21 @@ pub(super) fn build(
         .compositor
         .publish_wayland_outputs(&display_handle)
         .map_err(io::Error::other)?;
-    state.compositor.center_pointer_on_primary_output();
+
+    // A DRM compositor with an active display must start with a valid,
+    // visible pointer location. Do not silently boot at (0, 0), which may be
+    // outside a negative-origin or rearranged monitor layout.
+    let active_outputs = state.compositor.output_manager().active_output_count();
+    let pointer_centered = state.compositor.center_pointer_on_primary_output();
+    if active_outputs > 0 && !pointer_centered {
+        return Err(io::Error::other(
+            "AureaOS: active display outputs are available, but the Wayland pointer could not be placed on the primary output",
+        ));
+    }
+    eprintln!(
+        "AureaOS pointer: startup capability ready; active_outputs={} centered={}",
+        active_outputs, pointer_centered
+    );
 
     // Register the listening socket and incoming client handling.
     register_wayland_socket(&loop_handle, socket_name)?;
