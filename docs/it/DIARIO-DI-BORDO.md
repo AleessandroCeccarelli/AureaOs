@@ -2243,3 +2243,20 @@ capacità non supportate o errori reali.
 
 Nessuna build o test eseguiti: la verifica resta accorpata al controllo Fedora
 concordato.
+
+### 26 novembre 2026 — Secondo passaggio di semplificazione mouse/touchpad
+
+Controllati gli usi effettivi del registro dispositivi, delle capability e del report
+di configurazione. Il registro e il manager restano necessari: conservano inventario
+per la sessione, preferenze per periferica, notifiche ai client e soprattutto
+l'aggregazione dei pulsanti fisici sul singolo seat Wayland. Quest'ultima non è una
+duplicazione di libinput: serve a mantenere coerente lo stato condiviso del seat
+quando più dispositivi tengono premuto lo stesso pulsante o uno viene scollegato.
+
+Rimossa da AppliedTouchpadSettings l'operazione invalidate(), identica a remove()
+e priva di un uso runtime distinto. Un solo metodo gestisce ora la rimozione della
+cache dei profili applicati. Conservati capability snapshot e report perché sono
+dati reali letti/applicati tramite libinput e costituiscono il contratto per le
+future Impostazioni; non viene introdotto un secondo sistema di rilevamento.
+
+Nessuna build o test eseguiti. La validazione Rust resta accorpata come concordato.
