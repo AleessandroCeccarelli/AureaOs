@@ -219,7 +219,7 @@ The repository already has a working foundation, but ISO Factory is not yet a fu
 - UKI inspection for embedded Live boot parameters and final image validation.
 - Workspace preservation after success or failure in the current inner build script.
 - Source-commit marker and strict same-commit resume guard in the inner coordinator.
-- Debian target dependencies for the always-built TurboJPEG C shim and the enabled HEIF feature; build-only headers and artwork-generation tools are purged after use.
+- Debian target dependencies for the always-built TurboJPEG C shim and the enabled HEIF feature; build-only headers are purged after use; SVG rasterization tools remain confined to the disposable builder container.
 - SHA-256 sidecars for both the uniquely named candidate and the stable convenience alias.
 - JSON provenance manifest for each validated candidate, including exact source commit, kernel version, image size/hash and hardware-validation state.
 - Atomic promotion of the stable `AureaOS.iso` alias only after validation of the exact temporary ISO; uniquely named historical candidates are preserved.
