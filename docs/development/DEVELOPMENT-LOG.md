@@ -2152,3 +2152,12 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Debian reference checks: Trixie's `live-boot` requires `boot=live` and uses initramfs-tools to locate the `/live` filesystem; Trixie packages systemd-boot EFI binaries and systemd-ukify. The UKI generator embeds kernel, initramfs, os-release and the controlled command line.
 - **Not verified yet:** no ISO build, shellcheck/syntax run, ukify invocation, FAT-image inspection, El Torito inspection, Cargo checks, QEMU/OVMF boot or physical hardware boot was run. The previous `/scripts/live` kernel panic remains unresolved until the new UKI image is actually booted. The new preflight and final-image checks reduce the chance of repeating the missing-initramfs-script failure but do not prove boot success.
 - Keep the established workflow: accumulate source changes, then run grouped Fedora `cargo fmt`, workspace check/tests, build the ISO, inspect logs and test via Ventoy on hardware. Do not generate an ISO during this source-editing pass.
+
+
+### 2026-11-26 — ISO Live preflight staging correction
+
+- A follow-up source review found that the chroot hook invoked `/usr/local/libexec/aureaos/validate-chroot-boot.sh`, but the coordinator created the include directory without copying the validator into it. A fresh build could therefore fail at the preflight invocation even when the script existed in the repository.
+- Updated `build-live-iso.sh` to stage `tests/validate-chroot-boot.sh` into the chroot include tree with executable permissions before live-build runs.
+- Strengthened final UKI validation to require the `.linux`, `.initrd`, `.osrel`, and `.cmdline` PE sections, the embedded `boot=live` argument, and the AureaOS `ID=aureaos` identity.
+- Corrected ISO Factory EN/IT documentation: final Live media carries the squashfs payload plus the UKI, not separate kernel/initramfs files; only UEFI boot is in scope.
+- No build, shell syntax check, ukify invocation, ISO generation, QEMU/OVMF or hardware test was run. This remains a source-level correction awaiting the grouped Fedora validation.
