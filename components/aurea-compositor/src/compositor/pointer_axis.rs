@@ -27,7 +27,8 @@ fn axis_v120_value(value: Option<f64>) -> Option<i32> {
 }
 
 impl AureaCompositor {
-    /// Sends one grouped scroll frame while preserving source and direction data.
+    /// Sends one grouped scroll frame while preserving source, direction and high-resolution wheel data.
+    /// Both vertical and horizontal wheel axes are forwarded without desktop-side reinterpretation.
     #[allow(clippy::too_many_arguments)]
     pub fn handle_pointer_axis(
         &mut self,
