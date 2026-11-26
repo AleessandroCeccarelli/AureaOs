@@ -2061,7 +2061,7 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Added the shell runtime entry point for device-scoped mouse settings and connected the channel during application startup.
 - Forwarded the receiver through the desktop factory, compositor factory, Wayland server and Calloop-owned state.
 - Added compositor-side command draining with validation: unknown devices and non-mouse devices are ignored; accepted profiles update the compositor's per-device pointer settings.
-- The existing libinput acceleration adapter samples the new profile on the next pointer-motion event. No mouse libinput handles are retained, avoiding stale handles after hot-unplug.
+- The compositor applies the profile immediately to the retained live libinput handle. Handles are removed on disconnect/reclassification, and acceleration is reapplied after session activation.
 - Added a unit test for shell-to-compositor command delivery and updated compositor-factory test doubles.
 - Updated the input event coverage audit and Italian engineering diary.
 
