@@ -9,7 +9,7 @@ use std::{collections::HashMap, error::Error, fmt, fs, path::PathBuf, sync::Arc}
 
 use crate::{
     desktop::DesktopTheme,
-    render::shm_buffer::ShmBufferSnapshot,
+    render::{cursor::{DEFAULT_CURSOR_HOTSPOT, default_cursor_snapshot}, shm_buffer::ShmBufferSnapshot},
 };
 
 use super::{
@@ -103,7 +103,9 @@ impl VulkanNativeCursorTexture {
             return Ok(true);
         }
 
-        let frames = load_cursor_frames(name, theme)?;
+        // A missing theme package or cursor alias must never make the pointer disappear.
+        // Keep the built-in high-contrast arrow as a deterministic fallback.
+        let frames = load_cursor_frames(name, theme).or_else(|_| built_in_arrow_frame())?;
         let selected_size = frames
             .iter()
             .map(|frame| frame.width.max(frame.height))
@@ -154,6 +156,19 @@ impl VulkanNativeCursorTexture {
     ) -> Option<&VulkanNativeCursorAsset> {
         self.assets.get(&Self::cache_key(name, theme, requested_size))
     }
+}
+
+fn built_in_arrow_frame() -> Result<Vec<XcursorFrame>, VulkanNativeCursorTextureError> {
+    let snapshot = default_cursor_snapshot()
+        .map_err(|error| VulkanNativeCursorTextureError::Snapshot(error.to_string()))?;
+    Ok(vec![XcursorFrame {
+        width: snapshot.width(),
+        height: snapshot.height(),
+        hotspot_x: DEFAULT_CURSOR_HOTSPOT.0 as u32,
+        hotspot_y: DEFAULT_CURSOR_HOTSPOT.1 as u32,
+        delay_ms: 0,
+        rgba8: snapshot.pixels().to_vec(),
+    }])
 }
 
 fn frame_to_snapshot(
