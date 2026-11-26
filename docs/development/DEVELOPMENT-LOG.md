@@ -2209,3 +2209,12 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Commits: `b106476f`, `c6d99c16`, `2fa29f93`, `3752f5e7`, `c1141660`, `28753031`.
 - **Not verified in execution:** no Cargo build or tests were run, in accordance with the accumulated-work workflow. GitHub reported no check-runs for the latest commit at the time of inspection. The Vulkan renderer still uses the built-in arrow texture for all named cursor states; do not claim that the 26 cursor images are visible yet.
 - **Next implementation block:** add a bounded Xcursor runtime loader that resolves the installed `AureaOS-Light` / `AureaOS-Dark` theme, selects the closest supported pixel size, validates image dimensions and hotspot, converts the chosen frame to the existing RGBA8 snapshot contract, and feeds the texture cache. Then add animated busy-frame scheduling and per-output fractional/high-DPI validation. Keep file I/O and Xcursor parsing out of the frame callback.
+
+### 26 November 2026 — Xcursor binary decoder foundation
+
+- Added a dedicated Vulkan-side Xcursor file decoder. It validates the file signature, header/version, table-of-contents bounds, image chunk type and size, dimensions (maximum 256×256), hotspot bounds, frame count and total file size (maximum 16 MiB) before reading image payloads.
+- Converts Xcursor's little-endian ARGB CARDINAL pixels into the compositor's existing tightly packed RGBA8 snapshot representation. Preserves each frame's dimensions, hotspot and delay for subsequent texture-cache and animation work.
+- Added synthetic fixture tests for successful ARGB conversion, hotspot/delay preservation, invalid magic, truncated pixel payloads, invalid hotspots and oversized images.
+- Registered the decoder as a private Vulkan module. No third-party parser dependency or C library is introduced.
+- **Not yet connected to the Vulkan cursor texture cache:** the renderer still uses the built-in arrow. The next change must add theme-path resolution, safe file loading, closest-size selection, cache ownership and actual draw geometry using the decoded hotspot. Animation frame scheduling remains a separate follow-up.
+- No Cargo build or tests were run; this is source-only work accumulated for the planned verification pass.
