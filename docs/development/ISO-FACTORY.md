@@ -215,16 +215,15 @@ The repository already has a working foundation, but ISO Factory is not yet a fu
 - systemd-boot + UKI EFI image assembly and final UEFI-only ISO mastering.
 - UKI inspection for embedded Live boot parameters and final image validation.
 - Workspace preservation after success or failure in the current inner build script.
-- SHA-256 sidecar generation.
+- SHA-256 sidecars for both the uniquely named candidate and the stable convenience alias.
+- JSON provenance manifest for each validated candidate, including exact source commit, kernel version, image size/hash and hardware-validation state.
+- Atomic promotion of the stable `AureaOS.iso` alias only after validation of the exact temporary ISO; uniquely named historical candidates are preserved.
 
 ### Remaining work before calling ISO Factory release-ready
 
 - Inspect the existing failed-boot ISO's initramfs on Fedora before another rebuild.
 - Establish why the real boot reported that `/scripts/live` could not be opened. The exact root cause remains unconfirmed.
 - Verify the validator's assumptions against the actual generated UEFI image and El Torito EFI path.
-- Make publication atomic: validate a temporary candidate before replacing the stable `AureaOS.iso`. A failed validation must never overwrite the last known candidate.
-- Preserve uniquely named historical ISO artifacts, manifests, reports and logs rather than retaining only one mutable filename.
-- Generate a manifest containing the exact source commit and actual validation results.
 - Persist complete timestamped logs and a concise final report for successful and failed runs.
 - Add explicit, safe cleanup controls; never automatically delete a workspace or historical artifact needed for diagnosis or rollback.
 - Consider caching/versioning the builder container so package installation does not needlessly repeat, without compromising updates or reproducibility.
