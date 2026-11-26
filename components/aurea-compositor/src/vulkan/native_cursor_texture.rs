@@ -125,7 +125,7 @@ fn frame_index_for_elapsed(delays_ms: &[u32], elapsed_ms: u64) -> usize {
 
 #[cfg(test)]
 mod animation_tests {
-    use super::frame_index_for_elapsed;
+    use super::{built_in_arrow_frame, frame_index_for_elapsed};
 
     #[test]
     fn selects_frames_using_xcursor_delays_and_wraps() {
@@ -143,6 +143,25 @@ mod animation_tests {
     fn treats_zero_delay_as_a_minimum_one_millisecond_frame() {
         assert_eq!(frame_index_for_elapsed(&[0, 10], 0), 0);
         assert_eq!(frame_index_for_elapsed(&[0, 10], 1), 1);
+    }
+
+    #[test]
+    fn built_in_fallback_has_valid_dimensions_hotspot_and_rgba_payload() {
+        let frame = built_in_arrow_frame(64).unwrap().remove(0);
+
+        assert_eq!((frame.width, frame.height), (64, 64));
+        assert_eq!((frame.hotspot_x, frame.hotspot_y), (10, 6));
+        assert_eq!(frame.rgba8.len(), 64 * 64 * 4);
+        assert_eq!(frame.delay_ms, 0);
+    }
+
+    #[test]
+    fn built_in_fallback_clamps_extreme_raster_sizes() {
+        let small = built_in_arrow_frame(1).unwrap().remove(0);
+        let large = built_in_arrow_frame(4096).unwrap().remove(0);
+
+        assert_eq!((small.width, small.height), (16, 16));
+        assert_eq!((large.width, large.height), (256, 256));
     }
 }
 
