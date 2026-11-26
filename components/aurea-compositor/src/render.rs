@@ -44,6 +44,7 @@ pub struct RenderScene<'a> {
     toplevels: Vec<RenderToplevel<'a>>,
     cursor_surface: Option<(WlSurface, Point<i32, Logical>, Point<i32, Logical>)>,
     native_cursor_location: Option<Point<i32, Logical>>,
+    native_cursor_asset: Option<&'static str>,
     native_cursor_scale: f64,
 }
 
@@ -71,6 +72,7 @@ impl<'a> RenderScene<'a> {
                 .collect(),
             cursor_surface: None,
             native_cursor_location: None,
+            native_cursor_asset: None,
             native_cursor_scale: 1.0,
         }
     }
@@ -142,8 +144,11 @@ impl<'a> RenderScene<'a> {
 
         match status {
             CursorImageStatus::Hidden => {}
-            CursorImageStatus::Named(_) => {
+            CursorImageStatus::Named(icon) => {
                 self.native_cursor_location = Some(cursor::default_cursor_origin(pointer_location));
+                self.native_cursor_asset = Some(
+                    crate::input::cursor_theme::asset_name_for_icon(icon.name()),
+                );
             }
             CursorImageStatus::Surface(surface) => {
                 if !surface.alive() {
@@ -176,6 +181,11 @@ impl<'a> RenderScene<'a> {
     /// Client-provided cursor surfaces are kept in the regular Wayland surface tree.
     pub fn native_cursor_location(&self) -> Option<Point<i32, Logical>> {
         self.native_cursor_location
+    }
+
+    /// Returns the canonical AureaOS asset selected for a named cursor.
+    pub fn native_cursor_asset(&self) -> Option<&'static str> {
+        self.native_cursor_asset
     }
 
     /// Returns the current scale for the compositor-owned cursor image.
