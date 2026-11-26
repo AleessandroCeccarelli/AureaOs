@@ -158,7 +158,7 @@ pub(super) fn reapply_pointer_acceleration(state: &mut WaylandState) {
     for id in touchpad_ids {
         let settings = state.compositor.pointer_settings_for(id);
         if let Some(device) = state.touchpad_devices.get_mut(&id) {
-            pointing::apply_pointer_acceleration(device, settings);
+            crate::input::pointer_acceleration::apply(device, settings);
         }
     }
 }
