@@ -17,7 +17,7 @@ use aurea_desktop_api::input::{DesktopPointerBehaviorCommand, PointerSettingsCom
 use std::sync::mpsc::Receiver;
 
 #[cfg(feature = "drm")]
-use crate::input::pointing::AppliedTouchpadSettings;
+use crate::input::pointing::{AppliedTouchpadSettings, DesktopPointerBehaviorStore};
 
 #[cfg(feature = "drm")]
 use std::{collections::HashMap, path::PathBuf};
@@ -59,6 +59,8 @@ pub(super) struct WaylandState {
     pub(super) pointer_settings_receiver: Receiver<PointerSettingsCommand>,
     #[cfg(feature = "drm")]
     pub(super) desktop_pointer_behavior_receiver: Receiver<DesktopPointerBehaviorCommand>,
+    #[cfg(feature = "drm")]
+    pub(super) desktop_pointer_behavior_store: DesktopPointerBehaviorStore,
 
     /// Last successfully applied touchpad profile for each connected device.
     #[cfg(feature = "drm")]
