@@ -52,21 +52,6 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 device.config_tap_finger_count(),
                 device.config_dwt_is_available()
             );
-            let touchpad_settings = state.compositor.touchpad_settings_for(device_id);
-            let touchpad_report = pointing::configure_touchpad(&mut device, touchpad_settings);
-            if let Some(report) = touchpad_report {
-                tracing::info!(
-                    device_id = device_id.0,
-                    ?report,
-                    "Applied supported touchpad defaults"
-                );
-                if !report.has_failures() {
-                    state
-                        .applied_touchpad_settings
-                        .mark_applied(device_id, touchpad_settings);
-                }
-            }
-
             if let Some(descriptor) = pointing::describe(&device) {
                 eprintln!(
                     "AureaOS input: pointing device classified kind={:?} name={:?} id={}",
@@ -81,6 +66,29 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 state
                     .compositor
                     .register_pointing_device(descriptor.clone());
+
+                // Registration restores the saved physical-device profile.
+                // Configure only after that restore, so the device never
+                // receives a transient default profile before its preferences.
+                let touchpad_report = if descriptor.kind
+                    == aurea_desktop_api::input::InputDeviceKind::Touchpad
+                {
+                    let settings = state.compositor.touchpad_settings_for(device_id);
+                    let report = pointing::configure_touchpad(&mut device, settings);
+                    if let Some(report) = report {
+                        tracing::info!(
+                            device_id = device_id.0,
+                            ?report,
+                            "Applied restored touchpad preferences"
+                        );
+                        if !report.has_failures() {
+                            state.applied_touchpad_settings.mark_applied(device_id, settings);
+                        }
+                    }
+                    report
+                } else {
+                    None
+                };
 
                 // Apply the effective acceleration profile as soon as the
                 // physical pointer is discovered, before its first motion.
