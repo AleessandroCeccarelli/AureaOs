@@ -45,11 +45,12 @@ impl AureaCompositor {
     /// output-local mapping.
     pub fn handle_pointer_motion(
         &mut self,
+        device: aurea_desktop_api::input::InputDeviceId,
         delta: Point<f64, smithay::utils::Logical>,
         unaccelerated_delta: Point<f64, smithay::utils::Logical>,
         time: u32,
     ) {
-        if self.pointer_settings.shake_to_locate()
+        if self.pointer_settings_for(device).shake_to_locate()
             && self.pointer_shake.update(unaccelerated_delta, time)
         {
             self.cursor_locate_animation.trigger();
