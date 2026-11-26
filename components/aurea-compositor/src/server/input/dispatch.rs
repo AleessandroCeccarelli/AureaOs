@@ -88,9 +88,8 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
 
                 // Apply the effective acceleration profile as soon as the
                 // physical pointer is discovered, before its first motion.
-                // The motion path also refreshes it, so settings changed at
-                // runtime continue to take effect without retaining mouse
-                // handles in the compositor state.
+                // Runtime preference commands update the live mouse handle;
+                // motion also refreshes the profile as a defensive fallback.
                 if matches!(
                     descriptor.kind,
                     aurea_desktop_api::input::InputDeviceKind::Mouse
