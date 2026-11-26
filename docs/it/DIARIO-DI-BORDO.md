@@ -2099,3 +2099,8 @@ Estesa la scia dalla cronologia degli input fino agli snapshot della scena e all
 Durante la revisione è emerso un problema concreto: la finestra di tre secondi usata per il caricamento asincrono del cursore partiva dalla costruzione del compositor, prima della ricerca DRM, dell'inizializzazione Vulkan e della pubblicazione dei monitor. Su hardware lento poteva scadere prima del primo frame; il desktop veniva quindi disegnato senza freccia e, se il mouse restava fermo, non era garantito un altro frame.
 
 Aggiunto begin_cursor_asset_warmup(), richiamato soltanto dopo la pubblicazione delle uscite e il corretto centraggio del puntatore. La finestra viene così riavviata nel momento giusto e vengono richiesti subito nuovi frame, consentendo al worker Xcursor e all'upload Vulkan di completarsi anche senza movimento del mouse o del trackpad. Modifica sorgente non ancora compilata o verificata su hardware.
+
+
+### 26 novembre 2026 — Freccia nativa immediata
+
+Il renderer non deve più aspettare la lettura, la decodifica e l'upload del tema Xcursor per mostrare il puntatore. Aggiunta una piccola freccia AureaOS ad alto contrasto, caricata una sola volta per dimensione raster e conservata in una cache limitata a quattro dimensioni. La freccia di base viene disegnata subito mentre il tema viene preparato in background; quando la texture del tema è pronta, sostituisce automaticamente la freccia provvisoria mantenendo coordinate e hotspot. Se il worker non parte o la sua coda è momentaneamente piena, il puntatore di base resta comunque disponibile. L'upload sincrono riguarda soltanto questa piccola immagine; lettura e decodifica Xcursor restano asincrone. Nessuna build, formattazione, test o prova fisica eseguiti.
