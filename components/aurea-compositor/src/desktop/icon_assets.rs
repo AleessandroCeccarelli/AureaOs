@@ -187,6 +187,7 @@ mod tests {
                     1.0,
                 )
                 .expect("Trash artwork must resolve");
+                assert!(asset.relative_path.starts_with("icons/generated/trash/"));
                 assert!(asset.relative_path.ends_with("-64.rgba"));
                 assert_eq!(asset.key.pixel_size, 64);
                 assert_eq!(asset.key.revision, 1);
