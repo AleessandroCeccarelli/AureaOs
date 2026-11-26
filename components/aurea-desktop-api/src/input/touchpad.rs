@@ -205,8 +205,13 @@ impl TouchpadSettings {
 /// Outcome of applying one setting to one physical touchpad.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TouchpadSettingStatus {
+    /// The requested operation was applied successfully.
     Applied,
+    /// The device does not expose the requested capability.
     Unsupported,
+    /// This option is inactive because another mutually exclusive option was selected.
+    NotRequested,
+    /// The device exposed the capability but libinput rejected the operation.
     Failed,
 }
 
@@ -236,8 +241,8 @@ impl TouchpadApplyReport {
             && matches!(self.tap_and_drag, TouchpadSettingStatus::Applied)
             && matches!(self.tap_drag_lock, TouchpadSettingStatus::Applied)
             && matches!(self.tap_button_map, TouchpadSettingStatus::Applied)
-            && matches!(self.two_finger_scroll, TouchpadSettingStatus::Applied)
-            && matches!(self.edge_scrolling, TouchpadSettingStatus::Applied)
+            && matches!(self.two_finger_scroll, TouchpadSettingStatus::Applied | TouchpadSettingStatus::NotRequested)
+            && matches!(self.edge_scrolling, TouchpadSettingStatus::Applied | TouchpadSettingStatus::NotRequested)
             && matches!(self.natural_scrolling, TouchpadSettingStatus::Applied)
             && matches!(self.disable_while_typing, TouchpadSettingStatus::Applied)
             && matches!(self.disable_while_trackpointing, TouchpadSettingStatus::Applied)
@@ -268,6 +273,18 @@ impl TouchpadApplyReport {
             || matches!(self.acceleration_profile, TouchpadSettingStatus::Failed)
             || matches!(self.send_events_mode, TouchpadSettingStatus::Failed)
     }
+
+    #[test]
+    fn mutually_exclusive_scroll_option_is_reported_as_not_requested() {
+        let mut result = report(TouchpadSettingStatus::Applied);
+        result.edge_scrolling = TouchpadSettingStatus::NotRequested;
+        assert!(result.all_applied());
+        assert!(!result.has_failures());
+
+        result.edge_scrolling = TouchpadSettingStatus::Unsupported;
+        assert!(!result.all_applied());
+    }
+
 }
 
 #[cfg(test)]
