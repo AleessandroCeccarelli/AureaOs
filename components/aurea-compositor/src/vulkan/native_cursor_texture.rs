@@ -106,7 +106,7 @@ impl VulkanNativeCursorTexture {
 
         // A missing theme package or cursor alias must never make the pointer disappear.
         // Keep the built-in high-contrast arrow as a deterministic fallback.
-        let frames = load_cursor_frames(name, theme).or_else(|_| built_in_arrow_frame())?;
+        let frames = load_cursor_frames(name, theme).or_else(|_| built_in_arrow_frame(requested_size))?;
         let selected_size = frames
             .iter()
             .map(|frame| frame.width.max(frame.height))
@@ -159,16 +159,31 @@ impl VulkanNativeCursorTexture {
     }
 }
 
-fn built_in_arrow_frame() -> Result<Vec<XcursorFrame>, VulkanNativeCursorTextureError> {
+fn built_in_arrow_frame(
+    requested_size: u32,
+) -> Result<Vec<XcursorFrame>, VulkanNativeCursorTextureError> {
     let snapshot = default_cursor_snapshot()
         .map_err(|error| VulkanNativeCursorTextureError::Snapshot(error.to_string()))?;
+    let source_size = snapshot.width();
+    let size = requested_size.clamp(16, 256);
+    let mut rgba8 = vec![0_u8; (size * size * 4) as usize];
+    for y in 0..size {
+        for x in 0..size {
+            let source_x = x * source_size / size;
+            let source_y = y * source_size / size;
+            let source_offset = ((source_y * source_size + source_x) * 4) as usize;
+            let destination_offset = ((y * size + x) * 4) as usize;
+            rgba8[destination_offset..destination_offset + 4]
+                .copy_from_slice(&snapshot.pixels()[source_offset..source_offset + 4]);
+        }
+    }
     Ok(vec![XcursorFrame {
-        width: snapshot.width(),
-        height: snapshot.height(),
-        hotspot_x: DEFAULT_CURSOR_HOTSPOT.0 as u32,
-        hotspot_y: DEFAULT_CURSOR_HOTSPOT.1 as u32,
+        width: size,
+        height: size,
+        hotspot_x: (DEFAULT_CURSOR_HOTSPOT.0 as u32 * size / source_size).min(size - 1),
+        hotspot_y: (DEFAULT_CURSOR_HOTSPOT.1 as u32 * size / source_size).min(size - 1),
         delay_ms: 0,
-        rgba8: snapshot.pixels().to_vec(),
+        rgba8,
     }])
 }
 
