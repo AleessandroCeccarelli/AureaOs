@@ -2271,3 +2271,16 @@ poteva restare nascosto. Aggiunto `scroll_method` a `TouchpadApplyReport`, così
 il report mantiene separati lo stato dei controlli UI e l'esito effettivo della
 modalità selezionata. `all_applied()` e `has_failures()` considerano anche questo
 campo. Aggiunti test del contratto API; nessuna build o test eseguiti ancora.
+
+
+### 26 novembre 2026 — Coerenza del ripristino touchpad e verifica API libinput
+
+Corretto il ripristino delle preferenze dopo la riattivazione della sessione: il
+chiamante usava ancora il vecchio metodo `invalidate()`, già rimosso perché
+ridondante. Ora elimina soltanto il profilo applicato del dispositivo interessato
+tramite `remove()`, poi lo riapplica usando l'handle libinput vivo.
+
+Verificata nella documentazione della versione Rust `input 0.9.1` la presenza dei
+getter `config_click_default_method()` e `config_accel_default_profile()` e dei
+relativi setter. La verifica documentale conferma l'API, ma non sostituisce Cargo
+check e i test sul target Fedora: la validazione cumulativa resta da eseguire.
