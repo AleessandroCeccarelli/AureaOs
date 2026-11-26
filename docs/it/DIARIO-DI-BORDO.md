@@ -2069,3 +2069,7 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - L'event loop mantiene la pianificazione a 16 ms quando è attivo il cursore animato `busy` e durante una finestra di tre secondi al primo caricamento. In questo modo decodifica e upload asincroni possono terminare anche senza ulteriori eventi del puntatore.
 - **Ancora da completare:** limiti di memoria e cache LRU tra nomi di cursore e scale dei monitor, comportamento reduced-motion, eventuale animazione di `left_ptr_watch` e verifica visiva completa.
 - **Non verificato in esecuzione:** non sono stati eseguiti formatting Cargo, build, check, test, validazione shell o generazione ISO. Continuiamo ad accumulare modifiche prima della verifica prevista su Fedora.
+
+- Correzione successiva: cache delle texture native limitata a 32 risorse / 16 MiB, con espulsione LRU. Una singola animazione è limitata a 4 MiB; se supera il limite viene mantenuto il primo fotogramma, evitando di esaurire il budget GPU condiviso.
+- Aggiunti test unitari indipendenti dalla GPU per durate Xcursor, confini esatti dei fotogrammi, ripetizione ciclica e gestione dei ritardi pari a zero.
+- Verificato nel manifest che `busy` definisce 12 fotogrammi / 1100 ms, mentre `left_ptr_watch` è attualmente un'immagine statica; per questo viene animato soltanto `busy`.
