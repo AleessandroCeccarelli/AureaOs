@@ -217,6 +217,10 @@ pub(super) fn apply_pending_desktop_pointer_behavior(state: &mut WaylandState) {
             Err(std::sync::mpsc::TryRecvError::Empty)
             | Err(std::sync::mpsc::TryRecvError::Disconnected) => break,
         };
+        if let Err(error) = state.desktop_pointer_behavior_store.set(command.settings) {
+            tracing::warn!(%error, "Could not persist desktop pointer behavior preferences; keeping previous setting");
+            continue;
+        }
         state.compositor.set_desktop_double_click_interval_ms(
             command.settings.double_click_interval_ms(),
         );
