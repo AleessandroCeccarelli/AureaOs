@@ -11,7 +11,8 @@ mod extension;
 pub mod keyboard;
 pub mod pointer;
 pub mod touchpad;
-mod touchpad_controller;\nmod pointer_controller;
+mod touchpad_controller;
+mod pointer_controller;
 
 pub use action::InputAction;
 pub use device::{
@@ -28,6 +29,7 @@ pub use touchpad::{
     TouchpadSendEventsMode, TouchpadSettingStatus,
     TouchpadSettings, TouchpadTapButtonMap,
 };
-pub use pointer_controller::{PointerSettingsCommand, PointerSettingsController, pointer_settings_channel};\npub use touchpad_controller::{
+pub use pointer_controller::{PointerSettingsCommand, PointerSettingsController, pointer_settings_channel};
+pub use touchpad_controller::{
     TouchpadSettingsCommand, TouchpadSettingsController, touchpad_settings_channel,
 };
