@@ -7,7 +7,7 @@
 
 use std::sync::mpsc::Receiver;
 
-use super::{TouchpadApplyReport, TouchpadAccelerationProfile};
+use super::TouchpadApplyReport;
 
 /// Session-scoped identifier assigned by the AureaOS input-device discovery layer.
 ///
