@@ -42,7 +42,6 @@ pub(crate) enum VulkanNativeCursorTextureError {
     File(String),
     Decode(XcursorFileError),
     Texture(VulkanShmTextureError),
-    WorkerUnavailable,
     CacheBudgetExceeded,
 }
 
@@ -55,7 +54,6 @@ impl fmt::Display for VulkanNativeCursorTextureError {
             Self::File(error) => write!(formatter, "Xcursor file: {error}"),
             Self::Decode(error) => write!(formatter, "Xcursor decode: {error}"),
             Self::Texture(error) => write!(formatter, "Native cursor texture: {error}"),
-            Self::WorkerUnavailable => formatter.write_str("Native cursor decode worker is unavailable"),
             Self::CacheBudgetExceeded => formatter.write_str("Native cursor texture cache budget exceeded"),
         }
     }
