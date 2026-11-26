@@ -2220,3 +2220,8 @@ Aggiunti test unitari per il rifiuto dei begin duplicati e per la rimozione limi
 ### 26 novembre 2026 — Precisione del report delle opzioni di scorrimento touchpad
 
 Durante l'audit è emerso che, selezionando lo scorrimento a due dita, il report dichiarava anche lo scorrimento ai bordi come "Applied" (e viceversa), pur essendo le due modalità mutuamente esclusive. Aggiunto lo stato API `NotRequested` per distinguere un'opzione volutamente inattiva da una capacità hardware non supportata. `all_applied()` considera correttamente riuscite le opzioni non richieste, mentre continua a segnalare come incomplete quelle non supportate. Aggiunto un test unitario sul contratto del report. Modifiche sorgente non ancora formattate, compilate o testate; verifica rinviata al passaggio cumulativo su Fedora.
+
+
+### 26 novembre 2026 — Report corretto per la modalità touchpad senza scorrimento
+
+Completata la distinzione dei tre casi mutuamente esclusivi: con `NoScroll` né lo scorrimento a due dita né quello dai bordi risultano richiesti, quindi entrambi vengono riportati come `NotRequested` invece che come `Applied`. La selezione di `DisabledOnExternalMouse` resta delegata a libinput tramite `config_send_events_set_mode`, senza introdurre un secondo monitoraggio concorrente dei mouse esterni. Modifica sorgente e documentazione non ancora formattate, compilate o testate.
