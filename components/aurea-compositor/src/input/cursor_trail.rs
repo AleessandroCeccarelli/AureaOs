@@ -46,8 +46,7 @@ impl CursorTrail {
     }
 
     /// Returns newest-first samples with a linear temporal fade.
-    pub fn visible_at(&mut self, now: Instant) -> Vec<CursorTrailSample> {
-        self.samples.retain(|(_, created)| now.saturating_duration_since(*created) < CURSOR_TRAIL_LIFETIME);
+    pub fn visible_at(&self, now: Instant) -> Vec<CursorTrailSample> {
         self.samples.iter().rev().filter_map(|(position, created)| {
             let age = now.saturating_duration_since(*created);
             let remaining = 1.0 - age.as_secs_f32() / CURSOR_TRAIL_LIFETIME.as_secs_f32();
