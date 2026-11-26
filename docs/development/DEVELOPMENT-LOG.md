@@ -2171,3 +2171,4 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - The Podman Debian builder now explicitly installs Python 3 for JSON manifest generation.
 - Installer, disk partitioning, Btrfs installation, Aurea Update and Aurea Recovery remain out of scope. This milestone is only the real repository desktop in Debian Live mode.
 - **Not verified:** no shell syntax check, Python manifest execution, live-build, UKI generation, ISO validation, QEMU/OVMF or physical boot was run. The previous `/scripts/live` panic remains unresolved until the new image boots on real hardware.
+- Follow-up static review found and fixed an ISO-validator path mismatch: the EFI image is now extracted to `boot/efi.img`, matching the validator's subsequent inspection path. Commit: `9de7855e`. This correction is not yet runtime-tested.
