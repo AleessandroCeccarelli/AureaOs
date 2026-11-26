@@ -1916,3 +1916,25 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Creato `PointerShakeManager`: ogni dispositivo mantiene una cronologia indipendente dei movimenti non accelerati. Lo stato viene eliminato quando il dispositivo viene scollegato o quando la funzione viene disattivata per quel dispositivo.
 - Aggiunti test sorgente per impedire che movimenti alternati provenienti da due dispositivi diversi generino un falso shake e per verificare la pulizia selettiva. Non eseguiti.
 - Nessuna build, `cargo fmt`, check o test eseguiti.
+
+
+## 26 novembre 2026 — Collegamento delle preferenze live del mouse
+
+### Modifiche pubblicate su `main`
+
+- Aggiunti `PointerSettingsController` e `PointerSettingsCommand` nell'API desktop condivisa.
+- La Shell possiede il controller e offre il metodo `set_pointer_settings` per inviare un profilo a uno specifico mouse connesso.
+- Il canale attraversa l'avvio dell'applicazione, la factory desktop, la factory del compositor e il server Wayland fino al ciclo Calloop.
+- Il compositor verifica che il dispositivo esista e sia classificato come mouse; rifiuta dispositivi sconosciuti o di altro tipo.
+- Il profilo viene aggiornato nello stato per-device del compositor. L'adattatore libinput applica velocità e profilo al successivo evento di movimento, senza conservare handle del mouse che potrebbero diventare obsoleti dopo una disconnessione.
+
+### Scelte mantenute
+
+- Nessuna interfaccia temporanea è stata aggiunta.
+- I controlli di velocità e doppio clic saranno inseriti in futuro nella pagina Input di Impostazioni di sistema, insieme alle preferenze del touchpad.
+- L'intervallo di doppio clic attuale non è stato modificato.
+
+### Verifica e limiti
+
+- Aggiunto un test unitario per il passaggio del comando dalla Shell al canale del compositor.
+- Non sono stati eseguiti build, `cargo check`, `cargo fmt`, test o verifiche su hardware, in accordo con la decisione di accumulare le modifiche e svolgere i controlli insieme su Fedora.
