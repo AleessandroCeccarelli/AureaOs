@@ -211,24 +211,108 @@ if [[ -z "$ISO_PATH" || ! -s "$ISO_PATH" ]]; then
     exit 1
 fi
 
-DESTINATION="$OUTPUT_DIR/AureaOS.iso"
+# Record build provenance before the assembly helper removes split kernel/initramfs files.
+BUILD_TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+BUILD_ID="$BUILD_TIMESTAMP-$(git -C "$REPO_ROOT" rev-parse --short=12 HEAD)"
+COMMIT="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+BRANCH="$(git -C "$REPO_ROOT" branch --show-current)"
+REMOTE="$(git -C "$REPO_ROOT" remote get-url origin 2>/dev/null || true)"
+if [[ -z "$(git -C "$REPO_ROOT" status --porcelain)" ]]; then
+    WORKTREE_CLEAN=true
+else
+    WORKTREE_CLEAN=false
+fi
+KERNEL_PATH="$(find "$BUILD_ROOT/binary/live" -maxdepth 1 -type f -name 'vmlinuz-*' -print | sort -V | tail -n 1)"
+[[ -n "$KERNEL_PATH" ]] || { echo "No staged kernel found for build manifest." >&2; exit 1; }
+KERNEL_VERSION="\${KERNEL_PATH##*/vmlinuz-}"
+export BUILD_ID BUILD_TIMESTAMP COMMIT BRANCH REMOTE WORKTREE_CLEAN KERNEL_VERSION
+
 # Replace Debian Live's intermediate GRUB image with the approved systemd-boot + UKI path.
 bash "$SCRIPT_DIR/scripts/build-systemd-boot-live-iso.sh" \
     --binary-dir "$BUILD_ROOT/binary" \
     --output "$ISO_PATH"
 
-# Validate the final staged tree and the exact ISO before publication.
+# Validate the final staged tree and the exact ISO before publishing anything.
 bash "$SCRIPT_DIR/tests/validate-live-image.sh" --binary-dir "$BUILD_ROOT/binary"
-install -m 0644 "$ISO_PATH" "$DESTINATION"
-# Re-open the actual ISO and validate its extracted boot payload, not only the workspace.
-bash "$SCRIPT_DIR/tests/validate-live-image.sh" --iso "$DESTINATION"
-(
-    cd "$OUTPUT_DIR"
-    sha256sum AureaOS.iso > AureaOS.iso.sha256
-)
+
+CANDIDATE_NAME="AureaOS-$BUILD_ID.iso"
+CANDIDATE="$OUTPUT_DIR/$CANDIDATE_NAME"
+CANDIDATE_TMP="$OUTPUT_DIR/.$CANDIDATE_NAME.tmp.$$"
+CANDIDATE_SHA="$CANDIDATE.sha256"
+CANDIDATE_MANIFEST="$OUTPUT_DIR/AureaOS-$BUILD_ID.manifest.json"
+MANIFEST_TMP="$CANDIDATE_MANIFEST.tmp.$$"
+[[ ! -e "$CANDIDATE" && ! -e "$CANDIDATE_MANIFEST" ]] || {
+    echo "Build artifact already exists; refusing to overwrite historical evidence." >&2
+    exit 1
+}
+trap 'rm -f -- "$CANDIDATE_TMP" "$MANIFEST_TMP"; cleanup' EXIT
+
+install -m 0644 "$ISO_PATH" "$CANDIDATE_TMP"
+# Re-open the exact temporary ISO before it receives a permanent name.
+bash "$SCRIPT_DIR/tests/validate-live-image.sh" --iso "$CANDIDATE_TMP"
+ISO_SHA256="$(sha256sum "$CANDIDATE_TMP" | awk '{print $1}')"
+ISO_BYTES="$(stat -c '%s' "$CANDIDATE_TMP")"
+export CANDIDATE_NAME ISO_SHA256 ISO_BYTES
+
+python3 - "$MANIFEST_TMP" <<'PY'
+import json
+import os
+import sys
+
+manifest = {
+    "project": "AureaOS",
+    "artifact": os.environ["CANDIDATE_NAME"],
+    "build_id": os.environ["BUILD_ID"],
+    "build_timestamp_utc": os.environ["BUILD_TIMESTAMP"],
+    "git": {
+        "remote": os.environ.get("REMOTE", ""),
+        "branch": os.environ.get("BRANCH", ""),
+        "commit": os.environ["COMMIT"],
+        "working_tree_clean": os.environ["WORKTREE_CLEAN"] == "true",
+        "build_source": "git archive HEAD",
+    },
+    "platform": {
+        "distribution": "Debian GNU/Linux 13 (Trixie)",
+        "architecture": "amd64",
+        "boot_manager": "systemd-boot",
+        "kernel_artifact": "UKI",
+        "secure_boot": "disabled",
+        "kernel_version": os.environ["KERNEL_VERSION"],
+    },
+    "validation": {
+        "chroot_live_boot_preflight": "passed",
+        "binary_tree": "passed",
+        "iso_payload": "passed",
+        "sha256": os.environ["ISO_SHA256"],
+        "hardware_boot": "pending",
+    },
+    "iso": {
+        "size_bytes": int(os.environ["ISO_BYTES"]),
+        "sha256": os.environ["ISO_SHA256"],
+    },
+}
+with open(sys.argv[1], "w", encoding="utf-8") as stream:
+    json.dump(manifest, stream, indent=2, sort_keys=True)
+    stream.write("\n")
+PY
+
+# Publish uniquely named evidence first. The stable convenience alias is
+# replaced only after both automated validations have passed.
+mv -- "$CANDIDATE_TMP" "$CANDIDATE"
+printf '%s  %s\n' "$ISO_SHA256" "$CANDIDATE_NAME" > "$CANDIDATE_SHA"
+mv -- "$MANIFEST_TMP" "$CANDIDATE_MANIFEST"
+
+STABLE_TMP="$OUTPUT_DIR/.AureaOS.iso.tmp.$$"
+STABLE_SHA_TMP="$OUTPUT_DIR/.AureaOS.iso.sha256.tmp.$$"
+install -m 0644 "$CANDIDATE" "$STABLE_TMP"
+printf '%s  AureaOS.iso\n' "$ISO_SHA256" > "$STABLE_SHA_TMP"
+mv -f -- "$STABLE_TMP" "$OUTPUT_DIR/AureaOS.iso"
+mv -f -- "$STABLE_SHA_TMP" "$OUTPUT_DIR/AureaOS.iso.sha256"
 
 echo
-echo "AureaOS Live ISO created:"
-echo "$DESTINATION"
-echo "SHA256:"
-cat "$DESTINATION.sha256"
+echo "AureaOS Live ISO validated and published:"
+echo "  Candidate: $CANDIDATE"
+echo "  Stable:    $OUTPUT_DIR/AureaOS.iso"
+echo "  Manifest:  $CANDIDATE_MANIFEST"
+echo "  Kernel:    $KERNEL_VERSION"
+echo "  SHA256:    $ISO_SHA256"
