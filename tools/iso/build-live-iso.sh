@@ -71,6 +71,16 @@ fi
 OUTPUT_DIR="$(realpath -m -- "$OUTPUT_DIR")"
 BUILD_ROOT="$(realpath -m -- "$BUILD_ROOT")"
 
+# A build workspace is tied to one immutable source revision. Never combine
+# staged files or a partially built chroot from another commit.
+SOURCE_COMMIT="$(git -C "$REPO_ROOT" rev-parse HEAD)"
+if [[ -n "$(git -C "$REPO_ROOT" status --porcelain)" ]]; then
+    echo "The AureaOS working tree is not clean." >&2
+    echo "Commit the intended source state before building a reproducible Live ISO." >&2
+    exit 1
+fi
+SOURCE_MARKER="$BUILD_ROOT/.aureaos-source-commit"
+
 case "$OUTPUT_DIR/" in "$REPO_ROOT/"*) echo "Output directory must be outside the Git repository." >&2; exit 2 ;; esac
 case "$BUILD_ROOT/" in "$REPO_ROOT/"*) echo "Build directory must be outside the Git repository." >&2; exit 2 ;; esac
 
@@ -124,7 +134,18 @@ if "$RESUME"; then
         echo "Cannot resume: Debian Live configuration not found at $CONFIG_DIR" >&2
         exit 1
     }
-    echo "Resuming Debian Live workspace: $BUILD_ROOT"
+    [[ -s "$SOURCE_MARKER" ]] || {
+        echo "Cannot safely resume this legacy workspace: source commit marker is missing." >&2
+        echo "Preserve it for diagnostics and start a fresh build directory." >&2
+        exit 1
+    }
+    RECORDED_COMMIT="$(<"$SOURCE_MARKER")"
+    [[ "$RECORDED_COMMIT" == "$SOURCE_COMMIT" ]] || {
+        echo "Cannot resume: workspace belongs to commit $RECORDED_COMMIT, current source is $SOURCE_COMMIT." >&2
+        echo "Use a fresh build directory for this source revision." >&2
+        exit 1
+    }
+    echo "Resuming Debian Live workspace: $BUILD_ROOT (source $SOURCE_COMMIT)"
 
     # The previous Podman container may have been interrupted while live-build
     # held its workspace lock. The wrapper serializes all managed builds with
@@ -155,6 +176,8 @@ else
     fi
 
     mkdir -p -- "$BUILD_ROOT"
+    printf '%s\\n' "$SOURCE_COMMIT" > "$SOURCE_MARKER"
+    chmod 0644 "$SOURCE_MARKER"
     cd "$BUILD_ROOT"
 
     # Canonical Debian Live Build layout: workspace/config/{package-lists,hooks,...}
