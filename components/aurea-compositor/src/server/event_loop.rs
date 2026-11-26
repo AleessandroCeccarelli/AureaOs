@@ -65,7 +65,7 @@ impl WaylandServer {
 
         #[cfg(not(feature = "drm"))]
         let parts =
-            super::builder::build(socket_name, display_color, interactions, touchpad_settings, pointer_settings);
+            super::builder::build(socket_name, display_color, interactions, touchpad_settings, pointer_settings, desktop_pointer_behavior);
 
         let (event_loop, state) = parts?;
 
@@ -79,6 +79,7 @@ impl WaylandServer {
         let (interactions, _receiver) = desktop_interaction_channel();
         let (_touchpad_controller, touchpad_settings) = touchpad_settings_channel();
         let (_pointer_controller, pointer_settings) = pointer_settings_channel();
+        let (_desktop_pointer_behavior_controller, desktop_pointer_behavior) = desktop_pointer_behavior_channel();
         Self::build(
             socket_name,
             Some(drm_session),
@@ -87,6 +88,7 @@ impl WaylandServer {
             interactions,
             touchpad_settings,
             pointer_settings,
+            desktop_pointer_behavior,
         )
     }
 
@@ -150,6 +152,7 @@ impl WaylandServer {
         interactions: DesktopInteractionSender,
         touchpad_settings: Receiver<TouchpadSettingsCommand>,
         pointer_settings: Receiver<PointerSettingsCommand>,
+        desktop_pointer_behavior: Receiver<DesktopPointerBehaviorCommand>,
     ) -> io::Result<Self> {
         let (event_loop, state) = super::builder::build(
             socket_name,
