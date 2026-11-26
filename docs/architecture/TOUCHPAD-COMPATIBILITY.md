@@ -249,3 +249,20 @@ by the device and `set_method` returns a configuration status. Source:
 https://wayland.freedesktop.org/libinput/doc/latest/api/group__config.html
 
 This is a source-level correction; grouped build and tests remain pending.
+
+## Separate mouse and touchpad acceleration ownership — 26 November 2026
+
+The audit found two competing configuration paths for touchpad acceleration:
+the touchpad profile applied its own speed and acceleration curve, while the
+generic pointer profile was also applied on device discovery, pointer motion,
+and session activation. The generic path could therefore overwrite the
+touchpad-specific preference immediately or on the next motion event.
+
+Touchpad speed/profile now have one owner: `TouchpadSettings`, including
+discovery, live updates, motion refresh, and session reactivation. Generic
+`PointerSettings` are restricted to mice; their persisted profiles are no
+longer restored to touchpads, and the mouse acceleration adapter is no longer
+run against touchpad handles. Regression assertions reject assigning a mouse
+profile to a touchpad.
+
+No build or test run was performed; the grouped validation remains pending.
