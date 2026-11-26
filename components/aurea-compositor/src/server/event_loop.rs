@@ -114,6 +114,7 @@ impl WaylandServer {
             interactions,
             touchpad_settings,
             pointer_settings,
+            desktop_pointer_behavior,
         )
     }
 
@@ -126,6 +127,7 @@ impl WaylandServer {
         let (interactions, _receiver) = desktop_interaction_channel();
         let (_touchpad_controller, touchpad_settings) = touchpad_settings_channel();
         let (_pointer_controller, pointer_settings) = pointer_settings_channel();
+        let (_desktop_pointer_behavior_controller, desktop_pointer_behavior) = desktop_pointer_behavior_channel();
         Self::build(
             socket_name,
             Some(drm_session),
@@ -134,6 +136,7 @@ impl WaylandServer {
             interactions,
             touchpad_settings,
             pointer_settings,
+            desktop_pointer_behavior,
         )
     }
 
