@@ -39,7 +39,8 @@ use crate::{input::cursor_trail::CursorTrailSample, window_manager::WindowManage
 pub struct RenderScene<'a> {
     desktop: DesktopSnapshot,
     desktop_items: DesktopItemsSnapshot,
-    context_menu: Option<DesktopContextMenuLayout>,\n    active_panel: Option<DesktopPanelKind>,
+    context_menu: Option<DesktopContextMenuLayout>,
+    active_panel: Option<DesktopPanelKind>,
     context_menu_theme: DesktopTheme,
     toplevels: Vec<RenderToplevel<'a>>,
     cursor_surface: Option<(WlSurface, Point<i32, Logical>, Point<i32, Logical>)>,
@@ -66,7 +67,8 @@ impl<'a> RenderScene<'a> {
                 None,
             ),
             desktop_items: DesktopItemsSnapshot::default(),
-            context_menu: None,\n            active_panel: None,
+            context_menu: None,
+            active_panel: None,
             context_menu_theme: DesktopTheme::Light,
             toplevels: window_manager
                 .mapped_toplevels_with_location()
@@ -114,7 +116,18 @@ impl<'a> RenderScene<'a> {
         self
     }
 
-    /// Adds the active semantic desktop panel to this immutable frame snapshot.\n    pub fn with_active_panel(mut self, panel: Option<DesktopPanelKind>) -> Self {\n        self.active_panel = panel;\n        self\n    }\n\n    /// Returns the active semantic panel captured for this frame, if any.\n    pub fn active_panel(&self) -> Option<DesktopPanelKind> {\n        self.active_panel\n    }\n\n    /// Returns the context-menu geometry captured for this frame, if open.
+    /// Adds the active semantic desktop panel to this immutable frame snapshot.
+    pub fn with_active_panel(mut self, panel: Option<DesktopPanelKind>) -> Self {
+        self.active_panel = panel;
+        self
+    }
+
+    /// Returns the active semantic panel captured for this frame, if any.
+    pub fn active_panel(&self) -> Option<DesktopPanelKind> {
+        self.active_panel
+    }
+
+    /// Returns the context-menu geometry captured for this frame, if open.
     pub fn context_menu(&self) -> Option<&DesktopContextMenuLayout> {
         self.context_menu.as_ref()
     }
