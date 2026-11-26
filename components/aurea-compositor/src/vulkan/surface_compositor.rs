@@ -311,17 +311,20 @@ pub(super) fn render_frame(
     } else {
         false
     };
+    let cursor_frame_time = std::time::Instant::now();
     let cursor = if cursor_texture_ready {
         surface_cache
             .native_cursor_asset(cursor_name, cursor_theme, requested_cursor_size)
-            .and_then(|asset| {
+            .map(|asset| {
+                let frame = asset.frame_at(cursor_frame_time);
                 native_cursor_geometry(
                     scene,
                     target,
-                    (asset.width(), asset.height()),
-                    (asset.hotspot_x(), asset.hotspot_y()),
+                    (frame.width(), frame.height()),
+                    (frame.hotspot_x(), frame.hotspot_y()),
                 )
             })
+            .flatten()
     } else {
         None
     };
@@ -433,7 +436,7 @@ pub(super) fn render_frame(
     let cursor_binding = if cursor_texture_ready {
         let texture = surface_cache
             .native_cursor_asset(cursor_name, cursor_theme, requested_cursor_size)
-            .and_then(|asset| asset.texture())
+            .map(|asset| asset.frame_at(cursor_frame_time).texture())
             .ok_or_else(|| {
                 VulkanSurfaceCompositionError::Texture(
                     "The selected native cursor texture was not initialized".to_owned(),
