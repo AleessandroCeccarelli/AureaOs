@@ -415,6 +415,11 @@ impl VulkanSurfacePipelineCache {
             .map_err(VulkanSurfacePipelineCacheError::NativeCursor)
     }
 
+    /// Keeps output frames flowing until worker decode and Vulkan upload fences finish.
+    pub(crate) fn has_pending_native_cursor_work(&self) -> bool {
+        self.native_cursor_texture.has_pending_work()
+    }
+
     pub(crate) fn native_cursor_asset(
         &self,
         asset: &str,
