@@ -65,6 +65,10 @@ pub(super) struct WaylandState {
     #[cfg(feature = "drm")]
     pub(super) touchpad_devices:
         HashMap<aurea_desktop_api::input::InputDeviceId, smithay::reexports::input::Device>,
+    /// Live mouse handles used to restore acceleration after session activation.
+    #[cfg(feature = "drm")]
+    pub(super) mouse_devices:
+        HashMap<aurea_desktop_api::input::InputDeviceId, smithay::reexports::input::Device>,
 
     #[cfg(feature = "drm")]
     pub(super) drm_session: Option<DrmSession>,
