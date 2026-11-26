@@ -2034,3 +2034,12 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - The 32×32 RGBA cursor texture is now uploaded and completed once before the first frame that needs it. The texture remains cached for the Vulkan device lifetime, so later frames do not repeat the upload.
 - This prevents an idle desktop from remaining cursor-less after startup. It is a source-level fix, not a claim of physical movement validation.
 - No build, rustfmt, check or tests were run, as agreed; grouped Fedora validation remains pending.
+
+
+### 2026-11-26 — Defer pointer placement until client grabs end
+
+- Fixed an output hot-unplug lifecycle gap: when a client owned a pointer grab, the compositor correctly avoided moving the pointer but could lose the requested recenter operation.
+- Added `pointer_recenter_pending` to retain output-driven placement requests blocked by an active grab.
+- Output reconciliation now detects when the current pointer position falls outside the enabled-output union during a grab and records a deferred placement.
+- The DRM Calloop loop retries after each dispatch only while a placement is pending. Once Smithay releases the grab, the pointer is centered on an enabled output and output frames are requested.
+- No build, rustfmt, check or tests were run. Physical hot-unplug and popup-grab validation remain pending for the grouped Fedora session.
