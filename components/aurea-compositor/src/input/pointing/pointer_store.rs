@@ -118,8 +118,16 @@ impl PointerProfileStore {
 
     /// Updates the in-memory profile and persists it when the store is writable.
     pub fn set(&mut self, identity: String, settings: PointerSettings) -> io::Result<()> {
-        self.profiles.insert(identity, settings);
-        self.persist()
+        let previous = self.profiles.insert(identity.clone(), settings);
+        if let Err(error) = self.persist() {
+            if let Some(previous) = previous {
+                self.profiles.insert(identity, previous);
+            } else {
+                self.profiles.remove(&identity);
+            }
+            return Err(error);
+        }
+        Ok(())
     }
 
     fn persist(&self) -> io::Result<()> {
