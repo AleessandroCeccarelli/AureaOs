@@ -5,15 +5,16 @@ Non è documentazione utente né una specifica del prodotto.
 Aggiornare questo file quando cambiano script, diagnosi o stato delle prove.
 -->
 
-Ultimo aggiornamento: 2026-11-23
+Ultimo aggiornamento: 2026-11-26
 Repository: AleessandroCeccarelli/AureaOs
 Branch di lavoro: main
 
 ## PRIORITÀ E ISTRUZIONI DELL'UTENTE
 
 - Da lunedì 23 novembre si lavora sul DESKTOP AureaOS in GitHub.
-- NON fare build ISO, NON avviare verifiche ISO e NON modificare gli script ISO durante il lavoro desktop, salvo richiesta esplicita.
-- Venerdì 27 novembre si riprende la verifica ISO su Fedora.
+- L'utente ha richiesto esplicitamente la migrazione della ISO Factory a systemd-boot + UKI e l'avvio del desktop reale in modalità Live. Le modifiche ISO sono autorizzate su main.
+- La ISO serve soltanto come ambiente Live di sviluppo/test. Installer, partizionamento, installazione Btrfs, Aurea Update e Aurea Recovery sono rinviati.
+- Non generare ISO né eseguire build/test Rust remoti in questa sessione. L'utente eseguirà la verifica raggruppata su Fedora.
 - L'utente usa Ventoy: copia direttamente `AureaOS.iso` nella partizione dati di Ventoy e la seleziona al boot. NON proporre di preparare/formattare una nuova chiavetta.
 - Lavorare su `main`, senza creare branch salvo richiesta esplicita.
 - L'utente esegue localmente su Fedora `cargo fmt`, `cargo check`, test e build. Non lanciare CI, build Rust o test remoti per conto suo.
@@ -49,7 +50,7 @@ Il lavoro ISO ha richiesto gran parte della giornata. Problemi affrontati:
 - problema precedente di `pam_systemd.so` mancante; hook attuale lo verifica esplicitamente in `/usr/lib/x86_64-linux-gnu/security/pam_systemd.so`.
 - necessità di serializzare accesso al workspace con `flock` per evitare due live-build concorrenti.
 - recupero del file lock live-build obsoleto durante `--resume`, con controlli di sicurezza su file/symlink.
-- hook GRUB che rinomina la voce Debian Live in AureaOS.
+- precedente hook GRUB che rinominava la voce Debian Live in AureaOS (rimosso il 26 novembre).
 
 Log della build caricato dall'utente il 22 novembre (file: Testo incollato(20261122-191410).txt):
 - `live-build` termina con `P: Build completed successfully`.
@@ -922,3 +923,61 @@ Current raster decoder set: PNG, BMP, TIFF and WebP, alongside the existing JPEG
 - `DesktopPanelState` already retains panel kind and menu position, but there is no graphical context-menu surface or actionable entries yet. Do not claim it is visually displayed.
 - Selection state reaches the frame snapshot, but Vulkan selection highlighting is not yet drawn. Trash icon rendering is also still gated on generating/visually inspecting the 24 RGBA8 assets and connecting the asset loader/cache.
 - No Cargo fmt/check/test/build, CI or physical-device validation was run. Continue accumulating changes and leave grouped verification to Fedora; do not build after each correction.
+
+## STATO CORRENTE — ISO LIVE SYSTEMD-BOOT / UKI — 2026-11-26
+
+### Perimetro utente
+- Obiettivo: avviare il desktop AureaOS reale dal repository in modalità Live, per osservare i progressi ISO dopo ISO su hardware fisico.
+- Nessun desktop finto o sessione dimostrativa alternativa.
+- Nessun installer, partizionamento, layout ESP/Btrfs installato, Aurea Recovery o aggiornamento kernel installato in questo blocco.
+- Target ISO: Debian Trixie amd64, UEFI-only, systemd-boot, UKI, Secure Boot disabilitato. BIOS Legacy/CSM non supportato.
+- Fedora + Podman + container Debian Trixie. L'utente usa Ventoy già configurato: copiare la ISO nella partizione dati esistente, non proporre di riformattare la chiavetta.
+- Continuare su main; non fare build Rust/ISO/test remoti. Accumulare modifiche e verificare in un unico ciclo su Fedora.
+
+### File aggiornati il 26 novembre
+- tools/iso/os-release — identità AureaOS incorporata nella UKI.
+- tools/iso/scripts/build-systemd-boot-live-iso.sh — genera UKI da kernel/initramfs live-build, crea immagine EFI FAT con systemd-boot e voci BLS, rimasterizza ISO UEFI-only.
+- tools/iso/build-live-iso.sh — integra la fase UKI e la validazione finale; GRUB EFI resta soltanto scaffolding intermedio live-build e viene rimosso prima della ISO pubblicata.
+- tools/iso/build-live-iso-podman.sh — installa systemd-boot-efi, systemd-ukify, mtools e dosfstools nel container Debian Trixie.
+- tools/iso/tests/validate-live-image.sh — verifica ESP FAT, fallback EFI/BOOT/BOOTX64.EFI, systemd-boot, loader.conf, UKI, boot=live, filesystem Live e catalogo El Torito.
+- tools/iso/hooks/020-brand-boot-menu.hook.binary — eliminato.
+- ISO Factory EN/IT, log di sviluppo EN/IT e README aggiornati.
+
+### Catena Live prevista
+1. Firmware UEFI carica EFI/BOOT/BOOTX64.EFI dall'immagine EFI El Torito.
+2. systemd-boot mostra AureaOS Live e lancia la UKI sulla stessa ESP.
+3. UKI include kernel Debian, initramfs, os-release AureaOS e cmdline boot=live.
+4. live-boot (initramfs-tools) cerca il supporto con /live/filesystem.squashfs.
+5. systemd avvia aurea-desktop.service.
+6. PAM/logind registrano la sessione tty1/seat0; il servizio lancia il binario Rust aurea-desktop.
+7. Smithay/DRM/Vulkan inizializzano compositor, output e puntatore.
+
+### Desktop realmente incluso
+Il chroot hook continua a compilare:
+cargo +stable build --manifest-path /usr/src/aureaos/Cargo.toml --release --locked --features heif --package aurea-desktop --bin aurea-desktop
+Questo compila il crate desktop e il grafo Cargo collegato (desktop API, shell e compositor DRM/Vulkan). Non significa che ogni crate workspace sia già un servizio/app runtime: aurea-media e aurea-capture non diventano automaticamente componenti runtime se non collegati al binario o a un servizio.
+
+### Rischi e verifiche pendenti
+- Nessun build ISO, bash -n, shellcheck, ukify, mtools, xorriso, QEMU/OVMF o test fisico è stato eseguito dopo le modifiche. Non dichiarare il nuovo percorso avviabile.
+- Il panic precedente /scripts/live resta irrisolto. Il preflight chroot controlla pacchetti, hook e script live, rigenera initramfs e verifica scripts/live; il generatore incorpora quello stesso initramfs nella UKI. Solo un boot reale può dimostrare il successo.
+- Verificare sintassi/deps del generatore, path Debian Trixie di systemd-bootx64.efi e linuxx64.efi.stub, ukify build/inspect, mtools e xorriso.
+- Verificare catalogo El Torito verso /boot/efi.img, contenuto ESP, UKI con sezioni kernel/initrd/.osrel/.cmdline e assenza di GRUB nell'immagine finale.
+- Verificare live-boot con /live/filesystem.squashfs via Ventoy e avvio systemd del servizio desktop.
+- La ESP predefinita da 256 MiB è solo per la ISO Live, non il layout da 1 GiB ipotizzato per il futuro sistema installato.
+
+### Comandi Fedora per il prossimo ciclo autorizzato
+```bash
+git status --short --branch
+git switch main
+git pull --ff-only origin main
+cargo fmt --all -- --check
+cargo check --workspace
+cargo test --workspace
+cargo check -p aurea-compositor --features drm
+bash -n tools/iso/build-live-iso.sh
+bash -n tools/iso/build-live-iso-podman.sh
+bash -n tools/iso/scripts/build-systemd-boot-live-iso.sh
+bash -n tools/iso/tests/validate-live-image.sh
+bash tools/iso/build-live-iso-podman.sh
+```
+Poi ispezionare checksum/El Torito/ESP e avviare da Ventoy su hardware. Registrare ogni risultato; non dichiarare riuscito ciò che non è stato osservato.
