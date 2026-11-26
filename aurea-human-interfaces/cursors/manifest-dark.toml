@@ -1,0 +1,127 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# AureaOS cursor asset manifest.
+# Coordinates are measured on the 64x64 SVG source canvas.
+# The build pipeline must scale hotspots with the raster output.
+
+schema_version = 1
+canvas_width = 64
+canvas_height = 64
+logical_sizes = [24, 32, 48, 64]
+output_scales = [1, 2]
+
+[[cursor]]
+name = "default"
+source = "source/dark/default.svg"
+hotspot = [10, 5]
+role = "default"
+
+[[cursor]]
+name = "pointer"
+source = "source/dark/pointer.svg"
+hotspot = [24, 8]
+role = "link"
+
+[[cursor]]
+name = "text"
+source = "source/dark/text.svg"
+hotspot = [32, 32]
+role = "text-selection"
+
+[[cursor]]
+name = "grab"
+source = "source/dark/grab.svg"
+hotspot = [31, 8]
+role = "grab"
+
+[[cursor]]
+name = "grabbing"
+source = "source/dark/grabbing.svg"
+hotspot = [28, 14]
+role = "grabbing"
+
+[[cursor]]
+name = "move"
+source = "source/dark/move.svg"
+hotspot = [32, 32]
+role = "move"
+
+[[cursor]]
+name = "resize-nesw"
+source = "source/dark/resize-nesw.svg"
+hotspot = [32, 32]
+role = "resize-diagonal"
+
+[[cursor]]
+name = "resize-nwse"
+source = "source/dark/resize-nwse.svg"
+hotspot = [32, 32]
+role = "resize-diagonal"
+
+[[cursor]]
+name = "busy"
+source = "source/dark/busy.svg"
+hotspot = [32, 32]
+role = "busy"
+animation_frames = 12
+animation_duration_ms = 1100
+
+[[cursor]]
+name = "crosshair"
+source = "source/dark/crosshair.svg"
+hotspot = [32, 32]
+role = "precision"
+
+[[cursor]]
+name = "help"
+source = "source/dark/help.svg"
+hotspot = [32, 32]
+role = "help"
+
+[[cursor]]
+name = "not-allowed"
+source = "source/dark/forbidden.svg"
+hotspot = [32, 32]
+role = "forbidden"
+
+[[cursor]]
+name = "copy"
+source = "source/dark/copy.svg"
+hotspot = [16, 16]
+role = "copy"
+
+[[cursor]]
+name = "alias"
+source = "source/dark/alias.svg"
+hotspot = [16, 16]
+role = "alias"
+
+[[cursor]]
+name = "ew-resize"
+source = "source/dark/resize-ew.svg"
+hotspot = [32, 32]
+role = "resize-horizontal"
+
+[[cursor]]
+name = "ns-resize"
+source = "source/dark/resize-ns.svg"
+hotspot = [32, 32]
+role = "resize-vertical"
+
+[[cursor]]
+name = "pencil"
+source = "source/dark/pen.svg"
+hotspot = [32, 32]
+role = "handwriting"
+
+[[cursor]]
+name = "all-scroll"
+source = "source/dark/all-scroll.svg"
+hotspot = [32, 32]
+role = "all-scroll"
+
+[[cursor]]
+name = "left_ptr_watch"
+source = "source/dark/working.svg"
+hotspot = [8, 6]
+role = "working-background"
