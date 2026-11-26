@@ -248,6 +248,8 @@ trap cleanup EXIT
 }
 
 cd "$BUILD_ROOT"
+# Never accept a stale ISO left by an interrupted/resumed build as fresh output.
+find "$BUILD_ROOT" -maxdepth 1 -type f -name '*.iso' -delete
 echo "Building Debian Trixie amd64 Live ISO..."
 sudo lb build
 
@@ -279,8 +281,9 @@ bash "$SCRIPT_DIR/scripts/build-systemd-boot-live-iso.sh" \
     --binary-dir "$BUILD_ROOT/binary" \
     --output "$ISO_PATH"
 
-# Validate the final staged tree and the exact ISO before publishing anything.
-bash "$SCRIPT_DIR/tests/validate-live-image.sh" --binary-dir "$BUILD_ROOT/binary"
+# The UKI assembler validates its isolated staging tree before mastering.
+# Validate the exact ISO emitted by xorriso before preparing publication artifacts.
+bash "$SCRIPT_DIR/tests/validate-live-image.sh" --iso "$ISO_PATH"
 
 CANDIDATE_NAME="AureaOS-$BUILD_ID.iso"
 CANDIDATE="$OUTPUT_DIR/$CANDIDATE_NAME"
@@ -337,7 +340,7 @@ manifest = {
     },
     "validation": {
         "chroot_live_boot_preflight": "passed",
-        "binary_tree": "passed",
+        "assembly_tree": "passed",
         "iso_payload": "passed",
         "sha256": os.environ["ISO_SHA256"],
         "hardware_boot": "pending",
