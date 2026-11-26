@@ -301,7 +301,7 @@ impl VulkanNativeCursorTexture {
             return Ok(());
         }
 
-        let mut metadata = built_in_arrow_frame(requested_size)?
+        let metadata = built_in_arrow_frame(requested_size)?
             .into_iter()
             .next()
             .ok_or(VulkanNativeCursorTextureError::EmptyUpload)?;
@@ -325,8 +325,6 @@ impl VulkanNativeCursorTexture {
             hotspot_y: metadata.hotspot_y,
             delay_ms: 0,
         };
-        metadata.rgba8.clear();
-
         // Four raster sizes cover normal and high-DPI outputs without allowing
         // fallback textures to grow without bound.
         if self.fallback_assets.len() >= 4 {
