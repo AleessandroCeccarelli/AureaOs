@@ -2170,3 +2170,7 @@ Estesi i test di `RenderScene`: con il cursore predefinito nominato, la scena de
 ### 26 novembre 2026 — Diagnostica della disponibilità del puntatore nativo
 
 Aggiunti log `tracing::info` nei due passaggi che servono a diagnosticare il primo avvio su hardware: upload Vulkan completato della freccia integrata di riserva e pubblicazione in cache dell'asset Xcursor del tema, con nome asset, dimensioni raster e numero di fotogrammi. Al collaudo Fedora questi messaggi permetteranno di distinguere un problema di caricamento asset da uno di geometria/presentazione KMS. Nessuna build o test eseguiti.
+
+### 26 novembre 2026 — Geometria della freccia su monitor HiDPI
+
+Aggiunto un test mirato per il posizionamento del cursore nativo su output con scala 2×: verifica conversione coordinate logiche/fisiche, dimensioni raster 64×64 e hotspot scalato. Il test completa i casi già presenti per monitor primario 1× e puntatore collocato su un altro monitor. Non eseguito; nessuna build avviata.
