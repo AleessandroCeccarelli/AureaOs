@@ -332,6 +332,7 @@ pub(super) fn build(
         }
     }
 
+    #[cfg(feature = "drm")]
     state.compositor.set_desktop_double_click_interval_ms(
         state.desktop_pointer_behavior_store.settings().double_click_interval_ms(),
     );
