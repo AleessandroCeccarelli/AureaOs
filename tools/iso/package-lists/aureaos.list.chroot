@@ -40,6 +40,4 @@ build-essential
 pkg-config
 curl
 glslang-tools
-librsvg2-bin
-python3
 ca-certificates
