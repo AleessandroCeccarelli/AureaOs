@@ -229,13 +229,6 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             );
         }
         InputEvent::PointerButton { event } => {
-            let device_name = event.device().name().to_owned();
-            eprintln!(
-                "AureaOS input: pointer button device={:?} code={} state={:?}",
-                device_name,
-                event.button_code(),
-                event.state()
-            );
             let mut device = event.device();
             let device_id = pointing::id_for(&device);
             if !is_registered_pointing_device(state, device_id) {
@@ -250,14 +243,6 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             );
         }
         InputEvent::PointerAxis { event } => {
-            let device_name = event.device().name().to_owned();
-            eprintln!(
-                "AureaOS input: pointer axis device={:?} horizontal={:?} vertical={:?} source={:?}",
-                device_name,
-                event.amount(Axis::Horizontal),
-                event.amount(Axis::Vertical),
-                event.source()
-            );
             let mut device = event.device();
             if !is_registered_pointing_device(state, pointing::id_for(&device)) {
                 return;
