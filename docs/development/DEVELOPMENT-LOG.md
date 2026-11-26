@@ -2175,6 +2175,17 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Additional ISO Factory hardening: the Fedora Podman wrapper now chooses a default build workspace keyed by the source commit and refuses a dirty or untracked repository. This avoids resuming a completed chroot that contains an older desktop binary after the source commit changes. Resume is for the same clean commit only. Commits: `52d51009`, `3f04e842`. No build or runtime validation was run.
 
 
+### 26 November 2026 — Debian Live factory hardening: isolated assembly and exact UKI initramfs gate
+
+- The user's scope clarification: the factory must reliably deliver a booted Debian 13 Trixie Live base; after that handoff, compositor, Vulkan, desktop session and visible UI are AureaOS work. Do not repeatedly rework the known Debian boot chain without a failing observation.
+- The UKI assembler previously removed kernel/initramfs and GRUB files directly from `BUILD_ROOT/binary`. If xorriso or validation failed, a later `RESUME=1` could no longer find the kernel/initramfs. It now creates a same-filesystem hard-link snapshot with `cp -al`, mutates only that snapshot, validates it, and masters the ISO from it. The resumable live-build tree remains intact on both success and failure.
+- Fixed a temporary ISO naming regression during the staging refactor and removed a duplicate cleanup trap; the temporary output again uses the process ID. The helper's status output now names `boot/efi.img` inside the ISO rather than a temporary file that is deleted at exit.
+- The final validator now inspects the actual SquashFS rootfs for Debian 13 Trixie identity, systemd PID 1 and installed `live-boot`, `live-boot-initramfs-tools`, `live-config`, `live-config-systemd` and `systemd-sysv` packages.
+- More importantly, it extracts the `.initrd` section from every exact UKI with Debian Trixie's `ukify inspect --section=...:binary@...`, runs `lsinitramfs` on that extracted payload and requires `scripts/live`. This checks the bytes that firmware/systemd-boot will actually launch, not only an earlier initramfs in the chroot.
+- The builder container now installs `initramfs-tools-core` for this final inspection. The chroot boot preflight runs before build-only dependency purge so a failed preflight can be retried without first losing the toolchain.
+- The Podman host preflight now checks `sudo` explicitly.
+- Static source changes only. No `bash -n`, ShellCheck, `ukify`, live-build, SquashFS validation, QEMU/OVMF or physical boot has been executed in this session. The Debian base gate is therefore implemented but not yet observed passing.
+
 ### 26 November 2026 — End-to-end Live image audit and corrections
 
 - Audited the source chain from Debian Live packages and initramfs preflight through UKI assembly, systemd session registration, desktop launch, compositor startup and runtime artwork lookup.
