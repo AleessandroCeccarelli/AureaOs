@@ -2158,3 +2158,7 @@ Aggiunto un contratto e un canale dedicati alle preferenze globali del puntatore
 ### 26 novembre 2026 — Test mirati della scia del puntatore
 
 Estratto in una costante nominata l'intervallo minimo di campionamento di 24 ms e aggiunti test unitari per verificare il filtraggio degli eventi ad alta frequenza, l'ordine temporale dei campioni e il reset completo della cronologia dopo `clear()`. Nessuna build o test eseguito: la verifica resta accorpata alla sessione Fedora prevista.
+
+### 26 novembre 2026 — Warm-up cursore anche dopo hotplug e ripresa sessione
+
+Centralizzato l'avvio del warm-up del cursore in `center_pointer_on_primary_output()`. Ora il caricamento iniziale viene riattivato dopo ogni riposizionamento dovuto a pubblicazione/riconnessione dei monitor o ripresa della sessione libseat, non soltanto al primo avvio del server. In questo modo un puntatore fermo continua a ricevere frame mentre viene preparata la texture per il nuovo output. Rimossa la chiamata duplicata dal builder DRM. Modifica sorgente non ancora compilata o collaudata su Fedora.
