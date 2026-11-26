@@ -2010,6 +2010,17 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Ulteriore protezione ISO Factory: il wrapper Podman su Fedora sceglie ora un workspace predefinito legato al commit sorgente e rifiuta repository con modifiche non committate o file non tracciati. Evita così di riprendere un chroot completato che contenga un vecchio binario desktop dopo il cambio di commit. La ripresa vale soltanto per lo stesso commit pulito. Commit: `52d51009`, `3f04e842`. Nessuna build o verifica runtime eseguita.
 
 
+### 26 novembre 2026 — Hardening della fabbrica Debian Live e controllo initramfs UKI esatto
+
+- Chiarimento del perimetro richiesto: la fabbrica deve consegnare in modo affidabile una Debian 13 Trixie Live avviata; dal punto di consegna in avanti, compositor, Vulkan, sessione desktop e interfaccia visibile sono lavoro AureaOS. Non riaprire continuamente la catena Debian già stabile senza un'evidenza di errore.
+- Il generatore UKI rimuoveva kernel/initramfs e file GRUB direttamente da `BUILD_ROOT/binary`. Se xorriso o la validazione fallivano, una successiva `RESUME=1` non avrebbe più trovato kernel/initramfs. Ora crea una copia isolata sullo stesso filesystem con `cp -al`, modifica soltanto quella copia, la valida e crea la ISO da lì. Il tree live-build originale resta integro sia in caso di successo sia di errore.
+- Corretto un errore nel nome temporaneo ISO introdotto durante il refactoring e rimossa una doppia registrazione del trap di pulizia; il nome temporaneo contiene nuovamente il PID. Il riepilogo del generatore indica ora `boot/efi.img` dentro la ISO, non un percorso temporaneo già eliminato.
+- Il validatore finale controlla il vero SquashFS: identità Debian 13 Trixie, systemd PID 1 e stato installato di `live-boot`, `live-boot-initramfs-tools`, `live-config`, `live-config-systemd` e `systemd-sysv`.
+- Soprattutto, estrae la sezione `.initrd` da ogni UKI effettiva con `ukify inspect --section=...:binary@...`, esegue `lsinitramfs` sul payload estratto e richiede `scripts/live`. In questo modo controlla i byte che verranno realmente avviati, non soltanto un initramfs precedente presente nel chroot.
+- Il container builder installa ora `initramfs-tools-core` per questa ispezione finale. Il preflight initramfs nel chroot è stato spostato prima della rimozione delle dipendenze di compilazione, così un errore del controllo può essere ripreso senza aver prima perso la toolchain.
+- Il preflight Podman su Fedora verifica esplicitamente anche la presenza di `sudo`.
+- Modifiche statiche al sorgente. In questa sessione non sono stati eseguiti `bash -n`, ShellCheck, `ukify`, live-build, validazione SquashFS, QEMU/OVMF o boot fisico. Il controllo Debian base è quindi implementato, ma non ancora osservato superare una build.
+
 ### 26 novembre 2026 — Audit end-to-end della ISO Live e correzioni
 
 - Verificata staticamente la catena Debian Live, pacchetti, initramfs, UKI, servizio systemd, sessione PAM/logind, avvio del binario desktop, compositor e risorse grafiche runtime.
