@@ -10,6 +10,18 @@ use aurea_desktop_api::input::PointerSettings;
 use super::AureaCompositor;
 
 impl AureaCompositor {
+    /// Sets the desktop double-click interval in milliseconds.
+    /// Values are clamped to 150–1000 ms; changing it cancels a pending first click.
+    pub fn set_desktop_double_click_interval_ms(&mut self, interval_ms: u64) {
+        self.desktop_click_tracker
+            .set_interval(std::time::Duration::from_millis(interval_ms));
+    }
+
+    /// Returns the active desktop double-click interval in milliseconds.
+    pub fn desktop_double_click_interval_ms(&self) -> u64 {
+        self.desktop_click_tracker.interval().as_millis() as u64
+    }
+
     /// Returns the default pointer preferences for devices without an override.
     pub fn pointer_settings(&self) -> PointerSettings {
         self.pointer_settings
