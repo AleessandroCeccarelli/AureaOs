@@ -2161,3 +2161,13 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Strengthened final UKI validation to require the `.linux`, `.initrd`, `.osrel`, and `.cmdline` PE sections, the embedded `boot=live` argument, and the AureaOS `ID=aureaos` identity.
 - Corrected ISO Factory EN/IT documentation: final Live media carries the squashfs payload plus the UKI, not separate kernel/initramfs files; only UEFI boot is in scope.
 - No build, shell syntax check, ukify invocation, ISO generation, QEMU/OVMF or hardware test was run. This remains a source-level correction awaiting the grouped Fedora validation.
+
+### 2026-11-26 — Live ISO candidate publication and provenance
+
+- Hardened `tools/iso/build-live-iso.sh` so it no longer copies an unvalidated ISO over the stable `AureaOS.iso` name.
+- The coordinator now validates the binary tree, copies the finished ISO to a hidden temporary candidate, validates that exact ISO, calculates its SHA-256 and byte size, then publishes a uniquely named historical candidate containing the UTC build timestamp and source commit.
+- Added a JSON manifest beside each candidate with the source remote/branch/commit, working-tree cleanliness, Debian Trixie amd64 target, systemd-boot/UKI policy, kernel version, ISO size/hash and explicit automated/hardware validation states.
+- The stable `AureaOS.iso` convenience alias and checksum are atomically replaced only after both automated image validations pass. Existing uniquely named candidates and manifests are never overwritten.
+- The Podman Debian builder now explicitly installs Python 3 for JSON manifest generation.
+- Installer, disk partitioning, Btrfs installation, Aurea Update and Aurea Recovery remain out of scope. This milestone is only the real repository desktop in Debian Live mode.
+- **Not verified:** no shell syntax check, Python manifest execution, live-build, UKI generation, ISO validation, QEMU/OVMF or physical boot was run. The previous `/scripts/live` panic remains unresolved until the new image boots on real hardware.
