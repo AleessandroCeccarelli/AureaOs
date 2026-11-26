@@ -292,9 +292,7 @@ pub(super) fn render_frame(
 
     let cursor_theme = scene.context_menu_theme();
     let cursor_name = scene.native_cursor_asset().unwrap_or("default");
-    let output_scale = target
-        .fractional_scale()
-        .unwrap_or_else(|| f64::from(target.scale()));
+    let output_scale = target.effective_scale();
     let requested_cursor_size = (32.0 * scene.native_cursor_scale() * output_scale)
         .round()
         .clamp(16.0, 256.0) as u32;
