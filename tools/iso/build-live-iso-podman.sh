@@ -112,7 +112,7 @@ sudo podman run --rm --privileged --security-opt label=disable \
         apt-get update
         apt-get install -y --no-install-recommends \
             live-build git tar sudo ca-certificates xorriso python3 \
-            systemd-boot-efi systemd-ukify mtools dosfstools squashfs-tools librsvg2-bin
+            systemd-boot-efi systemd-ukify mtools dosfstools squashfs-tools initramfs-tools-core librsvg2-bin
 
         git config --global --add safe.directory /workspace
 
