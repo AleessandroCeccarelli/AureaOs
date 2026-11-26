@@ -85,20 +85,11 @@ impl VulkanNativeCursorAsset {
             return &self.frames[0];
         }
 
-        let total_ms = self.frames.iter()
-            .map(|frame| u64::from(frame.delay_ms.max(1)))
-            .sum::<u64>()
-            .max(1);
+        let delays = self.frames.iter()
+            .map(|frame| frame.delay_ms)
+            .collect::<Vec<_>>();
         let elapsed_ms = now.saturating_duration_since(self.animation_started_at).as_millis() as u64;
-        let mut position_ms = elapsed_ms % total_ms;
-        for frame in &self.frames {
-            let duration = u64::from(frame.delay_ms.max(1));
-            if position_ms < duration {
-                return frame;
-            }
-            position_ms -= duration;
-        }
-        &self.frames[0]
+        &self.frames[frame_index_for_elapsed(&delays, elapsed_ms)]
     }
 
     pub(crate) fn has_animation(&self) -> bool {
@@ -113,6 +104,48 @@ impl VulkanNativeCursorFrame {
     pub(crate) fn hotspot_x(&self) -> u32 { self.hotspot_x }
     pub(crate) fn hotspot_y(&self) -> u32 { self.hotspot_y }
     pub(crate) fn delay_ms(&self) -> u32 { self.delay_ms }
+}
+
+fn frame_index_for_elapsed(delays_ms: &[u32], elapsed_ms: u64) -> usize {
+    if delays_ms.len() <= 1 {
+        return 0;
+    }
+    let total_ms = delays_ms.iter()
+        .map(|delay| u64::from((*delay).max(1)))
+        .sum::<u64>()
+        .max(1);
+    let mut position_ms = elapsed_ms % total_ms;
+    for (index, delay) in delays_ms.iter().enumerate() {
+        let duration = u64::from((*delay).max(1));
+        if position_ms < duration {
+            return index;
+        }
+        position_ms -= duration;
+    }
+    0
+}
+
+#[cfg(test)]
+mod animation_tests {
+    use super::frame_index_for_elapsed;
+
+    #[test]
+    fn selects_frames_using_xcursor_delays_and_wraps() {
+        let delays = [100, 200, 300];
+        assert_eq!(frame_index_for_elapsed(&delays, 0), 0);
+        assert_eq!(frame_index_for_elapsed(&delays, 99), 0);
+        assert_eq!(frame_index_for_elapsed(&delays, 100), 1);
+        assert_eq!(frame_index_for_elapsed(&delays, 299), 1);
+        assert_eq!(frame_index_for_elapsed(&delays, 300), 2);
+        assert_eq!(frame_index_for_elapsed(&delays, 599), 2);
+        assert_eq!(frame_index_for_elapsed(&delays, 600), 0);
+    }
+
+    #[test]
+    fn treats_zero_delay_as_a_minimum_one_millisecond_frame() {
+        assert_eq!(frame_index_for_elapsed(&[0, 10], 0), 0);
+        assert_eq!(frame_index_for_elapsed(&[0, 10], 1), 1);
+    }
 }
 
 struct CursorDecodeRequest {
