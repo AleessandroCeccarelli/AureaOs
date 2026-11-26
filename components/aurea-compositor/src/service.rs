@@ -73,6 +73,7 @@ impl CompositorFactory for WaylandCompositorFactory {
             display_color,
             interactions,
             touchpad_settings,
+            pointer_settings,
         )?;
         if let Some(state) = self.initial_trash_state {
             server.set_trash_state(state);
