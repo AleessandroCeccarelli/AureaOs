@@ -838,7 +838,8 @@ mod context_menu_geometry_tests {
         assert_eq!((viewport.x, viewport.y), (1000.0, 600.0));
         assert_eq!((viewport.width, viewport.height), (512.0, 512.0));
         assert_eq!(scissor.extent.width, 512);
-        assert_eq!(scissor.extent.height, 512);
+        // The 512px canvas extends 32px beyond the 1080px output bottom.
+        assert_eq!(scissor.extent.height, 480);
     }
 
     #[test]
