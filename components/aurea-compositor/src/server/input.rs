@@ -147,7 +147,7 @@ pub(super) fn reapply_pointer_acceleration(state: &mut WaylandState) {
     for id in mouse_ids {
         let settings = state.compositor.pointer_settings_for(id);
         if let Some(device) = state.mouse_devices.get_mut(&id) {
-            pointing::apply_pointer_acceleration(device, settings);
+            crate::input::pointer_acceleration::apply(device, settings);
             tracing::info!(device_id = id.0, "Restored mouse acceleration after session activation");
         }
     }
@@ -163,9 +163,8 @@ pub(super) fn reapply_pointer_acceleration(state: &mut WaylandState) {
     }
 }
 
-/// Drains shell requests and updates the selected mouse profile.
-/// The libinput acceleration adapter samples this profile on the next motion
-/// event, avoiding retention of stale mouse handles across hot-unplug.
+/// Drains shell requests and applies them to the connected mouse immediately.
+/// Mouse handles are retained only for the lifetime of their DeviceAdded event.
 pub(super) fn apply_pending_pointer_settings(state: &mut WaylandState) {
     loop {
         let command = match state.pointer_settings_receiver.try_recv() {
