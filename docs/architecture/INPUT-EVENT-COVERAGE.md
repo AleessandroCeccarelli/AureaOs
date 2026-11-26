@@ -345,3 +345,13 @@ Output topology changes must not forcibly terminate an active Wayland pointer gr
 ## Per-device pointer preference and shake isolation — 2026-11-26
 
 Relative motion now carries its originating `InputDeviceId` through the compositor handler. Acceleration already uses the effective per-device pointer profile; shake-to-locate now uses the same per-device preference rather than reading only the global default. `PointerShakeManager` keeps independent unaccelerated-motion histories per physical device and drops that history on disconnect or when the feature is disabled for that device. This prevents alternating movement from two separate mice/touchpads from being combined into a false shake gesture. Source tests cover interleaved-device isolation and device-specific cleanup; they have not been executed.
+
+
+## Live pointer preference channel — 2026-11-26
+
+- Added a technology-independent `PointerSettingsController` and `PointerSettingsCommand` to the desktop API.
+- The shell owns the controller and exposes a device-scoped `set_pointer_settings` entry point. The compositor receives commands through its Calloop-owned channel; unknown devices and non-mouse devices are rejected.
+- Accepted settings update the compositor's per-device pointer profile. The existing libinput acceleration adapter samples the updated profile on the next pointer-motion event, without retaining mouse handles across hot-unplug.
+- The shell-to-compositor channel is wired through the application, desktop factory, compositor factory and Wayland server. No Settings UI was added.
+- Pointer speed/profile controls and double-click timing remain deferred to the future System Settings input page alongside touchpad preferences. The desktop double-click interval remains unchanged.
+- Source changes only. No Cargo build, rustfmt, tests or physical-device validation were run.
