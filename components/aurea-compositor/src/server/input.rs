@@ -53,9 +53,8 @@ pub(super) fn reapply_touchpad_settings(state: &mut WaylandState) {
     let devices = state.touchpad_devices.keys().copied().collect::<Vec<_>>();
 
     for id in devices {
-        // A device-specific invalidation must never disturb another touchpad's
-        // successfully applied settings or its retry state.
-        state.applied_touchpad_settings.invalidate(id);
+        // Remove only this device's cached profile before restoring it.
+        state.applied_touchpad_settings.remove(id);
         let settings = state.compositor.touchpad_settings_for(id);
         let Some(device) = state.touchpad_devices.get_mut(&id) else {
             continue;
