@@ -120,6 +120,7 @@ impl WaylandServer {
 
         let (interactions, _receiver) = desktop_interaction_channel();
         let (_touchpad_controller, touchpad_settings) = touchpad_settings_channel();
+        let (_pointer_controller, pointer_settings) = pointer_settings_channel();
         Self::build(
             socket_name,
             Some(drm_session),
@@ -127,6 +128,7 @@ impl WaylandServer {
             DisplayColorController::new(),
             interactions,
             touchpad_settings,
+            pointer_settings,
         )
     }
 
