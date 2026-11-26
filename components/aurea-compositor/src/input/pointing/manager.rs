@@ -309,6 +309,7 @@ mod tests {
             .expect("valid pointer profile");
         let touchpad_profile = TouchpadSettings::new(false, true, false, true, false);
         assert!(manager.set_pointer_settings(mouse, pointer));
+        assert!(!manager.set_pointer_settings(touchpad, pointer));
         assert!(manager.set_touchpad_settings(touchpad, touchpad_profile));
         assert_eq!(
             manager.pointer_settings(mouse, PointerSettings::default()),
