@@ -1938,3 +1938,14 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 
 - Aggiunto un test unitario per il passaggio del comando dalla Shell al canale del compositor.
 - Non sono stati eseguiti build, `cargo check`, `cargo fmt`, test o verifiche su hardware, in accordo con la decisione di accumulare le modifiche e svolgere i controlli insieme su Fedora.
+
+
+
+### 26 novembre 2026 — Pulsanti laterali, rotellina e ripristino del mouse
+
+- Verificato il percorso dei pulsanti ausiliari: `BTN_SIDE`, `BTN_EXTRA`, `BTN_FORWARD` e `BTN_BACK` vengono già inoltrati a Wayland con il codice Linux originale. Il menu contestuale desktop ora intercetta esclusivamente clic sinistro e destro; i pulsanti laterali non vengono più assorbiti dal menu. Aggiunti test unitari per questa separazione.
+- La rotellina verticale e orizzontale viene già inoltrata come frame Wayland axis. Sono preservati valori continui, valori ad alta risoluzione `v120`, sorgente e direzione relativa. Restano validi i test esistenti sulla gestione dei valori numerici.
+- Il compositor conserva gli handle libinput dei mouse solo finché il dispositivo risulta connesso. I comandi delle preferenze applicano ora accelerazione e velocità immediatamente all'handle attivo.
+- Alla riattivazione della sessione libseat, ad esempio tornando da un altro terminale virtuale, i profili di accelerazione vengono riapplicati ai mouse collegati; viene ripristinato anche il profilo di accelerazione dei touchpad attraverso il loro registro separato.
+- Alla disconnessione o riclassificazione del dispositivo, l'handle viene rimosso. La gestione esistente rilascia inoltre i pulsanti rimasti premuti prima della pausa della sessione e durante la rimozione.
+- Da verificare fisicamente su Fedora: hot-plug, pulsanti laterali, rotellina e sospensione/riattivazione VT. Nessuna build, `cargo fmt`, `cargo check` o test eseguiti in questa sessione.
