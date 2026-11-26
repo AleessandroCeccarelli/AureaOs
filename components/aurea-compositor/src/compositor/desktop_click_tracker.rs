@@ -7,8 +7,10 @@
 
 use std::time::{Duration, Instant};
 
-const DOUBLE_CLICK_INTERVAL: Duration = Duration::from_millis(400);
-const DOUBLE_CLICK_DISTANCE: f64 = 4.0;
+const DEFAULT_DOUBLE_CLICK_INTERVAL: Duration = Duration::from_millis(400);
+const DEFAULT_DOUBLE_CLICK_DISTANCE: f64 = 4.0;
+const MIN_DOUBLE_CLICK_INTERVAL: Duration = Duration::from_millis(150);
+const MAX_DOUBLE_CLICK_INTERVAL: Duration = Duration::from_millis(1_000);
 
 #[derive(Debug, Clone)]
 struct PreviousClick {
@@ -19,12 +21,35 @@ struct PreviousClick {
 }
 
 /// Tracks consecutive clicks on the same desktop item.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(super) struct DesktopClickTracker {
     previous: Option<PreviousClick>,
+    interval: Duration,
+    distance: f64,
+}
+
+impl Default for DesktopClickTracker {
+    fn default() -> Self {
+        Self {
+            previous: None,
+            interval: DEFAULT_DOUBLE_CLICK_INTERVAL,
+            distance: DEFAULT_DOUBLE_CLICK_DISTANCE,
+        }
+    }
 }
 
 impl DesktopClickTracker {
+    /// Updates the accepted double-click interval, clamped to a usable range.
+    pub(super) fn set_interval(&mut self, interval: Duration) {
+        self.interval = interval.clamp(MIN_DOUBLE_CLICK_INTERVAL, MAX_DOUBLE_CLICK_INTERVAL);
+        self.reset();
+    }
+
+    /// Returns the active double-click interval.
+    pub(super) fn interval(&self) -> Duration {
+        self.interval
+    }
+
     /// Records a click and returns true when it completes a double-click.
     pub(super) fn record(
         &mut self,
@@ -42,8 +67,8 @@ impl DesktopClickTracker {
             let dx = x - previous.x;
             let dy = y - previous.y;
             previous.item_id == item_id
-                && now.saturating_duration_since(previous.at) <= DOUBLE_CLICK_INTERVAL
-                && dx * dx + dy * dy <= DOUBLE_CLICK_DISTANCE * DOUBLE_CLICK_DISTANCE
+                && now.saturating_duration_since(previous.at) <= self.interval
+                && dx * dx + dy * dy <= self.distance * self.distance
         });
 
         if is_double_click {
@@ -108,7 +133,7 @@ mod tests {
             "system:trash",
             10.0,
             20.0,
-            start + DOUBLE_CLICK_INTERVAL + Duration::from_millis(1)
+            start + DEFAULT_DOUBLE_CLICK_INTERVAL + Duration::from_millis(1)
         ));
     }
 
@@ -139,6 +164,26 @@ mod tests {
             20.0,
             start + Duration::from_millis(100)
         ));
+    }
+
+    #[test]
+    fn configured_interval_changes_recognition_and_resets_pending_click() {
+        let start = Instant::now();
+        let mut tracker = DesktopClickTracker::default();
+        assert!(!tracker.record("system:trash", 10.0, 20.0, start));
+        tracker.set_interval(Duration::from_millis(700));
+        assert_eq!(tracker.interval(), Duration::from_millis(700));
+        assert!(!tracker.record("system:trash", 10.0, 20.0, start + Duration::from_millis(100)));
+        assert!(tracker.record("system:trash", 10.0, 20.0, start + Duration::from_millis(650)));
+    }
+
+    #[test]
+    fn configured_interval_is_clamped_to_safe_bounds() {
+        let mut tracker = DesktopClickTracker::default();
+        tracker.set_interval(Duration::from_millis(1));
+        assert_eq!(tracker.interval(), MIN_DOUBLE_CLICK_INTERVAL);
+        tracker.set_interval(Duration::from_secs(5));
+        assert_eq!(tracker.interval(), MAX_DOUBLE_CLICK_INTERVAL);
     }
 
     #[test]
