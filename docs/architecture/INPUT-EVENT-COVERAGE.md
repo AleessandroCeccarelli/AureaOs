@@ -351,7 +351,7 @@ Relative motion now carries its originating `InputDeviceId` through the composit
 
 - Added a technology-independent `PointerSettingsController` and `PointerSettingsCommand` to the desktop API.
 - The shell owns the controller and exposes a device-scoped `set_pointer_settings` entry point. The compositor receives commands through its Calloop-owned channel; unknown devices and non-mouse devices are rejected.
-- Accepted settings update the compositor's per-device pointer profile. The existing libinput acceleration adapter samples the updated profile on the next pointer-motion event, without retaining mouse handles across hot-unplug.
+- Accepted settings update the compositor's per-device pointer profile and are applied immediately to the retained live libinput handle. Handles are removed on disconnect/reclassification; acceleration is reapplied after session activation.
 - The shell-to-compositor channel is wired through the application, desktop factory, compositor factory and Wayland server. No Settings UI was added.
 - Pointer speed/profile controls and double-click timing remain deferred to the future System Settings input page alongside touchpad preferences. The desktop double-click interval remains unchanged.
 - Source changes only. No Cargo build, rustfmt, tests or physical-device validation were run.
