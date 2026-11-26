@@ -2235,11 +2235,11 @@ accelerazione, configurazione touchpad e riconoscimento dei gesti supportati;
 Smithay integra il flusso nel compositor Wayland. AureaOS mantiene la proprietà
 delle preferenze esposte, delle azioni desktop e dell'esperienza utente.
 
-Corretto anche il significato di DeviceDefault: click method e profilo di
-accelerazione lasciati a libinput vengono ora riportati come NotRequested,
-non come Applied né Unsupported. all_applied() considera soddisfatte tutte
-le opzioni volutamente lasciate al default, senza nascondere capacità non
-supportate o errori reali.
+Corretto anche il comportamento di DeviceDefault: quando l'API espone il valore
+predefinito del dispositivo, il compositor lo ripristina tramite libinput;
+quando non è disponibile un valore ripristinabile, il report usa NotRequested.
+all_applied() considera soddisfatte le opzioni non richieste, senza nascondere
+capacità non supportate o errori reali.
 
 Nessuna build o test eseguiti: la verifica resta accorpata al controllo Fedora
 concordato.
