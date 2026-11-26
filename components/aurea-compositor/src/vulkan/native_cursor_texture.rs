@@ -29,6 +29,9 @@ use super::{
 
 const MAX_CURSOR_FILE_BYTES: u64 = 16 * 1024 * 1024;
 const MAX_PENDING_CURSOR_DECODE_REQUESTS: usize = 4;
+const MAX_CACHED_CURSOR_ASSETS: usize = 32;
+const MAX_CACHED_CURSOR_BYTES: usize = 16 * 1024 * 1024;
+const MAX_CURSOR_ASSET_BYTES: usize = 4 * 1024 * 1024;
 
 /// Errors produced while loading or uploading a named cursor.
 #[derive(Debug)]
@@ -175,6 +178,8 @@ impl VulkanNativeCursorTexture {
             pending_uploads: Vec::new(),
             decode_tx: worker.map(|_| request_tx),
             decode_rx: result_rx,
+            cached_bytes: 0,
+            frame: 0,
         }
     }
 
@@ -196,11 +201,13 @@ impl VulkanNativeCursorTexture {
         theme: DesktopTheme,
         requested_size: u32,
     ) -> Result<bool, VulkanNativeCursorTextureError> {
+        self.frame = self.frame.wrapping_add(1);
         self.poll_uploads()?;
         self.poll_decoded_frames(device)?;
 
         let key = Self::cache_key(name, theme, requested_size);
-        if self.assets.contains_key(&key) {
+        if let Some(entry) = self.assets.get_mut(&key) {
+            entry.last_used = self.frame;
             return Ok(true);
         }
         if self.pending_keys.contains(&key) {
@@ -246,11 +253,19 @@ impl VulkanNativeCursorTexture {
                 .map(|frame| frame.width.max(frame.height))
                 .min_by_key(|size| size.abs_diff(result.requested_size))
                 .ok_or_else(|| VulkanNativeCursorTextureError::MissingAsset(result.name.clone()))?;
-            let metadata = frames.into_iter()
+            let mut metadata = frames.into_iter()
                 .filter(|frame| frame.width.max(frame.height) == selected_size)
                 .collect::<Vec<_>>();
             if metadata.is_empty() {
                 return Err(VulkanNativeCursorTextureError::MissingAsset(result.name));
+            }
+            let frame_bytes = metadata.iter().try_fold(0usize, |total, frame| {
+                total.checked_add(frame.rgba8.len())
+            }).ok_or(VulkanNativeCursorTextureError::CacheBudgetExceeded)?;
+            // Preserve the cursor's first frame rather than allowing an unusually
+            // large animation to consume the entire native artwork budget.
+            if frame_bytes > MAX_CURSOR_ASSET_BYTES {
+                metadata.truncate(1);
             }
 
             let snapshots = metadata.iter()
@@ -299,9 +314,32 @@ impl VulkanNativeCursorTexture {
                     delay_ms: metadata.delay_ms,
                 }
             }).collect();
-            self.assets.insert(pending.key, VulkanNativeCursorAsset {
-                frames,
-                animation_started_at: Instant::now(),
+            let byte_len = pending.metadata.iter().map(|frame| frame.rgba8.len()).sum::<usize>();
+            if byte_len > MAX_CACHED_CURSOR_BYTES {
+                return Err(VulkanNativeCursorTextureError::CacheBudgetExceeded);
+            }
+            while self.assets.len() >= MAX_CACHED_CURSOR_ASSETS
+                || self.cached_bytes.checked_add(byte_len)
+                    .map_or(true, |total| total > MAX_CACHED_CURSOR_BYTES)
+            {
+                let oldest = self.assets.iter()
+                    .min_by_key(|(_, entry)| entry.last_used)
+                    .map(|(key, _)| key.clone());
+                let Some(oldest) = oldest else {
+                    return Err(VulkanNativeCursorTextureError::CacheBudgetExceeded);
+                };
+                if let Some(removed) = self.assets.remove(&oldest) {
+                    self.cached_bytes = self.cached_bytes.saturating_sub(removed.byte_len);
+                }
+            }
+            self.cached_bytes = self.cached_bytes.saturating_add(byte_len);
+            self.assets.insert(pending.key, CachedNativeCursorAsset {
+                asset: VulkanNativeCursorAsset {
+                    frames,
+                    animation_started_at: Instant::now(),
+                },
+                byte_len,
+                last_used: self.frame,
             });
         }
         Ok(())
@@ -314,6 +352,7 @@ impl VulkanNativeCursorTexture {
         requested_size: u32,
     ) -> Option<&VulkanNativeCursorAsset> {
         self.assets.get(&Self::cache_key(name, theme, requested_size))
+            .map(|entry| &entry.asset)
     }
 }
 
