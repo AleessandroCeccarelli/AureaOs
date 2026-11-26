@@ -340,3 +340,8 @@ The compositor-owned arrow texture is a required part of the desktop's initial p
 ## Pointer placement after output hot-unplug during a client grab — 2026-11-26
 
 Output topology changes must not forcibly terminate an active Wayland pointer grab. The compositor now records a deferred pointer recenter when an output-driven placement request is blocked by a grab. Output reconciliation also detects when the current pointer location becomes invalid under the new enabled-output union while a grab is active and marks placement for retry. After each Calloop dispatch, the DRM event loop checks the pending flag; once Smithay has released the grab, the pointer is centered on an enabled output and all output frames are requested. The retry is event-loop driven and does not add a timer or poll while no placement is pending. This is source-level lifecycle hardening only; physical hot-unplug and popup-grab validation remain pending.
+
+
+## Per-device pointer preference and shake isolation — 2026-11-26
+
+Relative motion now carries its originating `InputDeviceId` through the compositor handler. Acceleration already uses the effective per-device pointer profile; shake-to-locate now uses the same per-device preference rather than reading only the global default. `PointerShakeManager` keeps independent unaccelerated-motion histories per physical device and drops that history on disconnect or when the feature is disabled for that device. This prevents alternating movement from two separate mice/touchpads from being combined into a false shake gesture. Source tests cover interleaved-device isolation and device-specific cleanup; they have not been executed.
