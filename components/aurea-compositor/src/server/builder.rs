@@ -332,6 +332,10 @@ pub(super) fn build(
         }
     }
 
+    state.compositor.set_desktop_double_click_interval_ms(
+        state.desktop_pointer_behavior_store.settings().double_click_interval_ms(),
+    );
+
     // Register the Wayland display fd for client dispatch.
     let display_fd = state
         .display
