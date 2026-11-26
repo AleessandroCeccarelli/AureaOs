@@ -417,6 +417,8 @@ mod cursor_scene_tests {
             scene.native_cursor_location(),
             Some(cursor::default_cursor_origin(pointer))
         );
+        assert_eq!(scene.native_cursor_pointer_location(), Some(pointer));
+        assert_eq!(scene.native_cursor_asset(), Some("default"));
     }
 
     #[test]
@@ -453,5 +455,7 @@ mod cursor_scene_tests {
             .with_cursor(&CursorImageStatus::Hidden, Some(pointer), 1.0);
 
         assert_eq!(scene.native_cursor_location(), None);
+        assert_eq!(scene.native_cursor_pointer_location(), None);
+        assert_eq!(scene.native_cursor_asset(), None);
     }
 }
