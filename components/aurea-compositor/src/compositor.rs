@@ -128,7 +128,8 @@ pub struct AureaCompositor {
     desktop_click_tracker: DesktopClickTracker,
     /// Pointer buttons consumed by the compositor-owned desktop context menu.
     context_menu_consumed_buttons: HashSet<(aurea_desktop_api::input::InputDeviceId, u32)>,
-    pointer_shake: PointerShakeDetector,
+    /// Independent shake-detection history for each physical pointer device.
+    pointer_shakes: HashMap<aurea_desktop_api::input::InputDeviceId, PointerShakeDetector>,
     cursor_locate_animation: CursorLocateAnimation,
     /// Defers output-driven pointer recentering until any active client grab ends.
     pointer_recenter_pending: bool,
@@ -204,7 +205,7 @@ impl AureaCompositor {
             desktop_interactions,
             desktop_click_tracker: DesktopClickTracker::default(),
             context_menu_consumed_buttons: HashSet::new(),
-            pointer_shake: PointerShakeDetector::default(),
+            pointer_shakes: HashMap::new(),
             cursor_locate_animation: CursorLocateAnimation::default(),
             pointer_recenter_pending: false,
         }
