@@ -187,5 +187,5 @@ mv -f -- "$TEMP_ISO" "$OUTPUT_PATH"
 
 echo "Created UEFI-only AureaOS Live ISO with systemd-boot and UKI:"
 echo "  $OUTPUT_PATH"
-echo "  ESP: $ESP_IMAGE (${ESP_SIZE_MIB} MiB FAT16; El Torito size limit respected)"
+echo "  ESP: boot/efi.img inside the ISO (${ESP_SIZE_MIB} MiB FAT16)"
 echo "  Default entry: $DEFAULT_ENTRY"
