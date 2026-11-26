@@ -105,7 +105,7 @@ The wrapper currently:
 - refuses to build when the repository contains uncommitted or untracked changes, because the source snapshot is created from `git archive HEAD`;
 - delegates the actual image generation to `tools/iso/build-live-iso.sh`;
 - publishes a uniquely named, validated historical candidate plus JSON manifest and SHA-256 sidecar in `~/Documenti` by default;
-- updates the stable `AureaOS.iso` convenience alias and checksum only after both binary-tree and exact-ISO validation pass.
+- updates the stable `AureaOS.iso` convenience alias and checksum only after the isolated assembly tree and the exact ISO both pass validation.
 
 For an interrupted build, rerun from the same clean checkout and commit:
 
@@ -123,16 +123,16 @@ The current source tree contains a chroot preflight, a UKI/ISO assembly helper, 
 
 - `tools/iso/tests/validate-chroot-boot.sh` — checks required boot packages and live-boot initramfs integration in the target chroot, regenerates initramfs and checks for `scripts/live`.
 - `tools/iso/scripts/build-systemd-boot-live-iso.sh` — assembles an unsigned UKI from the exact Debian kernel/initramfs pair, builds a FAT EFI boot image containing systemd-boot and the UKI entries, removes intermediate GRUB payloads, and remasters the UEFI-only ISO.
-- `tools/iso/tests/validate-live-image.sh` — checks the final EFI image, systemd-boot fallback path, loader entry, UKI sections and embedded `boot=live` command line, plus the actual SquashFS rootfs: desktop executable, session launcher, systemd unit, PAM definition, service enablement link and both context-menu RGBA8 assets with exact byte lengths. It also checks the El Torito EFI catalog.
+- `tools/iso/tests/validate-live-image.sh` — checks the actual SquashFS rootfs is Debian 13 Trixie with systemd PID 1 and the required Debian Live packages; checks the desktop session integration and artwork; inspects every UKI and extracts its embedded initramfs to prove that the exact UKI payload contains `scripts/live`; verifies the EFI fallback loader, systemd-boot entries and El Torito EFI catalog.
 
-The coordinator explicitly stages the chroot boot validator under `/usr/local/libexec/aureaos/` before live-build runs the hook. The hook invokes it after package installation and cleanup. The coordinator then assembles the UKI/EFI image and validates both the staged binary tree and the copied ISO.
+The coordinator explicitly stages the chroot boot validator under `/usr/local/libexec/aureaos/` before live-build runs the hook. The hook regenerates and inspects initramfs before purging build-only dependencies. The UKI assembler works on a same-filesystem hard-link snapshot of the live-build binary tree: kernel/initramfs and GRUB staging files are removed only from that isolated snapshot, never from the resumable live-build workspace. It validates the snapshot before mastering the ISO; the coordinator then validates the exact ISO and the copied candidate.
 
 The validation layers should cover, at minimum:
 
 1. Required package state in the target chroot: `live-boot`, `live-boot-initramfs-tools`, `live-config`, the explicit `live-config-systemd` backend, `systemd-sysv`, `initramfs-tools` and the intended kernel package.
 2. Presence and execution of the live-boot initramfs hook and early-boot script.
 3. Successful initramfs generation for the installed kernel.
-4. Presence of `scripts/live` in every selected initramfs.
+4. Presence of `scripts/live` in every selected initramfs and, independently, in the `.initrd` section extracted from every final UKI.
 5. A non-empty Live filesystem image at `/live/filesystem.squashfs`, with the real desktop binary and session integration present inside it.
 6. A FAT EFI image containing `EFI/BOOT/BOOTX64.EFI`, systemd-boot and loader configuration.
 7. One or more UKIs containing the kernel, initramfs, AureaOS os-release metadata and embedded `boot=live` command line.
@@ -142,6 +142,8 @@ The validation layers should cover, at minimum:
 11. The actual SquashFS rootfs contains the executable desktop, session launcher, systemd/PAM wiring and enabled service.
 12. Both context-menu RGBA8 assets exist beneath `/usr/share/aureaos/human-interfaces` and have exact expected lengths.
 13. SHA-256 checksum and a machine-readable validation report.
+
+**Scope boundary:** the base-system gate ends when Debian 13 Trixie has mounted its Live SquashFS root, systemd PID 1 is running, and the required Live boot packages and initramfs payload have been verified. The subsequent desktop service, PAM session, compositor, Vulkan and visible desktop are AureaOS integration work; they are not evidence for whether Debian Live itself booted.
 
 A test that is not implemented or not executed must be marked as pending, not assumed to pass.
 
