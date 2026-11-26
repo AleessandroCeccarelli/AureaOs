@@ -8,6 +8,7 @@
 mod absolute_pointer_outputs;
 mod applied_settings;
 mod device_settings;
+mod desktop_pointer_behavior_store;
 mod discovery;
 mod manager;
 mod mouse;
@@ -29,6 +30,7 @@ pub mod touchscreen_transform;
 pub use absolute_pointer_outputs::AbsolutePointerOutputMap;
 pub use applied_settings::AppliedTouchpadSettings;
 pub use device_settings::PointingDeviceSettings;
+pub use desktop_pointer_behavior_store::DesktopPointerBehaviorStore;
 pub(crate) use discovery::{describe, id_for};
 pub use manager::PointerManager;
 pub use pointer_store::PointerProfileStore;
