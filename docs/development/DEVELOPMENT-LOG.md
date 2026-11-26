@@ -2317,3 +2317,7 @@ Added `VulkanSurfacePipelineCache::prepare_desktop_item_texture`. It resolves th
 ## 2026-11-26 — Configurable desktop double-click interval
 
 Replaced the fixed 400 ms comparison constant with per-compositor tracker state. The default remains 400 ms; the compositor now exposes setter/getter methods in milliseconds. The accepted range is clamped to 150–1000 ms, and changing the value cancels any pending first click to prevent mixing two timing policies. The 4-logical-pixel movement threshold is unchanged. Added source tests for interval updates and clamping. The Settings UI and persistence connection are still pending; no build or tests were run.
+
+## 2026-11-26 — Global desktop pointer behavior channel and persistence
+
+Added a dedicated global preference contract and channel for desktop pointer behavior, avoiding confusion with physical-device mouse/touchpad profiles. The channel is forwarded from `aurea-shell` through the desktop factory and compositor service into the Calloop event loop. The compositor now persists the double-click interval in versioned `desktop-pointer.toml` beneath the AureaOS input configuration directory, with atomic replacement and mode 0600. Malformed or newer-version files are opened read-only and are not overwritten. The stored interval is restored at startup; the default is 400 ms and accepted values are clamped to 150–1000 ms. The Settings UI and hardware validation are not yet implemented. No build or tests were run.
