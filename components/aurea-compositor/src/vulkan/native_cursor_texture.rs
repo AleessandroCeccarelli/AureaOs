@@ -3,9 +3,19 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Xcursor theme decoding and persistent Vulkan textures for named cursors.
+//! Asynchronous Xcursor decoding and persistent Vulkan textures for named cursors.
 
-use std::{collections::HashMap, error::Error, fmt, fs, path::PathBuf, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+    fmt, fs,
+    path::PathBuf,
+    sync::{
+        Arc, mpsc::{self, Receiver, SyncSender, TryRecvError, TrySendError},
+    },
+    thread,
+    time::Instant,
+};
 
 use crate::{
     desktop::DesktopTheme,
@@ -13,11 +23,12 @@ use crate::{
 };
 
 use super::{
-    VulkanLogicalDevice, VulkanShmTexture, VulkanShmTextureError,
+    VulkanLogicalDevice, VulkanPendingUpload, VulkanShmTexture, VulkanShmTextureError,
     xcursor_file::{XcursorFileError, XcursorFrame, decode_xcursor},
 };
 
 const MAX_CURSOR_FILE_BYTES: u64 = 16 * 1024 * 1024;
+const MAX_PENDING_CURSOR_DECODE_REQUESTS: usize = 4;
 
 /// Errors produced while loading or uploading a named cursor.
 #[derive(Debug)]
@@ -28,6 +39,7 @@ pub(crate) enum VulkanNativeCursorTextureError {
     File(String),
     Decode(XcursorFileError),
     Texture(VulkanShmTextureError),
+    WorkerUnavailable,
 }
 
 impl fmt::Display for VulkanNativeCursorTextureError {
@@ -39,15 +51,15 @@ impl fmt::Display for VulkanNativeCursorTextureError {
             Self::File(error) => write!(formatter, "Xcursor file: {error}"),
             Self::Decode(error) => write!(formatter, "Xcursor decode: {error}"),
             Self::Texture(error) => write!(formatter, "Native cursor texture: {error}"),
+            Self::WorkerUnavailable => formatter.write_str("Native cursor decode worker is unavailable"),
         }
     }
 }
 
 impl Error for VulkanNativeCursorTextureError {}
 
-/// CPU metadata and GPU images for all frames of one selected cursor size.
-pub(crate) struct VulkanNativeCursorAsset {
-    frames: Vec<Arc<VulkanShmTexture>>,
+struct VulkanNativeCursorFrame {
+    texture: Arc<VulkanShmTexture>,
     width: u32,
     height: u32,
     hotspot_x: u32,
@@ -55,32 +67,115 @@ pub(crate) struct VulkanNativeCursorAsset {
     delay_ms: u32,
 }
 
+/// CPU metadata and GPU images for every frame of one selected cursor size.
+pub(crate) struct VulkanNativeCursorAsset {
+    frames: Vec<VulkanNativeCursorFrame>,
+    animation_started_at: Instant,
+}
+
 impl VulkanNativeCursorAsset {
-    pub(crate) fn texture(&self) -> Option<&VulkanShmTexture> {
-        self.frames.first().map(|texture| texture.as_ref())
+    /// Returns the frame selected by the Xcursor per-frame delays.
+    pub(crate) fn frame_at(&self, now: Instant) -> &VulkanNativeCursorFrame {
+        if self.frames.len() <= 1 {
+            return &self.frames[0];
+        }
+
+        let total_ms = self.frames.iter()
+            .map(|frame| u64::from(frame.delay_ms.max(1)))
+            .sum::<u64>()
+            .max(1);
+        let elapsed_ms = now.saturating_duration_since(self.animation_started_at).as_millis() as u64;
+        let mut position_ms = elapsed_ms % total_ms;
+        for frame in &self.frames {
+            let duration = u64::from(frame.delay_ms.max(1));
+            if position_ms < duration {
+                return frame;
+            }
+            position_ms -= duration;
+        }
+        &self.frames[0]
     }
 
+    pub(crate) fn has_animation(&self) -> bool {
+        self.frames.len() > 1
+    }
+}
+
+impl VulkanNativeCursorFrame {
+    pub(crate) fn texture(&self) -> &VulkanShmTexture { self.texture.as_ref() }
     pub(crate) fn width(&self) -> u32 { self.width }
     pub(crate) fn height(&self) -> u32 { self.height }
     pub(crate) fn hotspot_x(&self) -> u32 { self.hotspot_x }
     pub(crate) fn hotspot_y(&self) -> u32 { self.hotspot_y }
-    #[allow(dead_code)] // Consumed by the cursor animation scheduler added in the next block.
     pub(crate) fn delay_ms(&self) -> u32 { self.delay_ms }
-    #[allow(dead_code)] // Retained frames are uploaded together for animated cursors.
-    pub(crate) fn frame_count(&self) -> usize { self.frames.len() }
 }
 
-/// Owns the compositor's cursor textures for the lifetime of the Vulkan device.
+struct CursorDecodeRequest {
+    key: String,
+    name: String,
+    theme: DesktopTheme,
+    requested_size: u32,
+}
+
+struct CursorDecodeResult {
+    key: String,
+    name: String,
+    requested_size: u32,
+    frames: Result<Vec<XcursorFrame>, String>,
+}
+
+struct PendingCursorUpload {
+    key: String,
+    upload: VulkanPendingUpload<Vec<Arc<VulkanShmTexture>>>,
+    metadata: Vec<XcursorFrame>,
+}
+
+/// Owns cursor decoding and GPU resources for the lifetime of the Vulkan device.
 ///
-/// Xcursor files are loaded once per (theme, name, requested size) and retained
-/// until device teardown. Missing packaged themes fall back to the built-in arrow.
+/// File I/O and Xcursor parsing run on a dedicated bounded worker. Vulkan uploads
+/// are fence-polled by the render thread and never waited on during normal frames.
 pub(crate) struct VulkanNativeCursorTexture {
     assets: HashMap<String, VulkanNativeCursorAsset>,
+    pending_keys: HashSet<String>,
+    pending_uploads: Vec<PendingCursorUpload>,
+    decode_tx: Option<SyncSender<CursorDecodeRequest>>,
+    decode_rx: Receiver<CursorDecodeResult>,
 }
 
 impl VulkanNativeCursorTexture {
     pub(crate) fn new() -> Self {
-        Self { assets: HashMap::new() }
+        let (request_tx, request_rx) = mpsc::sync_channel::<CursorDecodeRequest>(
+            MAX_PENDING_CURSOR_DECODE_REQUESTS,
+        );
+        let (result_tx, result_rx) = mpsc::sync_channel::<CursorDecodeResult>(
+            MAX_PENDING_CURSOR_DECODE_REQUESTS,
+        );
+        let worker = thread::Builder::new()
+            .name("aurea-xcursor-decode".to_owned())
+            .spawn(move || {
+                while let Ok(request) = request_rx.recv() {
+                    let result = load_cursor_frames(&request.name, request.theme)
+                        .or_else(|_| built_in_arrow_frame(request.requested_size))
+                        .map_err(|error| error.to_string());
+                    if result_tx.send(CursorDecodeResult {
+                        key: request.key,
+                        name: request.name,
+                        requested_size: request.requested_size,
+                        frames: result,
+                    }).is_err() {
+                        break;
+                    }
+                }
+            })
+            .ok();
+
+        Self {
+            assets: HashMap::new(),
+            pending_keys: HashSet::new(),
+            pending_uploads: Vec::new(),
+            decode_tx: worker.map(|_| request_tx),
+            decode_rx: result_rx,
+        }
     }
 
     fn cache_key(name: &str, theme: DesktopTheme, requested_size: u32) -> String {
@@ -91,7 +186,9 @@ impl VulkanNativeCursorTexture {
         format!("{theme_name}/{name}/{requested_size}")
     }
 
-    /// Loads and uploads the closest matching Xcursor image size for one output.
+    /// Polls worker results and GPU fences, then queues a missing asset if needed.
+    ///
+    /// Returns true only after every selected frame has completed its GPU upload.
     pub(crate) fn ensure(
         &mut self,
         device: Arc<VulkanLogicalDevice>,
@@ -99,54 +196,115 @@ impl VulkanNativeCursorTexture {
         theme: DesktopTheme,
         requested_size: u32,
     ) -> Result<bool, VulkanNativeCursorTextureError> {
+        self.poll_uploads()?;
+        self.poll_decoded_frames(device)?;
+
         let key = Self::cache_key(name, theme, requested_size);
         if self.assets.contains_key(&key) {
             return Ok(true);
         }
-
-        // A missing theme package or cursor alias must never make the pointer disappear.
-        // Keep the built-in high-contrast arrow as a deterministic fallback.
-        let frames = load_cursor_frames(name, theme).or_else(|_| built_in_arrow_frame(requested_size))?;
-        let selected_size = frames
-            .iter()
-            .map(|frame| frame.width.max(frame.height))
-            .min_by_key(|size| size.abs_diff(requested_size))
-            .ok_or_else(|| VulkanNativeCursorTextureError::MissingAsset(name.to_owned()))?;
-        let selected = frames
-            .into_iter()
-            .filter(|frame| frame.width.max(frame.height) == selected_size)
-            .collect::<Vec<_>>();
-        let first = selected.first().ok_or_else(|| {
-            VulkanNativeCursorTextureError::MissingAsset(name.to_owned())
-        })?;
-
-        let width = first.width;
-        let height = first.height;
-        let hotspot_x = first.hotspot_x;
-        let hotspot_y = first.hotspot_y;
-        let delay_ms = first.delay_ms;
-        let snapshots = selected
-            .into_iter()
-            .map(frame_to_snapshot)
-            .collect::<Result<Vec<_>, _>>()?;
-        let upload = VulkanShmTexture::submit_snapshots(device, snapshots)
-            .map_err(VulkanNativeCursorTextureError::Texture)?;
-        let textures = upload.wait().map_err(|error| {
-            VulkanNativeCursorTextureError::Texture(VulkanShmTextureError::Command(error))
-        })?;
-        if textures.is_empty() {
-            return Err(VulkanNativeCursorTextureError::EmptyUpload);
+        if self.pending_keys.contains(&key) {
+            return Ok(false);
         }
 
-        self.assets.insert(key, VulkanNativeCursorAsset {
-            frames: textures,
-            width,
-            height,
-            hotspot_x,
-            hotspot_y,
-            delay_ms,
-        });
-        Ok(true)
+        let Some(sender) = &self.decode_tx else {
+            return Err(VulkanNativeCursorTextureError::WorkerUnavailable);
+        };
+        let request = CursorDecodeRequest {
+            key: key.clone(),
+            name: name.to_owned(),
+            theme,
+            requested_size,
+        };
+        match sender.try_send(request) {
+            Ok(()) => {
+                self.pending_keys.insert(key);
+            }
+            Err(TrySendError::Full(_)) => {}
+            Err(TrySendError::Disconnected(_)) => {
+                return Err(VulkanNativeCursorTextureError::WorkerUnavailable);
+            }
+        }
+        Ok(false)
+    }
+
+    fn poll_decoded_frames(
+        &mut self,
+        device: Arc<VulkanLogicalDevice>,
+    ) -> Result<(), VulkanNativeCursorTextureError> {
+        loop {
+            let result = match self.decode_rx.try_recv() {
+                Ok(result) => result,
+                Err(TryRecvError::Empty | TryRecvError::Disconnected) => break,
+            };
+            self.pending_keys.remove(&result.key);
+            let frames = result.frames.map_err(|error| {
+                VulkanNativeCursorTextureError::File(format!("{}: {error}", result.name))
+            })?;
+            let selected_size = frames
+                .iter()
+                .map(|frame| frame.width.max(frame.height))
+                .min_by_key(|size| size.abs_diff(result.requested_size))
+                .ok_or_else(|| VulkanNativeCursorTextureError::MissingAsset(result.name.clone()))?;
+            let metadata = frames.into_iter()
+                .filter(|frame| frame.width.max(frame.height) == selected_size)
+                .collect::<Vec<_>>();
+            if metadata.is_empty() {
+                return Err(VulkanNativeCursorTextureError::MissingAsset(result.name));
+            }
+
+            let snapshots = metadata.iter()
+                .map(|frame| {
+                    ShmBufferSnapshot::from_rgba8(frame.width, frame.height, frame.rgba8.clone())
+                        .map_err(|error| VulkanNativeCursorTextureError::Snapshot(error.to_string()))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let upload = VulkanShmTexture::submit_snapshots(Arc::clone(&device), snapshots)
+                .map_err(VulkanNativeCursorTextureError::Texture)?;
+            self.pending_uploads.push(PendingCursorUpload {
+                key: result.key,
+                upload,
+                metadata,
+            });
+        }
+        Ok(())
+    }
+
+    fn poll_uploads(&mut self) -> Result<(), VulkanNativeCursorTextureError> {
+        let mut index = 0;
+        while index < self.pending_uploads.len() {
+            let complete = self.pending_uploads[index].upload.is_complete()
+                .map_err(|error| {
+                    VulkanNativeCursorTextureError::Texture(VulkanShmTextureError::Command(error))
+                })?;
+            if !complete {
+                index += 1;
+                continue;
+            }
+
+            let pending = self.pending_uploads.remove(index);
+            let textures = pending.upload.wait().map_err(|error| {
+                VulkanNativeCursorTextureError::Texture(VulkanShmTextureError::Command(error))
+            })?;
+            if textures.len() != pending.metadata.len() || textures.is_empty() {
+                return Err(VulkanNativeCursorTextureError::EmptyUpload);
+            }
+            let frames = pending.metadata.into_iter().zip(textures).map(|(metadata, texture)| {
+                VulkanNativeCursorFrame {
+                    texture,
+                    width: metadata.width,
+                    height: metadata.height,
+                    hotspot_x: metadata.hotspot_x,
+                    hotspot_y: metadata.hotspot_y,
+                    delay_ms: metadata.delay_ms,
+                }
+            }).collect();
+            self.assets.insert(pending.key, VulkanNativeCursorAsset {
+                frames,
+                animation_started_at: Instant::now(),
+            });
+        }
+        Ok(())
     }
 
     pub(crate) fn asset(
@@ -185,13 +343,6 @@ fn built_in_arrow_frame(
         delay_ms: 0,
         rgba8,
     }])
-}
-
-fn frame_to_snapshot(
-    frame: XcursorFrame,
-) -> Result<ShmBufferSnapshot, VulkanNativeCursorTextureError> {
-    ShmBufferSnapshot::from_rgba8(frame.width, frame.height, frame.rgba8)
-        .map_err(|error| VulkanNativeCursorTextureError::Snapshot(error.to_string()))
 }
 
 fn load_cursor_frames(
