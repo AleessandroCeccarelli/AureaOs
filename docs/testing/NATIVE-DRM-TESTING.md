@@ -108,3 +108,60 @@ A successful process start is not a successful display test. Record separately
 whether libseat acquired the session, DRM/KMS initialized, a physical output
 was registered, Vulkan presented a frame, and the Wayland Welcome client
 connected and became visible.
+
+## Pointer and touchpad acceptance test
+
+Run this checklist during the first successful native DRM/Vulkan session. These
+are physical acceptance checks; Cargo tests and a successful compositor start
+do not replace them.
+
+Record each item as **PASS**, **FAIL**, or **NOT AVAILABLE** in the session
+report. Do not mark the pointer block complete while any required item is
+unverified.
+
+### Mouse
+
+1. Confirm that the AureaOS arrow is visible on the active monitor immediately
+   after startup, without moving the mouse first.
+2. Move slowly and quickly across the full display. Confirm that the arrow
+   follows continuously, does not disappear, and remains inside the active
+   display.
+3. On a multi-monitor setup, cross each monitor boundary in both directions.
+   Include mixed-DPI displays if available.
+4. Test left click, right click, middle click, and any side/back/forward buttons
+   present on the device. Confirm that auxiliary buttons are not converted to
+   primary or secondary clicks.
+5. Perform single and double clicks on a known interactive target. Confirm
+   that one physical click produces one activation and that double-click
+   timing is consistent.
+6. Test vertical and horizontal wheel scrolling, including a slow wheel turn
+   and a rapid sequence.
+
+### Touchpad
+
+1. Move the pointer with one finger across the full usable touchpad area.
+2. Test physical click, tap-to-click when supported, and two-finger scrolling.
+3. Test each advertised gesture capability on that device. Record unsupported
+   gestures as **NOT AVAILABLE**, not as failures.
+4. Confirm that typing does not unexpectedly move or click the pointer when
+   disable-while-typing is supported and enabled.
+5. Disconnect and reconnect an external mouse while the touchpad remains
+   active. Confirm that both devices continue to work and that the pointer
+   does not become stuck.
+
+### Reconnection and session recovery
+
+1. Unplug and reconnect a USB mouse. Confirm that it is rediscovered and moves
+   the same seat pointer.
+2. Disconnect a device while a button is held. Confirm that no button remains
+   logically stuck.
+3. Switch to another TTY and return to AureaOS. Confirm that the pointer,
+   buttons and touchpad settings recover after the libseat session resumes.
+
+### Evidence to retain
+
+Keep the session report directory and note the tested hardware, connection
+type, monitor layout and DPI scale. Correlate the visual result with the
+captured libinput device-added/device-removed messages and pointer motion
+samples. A log entry showing input events is not, by itself, proof that the
+cursor was visibly rendered or that the click reached the intended target.
