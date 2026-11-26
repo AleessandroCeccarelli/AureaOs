@@ -14,7 +14,10 @@ use std::{
 use aurea_desktop_api::{
     desktop_interaction::{DesktopInteractionSender, desktop_interaction_channel},
     display::DisplayColorController,
-    input::{DesktopPointerBehaviorCommand, PointerSettingsCommand, TouchpadSettingsCommand, desktop_pointer_behavior_channel, pointer_settings_channel, touchpad_settings_channel},
+    input::{
+        DesktopPointerBehaviorCommand, PointerSettingsCommand, TouchpadSettingsCommand,
+        desktop_pointer_behavior_channel, pointer_settings_channel, touchpad_settings_channel,
+    },
     keyboard::KeyboardLayoutId,
 };
 use smithay::reexports::calloop::EventLoop;
@@ -50,7 +53,8 @@ impl WaylandServer {
         let (interactions, _receiver) = desktop_interaction_channel();
         let (_touchpad_controller, touchpad_settings) = touchpad_settings_channel();
         let (_pointer_controller, pointer_settings) = pointer_settings_channel();
-        let (_desktop_pointer_behavior_controller, desktop_pointer_behavior) = desktop_pointer_behavior_channel();
+        let (_desktop_pointer_behavior_controller, desktop_pointer_behavior) =
+            desktop_pointer_behavior_channel();
         #[cfg(feature = "drm")]
         let parts = super::builder::build(
             socket_name,
@@ -64,8 +68,14 @@ impl WaylandServer {
         );
 
         #[cfg(not(feature = "drm"))]
-        let parts =
-            super::builder::build(socket_name, display_color, interactions, touchpad_settings, pointer_settings, desktop_pointer_behavior);
+        let parts = super::builder::build(
+            socket_name,
+            display_color,
+            interactions,
+            touchpad_settings,
+            pointer_settings,
+            desktop_pointer_behavior,
+        );
 
         let (event_loop, state) = parts?;
 
@@ -79,7 +89,8 @@ impl WaylandServer {
         let (interactions, _receiver) = desktop_interaction_channel();
         let (_touchpad_controller, touchpad_settings) = touchpad_settings_channel();
         let (_pointer_controller, pointer_settings) = pointer_settings_channel();
-        let (_desktop_pointer_behavior_controller, desktop_pointer_behavior) = desktop_pointer_behavior_channel();
+        let (_desktop_pointer_behavior_controller, desktop_pointer_behavior) =
+            desktop_pointer_behavior_channel();
         Self::build(
             socket_name,
             Some(drm_session),
@@ -127,7 +138,8 @@ impl WaylandServer {
         let (interactions, _receiver) = desktop_interaction_channel();
         let (_touchpad_controller, touchpad_settings) = touchpad_settings_channel();
         let (_pointer_controller, pointer_settings) = pointer_settings_channel();
-        let (_desktop_pointer_behavior_controller, desktop_pointer_behavior) = desktop_pointer_behavior_channel();
+        let (_desktop_pointer_behavior_controller, desktop_pointer_behavior) =
+            desktop_pointer_behavior_channel();
         Self::build(
             socket_name,
             Some(drm_session),
@@ -178,7 +190,10 @@ impl WaylandServer {
 
     /// Sets the initial desktop Trash artwork state before the event loop starts.
     pub fn set_trash_state(&mut self, state: aurea_desktop_api::desktop::DesktopTrashState) {
-        self.state.compositor.desktop_items_mut().set_trash_state(state);
+        self.state
+            .compositor
+            .desktop_items_mut()
+            .set_trash_state(state);
     }
 
     /// Runs the server until shutdown is requested.
@@ -206,9 +221,11 @@ impl WaylandServer {
             while !shutdown.load(Ordering::Acquire) {
                 #[cfg(feature = "drm")]
                 let animation_active = self.state.compositor.cursor_animation_active()
-                    || self.state.vulkan_backends.values().any(|backend| {
-                        backend.has_pending_native_cursor_work()
-                    });
+                    || self
+                        .state
+                        .vulkan_backends
+                        .values()
+                        .any(|backend| backend.has_pending_native_cursor_work());
 
                 #[cfg(not(feature = "drm"))]
                 let animation_active = false;

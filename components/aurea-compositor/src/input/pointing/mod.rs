@@ -7,18 +7,18 @@
 
 mod absolute_pointer_outputs;
 mod applied_settings;
-mod device_settings;
 mod desktop_pointer_behavior_store;
+mod device_settings;
 mod discovery;
 mod manager;
 mod mouse;
 mod pointer_store;
 mod registry;
 mod tablet;
-mod tablet_tools;
-mod tablet_store;
 mod tablet_calibration;
 mod tablet_outputs;
+mod tablet_store;
+mod tablet_tools;
 mod touchpad;
 mod touchpad_settings;
 mod touchpad_store;
@@ -29,15 +29,15 @@ pub mod touchscreen_transform;
 
 pub use absolute_pointer_outputs::AbsolutePointerOutputMap;
 pub use applied_settings::AppliedTouchpadSettings;
-pub use device_settings::PointingDeviceSettings;
 pub use desktop_pointer_behavior_store::DesktopPointerBehaviorStore;
+pub use device_settings::PointingDeviceSettings;
 pub(crate) use discovery::{describe, id_for};
 pub use manager::PointerManager;
 pub use pointer_store::PointerProfileStore;
 pub use registry::PointingDeviceService;
 pub use tablet_outputs::{TabletOutputMap, TabletOutputTarget};
-pub use tablet_tools::{RemovedTabletTool, TabletToolRegistry};
 pub use tablet_store::TabletProfileStore;
+pub use tablet_tools::{RemovedTabletTool, TabletToolRegistry};
 pub use touchscreen::TouchscreenOutputMap;
 pub use touchscreen_calibration::{
     TouchscreenCalibration, TouchscreenCalibrationError, TouchscreenCalibrationMap,

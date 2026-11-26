@@ -104,10 +104,12 @@ mod tests {
         let mut manager = DesktopManager::default();
         let snapshot = DesktopItemsSnapshot::capture(&manager);
         let trash_id = snapshot.items()[0].id().clone();
-        manager.set_item_position(
-            &trash_id,
-            aurea_desktop_api::desktop::DesktopPosition::new(120, 80),
-        ).unwrap();
+        manager
+            .set_item_position(
+                &trash_id,
+                aurea_desktop_api::desktop::DesktopPosition::new(120, 80),
+            )
+            .unwrap();
         assert_eq!(
             snapshot.items()[0].position(),
             aurea_desktop_api::desktop::DesktopPosition::new(32, 32)

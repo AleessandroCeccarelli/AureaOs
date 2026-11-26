@@ -19,14 +19,17 @@ use aurea_desktop_api::input::{InputDeviceId, InputDeviceProvider};
 
 use crate::input::pointing;
 
-use super::{refresh_touchpad_settings, wayland_time};
 use super::super::state::WaylandState;
+use super::{refresh_touchpad_settings, wayland_time};
 
 fn is_registered_pointing_device(state: &WaylandState, device: InputDeviceId) -> bool {
     state.compositor.pointing_devices().device(device).is_some()
 }
 
-pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, state: &mut WaylandState) {
+pub(super) fn dispatch_input_event(
+    event: InputEvent<LibinputInputBackend>,
+    state: &mut WaylandState,
+) {
     // Do not forward stale or queued input while libseat has paused this
     // compositor session (for example, after switching to another VT).
     if !state.session_active {
@@ -70,25 +73,26 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 // Registration restores the saved physical-device profile.
                 // Configure only after that restore, so the device never
                 // receives a transient default profile before its preferences.
-                let touchpad_report = if descriptor.kind
-                    == aurea_desktop_api::input::InputDeviceKind::Touchpad
-                {
-                    let settings = state.compositor.touchpad_settings_for(device_id);
-                    let report = pointing::configure_touchpad(&mut device, settings);
-                    if let Some(report) = report {
-                        tracing::info!(
-                            device_id = device_id.0,
-                            ?report,
-                            "Applied restored touchpad preferences"
-                        );
-                        if !report.has_failures() {
-                            state.applied_touchpad_settings.mark_applied(device_id, settings);
+                let touchpad_report =
+                    if descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchpad {
+                        let settings = state.compositor.touchpad_settings_for(device_id);
+                        let report = pointing::configure_touchpad(&mut device, settings);
+                        if let Some(report) = report {
+                            tracing::info!(
+                                device_id = device_id.0,
+                                ?report,
+                                "Applied restored touchpad preferences"
+                            );
+                            if !report.has_failures() {
+                                state
+                                    .applied_touchpad_settings
+                                    .mark_applied(device_id, settings);
+                            }
                         }
-                    }
-                    report
-                } else {
-                    None
-                };
+                        report
+                    } else {
+                        None
+                    };
 
                 // Apply the effective acceleration profile as soon as the
                 // physical pointer is discovered, before its first motion.
@@ -121,7 +125,12 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                         .record_touchpad_configuration(device_id, report);
                 }
                 state.compositor.sync_touchscreen_capability();
-            } else if state.compositor.pointing_devices().device(device_id).is_some() {
+            } else if state
+                .compositor
+                .pointing_devices()
+                .device(device_id)
+                .is_some()
+            {
                 // A sysname can be re-announced with capabilities that no
                 // longer describe a supported pointing device. Retire the
                 // previous registration instead of leaving stale seat state.
@@ -191,13 +200,11 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             }
             // A single enabled output is selected automatically. On multi-
             // output desktops, the device must have an explicit output mapping.
-            state
-                .compositor
-                .handle_pointer_motion_absolute(
-                    pointing::id_for(&event.device()),
-                    &event,
-                    wayland_time(event.time()),
-                );
+            state.compositor.handle_pointer_motion_absolute(
+                pointing::id_for(&event.device()),
+                &event,
+                wayland_time(event.time()),
+            );
         }
         InputEvent::PointerMotion { event } => {
             let delta = event.delta();
@@ -451,4 +458,3 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         _ => {}
     }
 }
-

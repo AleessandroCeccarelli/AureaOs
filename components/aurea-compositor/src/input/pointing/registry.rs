@@ -252,7 +252,8 @@ mod tests {
             scroll_method: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
-            disable_while_trackpointing: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            disable_while_trackpointing:
+                aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             click_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
@@ -282,7 +283,8 @@ mod tests {
             scroll_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
-            disable_while_trackpointing: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            disable_while_trackpointing:
+                aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             click_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
@@ -311,7 +313,8 @@ mod tests {
             scroll_method: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Applied,
-            disable_while_trackpointing: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            disable_while_trackpointing:
+                aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             click_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
@@ -340,7 +343,8 @@ mod tests {
             scroll_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             natural_scrolling: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             disable_while_typing: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
-            disable_while_trackpointing: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
+            disable_while_trackpointing:
+                aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             click_method: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             left_handed: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,
             middle_button_emulation: aurea_desktop_api::input::TouchpadSettingStatus::Unsupported,

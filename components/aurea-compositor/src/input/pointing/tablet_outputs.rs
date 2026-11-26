@@ -169,10 +169,7 @@ mod tests {
         assert_eq!(map.resolve(DEVICE, [SECOND]), None);
 
         assert!(map.unassign(DEVICE));
-        assert_eq!(
-            map.resolve(DEVICE, [SECOND]),
-            Some(TabletOutputTarget::All)
-        );
+        assert_eq!(map.resolve(DEVICE, [SECOND]), Some(TabletOutputTarget::All));
     }
 
     #[test]

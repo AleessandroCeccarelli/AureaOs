@@ -20,11 +20,19 @@ const FORMAT_VERSION: u32 = 1;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-enum StoredRotation { Deg0, Deg90, Deg180, Deg270 }
+enum StoredRotation {
+    Deg0,
+    Deg90,
+    Deg180,
+    Deg270,
+}
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-enum StoredAspectMode { Stretch, Preserve }
+enum StoredAspectMode {
+    Stretch,
+    Preserve,
+}
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 struct StoredTabletProfile {
@@ -73,7 +81,12 @@ impl TryFrom<StoredTabletProfile> for TabletCalibration {
             aspect_mode,
             profile.device_aspect_ratio,
         )
-        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid stored tablet calibration"))
+        .map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "invalid stored tablet calibration",
+            )
+        })
     }
 }
 
@@ -95,24 +108,38 @@ impl Default for TabletProfileStore {
     fn default() -> Self {
         match default_store_path() {
             Some(path) => Self::open(path),
-            None => Self { path: None, profiles: HashMap::new(), writable: true },
+            None => Self {
+                path: None,
+                profiles: HashMap::new(),
+                writable: true,
+            },
         }
     }
 }
 
 impl TabletProfileStore {
-    fn with_path(path: PathBuf) -> Self { Self::open(path) }
+    fn with_path(path: PathBuf) -> Self {
+        Self::open(path)
+    }
 
     fn open(path: PathBuf) -> Self {
         match load_profiles(&path) {
-            Ok(profiles) => Self { path: Some(path), profiles, writable: true },
+            Ok(profiles) => Self {
+                path: Some(path),
+                profiles,
+                writable: true,
+            },
             Err(error) => {
                 tracing::warn!(
                     path = %path.display(),
                     %error,
                     "Tablet preferences opened read-only; original file will be preserved"
                 );
-                Self { path: Some(path), profiles: HashMap::new(), writable: false }
+                Self {
+                    path: Some(path),
+                    profiles: HashMap::new(),
+                    writable: false,
+                }
             }
         }
     }
@@ -152,15 +179,22 @@ impl TabletProfileStore {
                 "tablet preferences were not loaded safely; refusing to overwrite the original file",
             ));
         }
-        let Some(path) = self.path.as_deref() else { return Ok(()); };
+        let Some(path) = self.path.as_deref() else {
+            return Ok(());
+        };
         let parent = path.parent().ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidInput, "tablet settings path has no parent")
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "tablet settings path has no parent",
+            )
         })?;
         fs::create_dir_all(parent)?;
 
         let document = StoredProfiles {
             format_version: FORMAT_VERSION,
-            devices: self.profiles.iter()
+            devices: self
+                .profiles
+                .iter()
                 .map(|(identity, profile)| (identity.clone(), (*profile).into()))
                 .collect(),
         };
@@ -213,10 +247,15 @@ fn load_profiles(path: &Path) -> io::Result<HashMap<String, TabletCalibration>> 
     if stored.format_version != FORMAT_VERSION {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            format!("unsupported tablet settings format {}; expected {}", stored.format_version, FORMAT_VERSION),
+            format!(
+                "unsupported tablet settings format {}; expected {}",
+                stored.format_version, FORMAT_VERSION
+            ),
         ));
     }
-    stored.devices.into_iter()
+    stored
+        .devices
+        .into_iter()
         .map(|(identity, profile)| Ok((identity, profile.try_into()?)))
         .collect()
 }
@@ -227,7 +266,10 @@ mod tests {
     use std::{fs, path::PathBuf};
 
     fn test_path(suffix: &str) -> PathBuf {
-        std::env::temp_dir().join(format!("aurea-tablet-profiles-{}-{suffix}.toml", std::process::id()))
+        std::env::temp_dir().join(format!(
+            "aurea-tablet-profiles-{}-{suffix}.toml",
+            std::process::id()
+        ))
     }
 
     fn profile(rotation: TabletRotation) -> TabletCalibration {
@@ -236,7 +278,8 @@ mod tests {
             rotation,
             TabletAspectMode::Preserve,
             1.6,
-        ).unwrap()
+        )
+        .unwrap()
     }
 
     #[test]
@@ -264,7 +307,11 @@ mod tests {
             let path = test_path(suffix);
             fs::write(&path, original).unwrap();
             let mut store = TabletProfileStore::with_path(path.clone());
-            assert!(store.set("tablet-a".into(), profile(TabletRotation::Deg0)).is_err());
+            assert!(
+                store
+                    .set("tablet-a".into(), profile(TabletRotation::Deg0))
+                    .is_err()
+            );
             assert_eq!(fs::read_to_string(&path).unwrap(), original);
             let _ = fs::remove_file(path);
         }
@@ -276,7 +323,11 @@ mod tests {
         let original = "[devices.tablet-a]\nactive_area = [0.0, 0.0, 2.0, 1.0]\nrotation = \"deg0\"\naspect_mode = \"stretch\"\ndevice_aspect_ratio = 1.0\n";
         fs::write(&path, original).unwrap();
         let mut store = TabletProfileStore::with_path(path.clone());
-        assert!(store.set("tablet-a".into(), profile(TabletRotation::Deg0)).is_err());
+        assert!(
+            store
+                .set("tablet-a".into(), profile(TabletRotation::Deg0))
+                .is_err()
+        );
         assert_eq!(fs::read_to_string(&path).unwrap(), original);
         let _ = fs::remove_file(path);
     }
@@ -286,9 +337,15 @@ mod tests {
         let path = test_path("remove");
         let _ = fs::remove_file(&path);
         let mut store = TabletProfileStore::with_path(path.clone());
-        store.set("tablet-a".into(), profile(TabletRotation::Deg180)).unwrap();
+        store
+            .set("tablet-a".into(), profile(TabletRotation::Deg180))
+            .unwrap();
         assert!(store.remove("tablet-a").unwrap());
-        assert!(TabletProfileStore::with_path(path.clone()).get("tablet-a").is_none());
+        assert!(
+            TabletProfileStore::with_path(path.clone())
+                .get("tablet-a")
+                .is_none()
+        );
         let _ = fs::remove_file(path);
     }
 }

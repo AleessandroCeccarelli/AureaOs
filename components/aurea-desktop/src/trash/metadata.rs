@@ -66,7 +66,10 @@ mod tests {
     #[test]
     fn path_encoding_round_trips_spaces_and_unicode() {
         let original = Path::new("/home/test/Documenti/idee è nuove.txt");
-        assert_eq!(decode_path(&encode_path(original)).as_deref(), Some(original));
+        assert_eq!(
+            decode_path(&encode_path(original)).as_deref(),
+            Some(original)
+        );
     }
 
     #[test]

@@ -20,16 +20,17 @@ use crate::{
 
 use super::{
     VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
-    VulkanLogicalDevice, VulkanSampler, VulkanSamplerError, VulkanShaderError, VulkanShaderModule,
-    VulkanShmTexture, VulkanTextureBindingError, VulkanTextureBindingPool,
-    VulkanNativeCursorTexture,
-    VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
+    VulkanLogicalDevice, VulkanNativeCursorTexture, VulkanSampler, VulkanSamplerError,
+    VulkanShaderError, VulkanShaderModule, VulkanShmTexture, VulkanTextureBindingError,
+    VulkanTextureBindingPool, VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
+    VulkanWallpaperTexture,
+    desktop_icon_texture_cache::{
+        VulkanDesktopIconTextureCache, VulkanDesktopIconTextureCacheError,
+    },
     surface_texture_cache::{VulkanSurfaceTextureCache, VulkanSurfaceTextureCacheError},
-    desktop_icon_texture_cache::{VulkanDesktopIconTextureCache, VulkanDesktopIconTextureCacheError},
     wallpaper_texture_cache::{
         VulkanWallpaperTextureCache, VulkanWallpaperTextureCacheError, WallpaperTextureKey,
     },
-    VulkanWallpaperTexture,
 };
 
 /// Errors returned while preparing cached surface-composition resources.
@@ -219,7 +220,10 @@ impl VulkanSurfacePipelineCache {
             .size((2 * std::mem::size_of::<u32>()) as u32)];
         let pipeline = VulkanGraphicsPipeline::new_shared_with_descriptor_layout_handles(
             Arc::clone(&self.device),
-            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            VulkanGraphicsShaders {
+                vertex: &vertex,
+                fragment: &fragment,
+            },
             format,
             &descriptor_layouts,
             &trail_range,
@@ -236,7 +240,6 @@ impl VulkanSurfacePipelineCache {
     ) -> Option<&VulkanGraphicsPipeline<'static>> {
         self.cursor_trail_pipelines.get(&format)
     }
-
 
     pub(crate) fn prepare_surface_textures(
         &mut self,
@@ -381,23 +384,26 @@ impl VulkanSurfacePipelineCache {
         let service = &mut self.wallpaper_decode_service;
         match service.select(Some(asset)) {
             Ok(_) => {}
-            Err(WallpaperDecodeServiceError::Worker(
-                aurea_media::DecodeWorkerError::QueueFull,
-            )) => return Ok(()),
+            Err(WallpaperDecodeServiceError::Worker(aurea_media::DecodeWorkerError::QueueFull)) => {
+                return Ok(());
+            }
             Err(error) => return Err(VulkanWallpaperTextureCacheError::Decode(error.to_string())),
         }
 
-        service.poll().map_err(|error| VulkanWallpaperTextureCacheError::Decode(error.to_string()))?;
+        service
+            .poll()
+            .map_err(|error| VulkanWallpaperTextureCacheError::Decode(error.to_string()))?;
         let ready_len = service.ready().map(|decoded| decoded.pixels().byte_len());
-        if ready_len.is_some_and(|byte_len| {
-            self.wallpaper_texture_cache.can_accept_upload(byte_len)
-        }) {
+        if ready_len
+            .is_some_and(|byte_len| self.wallpaper_texture_cache.can_accept_upload(byte_len))
+        {
             if let Some(decoded) = service.ready() {
                 let key = WallpaperTextureKey {
                     asset_id: decoded.key().asset_id().to_owned(),
                     revision: decoded.key().revision(),
                 };
-                if self.wallpaper_texture_cache
+                if self
+                    .wallpaper_texture_cache
                     .prepare(key, decoded.pixels())
                     .map_err(|error| error)?
                 {
@@ -466,7 +472,8 @@ impl VulkanSurfacePipelineCache {
         theme: DesktopTheme,
         requested_size: u32,
     ) -> Option<&super::native_cursor_texture::VulkanNativeCursorAsset> {
-        self.native_cursor_texture.asset(asset, theme, requested_size)
+        self.native_cursor_texture
+            .asset(asset, theme, requested_size)
     }
 
     pub(crate) fn pipeline(&self, format: vk::Format) -> Option<&VulkanGraphicsPipeline<'static>> {

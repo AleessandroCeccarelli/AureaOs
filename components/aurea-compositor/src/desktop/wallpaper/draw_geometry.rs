@@ -67,15 +67,11 @@ impl WallpaperDrawGeometry {
         let output = WallpaperPixelRect::new(0, 0, output_width, output_height)?;
         let clipped = destination.intersection(output)?;
 
-        let left_fraction = (clipped.x() - destination.x()) as f64
+        let left_fraction = (clipped.x() - destination.x()) as f64 / f64::from(destination.width());
+        let top_fraction = (clipped.y() - destination.y()) as f64 / f64::from(destination.height());
+        let right_fraction = (clipped.x() + i64::from(clipped.width()) - destination.x()) as f64
             / f64::from(destination.width());
-        let top_fraction = (clipped.y() - destination.y()) as f64
-            / f64::from(destination.height());
-        let right_fraction = (clipped.x() + i64::from(clipped.width())
-            - destination.x()) as f64
-            / f64::from(destination.width());
-        let bottom_fraction = (clipped.y() + i64::from(clipped.height())
-            - destination.y()) as f64
+        let bottom_fraction = (clipped.y() + i64::from(clipped.height()) - destination.y()) as f64
             / f64::from(destination.height());
 
         let source_left = source.x() as f64;
@@ -90,7 +86,8 @@ impl WallpaperDrawGeometry {
             ],
             max: [
                 ((source_left + source_width_f * right_fraction) / f64::from(source_width)) as f32,
-                ((source_top + source_height_f * bottom_fraction) / f64::from(source_height)) as f32,
+                ((source_top + source_height_f * bottom_fraction) / f64::from(source_height))
+                    as f32,
             ],
         };
 
@@ -119,14 +116,9 @@ mod tests {
         output: (u32, u32),
         mode: WallpaperFitMode,
     ) -> WallpaperDrawGeometry {
-        let layout = WallpaperLayout::calculate(
-            source.0, source.1, output.0, output.1, mode,
-        )
-        .unwrap();
-        WallpaperDrawGeometry::for_output(
-            layout, source.0, source.1, output.0, output.1,
-        )
-        .unwrap()
+        let layout =
+            WallpaperLayout::calculate(source.0, source.1, output.0, output.1, mode).unwrap();
+        WallpaperDrawGeometry::for_output(layout, source.0, source.1, output.0, output.1).unwrap()
     }
 
     #[test]
@@ -193,10 +185,8 @@ mod tests {
 
     #[test]
     fn fit_returns_none_when_destination_does_not_intersect_output() {
-        let layout = WallpaperLayout::calculate(
-            100, 100, 1920, 1080, WallpaperFitMode::Fit,
-        )
-        .unwrap();
+        let layout =
+            WallpaperLayout::calculate(100, 100, 1920, 1080, WallpaperFitMode::Fit).unwrap();
         assert!(WallpaperDrawGeometry::for_output(layout, 100, 100, 0, 1080).is_none());
     }
 }

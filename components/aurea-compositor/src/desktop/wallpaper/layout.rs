@@ -33,13 +33,26 @@ impl WallpaperPixelRect {
         if width == 0 || height == 0 {
             return None;
         }
-        Some(Self { x, y, width, height })
+        Some(Self {
+            x,
+            y,
+            width,
+            height,
+        })
     }
 
-    pub const fn x(self) -> i64 { self.x }
-    pub const fn y(self) -> i64 { self.y }
-    pub const fn width(self) -> u32 { self.width }
-    pub const fn height(self) -> u32 { self.height }
+    pub const fn x(self) -> i64 {
+        self.x
+    }
+    pub const fn y(self) -> i64 {
+        self.y
+    }
+    pub const fn width(self) -> u32 {
+        self.width
+    }
+    pub const fn height(self) -> u32 {
+        self.height
+    }
 
     /// Returns the portion of this rectangle visible inside `clip`.
     ///
@@ -97,10 +110,16 @@ impl WallpaperLayout {
         }
 
         let source_full = WallpaperPixelRect {
-            x: 0, y: 0, width: source_width, height: source_height,
+            x: 0,
+            y: 0,
+            width: source_width,
+            height: source_height,
         };
         let output_full = WallpaperPixelRect {
-            x: 0, y: 0, width: output_width, height: output_height,
+            x: 0,
+            y: 0,
+            width: output_width,
+            height: output_height,
         };
 
         let (source, destination) = match mode {
@@ -124,11 +143,18 @@ impl WallpaperLayout {
             ),
         };
 
-        Some(Self { source, destination })
+        Some(Self {
+            source,
+            destination,
+        })
     }
 
-    pub const fn source(self) -> WallpaperPixelRect { self.source }
-    pub const fn destination(self) -> WallpaperPixelRect { self.destination }
+    pub const fn source(self) -> WallpaperPixelRect {
+        self.source
+    }
+    pub const fn destination(self) -> WallpaperPixelRect {
+        self.destination
+    }
 }
 
 fn centered_cover_crop(
@@ -173,8 +199,8 @@ fn centered_contain_rect(
     let output_ratio_cross = u64::from(output_width) * u64::from(source_height);
 
     let (width, height) = if source_ratio_cross > output_ratio_cross {
-        let height = ((u64::from(source_height) * u64::from(output_width))
-            / u64::from(source_width)) as u32;
+        let height =
+            ((u64::from(source_height) * u64::from(output_width)) / u64::from(source_width)) as u32;
         (output_width, height.max(1))
     } else {
         let width = ((u64::from(source_width) * u64::from(output_height))
@@ -246,15 +272,9 @@ mod tests {
 
     #[test]
     fn intersection_clips_a_centered_image_to_output_bounds() {
-        let centered = WallpaperLayout::calculate(
-            2560,
-            1440,
-            1920,
-            1080,
-            WallpaperFitMode::Center,
-        )
-        .unwrap()
-        .destination();
+        let centered = WallpaperLayout::calculate(2560, 1440, 1920, 1080, WallpaperFitMode::Center)
+            .unwrap()
+            .destination();
         let output = super::WallpaperPixelRect {
             x: 0,
             y: 0,

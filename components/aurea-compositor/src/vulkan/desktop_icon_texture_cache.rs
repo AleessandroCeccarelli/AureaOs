@@ -32,7 +32,9 @@ pub(crate) enum VulkanDesktopIconTextureCacheError {
 impl fmt::Display for VulkanDesktopIconTextureCacheError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Texture(error) => write!(formatter, "Desktop icon texture upload failed: {error}"),
+            Self::Texture(error) => {
+                write!(formatter, "Desktop icon texture upload failed: {error}")
+            }
             Self::CacheBudgetExceeded => {
                 formatter.write_str("Desktop icon textures exceed the cache resource budget")
             }
@@ -82,11 +84,17 @@ impl VulkanDesktopIconTextureCache {
         requested: &[(DesktopIconTextureKey, ShmBufferSnapshot)],
     ) -> Result<(), VulkanDesktopIconTextureCacheError> {
         self.reap_completed_uploads()?;
-        let requested_keys = requested.iter().map(|(key, _)| *key).collect::<HashSet<_>>();
-        let pending_keys = self.pending_uploads.iter()
+        let requested_keys = requested
+            .iter()
+            .map(|(key, _)| *key)
+            .collect::<HashSet<_>>();
+        let pending_keys = self
+            .pending_uploads
+            .iter()
             .flat_map(|batch| batch.keys.iter().copied())
             .collect::<HashSet<_>>();
-        self.entries.retain(|key, _| requested_keys.contains(key) || pending_keys.contains(key));
+        self.entries
+            .retain(|key, _| requested_keys.contains(key) || pending_keys.contains(key));
         self.recalculate_cached_bytes();
 
         if requested_keys.len() > MAX_DESKTOP_ICON_TEXTURES {
@@ -118,7 +126,8 @@ impl VulkanDesktopIconTextureCache {
             missing.push((*key, snapshot.clone(), byte_len));
         }
 
-        if self.cached_bytes
+        if self
+            .cached_bytes
             .checked_add(missing_bytes)
             .map_or(true, |total| total > MAX_DESKTOP_ICON_BYTES)
         {
@@ -139,15 +148,12 @@ impl VulkanDesktopIconTextureCache {
             .map_err(VulkanDesktopIconTextureCacheError::Texture)?;
 
         let keys = missing.iter().map(|(key, _, _)| *key).collect::<Vec<_>>();
-        for ((key, _, byte_len), texture) in missing.into_iter().zip(upload.resources().iter().cloned()) {
+        for ((key, _, byte_len), texture) in
+            missing.into_iter().zip(upload.resources().iter().cloned())
+        {
             self.cached_bytes = self.cached_bytes.saturating_add(byte_len);
-            self.entries.insert(
-                key,
-                CachedDesktopIconTexture {
-                    texture,
-                    byte_len,
-                },
-            );
+            self.entries
+                .insert(key, CachedDesktopIconTexture { texture, byte_len });
         }
 
         self.pending_bytes = self.pending_bytes.saturating_add(missing_bytes);
@@ -174,10 +180,7 @@ impl VulkanDesktopIconTextureCache {
         Ok(())
     }
 
-    pub(crate) fn texture(
-        &self,
-        key: DesktopIconTextureKey,
-    ) -> Option<&VulkanShmTexture> {
+    pub(crate) fn texture(&self, key: DesktopIconTextureKey) -> Option<&VulkanShmTexture> {
         self.entries.get(&key).map(|entry| entry.texture.as_ref())
     }
 
@@ -221,7 +224,9 @@ impl VulkanDesktopIconTextureCache {
         incoming_bytes: usize,
     ) -> Result<(), VulkanDesktopIconTextureCacheError> {
         while self.pending_uploads.len() >= MAX_PENDING_ICON_BATCHES
-            || self.pending_bytes.checked_add(incoming_bytes)
+            || self
+                .pending_bytes
+                .checked_add(incoming_bytes)
                 .map_or(true, |total| total > MAX_PENDING_ICON_BYTES)
         {
             if self.pending_uploads.is_empty() {

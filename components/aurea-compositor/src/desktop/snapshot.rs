@@ -16,10 +16,7 @@ pub struct DesktopSnapshot {
 
 impl DesktopSnapshot {
     /// Creates a snapshot containing the desktop surface and optional wallpaper.
-    pub(crate) fn new(
-        surface: DesktopSurface,
-        wallpaper: Option<WallpaperSnapshot>,
-    ) -> Self {
+    pub(crate) fn new(surface: DesktopSurface, wallpaper: Option<WallpaperSnapshot>) -> Self {
         Self { surface, wallpaper }
     }
 

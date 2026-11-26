@@ -45,8 +45,14 @@ mod tests {
             resolve(keysyms::KEY_Right, modifiers),
             Some(ShortcutAction::NextWorkspace)
         );
-        assert_eq!(resolve(keysyms::KEY_Up, modifiers), Some(ShortcutAction::ShowOverview));
-        assert_eq!(resolve(keysyms::KEY_Down, modifiers), Some(ShortcutAction::ShowAppExpose));
+        assert_eq!(
+            resolve(keysyms::KEY_Up, modifiers),
+            Some(ShortcutAction::ShowOverview)
+        );
+        assert_eq!(
+            resolve(keysyms::KEY_Down, modifiers),
+            Some(ShortcutAction::ShowAppExpose)
+        );
     }
 
     #[test]

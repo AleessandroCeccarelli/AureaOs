@@ -4,8 +4,12 @@
 // Copyright (C) 2026 Alessandro Ceccarelli
 
 /// Default limits for one decoded image.
-pub const DEFAULT_DECODE_LIMITS: DecodeLimits =
-    DecodeLimits::new(64 * 1024 * 1024, 16_384, 64 * 1024 * 1024, 256 * 1024 * 1024);
+pub const DEFAULT_DECODE_LIMITS: DecodeLimits = DecodeLimits::new(
+    64 * 1024 * 1024,
+    16_384,
+    64 * 1024 * 1024,
+    256 * 1024 * 1024,
+);
 
 /// Explicit resource limits for one image decode request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -56,17 +60,14 @@ impl Default for DecodeLimits {
 
 #[cfg(test)]
 mod tests {
-    use super::{DecodeLimits, DEFAULT_DECODE_LIMITS};
+    use super::{DEFAULT_DECODE_LIMITS, DecodeLimits};
 
     #[test]
     fn defaults_match_the_initial_security_policy() {
         assert_eq!(DEFAULT_DECODE_LIMITS.max_input_bytes(), 64 * 1024 * 1024);
         assert_eq!(DEFAULT_DECODE_LIMITS.max_dimension(), 16_384);
         assert_eq!(DEFAULT_DECODE_LIMITS.max_pixels(), 64 * 1024 * 1024);
-        assert_eq!(
-            DEFAULT_DECODE_LIMITS.max_output_bytes(),
-            256 * 1024 * 1024
-        );
+        assert_eq!(DEFAULT_DECODE_LIMITS.max_output_bytes(), 256 * 1024 * 1024);
     }
 
     #[test]

@@ -10,8 +10,12 @@ use std::sync::mpsc;
 use std::thread::{self, JoinHandle};
 
 use aurea_desktop_api::{
-    CompositorFactory, ShutdownSignal, desktop_interaction::desktop_interaction_channel,
-    display::DisplayColorController, input::{desktop_pointer_behavior_channel, pointer_settings_channel, touchpad_settings_channel},
+    CompositorFactory, ShutdownSignal,
+    desktop_interaction::desktop_interaction_channel,
+    display::DisplayColorController,
+    input::{
+        desktop_pointer_behavior_channel, pointer_settings_channel, touchpad_settings_channel,
+    },
 };
 
 use crate::config::ShellConfig;
@@ -57,8 +61,14 @@ fn run_with_shutdown_handler(
     let display_color = DisplayColorController::new();
     let (touchpad_settings, touchpad_receiver) = touchpad_settings_channel();
     let (pointer_settings, pointer_receiver) = pointer_settings_channel();
-    let (desktop_pointer_behavior, desktop_pointer_behavior_receiver) = desktop_pointer_behavior_channel();
-    let mut runtime = ShellRuntime::with_controllers(display_color.clone(), touchpad_settings, pointer_settings, desktop_pointer_behavior);
+    let (desktop_pointer_behavior, desktop_pointer_behavior_receiver) =
+        desktop_pointer_behavior_channel();
+    let mut runtime = ShellRuntime::with_controllers(
+        display_color.clone(),
+        touchpad_settings,
+        pointer_settings,
+        desktop_pointer_behavior,
+    );
     let (event_bus, receiver) = EventBus::new();
     let (interaction_sender, interaction_receiver) = desktop_interaction_channel();
 
@@ -71,8 +81,13 @@ fn run_with_shutdown_handler(
 
     let compositor_thread = thread::spawn(move || {
         // Create the compositor inside its owning thread.
-        let mut compositor =
-            compositor_factory.create(display_color, interaction_sender, touchpad_receiver, pointer_receiver, desktop_pointer_behavior_receiver)?;
+        let mut compositor = compositor_factory.create(
+            display_color,
+            interaction_sender,
+            touchpad_receiver,
+            pointer_receiver,
+            desktop_pointer_behavior_receiver,
+        )?;
 
         // Report readiness only after successful initialization.
         ready_sender

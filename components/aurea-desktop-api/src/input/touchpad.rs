@@ -172,10 +172,7 @@ impl TouchpadSettings {
         self
     }
 
-    pub const fn with_acceleration_profile(
-        mut self,
-        profile: TouchpadAccelerationProfile,
-    ) -> Self {
+    pub const fn with_acceleration_profile(mut self, profile: TouchpadAccelerationProfile) -> Self {
         self.acceleration_profile = profile;
         self
     }
@@ -185,21 +182,51 @@ impl TouchpadSettings {
         self
     }
 
-    pub const fn tap_to_click(self) -> bool { self.tap_to_click }
-    pub const fn two_finger_scroll(self) -> bool { self.two_finger_scroll && !self.edge_scrolling }
-    pub const fn natural_scrolling(self) -> bool { self.natural_scrolling }
-    pub const fn disable_while_typing(self) -> bool { self.disable_while_typing }
-    pub const fn disable_while_trackpointing(self) -> bool { self.disable_while_trackpointing }
-    pub const fn tap_and_drag(self) -> bool { self.tap_and_drag }
-    pub const fn edge_scrolling(self) -> bool { self.edge_scrolling }
-    pub const fn tap_drag_lock(self) -> bool { self.tap_drag_lock }
-    pub const fn click_method(self) -> TouchpadClickMethod { self.click_method }
-    pub const fn tap_button_map(self) -> TouchpadTapButtonMap { self.tap_button_map }
-    pub const fn left_handed(self) -> bool { self.left_handed }
-    pub const fn middle_button_emulation(self) -> bool { self.middle_button_emulation }
-    pub const fn pointer_speed_percent(self) -> i8 { self.pointer_speed_percent }
-    pub const fn acceleration_profile(self) -> TouchpadAccelerationProfile { self.acceleration_profile }
-    pub const fn send_events_mode(self) -> TouchpadSendEventsMode { self.send_events_mode }
+    pub const fn tap_to_click(self) -> bool {
+        self.tap_to_click
+    }
+    pub const fn two_finger_scroll(self) -> bool {
+        self.two_finger_scroll && !self.edge_scrolling
+    }
+    pub const fn natural_scrolling(self) -> bool {
+        self.natural_scrolling
+    }
+    pub const fn disable_while_typing(self) -> bool {
+        self.disable_while_typing
+    }
+    pub const fn disable_while_trackpointing(self) -> bool {
+        self.disable_while_trackpointing
+    }
+    pub const fn tap_and_drag(self) -> bool {
+        self.tap_and_drag
+    }
+    pub const fn edge_scrolling(self) -> bool {
+        self.edge_scrolling
+    }
+    pub const fn tap_drag_lock(self) -> bool {
+        self.tap_drag_lock
+    }
+    pub const fn click_method(self) -> TouchpadClickMethod {
+        self.click_method
+    }
+    pub const fn tap_button_map(self) -> TouchpadTapButtonMap {
+        self.tap_button_map
+    }
+    pub const fn left_handed(self) -> bool {
+        self.left_handed
+    }
+    pub const fn middle_button_emulation(self) -> bool {
+        self.middle_button_emulation
+    }
+    pub const fn pointer_speed_percent(self) -> i8 {
+        self.pointer_speed_percent
+    }
+    pub const fn acceleration_profile(self) -> TouchpadAccelerationProfile {
+        self.acceleration_profile
+    }
+    pub const fn send_events_mode(self) -> TouchpadSendEventsMode {
+        self.send_events_mode
+    }
 }
 
 /// Outcome of applying one setting to one physical touchpad.
@@ -278,7 +305,10 @@ impl TouchpadApplyReport {
             || matches!(self.scroll_method, TouchpadSettingStatus::Failed)
             || matches!(self.natural_scrolling, TouchpadSettingStatus::Failed)
             || matches!(self.disable_while_typing, TouchpadSettingStatus::Failed)
-            || matches!(self.disable_while_trackpointing, TouchpadSettingStatus::Failed)
+            || matches!(
+                self.disable_while_trackpointing,
+                TouchpadSettingStatus::Failed
+            )
             || matches!(self.click_method, TouchpadSettingStatus::Failed)
             || matches!(self.left_handed, TouchpadSettingStatus::Failed)
             || matches!(self.middle_button_emulation, TouchpadSettingStatus::Failed)
@@ -286,14 +316,13 @@ impl TouchpadApplyReport {
             || matches!(self.acceleration_profile, TouchpadSettingStatus::Failed)
             || matches!(self.send_events_mode, TouchpadSettingStatus::Failed)
     }
-
 }
 
 #[cfg(test)]
 mod tests {
     use super::{
-        TouchpadAccelerationProfile, TouchpadApplyReport, TouchpadClickMethod, TouchpadSendEventsMode,
-        TouchpadSettingStatus, TouchpadSettings, TouchpadTapButtonMap,
+        TouchpadAccelerationProfile, TouchpadApplyReport, TouchpadClickMethod,
+        TouchpadSendEventsMode, TouchpadSettingStatus, TouchpadSettings, TouchpadTapButtonMap,
     };
 
     #[test]
@@ -308,9 +337,15 @@ mod tests {
         assert!(settings.tap_and_drag());
         assert!(!settings.tap_drag_lock());
         assert_eq!(settings.click_method(), TouchpadClickMethod::DeviceDefault);
-        assert_eq!(settings.tap_button_map(), TouchpadTapButtonMap::LeftRightMiddle);
+        assert_eq!(
+            settings.tap_button_map(),
+            TouchpadTapButtonMap::LeftRightMiddle
+        );
         assert_eq!(settings.pointer_speed_percent(), 0);
-        assert_eq!(settings.acceleration_profile(), TouchpadAccelerationProfile::DeviceDefault);
+        assert_eq!(
+            settings.acceleration_profile(),
+            TouchpadAccelerationProfile::DeviceDefault
+        );
         assert_eq!(settings.send_events_mode(), TouchpadSendEventsMode::Enabled);
     }
 
@@ -335,9 +370,18 @@ mod tests {
         assert!(settings.middle_button_emulation());
         assert_eq!(settings.pointer_speed_percent(), 100);
         assert_eq!(settings.click_method(), TouchpadClickMethod::ButtonAreas);
-        assert_eq!(settings.tap_button_map(), TouchpadTapButtonMap::LeftMiddleRight);
-        assert_eq!(settings.send_events_mode(), TouchpadSendEventsMode::DisabledOnExternalMouse);
-        assert_eq!(settings.acceleration_profile(), TouchpadAccelerationProfile::Flat);
+        assert_eq!(
+            settings.tap_button_map(),
+            TouchpadTapButtonMap::LeftMiddleRight
+        );
+        assert_eq!(
+            settings.send_events_mode(),
+            TouchpadSendEventsMode::DisabledOnExternalMouse
+        );
+        assert_eq!(
+            settings.acceleration_profile(),
+            TouchpadAccelerationProfile::Flat
+        );
     }
 
     fn report(status: TouchpadSettingStatus) -> TouchpadApplyReport {
@@ -360,7 +404,6 @@ mod tests {
             send_events_mode: status,
         }
     }
-
 
     #[test]
     fn not_requested_settings_are_satisfied_without_hiding_failures() {

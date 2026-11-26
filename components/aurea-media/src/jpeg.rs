@@ -41,9 +41,8 @@ pub(super) fn decode(
     let mut height = 0;
 
     // The shim reads the borrowed input and writes only the two output integers.
-    let status = unsafe {
-        aurea_turbojpeg_header(input.as_ptr(), input_len, &mut width, &mut height)
-    };
+    let status =
+        unsafe { aurea_turbojpeg_header(input.as_ptr(), input_len, &mut width, &mut height) };
     map_status(status)?;
 
     let width = u32::try_from(width).map_err(|_| DecodeError::InvalidDimensions)?;
@@ -78,11 +77,7 @@ pub(super) fn decode(
     Ok((width, height, pixels))
 }
 
-fn validate_dimensions(
-    width: u32,
-    height: u32,
-    limits: DecodeLimits,
-) -> Result<(), DecodeError> {
+fn validate_dimensions(width: u32, height: u32, limits: DecodeLimits) -> Result<(), DecodeError> {
     if width == 0
         || height == 0
         || width > limits.max_dimension()
@@ -169,8 +164,7 @@ mod native_tests {
 
     #[test]
     fn decodes_the_committed_wallpaper_to_bounded_rgba8() {
-        let (width, height, pixels) =
-            decode(DEFAULT_WALLPAPER, DecodeLimits::default()).unwrap();
+        let (width, height, pixels) = decode(DEFAULT_WALLPAPER, DecodeLimits::default()).unwrap();
 
         assert_eq!((width, height), (3840, 2160));
         assert_eq!(pixels.len(), 33_177_600);
@@ -187,12 +181,7 @@ mod native_tests {
 
     #[test]
     fn rejects_dimensions_over_configured_limit_before_allocation() {
-        let limits = DecodeLimits::new(
-            64 * 1024 * 1024,
-            100,
-            64 * 1024 * 1024,
-            256 * 1024 * 1024,
-        );
+        let limits = DecodeLimits::new(64 * 1024 * 1024, 100, 64 * 1024 * 1024, 256 * 1024 * 1024);
 
         assert_eq!(
             decode(DEFAULT_WALLPAPER, limits).unwrap_err(),

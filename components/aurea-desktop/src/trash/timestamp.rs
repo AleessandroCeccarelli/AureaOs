@@ -9,10 +9,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Formats the current time using the freedesktop Trash date representation.
 pub(super) fn deletion_timestamp() -> Option<String> {
-    let seconds = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .ok()?
-        .as_secs();
+    let seconds = SystemTime::now().duration_since(UNIX_EPOCH).ok()?.as_secs();
     let days = seconds / 86_400;
     let seconds_of_day = seconds % 86_400;
     let (year, month, day) = civil_from_days(days as i64);

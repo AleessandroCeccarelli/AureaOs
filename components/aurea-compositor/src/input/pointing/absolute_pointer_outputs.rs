@@ -5,9 +5,9 @@
 
 //! Per-device output assignment for absolute pointer devices.
 
-use std::collections::{HashMap, HashSet};
-use aurea_desktop_api::input::InputDeviceId;
 use crate::output::OutputId;
+use aurea_desktop_api::input::InputDeviceId;
+use std::collections::{HashMap, HashSet};
 
 /// Resolves absolute pointer coordinates against an assigned display.
 #[derive(Debug, Clone, Default)]
@@ -17,7 +17,9 @@ pub struct AbsolutePointerOutputMap {
 }
 
 impl AbsolutePointerOutputMap {
-    pub fn new() -> Self { Self::default() }
+    pub fn new() -> Self {
+        Self::default()
+    }
     pub fn assign(&mut self, device: InputDeviceId, output: OutputId) {
         self.unavailable_devices.remove(&device);
         self.assignments.insert(device, output);
@@ -28,16 +30,24 @@ impl AbsolutePointerOutputMap {
     }
     pub fn remove_output(&mut self, output: OutputId) {
         for (device, assigned) in &self.assignments {
-            if *assigned == output { self.unavailable_devices.insert(*device); }
+            if *assigned == output {
+                self.unavailable_devices.insert(*device);
+            }
         }
     }
     pub fn remove_device(&mut self, device: InputDeviceId) {
         self.assignments.remove(&device);
         self.unavailable_devices.remove(&device);
     }
-    pub fn resolve(&self, device: InputDeviceId, enabled_outputs: impl IntoIterator<Item = OutputId>) -> Option<OutputId> {
+    pub fn resolve(
+        &self,
+        device: InputDeviceId,
+        enabled_outputs: impl IntoIterator<Item = OutputId>,
+    ) -> Option<OutputId> {
         let outputs = enabled_outputs.into_iter().collect::<Vec<_>>();
-        if self.unavailable_devices.contains(&device) { return None; }
+        if self.unavailable_devices.contains(&device) {
+            return None;
+        }
         if let Some(output) = self.assignments.get(&device) {
             return outputs.contains(output).then_some(*output);
         }

@@ -36,12 +36,18 @@ impl Drop for TestHome {
 fn maps_service_visual_state_to_the_shared_desktop_contract() {
     use aurea_desktop_api::desktop::DesktopTrashState;
 
-    assert_eq!(DesktopTrashState::from(TrashVisualState::Empty), DesktopTrashState::Empty);
+    assert_eq!(
+        DesktopTrashState::from(TrashVisualState::Empty),
+        DesktopTrashState::Empty
+    );
     assert_eq!(
         DesktopTrashState::from(TrashVisualState::PartiallyFull),
         DesktopTrashState::PartiallyFull,
     );
-    assert_eq!(DesktopTrashState::from(TrashVisualState::Full), DesktopTrashState::Full);
+    assert_eq!(
+        DesktopTrashState::from(TrashVisualState::Full),
+        DesktopTrashState::Full
+    );
 }
 
 #[test]
@@ -51,7 +57,10 @@ fn moves_lists_restores_and_updates_visual_state() {
     fs::write(&source, "hello").unwrap();
     let trash = TrashService::new(&home.0).unwrap();
 
-    assert_eq!(trash.snapshot().unwrap().visual_state(), TrashVisualState::Empty);
+    assert_eq!(
+        trash.snapshot().unwrap().visual_state(),
+        TrashVisualState::Empty
+    );
     trash.move_to_trash(&source).unwrap();
     assert!(!source.exists());
 
@@ -65,7 +74,10 @@ fn moves_lists_restores_and_updates_visual_state() {
     let restored = trash.restore(entries[0].name()).unwrap();
     assert_eq!(restored, source);
     assert_eq!(fs::read_to_string(restored).unwrap(), "hello");
-    assert_eq!(trash.snapshot().unwrap().visual_state(), TrashVisualState::Empty);
+    assert_eq!(
+        trash.snapshot().unwrap().visual_state(),
+        TrashVisualState::Empty
+    );
 }
 
 #[test]
@@ -94,7 +106,10 @@ fn full_state_uses_configured_threshold() {
 
     trash.move_to_trash(&source).unwrap();
 
-    assert_eq!(trash.snapshot().unwrap().visual_state(), TrashVisualState::Full);
+    assert_eq!(
+        trash.snapshot().unwrap().visual_state(),
+        TrashVisualState::Full
+    );
 }
 
 #[test]

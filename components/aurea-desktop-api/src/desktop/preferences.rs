@@ -23,9 +23,15 @@ pub struct DesktopPreferences {
 }
 
 impl DesktopPreferences {
-    pub const fn show_trash(&self) -> bool { self.show_trash }
-    pub fn set_show_trash(&mut self, show: bool) { self.show_trash = show; }
-    pub const fn stack_grouping(&self) -> Option<StackGrouping> { self.stack_grouping }
+    pub const fn show_trash(&self) -> bool {
+        self.show_trash
+    }
+    pub fn set_show_trash(&mut self, show: bool) {
+        self.show_trash = show;
+    }
+    pub const fn stack_grouping(&self) -> Option<StackGrouping> {
+        self.stack_grouping
+    }
     pub fn set_stack_grouping(&mut self, grouping: Option<StackGrouping>) {
         self.stack_grouping = grouping;
     }
@@ -43,7 +49,11 @@ impl DesktopPreferences {
 
 impl Default for DesktopPreferences {
     fn default() -> Self {
-        Self { show_trash: true, stack_grouping: None, excluded_from_stacks: Vec::new() }
+        Self {
+            show_trash: true,
+            stack_grouping: None,
+            excluded_from_stacks: Vec::new(),
+        }
     }
 }
 
@@ -68,6 +78,9 @@ mod tests {
         preferences.set_excluded_from_stacks(id.clone(), false);
         assert!(!preferences.is_excluded_from_stacks(&id));
         preferences.set_stack_grouping(Some(StackGrouping::ByExtension));
-        assert_eq!(preferences.stack_grouping(), Some(StackGrouping::ByExtension));
+        assert_eq!(
+            preferences.stack_grouping(),
+            Some(StackGrouping::ByExtension)
+        );
     }
 }

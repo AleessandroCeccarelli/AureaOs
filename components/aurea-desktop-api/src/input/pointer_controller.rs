@@ -29,15 +29,13 @@ impl PointerSettingsController {
         device: InputDeviceId,
         settings: PointerSettings,
     ) -> Result<(), SendError<PointerSettingsCommand>> {
-        self.sender.send(PointerSettingsCommand { device, settings })
+        self.sender
+            .send(PointerSettingsCommand { device, settings })
     }
 }
 
 /// Creates the shell controller and its compositor-owned command receiver.
-pub fn pointer_settings_channel() -> (
-    PointerSettingsController,
-    Receiver<PointerSettingsCommand>,
-) {
+pub fn pointer_settings_channel() -> (PointerSettingsController, Receiver<PointerSettingsCommand>) {
     let (sender, receiver) = mpsc::channel();
     (PointerSettingsController { sender }, receiver)
 }

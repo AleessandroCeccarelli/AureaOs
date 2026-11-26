@@ -103,16 +103,14 @@ fn nonzero_id(value: u32) -> Option<u16> {
 /// Returns a stable hardware identity without reading or storing serial numbers.
 fn stable_hardware_identity(device: &Device) -> Option<String> {
     #[cfg(feature = "drm")]
-    let physical_path = udev::Device::from_subsystem_sysname(
-        "input".to_string(),
-        device.sysname().to_string(),
-    )
-    .ok()
-    .and_then(|udev_device| {
-        udev_device
-            .property_value("ID_PATH")
-            .map(|value| value.to_string_lossy().into_owned())
-    });
+    let physical_path =
+        udev::Device::from_subsystem_sysname("input".to_string(), device.sysname().to_string())
+            .ok()
+            .and_then(|udev_device| {
+                udev_device
+                    .property_value("ID_PATH")
+                    .map(|value| value.to_string_lossy().into_owned())
+            });
 
     #[cfg(not(feature = "drm"))]
     let physical_path: Option<String> = None;
@@ -133,14 +131,9 @@ fn stable_hardware_identity(device: &Device) -> Option<String> {
     ))
 }
 
-
 /// Hashes hardware IDs and a stable udev/sysfs physical path. The kernel event
 /// number, display name and serial numbers are deliberately excluded.
-fn stable_hardware_identity_from_parts(
-    vendor: u32,
-    product: u32,
-    physical_path: &[u8],
-) -> String {
+fn stable_hardware_identity_from_parts(vendor: u32, product: u32, physical_path: &[u8]) -> String {
     let mut digest = Sha256::new();
     digest.update(vendor.to_le_bytes());
     digest.update(product.to_le_bytes());
@@ -148,7 +141,9 @@ fn stable_hardware_identity_from_parts(
     let hash = digest.finalize();
     format!(
         "libinput:{vendor:04x}:{product:04x}:{}",
-        hash.iter().map(|byte| format!("{byte:02x}")).collect::<String>()
+        hash.iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
     )
 }
 

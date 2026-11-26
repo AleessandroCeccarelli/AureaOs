@@ -21,10 +21,12 @@ pub use context_menu::{
 };
 pub use item::{DesktopItem, DesktopItemId, DesktopItemKind, DesktopPosition};
 pub use layout::{DesktopHitTest, DesktopPoint, DesktopRect};
-pub use panel_geometry::DesktopPanelPlacement;
 pub use manager::{DesktopManager, DesktopManagerError};
+pub use panel_geometry::DesktopPanelPlacement;
 pub use preferences::{DesktopPreferences, StackGrouping};
 pub use stacks::{DesktopStack, DesktopStackCategory, DesktopStackId};
 pub use trash_state::DesktopTrashState;
 pub use wallpaper_preferences::{WallpaperPreferences, WallpaperScaleMode};
-pub use window_preview_layout::{DesktopWindowPreview, DesktopWindowPreviewInput, DesktopWindowPreviewLayout};
+pub use window_preview_layout::{
+    DesktopWindowPreview, DesktopWindowPreviewInput, DesktopWindowPreviewLayout,
+};

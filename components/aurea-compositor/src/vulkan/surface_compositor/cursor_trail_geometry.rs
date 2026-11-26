@@ -28,36 +28,37 @@ pub(super) fn cursor_trail_draws(
     image_size: (u32, u32),
     hotspot: (u32, u32),
 ) -> Vec<CursorTrailDraw> {
-    scene.cursor_trail().iter().rev().filter_map(|sample| {
-        let (geometry, scissor, texture_transform) = native_cursor_geometry_at(
-            sample.position(),
-            target,
-            image_size,
-            hotspot,
-        )?;
-        Some(CursorTrailDraw {
-            viewport: vk::Viewport {
-                x: geometry.x() as f32,
-                y: geometry.y() as f32,
-                width: geometry.width() as f32,
-                height: geometry.height() as f32,
-                min_depth: 0.0,
-                max_depth: 1.0,
-            },
-            scissor: vk::Rect2D {
-                offset: vk::Offset2D {
-                    x: i32::try_from(scissor.x).ok()?,
-                    y: i32::try_from(scissor.y).ok()?,
+    scene
+        .cursor_trail()
+        .iter()
+        .rev()
+        .filter_map(|sample| {
+            let (geometry, scissor, texture_transform) =
+                native_cursor_geometry_at(sample.position(), target, image_size, hotspot)?;
+            Some(CursorTrailDraw {
+                viewport: vk::Viewport {
+                    x: geometry.x() as f32,
+                    y: geometry.y() as f32,
+                    width: geometry.width() as f32,
+                    height: geometry.height() as f32,
+                    min_depth: 0.0,
+                    max_depth: 1.0,
                 },
-                extent: vk::Extent2D {
-                    width: scissor.width,
-                    height: scissor.height,
+                scissor: vk::Rect2D {
+                    offset: vk::Offset2D {
+                        x: i32::try_from(scissor.x).ok()?,
+                        y: i32::try_from(scissor.y).ok()?,
+                    },
+                    extent: vk::Extent2D {
+                        width: scissor.width,
+                        height: scissor.height,
+                    },
                 },
-            },
-            texture_transform,
-            opacity: sample.opacity(),
+                texture_transform,
+                opacity: sample.opacity(),
+            })
         })
-    }).collect()
+        .collect()
 }
 
 #[cfg(test)]
@@ -68,7 +69,10 @@ mod tests {
         output::{DisplayOutput, OutputMode},
         window_manager::WindowManager,
     };
-    use smithay::{input::pointer::CursorImageStatus, utils::{Logical, Point}};
+    use smithay::{
+        input::pointer::CursorImageStatus,
+        utils::{Logical, Point},
+    };
     use std::time::{Duration, Instant};
 
     fn target() -> RenderTarget {
@@ -85,7 +89,11 @@ mod tests {
         trail.record(Point::<f64, Logical>::from((960.0, 540.0)), start);
         let samples = trail.visible_at(start + Duration::from_millis(110));
         let scene = RenderScene::from_window_manager(&windows)
-            .with_cursor(&CursorImageStatus::default_named(), Some(Point::from((960.0, 540.0))), 1.0)
+            .with_cursor(
+                &CursorImageStatus::default_named(),
+                Some(Point::from((960.0, 540.0))),
+                1.0,
+            )
             .with_cursor_trail(samples);
 
         let draws = cursor_trail_draws(&scene, &target(), (32, 32), (5, 3));
@@ -127,7 +135,11 @@ mod tests {
         let mut trail = CursorTrail::default();
         trail.record(Point::<f64, Logical>::from((2200.0, 540.0)), start);
         let scene = RenderScene::from_window_manager(&windows)
-            .with_cursor(&CursorImageStatus::default_named(), Some(Point::from((2200.0, 540.0))), 1.0)
+            .with_cursor(
+                &CursorImageStatus::default_named(),
+                Some(Point::from((2200.0, 540.0))),
+                1.0,
+            )
             .with_cursor_trail(trail.visible_at(start + Duration::from_millis(10)));
 
         assert!(cursor_trail_draws(&scene, &target(), (32, 32), (5, 3)).is_empty());

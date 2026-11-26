@@ -15,7 +15,9 @@ pub struct DesktopPoint {
 }
 
 impl DesktopPoint {
-    pub const fn new(x: i32, y: i32) -> Self { Self { x, y } }
+    pub const fn new(x: i32, y: i32) -> Self {
+        Self { x, y }
+    }
 }
 
 /// A logical rectangle with a top-left origin and positive dimensions.
@@ -28,19 +30,31 @@ pub struct DesktopRect {
 
 impl DesktopRect {
     pub const fn new(origin: DesktopPoint, width: u32, height: u32) -> Option<Self> {
-        if width == 0 || height == 0 { return None; }
-        Some(Self { origin, width, height })
+        if width == 0 || height == 0 {
+            return None;
+        }
+        Some(Self {
+            origin,
+            width,
+            height,
+        })
     }
 
     pub const fn from_position(position: DesktopPosition, width: u32, height: u32) -> Option<Self> {
         Self::new(DesktopPoint::new(position.x, position.y), width, height)
     }
 
-    pub const fn origin(self) -> DesktopPoint { self.origin }
+    pub const fn origin(self) -> DesktopPoint {
+        self.origin
+    }
 
-    pub const fn width(self) -> u32 { self.width }
+    pub const fn width(self) -> u32 {
+        self.width
+    }
 
-    pub const fn height(self) -> u32 { self.height }
+    pub const fn height(self) -> u32 {
+        self.height
+    }
 
     /// Uses a left/top-inclusive and right/bottom-exclusive hit region.
     pub fn contains(self, point: DesktopPoint) -> bool {
@@ -48,7 +62,8 @@ impl DesktopRect {
         let y = i64::from(point.y);
         let left = i64::from(self.origin.x);
         let top = i64::from(self.origin.y);
-        x >= left && y >= top
+        x >= left
+            && y >= top
             && x < left + i64::from(self.width)
             && y < top + i64::from(self.height)
     }
@@ -67,7 +82,9 @@ impl DesktopHitTest {
         hit_width: u32,
         hit_height: u32,
     ) -> Option<&'a DesktopItem> {
-        if hit_width == 0 || hit_height == 0 { return None; }
+        if hit_width == 0 || hit_height == 0 {
+            return None;
+        }
         items.iter().rev().find(|item| {
             DesktopRect::from_position(item.position(), hit_width, hit_height)
                 .is_some_and(|bounds| bounds.contains(point))
@@ -93,7 +110,9 @@ mod tests {
         DesktopItem::new(
             DesktopItemId::new(id).unwrap(),
             id,
-            DesktopItemKind::File { uri: format!("file:///tmp/{id}") },
+            DesktopItemKind::File {
+                uri: format!("file:///tmp/{id}"),
+            },
             DesktopPosition::new(x, y),
         )
     }
@@ -111,7 +130,9 @@ mod tests {
     fn rejects_zero_sized_hit_regions() {
         assert!(DesktopRect::new(DesktopPoint::new(0, 0), 0, 10).is_none());
         assert!(DesktopRect::new(DesktopPoint::new(0, 0), 10, 0).is_none());
-        assert!(DesktopHitTest::item_at(&[item("one", 0, 0)], DesktopPoint::new(1, 1), 0, 10).is_none());
+        assert!(
+            DesktopHitTest::item_at(&[item("one", 0, 0)], DesktopPoint::new(1, 1), 0, 10).is_none()
+        );
     }
 
     #[test]

@@ -27,18 +27,28 @@ pub struct DesktopPosition {
 /// A desktop-level intent resolved from a physical input gesture.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum DesktopInteraction {
-    WorkspaceChanged { index: u8 },
+    WorkspaceChanged {
+        index: u8,
+    },
     ShowOverview,
     ShowAppExpose,
-    ShowContextMenu { position: DesktopPosition },
+    ShowContextMenu {
+        position: DesktopPosition,
+    },
     /// Dismisses the desktop context menu without affecting other panels.
     DismissContextMenu,
     /// Activates a command selected from the desktop context menu.
-    ContextMenuCommandSelected { command: DesktopContextMenuCommand },
-    DesktopItemSelected { id: String },
+    ContextMenuCommandSelected {
+        command: DesktopContextMenuCommand,
+    },
+    DesktopItemSelected {
+        id: String,
+    },
     DesktopSelectionCleared,
     /// Activates a desktop item after a recognized double-click.
-    DesktopItemActivated { id: String },
+    DesktopItemActivated {
+        id: String,
+    },
 }
 
 /// Shared, thread-safe selection state sampled by compositor render frames.
@@ -87,17 +97,24 @@ impl DesktopInteractionSender {
 
     /// Returns whether the desktop context menu is currently requested.
     pub fn context_menu_is_open(&self) -> bool {
-        self.context_menu_open.load(std::sync::atomic::Ordering::Acquire)
+        self.context_menu_open
+            .load(std::sync::atomic::Ordering::Acquire)
     }
 
     /// Returns the active panel kind as an owned frame-safe snapshot.
     pub fn active_panel(&self) -> Option<DesktopPanelKind> {
-        *self.active_panel.read().unwrap_or_else(std::sync::PoisonError::into_inner)
+        *self
+            .active_panel
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     /// Returns the global logical anchor of the currently open desktop menu.
     pub fn context_menu_position(&self) -> Option<DesktopPosition> {
-        *self.context_menu_position.read().unwrap_or_else(std::sync::PoisonError::into_inner)
+        *self
+            .context_menu_position
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     /// Sends one completed desktop interaction.
@@ -114,25 +131,56 @@ impl DesktopInteractionSender {
         if result.is_ok() {
             match interaction {
                 DesktopInteraction::ShowOverview => {
-                    *self.active_panel.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(DesktopPanelKind::Overview);
-                    *self.context_menu_position.write().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
-                    self.context_menu_open.store(false, std::sync::atomic::Ordering::Release);
+                    *self
+                        .active_panel
+                        .write()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner) =
+                        Some(DesktopPanelKind::Overview);
+                    *self
+                        .context_menu_position
+                        .write()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+                    self.context_menu_open
+                        .store(false, std::sync::atomic::Ordering::Release);
                 }
                 DesktopInteraction::ShowAppExpose => {
-                    *self.active_panel.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(DesktopPanelKind::AppExpose);
-                    *self.context_menu_position.write().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
-                    self.context_menu_open.store(false, std::sync::atomic::Ordering::Release);
+                    *self
+                        .active_panel
+                        .write()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner) =
+                        Some(DesktopPanelKind::AppExpose);
+                    *self
+                        .context_menu_position
+                        .write()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+                    self.context_menu_open
+                        .store(false, std::sync::atomic::Ordering::Release);
                 }
                 DesktopInteraction::ShowContextMenu { position } => {
-                    *self.active_panel.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(DesktopPanelKind::ContextMenu);
-                    *self.context_menu_position.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(position);
-                    self.context_menu_open.store(true, std::sync::atomic::Ordering::Release);
+                    *self
+                        .active_panel
+                        .write()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner) =
+                        Some(DesktopPanelKind::ContextMenu);
+                    *self
+                        .context_menu_position
+                        .write()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(position);
+                    self.context_menu_open
+                        .store(true, std::sync::atomic::Ordering::Release);
                 }
                 DesktopInteraction::DismissContextMenu
                 | DesktopInteraction::ContextMenuCommandSelected { .. } => {
-                    *self.context_menu_position.write().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
-                    self.context_menu_open.store(false, std::sync::atomic::Ordering::Release);
-                    *self.active_panel.write().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+                    *self
+                        .context_menu_position
+                        .write()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+                    self.context_menu_open
+                        .store(false, std::sync::atomic::Ordering::Release);
+                    *self
+                        .active_panel
+                        .write()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
                 }
                 _ => {}
             }
@@ -179,7 +227,10 @@ pub fn desktop_interaction_channel() -> (DesktopInteractionSender, DesktopIntera
             context_menu_position: context_menu_position.clone(),
             active_panel: active_panel.clone(),
         },
-        DesktopInteractionReceiver { receiver, selection },
+        DesktopInteractionReceiver {
+            receiver,
+            selection,
+        },
     )
 }
 
@@ -210,7 +261,10 @@ mod tests {
         let compositor_selection = sender.selection_controller();
 
         shell_selection.set_selected_item(Some("system:trash".to_owned()));
-        assert_eq!(compositor_selection.selected_item().as_deref(), Some("system:trash"));
+        assert_eq!(
+            compositor_selection.selected_item().as_deref(),
+            Some("system:trash")
+        );
 
         compositor_selection.set_selected_item(None);
         assert_eq!(shell_selection.selected_item(), None);
@@ -249,7 +303,9 @@ mod tests {
         let position = DesktopPosition { x: 40, y: 80 };
 
         assert!(!sender.context_menu_is_open());
-        sender.send(DesktopInteraction::ShowContextMenu { position }).unwrap();
+        sender
+            .send(DesktopInteraction::ShowContextMenu { position })
+            .unwrap();
         assert!(sender.context_menu_is_open());
         assert_eq!(sender.context_menu_position(), Some(position));
         assert_eq!(
@@ -257,13 +313,18 @@ mod tests {
             Ok(DesktopInteraction::ShowContextMenu { position })
         );
 
-        sender.send(DesktopInteraction::ContextMenuCommandSelected {
-            command: DesktopContextMenuCommand::UseAsWallpaper,
-        }).unwrap();
+        sender
+            .send(DesktopInteraction::ContextMenuCommandSelected {
+                command: DesktopContextMenuCommand::UseAsWallpaper,
+            })
+            .unwrap();
         assert!(!sender.context_menu_is_open());
-        assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::ContextMenuCommandSelected {
-            command: DesktopContextMenuCommand::UseAsWallpaper,
-        }));
+        assert_eq!(
+            receiver.try_recv(),
+            Ok(DesktopInteraction::ContextMenuCommandSelected {
+                command: DesktopContextMenuCommand::UseAsWallpaper,
+            })
+        );
 
         sender.send(DesktopInteraction::DismissContextMenu).unwrap();
         assert!(!sender.context_menu_is_open());
@@ -287,15 +348,23 @@ mod tests {
         assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::ShowAppExpose));
 
         let position = DesktopPosition { x: 80, y: 120 };
-        sender.send(DesktopInteraction::ShowContextMenu { position }).unwrap();
+        sender
+            .send(DesktopInteraction::ShowContextMenu { position })
+            .unwrap();
         assert_eq!(sender.active_panel(), Some(DesktopPanelKind::ContextMenu));
         assert_eq!(sender.context_menu_position(), Some(position));
-        assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::ShowContextMenu { position }));
+        assert_eq!(
+            receiver.try_recv(),
+            Ok(DesktopInteraction::ShowContextMenu { position })
+        );
 
         sender.send(DesktopInteraction::DismissContextMenu).unwrap();
         assert_eq!(sender.active_panel(), None);
         assert_eq!(sender.context_menu_position(), None);
-        assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::DismissContextMenu));
+        assert_eq!(
+            receiver.try_recv(),
+            Ok(DesktopInteraction::DismissContextMenu)
+        );
     }
 
     #[test]

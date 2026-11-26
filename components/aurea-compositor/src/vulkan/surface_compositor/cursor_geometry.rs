@@ -26,7 +26,12 @@ pub(super) fn native_cursor_geometry(
     image_size: (u32, u32),
     hotspot: (u32, u32),
 ) -> Option<(SurfaceGeometry, SurfaceScissor, u32)> {
-    native_cursor_geometry_at(scene.native_cursor_pointer_location()?, target, image_size, hotspot)
+    native_cursor_geometry_at(
+        scene.native_cursor_pointer_location()?,
+        target,
+        image_size,
+        hotspot,
+    )
 }
 
 /// Resolves a native cursor rectangle at an arbitrary historical pointer position.
@@ -104,12 +109,15 @@ mod tests {
         let windows = WindowManager::new();
         let pointer = Point::<f64, Logical>::from((960.0, 540.0));
         let status = CursorImageStatus::default_named();
-        let scene = RenderScene::from_window_manager(&windows)
-            .with_cursor(&status, Some(pointer), 1.0);
+        let scene =
+            RenderScene::from_window_manager(&windows).with_cursor(&status, Some(pointer), 1.0);
 
         let geometry = native_cursor_geometry(&scene, &target(1), (32, 32), (5, 3));
 
-        assert!(geometry.is_some(), "default arrow must intersect its output");
+        assert!(
+            geometry.is_some(),
+            "default arrow must intersect its output"
+        );
         let (surface, scissor, _) = geometry.unwrap();
         assert_eq!(surface.width(), 32);
         assert_eq!(surface.height(), 32);
@@ -121,8 +129,8 @@ mod tests {
         let windows = WindowManager::new();
         let pointer = Point::<f64, Logical>::from((960.0, 540.0));
         let status = CursorImageStatus::default_named();
-        let scene = RenderScene::from_window_manager(&windows)
-            .with_cursor(&status, Some(pointer), 1.0);
+        let scene =
+            RenderScene::from_window_manager(&windows).with_cursor(&status, Some(pointer), 1.0);
 
         let (geometry, _, _) = native_cursor_geometry(&scene, &target(1), (48, 48), (24, 24))
             .expect("cursor intersects the output");
@@ -136,16 +144,11 @@ mod tests {
         let windows = WindowManager::new();
         let pointer = Point::<f64, Logical>::from((480.0, 270.0));
         let status = CursorImageStatus::default_named();
-        let scene = RenderScene::from_window_manager(&windows)
-            .with_cursor(&status, Some(pointer), 1.0);
+        let scene =
+            RenderScene::from_window_manager(&windows).with_cursor(&status, Some(pointer), 1.0);
 
-        let (geometry, scissor, _) = native_cursor_geometry(
-            &scene,
-            &target(2),
-            (64, 64),
-            (10, 6),
-        )
-        .expect("cursor intersects the high-DPI output");
+        let (geometry, scissor, _) = native_cursor_geometry(&scene, &target(2), (64, 64), (10, 6))
+            .expect("cursor intersects the high-DPI output");
 
         assert_eq!((geometry.x(), geometry.y()), (950, 534));
         assert_eq!((geometry.width(), geometry.height()), (64, 64));
@@ -157,8 +160,8 @@ mod tests {
         let windows = WindowManager::new();
         let pointer = Point::<f64, Logical>::from((2200.0, 540.0));
         let status = CursorImageStatus::default_named();
-        let scene = RenderScene::from_window_manager(&windows)
-            .with_cursor(&status, Some(pointer), 1.0);
+        let scene =
+            RenderScene::from_window_manager(&windows).with_cursor(&status, Some(pointer), 1.0);
 
         assert!(native_cursor_geometry(&scene, &target(1), (32, 32), (5, 3)).is_none());
     }

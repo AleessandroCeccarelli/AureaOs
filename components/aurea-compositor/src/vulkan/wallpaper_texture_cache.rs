@@ -10,8 +10,7 @@ use std::{error::Error, fmt, sync::Arc};
 use crate::desktop::WallpaperPixels;
 
 use super::{
-    VulkanLogicalDevice, VulkanPendingUpload, VulkanWallpaperTexture,
-    VulkanWallpaperTextureError,
+    VulkanLogicalDevice, VulkanPendingUpload, VulkanWallpaperTexture, VulkanWallpaperTextureError,
 };
 
 const MAX_PENDING_WALLPAPER_UPLOADS: usize = 2;
@@ -44,8 +43,12 @@ impl fmt::Display for VulkanWallpaperTextureCacheError {
         match self {
             Self::Upload(error) => write!(formatter, "Wallpaper texture cache upload: {error}"),
             Self::Decode(error) => write!(formatter, "Wallpaper decode service: {error}"),
-            Self::Command(error) => write!(formatter, "Wallpaper upload synchronization: {error:?}"),
-            Self::PendingBudgetExceeded => formatter.write_str("Wallpaper upload queue budget exceeded"),
+            Self::Command(error) => {
+                write!(formatter, "Wallpaper upload synchronization: {error:?}")
+            }
+            Self::PendingBudgetExceeded => {
+                formatter.write_str("Wallpaper upload queue budget exceeded")
+            }
         }
     }
 }
@@ -79,7 +82,9 @@ impl VulkanWallpaperTextureCache {
     /// Reports whether another upload of this size fits the bounded pending budget.
     pub(crate) fn can_accept_upload(&self, byte_len: usize) -> bool {
         self.pending.len() < MAX_PENDING_WALLPAPER_UPLOADS
-            && self.pending_bytes.checked_add(byte_len)
+            && self
+                .pending_bytes
+                .checked_add(byte_len)
                 .is_some_and(|total| total <= MAX_PENDING_WALLPAPER_BYTES)
     }
 
@@ -90,7 +95,11 @@ impl VulkanWallpaperTextureCache {
         pixels: &WallpaperPixels,
     ) -> Result<bool, VulkanWallpaperTextureCacheError> {
         self.poll()?;
-        if self.ready.as_ref().is_some_and(|(ready_key, _)| ready_key == &key) {
+        if self
+            .ready
+            .as_ref()
+            .is_some_and(|(ready_key, _)| ready_key == &key)
+        {
             self.selected = Some(key.clone());
             return Ok(true);
         }
@@ -111,13 +120,19 @@ impl VulkanWallpaperTextureCache {
         if self.failed_upload.as_ref() == Some(&key) {
             return Ok(false);
         }
-        if self.failed_upload.as_ref().is_some_and(|failed| failed != &key) {
+        if self
+            .failed_upload
+            .as_ref()
+            .is_some_and(|failed| failed != &key)
+        {
             self.failed_upload = None;
         }
 
         let byte_len = pixels.byte_len();
         if self.pending.len() >= MAX_PENDING_WALLPAPER_UPLOADS
-            || self.pending_bytes.checked_add(byte_len)
+            || self
+                .pending_bytes
+                .checked_add(byte_len)
                 .map_or(true, |total| total > MAX_PENDING_WALLPAPER_BYTES)
         {
             return Err(VulkanWallpaperTextureCacheError::PendingBudgetExceeded);
@@ -194,10 +209,7 @@ impl VulkanWallpaperTextureCache {
     }
 
     /// Returns the ready texture only if the selected cache key belongs to this asset.
-    pub(crate) fn texture_for_asset(
-        &self,
-        asset_id: &str,
-    ) -> Option<&VulkanWallpaperTexture> {
+    pub(crate) fn texture_for_asset(&self, asset_id: &str) -> Option<&VulkanWallpaperTexture> {
         let (key, texture) = self.ready.as_ref()?;
         (self.selected.as_ref() == Some(key) && key.asset_id == asset_id)
             .then_some(texture.as_ref())

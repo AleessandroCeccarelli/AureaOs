@@ -219,7 +219,8 @@ impl AureaCompositor {
 
         match event.state() {
             smithay::backend::input::ProximityState::In => {
-                self.tablet_tools.observe(device_id, tool_descriptor.clone());
+                self.tablet_tools
+                    .observe(device_id, tool_descriptor.clone());
                 let Some(location) = self.tablet_location(&event) else {
                     return;
                 };
@@ -229,12 +230,11 @@ impl AureaCompositor {
 
                 // A uniquely identified pen may move between tablets. Close
                 // its previous source before activating the new physical one.
-                if let Some((previous_device, previous_time)) = self
-                    .tablet_tools
-                    .activate(device_id, tool_descriptor.clone(), time)
+                if let Some((previous_device, previous_time)) =
+                    self.tablet_tools
+                        .activate(device_id, tool_descriptor.clone(), time)
                 {
-                    if let Some(previous_tool) =
-                        self.seat.tablet_seat().get_tool(&tool_descriptor)
+                    if let Some(previous_tool) = self.seat.tablet_seat().get_tool(&tool_descriptor)
                     {
                         previous_tool.proximity_out(previous_time);
                     }
@@ -247,13 +247,7 @@ impl AureaCompositor {
 
                 Self::apply_tablet_axes(&tool, &event);
                 if let Some(focus) = self.tablet_focus(location) {
-                    tool.proximity_in(
-                        location,
-                        focus,
-                        &tablet,
-                        SERIAL_COUNTER.next_serial(),
-                        time,
-                    );
+                    tool.proximity_in(location, focus, &tablet, SERIAL_COUNTER.next_serial(), time);
                 }
             }
             smithay::backend::input::ProximityState::Out => {
@@ -298,7 +292,8 @@ impl AureaCompositor {
             SERIAL_COUNTER.next_serial(),
             time,
         );
-        self.tablet_tools.update_time(device_id, &tool_descriptor, time);
+        self.tablet_tools
+            .update_time(device_id, &tool_descriptor, time);
         self.request_all_output_frames();
     }
 

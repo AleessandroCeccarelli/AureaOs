@@ -63,26 +63,18 @@ mod tests {
 
     #[test]
     fn keeps_menu_at_pointer_when_there_is_room() {
-        let placement = DesktopPanelPlacement::context_menu(
-            DesktopPoint::new(300, 200),
-            output(),
-            240,
-            320,
-        )
-        .unwrap();
+        let placement =
+            DesktopPanelPlacement::context_menu(DesktopPoint::new(300, 200), output(), 240, 320)
+                .unwrap();
 
         assert_eq!(placement.bounds().origin(), DesktopPoint::new(300, 200));
     }
 
     #[test]
     fn moves_menu_left_and_up_near_bottom_right_edge() {
-        let placement = DesktopPanelPlacement::context_menu(
-            DesktopPoint::new(1_050, 720),
-            output(),
-            240,
-            320,
-        )
-        .unwrap();
+        let placement =
+            DesktopPanelPlacement::context_menu(DesktopPoint::new(1_050, 720), output(), 240, 320)
+                .unwrap();
 
         assert_eq!(placement.bounds().origin(), DesktopPoint::new(860, 430));
         assert!(output().contains(placement.bounds().origin()));
@@ -90,32 +82,22 @@ mod tests {
 
     #[test]
     fn clamps_anchor_to_output_when_pointer_is_outside_it() {
-        let placement = DesktopPanelPlacement::context_menu(
-            DesktopPoint::new(-500, -500),
-            output(),
-            240,
-            320,
-        )
-        .unwrap();
+        let placement =
+            DesktopPanelPlacement::context_menu(DesktopPoint::new(-500, -500), output(), 240, 320)
+                .unwrap();
 
         assert_eq!(placement.bounds().origin(), DesktopPoint::new(100, 50));
     }
 
     #[test]
     fn rejects_panels_larger_than_the_output_or_with_zero_size() {
-        assert!(DesktopPanelPlacement::context_menu(
-            DesktopPoint::new(100, 50),
-            output(),
-            1_001,
-            20,
-        )
-        .is_none());
-        assert!(DesktopPanelPlacement::context_menu(
-            DesktopPoint::new(100, 50),
-            output(),
-            20,
-            0,
-        )
-        .is_none());
+        assert!(
+            DesktopPanelPlacement::context_menu(DesktopPoint::new(100, 50), output(), 1_001, 20,)
+                .is_none()
+        );
+        assert!(
+            DesktopPanelPlacement::context_menu(DesktopPoint::new(100, 50), output(), 20, 0,)
+                .is_none()
+        );
     }
 }

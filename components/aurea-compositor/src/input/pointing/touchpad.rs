@@ -27,7 +27,6 @@ pub(super) fn supports(device: &Device) -> bool {
         )
 }
 
-
 /// Captures the exact configuration surface libinput exposes for this device.
 ///
 /// The result is suitable for a settings UI: it describes the connected
@@ -61,8 +60,12 @@ pub(super) fn capabilities(device: &Device) -> TouchpadCapabilities {
         pointer_acceleration: device.config_accel_is_available(),
         flat_acceleration: acceleration_profiles.contains(&AccelProfile::Flat),
         adaptive_acceleration: acceleration_profiles.contains(&AccelProfile::Adaptive),
-        disable_events: device.config_send_events_modes().contains(smithay::reexports::input::SendEventsMode::DISABLED),
-        disable_on_external_mouse: device.config_send_events_modes().contains(smithay::reexports::input::SendEventsMode::DISABLED_ON_EXTERNAL_MOUSE),
+        disable_events: device
+            .config_send_events_modes()
+            .contains(smithay::reexports::input::SendEventsMode::DISABLED),
+        disable_on_external_mouse: device
+            .config_send_events_modes()
+            .contains(smithay::reexports::input::SendEventsMode::DISABLED_ON_EXTERNAL_MOUSE),
     }
 }
 
@@ -89,19 +92,31 @@ mod tests {
 
     #[test]
     fn recognizes_scroll_only_touchpads() {
-        assert!(exposes_touchpad_configuration(false, false, false, true, false));
+        assert!(exposes_touchpad_configuration(
+            false, false, false, true, false
+        ));
     }
 
     #[test]
     fn recognizes_each_other_touchpad_capability_independently() {
-        assert!(exposes_touchpad_configuration(true, false, false, false, false));
-        assert!(exposes_touchpad_configuration(false, true, false, false, false));
-        assert!(exposes_touchpad_configuration(false, false, true, false, false));
-        assert!(exposes_touchpad_configuration(false, false, false, false, true));
+        assert!(exposes_touchpad_configuration(
+            true, false, false, false, false
+        ));
+        assert!(exposes_touchpad_configuration(
+            false, true, false, false, false
+        ));
+        assert!(exposes_touchpad_configuration(
+            false, false, true, false, false
+        ));
+        assert!(exposes_touchpad_configuration(
+            false, false, false, false, true
+        ));
     }
 
     #[test]
     fn rejects_devices_without_touchpad_specific_configuration() {
-        assert!(!exposes_touchpad_configuration(false, false, false, false, false));
+        assert!(!exposes_touchpad_configuration(
+            false, false, false, false, false
+        ));
     }
 }

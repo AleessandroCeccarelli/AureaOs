@@ -113,7 +113,10 @@ impl TouchpadProfileStore {
             return Ok(());
         };
         let parent = path.parent().ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidInput, "touchpad settings path has no parent")
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "touchpad settings path has no parent",
+            )
         })?;
         fs::create_dir_all(parent)?;
 
@@ -189,9 +192,7 @@ fn load_profiles(path: &Path) -> io::Result<HashMap<String, TouchpadSettings>> {
 #[cfg(test)]
 mod tests {
     use super::TouchpadProfileStore;
-    use aurea_desktop_api::input::{
-        TouchpadClickMethod, TouchpadSendEventsMode, TouchpadSettings,
-    };
+    use aurea_desktop_api::input::{TouchpadClickMethod, TouchpadSendEventsMode, TouchpadSettings};
     use std::{fs, path::PathBuf};
 
     fn test_path(suffix: &str) -> PathBuf {
@@ -229,7 +230,11 @@ mod tests {
         fs::write(&path, original).unwrap();
 
         let mut store = TouchpadProfileStore::with_path(path.clone());
-        assert!(store.set("physical-a".into(), TouchpadSettings::default()).is_err());
+        assert!(
+            store
+                .set("physical-a".into(), TouchpadSettings::default())
+                .is_err()
+        );
         assert_eq!(store.get("physical-a"), None);
         assert_eq!(fs::read_to_string(&path).unwrap(), original);
         let _ = fs::remove_file(path);
@@ -242,7 +247,11 @@ mod tests {
         fs::write(&path, original).unwrap();
 
         let mut store = TouchpadProfileStore::with_path(path.clone());
-        assert!(store.set("physical-a".into(), TouchpadSettings::default()).is_err());
+        assert!(
+            store
+                .set("physical-a".into(), TouchpadSettings::default())
+                .is_err()
+        );
         assert_eq!(fs::read_to_string(&path).unwrap(), original);
         let _ = fs::remove_file(path);
     }

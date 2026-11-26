@@ -16,12 +16,10 @@ use std::{
 
 use aurea_media::DecodeLimits;
 
-const DEFAULT_WALLPAPER_BYTES: &[u8] = include_bytes!(
-    concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg"
-    )
-);
+const DEFAULT_WALLPAPER_BYTES: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg"
+));
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WallpaperFormat {
@@ -41,8 +39,12 @@ pub struct WallpaperDimensions {
 }
 
 impl WallpaperDimensions {
-    pub const fn width(self) -> u32 { self.width }
-    pub const fn height(self) -> u32 { self.height }
+    pub const fn width(self) -> u32 {
+        self.width
+    }
+    pub const fn height(self) -> u32 {
+        self.height
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -117,8 +119,8 @@ impl WallpaperAsset {
     /// media-I/O task, never from the compositor frame/render loop.
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self, WallpaperAssetError> {
         let path = path.as_ref();
-        let metadata = std::fs::metadata(path)
-            .map_err(|error| WallpaperAssetError::Io(error.to_string()))?;
+        let metadata =
+            std::fs::metadata(path).map_err(|error| WallpaperAssetError::Io(error.to_string()))?;
         let max_bytes = DecodeLimits::default().max_input_bytes() as u64;
         if metadata.len() == 0 {
             return Err(WallpaperAssetError::EmptyInput);
@@ -127,8 +129,8 @@ impl WallpaperAsset {
             return Err(WallpaperAssetError::InputTooLarge);
         }
 
-        let mut file = File::open(path)
-            .map_err(|error| WallpaperAssetError::Io(error.to_string()))?;
+        let mut file =
+            File::open(path).map_err(|error| WallpaperAssetError::Io(error.to_string()))?;
         let mut bytes = Vec::with_capacity(metadata.len() as usize);
         file.take(max_bytes + 1)
             .read_to_end(&mut bytes)
@@ -141,10 +143,18 @@ impl WallpaperAsset {
         Self::from_bytes(id, bytes)
     }
 
-    pub fn id(&self) -> &str { &self.id }
-    pub const fn format(&self) -> WallpaperFormat { self.format }
-    pub fn bytes(&self) -> &[u8] { &self.bytes }
-    pub const fn dimensions(&self) -> Option<WallpaperDimensions> { self.dimensions }
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+    pub const fn format(&self) -> WallpaperFormat {
+        self.format
+    }
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+    pub const fn dimensions(&self) -> Option<WallpaperDimensions> {
+        self.dimensions
+    }
 }
 
 fn stable_file_id(path: &Path) -> String {
@@ -179,31 +189,47 @@ fn detect_format(bytes: &[u8]) -> Option<WallpaperFormat> {
 
 /// Reads JPEG SOF metadata without decoding or allocating the pixel buffer.
 fn jpeg_dimensions(bytes: &[u8]) -> Option<WallpaperDimensions> {
-    if bytes.get(0..2)? != [0xFF, 0xD8] { return None; }
+    if bytes.get(0..2)? != [0xFF, 0xD8] {
+        return None;
+    }
     let mut offset = 2usize;
     while offset < bytes.len() {
-        if bytes.get(offset) != Some(&0xFF) { return None; }
+        if bytes.get(offset) != Some(&0xFF) {
+            return None;
+        }
         while bytes.get(offset) == Some(&0xFF) {
             offset = offset.checked_add(1)?;
         }
         let marker = *bytes.get(offset)?;
         offset = offset.checked_add(1)?;
-        if marker == 0xD9 || marker == 0xDA { return None; }
-        if marker == 0x01 || (0xD0..=0xD7).contains(&marker) { continue; }
+        if marker == 0xD9 || marker == 0xDA {
+            return None;
+        }
+        if marker == 0x01 || (0xD0..=0xD7).contains(&marker) {
+            continue;
+        }
 
         let segment_length = usize::from(u16::from_be_bytes([
             *bytes.get(offset)?,
             *bytes.get(offset.checked_add(1)?)?,
         ]));
-        if segment_length < 2 { return None; }
+        if segment_length < 2 {
+            return None;
+        }
         let segment_start = offset.checked_add(2)?;
         let segment_end = offset.checked_add(segment_length)?;
-        if segment_end > bytes.len() { return None; }
+        if segment_end > bytes.len() {
+            return None;
+        }
 
         if matches!(marker, 0xC0..=0xC3 | 0xC5..=0xC7 | 0xC9..=0xCB | 0xCD..=0xCF) {
-            if segment_length < 8 { return None; }
+            if segment_length < 8 {
+                return None;
+            }
             let components = usize::from(*bytes.get(segment_start.checked_add(5)?)?);
-            if components == 0 || segment_length != 8usize.checked_add(components.checked_mul(3)?)? {
+            if components == 0
+                || segment_length != 8usize.checked_add(components.checked_mul(3)?)?
+            {
                 return None;
             }
             let height = u16::from_be_bytes([
@@ -214,8 +240,13 @@ fn jpeg_dimensions(bytes: &[u8]) -> Option<WallpaperDimensions> {
                 *bytes.get(segment_start.checked_add(3)?)?,
                 *bytes.get(segment_start.checked_add(4)?)?,
             ]);
-            if width == 0 || height == 0 { return None; }
-            return Some(WallpaperDimensions { width: u32::from(width), height: u32::from(height) });
+            if width == 0 || height == 0 {
+                return None;
+            }
+            return Some(WallpaperDimensions {
+                width: u32::from(width),
+                height: u32::from(height),
+            });
         }
         offset = segment_end;
     }
@@ -237,7 +268,10 @@ mod tests {
 
     #[test]
     fn detects_supported_formats_from_signatures() {
-        assert_eq!(detect_format(b"\x89PNG\r\n\x1A\n"), Some(WallpaperFormat::Png));
+        assert_eq!(
+            detect_format(b"\x89PNG\r\n\x1A\n"),
+            Some(WallpaperFormat::Png)
+        );
         assert_eq!(detect_format(b"BM"), Some(WallpaperFormat::Bmp));
         assert_eq!(detect_format(b"II*\0"), Some(WallpaperFormat::Tiff));
         assert_eq!(detect_format(b"RIFF0000WEBP"), Some(WallpaperFormat::WebP));

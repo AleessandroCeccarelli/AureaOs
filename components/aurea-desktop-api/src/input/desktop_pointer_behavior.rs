@@ -15,7 +15,9 @@ pub struct DesktopPointerBehaviorSettings {
 
 impl Default for DesktopPointerBehaviorSettings {
     fn default() -> Self {
-        Self { double_click_interval_ms: 400 }
+        Self {
+            double_click_interval_ms: 400,
+        }
     }
 }
 
@@ -74,13 +76,22 @@ mod tests {
 
     #[test]
     fn defaults_to_400_milliseconds() {
-        assert_eq!(DesktopPointerBehaviorSettings::default().double_click_interval_ms(), 400);
+        assert_eq!(
+            DesktopPointerBehaviorSettings::default().double_click_interval_ms(),
+            400
+        );
     }
 
     #[test]
     fn clamps_double_click_interval() {
-        assert_eq!(DesktopPointerBehaviorSettings::new(1).double_click_interval_ms(), 150);
-        assert_eq!(DesktopPointerBehaviorSettings::new(5_000).double_click_interval_ms(), 1_000);
+        assert_eq!(
+            DesktopPointerBehaviorSettings::new(1).double_click_interval_ms(),
+            150
+        );
+        assert_eq!(
+            DesktopPointerBehaviorSettings::new(5_000).double_click_interval_ms(),
+            1_000
+        );
     }
 
     #[test]

@@ -38,12 +38,8 @@ impl AureaCompositor {
             Some(id) => {
                 let id = id.as_str().to_owned();
                 let activated = if track_activation {
-                    self.desktop_click_tracker.record(
-                        &id,
-                        location.x,
-                        location.y,
-                        Instant::now(),
-                    )
+                    self.desktop_click_tracker
+                        .record(&id, location.x, location.y, Instant::now())
                 } else {
                     self.desktop_click_tracker.reset();
                     false

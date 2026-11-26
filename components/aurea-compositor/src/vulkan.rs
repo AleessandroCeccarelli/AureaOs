@@ -13,9 +13,9 @@ mod capture_target_pool;
 mod clear_pass;
 mod command_buffer;
 mod context;
+mod desktop_icon_texture_cache;
 mod device_extensions;
 mod device_owner;
-mod desktop_icon_texture_cache;
 #[cfg(feature = "drm")]
 mod display_color_manager;
 #[cfg(feature = "drm")]
@@ -73,9 +73,9 @@ mod texture_binding;
 mod texture_layout;
 mod upload_batch;
 mod upload_buffer;
-mod xcursor_file;
 mod wallpaper_texture;
 mod wallpaper_texture_cache;
+mod xcursor_file;
 
 use std::{error::Error, fmt};
 
@@ -104,9 +104,6 @@ pub use backend::VulkanBackend;
 #[cfg(feature = "drm")]
 pub use buffer_allocator::{VulkanBufferAllocator, VulkanBufferError, VulkanRenderTargetRequest};
 pub use capture_target::{VULKAN_CAPTURE_FORMAT, VulkanCaptureTarget, VulkanCaptureTargetError};
-pub(crate) use native_cursor_texture::{
-    VulkanNativeCursorTexture, VulkanNativeCursorTextureError,
-};
 pub use capture_target_pool::{
     VulkanCaptureTargetLease, VulkanCaptureTargetPool, VulkanCaptureTargetPoolStats,
 };
@@ -155,6 +152,7 @@ pub use image_transition::{VulkanImageState, VulkanImageTransition, VulkanImageT
 pub use image_view::{VulkanImageView, VulkanImageViewError};
 pub use logical_device::VulkanLogicalDevice;
 pub use memory_type::select_memory_type_index;
+pub(crate) use native_cursor_texture::{VulkanNativeCursorTexture, VulkanNativeCursorTextureError};
 pub use offscreen_renderer::{VulkanOffscreenError, VulkanOffscreenRenderer};
 pub use physical_device::{VulkanDeviceInfo, VulkanDeviceType};
 pub use queue::VulkanQueueFamilyInfo;

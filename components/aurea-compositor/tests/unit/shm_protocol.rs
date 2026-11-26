@@ -20,7 +20,6 @@ fn compositor_initializes_wayland_shared_memory_state() {
     drop(compositor);
 }
 
-
 #[test]
 fn render_scene_captures_the_shared_desktop_selection() {
     let display = Display::<AureaCompositor>::new()

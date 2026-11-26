@@ -60,7 +60,10 @@ pub(super) fn reapply_touchpad_settings(state: &mut WaylandState) {
             continue;
         };
         let Some(report) = pointing::configure_touchpad(device, settings) else {
-            tracing::warn!(device_id = id.0, "Touchpad could not be reconfigured after session activation");
+            tracing::warn!(
+                device_id = id.0,
+                "Touchpad could not be reconfigured after session activation"
+            );
             continue;
         };
 
@@ -68,7 +71,11 @@ pub(super) fn reapply_touchpad_settings(state: &mut WaylandState) {
         if !report.has_failures() {
             state.applied_touchpad_settings.mark_applied(id, settings);
         }
-        tracing::info!(device_id = id.0, ?report, "Restored touchpad preferences after session activation");
+        tracing::info!(
+            device_id = id.0,
+            ?report,
+            "Restored touchpad preferences after session activation"
+        );
     }
 }
 
@@ -137,8 +144,6 @@ pub(super) fn apply_pending_touchpad_settings(state: &mut WaylandState) {
     }
 }
 
-
-
 /// Reapplies acceleration profiles after libseat reactivates the input session.
 /// libinput may reset device configuration while a different VT owns the seat.
 pub(super) fn reapply_pointer_acceleration(state: &mut WaylandState) {
@@ -147,11 +152,12 @@ pub(super) fn reapply_pointer_acceleration(state: &mut WaylandState) {
         let settings = state.compositor.pointer_settings_for(id);
         if let Some(device) = state.mouse_devices.get_mut(&id) {
             crate::input::pointer_acceleration::apply(device, settings);
-            tracing::info!(device_id = id.0, "Restored mouse acceleration after session activation");
+            tracing::info!(
+                device_id = id.0,
+                "Restored mouse acceleration after session activation"
+            );
         }
     }
-
-
 }
 
 /// Drains shell requests and applies them to the connected mouse immediately.
@@ -179,7 +185,10 @@ pub(super) fn apply_pending_pointer_settings(state: &mut WaylandState) {
             );
             continue;
         }
-        if !state.compositor.set_pointer_device_settings(command.device, command.settings) {
+        if !state
+            .compositor
+            .set_pointer_device_settings(command.device, command.settings)
+        {
             tracing::warn!(
                 device_id = command.device.0,
                 "Pointer settings profile was rejected"
@@ -187,7 +196,10 @@ pub(super) fn apply_pending_pointer_settings(state: &mut WaylandState) {
             continue;
         }
         let Some(device) = state.mouse_devices.get_mut(&command.device) else {
-            tracing::warn!(device_id = command.device.0, "Mouse has no live libinput handle");
+            tracing::warn!(
+                device_id = command.device.0,
+                "Mouse has no live libinput handle"
+            );
             continue;
         };
         crate::input::pointer_acceleration::apply(device, command.settings);
@@ -212,9 +224,9 @@ pub(super) fn apply_pending_desktop_pointer_behavior(state: &mut WaylandState) {
             tracing::warn!(%error, "Could not persist desktop pointer behavior preferences; keeping previous setting");
             continue;
         }
-        state.compositor.set_desktop_double_click_interval_ms(
-            command.settings.double_click_interval_ms(),
-        );
+        state
+            .compositor
+            .set_desktop_double_click_interval_ms(command.settings.double_click_interval_ms());
         tracing::info!(
             interval_ms = command.settings.double_click_interval_ms(),
             "Applied global desktop pointer behavior preferences"

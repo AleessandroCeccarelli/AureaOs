@@ -100,9 +100,11 @@ mod tests {
         assert_eq!(state.trash_contents, TrashContentsState::Empty);
         assert!(!state.launcher.is_open());
         assert!(!state.night_light.is_enabled());
-        assert!(std::str::from_utf8(state.trash_artwork_svg())
-            .unwrap()
-            .contains("— empty"));
+        assert!(
+            std::str::from_utf8(state.trash_artwork_svg())
+                .unwrap()
+                .contains("— empty")
+        );
     }
 
     #[test]
@@ -128,9 +130,11 @@ mod tests {
     fn trash_state_selects_the_matching_artwork() {
         let mut state = DesktopState::default();
         state.set_trash_contents(TrashContentsState::Full);
-        assert!(std::str::from_utf8(state.trash_artwork_svg())
-            .unwrap()
-            .contains("overfilled pile"));
+        assert!(
+            std::str::from_utf8(state.trash_artwork_svg())
+                .unwrap()
+                .contains("overfilled pile")
+        );
     }
 
     #[test]

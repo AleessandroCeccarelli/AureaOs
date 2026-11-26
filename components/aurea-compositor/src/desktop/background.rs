@@ -51,8 +51,14 @@ mod tests {
     #[test]
     fn theme_background_tracks_theme_changes() {
         let background = DesktopBackground::default();
-        assert_eq!(background.resolve(DesktopTheme::Light), DesktopTheme::Light.desktop_color());
-        assert_eq!(background.resolve(DesktopTheme::Dark), DesktopTheme::Dark.desktop_color());
+        assert_eq!(
+            background.resolve(DesktopTheme::Light),
+            DesktopTheme::Light.desktop_color()
+        );
+        assert_eq!(
+            background.resolve(DesktopTheme::Dark),
+            DesktopTheme::Dark.desktop_color()
+        );
     }
 
     #[test]

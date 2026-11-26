@@ -7,9 +7,7 @@
 
 use aurea_desktop_api::desktop::{DesktopItem, DesktopItemKind, DesktopTrashState};
 
-use crate::{
-    render::shm_buffer::{ShmBufferError, ShmBufferSnapshot},
-};
+use crate::render::shm_buffer::{ShmBufferError, ShmBufferSnapshot};
 
 use super::DesktopTheme;
 
@@ -80,9 +78,7 @@ impl DesktopIconAssetDescriptor {
 }
 
 /// Resolves the pre-rasterized desktop context-menu artwork for the active theme.
-pub(crate) fn desktop_context_menu_asset(
-    theme: DesktopTheme,
-) -> DesktopIconAssetDescriptor {
+pub(crate) fn desktop_context_menu_asset(theme: DesktopTheme) -> DesktopIconAssetDescriptor {
     let (theme_name, asset_id) = match theme {
         DesktopTheme::Light => ("light", "system:context-menu:light"),
         DesktopTheme::Dark => ("dark", "system:context-menu:dark"),
@@ -94,9 +90,7 @@ pub(crate) fn desktop_context_menu_asset(
             revision: 1,
             pixel_size: 256,
         },
-        relative_path: format!(
-            "icons/generated/context-menu/context-menu-{theme_name}-256.rgba"
-        ),
+        relative_path: format!("icons/generated/context-menu/context-menu-{theme_name}-256.rgba"),
     }
 }
 
@@ -130,9 +124,7 @@ pub(crate) fn desktop_icon_asset(
         (DesktopTheme::Dark, DesktopTrashState::PartiallyFull) => {
             ("dark", "half", "system:trash:dark:half")
         }
-        (DesktopTheme::Dark, DesktopTrashState::Full) => {
-            ("dark", "full", "system:trash:dark:full")
-        }
+        (DesktopTheme::Dark, DesktopTrashState::Full) => ("dark", "full", "system:trash:dark:full"),
     };
 
     let pixel_size = DesktopIconRasterSize::for_scale(output_scale).pixels();
@@ -150,9 +142,7 @@ pub(crate) fn desktop_icon_asset(
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        DesktopIconRasterSize, DesktopTrashState, desktop_icon_asset,
-    };
+    use super::{DesktopIconRasterSize, DesktopTrashState, desktop_icon_asset};
     use crate::desktop::DesktopTheme;
     use aurea_desktop_api::desktop::DesktopManager;
 
@@ -180,13 +170,8 @@ mod tests {
                 DesktopTrashState::PartiallyFull,
                 DesktopTrashState::Full,
             ] {
-                let asset = desktop_icon_asset(
-                    trash,
-                    theme,
-                    state,
-                    1.0,
-                )
-                .expect("Trash artwork must resolve");
+                let asset = desktop_icon_asset(trash, theme, state, 1.0)
+                    .expect("Trash artwork must resolve");
                 assert!(asset.relative_path.starts_with("icons/generated/trash/"));
                 assert!(asset.relative_path.ends_with("-64.rgba"));
                 assert_eq!(asset.key.pixel_size, 64);
@@ -199,13 +184,8 @@ mod tests {
     fn selects_the_requested_raster_density() {
         let manager = DesktopManager::default();
         let trash = &manager.items()[0];
-        let asset = desktop_icon_asset(
-            trash,
-            DesktopTheme::Dark,
-            DesktopTrashState::Empty,
-            3.0,
-        )
-        .unwrap();
+        let asset =
+            desktop_icon_asset(trash, DesktopTheme::Dark, DesktopTrashState::Empty, 3.0).unwrap();
 
         assert_eq!(asset.key.pixel_size, 192);
         assert!(asset.relative_path.ends_with("trash-dark-empty-192.rgba"));
@@ -213,13 +193,34 @@ mod tests {
 
     #[test]
     fn selects_the_smallest_raster_that_covers_fractional_output_scale() {
-        assert_eq!(DesktopIconRasterSize::for_scale(1.0), DesktopIconRasterSize::OneX);
-        assert_eq!(DesktopIconRasterSize::for_scale(1.25), DesktopIconRasterSize::OneAndHalfX);
-        assert_eq!(DesktopIconRasterSize::for_scale(1.5), DesktopIconRasterSize::OneAndHalfX);
-        assert_eq!(DesktopIconRasterSize::for_scale(1.75), DesktopIconRasterSize::TwoX);
-        assert_eq!(DesktopIconRasterSize::for_scale(2.0), DesktopIconRasterSize::TwoX);
-        assert_eq!(DesktopIconRasterSize::for_scale(2.5), DesktopIconRasterSize::ThreeX);
-        assert_eq!(DesktopIconRasterSize::for_scale(f64::NAN), DesktopIconRasterSize::OneX);
+        assert_eq!(
+            DesktopIconRasterSize::for_scale(1.0),
+            DesktopIconRasterSize::OneX
+        );
+        assert_eq!(
+            DesktopIconRasterSize::for_scale(1.25),
+            DesktopIconRasterSize::OneAndHalfX
+        );
+        assert_eq!(
+            DesktopIconRasterSize::for_scale(1.5),
+            DesktopIconRasterSize::OneAndHalfX
+        );
+        assert_eq!(
+            DesktopIconRasterSize::for_scale(1.75),
+            DesktopIconRasterSize::TwoX
+        );
+        assert_eq!(
+            DesktopIconRasterSize::for_scale(2.0),
+            DesktopIconRasterSize::TwoX
+        );
+        assert_eq!(
+            DesktopIconRasterSize::for_scale(2.5),
+            DesktopIconRasterSize::ThreeX
+        );
+        assert_eq!(
+            DesktopIconRasterSize::for_scale(f64::NAN),
+            DesktopIconRasterSize::OneX
+        );
     }
 
     #[test]

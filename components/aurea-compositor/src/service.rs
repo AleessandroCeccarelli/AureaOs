@@ -9,8 +9,11 @@ use std::io;
 
 use aurea_desktop_api::{
     CompositorFactory, CompositorService, ShutdownSignal,
-    desktop_interaction::DesktopInteractionSender, display::DisplayColorController,
-    input::{DesktopPointerBehaviorCommand, PointerSettingsCommand, TouchpadSettingsCommand}, keyboard::KeyboardLayoutId, desktop::DesktopTrashState,
+    desktop::DesktopTrashState,
+    desktop_interaction::DesktopInteractionSender,
+    display::DisplayColorController,
+    input::{DesktopPointerBehaviorCommand, PointerSettingsCommand, TouchpadSettingsCommand},
+    keyboard::KeyboardLayoutId,
 };
 
 use crate::WaylandServer;

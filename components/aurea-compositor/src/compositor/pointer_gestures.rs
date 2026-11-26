@@ -124,15 +124,27 @@ impl AureaCompositor {
         match kind {
             PointerGestureKind::Swipe => pointer.gesture_swipe_end(
                 self,
-                &GestureSwipeEndEvent { serial, time, cancelled: true },
+                &GestureSwipeEndEvent {
+                    serial,
+                    time,
+                    cancelled: true,
+                },
             ),
             PointerGestureKind::Pinch => pointer.gesture_pinch_end(
                 self,
-                &GesturePinchEndEvent { serial, time, cancelled: true },
+                &GesturePinchEndEvent {
+                    serial,
+                    time,
+                    cancelled: true,
+                },
             ),
             PointerGestureKind::Hold => pointer.gesture_hold_end(
                 self,
-                &GestureHoldEndEvent { serial, time, cancelled: true },
+                &GestureHoldEndEvent {
+                    serial,
+                    time,
+                    cancelled: true,
+                },
             ),
         }
         pointer.frame(self);
@@ -462,10 +474,7 @@ mod owner_tests {
         let retained = InputDeviceId(5);
 
         assert!(owner.begin(removed, PointerGestureKind::Hold));
-        assert_eq!(
-            owner.take_device(removed),
-            Some(PointerGestureKind::Hold)
-        );
+        assert_eq!(owner.take_device(removed), Some(PointerGestureKind::Hold));
 
         assert!(owner.begin(retained, PointerGestureKind::Pinch));
         assert!(owner.owns(retained, PointerGestureKind::Pinch));

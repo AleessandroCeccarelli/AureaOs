@@ -63,16 +63,9 @@ impl DesktopContextMenuLayout {
     pub const HEIGHT: u32 = Self::ROW_HEIGHT * 4 + Self::VERTICAL_PADDING * 2;
 
     /// Creates the default desktop menu at the pointer, constrained to output.
-    pub fn at(
-        anchor: DesktopPoint,
-        output: DesktopRect,
-    ) -> Option<Self> {
-        let placement = DesktopPanelPlacement::context_menu(
-            anchor,
-            output,
-            Self::WIDTH,
-            Self::HEIGHT,
-        )?;
+    pub fn at(anchor: DesktopPoint, output: DesktopRect) -> Option<Self> {
+        let placement =
+            DesktopPanelPlacement::context_menu(anchor, output, Self::WIDTH, Self::HEIGHT)?;
         let origin = placement.bounds().origin();
         let first_row_y = origin.y.checked_add(Self::VERTICAL_PADDING as i32)?;
         let commands = [

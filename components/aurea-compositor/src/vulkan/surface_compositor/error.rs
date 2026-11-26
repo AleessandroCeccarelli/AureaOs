@@ -25,9 +25,7 @@ pub(crate) enum VulkanSurfaceCompositionError {
 }
 
 impl VulkanSurfaceCompositionError {
-    pub(crate) fn from_shm_texture_error(
-        error: super::super::VulkanShmTextureError,
-    ) -> Self {
+    pub(crate) fn from_shm_texture_error(error: super::super::VulkanShmTextureError) -> Self {
         match error {
             super::super::VulkanShmTextureError::Command(vk::Result::ERROR_DEVICE_LOST) => {
                 Self::DeviceLost(vk::Result::ERROR_DEVICE_LOST)
@@ -53,7 +51,10 @@ impl VulkanSurfaceCompositionError {
             | VulkanQueueSubmitError::SubmissionUncertain(result) => {
                 result == vk::Result::ERROR_DEVICE_LOST
             }
-            VulkanQueueSubmitError::CompletionUncertain { wait_error, idle_error } => {
+            VulkanQueueSubmitError::CompletionUncertain {
+                wait_error,
+                idle_error,
+            } => {
                 wait_error == vk::Result::ERROR_DEVICE_LOST
                     || idle_error == vk::Result::ERROR_DEVICE_LOST
             }
@@ -77,7 +78,10 @@ impl fmt::Display for VulkanSurfaceCompositionError {
                 formatter,
                 "Surface texture descriptor creation failed: {error}"
             ),
-            Self::DeviceLost(error) => write!(formatter, "Vulkan device was lost during surface composition: {error:?}"),
+            Self::DeviceLost(error) => write!(
+                formatter,
+                "Vulkan device was lost during surface composition: {error:?}"
+            ),
             Self::Command(error) => {
                 write!(formatter, "Surface composition command failed: {error}")
             }
@@ -94,7 +98,6 @@ impl fmt::Display for VulkanSurfaceCompositionError {
 }
 
 impl Error for VulkanSurfaceCompositionError {}
-
 
 #[cfg(test)]
 mod tests {
@@ -157,9 +160,6 @@ mod tests {
                 idle_error: vk::Result::ERROR_UNKNOWN,
             },
         );
-        assert!(matches!(
-            error,
-            VulkanSurfaceCompositionError::Command(_)
-        ));
+        assert!(matches!(error, VulkanSurfaceCompositionError::Command(_)));
     }
 }

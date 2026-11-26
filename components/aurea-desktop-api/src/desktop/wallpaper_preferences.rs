@@ -27,14 +27,18 @@ pub struct WallpaperPreferences {
 }
 
 impl WallpaperPreferences {
-    pub fn image_path(&self) -> Option<&str> { self.image_path.as_deref() }
+    pub fn image_path(&self) -> Option<&str> {
+        self.image_path.as_deref()
+    }
 
     /// Sets a path to a user-owned still image. Empty paths clear the selection.
     pub fn set_image_path(&mut self, path: Option<String>) {
         self.image_path = path.filter(|value| !value.trim().is_empty());
     }
 
-    pub const fn scale_mode(&self) -> WallpaperScaleMode { self.scale_mode }
+    pub const fn scale_mode(&self) -> WallpaperScaleMode {
+        self.scale_mode
+    }
 
     pub fn set_scale_mode(&mut self, mode: WallpaperScaleMode) {
         self.scale_mode = mode;

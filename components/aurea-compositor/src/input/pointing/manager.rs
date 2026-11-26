@@ -8,7 +8,8 @@
 use std::collections::{HashMap, HashSet};
 
 use aurea_desktop_api::input::{
-    InputDeviceDescriptor, InputDeviceId, InputDeviceProvider, PointerSettings, TouchpadApplyReport, TouchpadSettings,
+    InputDeviceDescriptor, InputDeviceId, InputDeviceProvider, PointerSettings,
+    TouchpadApplyReport, TouchpadSettings,
 };
 
 use super::{PointingDeviceService, PointingDeviceSettings};
@@ -192,10 +193,7 @@ impl PointerManager {
     /// Removes a device's held buttons and returns only seat buttons no other
     /// connected device still holds.
     pub fn take_buttons_released_by_device(&mut self, device: InputDeviceId) -> Vec<u32> {
-        let removed = self
-            .pressed_buttons
-            .remove(&device)
-            .unwrap_or_default();
+        let removed = self.pressed_buttons.remove(&device).unwrap_or_default();
         let mut released = removed
             .into_iter()
             .filter(|button| {
@@ -221,8 +219,7 @@ mod tests {
     use super::PointerManager;
     use aurea_desktop_api::input::{
         InputDeviceCapabilities, InputDeviceDescriptor, InputDeviceId, InputDeviceKind,
-        InputDeviceProvider,
-        PointerAccelerationProfile, PointerSettings, TouchpadSettings,
+        InputDeviceProvider, PointerAccelerationProfile, PointerSettings, TouchpadSettings,
     };
 
     fn descriptor(id: u64, kind: InputDeviceKind) -> InputDeviceDescriptor {
@@ -252,7 +249,10 @@ mod tests {
             manager.take_buttons_released_by_device(first),
             vec![0x111, 0x112]
         );
-        assert_eq!(manager.take_buttons_released_by_device(first), Vec::<u32>::new());
+        assert_eq!(
+            manager.take_buttons_released_by_device(first),
+            Vec::<u32>::new()
+        );
         assert_eq!(manager.take_buttons_released_by_device(second), vec![0x110]);
     }
 
@@ -349,9 +349,10 @@ mod tests {
         assert!(manager.set_pointer_settings(device, pointer));
 
         assert!(manager.connect(descriptor(13, InputDeviceKind::Tablet)));
-        assert_eq!(manager.pointer_settings(device, PointerSettings::default()), PointerSettings::default());
-
-
+        assert_eq!(
+            manager.pointer_settings(device, PointerSettings::default()),
+            PointerSettings::default()
+        );
     }
 
     #[test]
@@ -397,7 +398,10 @@ mod tests {
             manager.pointer_settings(device, PointerSettings::default()),
             PointerSettings::default()
         );
-        assert_eq!(manager.touchpad_settings(device), TouchpadSettings::default());
+        assert_eq!(
+            manager.touchpad_settings(device),
+            TouchpadSettings::default()
+        );
         assert!(manager.take_buttons_released_by_device(device).is_empty());
         assert_eq!(
             manager.devices().device(device).unwrap().kind,

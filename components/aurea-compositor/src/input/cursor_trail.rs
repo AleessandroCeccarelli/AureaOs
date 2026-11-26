@@ -24,8 +24,12 @@ pub struct CursorTrailSample {
 }
 
 impl CursorTrailSample {
-    pub fn position(self) -> Point<f64, Logical> { self.position }
-    pub fn opacity(self) -> f32 { self.opacity }
+    pub fn position(self) -> Point<f64, Logical> {
+        self.position
+    }
+    pub fn opacity(self) -> f32 {
+        self.opacity
+    }
 }
 
 /// Collects recent positions only while the locate animation is active.
@@ -38,22 +42,36 @@ pub struct CursorTrail {
 impl CursorTrail {
     /// Records a position, throttled to avoid duplicate impressions per frame.
     pub fn record(&mut self, position: Point<f64, Logical>, now: Instant) {
-        if !position.x.is_finite() || !position.y.is_finite() { return; }
-        if self.last_sample.is_some_and(|last| now.saturating_duration_since(last) < CURSOR_TRAIL_SAMPLE_INTERVAL) {
+        if !position.x.is_finite() || !position.y.is_finite() {
+            return;
+        }
+        if self
+            .last_sample
+            .is_some_and(|last| now.saturating_duration_since(last) < CURSOR_TRAIL_SAMPLE_INTERVAL)
+        {
             return;
         }
         self.samples.push((position, now));
-        if self.samples.len() > MAX_CURSOR_TRAIL_SAMPLES { self.samples.remove(0); }
+        if self.samples.len() > MAX_CURSOR_TRAIL_SAMPLES {
+            self.samples.remove(0);
+        }
         self.last_sample = Some(now);
     }
 
     /// Returns newest-first samples with a linear temporal fade.
     pub fn visible_at(&self, now: Instant) -> Vec<CursorTrailSample> {
-        self.samples.iter().rev().filter_map(|(position, created)| {
-            let age = now.saturating_duration_since(*created);
-            let remaining = 1.0 - age.as_secs_f32() / CURSOR_TRAIL_LIFETIME.as_secs_f32();
-            (remaining > 0.0).then_some(CursorTrailSample { position: *position, opacity: remaining.clamp(0.0, 1.0) })
-        }).collect()
+        self.samples
+            .iter()
+            .rev()
+            .filter_map(|(position, created)| {
+                let age = now.saturating_duration_since(*created);
+                let remaining = 1.0 - age.as_secs_f32() / CURSOR_TRAIL_LIFETIME.as_secs_f32();
+                (remaining > 0.0).then_some(CursorTrailSample {
+                    position: *position,
+                    opacity: remaining.clamp(0.0, 1.0),
+                })
+            })
+            .collect()
     }
 
     pub fn clear(&mut self) {
@@ -62,7 +80,9 @@ impl CursorTrail {
     }
 
     pub fn is_active(&self, now: Instant) -> bool {
-        self.samples.iter().any(|(_, created)| now.saturating_duration_since(*created) < CURSOR_TRAIL_LIFETIME)
+        self.samples
+            .iter()
+            .any(|(_, created)| now.saturating_duration_since(*created) < CURSOR_TRAIL_LIFETIME)
     }
 }
 
@@ -70,14 +90,19 @@ impl CursorTrail {
 mod tests {
     use super::*;
 
-    fn point(x: f64, y: f64) -> Point<f64, Logical> { Point::from((x, y)) }
+    fn point(x: f64, y: f64) -> Point<f64, Logical> {
+        Point::from((x, y))
+    }
 
     #[test]
     fn keeps_at_most_three_recent_positions_newest_first() {
         let start = Instant::now();
         let mut trail = CursorTrail::default();
         for index in 0..5 {
-            trail.record(point(index as f64, 0.0), start + Duration::from_millis(index * 30));
+            trail.record(
+                point(index as f64, 0.0),
+                start + Duration::from_millis(index * 30),
+            );
         }
         let samples = trail.visible_at(start + Duration::from_millis(130));
         assert_eq!(samples.len(), 3);
@@ -104,10 +129,7 @@ mod tests {
             point(2.0, 0.0),
             start + CURSOR_TRAIL_SAMPLE_INTERVAL - Duration::from_millis(1),
         );
-        trail.record(
-            point(3.0, 0.0),
-            start + CURSOR_TRAIL_SAMPLE_INTERVAL,
-        );
+        trail.record(point(3.0, 0.0), start + CURSOR_TRAIL_SAMPLE_INTERVAL);
 
         let samples = trail.visible_at(start + CURSOR_TRAIL_SAMPLE_INTERVAL);
         assert_eq!(samples.len(), 2);

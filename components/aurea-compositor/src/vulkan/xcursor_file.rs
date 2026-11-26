@@ -76,7 +76,11 @@ pub(crate) fn decode_xcursor(bytes: &[u8]) -> Result<Vec<XcursorFrame>, XcursorF
         return Err(XcursorFileError::InvalidTableOfContents);
     }
     let toc_end = header_bytes
-        .checked_add(toc_count.checked_mul(TOC_BYTES).ok_or(XcursorFileError::InvalidTableOfContents)?)
+        .checked_add(
+            toc_count
+                .checked_mul(TOC_BYTES)
+                .ok_or(XcursorFileError::InvalidTableOfContents)?,
+        )
         .ok_or(XcursorFileError::InvalidTableOfContents)?;
     if toc_end > bytes.len() {
         return Err(XcursorFileError::InvalidTableOfContents);
@@ -95,9 +99,7 @@ pub(crate) fn decode_xcursor(bytes: &[u8]) -> Result<Vec<XcursorFrame>, XcursorF
         let chunk_header = read_u32(bytes, position)? as usize;
         let chunk_type = read_u32(bytes, position + 4)?;
         let chunk_version = read_u32(bytes, position + 12)?;
-        if chunk_header < IMAGE_HEADER_BYTES
-            || chunk_type != IMAGE_CHUNK_TYPE
-            || chunk_version == 0
+        if chunk_header < IMAGE_HEADER_BYTES || chunk_type != IMAGE_CHUNK_TYPE || chunk_version == 0
         {
             return Err(XcursorFileError::InvalidImageChunk);
         }
@@ -106,7 +108,11 @@ pub(crate) fn decode_xcursor(bytes: &[u8]) -> Result<Vec<XcursorFrame>, XcursorF
         let hotspot_x = read_u32(bytes, position + 24)?;
         let hotspot_y = read_u32(bytes, position + 28)?;
         let delay_ms = read_u32(bytes, position + 32)?;
-        if width == 0 || height == 0 || width > MAX_CURSOR_DIMENSION || height > MAX_CURSOR_DIMENSION {
+        if width == 0
+            || height == 0
+            || width > MAX_CURSOR_DIMENSION
+            || height > MAX_CURSOR_DIMENSION
+        {
             return Err(XcursorFileError::InvalidDimensions);
         }
         if hotspot_x >= width || hotspot_y >= height {
@@ -117,9 +123,15 @@ pub(crate) fn decode_xcursor(bytes: &[u8]) -> Result<Vec<XcursorFrame>, XcursorF
             .ok()
             .and_then(|w| usize::try_from(height).ok().and_then(|h| w.checked_mul(h)))
             .ok_or(XcursorFileError::InvalidPixelData)?;
-        let pixel_bytes = pixel_count.checked_mul(4).ok_or(XcursorFileError::InvalidPixelData)?;
-        let pixels_start = position.checked_add(chunk_header).ok_or(XcursorFileError::InvalidPixelData)?;
-        let pixels_end = pixels_start.checked_add(pixel_bytes).ok_or(XcursorFileError::InvalidPixelData)?;
+        let pixel_bytes = pixel_count
+            .checked_mul(4)
+            .ok_or(XcursorFileError::InvalidPixelData)?;
+        let pixels_start = position
+            .checked_add(chunk_header)
+            .ok_or(XcursorFileError::InvalidPixelData)?;
+        let pixels_end = pixels_start
+            .checked_add(pixel_bytes)
+            .ok_or(XcursorFileError::InvalidPixelData)?;
         if pixels_end > bytes.len() {
             return Err(XcursorFileError::Truncated);
         }
@@ -135,7 +147,14 @@ pub(crate) fn decode_xcursor(bytes: &[u8]) -> Result<Vec<XcursorFrame>, XcursorF
                 ((argb >> 24) & 0xff) as u8,
             ]);
         }
-        frames.push(XcursorFrame { width, height, hotspot_x, hotspot_y, delay_ms, rgba8 });
+        frames.push(XcursorFrame {
+            width,
+            height,
+            hotspot_x,
+            hotspot_y,
+            delay_ms,
+            rgba8,
+        });
     }
 
     if frames.is_empty() {
@@ -195,21 +214,33 @@ mod tests {
 
     #[test]
     fn rejects_invalid_magic_and_truncated_payloads() {
-        assert_eq!(decode_xcursor(b"nope________________").unwrap_err(), XcursorFileError::InvalidMagic);
+        assert_eq!(
+            decode_xcursor(b"nope________________").unwrap_err(),
+            XcursorFileError::InvalidMagic
+        );
         let mut bytes = fixture(1, 1, (0, 0), &[0xff00_0000]);
         bytes.pop();
-        assert_eq!(decode_xcursor(&bytes).unwrap_err(), XcursorFileError::Truncated);
+        assert_eq!(
+            decode_xcursor(&bytes).unwrap_err(),
+            XcursorFileError::Truncated
+        );
     }
 
     #[test]
     fn rejects_hotspots_outside_the_image() {
         let bytes = fixture(1, 1, (1, 0), &[0xff00_0000]);
-        assert_eq!(decode_xcursor(&bytes).unwrap_err(), XcursorFileError::InvalidHotspot);
+        assert_eq!(
+            decode_xcursor(&bytes).unwrap_err(),
+            XcursorFileError::InvalidHotspot
+        );
     }
 
     #[test]
     fn rejects_images_larger_than_the_cursor_limit() {
         let bytes = fixture(257, 1, (0, 0), &[]);
-        assert_eq!(decode_xcursor(&bytes).unwrap_err(), XcursorFileError::InvalidDimensions);
+        assert_eq!(
+            decode_xcursor(&bytes).unwrap_err(),
+            XcursorFileError::InvalidDimensions
+        );
     }
 }

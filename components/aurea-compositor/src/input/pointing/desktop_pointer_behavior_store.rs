@@ -33,7 +33,11 @@ impl Default for DesktopPointerBehaviorStore {
     fn default() -> Self {
         match default_path() {
             Some(path) => Self::open(path),
-            None => Self { path: None, settings: DesktopPointerBehaviorSettings::default(), writable: true },
+            None => Self {
+                path: None,
+                settings: DesktopPointerBehaviorSettings::default(),
+                writable: true,
+            },
         }
     }
 }
@@ -41,10 +45,18 @@ impl Default for DesktopPointerBehaviorStore {
 impl DesktopPointerBehaviorStore {
     fn open(path: PathBuf) -> Self {
         match load(&path) {
-            Ok(settings) => Self { path: Some(path), settings, writable: true },
+            Ok(settings) => Self {
+                path: Some(path),
+                settings,
+                writable: true,
+            },
             Err(error) => {
                 tracing::warn!(path = %path.display(), %error, "Desktop pointer preferences opened read-only");
-                Self { path: Some(path), settings: DesktopPointerBehaviorSettings::default(), writable: false }
+                Self {
+                    path: Some(path),
+                    settings: DesktopPointerBehaviorSettings::default(),
+                    writable: false,
+                }
             }
         }
     }
@@ -62,16 +74,24 @@ impl DesktopPointerBehaviorStore {
 
     fn persist(&self, settings: DesktopPointerBehaviorSettings) -> io::Result<()> {
         if !self.writable {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "refusing to overwrite unreadable desktop pointer preferences"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "refusing to overwrite unreadable desktop pointer preferences",
+            ));
         }
-        let Some(path) = self.path.as_deref() else { return Ok(()); };
-        let parent = path.parent().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "settings path has no parent"))?;
+        let Some(path) = self.path.as_deref() else {
+            return Ok(());
+        };
+        let parent = path.parent().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidInput, "settings path has no parent")
+        })?;
         fs::create_dir_all(parent)?;
         let document = StoredPreferences {
             format_version: FORMAT_VERSION,
             double_click_interval_ms: settings.double_click_interval_ms(),
         };
-        let encoded = toml::to_string_pretty(&document).map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+        let encoded = toml::to_string_pretty(&document)
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
         let temporary = path.with_extension("toml.tmp");
         let mut options = OpenOptions::new();
         options.create(true).truncate(true).write(true);
@@ -90,7 +110,9 @@ impl DesktopPointerBehaviorStore {
         file.sync_all()?;
         drop(file);
         fs::rename(&temporary, path)?;
-        if let Ok(directory) = OpenOptions::new().read(true).open(parent) { let _ = directory.sync_all(); }
+        if let Ok(directory) = OpenOptions::new().read(true).open(parent) {
+            let _ = directory.sync_all();
+        }
         Ok(())
     }
 }
@@ -99,22 +121,30 @@ fn default_path() -> Option<PathBuf> {
     if let Some(home) = std::env::var_os("XDG_CONFIG_HOME").filter(|value| !value.is_empty()) {
         return Some(PathBuf::from(home).join("aureaos/input/desktop-pointer.toml"));
     }
-    std::env::var_os("HOME").filter(|value| !value.is_empty())
+    std::env::var_os("HOME")
+        .filter(|value| !value.is_empty())
         .map(|home| PathBuf::from(home).join(".config/aureaos/input/desktop-pointer.toml"))
 }
 
 fn load(path: &Path) -> io::Result<DesktopPointerBehaviorSettings> {
     let content = match fs::read_to_string(path) {
         Ok(content) => content,
-        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(DesktopPointerBehaviorSettings::default()),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            return Ok(DesktopPointerBehaviorSettings::default());
+        }
         Err(error) => return Err(error),
     };
     let stored: StoredPreferences = toml::from_str(&content)
         .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
     if stored.format_version != FORMAT_VERSION {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "unsupported desktop pointer settings format"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "unsupported desktop pointer settings format",
+        ));
     }
-    Ok(DesktopPointerBehaviorSettings::new(stored.double_click_interval_ms))
+    Ok(DesktopPointerBehaviorSettings::new(
+        stored.double_click_interval_ms,
+    ))
 }
 
 #[cfg(test)]
@@ -123,7 +153,10 @@ mod tests {
     use std::fs;
 
     fn path(label: &str) -> PathBuf {
-        std::env::temp_dir().join(format!("aurea-desktop-pointer-{}-{label}.toml", std::process::id()))
+        std::env::temp_dir().join(format!(
+            "aurea-desktop-pointer-{}-{label}.toml",
+            std::process::id()
+        ))
     }
 
     #[test]
@@ -139,7 +172,13 @@ mod tests {
 
     #[test]
     fn malformed_or_newer_file_is_preserved() {
-        for (suffix, original) in [("bad", "broken = ["), ("future", "format_version = 9\ndouble_click_interval_ms = 400\n")] {
+        for (suffix, original) in [
+            ("bad", "broken = ["),
+            (
+                "future",
+                "format_version = 9\ndouble_click_interval_ms = 400\n",
+            ),
+        ] {
             let path = path(suffix);
             fs::write(&path, original).unwrap();
             let mut store = DesktopPointerBehaviorStore::open(path.clone());

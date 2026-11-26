@@ -14,7 +14,8 @@ use std::thread::{self, JoinHandle, ThreadId};
 
 use aurea_desktop_api::{
     CompositorFactory, CompositorService, ShutdownSignal,
-    desktop_interaction::DesktopInteractionSender, display::DisplayColorController,
+    desktop_interaction::DesktopInteractionSender,
+    display::DisplayColorController,
     input::{DesktopPointerBehaviorCommand, PointerSettingsCommand, TouchpadSettingsCommand},
 };
 

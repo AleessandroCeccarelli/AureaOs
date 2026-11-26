@@ -18,5 +18,7 @@ impl WallpaperSnapshot {
         Self { asset }
     }
 
-    pub fn asset(&self) -> &WallpaperAsset { &self.asset }
+    pub fn asset(&self) -> &WallpaperAsset {
+        &self.asset
+    }
 }

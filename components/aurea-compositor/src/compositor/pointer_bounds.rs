@@ -174,11 +174,17 @@ mod tests {
     #[test]
     fn rejects_non_finite_requested_pointer_locations() {
         assert_eq!(
-            constrain_to_outputs(Point::from((f64::NAN, 10.0)), [output(0.0, 0.0, 100.0, 80.0)]),
+            constrain_to_outputs(
+                Point::from((f64::NAN, 10.0)),
+                [output(0.0, 0.0, 100.0, 80.0)]
+            ),
             None
         );
         assert_eq!(
-            constrain_to_outputs(Point::from((10.0, f64::INFINITY)), [output(0.0, 0.0, 100.0, 80.0)]),
+            constrain_to_outputs(
+                Point::from((10.0, f64::INFINITY)),
+                [output(0.0, 0.0, 100.0, 80.0)]
+            ),
             None
         );
     }

@@ -5,9 +5,7 @@
 
 //! Coordinates compositor-side desktop appearance and surface policy.
 
-use super::{
-    DesktopBackground, DesktopSnapshot, DesktopSurface, DesktopTheme, WallpaperManager,
-};
+use super::{DesktopBackground, DesktopSnapshot, DesktopSurface, DesktopTheme, WallpaperManager};
 
 /// Owns desktop appearance policy consumed by each render frame.
 ///
@@ -59,10 +57,7 @@ impl DesktopManager {
     /// Captures immutable desktop and wallpaper data for the next render frame.
     pub fn snapshot(&self) -> DesktopSnapshot {
         let color = self.background.resolve(self.theme);
-        DesktopSnapshot::new(
-            DesktopSurface::new(color),
-            self.wallpaper.snapshot(),
-        )
+        DesktopSnapshot::new(DesktopSurface::new(color), self.wallpaper.snapshot())
     }
 }
 
@@ -78,7 +73,10 @@ mod tests {
             DesktopTheme::Light.desktop_color()
         );
         assert_eq!(
-            manager.snapshot().wallpaper().map(|wallpaper| wallpaper.asset().id()),
+            manager
+                .snapshot()
+                .wallpaper()
+                .map(|wallpaper| wallpaper.asset().id()),
             Some("aureaos-midnight-flow")
         );
     }
@@ -96,9 +94,7 @@ mod tests {
     #[test]
     fn custom_background_is_independent_from_theme() {
         let mut manager = DesktopManager::default();
-        manager.set_background(
-            DesktopBackground::solid_color([0.1, 0.2, 0.3, 1.0]).unwrap(),
-        );
+        manager.set_background(DesktopBackground::solid_color([0.1, 0.2, 0.3, 1.0]).unwrap());
         manager.set_theme(DesktopTheme::Dark);
         assert_eq!(
             manager.snapshot().surface().background_color(),

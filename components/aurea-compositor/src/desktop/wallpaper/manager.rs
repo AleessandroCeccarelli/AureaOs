@@ -15,25 +15,39 @@ pub struct WallpaperManager {
 
 impl WallpaperManager {
     pub fn with_default_wallpaper() -> Self {
-        Self { selected: WallpaperAsset::default_wallpaper() }
+        Self {
+            selected: WallpaperAsset::default_wallpaper(),
+        }
     }
 
-    pub fn selected(&self) -> Option<&WallpaperAsset> { self.selected.as_ref() }
+    pub fn selected(&self) -> Option<&WallpaperAsset> {
+        self.selected.as_ref()
+    }
 
     pub fn snapshot(&self) -> Option<WallpaperSnapshot> {
         self.selected.clone().map(WallpaperSnapshot::new)
     }
 
-    pub fn select(&mut self, asset: WallpaperAsset) { self.selected = Some(asset); }
-    pub fn clear_selection(&mut self) { self.selected = None; }
+    pub fn select(&mut self, asset: WallpaperAsset) {
+        self.selected = Some(asset);
+    }
+    pub fn clear_selection(&mut self) {
+        self.selected = None;
+    }
 }
 
 impl Default for WallpaperManager {
-    fn default() -> Self { Self::with_default_wallpaper() }
+    fn default() -> Self {
+        Self::with_default_wallpaper()
+    }
 }
 
 impl From<WallpaperAsset> for WallpaperManager {
-    fn from(asset: WallpaperAsset) -> Self { Self { selected: Some(asset) } }
+    fn from(asset: WallpaperAsset) -> Self {
+        Self {
+            selected: Some(asset),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -44,7 +58,10 @@ mod tests {
     #[test]
     fn default_manager_selects_the_aureaos_wallpaper() {
         let manager = WallpaperManager::default();
-        assert_eq!(manager.selected().map(|asset| asset.id()), Some("aureaos-midnight-flow"));
+        assert_eq!(
+            manager.selected().map(|asset| asset.id()),
+            Some("aureaos-midnight-flow")
+        );
     }
 
     #[test]
@@ -52,7 +69,10 @@ mod tests {
         let asset = WallpaperAsset::from_bytes("user-test", b"BM".to_vec()).unwrap();
         let mut manager = WallpaperManager::default();
         manager.select(asset);
-        assert_eq!(manager.selected().map(|asset| asset.id()), Some("user-test"));
+        assert_eq!(
+            manager.selected().map(|asset| asset.id()),
+            Some("user-test")
+        );
     }
 
     #[test]

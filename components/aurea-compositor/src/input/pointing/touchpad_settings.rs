@@ -6,9 +6,8 @@
 //! Applies per-device touchpad preferences through libinput.
 
 use aurea_desktop_api::input::{
-    TouchpadAccelerationProfile, TouchpadApplyReport, TouchpadClickMethod,
-    TouchpadSendEventsMode, TouchpadSettingStatus,
-    TouchpadSettings, TouchpadTapButtonMap,
+    TouchpadAccelerationProfile, TouchpadApplyReport, TouchpadClickMethod, TouchpadSendEventsMode,
+    TouchpadSettingStatus, TouchpadSettings, TouchpadTapButtonMap,
 };
 use smithay::reexports::input::{
     AccelProfile, ClickMethod, Device, DeviceConfigError, ScrollMethod, SendEventsMode,
@@ -84,7 +83,10 @@ pub(super) fn apply(
             TouchpadSettingStatus::NotRequested,
             TouchpadSettingStatus::NotRequested,
         ),
-        _ => (TouchpadSettingStatus::Unsupported, TouchpadSettingStatus::Unsupported),
+        _ => (
+            TouchpadSettingStatus::Unsupported,
+            TouchpadSettingStatus::Unsupported,
+        ),
     };
 
     let natural_scrolling = if device.config_scroll_has_natural_scroll() {
@@ -101,9 +103,7 @@ pub(super) fn apply(
 
     #[cfg(feature = "drm")]
     let disable_while_trackpointing = if device.config_dwtp_is_available() {
-        status(device.config_dwtp_set_enabled(
-            settings.disable_while_trackpointing(),
-        ))
+        status(device.config_dwtp_set_enabled(settings.disable_while_trackpointing()))
     } else {
         TouchpadSettingStatus::Unsupported
     };
@@ -139,9 +139,7 @@ pub(super) fn apply(
     };
 
     let pointer_speed = if device.config_accel_is_available() {
-        status(device.config_accel_set_speed(
-            f64::from(settings.pointer_speed_percent()) / 100.0,
-        ))
+        status(device.config_accel_set_speed(f64::from(settings.pointer_speed_percent()) / 100.0))
     } else {
         TouchpadSettingStatus::Unsupported
     };
@@ -153,7 +151,9 @@ pub(super) fn apply(
             .config_accel_default_profile()
             .map(|profile| status(device.config_accel_set_profile(profile)))
             .unwrap_or(TouchpadSettingStatus::NotRequested),
-        TouchpadAccelerationProfile::Flat if acceleration_profiles.contains(&AccelProfile::Flat) => {
+        TouchpadAccelerationProfile::Flat
+            if acceleration_profiles.contains(&AccelProfile::Flat) =>
+        {
             status(device.config_accel_set_profile(AccelProfile::Flat))
         }
         TouchpadAccelerationProfile::Adaptive

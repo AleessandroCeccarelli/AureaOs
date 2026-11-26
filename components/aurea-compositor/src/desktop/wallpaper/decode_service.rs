@@ -22,8 +22,12 @@ pub struct WallpaperDecodeKey {
 }
 
 impl WallpaperDecodeKey {
-    pub fn asset_id(&self) -> &str { &self.asset_id }
-    pub const fn revision(&self) -> u64 { self.revision }
+    pub fn asset_id(&self) -> &str {
+        &self.asset_id
+    }
+    pub const fn revision(&self) -> u64 {
+        self.revision
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,9 +37,15 @@ pub struct DecodedWallpaper {
 }
 
 impl DecodedWallpaper {
-    pub fn key(&self) -> &WallpaperDecodeKey { &self.key }
-    pub const fn pixels(&self) -> &WallpaperPixels { &self.pixels }
-    pub fn into_pixels(self) -> WallpaperPixels { self.pixels }
+    pub fn key(&self) -> &WallpaperDecodeKey {
+        &self.key
+    }
+    pub const fn pixels(&self) -> &WallpaperPixels {
+        &self.pixels
+    }
+    pub fn into_pixels(self) -> WallpaperPixels {
+        self.pixels
+    }
 }
 
 #[derive(Debug)]
@@ -95,15 +105,27 @@ impl WallpaperDecodeService {
     ) -> Result<Option<WallpaperDecodeKey>, WallpaperDecodeServiceError> {
         let asset_id = asset.as_ref().map(|asset| asset.id().to_owned());
         if asset_id == self.requested_asset {
-            if let Some(completed) = self.completed.as_ref() { return Ok(Some(completed.clone())); }
-            if let Some(failed) = self.failed.as_ref() { return Ok(Some(failed.clone())); }
-            if let Some(ready) = self.ready.as_ref() { return Ok(Some(ready.key().clone())); }
-            if let Some((key, _)) = self.pending.as_ref() { return Ok(Some(key.clone())); }
-            if let Some(asset) = asset { return self.submit(asset).map(Some); }
+            if let Some(completed) = self.completed.as_ref() {
+                return Ok(Some(completed.clone()));
+            }
+            if let Some(failed) = self.failed.as_ref() {
+                return Ok(Some(failed.clone()));
+            }
+            if let Some(ready) = self.ready.as_ref() {
+                return Ok(Some(ready.key().clone()));
+            }
+            if let Some((key, _)) = self.pending.as_ref() {
+                return Ok(Some(key.clone()));
+            }
+            if let Some(asset) = asset {
+                return self.submit(asset).map(Some);
+            }
             return Ok(None);
         }
 
-        self.revision = self.revision.checked_add(1)
+        self.revision = self
+            .revision
+            .checked_add(1)
             .ok_or(WallpaperDecodeServiceError::RevisionExhausted)?;
         self.requested_asset = asset_id;
         self.pending = None;
@@ -134,7 +156,8 @@ impl WallpaperDecodeService {
             asset_id: asset.id().to_owned(),
             revision: self.revision,
         };
-        let response = self.worker
+        let response = self
+            .worker
             .try_submit(format, asset.bytes().to_vec(), DecodeLimits::default())
             .map_err(WallpaperDecodeServiceError::Worker)?;
         self.pending = Some((key.clone(), response));
@@ -178,11 +201,16 @@ impl WallpaperDecodeService {
             Err(TryRecvError::Empty) => Ok(self.ready.as_ref()),
             Err(TryRecvError::Disconnected) => {
                 self.pending = None;
-                self.failed = self.requested_asset.as_ref().map(|asset_id| WallpaperDecodeKey {
-                    asset_id: asset_id.clone(),
-                    revision: self.revision,
-                });
-                Err(WallpaperDecodeServiceError::Worker(DecodeWorkerError::WorkerStopped))
+                self.failed = self
+                    .requested_asset
+                    .as_ref()
+                    .map(|asset_id| WallpaperDecodeKey {
+                        asset_id: asset_id.clone(),
+                        revision: self.revision,
+                    });
+                Err(WallpaperDecodeServiceError::Worker(
+                    DecodeWorkerError::WorkerStopped,
+                ))
             }
         }
     }
@@ -193,7 +221,9 @@ impl WallpaperDecodeService {
         Some(ready)
     }
 
-    pub fn ready(&self) -> Option<&DecodedWallpaper> { self.ready.as_ref() }
+    pub fn ready(&self) -> Option<&DecodedWallpaper> {
+        self.ready.as_ref()
+    }
 
     pub fn pending_key(&self) -> Option<&WallpaperDecodeKey> {
         self.pending.as_ref().map(|(key, _)| key)
@@ -235,7 +265,9 @@ mod tests {
 
         for _ in 0..10_000 {
             assert!(service.poll().unwrap().is_none());
-            if service.pending_key().is_none() { break; }
+            if service.pending_key().is_none() {
+                break;
+            }
             std::thread::sleep(std::time::Duration::from_millis(1));
         }
         assert!(service.ready().is_none());

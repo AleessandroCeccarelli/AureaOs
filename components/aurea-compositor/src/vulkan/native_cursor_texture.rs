@@ -11,7 +11,8 @@ use std::{
     fmt, fs,
     path::PathBuf,
     sync::{
-        Arc, mpsc::{self, Receiver, SyncSender, TryRecvError, TrySendError},
+        Arc,
+        mpsc::{self, Receiver, SyncSender, TryRecvError, TrySendError},
     },
     thread,
     time::Instant,
@@ -19,7 +20,10 @@ use std::{
 
 use crate::{
     desktop::DesktopTheme,
-    render::{cursor::{DEFAULT_CURSOR_HOTSPOT, default_cursor_snapshot}, shm_buffer::ShmBufferSnapshot},
+    render::{
+        cursor::{DEFAULT_CURSOR_HOTSPOT, default_cursor_snapshot},
+        shm_buffer::ShmBufferSnapshot,
+    },
 };
 
 use super::{
@@ -49,12 +53,16 @@ impl fmt::Display for VulkanNativeCursorTextureError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Snapshot(error) => write!(formatter, "Native cursor snapshot: {error}"),
-            Self::EmptyUpload => formatter.write_str("Native cursor upload completed without a texture"),
+            Self::EmptyUpload => {
+                formatter.write_str("Native cursor upload completed without a texture")
+            }
             Self::MissingAsset(name) => write!(formatter, "Xcursor asset '{name}' was not found"),
             Self::File(error) => write!(formatter, "Xcursor file: {error}"),
             Self::Decode(error) => write!(formatter, "Xcursor decode: {error}"),
             Self::Texture(error) => write!(formatter, "Native cursor texture: {error}"),
-            Self::CacheBudgetExceeded => formatter.write_str("Native cursor texture cache budget exceeded"),
+            Self::CacheBudgetExceeded => {
+                formatter.write_str("Native cursor texture cache budget exceeded")
+            }
         }
     }
 }
@@ -83,10 +91,14 @@ impl VulkanNativeCursorAsset {
             return &self.frames[0];
         }
 
-        let delays = self.frames.iter()
+        let delays = self
+            .frames
+            .iter()
             .map(|frame| frame.delay_ms)
             .collect::<Vec<_>>();
-        let elapsed_ms = now.saturating_duration_since(self.animation_started_at).as_millis() as u64;
+        let elapsed_ms = now
+            .saturating_duration_since(self.animation_started_at)
+            .as_millis() as u64;
         &self.frames[frame_index_for_elapsed(&delays, elapsed_ms)]
     }
 
@@ -96,19 +108,32 @@ impl VulkanNativeCursorAsset {
 }
 
 impl VulkanNativeCursorFrame {
-    pub(crate) fn texture(&self) -> &VulkanShmTexture { self.texture.as_ref() }
-    pub(crate) fn width(&self) -> u32 { self.width }
-    pub(crate) fn height(&self) -> u32 { self.height }
-    pub(crate) fn hotspot_x(&self) -> u32 { self.hotspot_x }
-    pub(crate) fn hotspot_y(&self) -> u32 { self.hotspot_y }
-    pub(crate) fn delay_ms(&self) -> u32 { self.delay_ms }
+    pub(crate) fn texture(&self) -> &VulkanShmTexture {
+        self.texture.as_ref()
+    }
+    pub(crate) fn width(&self) -> u32 {
+        self.width
+    }
+    pub(crate) fn height(&self) -> u32 {
+        self.height
+    }
+    pub(crate) fn hotspot_x(&self) -> u32 {
+        self.hotspot_x
+    }
+    pub(crate) fn hotspot_y(&self) -> u32 {
+        self.hotspot_y
+    }
+    pub(crate) fn delay_ms(&self) -> u32 {
+        self.delay_ms
+    }
 }
 
 fn frame_index_for_elapsed(delays_ms: &[u32], elapsed_ms: u64) -> usize {
     if delays_ms.len() <= 1 {
         return 0;
     }
-    let total_ms = delays_ms.iter()
+    let total_ms = delays_ms
+        .iter()
         .map(|delay| u64::from((*delay).max(1)))
         .sum::<u64>()
         .max(1);
@@ -214,12 +239,10 @@ pub(crate) struct VulkanNativeCursorTexture {
 
 impl VulkanNativeCursorTexture {
     pub(crate) fn new() -> Self {
-        let (request_tx, request_rx) = mpsc::sync_channel::<CursorDecodeRequest>(
-            MAX_PENDING_CURSOR_DECODE_REQUESTS,
-        );
-        let (result_tx, result_rx) = mpsc::sync_channel::<CursorDecodeResult>(
-            MAX_PENDING_CURSOR_DECODE_REQUESTS,
-        );
+        let (request_tx, request_rx) =
+            mpsc::sync_channel::<CursorDecodeRequest>(MAX_PENDING_CURSOR_DECODE_REQUESTS);
+        let (result_tx, result_rx) =
+            mpsc::sync_channel::<CursorDecodeResult>(MAX_PENDING_CURSOR_DECODE_REQUESTS);
         let worker = thread::Builder::new()
             .name("aurea-xcursor-decode".to_owned())
             .spawn(move || {
@@ -227,12 +250,15 @@ impl VulkanNativeCursorTexture {
                     let result = load_cursor_frames(&request.name, request.theme)
                         .or_else(|_| built_in_arrow_frame(request.requested_size))
                         .map_err(|error| error.to_string());
-                    if result_tx.send(CursorDecodeResult {
-                        key: request.key,
-                        name: request.name,
-                        requested_size: request.requested_size,
-                        frames: result,
-                    }).is_err() {
+                    if result_tx
+                        .send(CursorDecodeResult {
+                            key: request.key,
+                            name: request.name,
+                            requested_size: request.requested_size,
+                            frames: result,
+                        })
+                        .is_err()
+                    {
                         break;
                     }
                 }
@@ -323,12 +349,9 @@ impl VulkanNativeCursorTexture {
             .into_iter()
             .next()
             .ok_or(VulkanNativeCursorTextureError::EmptyUpload)?;
-        let snapshot = ShmBufferSnapshot::from_rgba8(
-            metadata.width,
-            metadata.height,
-            metadata.rgba8.clone(),
-        )
-        .map_err(|error| VulkanNativeCursorTextureError::Snapshot(error.to_string()))?;
+        let snapshot =
+            ShmBufferSnapshot::from_rgba8(metadata.width, metadata.height, metadata.rgba8.clone())
+                .map_err(|error| VulkanNativeCursorTextureError::Snapshot(error.to_string()))?;
         // This one-time upload is deliberately synchronous and extremely small:
         // the initial arrow must be drawable on the first output frame.
         let texture = Arc::new(
@@ -382,25 +405,30 @@ impl VulkanNativeCursorTexture {
                 .map(|frame| frame.width.max(frame.height))
                 .min_by_key(|size| size.abs_diff(result.requested_size))
                 .ok_or_else(|| VulkanNativeCursorTextureError::MissingAsset(result.name.clone()))?;
-            let mut metadata = frames.into_iter()
+            let mut metadata = frames
+                .into_iter()
                 .filter(|frame| frame.width.max(frame.height) == selected_size)
                 .collect::<Vec<_>>();
             if metadata.is_empty() {
                 return Err(VulkanNativeCursorTextureError::MissingAsset(result.name));
             }
-            let frame_bytes = metadata.iter().try_fold(0usize, |total, frame| {
-                total.checked_add(frame.rgba8.len())
-            }).ok_or(VulkanNativeCursorTextureError::CacheBudgetExceeded)?;
+            let frame_bytes = metadata
+                .iter()
+                .try_fold(0usize, |total, frame| total.checked_add(frame.rgba8.len()))
+                .ok_or(VulkanNativeCursorTextureError::CacheBudgetExceeded)?;
             // Preserve the cursor's first frame rather than allowing an unusually
             // large animation to consume the entire native artwork budget.
             if frame_bytes > MAX_CURSOR_ASSET_BYTES {
                 metadata.truncate(1);
             }
 
-            let snapshots = metadata.iter()
+            let snapshots = metadata
+                .iter()
                 .map(|frame| {
                     ShmBufferSnapshot::from_rgba8(frame.width, frame.height, frame.rgba8.clone())
-                        .map_err(|error| VulkanNativeCursorTextureError::Snapshot(error.to_string()))
+                        .map_err(|error| {
+                            VulkanNativeCursorTextureError::Snapshot(error.to_string())
+                        })
                 })
                 .collect::<Result<Vec<_>, _>>()?;
             let upload = VulkanShmTexture::submit_snapshots(Arc::clone(&device), snapshots)
@@ -417,7 +445,9 @@ impl VulkanNativeCursorTexture {
     fn poll_uploads(&mut self) -> Result<(), VulkanNativeCursorTextureError> {
         let mut index = 0;
         while index < self.pending_uploads.len() {
-            let complete = self.pending_uploads[index].upload.is_complete()
+            let complete = self.pending_uploads[index]
+                .upload
+                .is_complete()
                 .map_err(|error| {
                     VulkanNativeCursorTextureError::Texture(VulkanShmTextureError::Command(error))
                 })?;
@@ -434,31 +464,41 @@ impl VulkanNativeCursorTexture {
                 return Err(VulkanNativeCursorTextureError::EmptyUpload);
             }
             let frame_count = pending.metadata.len();
-            let raster_size = pending.metadata
+            let raster_size = pending
+                .metadata
                 .first()
                 .map(|frame| (frame.width, frame.height))
                 .ok_or(VulkanNativeCursorTextureError::EmptyUpload)?;
-            let byte_len = pending.metadata.iter()
+            let byte_len = pending
+                .metadata
+                .iter()
                 .map(|frame| frame.rgba8.len())
                 .sum::<usize>();
-            let frames = pending.metadata.into_iter().zip(textures).map(|(metadata, texture)| {
-                VulkanNativeCursorFrame {
+            let frames = pending
+                .metadata
+                .into_iter()
+                .zip(textures)
+                .map(|(metadata, texture)| VulkanNativeCursorFrame {
                     texture,
                     width: metadata.width,
                     height: metadata.height,
                     hotspot_x: metadata.hotspot_x,
                     hotspot_y: metadata.hotspot_y,
                     delay_ms: metadata.delay_ms,
-                }
-            }).collect();
+                })
+                .collect();
             if byte_len > MAX_CACHED_CURSOR_BYTES {
                 return Err(VulkanNativeCursorTextureError::CacheBudgetExceeded);
             }
             while self.assets.len() >= MAX_CACHED_CURSOR_ASSETS
-                || self.cached_bytes.checked_add(byte_len)
+                || self
+                    .cached_bytes
+                    .checked_add(byte_len)
                     .map_or(true, |total| total > MAX_CACHED_CURSOR_BYTES)
             {
-                let oldest = self.assets.iter()
+                let oldest = self
+                    .assets
+                    .iter()
                     .min_by_key(|(_, entry)| entry.last_used)
                     .map(|(key, _)| key.clone());
                 let Some(oldest) = oldest else {
@@ -470,14 +510,17 @@ impl VulkanNativeCursorTexture {
             }
             self.cached_bytes = self.cached_bytes.saturating_add(byte_len);
             let asset_key = pending.key;
-            self.assets.insert(asset_key.clone(), CachedNativeCursorAsset {
-                asset: VulkanNativeCursorAsset {
-                    frames,
-                    animation_started_at: Instant::now(),
+            self.assets.insert(
+                asset_key.clone(),
+                CachedNativeCursorAsset {
+                    asset: VulkanNativeCursorAsset {
+                        frames,
+                        animation_started_at: Instant::now(),
+                    },
+                    byte_len,
+                    last_used: self.frame,
                 },
-                byte_len,
-                last_used: self.frame,
-            });
+            );
             tracing::info!(
                 cursor_asset = %asset_key,
                 width = raster_size.0,
@@ -500,7 +543,8 @@ impl VulkanNativeCursorTexture {
         theme: DesktopTheme,
         requested_size: u32,
     ) -> Option<&VulkanNativeCursorAsset> {
-        self.assets.get(&Self::cache_key(name, theme, requested_size))
+        self.assets
+            .get(&Self::cache_key(name, theme, requested_size))
             .map(|entry| &entry.asset)
             .or_else(|| self.fallback_assets.get(&requested_size))
     }
@@ -548,15 +592,17 @@ fn load_cursor_frames(
         DesktopTheme::Dark => "AureaOS-Dark",
     };
     let path = root.join(theme_name).join("cursors").join(name);
-    let metadata = fs::metadata(&path)
-        .map_err(|error| VulkanNativeCursorTextureError::File(format!("{}: {error}", path.display())))?;
+    let metadata = fs::metadata(&path).map_err(|error| {
+        VulkanNativeCursorTextureError::File(format!("{}: {error}", path.display()))
+    })?;
     if !metadata.is_file() || metadata.len() > MAX_CURSOR_FILE_BYTES {
         return Err(VulkanNativeCursorTextureError::File(format!(
             "{} is not a regular Xcursor file within the 16 MiB limit",
             path.display()
         )));
     }
-    let bytes = fs::read(&path)
-        .map_err(|error| VulkanNativeCursorTextureError::File(format!("{}: {error}", path.display())))?;
+    let bytes = fs::read(&path).map_err(|error| {
+        VulkanNativeCursorTextureError::File(format!("{}: {error}", path.display()))
+    })?;
     decode_xcursor(&bytes).map_err(VulkanNativeCursorTextureError::Decode)
 }

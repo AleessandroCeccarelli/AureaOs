@@ -61,9 +61,8 @@ impl VulkanWallpaperTexture {
         let texture = Self::submit_pixels(device, &pixels)?
             .wait()
             .map_err(VulkanWallpaperTextureError::Command)?;
-        Arc::try_unwrap(texture).map_err(|_| {
-            VulkanWallpaperTextureError::Command(vk::Result::ERROR_UNKNOWN)
-        })
+        Arc::try_unwrap(texture)
+            .map_err(|_| VulkanWallpaperTextureError::Command(vk::Result::ERROR_UNKNOWN))
     }
 
     /// Starts a wallpaper upload and returns without waiting for GPU completion.

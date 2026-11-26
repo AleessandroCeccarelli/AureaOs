@@ -186,8 +186,7 @@ mod tests {
         let recycled_second = slots.acquire(InputDeviceId(4), slot(0)).unwrap();
         assert_ne!(recycled_first, recycled_second);
         assert!(
-            [first, second].contains(&recycled_first)
-                && [first, second].contains(&recycled_second)
+            [first, second].contains(&recycled_first) && [first, second].contains(&recycled_second)
         );
     }
 }

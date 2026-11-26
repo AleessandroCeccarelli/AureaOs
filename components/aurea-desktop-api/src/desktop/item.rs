@@ -62,13 +62,26 @@ impl DesktopItem {
         kind: DesktopItemKind,
         position: DesktopPosition,
     ) -> Self {
-        Self { id, name: name.into(), kind, position }
+        Self {
+            id,
+            name: name.into(),
+            kind,
+            position,
+        }
     }
 
-    pub fn id(&self) -> &DesktopItemId { &self.id }
-    pub fn name(&self) -> &str { &self.name }
-    pub fn kind(&self) -> &DesktopItemKind { &self.kind }
-    pub const fn position(&self) -> DesktopPosition { self.position }
+    pub fn id(&self) -> &DesktopItemId {
+        &self.id
+    }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    pub fn kind(&self) -> &DesktopItemKind {
+        &self.kind
+    }
+    pub const fn position(&self) -> DesktopPosition {
+        self.position
+    }
 
     pub fn set_position(&mut self, position: DesktopPosition) {
         self.position = position;
@@ -76,11 +89,15 @@ impl DesktopItem {
 
     /// Returns the file extension without the leading dot, if present.
     pub fn file_extension(&self) -> Option<String> {
-        let DesktopItemKind::File { uri } = &self.kind else { return None };
+        let DesktopItemKind::File { uri } = &self.kind else {
+            return None;
+        };
         let path = uri.split(['?', '#']).next()?;
         let file_name = path.rsplit('/').next()?;
         let (_, extension) = file_name.rsplit_once('.')?;
-        if extension.is_empty() { return None; }
+        if extension.is_empty() {
+            return None;
+        }
         Some(extension.to_ascii_lowercase())
     }
 }
@@ -101,7 +118,9 @@ mod tests {
         let item = DesktopItem::new(
             DesktopItemId::new("file:one").unwrap(),
             "Photo",
-            DesktopItemKind::File { uri: "file:///home/user/Picture.JPEG?download=1".into() },
+            DesktopItemKind::File {
+                uri: "file:///home/user/Picture.JPEG?download=1".into(),
+            },
             DesktopPosition::default(),
         );
         assert_eq!(item.file_extension().as_deref(), Some("jpeg"));
@@ -112,7 +131,9 @@ mod tests {
         let item = DesktopItem::new(
             DesktopItemId::new("folder:one").unwrap(),
             "Pictures",
-            DesktopItemKind::Folder { uri: "file:///home/user/Pictures".into() },
+            DesktopItemKind::Folder {
+                uri: "file:///home/user/Pictures".into(),
+            },
             DesktopPosition::default(),
         );
         assert_eq!(item.file_extension(), None);

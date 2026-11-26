@@ -12,8 +12,8 @@ use smithay::{
 };
 
 use crate::{
-    output::coordinates::{LogicalPoint, OutputLogicalBounds},
     AureaCompositor,
+    output::coordinates::{LogicalPoint, OutputLogicalBounds},
 };
 
 /// Applies the XDG constraint-adjustment policy against the output containing
@@ -53,8 +53,7 @@ pub(crate) fn constrain_geometry(
         };
         let parent_geometry = parent_popup.geometry();
         (
-            Point::<i32, Logical>::from(toplevel_location) + parent_offset
-                - parent_geometry.loc,
+            Point::<i32, Logical>::from(toplevel_location) + parent_offset - parent_geometry.loc,
             parent_geometry.size,
         )
     };
@@ -89,14 +88,25 @@ fn select_constraint_output(
         .registry()
         .iter()
         .filter(|output| output.is_enabled())
-        .filter_map(|output| compositor.output_manager.logical_bounds(output.id()).ok().flatten())
+        .filter_map(|output| {
+            compositor
+                .output_manager
+                .logical_bounds(output.id())
+                .ok()
+                .flatten()
+        })
         .collect::<Vec<_>>();
 
     outputs
         .iter()
         .copied()
         .find(|bounds| bounds.contains(anchor))
-        .or_else(|| outputs.iter().copied().find(|bounds| bounds.contains(parent_center)))
+        .or_else(|| {
+            outputs
+                .iter()
+                .copied()
+                .find(|bounds| bounds.contains(parent_center))
+        })
 }
 
 fn target_relative_to_parent(
@@ -140,7 +150,10 @@ mod tests {
     #[test]
     fn rejects_relative_coordinates_that_overflow_protocol_geometry() {
         let bounds = OutputLogicalBounds::from_logical_size(
-            LogicalPoint { x: i64::MAX - 100, y: 0 },
+            LogicalPoint {
+                x: i64::MAX - 100,
+                y: 0,
+            },
             LogicalSize {
                 width: 50,
                 height: 50,
@@ -167,7 +180,11 @@ impl PopupPlacementRegistry {
 
     pub(crate) fn update(&mut self, popup: PopupSurface, positioner: PositionerState) {
         self.entries.retain(|(entry, _)| entry.alive());
-        if let Some((_, current)) = self.entries.iter_mut().find(|(entry, _)| entry.wl_surface() == popup.wl_surface()) {
+        if let Some((_, current)) = self
+            .entries
+            .iter_mut()
+            .find(|(entry, _)| entry.wl_surface() == popup.wl_surface())
+        {
             *current = positioner;
         } else {
             self.entries.push((popup, positioner));
@@ -175,7 +192,8 @@ impl PopupPlacementRegistry {
     }
 
     pub(crate) fn remove(&mut self, popup: &PopupSurface) {
-        self.entries.retain(|(entry, _)| entry.alive() && entry != popup);
+        self.entries
+            .retain(|(entry, _)| entry.alive() && entry != popup);
     }
 
     fn reactive_popups(&mut self) -> Vec<(PopupSurface, PositionerState)> {
@@ -218,10 +236,7 @@ impl AureaCompositor {
                 Ok(Some(_serial)) => changed = true,
                 Ok(None) => {}
                 Err(error) => {
-                    tracing::debug!(
-                        ?error,
-                        "Reactive XDG popup could not be reconfigured"
-                    );
+                    tracing::debug!(?error, "Reactive XDG popup could not be reconfigured");
                 }
             }
         }
@@ -251,4 +266,3 @@ impl AureaCompositor {
         true
     }
 }
-

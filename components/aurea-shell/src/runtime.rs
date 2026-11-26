@@ -15,7 +15,9 @@ use aurea_desktop_api::desktop_interaction::{
     DesktopInteraction, DesktopInteractionReceiver, DesktopSelectionController,
 };
 use aurea_desktop_api::input::{
-    InputDeviceId, PointerSettings, PointerSettingsController, TouchpadSettings, TouchpadSettingsController, DesktopPointerBehaviorController, DesktopPointerBehaviorSettings, desktop_pointer_behavior_channel, pointer_settings_channel, touchpad_settings_channel,
+    DesktopPointerBehaviorController, DesktopPointerBehaviorSettings, InputDeviceId,
+    PointerSettings, PointerSettingsController, TouchpadSettings, TouchpadSettingsController,
+    desktop_pointer_behavior_channel, pointer_settings_channel, touchpad_settings_channel,
 };
 
 use aurea_desktop_api::display::{DisplayColorAdjustment, DisplayColorController};
@@ -53,8 +55,14 @@ impl ShellRuntime {
     pub fn with_display_color(display_color: DisplayColorController) -> Self {
         let (touchpad_settings, _touchpad_receiver) = touchpad_settings_channel();
         let (pointer_settings, _pointer_receiver) = pointer_settings_channel();
-        let (desktop_pointer_behavior, _desktop_pointer_behavior_receiver) = desktop_pointer_behavior_channel();
-        Self::with_controllers(display_color, touchpad_settings, pointer_settings, desktop_pointer_behavior)
+        let (desktop_pointer_behavior, _desktop_pointer_behavior_receiver) =
+            desktop_pointer_behavior_channel();
+        Self::with_controllers(
+            display_color,
+            touchpad_settings,
+            pointer_settings,
+            desktop_pointer_behavior,
+        )
     }
 
     /// Creates a runtime with shared display, touchpad and pointer policy channels.

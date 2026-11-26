@@ -39,7 +39,10 @@ fn parse_ftyp_brands(bytes: &[u8]) -> Option<Vec<&[u8; 4]>> {
     let short_size = u32::from_be_bytes(bytes.get(0..4)?.try_into().ok()?);
     let (box_size, header_size) = match short_size {
         0 => (u64::try_from(bytes.len()).ok()?, 8usize),
-        1 => (u64::from_be_bytes(bytes.get(8..16)?.try_into().ok()?), 16usize),
+        1 => (
+            u64::from_be_bytes(bytes.get(8..16)?.try_into().ok()?),
+            16usize,
+        ),
         size => (u64::from(size), 8usize),
     };
     let available = u64::try_from(bytes.len()).ok()?;
@@ -82,9 +85,18 @@ mod tests {
 
     #[test]
     fn recognizes_avif_and_heic_still_brands() {
-        assert_eq!(detect_container_format(&ftyp(b"avif", &[])), Some(ImageFormat::Avif));
-        assert_eq!(detect_container_format(&ftyp(b"heic", &[])), Some(ImageFormat::Heic));
-        assert_eq!(detect_container_format(&ftyp(b"mif1", &[b"heix"])), Some(ImageFormat::Heic));
+        assert_eq!(
+            detect_container_format(&ftyp(b"avif", &[])),
+            Some(ImageFormat::Avif)
+        );
+        assert_eq!(
+            detect_container_format(&ftyp(b"heic", &[])),
+            Some(ImageFormat::Heic)
+        );
+        assert_eq!(
+            detect_container_format(&ftyp(b"mif1", &[b"heix"])),
+            Some(ImageFormat::Heic)
+        );
     }
 
     #[test]
@@ -98,7 +110,10 @@ mod tests {
     fn rejects_generic_mif1_and_malformed_boxes() {
         assert_eq!(detect_container_format(&ftyp(b"mif1", &[])), None);
         assert_eq!(detect_container_format(b"not an image"), None);
-        assert_eq!(detect_container_format(&[0, 0, 0, 15, b'f', b't', b'y', b'p']), None);
+        assert_eq!(
+            detect_container_format(&[0, 0, 0, 15, b'f', b't', b'y', b'p']),
+            None
+        );
     }
 
     #[test]

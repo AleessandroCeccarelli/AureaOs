@@ -65,7 +65,10 @@ fn overview_and_context_menu_interactions_are_preserved_for_presentation() {
         runtime.desktop_state().panels.active(),
         Some(crate::desktop::DesktopPanel::ContextMenu)
     );
-    assert_eq!(runtime.desktop_state().panels.context_menu_position(), Some(position));
+    assert_eq!(
+        runtime.desktop_state().panels.context_menu_position(),
+        Some(position)
+    );
 
     runtime.dismiss_desktop_panel();
     assert_eq!(runtime.desktop_state().panels.active(), None);
@@ -383,8 +386,12 @@ fn runtime_event_loop_applies_gesture_panels_and_context_menu_position() {
     let mut runtime = ShellRuntime::new();
 
     runtime.start().unwrap();
-    interaction_sender.send(DesktopInteraction::ShowOverview).unwrap();
-    interaction_sender.send(DesktopInteraction::ShowAppExpose).unwrap();
+    interaction_sender
+        .send(DesktopInteraction::ShowOverview)
+        .unwrap();
+    interaction_sender
+        .send(DesktopInteraction::ShowAppExpose)
+        .unwrap();
     let position = DesktopPosition { x: 320, y: 240 };
     interaction_sender
         .send(DesktopInteraction::ShowContextMenu { position })
@@ -427,7 +434,10 @@ fn compositor_desktop_item_selection_is_applied_to_shell_state() {
     runtime.handle_desktop_interaction(DesktopInteraction::DesktopItemSelected {
         id: "system:trash".to_owned(),
     });
-    assert_eq!(runtime.desktop_state().selected_item_id(), Some("system:trash"));
+    assert_eq!(
+        runtime.desktop_state().selected_item_id(),
+        Some("system:trash")
+    );
     assert_eq!(
         runtime.desktop_selection.selected_item().as_deref(),
         Some("system:trash")
@@ -443,7 +453,6 @@ fn compositor_desktop_item_selection_is_applied_to_shell_state() {
     assert_eq!(runtime.desktop_state().selected_item_id(), None);
     assert_eq!(runtime.desktop_selection.selected_item(), None);
 }
-
 
 #[test]
 fn desktop_item_activation_is_retained_as_a_semantic_action() {
@@ -461,7 +470,6 @@ fn desktop_item_activation_is_retained_as_a_semantic_action() {
         })
     );
 }
-
 
 #[test]
 fn selected_context_menu_command_closes_menu_and_is_retained_for_service_dispatch() {
@@ -502,7 +510,8 @@ fn runtime_forwards_mouse_preferences_to_compositor_channel() {
 
     let (touchpad_controller, _touchpad_receiver) = touchpad_settings_channel();
     let (pointer_controller, pointer_receiver) = pointer_settings_channel();
-    let (desktop_pointer_behavior, _desktop_pointer_behavior_receiver) = desktop_pointer_behavior_channel();
+    let (desktop_pointer_behavior, _desktop_pointer_behavior_receiver) =
+        desktop_pointer_behavior_channel();
     let runtime = ShellRuntime::with_controllers(
         DisplayColorController::new(),
         touchpad_controller,

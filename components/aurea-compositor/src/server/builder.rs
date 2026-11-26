@@ -6,7 +6,8 @@
 //! Wayland server construction and backend initialization.
 
 use aurea_desktop_api::{
-    desktop_interaction::DesktopInteractionSender, display::DisplayColorController,
+    desktop_interaction::DesktopInteractionSender,
+    display::DisplayColorController,
     input::{DesktopPointerBehaviorCommand, PointerSettingsCommand, TouchpadSettingsCommand},
 };
 use std::sync::mpsc::Receiver;
@@ -73,7 +74,11 @@ pub(super) fn build(
     }
 
     #[cfg(not(feature = "drm"))]
-    let _ = (touchpad_settings_receiver, pointer_settings_receiver, desktop_pointer_behavior_receiver);
+    let _ = (
+        touchpad_settings_receiver,
+        pointer_settings_receiver,
+        desktop_pointer_behavior_receiver,
+    );
 
     let mut state = WaylandState {
         display,
@@ -89,7 +94,8 @@ pub(super) fn build(
         #[cfg(feature = "drm")]
         desktop_pointer_behavior_receiver,
         #[cfg(feature = "drm")]
-        desktop_pointer_behavior_store: crate::input::pointing::DesktopPointerBehaviorStore::default(),
+        desktop_pointer_behavior_store:
+            crate::input::pointing::DesktopPointerBehaviorStore::default(),
         #[cfg(feature = "drm")]
         applied_touchpad_settings: AppliedTouchpadSettings::default(),
         #[cfg(feature = "drm")]
@@ -330,7 +336,10 @@ pub(super) fn build(
 
     #[cfg(feature = "drm")]
     state.compositor.set_desktop_double_click_interval_ms(
-        state.desktop_pointer_behavior_store.settings().double_click_interval_ms(),
+        state
+            .desktop_pointer_behavior_store
+            .settings()
+            .double_click_interval_ms(),
     );
 
     // Register the Wayland display fd for client dispatch.

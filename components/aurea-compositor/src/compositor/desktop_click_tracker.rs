@@ -51,13 +51,7 @@ impl DesktopClickTracker {
     }
 
     /// Records a click and returns true when it completes a double-click.
-    pub(super) fn record(
-        &mut self,
-        item_id: &str,
-        x: f64,
-        y: f64,
-        now: Instant,
-    ) -> bool {
+    pub(super) fn record(&mut self, item_id: &str, x: f64, y: f64, now: Instant) -> bool {
         if !x.is_finite() || !y.is_finite() {
             self.reset();
             return false;
@@ -173,8 +167,18 @@ mod tests {
         assert!(!tracker.record("system:trash", 10.0, 20.0, start));
         tracker.set_interval(Duration::from_millis(700));
         assert_eq!(tracker.interval(), Duration::from_millis(700));
-        assert!(!tracker.record("system:trash", 10.0, 20.0, start + Duration::from_millis(100)));
-        assert!(tracker.record("system:trash", 10.0, 20.0, start + Duration::from_millis(650)));
+        assert!(!tracker.record(
+            "system:trash",
+            10.0,
+            20.0,
+            start + Duration::from_millis(100)
+        ));
+        assert!(tracker.record(
+            "system:trash",
+            10.0,
+            20.0,
+            start + Duration::from_millis(650)
+        ));
     }
 
     #[test]

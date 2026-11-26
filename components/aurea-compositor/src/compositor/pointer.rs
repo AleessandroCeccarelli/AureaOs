@@ -52,7 +52,10 @@ impl AureaCompositor {
             || !unaccelerated_delta.x.is_finite()
             || !unaccelerated_delta.y.is_finite()
         {
-            tracing::warn!(device_id = device.0, "Discarded non-finite pointer motion sample");
+            tracing::warn!(
+                device_id = device.0,
+                "Discarded non-finite pointer motion sample"
+            );
             return;
         }
 
@@ -119,12 +122,13 @@ impl AureaCompositor {
     where
         E: smithay::backend::input::AbsolutePositionEvent<
                 smithay::backend::libinput::LibinputInputBackend,
-            > + smithay::backend::input::Event<
-                smithay::backend::libinput::LibinputInputBackend,
-            >,
+            > + smithay::backend::input::Event<smithay::backend::libinput::LibinputInputBackend>,
     {
         let Some(output_id) = self.absolute_pointer_output(device) else {
-            tracing::debug!(device_id = device.0, "Absolute pointer motion ignored: explicit output assignment required");
+            tracing::debug!(
+                device_id = device.0,
+                "Absolute pointer motion ignored: explicit output assignment required"
+            );
             return false;
         };
         let bounds = self.output_manager.logical_bounds(output_id).ok().flatten();
@@ -140,16 +144,15 @@ impl AureaCompositor {
 
         let width = size.width;
         let height = size.height;
-        let (Ok(event_width), Ok(event_height)) =
-            (i32::try_from(width), i32::try_from(height))
+        let (Ok(event_width), Ok(event_height)) = (i32::try_from(width), i32::try_from(height))
         else {
             return false;
         };
         let requested = Point::from((
-            origin.x as f64 + event.x_transformed(event_width) / f64::from(width)
-                * f64::from(width - 1),
-            origin.y as f64 + event.y_transformed(event_height) / f64::from(height)
-                * f64::from(height - 1),
+            origin.x as f64
+                + event.x_transformed(event_width) / f64::from(width) * f64::from(width - 1),
+            origin.y as f64
+                + event.y_transformed(event_height) / f64::from(height) * f64::from(height - 1),
         ));
         let Some(output_geometry) = OutputGeometry::new(
             origin.x as f64,

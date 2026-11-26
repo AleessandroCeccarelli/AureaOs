@@ -62,22 +62,28 @@ impl GestureProfile {
                     Some(PointingInteraction::PreviousWorkspace)
                 }
             }
-            PointingGesture::Swipe { fingers, delta_x, delta_y }
-                if fingers == self.overview_swipe_fingers
-                    && delta_x.is_finite()
-                    && delta_y.is_finite()
-                    && delta_y.abs() >= self.vertical_threshold
-                    && delta_y.abs() > delta_x.abs()
-                    && delta_y.is_sign_negative() =>
+            PointingGesture::Swipe {
+                fingers,
+                delta_x,
+                delta_y,
+            } if fingers == self.overview_swipe_fingers
+                && delta_x.is_finite()
+                && delta_y.is_finite()
+                && delta_y.abs() >= self.vertical_threshold
+                && delta_y.abs() > delta_x.abs()
+                && delta_y.is_sign_negative() =>
             {
                 Some(PointingInteraction::Overview)
             }
-            PointingGesture::Swipe { fingers, delta_x, delta_y }
-                if fingers == self.app_expose_swipe_fingers
-                    && delta_x.is_finite()
-                    && delta_y.is_finite()
-                    && delta_y >= self.vertical_threshold
-                    && delta_y.abs() > delta_x.abs() =>
+            PointingGesture::Swipe {
+                fingers,
+                delta_x,
+                delta_y,
+            } if fingers == self.app_expose_swipe_fingers
+                && delta_x.is_finite()
+                && delta_y.is_finite()
+                && delta_y >= self.vertical_threshold
+                && delta_y.abs() > delta_x.abs() =>
             {
                 Some(PointingInteraction::AppExpose)
             }

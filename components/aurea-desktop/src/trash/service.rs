@@ -7,8 +7,7 @@
 
 use std::{
     error::Error,
-    fmt,
-    fs,
+    fmt, fs,
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -50,9 +49,15 @@ pub struct TrashEntry {
 }
 
 impl TrashEntry {
-    pub fn name(&self) -> &str { &self.name }
-    pub fn original_path(&self) -> &Path { &self.original_path }
-    pub fn is_directory(&self) -> bool { self.stored_path.is_dir() }
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+    pub fn original_path(&self) -> &Path {
+        &self.original_path
+    }
+    pub fn is_directory(&self) -> bool {
+        self.stored_path.is_dir()
+    }
 }
 
 /// Immutable summary used by the desktop presentation model.
@@ -63,8 +68,12 @@ pub struct TrashSnapshot {
 }
 
 impl TrashSnapshot {
-    pub fn item_count(self) -> usize { self.item_count }
-    pub fn visual_state(self) -> TrashVisualState { self.visual_state }
+    pub fn item_count(self) -> usize {
+        self.item_count
+    }
+    pub fn visual_state(self) -> TrashVisualState {
+        self.visual_state
+    }
 }
 
 /// Errors returned by Trash operations.
@@ -84,9 +93,13 @@ impl fmt::Display for TrashError {
         match self {
             Self::Io(error) => write!(f, "Trash filesystem operation failed: {error}"),
             Self::InvalidSource => f.write_str("Trash source must be an existing absolute path"),
-            Self::SourceInsideTrash => f.write_str("A Trash item cannot be moved into the Trash again"),
+            Self::SourceInsideTrash => {
+                f.write_str("A Trash item cannot be moved into the Trash again")
+            }
             Self::EntryNotFound => f.write_str("Trash entry no longer exists"),
-            Self::RestoreDestinationExists(path) => write!(f, "Restore destination already exists: {}", path.display()),
+            Self::RestoreDestinationExists(path) => {
+                write!(f, "Restore destination already exists: {}", path.display())
+            }
             Self::InvalidMetadata => f.write_str("Trash metadata is invalid or incomplete"),
             Self::ClockUnavailable => f.write_str("System clock is earlier than the Unix epoch"),
         }
@@ -95,7 +108,9 @@ impl fmt::Display for TrashError {
 
 impl Error for TrashError {}
 impl From<std::io::Error> for TrashError {
-    fn from(error: std::io::Error) -> Self { Self::Io(error) }
+    fn from(error: std::io::Error) -> Self {
+        Self::Io(error)
+    }
 }
 
 /// Manages the freedesktop home Trash at ~/.local/share/Trash.
@@ -199,7 +214,10 @@ impl TrashService {
         } else {
             TrashVisualState::PartiallyFull
         };
-        Ok(TrashSnapshot { item_count, visual_state })
+        Ok(TrashSnapshot {
+            item_count,
+            visual_state,
+        })
     }
 
     /// Restores an entry to its recorded original location.
@@ -264,14 +282,20 @@ impl TrashService {
         let base = original_name.to_string_lossy();
         let candidate = format!("{timestamp}-{base}");
         if !self.files_dir.join(&candidate).exists()
-            && !self.info_dir.join(format!("{candidate}.trashinfo")).exists()
+            && !self
+                .info_dir
+                .join(format!("{candidate}.trashinfo"))
+                .exists()
         {
             return Ok(candidate);
         }
         for suffix in 1..=u32::MAX {
             let candidate = format!("{timestamp}-{suffix}-{base}");
             if !self.files_dir.join(&candidate).exists()
-                && !self.info_dir.join(format!("{candidate}.trashinfo")).exists()
+                && !self
+                    .info_dir
+                    .join(format!("{candidate}.trashinfo"))
+                    .exists()
             {
                 return Ok(candidate);
             }
@@ -279,4 +303,3 @@ impl TrashService {
         Err(TrashError::EntryNotFound)
     }
 }
-

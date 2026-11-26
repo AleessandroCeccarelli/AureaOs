@@ -14,22 +14,34 @@ use super::{DesktopTheme, TrashContentsState};
 pub fn svg(theme: DesktopTheme, state: TrashContentsState) -> &'static [u8] {
     match (theme, state) {
         (DesktopTheme::Light, TrashContentsState::Empty) => {
-            include_bytes!("../../../../aurea-human-interfaces/icons/source/system/trash/light/trash-empty.svg")
+            include_bytes!(
+                "../../../../aurea-human-interfaces/icons/source/system/trash/light/trash-empty.svg"
+            )
         }
         (DesktopTheme::Light, TrashContentsState::PartiallyFull) => {
-            include_bytes!("../../../../aurea-human-interfaces/icons/source/system/trash/light/trash-half.svg")
+            include_bytes!(
+                "../../../../aurea-human-interfaces/icons/source/system/trash/light/trash-half.svg"
+            )
         }
         (DesktopTheme::Light, TrashContentsState::Full) => {
-            include_bytes!("../../../../aurea-human-interfaces/icons/source/system/trash/light/trash-full.svg")
+            include_bytes!(
+                "../../../../aurea-human-interfaces/icons/source/system/trash/light/trash-full.svg"
+            )
         }
         (DesktopTheme::Dark, TrashContentsState::Empty) => {
-            include_bytes!("../../../../aurea-human-interfaces/icons/source/system/trash/dark/trash-empty.svg")
+            include_bytes!(
+                "../../../../aurea-human-interfaces/icons/source/system/trash/dark/trash-empty.svg"
+            )
         }
         (DesktopTheme::Dark, TrashContentsState::PartiallyFull) => {
-            include_bytes!("../../../../aurea-human-interfaces/icons/source/system/trash/dark/trash-half.svg")
+            include_bytes!(
+                "../../../../aurea-human-interfaces/icons/source/system/trash/dark/trash-half.svg"
+            )
         }
         (DesktopTheme::Dark, TrashContentsState::Full) => {
-            include_bytes!("../../../../aurea-human-interfaces/icons/source/system/trash/dark/trash-full.svg")
+            include_bytes!(
+                "../../../../aurea-human-interfaces/icons/source/system/trash/dark/trash-full.svg"
+            )
         }
     }
 }
@@ -64,11 +76,8 @@ mod tests {
 
     #[test]
     fn full_state_uses_the_approved_full_artwork() {
-        let source = std::str::from_utf8(svg(
-            DesktopTheme::Light,
-            TrashContentsState::Full,
-        ))
-        .unwrap();
+        let source =
+            std::str::from_utf8(svg(DesktopTheme::Light, TrashContentsState::Full)).unwrap();
         assert!(source.contains("overfilled pile"));
     }
 }

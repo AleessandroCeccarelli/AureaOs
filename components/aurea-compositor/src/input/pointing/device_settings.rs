@@ -29,9 +29,10 @@ impl PointingDeviceSettings {
         id: InputDeviceId,
         settings: PointerSettings,
     ) -> bool {
-        if !provider.device(id).is_some_and(|device| {
-            device.kind == InputDeviceKind::Mouse
-        }) {
+        if !provider
+            .device(id)
+            .is_some_and(|device| device.kind == InputDeviceKind::Mouse)
+        {
             return false;
         }
         self.pointers.insert(id, settings);
@@ -119,11 +120,7 @@ mod tests {
         let mut settings = PointingDeviceSettings::default();
         let mouse = PointerSettings::new(PointerAccelerationProfile::Flat, 0.7, false).unwrap();
         assert!(settings.set_pointer(&devices, InputDeviceId(1), mouse));
-        assert!(!settings.set_pointer(
-            &devices,
-            InputDeviceId(2),
-            PointerSettings::default()
-        ));
+        assert!(!settings.set_pointer(&devices, InputDeviceId(2), PointerSettings::default()));
         assert_eq!(
             settings.pointer(InputDeviceId(1), PointerSettings::default()),
             mouse
@@ -153,11 +150,20 @@ mod tests {
         assert!(settings.set_pointer(&devices, InputDeviceId(5), pointer));
 
         settings.reconcile_kind(InputDeviceId(5), InputDeviceKind::Touchpad);
-        assert_eq!(settings.pointer(InputDeviceId(5), PointerSettings::default()), PointerSettings::default());
-        assert_eq!(settings.touchpad(InputDeviceId(5)), TouchpadSettings::default());
+        assert_eq!(
+            settings.pointer(InputDeviceId(5), PointerSettings::default()),
+            PointerSettings::default()
+        );
+        assert_eq!(
+            settings.touchpad(InputDeviceId(5)),
+            TouchpadSettings::default()
+        );
 
         settings.reconcile_kind(InputDeviceId(5), InputDeviceKind::Tablet);
-        assert_eq!(settings.pointer(InputDeviceId(5), PointerSettings::default()), PointerSettings::default());
+        assert_eq!(
+            settings.pointer(InputDeviceId(5), PointerSettings::default()),
+            PointerSettings::default()
+        );
     }
 
     #[test]
@@ -172,6 +178,5 @@ mod tests {
             settings.pointer(InputDeviceId(4), PointerSettings::default()),
             PointerSettings::default()
         );
-
     }
 }

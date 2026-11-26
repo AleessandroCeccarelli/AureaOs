@@ -6,8 +6,8 @@
 //! Owns the desktop entry collection and derives optional visual stacks.
 
 use super::{
-    stacks::build_stacks, DesktopItem, DesktopItemId, DesktopItemKind, DesktopPosition,
-    DesktopPreferences, DesktopStack, DesktopTrashState, StackGrouping,
+    DesktopItem, DesktopItemId, DesktopItemKind, DesktopPosition, DesktopPreferences, DesktopStack,
+    DesktopTrashState, StackGrouping, stacks::build_stacks,
 };
 
 /// Errors returned when changing the desktop entry collection.
@@ -27,10 +27,18 @@ pub struct DesktopManager {
 }
 
 impl DesktopManager {
-    pub fn items(&self) -> &[DesktopItem] { &self.items }
-    pub const fn preferences(&self) -> &DesktopPreferences { &self.preferences }
-    pub fn preferences_mut(&mut self) -> &mut DesktopPreferences { &mut self.preferences }
-    pub const fn trash_state(&self) -> DesktopTrashState { self.trash_state }
+    pub fn items(&self) -> &[DesktopItem] {
+        &self.items
+    }
+    pub const fn preferences(&self) -> &DesktopPreferences {
+        &self.preferences
+    }
+    pub fn preferences_mut(&mut self) -> &mut DesktopPreferences {
+        &mut self.preferences
+    }
+    pub const fn trash_state(&self) -> DesktopTrashState {
+        self.trash_state
+    }
 
     /// Updates the visual state supplied by the Trash service.
     pub fn set_trash_state(&mut self, state: DesktopTrashState) {
@@ -46,7 +54,10 @@ impl DesktopManager {
     }
 
     pub fn remove_item(&mut self, id: &DesktopItemId) -> Result<DesktopItem, DesktopManagerError> {
-        let index = self.items.iter().position(|item| item.id() == id)
+        let index = self
+            .items
+            .iter()
+            .position(|item| item.id() == id)
             .ok_or(DesktopManagerError::MissingItem)?;
         if matches!(self.items[index].kind(), DesktopItemKind::Trash) {
             return Err(DesktopManagerError::SystemItem);
@@ -59,15 +70,22 @@ impl DesktopManager {
         id: &DesktopItemId,
         position: DesktopPosition,
     ) -> Result<(), DesktopManagerError> {
-        let item = self.items.iter_mut().find(|item| item.id() == id)
+        let item = self
+            .items
+            .iter_mut()
+            .find(|item| item.id() == id)
             .ok_or(DesktopManagerError::MissingItem)?;
         item.set_position(position);
         Ok(())
     }
 
     pub fn stacks(&self) -> Vec<DesktopStack> {
-        let Some(grouping) = self.preferences.stack_grouping() else { return Vec::new() };
-        build_stacks(&self.items, grouping, |id| self.preferences.is_excluded_from_stacks(id))
+        let Some(grouping) = self.preferences.stack_grouping() else {
+            return Vec::new();
+        };
+        build_stacks(&self.items, grouping, |id| {
+            self.preferences.is_excluded_from_stacks(id)
+        })
     }
 
     pub fn set_stack_grouping(&mut self, grouping: Option<StackGrouping>) {
@@ -103,7 +121,9 @@ mod tests {
         DesktopItem::new(
             DesktopItemId::new(id).unwrap(),
             name,
-            DesktopItemKind::File { uri: format!("file:///home/user/{name}") },
+            DesktopItemKind::File {
+                uri: format!("file:///home/user/{name}"),
+            },
             DesktopPosition::default(),
         )
     }
@@ -121,9 +141,15 @@ mod tests {
         let mut manager = DesktopManager::default();
         let item = file("file:one", "notes.txt");
         manager.add_item(item.clone()).unwrap();
-        assert_eq!(manager.add_item(item), Err(DesktopManagerError::DuplicateItem));
+        assert_eq!(
+            manager.add_item(item),
+            Err(DesktopManagerError::DuplicateItem)
+        );
         let trash_id = DesktopItemId::new("system:trash").unwrap();
-        assert_eq!(manager.remove_item(&trash_id), Err(DesktopManagerError::SystemItem));
+        assert_eq!(
+            manager.remove_item(&trash_id),
+            Err(DesktopManagerError::SystemItem)
+        );
     }
 
     #[test]

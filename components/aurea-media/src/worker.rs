@@ -12,7 +12,7 @@ use std::{
     thread,
 };
 
-use crate::{decode, DecodeError, DecodeLimits, DecodedImage, ImageFormat};
+use crate::{DecodeError, DecodeLimits, DecodedImage, ImageFormat, decode};
 
 /// At most one request may wait while the worker processes another request.
 pub const DECODE_QUEUE_CAPACITY: usize = 1;
@@ -101,7 +101,7 @@ fn worker_loop(receiver: Receiver<DecodeRequest>) {
 
 #[cfg(test)]
 mod tests {
-    use super::{DecodeWorker, DecodeWorkerError, DECODE_QUEUE_CAPACITY};
+    use super::{DECODE_QUEUE_CAPACITY, DecodeWorker, DecodeWorkerError};
     use crate::{DecodeLimits, ImageFormat};
 
     #[test]
@@ -126,12 +126,15 @@ mod tests {
     fn decodes_on_the_worker_and_returns_the_result() {
         let worker = DecodeWorker::new().unwrap();
         let result = worker
-            .try_submit(ImageFormat::Jpeg, vec![0xFF, 0xD8, 0xFF], DecodeLimits::default())
+            .try_submit(
+                ImageFormat::Jpeg,
+                vec![0xFF, 0xD8, 0xFF],
+                DecodeLimits::default(),
+            )
             .unwrap()
             .recv()
             .unwrap();
 
         assert_eq!(result.unwrap_err(), crate::DecodeError::InvalidImage);
     }
-
 }

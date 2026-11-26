@@ -7,8 +7,7 @@
 
 use std::{
     error::Error,
-    fmt,
-    fs,
+    fmt, fs,
     path::{Component, Path},
 };
 
@@ -86,11 +85,9 @@ pub(crate) fn load_desktop_icon_snapshot(
         .and_then(|pixels| pixels.checked_mul(4))
         .ok_or(DesktopIconAssetLoadError::InvalidRelativePath)?;
 
-    let canonical_root =
-        fs::canonicalize(asset_root).map_err(DesktopIconAssetLoadError::Io)?;
+    let canonical_root = fs::canonicalize(asset_root).map_err(DesktopIconAssetLoadError::Io)?;
     let candidate = canonical_root.join(relative_path);
-    let canonical_asset =
-        fs::canonicalize(candidate).map_err(DesktopIconAssetLoadError::Io)?;
+    let canonical_asset = fs::canonicalize(candidate).map_err(DesktopIconAssetLoadError::Io)?;
     if !canonical_asset.starts_with(&canonical_root) {
         return Err(DesktopIconAssetLoadError::AssetOutsideRoot);
     }

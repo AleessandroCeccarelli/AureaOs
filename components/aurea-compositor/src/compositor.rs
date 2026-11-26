@@ -8,14 +8,17 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use aurea_desktop_api::{
-    desktop::DesktopManager as DesktopItemsManager,
-    desktop_interaction::DesktopInteractionSender,
+    desktop::DesktopManager as DesktopItemsManager, desktop_interaction::DesktopInteractionSender,
     input::InputDeviceProvider,
 };
 
 use smithay::{
     backend::input::Keycode,
-    input::{Seat, SeatHandler, SeatState, pointer::{CursorImageStatus, Focus}, touch::TouchHandle},
+    input::{
+        Seat, SeatHandler, SeatState,
+        pointer::{CursorImageStatus, Focus},
+        touch::TouchHandle,
+    },
     output::Output,
     reexports::wayland_server::{
         DisplayHandle,
@@ -39,10 +42,10 @@ use crate::{
         pointer_settings::PointerSettings,
         pointer_shake::PointerShakeManager,
         pointing::{
-            AbsolutePointerOutputMap, PointerManager, PointingDeviceService, TabletCalibrationMap, TabletOutputMap, TabletProfileStore,
-            TabletToolRegistry,
-            TouchscreenCalibration, TouchscreenCalibrationError, TouchscreenCalibrationMap,
-            TouchscreenOutputMap, TouchscreenSlotMap,
+            AbsolutePointerOutputMap, PointerManager, PointingDeviceService, TabletCalibrationMap,
+            TabletOutputMap, TabletProfileStore, TabletToolRegistry, TouchscreenCalibration,
+            TouchscreenCalibrationError, TouchscreenCalibrationMap, TouchscreenOutputMap,
+            TouchscreenSlotMap,
         },
     },
     output::{OutputId, manager::OutputManager},
@@ -154,9 +157,8 @@ impl SeatHandler for AureaCompositor {
     fn cursor_image(&mut self, _seat: &Seat<Self>, image: CursorImageStatus) {
         self.cursor_image = image;
         if matches!(&self.cursor_image, CursorImageStatus::Named(_)) {
-            self.cursor_asset_warmup_until = Some(
-                std::time::Instant::now() + std::time::Duration::from_secs(3),
-            );
+            self.cursor_asset_warmup_until =
+                Some(std::time::Instant::now() + std::time::Duration::from_secs(3));
         }
         self.request_all_output_frames();
     }
@@ -283,9 +285,7 @@ impl AureaCompositor {
         seat_resource: &smithay::reexports::wayland_server::protocol::wl_seat::WlSeat,
         serial: smithay::utils::Serial,
     ) -> Result<(), smithay::desktop::PopupGrabError> {
-        use smithay::desktop::{
-            PopupKeyboardGrab, PopupPointerGrab, find_popup_root_surface,
-        };
+        use smithay::desktop::{PopupKeyboardGrab, PopupPointerGrab, find_popup_root_surface};
 
         let Some(seat) = Seat::<Self>::from_resource(seat_resource) else {
             return Err(smithay::desktop::PopupGrabError::InvalidGrab);
@@ -325,9 +325,8 @@ impl AureaCompositor {
     /// Keeping frames scheduled here lets the asynchronous Xcursor worker and
     /// Vulkan upload finish even when the pointer is never moved after boot.
     pub(crate) fn begin_cursor_asset_warmup(&mut self) {
-        self.cursor_asset_warmup_until = Some(
-            std::time::Instant::now() + std::time::Duration::from_secs(3),
-        );
+        self.cursor_asset_warmup_until =
+            Some(std::time::Instant::now() + std::time::Duration::from_secs(3));
         self.request_all_output_frames();
     }
 
@@ -335,7 +334,9 @@ impl AureaCompositor {
     pub fn cursor_animation_active(&self) -> bool {
         let now = std::time::Instant::now();
         let locate_active = self.cursor_locate_animation.is_active(now);
-        let cursor_warmup = self.cursor_asset_warmup_until.is_some_and(|deadline| now < deadline);
+        let cursor_warmup = self
+            .cursor_asset_warmup_until
+            .is_some_and(|deadline| now < deadline);
         let named_cursor_animated = matches!(
             &self.cursor_image,
             CursorImageStatus::Named(icon)
@@ -430,9 +431,21 @@ impl AureaCompositor {
         output: OutputId,
     ) -> bool {
         use aurea_desktop_api::input::{InputDeviceProvider, StandardInputCapability};
-        if !self.pointer_manager.devices().device(device).is_some_and(|descriptor| {
-            descriptor.capabilities.supports(StandardInputCapability::PointerMotion)
-        }) || !self.output_manager.registry().get(output).is_some_and(|display| display.is_enabled()) {
+        if !self
+            .pointer_manager
+            .devices()
+            .device(device)
+            .is_some_and(|descriptor| {
+                descriptor
+                    .capabilities
+                    .supports(StandardInputCapability::PointerMotion)
+            })
+            || !self
+                .output_manager
+                .registry()
+                .get(output)
+                .is_some_and(|display| display.is_enabled())
+        {
             return false;
         }
         self.absolute_pointer_outputs.assign(device, output);
@@ -452,7 +465,10 @@ impl AureaCompositor {
         &self,
         device: aurea_desktop_api::input::InputDeviceId,
     ) -> Option<OutputId> {
-        let enabled = self.output_manager.registry().iter()
+        let enabled = self
+            .output_manager
+            .registry()
+            .iter()
             .filter(|output| output.is_enabled())
             .map(|output| output.id());
         self.absolute_pointer_outputs.resolve(device, enabled)
@@ -461,7 +477,8 @@ impl AureaCompositor {
     /// Initializes the Wayland touch capability when a touchscreen is present.
     pub fn sync_touchscreen_capability(&mut self) {
         let connected = self
-            .pointer_manager.devices()
+            .pointer_manager
+            .devices()
             .has_kind(aurea_desktop_api::input::InputDeviceKind::Touchscreen);
 
         if connected && self.touch.is_none() {
@@ -481,7 +498,8 @@ impl AureaCompositor {
         output: OutputId,
     ) -> bool {
         if !self
-            .pointer_manager.devices()
+            .pointer_manager
+            .devices()
             .device(device)
             .is_some_and(|descriptor| {
                 descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchscreen
@@ -508,7 +526,8 @@ impl AureaCompositor {
         coefficients: [f64; 6],
     ) -> Result<(), TouchscreenCalibrationError> {
         if !self
-            .pointer_manager.devices()
+            .pointer_manager
+            .devices()
             .device(device)
             .is_some_and(|descriptor| {
                 descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Touchscreen

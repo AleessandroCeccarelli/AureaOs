@@ -11,8 +11,8 @@ use smithay::utils::Transform;
 use crate::{
     desktop::DesktopItemsSnapshot,
     render::geometry::{
-        SurfaceGeometry, SurfaceScissor, surface_geometry,
-        surface_geometry_with_fractional_scale, transform_geometry_for_output,
+        SurfaceGeometry, SurfaceScissor, surface_geometry, surface_geometry_with_fractional_scale,
+        transform_geometry_for_output,
     },
     renderer::RenderTarget,
 };
@@ -116,9 +116,8 @@ mod tests {
 
     #[test]
     fn unselected_item_geometry_does_not_mark_selection() {
-        let snapshot = DesktopItemsSnapshot::capture(
-            &aurea_desktop_api::desktop::DesktopManager::default(),
-        );
+        let snapshot =
+            DesktopItemsSnapshot::capture(&aurea_desktop_api::desktop::DesktopManager::default());
 
         let geometries = desktop_item_geometries(&snapshot, &target((0, 0), 1));
         assert_eq!(geometries.len(), 1);
@@ -129,10 +128,12 @@ mod tests {
     fn positions_are_translated_into_each_outputs_local_space() {
         let mut manager = aurea_desktop_api::desktop::DesktopManager::default();
         let trash = manager.items()[0].id().clone();
-        manager.set_item_position(
-            &trash,
-            aurea_desktop_api::desktop::DesktopPosition::new(1960, 40),
-        ).unwrap();
+        manager
+            .set_item_position(
+                &trash,
+                aurea_desktop_api::desktop::DesktopPosition::new(1960, 40),
+            )
+            .unwrap();
         let snapshot = DesktopItemsSnapshot::capture(&manager);
 
         let geometries = desktop_item_geometries(&snapshot, &target((1920, 0), 1));
@@ -144,32 +145,37 @@ mod tests {
 
     #[test]
     fn item_outside_an_output_is_not_emitted_for_that_output() {
-        let snapshot = DesktopItemsSnapshot::capture(
-            &aurea_desktop_api::desktop::DesktopManager::default(),
-        );
-        assert!(desktop_item_geometries(&snapshot, &target((1920, 0), 1))
-            .is_empty());
+        let snapshot =
+            DesktopItemsSnapshot::capture(&aurea_desktop_api::desktop::DesktopManager::default());
+        assert!(desktop_item_geometries(&snapshot, &target((1920, 0), 1)).is_empty());
     }
 
     #[test]
     fn icon_geometry_uses_integer_output_scale() {
-        let snapshot = DesktopItemsSnapshot::capture(
-            &aurea_desktop_api::desktop::DesktopManager::default(),
-        );
+        let snapshot =
+            DesktopItemsSnapshot::capture(&aurea_desktop_api::desktop::DesktopManager::default());
         let geometries = desktop_item_geometries(&snapshot, &target((0, 0), 2));
         assert_eq!(geometries.len(), 1);
-        assert_eq!(geometries[0].geometry.width(), DESKTOP_ICON_LOGICAL_SIZE * 2);
-        assert_eq!(geometries[0].geometry.height(), DESKTOP_ICON_LOGICAL_SIZE * 2);
+        assert_eq!(
+            geometries[0].geometry.width(),
+            DESKTOP_ICON_LOGICAL_SIZE * 2
+        );
+        assert_eq!(
+            geometries[0].geometry.height(),
+            DESKTOP_ICON_LOGICAL_SIZE * 2
+        );
     }
 
     #[test]
     fn partially_visible_icon_is_clipped_to_the_output() {
         let mut manager = aurea_desktop_api::desktop::DesktopManager::default();
         let trash = manager.items()[0].id().clone();
-        manager.set_item_position(
-            &trash,
-            aurea_desktop_api::desktop::DesktopPosition::new(-32, 12),
-        ).unwrap();
+        manager
+            .set_item_position(
+                &trash,
+                aurea_desktop_api::desktop::DesktopPosition::new(-32, 12),
+            )
+            .unwrap();
         let snapshot = DesktopItemsSnapshot::capture(&manager);
 
         let geometries = desktop_item_geometries(&snapshot, &target((0, 0), 1));

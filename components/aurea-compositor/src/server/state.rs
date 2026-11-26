@@ -12,7 +12,9 @@ use std::{
 
 use aurea_desktop_api::display::DisplayColorController;
 #[cfg(feature = "drm")]
-use aurea_desktop_api::input::{DesktopPointerBehaviorCommand, PointerSettingsCommand, TouchpadSettingsCommand};
+use aurea_desktop_api::input::{
+    DesktopPointerBehaviorCommand, PointerSettingsCommand, TouchpadSettingsCommand,
+};
 #[cfg(feature = "drm")]
 use std::sync::mpsc::Receiver;
 

@@ -144,7 +144,10 @@ impl PointerProfileStore {
             return Ok(());
         };
         let parent = path.parent().ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidInput, "pointer settings path has no parent")
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "pointer settings path has no parent",
+            )
         })?;
         fs::create_dir_all(parent)?;
 
@@ -238,8 +241,10 @@ mod tests {
         let path = test_path("roundtrip");
         let _ = fs::remove_file(&path);
         let mut first = PointerProfileStore::with_path(path.clone());
-        let profile_a = PointerSettings::new(PointerAccelerationProfile::Flat, 0.65, false).unwrap();
-        let profile_b = PointerSettings::new(PointerAccelerationProfile::Adaptive, -0.2, true).unwrap();
+        let profile_a =
+            PointerSettings::new(PointerAccelerationProfile::Flat, 0.65, false).unwrap();
+        let profile_b =
+            PointerSettings::new(PointerAccelerationProfile::Adaptive, -0.2, true).unwrap();
 
         first.set("physical-a".into(), profile_a).unwrap();
         first.set("physical-b".into(), profile_b).unwrap();
@@ -259,9 +264,11 @@ mod tests {
             let path = test_path(suffix);
             fs::write(&path, original).unwrap();
             let mut store = PointerProfileStore::with_path(path.clone());
-            assert!(store
-                .set("physical-a".into(), PointerSettings::default())
-                .is_err());
+            assert!(
+                store
+                    .set("physical-a".into(), PointerSettings::default())
+                    .is_err()
+            );
             assert_eq!(store.get("physical-a"), None);
             assert_eq!(fs::read_to_string(&path).unwrap(), original);
             let _ = fs::remove_file(path);
@@ -271,12 +278,15 @@ mod tests {
     #[test]
     fn invalid_speed_in_existing_profile_is_rejected_without_overwrite() {
         let path = test_path("invalid-speed");
-        let original = "[devices.physical-a]\nprofile = \"flat\"\nspeed = 9.0\nshake_to_locate = true\n";
+        let original =
+            "[devices.physical-a]\nprofile = \"flat\"\nspeed = 9.0\nshake_to_locate = true\n";
         fs::write(&path, original).unwrap();
         let mut store = PointerProfileStore::with_path(path.clone());
-        assert!(store
-            .set("physical-a".into(), PointerSettings::default())
-            .is_err());
+        assert!(
+            store
+                .set("physical-a".into(), PointerSettings::default())
+                .is_err()
+        );
         assert_eq!(fs::read_to_string(&path).unwrap(), original);
         let _ = fs::remove_file(path);
     }

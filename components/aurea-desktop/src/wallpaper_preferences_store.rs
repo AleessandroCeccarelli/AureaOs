@@ -25,14 +25,18 @@ impl WallpaperPreferencesStore {
             _ => {
                 let home = std::env::var_os("HOME")
                     .filter(|value| !value.is_empty())
-                    .ok_or_else(|| io::Error::new(
-                        io::ErrorKind::NotFound,
-                        "neither XDG_CONFIG_HOME nor HOME is set",
-                    ))?;
+                    .ok_or_else(|| {
+                        io::Error::new(
+                            io::ErrorKind::NotFound,
+                            "neither XDG_CONFIG_HOME nor HOME is set",
+                        )
+                    })?;
                 PathBuf::from(home).join(".config")
             }
         };
-        Ok(Self { path: config_home.join("aureaos").join("wallpaper.conf") })
+        Ok(Self {
+            path: config_home.join("aureaos").join("wallpaper.conf"),
+        })
     }
 
     /// Loads preferences; a missing file means default wallpaper and Fill mode.
@@ -44,20 +48,26 @@ impl WallpaperPreferencesStore {
             }
             Err(error) => return Err(error),
         };
-        parse_preferences(&content).ok_or_else(|| io::Error::new(
-            io::ErrorKind::InvalidData,
-            "invalid wallpaper configuration",
-        ))
+        parse_preferences(&content).ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "invalid wallpaper configuration",
+            )
+        })
     }
 
     /// Persists preferences with a same-directory atomic rename and mode 0600.
     pub fn save(&self, preferences: &WallpaperPreferences) -> io::Result<()> {
-        let parent = self.path.parent().ok_or_else(|| io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "wallpaper config path has no parent",
-        ))?;
+        let parent = self.path.parent().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "wallpaper config path has no parent",
+            )
+        })?;
         fs::create_dir_all(parent)?;
-        let temporary = self.path.with_extension(format!("conf.{}.tmp", std::process::id()));
+        let temporary = self
+            .path
+            .with_extension(format!("conf.{}.tmp", std::process::id()));
         let mut options = OpenOptions::new();
         options.write(true).create_new(true);
         #[cfg(unix)]
@@ -74,8 +84,8 @@ impl WallpaperPreferencesStore {
             WallpaperScaleMode::Center => "center",
         };
         let escaped_path = path.replace('\\', "\\\\").replace('\n', "\\n");
-        let result = writeln!(file, "path={escaped_path}\nmode={mode}")
-            .and_then(|()| file.sync_all());
+        let result =
+            writeln!(file, "path={escaped_path}\nmode={mode}").and_then(|()| file.sync_all());
         if let Err(error) = result {
             let _ = fs::remove_file(&temporary);
             return Err(error);
@@ -120,12 +130,16 @@ fn parse_preferences(content: &str) -> Option<WallpaperPreferences> {
 #[cfg(test)]
 mod tests {
     use super::parse_preferences;
-    use aurea_desktop_api::desktop::{WallpaperScaleMode};
+    use aurea_desktop_api::desktop::WallpaperScaleMode;
 
     #[test]
     fn round_trip_parser_accepts_paths_and_modes() {
-        let preferences = parse_preferences("path=/home/user/My\\nWallpapers/image.jpg\nmode=fit\n").unwrap();
-        assert_eq!(preferences.image_path(), Some("/home/user/My\nWallpapers/image.jpg"));
+        let preferences =
+            parse_preferences("path=/home/user/My\\nWallpapers/image.jpg\nmode=fit\n").unwrap();
+        assert_eq!(
+            preferences.image_path(),
+            Some("/home/user/My\nWallpapers/image.jpg")
+        );
         assert_eq!(preferences.scale_mode(), WallpaperScaleMode::Fit);
     }
 

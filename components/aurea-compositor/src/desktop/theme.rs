@@ -33,6 +33,9 @@ mod tests {
     fn light_and_dark_tokens_are_opaque() {
         assert_eq!(DesktopTheme::Light.desktop_color()[3], 1.0);
         assert_eq!(DesktopTheme::Dark.desktop_color()[3], 1.0);
-        assert_ne!(DesktopTheme::Light.desktop_color(), DesktopTheme::Dark.desktop_color());
+        assert_ne!(
+            DesktopTheme::Light.desktop_color(),
+            DesktopTheme::Dark.desktop_color()
+        );
     }
 }

@@ -164,9 +164,8 @@ impl<'a> RenderScene<'a> {
             CursorImageStatus::Named(icon) => {
                 self.native_cursor_location = Some(cursor::default_cursor_origin(pointer_location));
                 self.native_cursor_pointer_location = Some(pointer_location);
-                self.native_cursor_asset = Some(
-                    crate::input::cursor_theme::asset_name_for_icon(icon.name()),
-                );
+                self.native_cursor_asset =
+                    Some(crate::input::cursor_theme::asset_name_for_icon(icon.name()));
             }
             CursorImageStatus::Surface(surface) => {
                 if !surface.alive() {
@@ -311,7 +310,11 @@ impl<'a> RenderScene<'a> {
                 Kind::Unspecified,
             ));
 
-            for (popup, popup_offset) in PopupManager::popups_for_surface(root).collect::<Vec<_>>().into_iter().rev() {
+            for (popup, popup_offset) in PopupManager::popups_for_surface(root)
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+            {
                 let popup_origin = toplevel.location + popup_offset - popup.geometry().loc;
                 let popup_location: Point<i32, Physical> = Point::<f64, Logical>::from((
                     f64::from(popup_origin.x) - f64::from(output_origin.0),
@@ -410,8 +413,8 @@ mod cursor_scene_tests {
         let pointer = Point::<f64, Logical>::from((640.0, 360.0));
         let status = CursorImageStatus::default_named();
 
-        let scene = RenderScene::from_window_manager(&windows)
-            .with_cursor(&status, Some(pointer), 1.0);
+        let scene =
+            RenderScene::from_window_manager(&windows).with_cursor(&status, Some(pointer), 1.0);
 
         assert_eq!(
             scene.native_cursor_location(),
@@ -425,12 +428,10 @@ mod cursor_scene_tests {
     fn named_cursor_selection_is_carried_into_the_render_scene() {
         let windows = WindowManager::new();
         let pointer = Point::<f64, Logical>::from((640.0, 360.0));
-        let status = CursorImageStatus::Named(
-            smithay::input::pointer::CursorIcon::Help,
-        );
+        let status = CursorImageStatus::Named(smithay::input::pointer::CursorIcon::Help);
 
-        let scene = RenderScene::from_window_manager(&windows)
-            .with_cursor(&status, Some(pointer), 1.0);
+        let scene =
+            RenderScene::from_window_manager(&windows).with_cursor(&status, Some(pointer), 1.0);
 
         assert_eq!(scene.native_cursor_asset(), Some("help"));
     }
@@ -440,8 +441,7 @@ mod cursor_scene_tests {
         let windows = WindowManager::new();
         let status = CursorImageStatus::default_named();
 
-        let scene = RenderScene::from_window_manager(&windows)
-            .with_cursor(&status, None, 1.0);
+        let scene = RenderScene::from_window_manager(&windows).with_cursor(&status, None, 1.0);
 
         assert_eq!(scene.native_cursor_location(), None);
     }
@@ -451,8 +451,11 @@ mod cursor_scene_tests {
         let windows = WindowManager::new();
         let pointer = Point::<f64, Logical>::from((640.0, 360.0));
 
-        let scene = RenderScene::from_window_manager(&windows)
-            .with_cursor(&CursorImageStatus::Hidden, Some(pointer), 1.0);
+        let scene = RenderScene::from_window_manager(&windows).with_cursor(
+            &CursorImageStatus::Hidden,
+            Some(pointer),
+            1.0,
+        );
 
         assert_eq!(scene.native_cursor_location(), None);
         assert_eq!(scene.native_cursor_pointer_location(), None);

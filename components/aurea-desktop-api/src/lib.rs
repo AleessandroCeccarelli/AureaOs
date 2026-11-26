@@ -10,8 +10,8 @@
 
 pub mod appearance;
 pub mod calendar;
-pub mod desktop_interaction;
 pub mod desktop;
+pub mod desktop_interaction;
 pub mod display;
 pub mod hardware_monitor;
 pub mod input;

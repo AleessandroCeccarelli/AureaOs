@@ -154,7 +154,10 @@ mod tests {
         let pen = tool(20);
 
         registry.activate(first, pen.clone(), 100);
-        assert_eq!(registry.activate(second, pen.clone(), 200), Some((first, 100)));
+        assert_eq!(
+            registry.activate(second, pen.clone(), 200),
+            Some((first, 100))
+        );
         assert!(!registry.is_active_on(first, &pen));
         assert!(registry.is_active_on(second, &pen));
         assert!(registry.is_owned_by(first, &pen));

@@ -42,8 +42,8 @@ use cursor_trail_geometry::cursor_trail_draws;
 use super::{
     VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanDrawPass,
     VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanLogicalDevice,
-    VulkanReadbackBuffer, VulkanSurfacePipelineCache, VulkanTextureBinding,
-    VulkanNativeCursorTextureError,
+    VulkanNativeCursorTextureError, VulkanReadbackBuffer, VulkanSurfacePipelineCache,
+    VulkanTextureBinding,
 };
 
 pub(super) const MAX_COMPOSITED_SURFACES: usize = 128;
@@ -198,9 +198,12 @@ pub(super) fn render_frame(
     let active_surface_ids = scene.surface_ids();
     let snapshots = scene.shm_snapshots();
     let visible = visible_surfaces(snapshots, target)?;
-    let cursor_needed = scene.native_cursor_asset().is_some()
-        && scene.native_cursor_pointer_location().is_some();
-    let wallpaper_asset_id = scene.desktop().wallpaper().map(|wallpaper| wallpaper.asset().id());
+    let cursor_needed =
+        scene.native_cursor_asset().is_some() && scene.native_cursor_pointer_location().is_some();
+    let wallpaper_asset_id = scene
+        .desktop()
+        .wallpaper()
+        .map(|wallpaper| wallpaper.asset().id());
     if wallpaper_asset_id.is_none() {
         surface_cache.clear_wallpaper_texture();
     }
@@ -223,7 +226,9 @@ pub(super) fn render_frame(
         && !cursor_needed
         && context_menu_draw.is_none()
         && wallpaper_asset_id.is_none_or(|asset_id| {
-            surface_cache.wallpaper_texture_for_asset(asset_id).is_none()
+            surface_cache
+                .wallpaper_texture_for_asset(asset_id)
+                .is_none()
         })
     {
         surface_cache
@@ -357,11 +362,12 @@ pub(super) fn render_frame(
             .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
     }
     let wallpaper_ready = wallpaper_asset_id.is_some_and(|asset_id| {
-        surface_cache.wallpaper_texture_for_asset(asset_id).is_some()
+        surface_cache
+            .wallpaper_texture_for_asset(asset_id)
+            .is_some()
     });
-    let context_menu_ready = context_menu_key.is_some_and(|key| {
-        surface_cache.desktop_icon_texture(key).is_some()
-    });
+    let context_menu_ready =
+        context_menu_key.is_some_and(|key| surface_cache.desktop_icon_texture(key).is_some());
     if wallpaper_ready {
         surface_cache
             .ensure_wallpaper_pipeline(composition_view.format())
@@ -418,10 +424,10 @@ pub(super) fn render_frame(
         let texture = wallpaper_asset_id
             .and_then(|asset_id| surface_cache.wallpaper_texture_for_asset(asset_id))
             .ok_or_else(|| {
-            VulkanSurfaceCompositionError::Texture(
-                "The selected wallpaper texture was not ready after upload polling".to_owned(),
-            )
-        })?;
+                VulkanSurfaceCompositionError::Texture(
+                    "The selected wallpaper texture was not ready after upload polling".to_owned(),
+                )
+            })?;
         Some(
             VulkanTextureBinding::new_in_pool(
                 device,
@@ -504,14 +510,10 @@ pub(super) fn render_frame(
     )
     .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
 
-    if let (Some(texture), Some(binding)) =
-        (
-            wallpaper_asset_id.and_then(|asset_id| {
-                surface_cache.wallpaper_texture_for_asset(asset_id)
-            }),
-            wallpaper_binding.as_ref(),
-        )
-    {
+    if let (Some(texture), Some(binding)) = (
+        wallpaper_asset_id.and_then(|asset_id| surface_cache.wallpaper_texture_for_asset(asset_id)),
+        wallpaper_binding.as_ref(),
+    ) {
         let layout = WallpaperLayout::calculate(
             texture.width(),
             texture.height(),
@@ -683,9 +685,11 @@ pub(super) fn render_frame(
         if !cursor_trail.is_empty() {
             let trail_pipeline = surface_cache
                 .cursor_trail_pipeline(composition_view.format())
-                .ok_or_else(|| VulkanSurfaceCompositionError::Pipeline(
-                    "The cursor trail pipeline was not cached".to_owned(),
-                ))?;
+                .ok_or_else(|| {
+                    VulkanSurfaceCompositionError::Pipeline(
+                        "The cursor trail pipeline was not cached".to_owned(),
+                    )
+                })?;
             for impression in &cursor_trail {
                 let mut push_constants = [0_u8; 8];
                 push_constants[0..4].copy_from_slice(&impression.texture_transform.to_ne_bytes());
@@ -808,8 +812,7 @@ mod context_menu_geometry_tests {
 
     fn target(origin: (i32, i32), scale: u32) -> RenderTarget {
         let mode = OutputMode::new(1920, 1080, 60_000).expect("valid mode");
-        let output = DisplayOutput::new(1, "DP-1", vec![mode], mode, scale)
-            .expect("valid output");
+        let output = DisplayOutput::new(1, "DP-1", vec![mode], mode, scale).expect("valid output");
         RenderTarget::from_output(&output, origin).expect("enabled output target")
     }
 

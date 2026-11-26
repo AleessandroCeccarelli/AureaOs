@@ -9,13 +9,13 @@
 mod decoder;
 mod error;
 mod heif;
-mod limits;
 mod jpeg;
+mod limits;
 mod raster;
 mod worker;
 
 pub use decoder::{DecodedImage, ImageFormat, PixelFormat, decode};
 pub use error::DecodeError;
 pub use heif::detect_container_format as detect_heif_format;
-pub use limits::{DecodeLimits, DEFAULT_DECODE_LIMITS};
-pub use worker::{DecodeWorker, DecodeWorkerError, DECODE_QUEUE_CAPACITY};
+pub use limits::{DEFAULT_DECODE_LIMITS, DecodeLimits};
+pub use worker::{DECODE_QUEUE_CAPACITY, DecodeWorker, DecodeWorkerError};
