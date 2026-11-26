@@ -1926,7 +1926,7 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - La Shell possiede il controller e offre il metodo `set_pointer_settings` per inviare un profilo a uno specifico mouse connesso.
 - Il canale attraversa l'avvio dell'applicazione, la factory desktop, la factory del compositor e il server Wayland fino al ciclo Calloop.
 - Il compositor verifica che il dispositivo esista e sia classificato come mouse; rifiuta dispositivi sconosciuti o di altro tipo.
-- Il profilo viene aggiornato nello stato per-device del compositor. L'adattatore libinput applica velocità e profilo al successivo evento di movimento, senza conservare handle del mouse che potrebbero diventare obsoleti dopo una disconnessione.
+- Il profilo viene aggiornato nello stato per-device del compositor e applicato immediatamente all'handle libinput vivo del mouse. Gli handle vengono rimossi alla disconnessione o riclassificazione; l'accelerazione viene ripristinata alla riattivazione della sessione.
 
 ### Scelte mantenute
 
