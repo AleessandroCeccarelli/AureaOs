@@ -126,6 +126,27 @@ refresh_inputs() {
         aurea-human-interfaces/icons/source/system/context-menu |
         tar -xf - -C "$SOURCE_DIR"
 
+    # Generate only the artwork consumed by the current compositor. Rasterize
+    # in the disposable Debian builder, then stage raw RGBA into includes.chroot
+    # so librsvg and Python never enter the target system.
+    bash "$SOURCE_DIR/tools/assets/render-context-menu.sh"
+    ASSET_SOURCE="$SOURCE_DIR/aurea-human-interfaces/icons/generated/context-menu"
+    ASSET_INCLUDE="$CONFIG_DIR/includes.chroot/usr/share/aureaos/human-interfaces/icons/generated/context-menu"
+    rm -rf -- "$ASSET_INCLUDE"
+    mkdir -p -- "$ASSET_INCLUDE"
+    for theme in light dark; do
+        asset="$ASSET_SOURCE/context-menu-$theme-256.rgba"
+        [[ -s "$asset" ]] || {
+            echo "Generated $theme context-menu artwork is missing." >&2
+            return 1
+        }
+        [[ "$(stat -c '%s' "$asset")" == 262144 ]] || {
+            echo "Generated $theme context-menu artwork has an invalid byte length." >&2
+            return 1
+        }
+        install -m 0644 "$asset" "$ASSET_INCLUDE/"
+    done
+
     [[ -s "$SOURCE_DIR/Cargo.toml" && -s "$SOURCE_DIR/Cargo.lock" ]] || {
         echo "The staged AureaOS source snapshot is incomplete." >&2
         return 1
