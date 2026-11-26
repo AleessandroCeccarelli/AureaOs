@@ -115,7 +115,7 @@ RESUME=1 bash tools/iso/build-live-iso-podman.sh
 
 Il percorso predefinito del workspace contiene l'ID del commit sorgente: un nuovo commit riceve quindi un workspace nuovo, evitando di riutilizzare per errore un chroot completato che contiene un vecchio binario `aurea-desktop`. Se `BUILD_PARENT` è stato personalizzato, va passato esattamente lo stesso valore anche durante la ripresa. Non si avvia una seconda build sullo stesso workspace e non si cancella una build fallita prima di averne esaminato log e causa.
 
-Lo script interno prepara il sorgente tramite `git archive HEAD`. Quindi compila il commit locale attualmente selezionato, non esegue automaticamente un fetch di GitHub. La sincronizzazione Fedora e i controlli della fase precedente garantiscono che quel commit locale corrisponda allo stato `main` che intendiamo verificare. Durante la build lo script non deve cambiare branch né eseguire pull silenziosi.
+Lo script interno prepara il sorgente tramite `git archive HEAD`. Ora rifiuta working tree modificati e registra il commit completo in `.aureaos-source-commit` dentro ogni workspace. La ripresa è consentita soltanto se il marcatore coincide con il commit corrente; i workspace legacy senza marcatore vengono rifiutati. Compila quindi il commit locale attualmente selezionato, non esegue automaticamente un fetch di GitHub. La sincronizzazione Fedora e i controlli della fase precedente garantiscono che quel commit locale corrisponda allo stato `main` che intendiamo verificare. Durante la build lo script non deve cambiare branch né eseguire pull silenziosi.
 
 ### Fase E — Validazione automatica dell'immagine
 
@@ -123,7 +123,7 @@ Nel repository sono presenti un preflight del chroot, un generatore UKI/ISO e un
 
 - `tools/iso/tests/validate-chroot-boot.sh` — controlla nel chroot i pacchetti di boot richiesti e l'integrazione initramfs di live-boot, rigenera l'initramfs e verifica la presenza di `scripts/live`.
 - `tools/iso/scripts/build-systemd-boot-live-iso.sh` — genera una UKI dalla coppia kernel/initramfs Debian esatta, crea un'immagine EFI FAT con systemd-boot e le voci UKI, rimuove il payload GRUB intermedio e rimasterizza la ISO UEFI-only.
-- `tools/iso/tests/validate-live-image.sh` — controlla immagine EFI, percorso fallback systemd-boot, voce di avvio, sezioni UKI e parametro `boot=live`, filesystem Debian Live e catalogo El Torito EFI.
+- `tools/iso/tests/validate-live-image.sh` — controlla immagine EFI, percorso fallback systemd-boot, voce di avvio, sezioni UKI e parametro `boot=live`, oltre al vero rootfs SquashFS: binario desktop, launcher, unit systemd, definizione PAM, link di abilitazione e 26 asset RGBA8 con dimensioni esatte; verifica anche il catalogo El Torito EFI.
 
 Il coordinatore installa esplicitamente il validatore boot del chroot in `/usr/local/libexec/aureaos/` prima dell'esecuzione di live-build. L'hook lo richiama dopo l'installazione e la pulizia dei pacchetti. Il coordinatore genera poi UKI/immagine EFI e valida sia il tree binary sia la ISO copiata.
 
@@ -133,7 +133,7 @@ I livelli di validazione devono coprire almeno:
 2. Presenza ed esecuzione dell'hook initramfs di live-boot e dello script di avvio anticipato.
 3. Generazione corretta dell'initramfs per il kernel installato.
 4. Presenza di `scripts/live` in ogni initramfs selezionato.
-5. Immagine filesystem Live non vuota in `/live/filesystem.squashfs`.
+5. Immagine filesystem Live non vuota in `/live/filesystem.squashfs`, con binario desktop e integrazione della sessione realmente presenti al suo interno.
 6. Immagine EFI FAT con `EFI/BOOT/BOOTX64.EFI`, systemd-boot e configurazione loader.
 7. Una o più UKI con kernel, initramfs, metadati os-release AureaOS e parametro `boot=live` incorporato.
 8. Voci systemd-boot corrispondenti e voce predefinita valida.
@@ -201,7 +201,7 @@ Il manifest deve contenere almeno:
 
 Il repository dispone già di una base funzionante, ma ISO Factory non è ancora un sistema completo di gestione delle release.
 
-### Già presente nel repository al 23 novembre 2026
+### Già presente nel repository al 26 novembre 2026
 
 - Configurazione live-build Debian Trixie amd64.
 - Wrapper Podman con container Debian Trixie.
