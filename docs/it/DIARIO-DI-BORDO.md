@@ -1987,3 +1987,12 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Il vecchio panic `/scripts/live` resta una diagnosi aperta: il nuovo preflight controlla la presenza dello script nell'initramfs e il validatore finale controlla la UKI, ma soltanto un avvio reale potrà dimostrare che la catena è corretta.
 - **Non verificato:** nessuna build ISO, verifica di sintassi Bash, invocazione ukify, ispezione immagine FAT, report El Torito, boot QEMU/OVMF o avvio fisico è stato eseguito. Nessun comando Cargo è stato eseguito.
 - Il prossimo ciclo di verifica deve essere raggruppato su Fedora: sincronizzazione `main`, `cargo fmt`, check/test workspace, generazione ISO, controlli automatici e infine avvio tramite la chiavetta Ventoy già esistente.
+
+
+### 26 novembre 2026 — Correzione staging preflight ISO Live
+
+- Una revisione aggiuntiva ha individuato un errore nel coordinatore: l'hook chroot eseguiva `/usr/local/libexec/aureaos/validate-chroot-boot.sh`, ma la directory include veniva creata senza copiare al suo interno lo script di validazione. Una build nuova avrebbe quindi potuto fallire al preflight anche se il file esisteva nel repository.
+- Aggiornato `build-live-iso.sh` per copiare il validatore nel chroot con permessi eseguibili prima dell'esecuzione di live-build.
+- Rafforzata la validazione UKI finale: devono essere presenti le sezioni PE `.linux`, `.initrd`, `.osrel`, `.cmdline`, il parametro incorporato `boot=live` e l'identità AureaOS `ID=aureaos`.
+- Corretta la documentazione ISO Factory EN/IT: il supporto Live finale contiene il filesystem squashfs e la UKI, non kernel/initramfs separati; l'unico percorso di avvio previsto è UEFI.
+- Nessuna build, verifica sintassi shell, invocazione ukify, generazione ISO, test QEMU/OVMF o prova hardware è stata eseguita. Correzione sorgente in attesa della verifica raggruppata su Fedora.
