@@ -38,7 +38,7 @@ use crate::{
         pointer_settings::PointerSettings,
         pointer_shake::PointerShakeManager,
         pointing::{
-            AbsolutePointerOutputMap, PointerManager, PointingDeviceService, TabletCalibrationMap, TabletOutputMap,
+            AbsolutePointerOutputMap, PointerManager, PointingDeviceService, TabletCalibrationMap, TabletOutputMap, TabletProfileStore,
             TabletToolRegistry,
             TouchscreenCalibration, TouchscreenCalibrationError, TouchscreenCalibrationMap,
             TouchscreenOutputMap, TouchscreenSlotMap,
@@ -118,6 +118,7 @@ pub struct AureaCompositor {
     /// Physical tablet ownership and active-source arbitration for each pen/tool.
     tablet_tools: TabletToolRegistry,
     tablet_calibrations: TabletCalibrationMap,
+    tablet_profiles: TabletProfileStore,
     touchscreen_calibrations: TouchscreenCalibrationMap,
     touchscreen_slots: TouchscreenSlotMap,
     interaction_engine: InteractionEngine,
@@ -196,6 +197,7 @@ impl AureaCompositor {
             tablet_outputs: TabletOutputMap::new(),
             tablet_tools: TabletToolRegistry::default(),
             tablet_calibrations: TabletCalibrationMap::default(),
+            tablet_profiles: TabletProfileStore::default(),
             touchscreen_calibrations: TouchscreenCalibrationMap::default(),
             touchscreen_slots: TouchscreenSlotMap::new(),
             interaction_engine: InteractionEngine::new(),
@@ -320,7 +322,20 @@ impl AureaCompositor {
         &mut self,
         descriptor: aurea_desktop_api::input::InputDeviceDescriptor,
     ) -> bool {
-        self.pointer_manager.connect(descriptor)
+        let device_id = descriptor.id;
+        let is_tablet = descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Tablet;
+        let persistent_id = descriptor.persistent_id.clone();
+        if !self.pointer_manager.connect(descriptor) {
+            return false;
+        }
+        if is_tablet {
+            if let Some(identity) = persistent_id {
+                if let Some(profile) = self.tablet_profiles.get(&identity) {
+                    self.tablet_calibrations.set(device_id, profile);
+                }
+            }
+        }
+        true
     }
 
     /// Clears protocol state and unregisters a disconnected pointing device.
