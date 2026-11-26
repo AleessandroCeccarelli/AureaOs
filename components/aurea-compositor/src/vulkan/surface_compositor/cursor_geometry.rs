@@ -93,9 +93,9 @@ mod tests {
     use smithay::input::pointer::CursorImageStatus;
     use smithay::utils::{Logical, Point};
 
-    fn target() -> RenderTarget {
+    fn target(scale: u32) -> RenderTarget {
         let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
-        let output = DisplayOutput::new(7, "DP-1", vec![mode], mode, 1).unwrap();
+        let output = DisplayOutput::new(7, "DP-1", vec![mode], mode, scale).unwrap();
         RenderTarget::from_output(&output, (0, 0)).unwrap()
     }
 
@@ -107,7 +107,7 @@ mod tests {
         let scene = RenderScene::from_window_manager(&windows)
             .with_cursor(&status, Some(pointer), 1.0);
 
-        let geometry = native_cursor_geometry(&scene, &target(), (32, 32), (5, 3));
+        let geometry = native_cursor_geometry(&scene, &target(1), (32, 32), (5, 3));
 
         assert!(geometry.is_some(), "default arrow must intersect its output");
         let (surface, scissor, _) = geometry.unwrap();
@@ -124,11 +124,32 @@ mod tests {
         let scene = RenderScene::from_window_manager(&windows)
             .with_cursor(&status, Some(pointer), 1.0);
 
-        let (geometry, _, _) = native_cursor_geometry(&scene, &target(), (48, 48), (24, 24))
+        let (geometry, _, _) = native_cursor_geometry(&scene, &target(1), (48, 48), (24, 24))
             .expect("cursor intersects the output");
 
         assert_eq!((geometry.x(), geometry.y()), (936, 516));
         assert_eq!((geometry.width(), geometry.height()), (48, 48));
+    }
+
+    #[test]
+    fn high_dpi_cursor_geometry_uses_physical_pixels_and_scaled_hotspot() {
+        let windows = WindowManager::new();
+        let pointer = Point::<f64, Logical>::from((480.0, 270.0));
+        let status = CursorImageStatus::default_named();
+        let scene = RenderScene::from_window_manager(&windows)
+            .with_cursor(&status, Some(pointer), 1.0);
+
+        let (geometry, scissor, _) = native_cursor_geometry(
+            &scene,
+            &target(2),
+            (64, 64),
+            (10, 6),
+        )
+        .expect("cursor intersects the high-DPI output");
+
+        assert_eq!((geometry.x(), geometry.y()), (950, 534));
+        assert_eq!((geometry.width(), geometry.height()), (64, 64));
+        assert_eq!((scissor.width, scissor.height), (64, 64));
     }
 
     #[test]
@@ -139,6 +160,6 @@ mod tests {
         let scene = RenderScene::from_window_manager(&windows)
             .with_cursor(&status, Some(pointer), 1.0);
 
-        assert!(native_cursor_geometry(&scene, &target(), (32, 32), (5, 3)).is_none());
+        assert!(native_cursor_geometry(&scene, &target(1), (32, 32), (5, 3)).is_none());
     }
 }
