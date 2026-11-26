@@ -65,6 +65,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     device: Arc<VulkanLogicalDevice>,
     pipelines: HashMap<vk::Format, VulkanGraphicsPipeline<'static>>,
     wallpaper_pipelines: HashMap<vk::Format, VulkanGraphicsPipeline<'static>>,
+    cursor_trail_pipelines: HashMap<vk::Format, VulkanGraphicsPipeline<'static>>,
     descriptor_layout: VulkanTextureDescriptorSetLayout<'static>,
     sampler: VulkanSampler<'static>,
     texture_cache: VulkanSurfaceTextureCache,
@@ -93,6 +94,7 @@ impl VulkanSurfacePipelineCache {
             device,
             pipelines: HashMap::new(),
             wallpaper_pipelines: HashMap::new(),
+            cursor_trail_pipelines: HashMap::new(),
             descriptor_layout,
             sampler,
             texture_cache,
@@ -190,6 +192,51 @@ impl VulkanSurfacePipelineCache {
     ) -> Option<&VulkanGraphicsPipeline<'static>> {
         self.wallpaper_pipelines.get(&format)
     }
+
+    /// Creates an alpha-faded cursor trail pipeline with fragment-stage opacity.
+    pub(crate) fn ensure_cursor_trail_pipeline(
+        &mut self,
+        format: vk::Format,
+    ) -> Result<(), VulkanSurfacePipelineCacheError> {
+        if self.cursor_trail_pipelines.contains_key(&format) {
+            return Ok(());
+        }
+
+        let vertex = VulkanShaderModule::from_bytes(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let fragment = VulkanShaderModule::from_bytes(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_CURSOR_TRAIL_FRAG_SPV")),
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let descriptor_layouts = [self.descriptor_layout.handle()];
+        let trail_range = [vk::PushConstantRange::default()
+            .stage_flags(vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT)
+            .offset(0)
+            .size((2 * std::mem::size_of::<u32>()) as u32)];
+        let pipeline = VulkanGraphicsPipeline::new_shared_with_descriptor_layout_handles(
+            Arc::clone(&self.device),
+            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            format,
+            &descriptor_layouts,
+            &trail_range,
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Pipeline)?;
+
+        self.cursor_trail_pipelines.insert(format, pipeline);
+        Ok(())
+    }
+
+    pub(crate) fn cursor_trail_pipeline(
+        &self,
+        format: vk::Format,
+    ) -> Option<&VulkanGraphicsPipeline<'static>> {
+        self.cursor_trail_pipelines.get(&format)
+    }
+
 
     pub(crate) fn prepare_surface_textures(
         &mut self,
