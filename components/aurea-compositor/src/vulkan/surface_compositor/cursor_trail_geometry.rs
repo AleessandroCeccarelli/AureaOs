@@ -59,3 +59,52 @@ pub(super) fn cursor_trail_draws(
         })
     }).collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        input::cursor_trail::CursorTrail,
+        output::{DisplayOutput, OutputMode},
+        window_manager::WindowManager,
+    };
+    use smithay::{input::pointer::CursorImageStatus, utils::{Logical, Point}};
+    use std::time::{Duration, Instant};
+
+    fn target() -> RenderTarget {
+        let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
+        let output = DisplayOutput::new(7, "DP-1", vec![mode], mode, 1).unwrap();
+        RenderTarget::from_output(&output, (0, 0)).unwrap()
+    }
+
+    #[test]
+    fn trail_geometry_preserves_hotspot_and_temporal_opacity() {
+        let windows = WindowManager::new();
+        let start = Instant::now();
+        let mut trail = CursorTrail::default();
+        trail.record(Point::<f64, Logical>::from((960.0, 540.0)), start);
+        let samples = trail.visible_at(start + Duration::from_millis(110));
+        let scene = RenderScene::from_window_manager(&windows)
+            .with_cursor(&CursorImageStatus::default_named(), Some(Point::from((960.0, 540.0))), 1.0)
+            .with_cursor_trail(samples);
+
+        let draws = cursor_trail_draws(&scene, &target(), (32, 32), (5, 3));
+        assert_eq!(draws.len(), 1);
+        assert!((draws[0].opacity - 0.5).abs() < 0.02);
+        assert_eq!(draws[0].scissor.extent.width, 32);
+        assert_eq!(draws[0].scissor.extent.height, 32);
+    }
+
+    #[test]
+    fn trail_impressions_outside_an_output_are_clipped_away() {
+        let windows = WindowManager::new();
+        let start = Instant::now();
+        let mut trail = CursorTrail::default();
+        trail.record(Point::<f64, Logical>::from((2200.0, 540.0)), start);
+        let scene = RenderScene::from_window_manager(&windows)
+            .with_cursor(&CursorImageStatus::default_named(), Some(Point::from((2200.0, 540.0))), 1.0)
+            .with_cursor_trail(trail.visible_at(start + Duration::from_millis(10)));
+
+        assert!(cursor_trail_draws(&scene, &target(), (32, 32), (5, 3)).is_empty());
+    }
+}
