@@ -119,13 +119,13 @@ impl AureaCompositor {
         self.request_all_output_frames();
     }
 
-    /// Routes an absolute pointer device when the desktop has exactly one
-    /// enabled output.
+    /// Routes an absolute pointer device to its assigned enabled output.
     ///
-    /// Absolute coordinates are output-local. Until AureaOS exposes an
-    /// explicit per-device output assignment, multi-output layouts are
-    /// deliberately rejected rather than guessing which monitor owns the
-    /// device. Touchscreens and tablet tools keep their dedicated paths.
+    /// Absolute coordinates are output-local. A single enabled output may be
+    /// selected automatically; multi-output layouts require an explicit
+    /// per-device assignment so the compositor never guesses which monitor
+    /// owns the device. Touchscreens and tablet tools keep their dedicated
+    /// paths.
     pub fn handle_pointer_motion_absolute<E>(
         &mut self,
         device: aurea_desktop_api::input::InputDeviceId,
