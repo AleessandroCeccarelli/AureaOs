@@ -51,16 +51,11 @@ impl AureaCompositor {
         time: u32,
     ) {
         if self.pointer_settings_for(device).shake_to_locate() {
-            if self
-                .pointer_shakes
-                .entry(device)
-                .or_default()
-                .update(unaccelerated_delta, time)
-            {
+            if self.pointer_shake.update(device, unaccelerated_delta, time) {
                 self.cursor_locate_animation.trigger();
             }
         } else {
-            self.pointer_shakes.remove(&device);
+            self.pointer_shake.remove(device);
         }
 
         let Some(pointer) = self.seat.get_pointer() else {
