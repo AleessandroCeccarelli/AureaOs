@@ -125,3 +125,45 @@ name = "left_ptr_watch"
 source = "source/dark/working.svg"
 hotspot = [8, 6]
 role = "working-background"
+
+[[cursor]]
+name = "up-arrow"
+source = "source/dark/alternate.svg"
+hotspot = [32, 20]
+role = "alternate-select"
+
+[[cursor]]
+name = "pin"
+source = "source/dark/pin.svg"
+hotspot = [32, 20]
+role = "pin"
+
+[[cursor]]
+name = "person"
+source = "source/dark/person.svg"
+hotspot = [32, 19]
+role = "person"
+
+[[cursor]]
+name = "vertical-text"
+source = "source/dark/vertical-text.svg"
+hotspot = [32, 32]
+role = "vertical-text"
+
+[[cursor]]
+name = "zoom-in"
+source = "source/dark/zoom-in.svg"
+hotspot = [26, 26]
+role = "zoom-in"
+
+[[cursor]]
+name = "zoom-out"
+source = "source/dark/zoom-out.svg"
+hotspot = [26, 26]
+role = "zoom-out"
+
+[[cursor]]
+name = "context-menu"
+source = "source/dark/context-menu.svg"
+hotspot = [8, 5]
+role = "context-menu"
