@@ -37,6 +37,7 @@ impl CompositorFactory for InitializationFailureFactory {
         _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
         _pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
         _desktop_pointer_behavior: std::sync::mpsc::Receiver<DesktopPointerBehaviorCommand>,
+        _desktop_pointer_behavior: std::sync::mpsc::Receiver<DesktopPointerBehaviorCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         *self
             .observed_thread
@@ -57,6 +58,7 @@ impl CompositorFactory for InitializationPanicFactory {
         _interactions: DesktopInteractionSender,
         _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
         _pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
+        _desktop_pointer_behavior: std::sync::mpsc::Receiver<DesktopPointerBehaviorCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         panic!("Compositor initialization test panic");
     }
@@ -90,6 +92,7 @@ impl CompositorFactory for RuntimeFailureFactory {
         _interactions: DesktopInteractionSender,
         _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
         _pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
+        _desktop_pointer_behavior: std::sync::mpsc::Receiver<DesktopPointerBehaviorCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(RuntimeFailureService {
             observed_shutdown: Arc::clone(&self.observed_shutdown),
@@ -116,6 +119,7 @@ impl CompositorFactory for RuntimePanicFactory {
         _interactions: DesktopInteractionSender,
         _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
         _pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
+        _desktop_pointer_behavior: std::sync::mpsc::Receiver<DesktopPointerBehaviorCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(RuntimePanicService))
     }
@@ -145,6 +149,7 @@ impl CompositorFactory for SuccessfulFactory {
         _interactions: DesktopInteractionSender,
         _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
         _pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
+        _desktop_pointer_behavior: std::sync::mpsc::Receiver<DesktopPointerBehaviorCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(SuccessfulService {
             started: Arc::clone(&self.started),
@@ -185,6 +190,7 @@ impl CompositorFactory for ShutdownAwareFactory {
         _interactions: DesktopInteractionSender,
         _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
         _pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
+        _desktop_pointer_behavior: std::sync::mpsc::Receiver<DesktopPointerBehaviorCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         Ok(Box::new(ShutdownAwareService {
             started: Arc::clone(&self.started),
