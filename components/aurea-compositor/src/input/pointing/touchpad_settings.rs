@@ -112,10 +112,9 @@ pub(super) fn apply(
 
     let click_methods = device.config_click_methods();
     let click_method = match settings.click_method() {
-        TouchpadClickMethod::DeviceDefault if !click_methods.is_empty() => {
-            TouchpadSettingStatus::Applied
-        }
-        TouchpadClickMethod::DeviceDefault => TouchpadSettingStatus::Unsupported,
+        // Keep libinput's hardware-selected method; AureaOS does not invent a
+        // second default policy for clickpads.
+        TouchpadClickMethod::DeviceDefault => TouchpadSettingStatus::NotRequested,
         TouchpadClickMethod::ButtonAreas if click_methods.contains(&ClickMethod::ButtonAreas) => {
             status(device.config_click_set_method(ClickMethod::ButtonAreas))
         }
@@ -147,10 +146,8 @@ pub(super) fn apply(
 
     let acceleration_profiles = device.config_accel_profiles();
     let acceleration_profile = match settings.acceleration_profile() {
-        TouchpadAccelerationProfile::DeviceDefault if !acceleration_profiles.is_empty() => {
-            TouchpadSettingStatus::Applied
-        }
-        TouchpadAccelerationProfile::DeviceDefault => TouchpadSettingStatus::Unsupported,
+        // libinput owns the device default acceleration profile.
+        TouchpadAccelerationProfile::DeviceDefault => TouchpadSettingStatus::NotRequested,
         TouchpadAccelerationProfile::Flat if acceleration_profiles.contains(&AccelProfile::Flat) => {
             status(device.config_accel_set_profile(AccelProfile::Flat))
         }
