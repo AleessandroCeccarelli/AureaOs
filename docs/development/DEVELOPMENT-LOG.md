@@ -2282,3 +2282,19 @@ Extended the locate-trail implementation from input history into render-scene sn
 - No build, formatting, tests or physical boot validation were run.
 
 - Added GPU-independent unit tests for the built-in fallback raster: exact requested dimensions/hotspot/RGBA payload and lower/upper size clamping. These tests are committed but have not been executed.
+
+### Native pointer-to-KMS path audit — 26 November 2026
+
+A source-level audit followed the named-cursor path from startup through physical presentation:
+
+- server/builder.rs publishes DRM-backed Wayland outputs, centers the seat pointer on the primary output, then starts the cursor warm-up. This ordering avoids consuming the warm-up during GPU/output discovery.
+- compositor/rendering.rs snapshots the Smithay seat pointer location and named cursor role into RenderScene.
+- render.rs distinguishes named compositor cursors from client-provided Wayland cursor surfaces. The former carry the global logical pointer anchor and canonical Xcursor asset name; the latter retain their own committed hotspot and SHM surface path.
+- surface_compositor.rs calls ensure_native_cursor_texture before looking up the asset. A ready theme asset wins; otherwise the bounded built-in fallback is returned by the same native_cursor_asset lookup and is bound/drawn by the normal textured pass. Thus the fallback is not merely cached: it reaches the draw command.
+- native_cursor_geometry converts the pointer anchor and asset hotspot into output-local geometry, then applies output origin, scale/fractional scale, transform and clipping. The geometry tests cover the default arrow, asset-specific hotspot and a pointer located on another monitor.
+- Relative libinput motion is validated for finite values, constrained to the union of enabled logical output rectangles, routed through Smithay pointer.motion/pointer.frame, and followed by request_all_output_frames. Startup placement and absolute-device motion also request frames.
+- event_loop.rs requests frames every 16 ms while the three-second first-use warm-up is active. server/rendering.rs consumes pending frames through the selected Vulkan direct-presentation or Vulkan-render/GBM-CPU-upload compatibility path. DRM page-flip/VBlank handlers retire the submitted scanout resources.
+
+**Remaining limitation:** the three-second warm-up is a bounded polling window, not a worker-completion notification. If initial Xcursor file access, decode or upload takes longer than that window and the pointer is never moved, the built-in fallback remains visible until another frame is requested (for example by pointer motion). The pointer itself remains drawable and usable. A future improvement should wake/schedule the compositor from cursor-worker completion rather than extending the high-frequency warm-up arbitrarily.
+
+**Verification boundary:** this was a repository source audit only. No Rust formatting, build, Cargo check/test, boot, physical mouse test or live KMS/Vulkan presentation test was run. The end-to-end path is structurally connected, but hardware operation is not yet proven.
