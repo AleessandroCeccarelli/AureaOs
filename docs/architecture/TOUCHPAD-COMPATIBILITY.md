@@ -235,3 +235,17 @@ claims the stream.
 
 These are source changes only. The grouped Rust formatting, compile, and test
 pass remains pending, as requested; no hardware validation has been performed.
+
+## Accurate no-scroll result reporting — 26 November 2026
+
+The scroll configuration audit found that the `NoScroll` branch marked both
+two-finger and edge scrolling as `Applied` even if libinput rejected the
+requested `NoScroll` method. The report now propagates the actual result of
+`config_scroll_set_method(NoScroll)` to both settings, so an unsupported or
+failed operation is not presented as successful.
+
+This follows libinput's contract: `get_methods` reports the methods supported
+by the device and `set_method` returns a configuration status. Source:
+https://wayland.freedesktop.org/libinput/doc/latest/api/group__config.html
+
+This is a source-level correction; grouped build and tests remain pending.
