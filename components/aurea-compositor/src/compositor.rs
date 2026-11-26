@@ -132,6 +132,8 @@ pub struct AureaCompositor {
     /// Independent shake-detection history for each physical pointer device.
     pointer_shake: PointerShakeManager,
     cursor_locate_animation: CursorLocateAnimation,
+    /// Keeps frames flowing briefly while the first native cursor asset is decoded and uploaded.
+    cursor_asset_warmup_until: Option<std::time::Instant>,
     /// Defers output-driven pointer recentering until any active client grab ends.
     pointer_recenter_pending: bool,
 }
@@ -149,6 +151,11 @@ impl SeatHandler for AureaCompositor {
 
     fn cursor_image(&mut self, _seat: &Seat<Self>, image: CursorImageStatus) {
         self.cursor_image = image;
+        if matches!(self.cursor_image, CursorImageStatus::Named(_)) {
+            self.cursor_asset_warmup_until = Some(
+                std::time::Instant::now() + std::time::Duration::from_secs(3),
+            );
+        }
         self.request_all_output_frames();
     }
 }
@@ -209,6 +216,9 @@ impl AureaCompositor {
             context_menu_consumed_buttons: HashSet::new(),
             pointer_shake: PointerShakeManager::default(),
             cursor_locate_animation: CursorLocateAnimation::default(),
+            cursor_asset_warmup_until: Some(
+                std::time::Instant::now() + std::time::Duration::from_secs(3),
+            ),
             pointer_recenter_pending: false,
         }
     }
@@ -308,8 +318,18 @@ impl AureaCompositor {
 
     /// Reports whether the locate effect still needs scheduled frames.
     pub fn cursor_animation_active(&self) -> bool {
-        self.cursor_locate_animation
-            .is_active(std::time::Instant::now())
+        let now = std::time::Instant::now();
+        let locate_active = self.cursor_locate_animation.is_active(now);
+        let cursor_warmup = self.cursor_asset_warmup_until.is_some_and(|deadline| now < deadline);
+        let named_cursor_animated = matches!(
+            &self.cursor_image,
+            CursorImageStatus::Named(icon)
+                if matches!(
+                    crate::input::cursor_theme::asset_name_for_icon(icon.name()),
+                    "busy"
+                )
+        );
+        locate_active || cursor_warmup || named_cursor_animated
     }
 
     /// Returns the seat-wide registry of connected pointing devices.
