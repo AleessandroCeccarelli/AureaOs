@@ -42,7 +42,7 @@ done
 [[ "$ESP_SIZE_MIB" =~ ^[0-9]+$ ]] || fail "AUREAOS_ESP_SIZE_MIB must be an integer"
 (( ESP_SIZE_MIB >= 16 && ESP_SIZE_MIB <= 31 )) || fail "El Torito EFI image must be between 16 and 31 MiB"
 
-for tool in ukify mcopy mmd mkfs.vfat truncate xorriso sort; do
+for tool in ukify mcopy mmd mkfs.vfat truncate xorriso sort cp; do
     command -v "$tool" >/dev/null 2>&1 || fail "required tool not found: $tool"
 done
 
@@ -51,21 +51,29 @@ readonly UKI_STUB="/usr/lib/systemd/boot/efi/linuxx64.efi.stub"
 [[ -s "$BOOTLOADER" ]] || fail "Debian systemd-boot EFI binary is missing: $BOOTLOADER"
 [[ -s "$UKI_STUB" ]] || fail "Debian systemd UKI stub is missing: $UKI_STUB"
 
-LIVE_DIR="$BINARY_DIR/live"
+# Work on a hard-link clone on the same filesystem. The assembly removes
+# split kernel/initramfs and GRUB staging files; never mutate live-build's
+# resumable binary tree until a final ISO has been validated.
+WORK_DIR="$(mktemp -d "$(dirname -- "$BINARY_DIR")/.aureaos-uki.XXXXXX")"
+ASSEMBLY_DIR="$WORK_DIR/binary"
+mkdir -p "$ASSEMBLY_DIR"
+cp -al -- "$BINARY_DIR/." "$ASSEMBLY_DIR/" ||
+    fail "cannot create a same-filesystem assembly snapshot"
+
+LIVE_DIR="$ASSEMBLY_DIR/live"
 shopt -s nullglob
 KERNELS=("$LIVE_DIR"/vmlinuz-*)
 (("${#KERNELS[@]}" > 0)) || fail "no Debian kernel found in /live"
 
-WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/aureaos-uki.XXXXXX")"
-TEMP_ISO="${OUTPUT_PATH}.tmp.$$"
+TEMP_ISO="${OUTPUT_PATH}.tmp.$"
 cleanup() {
     rm -rf -- "$WORK_DIR"
     rm -f -- "$TEMP_ISO"
 }
 trap cleanup EXIT
 
-readonly ESP_IMAGE="$BINARY_DIR/boot/efi.img"
-mkdir -p "$BINARY_DIR/boot"
+readonly ESP_IMAGE="$ASSEMBLY_DIR/boot/efi.img"
+mkdir -p "$ASSEMBLY_DIR/boot"
 
 CMDLINE='boot=live components quiet loglevel=3 systemd.show_status=false live-config.nocomponents=user-setup live-config.nottyautologin'
 DEFAULT_ENTRY=""
@@ -167,7 +175,11 @@ xorriso -as mkisofs \
     -e boot/efi.img \
     -no-emul-boot \
     -efi-boot-part --efi-boot-image \
-    "$BINARY_DIR"
+    "$ASSEMBLY_DIR"
+
+# Validate the exact staged boot tree before producing an ISO. The source
+# live-build binary tree remains untouched and can be resumed if any step fails.
+bash "$ISO_DIR/tests/validate-live-image.sh" --binary-dir "$ASSEMBLY_DIR"
 
 [[ -s "$TEMP_ISO" ]] || fail "xorriso did not create the final ISO"
 mv -f -- "$TEMP_ISO" "$OUTPUT_PATH"
