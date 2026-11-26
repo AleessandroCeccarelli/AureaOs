@@ -362,19 +362,34 @@ impl AureaCompositor {
         let is_tablet = descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Tablet;
         let persistent_id = descriptor.persistent_id.clone();
 
-        // libinput can re-announce a sysname with a changed capability set.
-        // Treat a class change as a lifecycle boundary so held buttons,
-        // gesture ownership and class-specific state cannot leak across it.
-        if self
+        // libinput can re-announce a sysname after capability changes or
+        // physical replacement. A changed class or a conflicting stable
+        // hardware identity is a lifecycle boundary: release held state and
+        // discard the old device-scoped runtime preferences before reconnect.
+        let identity_changed = self
             .pointer_manager
             .devices()
             .device(device_id)
-            .is_some_and(|current| current.kind != descriptor.kind)
-        {
+            .is_some_and(|current| {
+                current.kind != descriptor.kind
+                    || matches!(
+                        (&current.persistent_id, &descriptor.persistent_id),
+                        (Some(previous), Some(next)) if previous != next
+                    )
+                    || matches!(
+                        (current.vendor_id, descriptor.vendor_id),
+                        (Some(previous), Some(next)) if previous != next
+                    )
+                    || matches!(
+                        (current.product_id, descriptor.product_id),
+                        (Some(previous), Some(next)) if previous != next
+                    )
+            });
+        if identity_changed {
             tracing::info!(
                 device_id = device_id.0,
                 new_kind = ?descriptor.kind,
-                "Pointing device classification changed; resetting its runtime state"
+                "Pointing device identity or classification changed; resetting its runtime state"
             );
             self.disconnect_pointing_device(device_id);
         }
