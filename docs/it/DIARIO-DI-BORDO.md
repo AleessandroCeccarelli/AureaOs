@@ -2260,3 +2260,14 @@ dati reali letti/applicati tramite libinput e costituiscono il contratto per le
 future Impostazioni; non viene introdotto un secondo sistema di rilevamento.
 
 Nessuna build o test eseguiti. La validazione Rust resta accorpata come concordato.
+
+
+### 26 novembre 2026 — Esito esplicito della modalità di scorrimento
+
+Il controllo del report ha evidenziato che `NoScroll` veniva inviato a libinput,
+ma il suo esito non era conservato: le due opzioni mutuamente esclusive risultavano
+correttamente `NotRequested`, però un eventuale rifiuto della modalità scelta
+poteva restare nascosto. Aggiunto `scroll_method` a `TouchpadApplyReport`, così
+il report mantiene separati lo stato dei controlli UI e l'esito effettivo della
+modalità selezionata. `all_applied()` e `has_failures()` considerano anche questo
+campo. Aggiunti test del contratto API; nessuna build o test eseguiti ancora.
