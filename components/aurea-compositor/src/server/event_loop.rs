@@ -14,7 +14,7 @@ use std::{
 use aurea_desktop_api::{
     desktop_interaction::{DesktopInteractionSender, desktop_interaction_channel},
     display::DisplayColorController,
-    input::{PointerSettingsCommand, TouchpadSettingsCommand, pointer_settings_channel, touchpad_settings_channel},
+    input::{DesktopPointerBehaviorCommand, PointerSettingsCommand, TouchpadSettingsCommand, desktop_pointer_behavior_channel, pointer_settings_channel, touchpad_settings_channel},
     keyboard::KeyboardLayoutId,
 };
 use smithay::reexports::calloop::EventLoop;
@@ -50,6 +50,7 @@ impl WaylandServer {
         let (interactions, _receiver) = desktop_interaction_channel();
         let (_touchpad_controller, touchpad_settings) = touchpad_settings_channel();
         let (_pointer_controller, pointer_settings) = pointer_settings_channel();
+        let (_desktop_pointer_behavior_controller, desktop_pointer_behavior) = desktop_pointer_behavior_channel();
         #[cfg(feature = "drm")]
         let parts = super::builder::build(
             socket_name,
@@ -59,6 +60,7 @@ impl WaylandServer {
             interactions,
             touchpad_settings,
             pointer_settings,
+            desktop_pointer_behavior,
         );
 
         #[cfg(not(feature = "drm"))]
@@ -97,6 +99,7 @@ impl WaylandServer {
         interactions: DesktopInteractionSender,
         touchpad_settings: Receiver<TouchpadSettingsCommand>,
         pointer_settings: Receiver<PointerSettingsCommand>,
+        desktop_pointer_behavior: Receiver<DesktopPointerBehaviorCommand>,
     ) -> io::Result<Self> {
         let mut drm_session = session::create_session()?;
         let drm_device = session::open_primary_device(&mut drm_session, seat)?;
@@ -156,6 +159,7 @@ impl WaylandServer {
             interactions,
             touchpad_settings,
             pointer_settings,
+            desktop_pointer_behavior,
         )?;
 
         Ok(Self { event_loop, state })
@@ -224,6 +228,8 @@ impl WaylandServer {
                 super::input::apply_pending_touchpad_settings(&mut self.state);
                 #[cfg(feature = "drm")]
                 super::input::apply_pending_pointer_settings(&mut self.state);
+                #[cfg(feature = "drm")]
+                super::input::apply_pending_desktop_pointer_behavior(&mut self.state);
 
                 #[cfg(feature = "drm")]
                 super::rendering::render_pending_outputs(&mut self.state)?;
