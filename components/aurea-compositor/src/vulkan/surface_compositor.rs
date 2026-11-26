@@ -6,6 +6,7 @@
 //! SHM surface composition into a Vulkan DRM scanout image.
 
 mod cursor_geometry;
+mod cursor_trail_geometry;
 mod error;
 mod readback;
 mod readback_entry;
