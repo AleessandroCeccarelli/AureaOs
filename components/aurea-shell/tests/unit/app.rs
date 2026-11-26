@@ -37,7 +37,6 @@ impl CompositorFactory for InitializationFailureFactory {
         _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
         _pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
         _desktop_pointer_behavior: std::sync::mpsc::Receiver<DesktopPointerBehaviorCommand>,
-        _desktop_pointer_behavior: std::sync::mpsc::Receiver<DesktopPointerBehaviorCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         *self
             .observed_thread
