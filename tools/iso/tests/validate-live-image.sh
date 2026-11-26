@@ -29,7 +29,7 @@ while (($#)); do
 done
 [[ -n "$MODE" && -n "$TARGET" ]] || usage
 
-for tool in mdir mcopy mtype ukify grep unsquashfs readlink stat; do
+for tool in mdir mcopy mtype ukify grep unsquashfs readlink stat lsinitramfs dpkg-query; do
     command -v "$tool" >/dev/null 2>&1 || fail "required validation tool not found: $tool"
 done
 
@@ -75,6 +75,8 @@ unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
     etc/systemd/system/aurea-desktop.service \
     etc/pam.d/aurea-desktop \
     etc/systemd/system/multi-user.target.wants/aurea-desktop.service \
+    etc/os-release etc/debian_version usr/lib/systemd/systemd sbin/init \
+    var/lib/dpkg/status \
     usr/share/aureaos/human-interfaces/icons/generated/context-menu \
     >/dev/null 2>&1 || fail "cannot inspect the AureaOS desktop session and artwork inside filesystem.squashfs"
 
@@ -82,6 +84,23 @@ unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
     fail "AureaOS desktop executable is missing or not executable in the Live rootfs"
 [[ -x "$ROOTFS/usr/local/bin/aurea-live-session" ]] ||
     fail "AureaOS Live session launcher is missing or not executable"
+[[ -s "$ROOTFS/etc/os-release" ]] ||
+    fail "Debian os-release metadata is missing from the Live rootfs"
+grep -Fxq 'ID=debian' "$ROOTFS/etc/os-release" ||
+    fail "Live rootfs is not identified as Debian"
+grep -Fxq 'VERSION_CODENAME=trixie' "$ROOTFS/etc/os-release" ||
+    fail "Live rootfs is not Debian Trixie"
+[[ "$(head -n 1 "$ROOTFS/etc/debian_version")" =~ ^13(\\.|$) ]] ||
+    fail "Live rootfs is not Debian 13"
+[[ -x "$ROOTFS/usr/lib/systemd/systemd" && -L "$ROOTFS/sbin/init" ]] ||
+    fail "Debian systemd PID 1 integration is missing from the Live rootfs"
+for package in live-boot live-boot-initramfs-tools live-config live-config-systemd systemd-sysv; do
+    status="$(dpkg-query --admindir="$ROOTFS/var/lib/dpkg" -W -f='${db:Status-Status}' "$package" 2>/dev/null)" ||
+        fail "Debian Live boot package is missing: $package"
+    [[ "$status" == installed ]] ||
+        fail "Debian Live boot package is not installed: $package"
+done
+
 [[ -s "$ROOTFS/etc/systemd/system/aurea-desktop.service" ]] ||
     fail "AureaOS systemd service is missing from the Live rootfs"
 [[ -s "$ROOTFS/etc/pam.d/aurea-desktop" ]] ||
@@ -160,6 +179,15 @@ for UKI in "${UKIS[@]}"; do
         fail "$UKI_NAME does not embed boot=live"
     grep -Fq 'ID=aureaos' "$TEMP_DIR/$UKI_NAME.inspect" ||
         fail "$UKI_NAME does not identify AureaOS in .osrel"
+
+    # Inspect the initramfs embedded in this exact UKI, not merely the source
+    # initrd that existed earlier in the live-build workspace.
+    UKI_INITRD="$TEMP_DIR/$UKI_NAME.initrd"
+    ukify inspect --section=".initrd:binary@$UKI_INITRD" "$UKI" >/dev/null ||
+        fail "cannot extract the initramfs embedded in $UKI_NAME"
+    [[ -s "$UKI_INITRD" ]] || fail "$UKI_NAME contains an empty initramfs"
+    lsinitramfs "$UKI_INITRD" | grep -Fxq 'scripts/live' ||
+        fail "$UKI_NAME initramfs does not contain scripts/live"
     mcopy -i "$ESP_IMAGE" "::/loader/entries/aureaos-live-$VERSION.conf" "$ENTRY" >/dev/null ||
         fail "boot entry for $UKI_NAME is missing"
     grep -Fq "efi /EFI/Linux/$UKI_NAME" "$ENTRY" ||
