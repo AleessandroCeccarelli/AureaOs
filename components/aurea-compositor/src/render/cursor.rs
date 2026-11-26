@@ -13,7 +13,7 @@ pub const DEFAULT_CURSOR_WIDTH: u32 = 32;
 pub const DEFAULT_CURSOR_HEIGHT: u32 = 32;
 
 /// Hotspot of the default arrow, measured from its top-left pixel.
-pub const DEFAULT_CURSOR_HOTSPOT: (i32, i32) = (5, 2);
+pub const DEFAULT_CURSOR_HOTSPOT: (i32, i32) = (5, 3);
 
 /// Converts the global pointer position to the native arrow's top-left origin.
 ///
@@ -125,7 +125,7 @@ mod tests {
         let pointer = Point::<f64, Logical>::from((10.6, 20.2));
         let origin = default_cursor_origin(pointer);
 
-        assert_eq!((origin.x, origin.y), (6, 18));
+        assert_eq!((origin.x, origin.y), (6, 17));
     }
 
     #[test]
@@ -133,8 +133,8 @@ mod tests {
         let origin = Point::<i32, Logical>::from((95, 48));
 
         assert_eq!(scaled_cursor_origin(origin, 1.0), origin);
-        assert_eq!(scaled_cursor_origin(origin, 2.0), Point::from((90, 46)));
-        assert_eq!(scaled_cursor_origin(origin, 3.0), Point::from((85, 44)));
+        assert_eq!(scaled_cursor_origin(origin, 2.0), Point::from((90, 45)));
+        assert_eq!(scaled_cursor_origin(origin, 3.0), Point::from((85, 42)));
     }
 
     #[test]
@@ -151,7 +151,7 @@ mod tests {
 
         assert_eq!(cursor.width(), DEFAULT_CURSOR_WIDTH);
         assert_eq!(cursor.height(), DEFAULT_CURSOR_HEIGHT);
-        assert_eq!(DEFAULT_CURSOR_HOTSPOT, (5, 2));
+        assert_eq!(DEFAULT_CURSOR_HOTSPOT, (5, 3));
     }
 
     #[test]
