@@ -2257,3 +2257,7 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - **Not implemented yet:** a visual pointer trail/ghost effect. Apple's documented built-in feature is temporary enlargement; a trail would be an additional AureaOS visual treatment. The next implementation should keep a short, time-decayed history of pointer positions and render translucent cursor echoes behind the live pointer, with reduced-motion support and a per-device setting.
 - Current detection is fed by the common libinput relative-motion path for registered mice and touchpads. Trackpad hardware validation remains pending; libinput gesture swipe/pinch streams are separate and must not trigger this effect.
 - No Cargo build, rustfmt, check or tests were run.
+
+## 2026-11-26 — Modular cursor locate trail foundation
+
+Added `input/cursor_trail.rs` for a bounded three-position history with finite-coordinate validation and a 220 ms linear fade, plus `input/cursor_trail_animation.rs` to isolate trail frame-lifetime policy. Registered both modules in `input/mod.rs`. Unit tests cover sample bounds, newest-first ordering, fade/expiry, and invalid coordinates. The Vulkan drawing stage is intentionally not marked complete: alpha-correct cursor ghost rendering still needs a dedicated texture/shader path and scene integration. No build or tests were run, in accordance with the deferred verification workflow.
