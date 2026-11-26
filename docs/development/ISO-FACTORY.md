@@ -129,7 +129,7 @@ The coordinator explicitly stages the chroot boot validator under `/usr/local/li
 
 The validation layers should cover, at minimum:
 
-1. Required package state in the target chroot: `live-boot`, `live-boot-initramfs-tools`, `live-config`, `initramfs-tools` and the intended kernel package.
+1. Required package state in the target chroot: `live-boot`, `live-boot-initramfs-tools`, `live-config`, the explicit `live-config-systemd` backend, `systemd-sysv`, `initramfs-tools` and the intended kernel package.
 2. Presence and execution of the live-boot initramfs hook and early-boot script.
 3. Successful initramfs generation for the installed kernel.
 4. Presence of `scripts/live` in every selected initramfs.
