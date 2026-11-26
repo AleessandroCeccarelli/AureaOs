@@ -177,3 +177,9 @@ preferences remain intact.
 If libinput reports an individual setting as unsupported or failed, the
 per-setting application report remains visible and the profile is not marked
 fully applied. A later input event can retry through the normal refresh path.
+
+## Shake-to-locate pointer gesture
+
+The macOS-style locate gesture is available in principle on touchpads through the same libinput relative pointer-motion events used for ordinary cursor movement. AureaOS feeds the unaccelerated relative deltas into the per-device shake detector, rather than treating a Wayland swipe/pinch gesture as a locate command. The detector looks for rapid alternating movement; users do not need to trace a circle.
+
+Apple Support documents this feature for both mouse and trackpad, describing a quick movement of the mouse or finger to temporarily enlarge the pointer. AureaOS currently implements the enlargement response; the requested fading pointer trail is a separate compositor-rendering feature and is not yet implemented. Physical tests across different touchpad vendors/drivers are still required.
