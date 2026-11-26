@@ -41,7 +41,7 @@ impl AureaCompositor {
         self.pointer_settings = settings;
     }
 
-    /// Sets a per-device pointer profile for a connected mouse or touchpad.
+    /// Sets a per-device pointer profile for a connected mouse. Touchpads use TouchpadSettings.
     pub fn set_pointer_device_settings(
         &mut self,
         device: aurea_desktop_api::input::InputDeviceId,
