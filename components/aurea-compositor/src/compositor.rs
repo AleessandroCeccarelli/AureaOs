@@ -528,6 +528,7 @@ impl AureaCompositor {
         self.handle_touch_cancel(device, time);
         self.release_pointer_buttons_for_device(device, time);
         self.interaction_engine.remove_device(device);
+        self.pointer_shakes.remove(&device);
         self.touchscreen_outputs.remove_device(device);
         self.absolute_pointer_outputs.remove_device(device);
         self.tablet_outputs.remove_device(device);
