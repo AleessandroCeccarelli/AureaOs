@@ -65,3 +65,63 @@ hotspot = [32, 32]
 role = "busy"
 animation_frames = 12
 animation_duration_ms = 1100
+
+[[cursor]]
+name = "crosshair"
+source = "source/crosshair.svg"
+hotspot = [32, 32]
+role = "precision"
+
+[[cursor]]
+name = "help"
+source = "source/help.svg"
+hotspot = [32, 32]
+role = "help"
+
+[[cursor]]
+name = "not-allowed"
+source = "source/forbidden.svg"
+hotspot = [32, 32]
+role = "forbidden"
+
+[[cursor]]
+name = "copy"
+source = "source/copy.svg"
+hotspot = [16, 16]
+role = "copy"
+
+[[cursor]]
+name = "alias"
+source = "source/alias.svg"
+hotspot = [16, 16]
+role = "alias"
+
+[[cursor]]
+name = "ew-resize"
+source = "source/resize-ew.svg"
+hotspot = [32, 32]
+role = "resize-horizontal"
+
+[[cursor]]
+name = "ns-resize"
+source = "source/resize-ns.svg"
+hotspot = [32, 32]
+role = "resize-vertical"
+
+[[cursor]]
+name = "pencil"
+source = "source/pen.svg"
+hotspot = [32, 32]
+role = "handwriting"
+
+[[cursor]]
+name = "all-scroll"
+source = "source/all-scroll.svg"
+hotspot = [32, 32]
+role = "all-scroll"
+
+[[cursor]]
+name = "left_ptr_watch"
+source = "source/working.svg"
+hotspot = [8, 6]
+role = "working-background"
