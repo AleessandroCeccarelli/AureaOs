@@ -79,6 +79,7 @@ unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
     usr/lib/systemd/system/multi-user.target etc/systemd/system/default.target \
     var/lib/dpkg/status \
     usr/share/aureaos/human-interfaces/icons/generated/context-menu \
+    usr/share/icons/AureaOS-Light usr/share/icons/AureaOS-Dark \
     >/dev/null 2>&1 || fail "cannot inspect the AureaOS desktop session and artwork inside filesystem.squashfs"
 
 [[ -x "$ROOTFS/usr/local/bin/aurea-desktop" ]] ||
@@ -139,6 +140,18 @@ for theme in light dark; do
     asset_count=$((asset_count + 1))
 done
 [[ "$asset_count" == 2 ]] || fail "expected 2 context-menu RGBA8 assets, found $asset_count"
+
+# Validate both installed Xcursor themes in the extracted final SquashFS.
+cursor_count=0
+for theme in AureaOS-Light AureaOS-Dark; do
+    theme_root="$ROOTFS/usr/share/icons/$theme"
+    [[ -s "$theme_root/index.theme" ]] || fail "missing Xcursor theme index: $theme"
+    for cursor in default pointer text vertical-text crosshair help busy left_ptr_watch not-allowed copy alias grab grabbing move all-scroll ew-resize ns-resize resize-nesw resize-nwse pencil up-arrow pin person zoom-in zoom-out context-menu; do
+        [[ -s "$theme_root/cursors/$cursor" ]] || fail "missing Xcursor asset: $theme/$cursor"
+        cursor_count=$((cursor_count + 1))
+    done
+done
+[[ "$cursor_count" == 52 ]] || fail "expected 52 canonical Xcursor files across both themes, found $cursor_count"
 
 # The final image is UEFI-only. No GRUB configuration or split kernel/initrd
 # files should remain in the published Live payload.
