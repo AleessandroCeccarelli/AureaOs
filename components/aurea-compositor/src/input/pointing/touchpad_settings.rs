@@ -195,6 +195,7 @@ pub(super) fn apply(
         tap_button_map,
         two_finger_scroll,
         edge_scrolling,
+        scroll_method: selected_scroll_status,
         natural_scrolling,
         disable_while_typing,
         disable_while_trackpointing,
