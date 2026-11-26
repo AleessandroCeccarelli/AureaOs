@@ -24,6 +24,7 @@ impl AureaCompositor {
         };
 
         if pointer.is_grabbed() {
+            self.pointer_recenter_pending = true;
             return false;
         }
 
@@ -46,6 +47,8 @@ impl AureaCompositor {
         let Some(location) = target else {
             return false;
         };
+
+        self.pointer_recenter_pending = false;
 
         let focus = {
             let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
@@ -71,6 +74,19 @@ impl AureaCompositor {
         self.request_all_output_frames();
         true
     }
+    /// Applies a deferred output-driven recenter once the active client grab ends.
+    ///
+    /// Output removal must not break an XDG popup or another legitimate pointer
+    /// grab. If recentering was deferred, the event loop retries after dispatch;
+    /// the first iteration after Smithay releases the grab restores the pointer
+    /// to an enabled output and schedules the corresponding frames.
+    pub fn apply_deferred_pointer_recenter(&mut self) -> bool {
+        if !self.pointer_recenter_pending {
+            return false;
+        }
+        self.center_pointer_on_primary_output()
+    }
+
     /// Re-evaluates pointer focus after a surface changes the visible scene.
     ///
     /// The pointer remains at its current logical location; this only refreshes
@@ -79,10 +95,6 @@ impl AureaCompositor {
         let Some(pointer) = self.seat.get_pointer() else {
             return false;
         };
-
-        if pointer.is_grabbed() {
-            return false;
-        }
 
         let requested = pointer.current_location();
         let output_geometry = self
@@ -107,11 +119,19 @@ impl AureaCompositor {
                 )
             })
             .collect::<Vec<_>>();
+
         let Some(location) =
             super::pointer_bounds::constrain_to_outputs(requested, output_geometry.iter().copied())
         else {
             return false;
         };
+
+        if pointer.is_grabbed() {
+            if location != requested {
+                self.pointer_recenter_pending = true;
+            }
+            return false;
+        }
 
         let focus = {
             let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
