@@ -11,7 +11,7 @@ use aurea_compositor::service::{DEFAULT_WAYLAND_DISPLAY_NAME, WaylandCompositorF
 use aurea_desktop_api::{
     CompositorFactory, CompositorService, ShutdownSignal,
     desktop_interaction::DesktopInteractionSender, display::DisplayColorController,
-    input::{PointerSettingsCommand, TouchpadSettingsCommand}, keyboard::KeyboardLayoutId,
+    input::{DesktopPointerBehaviorCommand, PointerSettingsCommand, TouchpadSettingsCommand}, keyboard::KeyboardLayoutId,
 };
 
 use crate::welcome_process::WelcomeClientProcess;
@@ -45,6 +45,7 @@ impl CompositorFactory for DesktopCompositorFactory {
         interactions: DesktopInteractionSender,
         touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
         pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
+        desktop_pointer_behavior: std::sync::mpsc::Receiver<DesktopPointerBehaviorCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         // Read the initial Trash state in the desktop composition root.
         // The compositor receives only the semantic value, never filesystem access.
@@ -58,7 +59,7 @@ impl CompositorFactory for DesktopCompositorFactory {
 
         // Creating the native service also creates and binds the Wayland socket.
         let compositor = compositor_factory
-            .create(display_color, interactions, touchpad_settings, pointer_settings)?;
+            .create(display_color, interactions, touchpad_settings, pointer_settings, desktop_pointer_behavior)?;
         let welcome_client = WelcomeClientProcess::spawn(DEFAULT_WAYLAND_DISPLAY_NAME)?;
 
         Ok(Box::new(DesktopCompositorService {
