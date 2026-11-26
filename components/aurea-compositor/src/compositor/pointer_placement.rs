@@ -71,6 +71,10 @@ impl AureaCompositor {
             },
         );
         pointer.frame(self);
+        // Output publication, hotplug and session restoration all converge here.
+        // Restart the first-use cursor warm-up after the new output is ready so
+        // an idle pointer still gets frames while its size/theme asset is loaded.
+        self.begin_cursor_asset_warmup();
         self.request_all_output_frames();
         true
     }
