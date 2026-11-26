@@ -210,8 +210,9 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             }
             refresh_touchpad_settings(state, &mut device);
 
-            // Acceleration is a mouse/touchpad policy. Absolute digitizers,
-            // tablets and touchscreens must never pass through this path.
+            // Generic pointer acceleration belongs to mice. Touchpads apply
+            // their independent speed/profile through TouchpadSettings.
+            // Absolute digitizers, tablets and touchscreens never use this path.
             if state
                 .compositor
                 .pointing_devices()
