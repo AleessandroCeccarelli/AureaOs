@@ -5,12 +5,7 @@
 
 //! Pointer capability initialization and relative motion routing.
 
-use std::{
-    io,
-    sync::atomic::{AtomicU64, Ordering},
-};
-
-static POINTER_POSITION_LOG_COUNT: AtomicU64 = AtomicU64::new(0);
+use std::io;
 
 use smithay::{
     input::pointer::{MotionEvent, PointerHandle},
@@ -50,6 +45,17 @@ impl AureaCompositor {
         unaccelerated_delta: Point<f64, smithay::utils::Logical>,
         time: u32,
     ) {
+        // Preserve sub-pixel precision, but never allow invalid backend values
+        // to poison the shared seat cursor position.
+        if !delta.x.is_finite()
+            || !delta.y.is_finite()
+            || !unaccelerated_delta.x.is_finite()
+            || !unaccelerated_delta.y.is_finite()
+        {
+            tracing::warn!(device_id = device.0, "Discarded non-finite pointer motion sample");
+            return;
+        }
+
         if self.pointer_settings_for(device).shake_to_locate() {
             if self.pointer_shake.update(device, unaccelerated_delta, time) {
                 self.cursor_locate_animation.trigger();
@@ -110,14 +116,6 @@ impl AureaCompositor {
             },
         );
         pointer.frame(self);
-        let count = POINTER_POSITION_LOG_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
-        if count == 1 || count % 120 == 0 {
-            let actual = pointer.current_location();
-            eprintln!(
-                "AureaOS pointer: motion={} requested=({:.2},{:.2}) applied=({:.2},{:.2})",
-                count, requested.x, requested.y, actual.x, actual.y
-            );
-        }
         self.request_all_output_frames();
     }
 
