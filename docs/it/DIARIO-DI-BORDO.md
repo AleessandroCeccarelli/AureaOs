@@ -2179,3 +2179,10 @@ Aggiunto un test mirato per il posizionamento del cursore nativo su output con s
 ### 26 novembre 2026 — Percorso comune di aggiornamento del puntatore
 
 Separata in `compositor/pointer.rs` la fase finale comune ai movimenti relativi e assoluti: calcolo del focus sulla superficie, aggiornamento Smithay, invio del frame Wayland e richiesta dei frame di output. Mouse/touchpad e dispositivi assoluti mantengono distinti i rispettivi calcoli e vincoli; condividono soltanto il commit della posizione già validata. La modifica riduce duplicazione e impedisce che i due percorsi divergano nella richiesta di ridisegno. Nessuna build o test eseguiti.
+
+### 26 novembre 2026 — Rilascio pulsanti alla disconnessione del mouse/touchpad
+
+- Durante l'audit del ciclo di vita dei dispositivi è emerso che la pausa della sessione sintetizzava correttamente i rilasci, ma la rimozione fisica di un dispositivo eliminava il suo stato dei pulsanti senza prima inviare al seat Wayland il rilascio finale.
+- Corretto `disconnect_pointing_device`: prima di cancellare inventario e stato del dispositivo, ora invia i rilasci dei pulsanti ancora premuti usando il timestamp monotono; il `PointerManager` continua a preservare un pulsante se un altro dispositivo fisico lo tiene ancora premuto.
+- Questo evita che un'applicazione mantenga un click logicamente premuto dopo lo scollegamento del mouse o del touchpad.
+- Commit: `90dec90c`. Nessuna build o test eseguiti: le verifiche restano raggruppate come concordato.
