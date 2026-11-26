@@ -266,3 +266,8 @@ run against touchpad handles. Regression assertions reject assigning a mouse
 profile to a touchpad.
 
 No build or test run was performed; the grouped validation remains pending.
+
+
+## Reporting mutuamente esclusivo delle modalità di scorrimento
+
+Il report touchpad distingue tre casi: `Applied` quando la modalità richiesta è stata impostata, `Unsupported` quando il dispositivo non espone la capacità e `NotRequested` quando l'opzione è inattiva perché è stata scelta la modalità alternativa. Lo scorrimento a due dita e quello ai bordi sono mutuamente esclusivi: il report non deve presentare entrambe le modalità come applicate. `all_applied()` ignora `NotRequested` ma non `Unsupported` o `Failed`.
