@@ -209,6 +209,24 @@ pub(super) fn apply_pending_pointer_settings(state: &mut WaylandState) {
     }
 }
 
+/// Applies global desktop pointer behavior preferences from the shell.
+pub(super) fn apply_pending_desktop_pointer_behavior(state: &mut WaylandState) {
+    loop {
+        let command = match state.desktop_pointer_behavior_receiver.try_recv() {
+            Ok(command) => command,
+            Err(std::sync::mpsc::TryRecvError::Empty)
+            | Err(std::sync::mpsc::TryRecvError::Disconnected) => break,
+        };
+        state.compositor.set_desktop_double_click_interval_ms(
+            command.settings.double_click_interval_ms(),
+        );
+        tracing::info!(
+            interval_ms = command.settings.double_click_interval_ms(),
+            "Applied global desktop pointer behavior preferences"
+        );
+    }
+}
+
 /// Registers the seat's libinput source with Calloop.
 pub(super) fn register_input_backend(
     loop_handle: &LoopHandle<'_, WaylandState>,
