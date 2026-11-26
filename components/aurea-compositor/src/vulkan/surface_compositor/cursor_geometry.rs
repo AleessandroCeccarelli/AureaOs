@@ -27,9 +27,7 @@ pub(super) fn native_cursor_geometry(
     hotspot: (u32, u32),
 ) -> Option<(SurfaceGeometry, SurfaceScissor, u32)> {
     let pointer = scene.native_cursor_pointer_location()?;
-    let output_scale = target
-        .fractional_scale()
-        .unwrap_or_else(|| f64::from(target.scale()));
+    let output_scale = target.effective_scale();
     if !output_scale.is_finite() || output_scale <= 0.0 {
         return None;
     }
