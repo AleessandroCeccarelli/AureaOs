@@ -102,6 +102,17 @@ for KERNEL in "${KERNELS[@]}"; do
 
 done
 
+# El Torito's EFI boot-image size field is limited. Keep the FAT ESP below
+# 32 MiB and fail before mcopy if the UKIs cannot fit safely.
+UKI_BYTES=0
+for UKI in "$WORK_DIR"/aureaos-live-*.efi; do
+    UKI_BYTES=$((UKI_BYTES + $(stat -c '%s' "$UKI")))
+done
+BOOTLOADER_BYTES="$(stat -c '%s' "$BOOTLOADER")"
+ESP_BYTES=$((ESP_SIZE_MIB * 1024 * 1024))
+(( UKI_BYTES + 2 * BOOTLOADER_BYTES + 2 * 1024 * 1024 < ESP_BYTES )) ||
+    fail "UKI payloads need more than the ${ESP_SIZE_MIB} MiB El Torito ESP can safely hold"
+
 # systemd-boot scans this FAT image as its ESP. No firmware NVRAM entries are
 # created and no host disk is touched by this build-time operation.
 rm -f -- "$ESP_IMAGE"
