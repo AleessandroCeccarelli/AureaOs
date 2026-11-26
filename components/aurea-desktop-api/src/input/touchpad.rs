@@ -224,6 +224,8 @@ pub struct TouchpadApplyReport {
     pub tap_button_map: TouchpadSettingStatus,
     pub two_finger_scroll: TouchpadSettingStatus,
     pub edge_scrolling: TouchpadSettingStatus,
+    /// Outcome of selecting the active scroll mode, including NoScroll.
+    pub scroll_method: TouchpadSettingStatus,
     pub natural_scrolling: TouchpadSettingStatus,
     pub disable_while_typing: TouchpadSettingStatus,
     pub disable_while_trackpointing: TouchpadSettingStatus,
@@ -252,6 +254,7 @@ impl TouchpadApplyReport {
             && self.tap_button_map.is_satisfied()
             && self.two_finger_scroll.is_satisfied()
             && self.edge_scrolling.is_satisfied()
+            && self.scroll_method.is_satisfied()
             && self.natural_scrolling.is_satisfied()
             && self.disable_while_typing.is_satisfied()
             && self.disable_while_trackpointing.is_satisfied()
@@ -272,6 +275,7 @@ impl TouchpadApplyReport {
             || matches!(self.tap_button_map, TouchpadSettingStatus::Failed)
             || matches!(self.two_finger_scroll, TouchpadSettingStatus::Failed)
             || matches!(self.edge_scrolling, TouchpadSettingStatus::Failed)
+            || matches!(self.scroll_method, TouchpadSettingStatus::Failed)
             || matches!(self.natural_scrolling, TouchpadSettingStatus::Failed)
             || matches!(self.disable_while_typing, TouchpadSettingStatus::Failed)
             || matches!(self.disable_while_trackpointing, TouchpadSettingStatus::Failed)
@@ -344,6 +348,7 @@ mod tests {
             tap_button_map: status,
             two_finger_scroll: status,
             edge_scrolling: status,
+            scroll_method: status,
             natural_scrolling: status,
             disable_while_typing: status,
             disable_while_trackpointing: status,
@@ -368,6 +373,14 @@ mod tests {
         assert!(!result.has_failures());
 
         result.pointer_speed = TouchpadSettingStatus::Failed;
+        assert!(!result.all_applied());
+        assert!(result.has_failures());
+    }
+
+    #[test]
+    fn failed_scroll_mode_selection_is_not_hidden_by_inactive_scroll_toggles() {
+        let mut result = report(TouchpadSettingStatus::NotRequested);
+        result.scroll_method = TouchpadSettingStatus::Failed;
         assert!(!result.all_applied());
         assert!(result.has_failures());
     }
