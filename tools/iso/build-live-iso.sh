@@ -224,7 +224,7 @@ else
 fi
 KERNEL_PATH="$(find "$BUILD_ROOT/binary/live" -maxdepth 1 -type f -name 'vmlinuz-*' -print | sort -V | tail -n 1)"
 [[ -n "$KERNEL_PATH" ]] || { echo "No staged kernel found for build manifest." >&2; exit 1; }
-KERNEL_VERSION="\${KERNEL_PATH##*/vmlinuz-}"
+KERNEL_VERSION="${KERNEL_PATH##*/vmlinuz-}"
 export BUILD_ID BUILD_TIMESTAMP COMMIT BRANCH REMOTE WORKTREE_CLEAN KERNEL_VERSION
 
 # Replace Debian Live's intermediate GRUB image with the approved systemd-boot + UKI path.
