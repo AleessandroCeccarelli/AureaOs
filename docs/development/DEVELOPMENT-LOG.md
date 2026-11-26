@@ -2229,3 +2229,7 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Updated cursor documentation with the runtime path, development override and remaining limitations.
 - **Not verified in execution:** no `cargo fmt`, Cargo build/check/test, shell syntax check, Debian ISO build or visual hardware validation was run. This work was accumulated without per-change builds as requested.
 - **Remaining:** the runtime uploads every frame for the selected size but currently draws frame zero only. Implement a frame scheduler for `busy` / `left_ptr_watch`, move file loading and decoding off the render callback, review cache memory across outputs, validate fractional/high-DPI geometry and run the full test suite on Fedora before claiming the integration is verified.
+
+- Follow-up: cursor geometry and requested raster selection now use `RenderTarget::effective_scale()`, preserving the exact fractional output scale instead of approximating it from the legacy integer scale.
+- Follow-up: the ISO's final SquashFS validator now extracts and checks both installed themes and all 52 canonical cursor files (26 per palette), in addition to the chroot hook's pre-publication checks.
+- Latest source-only changes remain unbuilt and untested; no GitHub check-runs were reported for the documentation commit.
