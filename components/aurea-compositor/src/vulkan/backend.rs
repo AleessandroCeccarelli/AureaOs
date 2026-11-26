@@ -203,6 +203,15 @@ impl VulkanBackend {
         &self.surface_pipeline
     }
 
+    /// Returns whether native cursor decoding or texture upload still needs frame polling.
+    #[cfg(feature = "drm")]
+    pub(crate) fn has_pending_native_cursor_work(&self) -> bool {
+        self.surface_pipeline
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .has_pending_native_cursor_work()
+    }
+
     /// Records an empty one-time command buffer.
     ///
     /// This exercises command-buffer allocation, recording and finalization.
