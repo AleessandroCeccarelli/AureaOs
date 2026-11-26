@@ -182,8 +182,8 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             if !is_registered_pointing_device(state, pointing::id_for(&event.device())) {
                 return;
             }
-            // The compositor currently routes absolute pointer devices only
-            // when a single enabled output makes the target unambiguous.
+            // A single enabled output is selected automatically. On multi-
+            // output desktops, the device must have an explicit output mapping.
             state
                 .compositor
                 .handle_pointer_motion_absolute(
