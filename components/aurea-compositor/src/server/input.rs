@@ -138,6 +138,49 @@ pub(super) fn apply_pending_touchpad_settings(state: &mut WaylandState) {
     }
 }
 
+
+/// Drains shell requests and updates the selected mouse profile.
+/// The libinput acceleration adapter samples this profile on the next motion
+/// event, avoiding retention of stale mouse handles across hot-unplug.
+pub(super) fn apply_pending_pointer_settings(state: &mut WaylandState) {
+    loop {
+        let command = match state.pointer_settings_receiver.try_recv() {
+            Ok(command) => command,
+            Err(std::sync::mpsc::TryRecvError::Empty)
+            | Err(std::sync::mpsc::TryRecvError::Disconnected) => break,
+        };
+
+        let Some(descriptor) = state.compositor.pointing_devices().device(command.device) else {
+            tracing::debug!(
+                device_id = command.device.0,
+                "Ignoring pointer settings for an unknown device"
+            );
+            continue;
+        };
+        if descriptor.kind != aurea_desktop_api::input::InputDeviceKind::Mouse {
+            tracing::debug!(
+                device_id = command.device.0,
+                kind = ?descriptor.kind,
+                "Ignoring mouse settings for a non-mouse device"
+            );
+            continue;
+        }
+        if !state.compositor.set_pointer_device_settings(command.device, command.settings) {
+            tracing::warn!(
+                device_id = command.device.0,
+                "Pointer settings profile was rejected"
+            );
+            continue;
+        }
+        tracing::info!(
+            device_id = command.device.0,
+            profile = ?command.settings.profile(),
+            speed = command.settings.speed(),
+            "Updated live mouse preferences; libinput will apply them on the next motion event"
+        );
+    }
+}
+
 /// Registers the seat's libinput source with Calloop.
 pub(super) fn register_input_backend(
     loop_handle: &LoopHandle<'_, WaylandState>,
