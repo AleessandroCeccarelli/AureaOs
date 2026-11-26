@@ -2409,3 +2409,14 @@ meaning while the selected mode's Applied/Unsupported/Failed result remains
 observable. Aggregate success/failure helpers now include the selected mode,
 and registry test fixtures were updated. Source changes are committed on main;
 no rustfmt, build or tests have been run yet.
+
+
+## 2026-11-26 — Touchpad session-restore cleanup and binding API check
+
+Fixed the session-reactivation path to use the single remaining
+AppliedTouchpadSettings::remove operation after invalidate was removed as a
+redundant alias. The live libinput handle is then configured again as before.
+Checked the pinned input 0.9.1 documentation: config_click_default_method and
+config_accel_default_profile, together with their setters, are available.
+This confirms API availability but does not replace the pending Fedora Cargo
+check and test run. No build or tests were executed in this pass.
