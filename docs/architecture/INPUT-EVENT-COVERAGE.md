@@ -370,9 +370,7 @@ Relative motion now carries its originating `InputDeviceId` through the composit
 
 The DRM builder initializes the seat pointer, publishes initial outputs, and centers the pointer on the first enabled output before opening the Wayland socket. The seat starts with a named default cursor, and the native cursor renderer has a first-frame upload guarantee. The centering helper operates in global logical coordinates, including non-zero and negative output origins. It currently selects the first enabled output in registry order; a persistent user-selected primary display is not yet represented.
 
-Shake-to-locate is already implemented for relative pointer motion and enabled by default. It consumes unaccelerated deltas and maintains independent histories per physical device. Mouse and touchpad events share this relative-motion path; libinput swipe/pinch gestures remain separate. The current visual response is a smooth temporary enlargement up to 2.4×, not a trail. Apple documents the same quick back-and-forth movement for mouse and trackpad; circular movement is not required.
-
-AureaOS's requested trail remains a separate feature: retain a short bounded pointer-position history and render fading translucent cursor echoes behind the current pointer. It must honor reduced-motion settings and must not interfere with client Wayland pointer surfaces. Source-level center-coordinate tests were added but have not been executed. Hardware validation, Cargo build/check and tests remain pending.
+Shake-to-locate is implemented for relative pointer motion and enabled by default. It consumes unaccelerated deltas and maintains independent histories per physical device. Mouse and touchpad events share this relative-motion path; libinput swipe/pinch gestures remain separate. The visual response includes temporary enlargement and a fading trail behind the compositor-owned cursor. The trail does not replace or alter client-provided Wayland cursor surfaces. Source-level tests exist but have not been executed. Hardware validation, Cargo build/check and tests remain pending.
 
 ## Native cursor locate trail
 
@@ -386,3 +384,14 @@ The desktop click tracker no longer hard-codes its interval in the comparison pa
 ## Global desktop pointer behavior preferences — 2026-11-26
 
 Added a dedicated `DesktopPointerBehaviorSettings` API and channel, separate from per-device mouse/touchpad profiles. The Shell runtime now sends global behavior updates through the desktop composition root to the compositor event loop. The compositor persists the double-click interval in `$XDG_CONFIG_HOME/aureaos/input/desktop-pointer.toml` (or `~/.config/aureaos/input/desktop-pointer.toml`), using versioned TOML, restrictive file permissions and atomic replacement. The default remains 400 ms; values are clamped to 150–1000 ms. The saved preference is restored during compositor startup. Settings UI and physical hardware validation remain pending. No build or tests were run.
+
+
+## Touchpad gesture actions through the Shell — 2026-11-26
+
+Completed swipe, pinch and hold sequences are resolved per input device by the compositor interaction engine. Cancelled sequences are discarded; device removal clears both active sequences and queued actions. A single owner protects the Wayland seat gesture stream, while normalized events are forwarded to focused Wayland clients through the pointer-gestures protocol.
+
+AureaOS desktop bindings are resolved separately: horizontal three-finger swipes switch workspace in the compositor; three-finger vertical swipes request Overview or App Exposé; four-finger pinch requests Overview; single-finger hold requests the context menu at the current logical pointer position. Overview, App Exposé and context-menu requests are sent through the desktop interaction channel and applied to Shell-owned DesktopPanelState. Workspace changes are also mirrored to Shell state.
+
+Shell runtime tests cover compositor-originated panel requests, context-menu position, workspace synchronization and event-loop delivery. A further event-loop test was added for the complete sequence of Overview, App Exposé and context menu. These tests have not been executed.
+
+Important presentation boundary: DesktopPanelState records which surface should be shown and its context-menu position; it is not itself a renderer. The native Overview, App Exposé and context-menu Vulkan presentation/hit-testing paths must be completed and validated separately before claiming that these gestures visibly open finished panels. No hardware or grouped build validation has been performed.
