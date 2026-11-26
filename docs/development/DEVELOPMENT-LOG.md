@@ -2265,3 +2265,10 @@ Added `input/cursor_trail.rs` for a bounded three-position history with finite-c
 ## 2026-11-26 — Vulkan cursor trail rendering path
 
 Extended the locate-trail implementation from input history into render-scene snapshots and output-specific geometry. Pointer motion records global logical positions while locate animation is active; the event loop keeps requesting frames while recent samples remain visible. Added `surface_compositor/cursor_trail_geometry.rs`, reusing native cursor hotspot, output transform, fractional-scale and clipping calculations. Added a dedicated `cursor_trail.frag` shader and format-cached Vulkan pipeline; opacity is passed through fragment-stage push constants and impressions are composited before the live cursor. The regular surface pipeline and client cursor rendering remain unchanged. Still requires deferred Fedora verification: shader compilation, Rust formatting/checks/tests, Vulkan runtime blending validation, and multi-monitor testing. No builds/tests run yet.
+
+
+### 2026-11-26 — First-frame native cursor warm-up correction
+
+- Review found a startup timing gap: the three-second asynchronous Xcursor warm-up was initially started in AureaCompositor::new(), before DRM discovery, Vulkan initialization and output publication. On slower hardware those steps could consume the entire window; the first requested frame could then clear the desktop while the cursor texture was still decoding, with no further frame scheduled if the pointer remained idle.
+- Added begin_cursor_asset_warmup() and call it only after active outputs are published and the pointer is successfully centered. It resets the three-second window and requests output frames immediately, so the decode worker and Vulkan upload can complete without requiring a mouse/trackpad event.
+- This is a source-level startup fix. No build, rustfmt, Cargo check, tests or physical boot validation were run.
