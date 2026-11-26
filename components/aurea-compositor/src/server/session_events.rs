@@ -130,6 +130,7 @@ pub(super) fn register_session_events(
             if state.session_active {
                 super::udev_events::activate_discovered_devices(state);
                 super::input::reapply_touchpad_settings(state);
+                super::input::reapply_pointer_acceleration(state);
                 state.compositor.center_pointer_on_primary_output();
             }
         })
