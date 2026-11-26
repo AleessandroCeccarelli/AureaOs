@@ -4,6 +4,7 @@
 # Coordinates are measured on the 64x64 SVG source canvas.
 # The build pipeline must scale hotspots with the raster output.
 
+theme_name = "AureaOS-Light"
 schema_version = 1
 canvas_width = 64
 canvas_height = 64
