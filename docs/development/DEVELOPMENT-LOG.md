@@ -2350,3 +2350,8 @@ Added `tracing::info` diagnostics at the two readiness boundaries needed for fir
 ### 2026-11-26 — HiDPI native cursor geometry coverage
 
 Added a focused 2× output-scale test for native cursor placement, covering logical-to-physical coordinate conversion, 64×64 raster sizing and scaled hotspot placement. This complements the existing 1× primary-output and off-output clipping cases. Not executed; no build started.
+
+
+### 2026-11-26 — Shared pointer location commit path
+
+Extracted the common final stage for relative and absolute pointer motion into `compositor/pointer.rs`: surface-focus calculation, Smithay location update, Wayland pointer frame dispatch, and output-frame scheduling. Device-specific coordinate mapping and bounds remain separate; only the commit/presentation invariant is shared. This removes duplicated behavior and prevents the two paths from drifting in redraw scheduling. No build or tests were run.
