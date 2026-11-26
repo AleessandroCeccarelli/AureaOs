@@ -2307,3 +2307,8 @@ A source-level audit followed the named-cursor path from startup through physica
 - The DRM event loop now treats pending native cursor work as animation activity, requests output frames every 16 ms, and naturally returns to its 100 ms idle dispatch once decode and upload are complete.
 - This polling is backend-independent: both direct Vulkan presentation and the CPU-upload compatibility route use the same per-GPU surface pipeline cache.
 - The built-in fallback arrow remains available throughout. No build or runtime test was run in this source-only change; validation is deferred to the planned Fedora batch check.
+
+
+## 2026-11-26 — Desktop artwork Vulkan preparation
+
+Added `VulkanSurfacePipelineCache::prepare_desktop_item_texture`. It resolves the desktop item through the canonical asset descriptor (theme, Trash contents and effective output scale), loads the generated RGBA8 file beneath `AUREA_HUMAN_INTERFACES_ROOT` (default `/usr/share/aureaos/human-interfaces`), validates it through the existing loader, retains the CPU snapshot by texture key, and queues the texture in the existing Vulkan desktop-icon cache. Missing/unapproved item artwork returns `None` rather than substituting an unrelated icon. This is the preparation stage only: the per-output geometry and draw/binding path are not yet connected to `surface_compositor`; selection highlighting and visible desktop icon rendering remain pending. No build or tests were run.
