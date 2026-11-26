@@ -89,6 +89,8 @@ pub(super) fn build(
         #[cfg(feature = "drm")]
         desktop_pointer_behavior_receiver,
         #[cfg(feature = "drm")]
+        desktop_pointer_behavior_store: crate::input::pointing::DesktopPointerBehaviorStore::default(),
+        #[cfg(feature = "drm")]
         applied_touchpad_settings: AppliedTouchpadSettings::default(),
         #[cfg(feature = "drm")]
         touchpad_devices: std::collections::HashMap::new(),
