@@ -245,7 +245,16 @@ MANIFEST_TMP="$CANDIDATE_MANIFEST.tmp.$$"
     echo "Build artifact already exists; refusing to overwrite historical evidence." >&2
     exit 1
 }
-trap 'rm -f -- "$CANDIDATE_TMP" "$MANIFEST_TMP"; cleanup' EXIT
+finalize_publication() {
+    local status=$?
+    rm -f -- "$CANDIDATE_TMP" "$MANIFEST_TMP"
+    if ((status == 0)); then
+        echo "Build workspace and caches preserved: $BUILD_ROOT"
+    else
+        echo "Build failed; preserving workspace and diagnostics: $BUILD_ROOT" >&2
+    fi
+}
+trap finalize_publication EXIT
 
 install -m 0644 "$ISO_PATH" "$CANDIDATE_TMP"
 # Re-open the exact temporary ISO before it receives a permanent name.
