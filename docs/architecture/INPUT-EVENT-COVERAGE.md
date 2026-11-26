@@ -335,3 +335,8 @@ This is semantic input routing only. The menu has light/dark SVG masters and a N
 ## Native cursor first-frame guarantee — 2026-11-25
 
 The compositor-owned arrow texture is a required part of the desktop's initial pointer presentation. Its 32×32 RGBA upload is now completed once before the first frame that needs it, rather than leaving an upload fence pending and relying on a later mouse event to request another frame. This prevents the startup-centering frame from clearing the output without drawing the arrow when the pointer is otherwise idle. The texture remains cached for the Vulkan device lifetime; subsequent frames do not upload it again. This is a source-level correction only. The grouped Fedora build/check/test and physical pointer validation remain pending.
+
+
+## Pointer placement after output hot-unplug during a client grab — 2026-11-26
+
+Output topology changes must not forcibly terminate an active Wayland pointer grab. The compositor now records a deferred pointer recenter when an output-driven placement request is blocked by a grab. Output reconciliation also detects when the current pointer location becomes invalid under the new enabled-output union while a grab is active and marks placement for retry. After each Calloop dispatch, the DRM event loop checks the pending flag; once Smithay has released the grab, the pointer is centered on an enabled output and all output frames are requested. The retry is event-loop driven and does not add a timer or poll while no placement is pending. This is source-level lifecycle hardening only; physical hot-unplug and popup-grab validation remain pending.
