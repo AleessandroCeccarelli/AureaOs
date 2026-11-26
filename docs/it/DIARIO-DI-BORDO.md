@@ -1898,3 +1898,12 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - La texture Vulkan della freccia (32×32 RGBA) viene ora caricata e completata una sola volta prima del primo frame che la utilizza. Dopo l'inizializzazione resta in cache per tutta la vita del dispositivo Vulkan; i frame successivi non ripetono l'upload.
 - La modifica evita che il puntatore resti invisibile sul desktop fermo subito dopo l'avvio. Non sostituisce la verifica fisica del movimento: quella resta da eseguire su Fedora.
 - Nessuna build, cargo fmt, check o test eseguiti, come concordato.
+
+
+### 26 novembre 2026 — Riposizionamento differito del puntatore dopo hot-unplug
+
+- Chiuso un caso limite del lifecycle: se un monitor veniva rimosso mentre un client possedeva un pointer grab, AureaOS proteggeva correttamente il grab ma poteva perdere il ricentramento richiesto.
+- Aggiunto `pointer_recenter_pending` nel compositor. Le richieste di ricentramento bloccate da un grab vengono conservate invece di essere scartate.
+- La riconciliazione della topologia controlla anche se la posizione corrente è diventata esterna all'unione dei monitor attivi durante un grab; in tal caso registra il riposizionamento differito.
+- Dopo ogni dispatch Calloop, il loop DRM ritenta solo se esiste una richiesta pendente. Quando il grab termina, il puntatore viene ricentrato su un output attivo e vengono richiesti i frame.
+- Nessuna build, `cargo fmt`, check o test eseguiti. La verifica di hot-unplug e popup grab resta da fare su Fedora insieme al ciclo di test concordato.
