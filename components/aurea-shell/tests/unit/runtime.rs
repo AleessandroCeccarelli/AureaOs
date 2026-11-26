@@ -456,10 +456,12 @@ fn runtime_forwards_mouse_preferences_to_compositor_channel() {
 
     let (touchpad_controller, _touchpad_receiver) = touchpad_settings_channel();
     let (pointer_controller, pointer_receiver) = pointer_settings_channel();
+    let (desktop_pointer_behavior, _desktop_pointer_behavior_receiver) = desktop_pointer_behavior_channel();
     let runtime = ShellRuntime::with_controllers(
         DisplayColorController::new(),
         touchpad_controller,
         pointer_controller,
+        desktop_pointer_behavior,
     );
     let settings = PointerSettings::default();
 
