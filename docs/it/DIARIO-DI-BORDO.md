@@ -2209,3 +2209,6 @@ Aggiunti test unitari per il rifiuto dei begin duplicati e per la rimozione limi
 - Modifiche sorgente e documentazione registrate su `main`. Nessuna build o suite eseguita in questa fase: la validazione Rust resta da eseguire in un unico blocco, come concordato.
 
 - Audit configurazione touchpad: corretto il report della modalità `NoScroll`. In caso di rifiuto o errore da libinput, le opzioni di scorrimento non vengono più dichiarate erroneamente applicate. Il risultato effettivo di libinput viene propagato al report.
+
+- Audit accelerazione mouse/touchpad: eliminata la doppia applicazione dei profili. Il mouse usa `PointerSettings`; il touchpad usa esclusivamente il proprio `TouchpadSettings` per velocità e curva. La vecchia applicazione generica poteva sovrascrivere il profilo touchpad all'avvio, al movimento o alla riattivazione della sessione.
+- I profili generici sono ora accettati e ripristinati solo per i mouse; aggiunte asserzioni per impedire l'assegnazione di un profilo mouse a un touchpad.
