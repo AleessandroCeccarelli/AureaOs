@@ -280,3 +280,12 @@ The desktop context menu now follows the compositor-owned native artwork path ra
 The compositor owns a small high-contrast 32×32 RGBA arrow for the default named cursor. RenderScene derives its top-left origin from the seat pointer location and the arrow hotspot; output geometry applies each monitor's logical origin, integer or fractional scale, transform and clipping. A client-provided Wayland cursor surface instead follows its committed hotspot and is composited above desktop overlays; the compositor-owned arrow is drawn last when the cursor status is a named cursor.
 
 The native arrow texture is initialized once and cached for the Vulkan device lifetime. Its first upload is completed before the first frame that requires it, ensuring the startup pointer-centering frame cannot omit the arrow while waiting for another input event. The cursor is positioned by the same seat pointer location updated by libinput motion, and each accepted relative motion requests output frames. These are source-level guarantees; physical movement, click, wheel, multi-monitor and hotplug behavior still require the grouped Fedora validation.
+
+
+### Native Xcursor rendering — 26 November 2026
+
+- `RenderScene` carries the named Smithay cursor role, global pointer anchor and desktop Light/Dark theme.
+- `VulkanNativeCursorTexture` resolves Xcursor files from `AUREA_CURSOR_THEME_ROOT` (default `/usr/share/icons`), decodes with the bounded internal parser, selects the closest raster size and retains the uploaded frame textures in the per-device cache.
+- The native cursor draw uses the decoded image dimensions and per-asset hotspot. Missing files fall back to a raster-size-adjusted built-in arrow.
+- Debian Live packaging builds both SVG themes with `rsvg-convert` and `xcursorgen`, installs them in `/usr/share/icons`, and validates the canonical cursor payload.
+- Current limitation: first-use file read/decode/upload still occurs synchronously on the render path; all selected frames are uploaded but only frame zero is drawn. Animation scheduling, asynchronous preparation, cache-budget review and physical fractional/high-DPI validation remain open. No build or test was run for this source change.
