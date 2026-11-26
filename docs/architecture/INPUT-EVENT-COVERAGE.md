@@ -355,3 +355,13 @@ Relative motion now carries its originating `InputDeviceId` through the composit
 - The shell-to-compositor channel is wired through the application, desktop factory, compositor factory and Wayland server. No Settings UI was added.
 - Pointer speed/profile controls and double-click timing remain deferred to the future System Settings input page alongside touchpad preferences. The desktop double-click interval remains unchanged.
 - Source changes only. No Cargo build, rustfmt, tests or physical-device validation were run.
+
+
+
+## Mouse buttons, wheel and input-session restoration — 2026-11-26
+
+- Standard auxiliary mouse buttons (`BTN_SIDE`, `BTN_EXTRA`, `BTN_FORWARD`, `BTN_BACK`) already arrive through the common libinput `PointerButton` event and are forwarded with their original Linux button codes to the Wayland seat. Desktop context-menu hit testing now claims only primary/secondary clicks; auxiliary buttons are never swallowed by the desktop menu. Added unit coverage for this routing boundary.
+- Vertical and horizontal wheel input is already delivered as Wayland axis frames. The dispatch preserves continuous values, high-resolution `v120` values, source type and relative direction. Existing axis tests cover finite-value filtering and representable `v120` conversion.
+- The compositor now retains live libinput handles for connected mice only while registered. Pointer preference commands apply acceleration settings immediately to that handle. Device removal and reclassification clear the retained handle.
+- On libseat session activation (for example, returning from another VT), saved mouse acceleration is reapplied to all retained mouse handles; touchpad acceleration is also restored through its separate retained-device registry. Existing held-button release on pause and device-removal cleanup remain in place.
+- Hotplug, physical side-button behavior, wheel behavior and VT suspend/resume still require hardware validation. No build, rustfmt, cargo check or tests were run in this source-editing session.
