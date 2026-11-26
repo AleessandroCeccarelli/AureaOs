@@ -2106,3 +2106,19 @@ Aggiunto begin_cursor_asset_warmup(), richiamato soltanto dopo la pubblicazione 
 Il renderer non deve più aspettare la lettura, la decodifica e l'upload del tema Xcursor per mostrare il puntatore. Aggiunta una piccola freccia AureaOS ad alto contrasto, caricata una sola volta per dimensione raster e conservata in una cache limitata a quattro dimensioni. La freccia di base viene disegnata subito mentre il tema viene preparato in background; quando la texture del tema è pronta, sostituisce automaticamente la freccia provvisoria mantenendo coordinate e hotspot. Se il worker non parte o la sua coda è momentaneamente piena, il puntatore di base resta comunque disponibile. L'upload sincrono riguarda soltanto questa piccola immagine; lettura e decodifica Xcursor restano asincrone. Nessuna build, formattazione, test o prova fisica eseguiti.
 
 Aggiunti anche test unitari indipendenti dalla GPU per dimensioni, hotspot, payload RGBA e limiti minimo/massimo della freccia provvisoria. I test sono nel repository ma non sono ancora stati eseguiti.
+
+### Verifica del percorso puntatore → renderer → KMS — 26 novembre 2026
+
+È stata eseguita una revisione del percorso completo del puntatore nativo:
+
+- Il builder DRM pubblica gli output Wayland, centra il puntatore sull'output primario e solo dopo avvia la finestra di warm-up del cursore.
+- RenderScene acquisisce la posizione corrente del puntatore Smithay e il ruolo del cursore.
+- Per i cursori nominati, la scena trasporta posizione globale logica e nome dell'asset Xcursor. I cursori forniti dalle applicazioni restano invece superfici Wayland con il proprio hotspot.
+- Il renderer chiama ensure_native_cursor_texture, poi recupera l'asset tramite native_cursor_asset. Se il tema non è pronto, il fallback integrato viene restituito dalla stessa lookup e arriva effettivamente al binding Vulkan e al draw pass.
+- La geometria applica hotspot dell'asset, origine logica del monitor, scala intera/frazionaria, trasformazione e clipping. I test già presenti coprono freccia predefinita, hotspot specifico e puntatore collocato su un altro monitor.
+- Il movimento relativo passa dai controlli sui valori non finiti, viene limitato all'unione degli output attivi, aggiornato tramite pointer.motion e pointer.frame, quindi richiede il ridisegno degli output.
+- Il ciclo eventi mantiene richieste a 16 ms durante il warm-up iniziale. Il renderer consegna i frame attraverso Vulkan diretto oppure tramite il percorso compatibile Vulkan + readback CPU + GBM/KMS; gli eventi VBlank/page-flip gestiscono il ritiro delle risorse.
+
+**Limite individuato:** il warm-up di tre secondi è una finestra temporizzata, non una notifica di completamento del worker. Se lettura, decodifica o upload Xcursor superano tale finestra e il mouse resta immobile, il fallback continua a essere mostrato fino alla richiesta di un nuovo frame (ad esempio al successivo movimento). La freccia di fallback resta comunque disponibile e il puntatore continua a funzionare. La soluzione corretta, in futuro, è notificare il loop al completamento del worker, non prolungare indefinitamente il rendering ad alta frequenza.
+
+**Verifica:** revisione statica dei sorgenti e dei collegamenti tra i componenti. Non sono stati eseguiti cargo fmt, build, cargo check, test, boot o prove fisiche su DRM/KMS/Vulkan. Il collegamento architetturale è presente; il funzionamento reale sul laptop deve ancora essere verificato.
