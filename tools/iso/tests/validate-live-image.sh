@@ -90,7 +90,8 @@ grep -Fxq 'ID=debian' "$ROOTFS/etc/os-release" ||
     fail "Live rootfs is not identified as Debian"
 grep -Fxq 'VERSION_CODENAME=trixie' "$ROOTFS/etc/os-release" ||
     fail "Live rootfs is not Debian Trixie"
-[[ "$(head -n 1 "$ROOTFS/etc/debian_version")" =~ ^13(\\.|$) ]] ||
+DEBIAN_VERSION="$(head -n 1 "$ROOTFS/etc/debian_version")"
+[[ "$DEBIAN_VERSION" == 13 || "$DEBIAN_VERSION" == 13.* ]] ||
     fail "Live rootfs is not Debian 13"
 [[ -x "$ROOTFS/usr/lib/systemd/systemd" && -L "$ROOTFS/sbin/init" ]] ||
     fail "Debian systemd PID 1 integration is missing from the Live rootfs"
@@ -186,7 +187,10 @@ for UKI in "${UKIS[@]}"; do
     ukify inspect --section=".initrd:binary@$UKI_INITRD" "$UKI" >/dev/null ||
         fail "cannot extract the initramfs embedded in $UKI_NAME"
     [[ -s "$UKI_INITRD" ]] || fail "$UKI_NAME contains an empty initramfs"
-    lsinitramfs "$UKI_INITRD" | grep -Fxq 'scripts/live' ||
+    UKI_INITRD_LIST="$TEMP_DIR/$UKI_NAME.initrd.list"
+    lsinitramfs "$UKI_INITRD" > "$UKI_INITRD_LIST" ||
+        fail "cannot list the initramfs embedded in $UKI_NAME"
+    grep -Fxq 'scripts/live' "$UKI_INITRD_LIST" ||
         fail "$UKI_NAME initramfs does not contain scripts/live"
     mcopy -i "$ESP_IMAGE" "::/loader/entries/aureaos-live-$VERSION.conf" "$ENTRY" >/dev/null ||
         fail "boot entry for $UKI_NAME is missing"
