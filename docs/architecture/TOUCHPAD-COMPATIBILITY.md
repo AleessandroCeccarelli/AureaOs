@@ -294,9 +294,9 @@ In particular:
   settings advertised by the connected device.
 - DisabledOnExternalMouse is delegated to libinput; AureaOS must not add a parallel
   external-mouse detector.
-- DeviceDefault means leave the choice to libinput. The apply report marks it
-  NotRequested, not Applied or Unsupported; this avoids claiming AureaOS configured
-  a value it deliberately did not set.
+- DeviceDefault means restore libinput's own per-device default through its default
+  getter/setter APIs when available. If the binding exposes no default value, the
+  report marks the option NotRequested rather than inventing a policy.
 
 Do not add a new service, registry or capability abstraction unless a concrete
 compositor or shell consumer requires it. Keep the input lifecycle state needed
