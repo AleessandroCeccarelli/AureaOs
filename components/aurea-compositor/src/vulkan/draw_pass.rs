@@ -138,6 +138,7 @@ impl VulkanDrawPass {
             Some((texture, set_index)),
             None,
             Some(&0_u32.to_ne_bytes()),
+            vk::ShaderStageFlags::VERTEX,
         )
     }
 
@@ -173,6 +174,7 @@ impl VulkanDrawPass {
             Some((texture, set_index)),
             Some((viewport, scissor)),
             Some(&texture_transform.to_ne_bytes()),
+            vk::ShaderStageFlags::VERTEX,
         )
     }
 
@@ -206,6 +208,39 @@ impl VulkanDrawPass {
             Some((texture, set_index)),
             Some((viewport, scissor)),
             Some(push_constants),
+            vk::ShaderStageFlags::VERTEX,
+        )
+    }
+
+    /// Records a textured region while exposing push constants to both shader stages.
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_textured_region_with_stage_push_constants(
+        command_buffer: vk::CommandBuffer,
+        view: &VulkanImageView<'_, '_>,
+        pipeline: &VulkanGraphicsPipeline<'_>,
+        texture: &VulkanTextureBinding<'_, '_, '_, '_>,
+        set_index: u32,
+        previous_state: VulkanImageState,
+        final_state: VulkanImageState,
+        load: VulkanColorLoad,
+        viewport: vk::Viewport,
+        scissor: vk::Rect2D,
+        push_constants: &[u8],
+        stages: vk::ShaderStageFlags,
+    ) -> Result<(), VulkanDrawPassError> {
+        Self::record_inner(
+            command_buffer,
+            view,
+            pipeline,
+            previous_state,
+            final_state,
+            load,
+            3,
+            1,
+            Some((texture, set_index)),
+            Some((viewport, scissor)),
+            Some(push_constants),
+            stages,
         )
     }
 
@@ -222,6 +257,7 @@ impl VulkanDrawPass {
         texture: Option<(&VulkanTextureBinding<'_, '_, '_, '_>, u32)>,
         region: Option<(vk::Viewport, vk::Rect2D)>,
         push_constants: Option<&[u8]>,
+        push_constant_stages: vk::ShaderStageFlags,
     ) -> Result<(), VulkanDrawPassError> {
         Self::validate(vertex_count, instance_count, final_state, load)?;
         if let Some(bytes) = push_constants {
@@ -250,7 +286,7 @@ impl VulkanDrawPass {
         if let Some((binding, set_index)) = texture {
             binding.bind(command_buffer, pipeline.layout(), set_index);
             if let Some(data) = push_constants {
-                pipeline.push_constants(command_buffer, vk::ShaderStageFlags::VERTEX, 0, data);
+                pipeline.push_constants(command_buffer, push_constant_stages, 0, data);
             }
         }
         if let Some((viewport, scissor)) = region {
