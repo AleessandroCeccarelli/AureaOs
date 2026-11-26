@@ -43,6 +43,7 @@ pub(crate) enum VulkanNativeCursorTextureError {
     Decode(XcursorFileError),
     Texture(VulkanShmTextureError),
     WorkerUnavailable,
+    CacheBudgetExceeded,
 }
 
 impl fmt::Display for VulkanNativeCursorTextureError {
@@ -55,6 +56,7 @@ impl fmt::Display for VulkanNativeCursorTextureError {
             Self::Decode(error) => write!(formatter, "Xcursor decode: {error}"),
             Self::Texture(error) => write!(formatter, "Native cursor texture: {error}"),
             Self::WorkerUnavailable => formatter.write_str("Native cursor decode worker is unavailable"),
+            Self::CacheBudgetExceeded => formatter.write_str("Native cursor texture cache budget exceeded"),
         }
     }
 }
@@ -137,12 +139,24 @@ struct PendingCursorUpload {
 ///
 /// File I/O and Xcursor parsing run on a dedicated bounded worker. Vulkan uploads
 /// are fence-polled by the render thread and never waited on during normal frames.
+struct CachedNativeCursorAsset {
+    asset: VulkanNativeCursorAsset,
+    byte_len: usize,
+    last_used: u64,
+}
+
+/// Owns cursor decoding and GPU resources for the lifetime of the Vulkan device.
+///
+/// File I/O and Xcursor parsing run on a dedicated bounded worker. Vulkan uploads
+/// are fence-polled by the render thread and never waited on during normal frames.
 pub(crate) struct VulkanNativeCursorTexture {
-    assets: HashMap<String, VulkanNativeCursorAsset>,
+    assets: HashMap<String, CachedNativeCursorAsset>,
     pending_keys: HashSet<String>,
     pending_uploads: Vec<PendingCursorUpload>,
     decode_tx: Option<SyncSender<CursorDecodeRequest>>,
     decode_rx: Receiver<CursorDecodeResult>,
+    cached_bytes: usize,
+    frame: u64,
 }
 
 impl VulkanNativeCursorTexture {
@@ -304,6 +318,9 @@ impl VulkanNativeCursorTexture {
             if textures.len() != pending.metadata.len() || textures.is_empty() {
                 return Err(VulkanNativeCursorTextureError::EmptyUpload);
             }
+            let byte_len = pending.metadata.iter()
+                .map(|frame| frame.rgba8.len())
+                .sum::<usize>();
             let frames = pending.metadata.into_iter().zip(textures).map(|(metadata, texture)| {
                 VulkanNativeCursorFrame {
                     texture,
@@ -314,7 +331,6 @@ impl VulkanNativeCursorTexture {
                     delay_ms: metadata.delay_ms,
                 }
             }).collect();
-            let byte_len = pending.metadata.iter().map(|frame| frame.rgba8.len()).sum::<usize>();
             if byte_len > MAX_CACHED_CURSOR_BYTES {
                 return Err(VulkanNativeCursorTextureError::CacheBudgetExceeded);
             }
