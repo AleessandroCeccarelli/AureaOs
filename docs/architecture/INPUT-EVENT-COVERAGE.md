@@ -365,3 +365,11 @@ Relative motion now carries its originating `InputDeviceId` through the composit
 - The compositor now retains live libinput handles for connected mice only while registered. Pointer preference commands apply acceleration settings immediately to that handle. Device removal and reclassification clear the retained handle.
 - On libseat session activation (for example, returning from another VT), saved mouse acceleration is reapplied to all retained mouse handles; touchpad acceleration is also restored through its separate retained-device registry. Existing held-button release on pause and device-removal cleanup remain in place.
 - Hotplug, physical side-button behavior, wheel behavior and VT suspend/resume still require hardware validation. No build, rustfmt, cargo check or tests were run in this source-editing session.
+
+## Startup pointer placement and shake-to-locate — 2026-11-26
+
+The DRM builder initializes the seat pointer, publishes initial outputs, and centers the pointer on the first enabled output before opening the Wayland socket. The seat starts with a named default cursor, and the native cursor renderer has a first-frame upload guarantee. The centering helper operates in global logical coordinates, including non-zero and negative output origins. It currently selects the first enabled output in registry order; a persistent user-selected primary display is not yet represented.
+
+Shake-to-locate is already implemented for relative pointer motion and enabled by default. It consumes unaccelerated deltas and maintains independent histories per physical device. Mouse and touchpad events share this relative-motion path; libinput swipe/pinch gestures remain separate. The current visual response is a smooth temporary enlargement up to 2.4×, not a trail. Apple documents the same quick back-and-forth movement for mouse and trackpad; circular movement is not required.
+
+AureaOS's requested trail remains a separate feature: retain a short bounded pointer-position history and render fading translucent cursor echoes behind the current pointer. It must honor reduced-motion settings and must not interfere with client Wayland pointer surfaces. Source-level center-coordinate tests were added but have not been executed. Hardware validation, Cargo build/check and tests remain pending.
