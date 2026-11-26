@@ -151,7 +151,7 @@ impl SeatHandler for AureaCompositor {
 
     fn cursor_image(&mut self, _seat: &Seat<Self>, image: CursorImageStatus) {
         self.cursor_image = image;
-        if matches!(self.cursor_image, CursorImageStatus::Named(_)) {
+        if matches!(&self.cursor_image, CursorImageStatus::Named(_)) {
             self.cursor_asset_warmup_until = Some(
                 std::time::Instant::now() + std::time::Duration::from_secs(3),
             );
