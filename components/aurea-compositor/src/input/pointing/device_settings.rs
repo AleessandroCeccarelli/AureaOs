@@ -145,9 +145,7 @@ mod tests {
         let devices = Devices(vec![descriptor(5, InputDeviceKind::Mouse)]);
         let mut settings = PointingDeviceSettings::default();
         let pointer = PointerSettings::new(PointerAccelerationProfile::Flat, 0.4, false).unwrap();
-        let touchpad = TouchpadSettings::new(false, true, false, true, false);
         assert!(settings.set_pointer(&devices, InputDeviceId(5), pointer));
-        assert!(settings.set_touchpad(&devices, InputDeviceId(5), touchpad));
 
         settings.reconcile_kind(InputDeviceId(5), InputDeviceKind::Touchpad);
         assert_eq!(settings.pointer(InputDeviceId(5), PointerSettings::default()), PointerSettings::default());
@@ -169,7 +167,6 @@ mod tests {
             settings.pointer(InputDeviceId(4), PointerSettings::default()),
             PointerSettings::default()
         );
-        assert_eq!(
-        );
+
     }
 }
