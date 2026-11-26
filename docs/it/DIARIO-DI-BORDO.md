@@ -2225,3 +2225,21 @@ Durante l'audit è emerso che, selezionando lo scorrimento a due dita, il report
 ### 26 novembre 2026 — Report corretto per la modalità touchpad senza scorrimento
 
 Completata la distinzione dei tre casi mutuamente esclusivi: con `NoScroll` né lo scorrimento a due dita né quello dai bordi risultano richiesti, quindi entrambi vengono riportati come `NotRequested` invece che come `Applied`. La selezione di `DisabledOnExternalMouse` resta delegata a libinput tramite `config_send_events_set_mode`, senza introdurre un secondo monitoraggio concorrente dei mouse esterni. Modifica sorgente e documentazione non ancora formattate, compilate o testate.
+
+### 26 novembre 2026 — Semplificazione dello stack mouse/touchpad
+
+Riaffermato il confine architetturale di AureaOS: non riscrivere ciò che il kernel
+Debian, udev, libinput e Smithay già forniscono. I driver kernel gestiscono il
+trasporto hardware; libinput gestisce classificazione, quirks, normalizzazione,
+accelerazione, configurazione touchpad e riconoscimento dei gesti supportati;
+Smithay integra il flusso nel compositor Wayland. AureaOS mantiene la proprietà
+delle preferenze esposte, delle azioni desktop e dell'esperienza utente.
+
+Corretto anche il significato di DeviceDefault: click method e profilo di
+accelerazione lasciati a libinput vengono ora riportati come NotRequested,
+non come Applied né Unsupported. all_applied() considera soddisfatte tutte
+le opzioni volutamente lasciate al default, senza nascondere capacità non
+supportate o errori reali.
+
+Nessuna build o test eseguiti: la verifica resta accorpata al controllo Fedora
+concordato.
