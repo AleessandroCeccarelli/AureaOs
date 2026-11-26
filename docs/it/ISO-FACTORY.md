@@ -118,13 +118,13 @@ Lo script interno prepara il sorgente tramite `git archive HEAD`. Quindi compila
 
 ### Fase E — Validazione automatica dell'immagine
 
-Nel repository sono già presenti due script specifici:
+Nel repository sono presenti un preflight del chroot, un generatore UKI/ISO e un validatore specifico dell'immagine finale:
 
 - `tools/iso/tests/validate-chroot-boot.sh` — controlla nel chroot i pacchetti di boot richiesti e l'integrazione initramfs di live-boot, rigenera l'initramfs e verifica la presenza di `scripts/live`.
 - `tools/iso/scripts/build-systemd-boot-live-iso.sh` — genera una UKI dalla coppia kernel/initramfs Debian esatta, crea un'immagine EFI FAT con systemd-boot e le voci UKI, rimuove il payload GRUB intermedio e rimasterizza la ISO UEFI-only.
 - `tools/iso/tests/validate-live-image.sh` — controlla immagine EFI, percorso fallback systemd-boot, voce di avvio, sezioni UKI e parametro `boot=live`, filesystem Debian Live e catalogo El Torito EFI.
 
-L'hook di build richiama il validatore del chroot dopo l'installazione e la pulizia dei pacchetti. Il coordinatore controlla il payload binary e successivamente la ISO copiata.
+Il coordinatore installa esplicitamente il validatore boot del chroot in `/usr/local/libexec/aureaos/` prima dell'esecuzione di live-build. L'hook lo richiama dopo l'installazione e la pulizia dei pacchetti. Il coordinatore genera poi UKI/immagine EFI e valida sia il tree binary sia la ISO copiata.
 
 I livelli di validazione devono coprire almeno:
 
@@ -132,7 +132,7 @@ I livelli di validazione devono coprire almeno:
 2. Presenza ed esecuzione dell'hook initramfs di live-boot e dello script di avvio anticipato.
 3. Generazione corretta dell'initramfs per il kernel installato.
 4. Presenza di `scripts/live` in ogni initramfs selezionato.
-5. File kernel e initramfs non vuoti e coerenti nel payload Live.
+5. Immagine filesystem Live non vuota in `/live/filesystem.squashfs`.
 6. Immagine EFI FAT con `EFI/BOOT/BOOTX64.EFI`, systemd-boot e configurazione loader.
 7. Una o più UKI con kernel, initramfs, metadati os-release AureaOS e parametro `boot=live` incorporato.
 8. Voci systemd-boot corrispondenti e voce predefinita valida.
@@ -219,7 +219,7 @@ Il repository dispone già di una base funzionante, ma ISO Factory non è ancora
 
 - Ispezionare su Fedora l'initramfs della ISO che non ha superato il primo avvio, prima di eseguire una nuova build.
 - Determinare perché il boot reale ha segnalato che `/scripts/live` non era accessibile. La causa esatta non è ancora confermata.
-- Verificare le ipotesi del validatore rispetto all'immagine effettivamente generata e ai percorsi BIOS/UEFI.
+- Verificare le ipotesi del validatore rispetto all'immagine UEFI effettivamente generata e al percorso El Torito EFI.
 - Rendere atomica la pubblicazione: validare una candidata temporanea prima di sostituire la ISO stabile `AureaOS.iso`. Una validazione fallita non deve mai sovrascrivere l'ultima candidata conservata.
 - Conservare ISO storiche con nomi univoci, manifest, report e log, invece di mantenere un solo nome mutabile.
 - Generare un manifest con commit esatto e risultati effettivi dei controlli.
