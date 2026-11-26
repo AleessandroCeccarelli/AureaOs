@@ -12,7 +12,7 @@ use std::{
 
 use aurea_desktop_api::display::DisplayColorController;
 #[cfg(feature = "drm")]
-use aurea_desktop_api::input::TouchpadSettingsCommand;
+use aurea_desktop_api::input::{PointerSettingsCommand, TouchpadSettingsCommand};
 #[cfg(feature = "drm")]
 use std::sync::mpsc::Receiver;
 
@@ -55,6 +55,8 @@ pub(super) struct WaylandState {
     pub(super) display_color: DisplayColorController,
     #[cfg(feature = "drm")]
     pub(super) touchpad_settings_receiver: Receiver<TouchpadSettingsCommand>,
+    #[cfg(feature = "drm")]
+    pub(super) pointer_settings_receiver: Receiver<PointerSettingsCommand>,
 
     /// Last successfully applied touchpad profile for each connected device.
     #[cfg(feature = "drm")]
