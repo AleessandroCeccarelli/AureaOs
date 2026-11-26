@@ -91,6 +91,7 @@ impl AureaCompositor {
                 pointer_location,
                 self.cursor_locate_scale(),
             )
+            .with_cursor_trail(self.cursor_trail.visible_at(std::time::Instant::now()))
     }
 
     /// Renders a previously requested frame on an enabled output.
