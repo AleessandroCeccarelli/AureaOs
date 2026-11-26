@@ -122,6 +122,9 @@ refresh_inputs() {
     git -C "$REPO_ROOT" archive --format=tar HEAD \
         Cargo.toml Cargo.lock components tools/iso/pam tools/iso/systemd tools/iso/scripts \
         tools/assets/render-context-menu.sh tools/assets/png_to_rgba.py \
+        tools/assets/build_cursor_theme.py tools/assets/cursor_manifest.py \
+        tools/assets/cursor_rasterizer.py tools/assets/cursor_svg.py \
+        tools/assets/xcursor_config.py aurea-human-interfaces/cursors \
         aurea-human-interfaces/fonts/source/google-fonts/noto-sans \
         aurea-human-interfaces/icons/source/system/context-menu |
         tar -xf - -C "$SOURCE_DIR"
