@@ -101,7 +101,8 @@ sudo podman run --rm --privileged --security-opt label=disable \
 
         apt-get update
         apt-get install -y --no-install-recommends \
-            live-build git tar sudo ca-certificates xorriso
+            live-build git tar sudo ca-certificates xorriso \
+            systemd-boot-efi systemd-ukify mtools dosfstools
 
         git config --global --add safe.directory /workspace
 
