@@ -13,6 +13,8 @@ use smithay::utils::{Logical, Point};
 pub const MAX_CURSOR_TRAIL_SAMPLES: usize = 3;
 /// Old impressions are discarded quickly to keep the trail short.
 pub const CURSOR_TRAIL_LIFETIME: Duration = Duration::from_millis(220);
+/// Minimum spacing between recorded impressions at high input polling rates.
+pub const CURSOR_TRAIL_SAMPLE_INTERVAL: Duration = Duration::from_millis(24);
 
 /// One immutable cursor position and its remaining lifetime.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -37,7 +39,7 @@ impl CursorTrail {
     /// Records a position, throttled to avoid duplicate impressions per frame.
     pub fn record(&mut self, position: Point<f64, Logical>, now: Instant) {
         if !position.x.is_finite() || !position.y.is_finite() { return; }
-        if self.last_sample.is_some_and(|last| now.saturating_duration_since(last) < Duration::from_millis(24)) {
+        if self.last_sample.is_some_and(|last| now.saturating_duration_since(last) < CURSOR_TRAIL_SAMPLE_INTERVAL) {
             return;
         }
         self.samples.push((position, now));
@@ -91,6 +93,39 @@ mod tests {
         assert_eq!(middle.len(), 1);
         assert!((middle[0].opacity() - 0.5).abs() < 0.02);
         assert!(trail.visible_at(start + CURSOR_TRAIL_LIFETIME).is_empty());
+    }
+
+    #[test]
+    fn throttles_high_frequency_samples_without_reordering_positions() {
+        let start = Instant::now();
+        let mut trail = CursorTrail::default();
+        trail.record(point(1.0, 0.0), start);
+        trail.record(
+            point(2.0, 0.0),
+            start + CURSOR_TRAIL_SAMPLE_INTERVAL - Duration::from_millis(1),
+        );
+        trail.record(
+            point(3.0, 0.0),
+            start + CURSOR_TRAIL_SAMPLE_INTERVAL,
+        );
+
+        let samples = trail.visible_at(start + CURSOR_TRAIL_SAMPLE_INTERVAL);
+        assert_eq!(samples.len(), 2);
+        assert_eq!(samples[0].position(), point(3.0, 0.0));
+        assert_eq!(samples[1].position(), point(1.0, 0.0));
+    }
+
+    #[test]
+    fn clear_resets_history_and_sampling_throttle() {
+        let start = Instant::now();
+        let mut trail = CursorTrail::default();
+        trail.record(point(1.0, 0.0), start);
+        trail.clear();
+        trail.record(point(2.0, 0.0), start + Duration::from_millis(1));
+
+        let samples = trail.visible_at(start + Duration::from_millis(1));
+        assert_eq!(samples.len(), 1);
+        assert_eq!(samples[0].position(), point(2.0, 0.0));
     }
 
     #[test]
