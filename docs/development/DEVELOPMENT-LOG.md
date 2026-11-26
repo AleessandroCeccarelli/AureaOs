@@ -2043,3 +2043,11 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Output reconciliation now detects when the current pointer position falls outside the enabled-output union during a grab and records a deferred placement.
 - The DRM Calloop loop retries after each dispatch only while a placement is pending. Once Smithay releases the grab, the pointer is centered on an enabled output and output frames are requested.
 - No build, rustfmt, check or tests were run. Physical hot-unplug and popup-grab validation remain pending for the grouped Fedora session.
+
+
+### 2026-11-26 — Per-device pointer preference and shake isolation
+
+- Relative motion now carries its physical `InputDeviceId` into the compositor handler. Acceleration already used the effective per-device profile; shake-to-locate now reads that same device-scoped preference instead of only the global default.
+- Added `PointerShakeManager` with independent unaccelerated-motion histories per mouse/touchpad. Device disconnect and per-device feature disable clear only the matching history.
+- Added source tests proving that interleaved motion from two devices cannot combine into a false shake and that cleanup is device-scoped. Tests were not executed.
+- No build, rustfmt or check was run.
