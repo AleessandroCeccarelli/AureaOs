@@ -2154,3 +2154,7 @@ Aggiunto un contratto e un canale dedicati alle preferenze globali del puntatore
 - Decisione per AureaOS 1.0: tavolette Wacom e controlli Tablet Pad sono rinviati e non bloccano il completamento del blocco mouse/touchpad. Il percorso touchscreen resta una famiglia input separata.
 - L'interfaccia grafica delle preferenze sarà realizzata nella successiva attività Impostazioni di sistema: il backend è predisposto, ma i controlli visibili non sono ancora presenti.
 - Non eseguiti cargo fmt, build, cargo check, test o prove fisiche. Il blocco potrà essere dichiarato verificato solo dopo il controllo cumulativo su Fedora e le prove con mouse e touchpad reali.
+
+### 26 novembre 2026 — Test mirati della scia del puntatore
+
+Estratto in una costante nominata l'intervallo minimo di campionamento di 24 ms e aggiunti test unitari per verificare il filtraggio degli eventi ad alta frequenza, l'ordine temporale dei campioni e il reset completo della cronologia dopo `clear()`. Nessuna build o test eseguito: la verifica resta accorpata alla sessione Fedora prevista.
