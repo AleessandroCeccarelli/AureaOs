@@ -373,6 +373,51 @@ fn runtime_event_loop_receives_compositor_interactions() {
 }
 
 #[test]
+fn runtime_event_loop_applies_gesture_panels_and_context_menu_position() {
+    use aurea_desktop_api::desktop_interaction::{
+        DesktopInteraction, DesktopPosition, desktop_interaction_channel,
+    };
+
+    let (event_bus, event_receiver) = EventBus::new();
+    let (interaction_sender, interaction_receiver) = desktop_interaction_channel();
+    let mut runtime = ShellRuntime::new();
+
+    runtime.start().unwrap();
+    interaction_sender.send(DesktopInteraction::ShowOverview).unwrap();
+    interaction_sender.send(DesktopInteraction::ShowAppExpose).unwrap();
+    let position = DesktopPosition { x: 320, y: 240 };
+    interaction_sender
+        .send(DesktopInteraction::ShowContextMenu { position })
+        .unwrap();
+    event_bus.publish(ShellEvent::ShutdownRequested).unwrap();
+
+    runtime
+        .run_event_loop_with_interactions(event_receiver, interaction_receiver)
+        .unwrap();
+
+    assert_eq!(
+        runtime.desktop_state().panels.active(),
+        Some(crate::desktop::DesktopPanel::ContextMenu)
+    );
+    assert_eq!(
+        runtime.desktop_state().panels.context_menu_position(),
+        Some(position)
+    );
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::ShowOverview)
+    );
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::ShowAppExpose)
+    );
+    assert_eq!(
+        runtime.take_desktop_interaction(),
+        Some(DesktopInteraction::ShowContextMenu { position })
+    );
+}
+
+#[test]
 fn compositor_desktop_item_selection_is_applied_to_shell_state() {
     use aurea_desktop_api::desktop_interaction::DesktopInteraction;
 
