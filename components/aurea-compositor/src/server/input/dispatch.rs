@@ -210,23 +210,10 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             }
             refresh_touchpad_settings(state, &mut device);
 
-            // Generic pointer acceleration belongs to mice. Touchpads apply
-            // their independent speed/profile through TouchpadSettings.
-            // Absolute digitizers, tablets and touchscreens never use this path.
-            if state
-                .compositor
-                .pointing_devices()
-                .device(device_id)
-                .is_some_and(|descriptor| {
-                    matches!(
-                        descriptor.kind,
-                        aurea_desktop_api::input::InputDeviceKind::Mouse
-                    )
-                })
-            {
-                let settings = state.compositor.pointer_settings_for(device_id);
-                crate::input::pointer_acceleration::apply(&mut device, settings);
-            }
+            // libinput has already applied mouse acceleration before emitting
+            // this event. Preferences are applied on device discovery, when
+            // changed by the shell, and after session reactivation; never
+            // reconfigure the device on every motion event.
 
             state.compositor.handle_pointer_motion(
                 device_id,
