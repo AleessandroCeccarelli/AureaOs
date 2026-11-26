@@ -8,7 +8,7 @@ fail() {
     exit 1
 }
 
-for package in live-boot live-boot-initramfs-tools initramfs-tools linux-image-amd64; do
+for package in live-boot live-boot-initramfs-tools live-config live-config-systemd systemd-sysv initramfs-tools linux-image-amd64; do
     status="$(dpkg-query -W -f='${db:Status-Status}' "$package" 2>/dev/null || true)"
     [ "$status" = installed ] || fail "required package is not installed: $package"
 done
