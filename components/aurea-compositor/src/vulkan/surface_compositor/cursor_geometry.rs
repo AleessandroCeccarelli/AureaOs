@@ -110,6 +110,21 @@ mod tests {
     }
 
     #[test]
+    fn named_cursor_uses_its_own_hotspot_instead_of_the_arrow_hotspot() {
+        let windows = WindowManager::new();
+        let pointer = Point::<f64, Logical>::from((960.0, 540.0));
+        let status = CursorImageStatus::default_named();
+        let scene = RenderScene::from_window_manager(&windows)
+            .with_cursor(&status, Some(pointer), 1.0);
+
+        let (geometry, _, _) = native_cursor_geometry(&scene, &target(), (48, 48), (24, 24))
+            .expect("cursor intersects the output");
+
+        assert_eq!((geometry.x(), geometry.y()), (936, 516));
+        assert_eq!((geometry.width(), geometry.height()), (48, 48));
+    }
+
+    #[test]
     fn cursor_on_another_monitor_is_not_drawn_on_this_output() {
         let windows = WindowManager::new();
         let pointer = Point::<f64, Logical>::from((2200.0, 540.0));
