@@ -34,12 +34,37 @@ impl AureaCompositor {
         let profile =
             TabletCalibration::new(active_area, rotation, aspect_mode, device_aspect_ratio)?;
         self.tablet_calibrations.set(device, profile);
+
+        // Runtime-only devices remain configurable for this session. When a
+        // stable physical identity exists, persist the profile for reconnects.
+        if let Some(identity) = self
+            .pointing_devices()
+            .device(device)
+            .and_then(|descriptor| descriptor.persistent_id)
+        {
+            self.tablet_profiles
+                .set(identity, profile)
+                .map_err(|error| {
+                    tracing::warn!(device_id = device.0, %error, "Could not persist tablet calibration");
+                    TabletCalibrationError::PersistenceFailure
+                })?;
+        }
         Ok(())
     }
 
     /// Restores identity mapping for one connected tablet.
     pub fn reset_tablet_calibration(&mut self, device: InputDeviceId) -> bool {
-        self.tablet_calibrations.remove_device(device)
+        let removed = self.tablet_calibrations.remove_device(device);
+        if let Some(identity) = self
+            .pointing_devices()
+            .device(device)
+            .and_then(|descriptor| descriptor.persistent_id)
+        {
+            if let Err(error) = self.tablet_profiles.remove(&identity) {
+                tracing::warn!(device_id = device.0, %error, "Could not persist tablet calibration reset");
+            }
+        }
+        removed
     }
 
     /// Returns the configured tablet calibration, or identity by default.
