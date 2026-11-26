@@ -2045,3 +2045,14 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Aggiornata la CI per costruire e conservare entrambi i temi.
 - Non eseguiti build o test in questa sessione: validazione automatica e packaging sono demandati alla CI; resta da verificare l'aspetto a schermo e l'integrazione runtime Smithay/Vulkan.
 - Decisione UX: palette chiara/scura selezionabile; modalità invertita e colori personalizzati sono una successiva funzione di accessibilità a livello compositor, non un terzo set statico.
+
+### 26 novembre 2026 — Collegamento dei temi Xcursor al renderer Vulkan
+
+- Sostituita la risorsa GPU limitata alla freccia integrata con una cache per dispositivo delle risorse Xcursor nominate, indicizzata per tema, nome del puntatore e dimensione raster richiesta.
+- Aggiunta la risoluzione dei temi tramite `AUREA_CURSOR_THEME_ROOT` (predefinita a `/usr/share/icons`), il limite di dimensione dei file, la decodifica Xcursor, la selezione della dimensione più vicina e il caricamento Vulkan di tutti i fotogrammi della dimensione scelta.
+- La scena di rendering conserva ora la posizione globale del puntatore. La geometria usa dimensioni e hotspot specifici del cursore; il tema desktop esistente sceglie la palette Light o Dark.
+- Se il tema o il cursore non è disponibile, viene usata la freccia AureaOS integrata. Il fallback viene ridimensionato alla dimensione fisica richiesta per mantenere la dimensione logica corretta sugli schermi HiDPI.
+- Aggiornato il packaging Debian Live: vengono incluse le sorgenti SVG e gli strumenti del builder, installate temporaneamente le dipendenze `librsvg2-bin` e `xcursorgen`, generati entrambi i temi nel chroot Debian, installati in `/usr/share/icons`, verificati i 26 cursori canonici e rimosse le dipendenze usate solo per la compilazione.
+- Aggiornata la documentazione dei puntatori con percorsi runtime, override per lo sviluppo e limitazioni ancora aperte.
+- **Non verificato in esecuzione:** non sono stati eseguiti `cargo fmt`, build/check/test Cargo, controlli di sintassi shell, build ISO Debian o prove visive su hardware. Le modifiche sono state accumulate senza build a ogni correzione, come concordato.
+- **Da completare:** tutti i fotogrammi vengono caricati nella cache, ma al momento viene disegnato solo il primo. Restano scheduler per le animazioni `busy` / `left_ptr_watch`, caricamento e decodifica fuori dal callback di rendering, revisione della memoria cache multi-monitor, verifica fractional/high-DPI e suite completa su Fedora.
