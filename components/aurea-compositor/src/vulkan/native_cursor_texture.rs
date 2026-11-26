@@ -256,17 +256,18 @@ impl VulkanNativeCursorTexture {
         self.poll_uploads()?;
         self.poll_decoded_frames(Arc::clone(&device))?;
 
+        let key = Self::cache_key(name, theme, requested_size);
+        if let Some(entry) = self.assets.get_mut(&key) {
+            entry.last_used = self.frame;
+            return Ok(true);
+        }
+
         // Never leave the desktop without a pointer while file I/O, Xcursor
         // decoding or the themed texture upload is still in flight. The
         // built-in 32x32-derived arrow is tiny and is uploaded only once for
         // each output raster size; the themed asset replaces it when ready.
         self.ensure_fallback_cursor(Arc::clone(&device), requested_size)?;
 
-        let key = Self::cache_key(name, theme, requested_size);
-        if let Some(entry) = self.assets.get_mut(&key) {
-            entry.last_used = self.frame;
-            return Ok(true);
-        }
         if self.pending_keys.contains(&key) {
             return Ok(self.fallback_assets.contains_key(&requested_size));
         }
