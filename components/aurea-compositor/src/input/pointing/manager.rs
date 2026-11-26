@@ -50,11 +50,7 @@ impl PointerManager {
         }
         self.settings.reconcile_kind(id, kind);
         if let Some(identity) = persistent_id {
-            if matches!(
-                kind,
-                aurea_desktop_api::input::InputDeviceKind::Mouse
-                    | aurea_desktop_api::input::InputDeviceKind::Touchpad
-            ) {
+            if kind == aurea_desktop_api::input::InputDeviceKind::Mouse {
                 if let Some(profile) = self.persistent_pointers.get(&identity) {
                     self.settings.set_pointer(&self.devices, id, profile);
                 }
@@ -94,7 +90,7 @@ impl PointerManager {
         self.settings.pointer(device, fallback)
     }
 
-    /// Sets a pointer profile only when the device is a registered mouse or touchpad.
+    /// Sets a pointer profile only when the device is a registered mouse.
     pub fn set_pointer_settings(
         &mut self,
         device: InputDeviceId,
@@ -339,7 +335,7 @@ mod tests {
     fn reclassification_reconciles_per_device_preferences() {
         let mut manager = PointerManager::new();
         let device = InputDeviceId(13);
-        assert!(manager.connect(descriptor(13, InputDeviceKind::Touchpad)));
+        assert!(manager.connect(descriptor(13, InputDeviceKind::Mouse)));
 
         let pointer = PointerSettings::new(PointerAccelerationProfile::Flat, 0.55, false)
             .expect("valid pointer profile");
@@ -384,7 +380,7 @@ mod tests {
     fn reconnecting_same_id_after_disconnect_starts_with_clean_runtime_state() {
         let mut manager = PointerManager::new();
         let device = InputDeviceId(15);
-        assert!(manager.connect(descriptor(15, InputDeviceKind::Touchpad)));
+        assert!(manager.connect(descriptor(15, InputDeviceKind::Mouse)));
 
         let pointer = PointerSettings::new(PointerAccelerationProfile::Flat, 0.5, false)
             .expect("valid pointer profile");
@@ -407,7 +403,7 @@ mod tests {
         assert!(manager.take_buttons_released_by_device(device).is_empty());
         assert_eq!(
             manager.devices().device(device).unwrap().kind,
-            InputDeviceKind::Touchpad
+            InputDeviceKind::Mouse
         );
     }
 
