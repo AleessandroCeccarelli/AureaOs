@@ -15,7 +15,7 @@ use std::thread::{self, JoinHandle, ThreadId};
 use aurea_desktop_api::{
     CompositorFactory, CompositorService, ShutdownSignal,
     desktop_interaction::DesktopInteractionSender, display::DisplayColorController,
-    input::{PointerSettingsCommand, TouchpadSettingsCommand},
+    input::{DesktopPointerBehaviorCommand, PointerSettingsCommand, TouchpadSettingsCommand},
 };
 
 use super::{join_compositor_thread, request_shutdown};
@@ -36,6 +36,7 @@ impl CompositorFactory for InitializationFailureFactory {
         _interactions: DesktopInteractionSender,
         _touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
         _pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
+        _desktop_pointer_behavior: std::sync::mpsc::Receiver<DesktopPointerBehaviorCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         *self
             .observed_thread
