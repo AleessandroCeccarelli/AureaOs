@@ -50,26 +50,21 @@ install -D -m 0644 "$SYSTEMD_SOURCE" /etc/systemd/system/aurea-desktop.service
 install -D -m 0644 "$PAM_SOURCE" /etc/pam.d/aurea-desktop
 install -D -m 0755 "$SESSION_SOURCE" /usr/local/bin/aurea-live-session
 
-# Rasterize the approved SVG masters at build time. Only the bounded raw RGBA8
-# payloads are installed; librsvg, Python, SVGs and font sources stay out of
-# the final runtime image.
-bash "$SOURCE/tools/assets/render-context-menu.sh"
-ASSET_SOURCE="$SOURCE/aurea-human-interfaces"
-ASSET_DESTINATION="/usr/share/aureaos/human-interfaces"
-asset_count=0
-for asset in "$ASSET_SOURCE"/icons/generated/context-menu/*.rgba; do
+# The coordinator rasterizes approved SVGs in the disposable builder and
+# stages only raw RGBA8 files into the chroot include tree. Verify that payload
+# before the desktop binary can be published into the Live rootfs.
+ASSET_ROOT="/usr/share/aureaos/human-interfaces/icons/generated/context-menu"
+for theme in light dark; do
+    asset="$ASSET_ROOT/context-menu-$theme-256.rgba"
     [ -s "$asset" ] || {
-        echo "Generated AureaOS desktop artwork is missing: $asset" >&2
+        echo "AureaOS $theme context-menu artwork is missing from the target rootfs." >&2
         exit 1
     }
-    relative_path="${asset#"$ASSET_SOURCE"/}"
-    install -D -m 0644 "$asset" "$ASSET_DESTINATION/$relative_path"
-    asset_count=$((asset_count + 1))
+    [ "$(stat -c '%s' "$asset")" = 262144 ] || {
+        echo "AureaOS $theme context-menu artwork has an invalid byte length." >&2
+        exit 1
+    }
 done
-[ "$asset_count" -eq 26 ] || {
-    echo "Expected 26 desktop RGBA8 assets, generated $asset_count." >&2
-    exit 1
-}
 
 # Catch missing runtime libraries while still inside the Debian target rootfs.
 # This is especially important because Cargo only guarantees a successful link
@@ -110,7 +105,7 @@ DEBIAN_FRONTEND=noninteractive apt-get purge -y -- \
     curl build-essential pkg-config glslang-tools \
     libvulkan-dev libudev-dev libinput-dev libseat-dev libgbm-dev \
     libdrm-dev libxkbcommon-dev libwayland-dev libheif-dev \
-    libturbojpeg0-dev librsvg2-bin python3
+    libturbojpeg0-dev
 
 # Rebuild and inspect the initramfs after all package installation and cleanup.
 # This catches a missing live-boot backend before live-build assembles the ISO.
