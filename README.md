@@ -190,8 +190,10 @@ AureaOS product ownership and visual identity are separate from software licensi
 The project is not adopting a proprietary or dual-licensing model at this stage. Any future change to the licensing or distribution model is an open strategic decision and must be reviewed separately, with attention to copyright ownership, contributor permissions, and applicable license obligations.
 
 
-## Current engineering checkpoint — 22 November 2026
+## Current engineering checkpoint — 26 November 2026
 
-The first Debian Trixie Live ISO has been generated and its SHA-256 and BIOS/UEFI boot structures have been checked. However, its first real boot through Ventoy on the Lenovo test laptop failed before the desktop started: initramfs reported that `/scripts/live` could not be opened, followed by an init kernel panic. The image must not be described as a successfully bootable Live system yet.
+AureaOS development is focused on completing the native desktop and its first-party applications. The repository already contains the real Rust desktop composition root, Aurea Shell, and the Smithay/DRM/Vulkan compositor; the desktop is still an evolving prototype and must not be described as a finished graphical environment.
 
-The immediate development priority is the AureaOS desktop. ISO work is intentionally paused until the next Fedora validation session. See the [Italian development diary](docs/it/DIARIO-DI-BORDO.md), the [English development log](docs/development/DEVELOPMENT-LOG.md), and the [internal ISO handoff](tools/iso/INTERNAL-ASSISTANT-HANDOFF.md).
+The first Debian Trixie Live ISO used GRUB and failed during initramfs startup because `/scripts/live` could not be opened. The cause has not yet been isolated, and that image was not proven bootable. ISO Factory is now being migrated to the approved Roma 1.0 UEFI-only systemd-boot + UKI path. Its purpose is to boot the actual repository desktop in Live mode for iterative hardware testing. The installer, disk partitioning, Btrfs installation, update and recovery flows are explicitly deferred until the desktop and applications are ready.
+
+The new systemd-boot/UKI assembly and validation scripts have been committed, but no ISO build, shell syntax check, QEMU/OVMF test or physical boot has yet verified them. Do not describe the new Live ISO as bootable until those checks and a real Ventoy test succeed. See the [ISO Factory procedure](docs/development/ISO-FACTORY.md), [Italian development diary](docs/it/DIARIO-DI-BORDO.md), [English development log](docs/development/DEVELOPMENT-LOG.md), and [internal ISO handoff](tools/iso/INTERNAL-ASSISTANT-HANDOFF.md).
