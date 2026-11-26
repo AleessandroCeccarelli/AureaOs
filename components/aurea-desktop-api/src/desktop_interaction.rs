@@ -9,7 +9,7 @@ use std::sync::mpsc::{self, Receiver, SendError, Sender, TryRecvError};
 
 use crate::desktop::DesktopContextMenuCommand;
 
-/// A desktop position expressed in logical output coordinates.
+/// Identifies the transient desktop panel currently requested for presentation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DesktopPanelKind {
     Overview,
