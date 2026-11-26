@@ -96,19 +96,22 @@ impl PointerManager {
         device: InputDeviceId,
         settings: PointerSettings,
     ) -> bool {
-        if !self.settings.set_pointer(&self.devices, device, settings) {
+        let Some(descriptor) = self.devices.device(device) else {
+            return false;
+        };
+        if descriptor.kind != aurea_desktop_api::input::InputDeviceKind::Mouse {
             return false;
         }
-        if let Some(identity) = self
-            .devices
-            .device(device)
-            .and_then(|descriptor| descriptor.persistent_id)
-        {
+
+        // Persist first: a failed write must not leave a runtime-only profile
+        // that the caller mistakes for a durable preference.
+        if let Some(identity) = descriptor.persistent_id {
             if let Err(error) = self.persistent_pointers.set(identity, settings) {
-                tracing::warn!(device_id = device.0, %error, "Could not persist pointer preferences");
+                tracing::warn!(device_id = device.0, %error, "Could not persist pointer preferences; keeping previous settings");
+                return false;
             }
         }
-        true
+        self.settings.set_pointer(&self.devices, device, settings)
     }
 
     /// Returns touchpad preferences, falling back to the shared defaults.
@@ -122,19 +125,22 @@ impl PointerManager {
         device: InputDeviceId,
         settings: TouchpadSettings,
     ) -> bool {
-        if !self.settings.set_touchpad(&self.devices, device, settings) {
+        let Some(descriptor) = self.devices.device(device) else {
+            return false;
+        };
+        if descriptor.kind != aurea_desktop_api::input::InputDeviceKind::Touchpad {
             return false;
         }
-        if let Some(identity) = self
-            .devices
-            .device(device)
-            .and_then(|descriptor| descriptor.persistent_id)
-        {
+
+        // Persist first so disk errors cannot silently create a temporary-only
+        // profile while reporting the request as accepted.
+        if let Some(identity) = descriptor.persistent_id {
             if let Err(error) = self.persistent_touchpads.set(identity, settings) {
-                tracing::warn!(device_id = device.0, %error, "Could not persist touchpad preferences");
+                tracing::warn!(device_id = device.0, %error, "Could not persist touchpad preferences; keeping previous settings");
+                return false;
             }
         }
-        true
+        self.settings.set_touchpad(&self.devices, device, settings)
     }
 
     /// Stores the result of applying touchpad settings to hardware.
