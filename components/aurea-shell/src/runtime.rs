@@ -15,7 +15,7 @@ use aurea_desktop_api::desktop_interaction::{
     DesktopInteraction, DesktopInteractionReceiver, DesktopSelectionController,
 };
 use aurea_desktop_api::input::{
-    InputDeviceId, PointerSettings, PointerSettingsController, TouchpadSettings, TouchpadSettingsController, pointer_settings_channel, touchpad_settings_channel,
+    InputDeviceId, PointerSettings, PointerSettingsController, TouchpadSettings, TouchpadSettingsController, DesktopPointerBehaviorController, DesktopPointerBehaviorSettings, desktop_pointer_behavior_channel, pointer_settings_channel, touchpad_settings_channel,
 };
 
 use aurea_desktop_api::display::{DisplayColorAdjustment, DisplayColorController};
@@ -38,6 +38,7 @@ pub struct ShellRuntime {
     display_color: DisplayColorController,
     touchpad_settings: TouchpadSettingsController,
     pointer_settings: PointerSettingsController,
+    desktop_pointer_behavior: DesktopPointerBehaviorController,
     pending_desktop_interactions: VecDeque<DesktopInteraction>,
     desktop_selection: DesktopSelectionController,
 }
@@ -52,7 +53,8 @@ impl ShellRuntime {
     pub fn with_display_color(display_color: DisplayColorController) -> Self {
         let (touchpad_settings, _touchpad_receiver) = touchpad_settings_channel();
         let (pointer_settings, _pointer_receiver) = pointer_settings_channel();
-        Self::with_controllers(display_color, touchpad_settings, pointer_settings)
+        let (desktop_pointer_behavior, _desktop_pointer_behavior_receiver) = desktop_pointer_behavior_channel();
+        Self::with_controllers(display_color, touchpad_settings, pointer_settings, desktop_pointer_behavior)
     }
 
     /// Creates a runtime with shared display, touchpad and pointer policy channels.
@@ -60,6 +62,7 @@ impl ShellRuntime {
         display_color: DisplayColorController,
         touchpad_settings: TouchpadSettingsController,
         pointer_settings: PointerSettingsController,
+        desktop_pointer_behavior: DesktopPointerBehaviorController,
     ) -> Self {
         Self {
             lifecycle: ShellLifecycle::new(),
@@ -68,6 +71,7 @@ impl ShellRuntime {
             display_color,
             touchpad_settings,
             pointer_settings,
+            desktop_pointer_behavior,
             pending_desktop_interactions: VecDeque::new(),
             desktop_selection: DesktopSelectionController::default(),
         }
@@ -96,6 +100,11 @@ impl ShellRuntime {
     /// Requests a live profile update for one connected mouse.
     pub fn set_pointer_settings(&self, device: InputDeviceId, settings: PointerSettings) -> bool {
         self.pointer_settings.set(device, settings).is_ok()
+    }
+
+    /// Requests a live update to global desktop pointer behavior preferences.
+    pub fn set_desktop_pointer_behavior(&self, settings: DesktopPointerBehaviorSettings) -> bool {
+        self.desktop_pointer_behavior.set(settings).is_ok()
     }
 
     /// Returns the latest effective display adjustment.
