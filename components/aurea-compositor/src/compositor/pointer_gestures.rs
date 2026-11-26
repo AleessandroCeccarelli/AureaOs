@@ -452,6 +452,17 @@ mod owner_tests {
     }
 
     #[test]
+    fn taking_active_owner_clears_the_stream_for_session_cancellation() {
+        let mut owner = PointerGestureOwner::default();
+        let device = InputDeviceId(8);
+
+        assert!(owner.begin(device, PointerGestureKind::Pinch));
+        assert_eq!(owner.take(), Some((device, PointerGestureKind::Pinch)));
+        assert_eq!(owner.take(), None);
+        assert!(owner.begin(InputDeviceId(9), PointerGestureKind::Swipe));
+    }
+
+    #[test]
     fn ending_non_owner_does_not_release_active_sequence() {
         let mut owner = PointerGestureOwner::default();
         let first = InputDeviceId(6);
