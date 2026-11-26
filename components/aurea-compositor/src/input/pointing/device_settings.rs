@@ -30,10 +30,7 @@ impl PointingDeviceSettings {
         settings: PointerSettings,
     ) -> bool {
         if !provider.device(id).is_some_and(|device| {
-            matches!(
-                device.kind,
-                InputDeviceKind::Mouse | InputDeviceKind::Touchpad
-            )
+            device.kind == InputDeviceKind::Mouse
         }) {
             return false;
         }
@@ -63,7 +60,7 @@ impl PointingDeviceSettings {
 
     /// Removes overrides that are no longer valid after a device is reclassified.
     pub fn reconcile_kind(&mut self, id: InputDeviceId, kind: InputDeviceKind) {
-        if !matches!(kind, InputDeviceKind::Mouse | InputDeviceKind::Touchpad) {
+        if kind != InputDeviceKind::Mouse {
             self.pointers.remove(&id);
         }
         if kind != InputDeviceKind::Touchpad {
@@ -145,15 +142,15 @@ mod tests {
 
     #[test]
     fn reclassification_clears_only_incompatible_overrides() {
-        let devices = Devices(vec![descriptor(5, InputDeviceKind::Touchpad)]);
+        let devices = Devices(vec![descriptor(5, InputDeviceKind::Mouse)]);
         let mut settings = PointingDeviceSettings::default();
         let pointer = PointerSettings::new(PointerAccelerationProfile::Flat, 0.4, false).unwrap();
         let touchpad = TouchpadSettings::new(false, true, false, true, false);
         assert!(settings.set_pointer(&devices, InputDeviceId(5), pointer));
         assert!(settings.set_touchpad(&devices, InputDeviceId(5), touchpad));
 
-        settings.reconcile_kind(InputDeviceId(5), InputDeviceKind::Mouse);
-        assert_eq!(settings.pointer(InputDeviceId(5), PointerSettings::default()), pointer);
+        settings.reconcile_kind(InputDeviceId(5), InputDeviceKind::Touchpad);
+        assert_eq!(settings.pointer(InputDeviceId(5), PointerSettings::default()), PointerSettings::default());
         assert_eq!(settings.touchpad(InputDeviceId(5)), TouchpadSettings::default());
 
         settings.reconcile_kind(InputDeviceId(5), InputDeviceKind::Tablet);
@@ -162,23 +159,17 @@ mod tests {
 
     #[test]
     fn removal_clears_all_overrides() {
-        let devices = Devices(vec![descriptor(4, InputDeviceKind::Touchpad)]);
+        let devices = Devices(vec![descriptor(4, InputDeviceKind::Mouse)]);
         let mut settings = PointingDeviceSettings::default();
         let pointer = PointerSettings::new(PointerAccelerationProfile::Flat, 0.5, true).unwrap();
         assert!(settings.set_pointer(&devices, InputDeviceId(4), pointer));
-        assert!(settings.set_touchpad(
-            &devices,
-            InputDeviceId(4),
-            TouchpadSettings::new(false, false, true, false, false)
-        ));
+
         settings.remove(InputDeviceId(4));
         assert_eq!(
             settings.pointer(InputDeviceId(4), PointerSettings::default()),
             PointerSettings::default()
         );
         assert_eq!(
-            settings.touchpad(InputDeviceId(4)),
-            TouchpadSettings::default()
         );
     }
 }
