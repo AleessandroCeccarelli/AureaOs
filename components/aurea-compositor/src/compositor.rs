@@ -36,7 +36,7 @@ use crate::{
         cursor_animation::CursorLocateAnimation,
         interaction::{GestureProfile, InteractionEngine},
         pointer_settings::PointerSettings,
-        pointer_shake::PointerShakeDetector,
+        pointer_shake::PointerShakeManager,
         pointing::{
             AbsolutePointerOutputMap, PointerManager, PointingDeviceService, TabletCalibrationMap, TabletOutputMap,
             TabletToolRegistry,
@@ -129,7 +129,7 @@ pub struct AureaCompositor {
     /// Pointer buttons consumed by the compositor-owned desktop context menu.
     context_menu_consumed_buttons: HashSet<(aurea_desktop_api::input::InputDeviceId, u32)>,
     /// Independent shake-detection history for each physical pointer device.
-    pointer_shakes: HashMap<aurea_desktop_api::input::InputDeviceId, PointerShakeDetector>,
+    pointer_shake: PointerShakeManager,
     cursor_locate_animation: CursorLocateAnimation,
     /// Defers output-driven pointer recentering until any active client grab ends.
     pointer_recenter_pending: bool,
@@ -205,7 +205,7 @@ impl AureaCompositor {
             desktop_interactions,
             desktop_click_tracker: DesktopClickTracker::default(),
             context_menu_consumed_buttons: HashSet::new(),
-            pointer_shakes: HashMap::new(),
+            pointer_shake: PointerShakeManager::default(),
             cursor_locate_animation: CursorLocateAnimation::default(),
             pointer_recenter_pending: false,
         }
@@ -528,7 +528,7 @@ impl AureaCompositor {
         self.handle_touch_cancel(device, time);
         self.release_pointer_buttons_for_device(device, time);
         self.interaction_engine.remove_device(device);
-        self.pointer_shakes.remove(&device);
+        self.pointer_shake.remove(device);
         self.touchscreen_outputs.remove_device(device);
         self.absolute_pointer_outputs.remove_device(device);
         self.tablet_outputs.remove_device(device);
