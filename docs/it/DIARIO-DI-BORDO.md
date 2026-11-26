@@ -2060,3 +2060,12 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Correzione successiva: geometria e selezione raster usano ora `RenderTarget::effective_scale()`, mantenendo la scala frazionaria esatta di ogni monitor invece di approssimarla con la vecchia scala intera.
 - Correzione successiva: il validatore dello SquashFS finale estrae e controlla entrambi i temi installati e tutti i 52 file cursore canonici (26 per palette), oltre ai controlli già eseguiti nel chroot.
 - Le ultime modifiche sorgente non sono ancora state compilate né testate; per il commit documentale non risultano check GitHub.
+
+### 26 novembre 2026 — Decodifica asincrona e fotogrammi Xcursor animati
+
+- Aggiunto un worker dedicato e limitato, `aurea-xcursor-decode`. Controllo dei metadati, lettura dei file, parsing Xcursor e generazione della freccia di fallback avvengono ora fuori dal callback di rendering.
+- Il thread di rendering controlla i risultati decodificati, crea gli snapshot RGBA8, invia gli upload Vulkan e controlla le fence. Le texture vengono rese disponibili solo a upload completato; il caricamento dei puntatori non esegue più un'attesa GPU incondizionata.
+- Ogni fotogramma conserva dimensioni, hotspot e durata Xcursor. Il renderer seleziona il fotogramma corrente usando un timestamp monotono e collega la relativa texture Vulkan.
+- L'event loop mantiene la pianificazione a 16 ms quando è attivo il cursore animato `busy` e durante una finestra di tre secondi al primo caricamento. In questo modo decodifica e upload asincroni possono terminare anche senza ulteriori eventi del puntatore.
+- **Ancora da completare:** limiti di memoria e cache LRU tra nomi di cursore e scale dei monitor, comportamento reduced-motion, eventuale animazione di `left_ptr_watch` e verifica visiva completa.
+- **Non verificato in esecuzione:** non sono stati eseguiti formatting Cargo, build, check, test, validazione shell o generazione ISO. Continuiamo ad accumulare modifiche prima della verifica prevista su Fedora.
