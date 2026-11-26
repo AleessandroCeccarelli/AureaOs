@@ -2382,3 +2382,18 @@ distinguishing unsupported capabilities and real failures.
 
 Source and documentation updates are committed on main. No rustfmt, build,
 Cargo check or tests were run; grouped Fedora validation remains pending.
+
+## 2026-11-26 — Focused mouse/touchpad simplification audit
+
+Reviewed actual consumers of the pointing registry, touchpad capability snapshot,
+settings report and applied-profile cache. Retained the registry/manager because
+they own AureaOS-specific state not supplied by libinput: seat-level aggregation
+of physical button holds, per-device preferences, lifecycle notifications and
+the latest configuration report for trusted clients. The capability snapshot and
+apply report remain direct observations/results from the active libinput device,
+not a parallel hardware detection implementation.
+
+Removed the redundant AppliedTouchpadSettings::invalidate method: it performed
+the same operation as remove and had no distinct runtime consumer. The cache
+now exposes one removal operation. No build, rustfmt, Cargo check or tests were run;
+grouped Fedora validation remains pending.
