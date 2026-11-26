@@ -99,17 +99,18 @@ systemctl --root=/ is-enabled aurea-desktop.service >/dev/null || {
     exit 1
 }
 
-# Remove only explicitly listed build tools and development headers.
-# Do not run autoremove: runtime dependencies must remain in the live image.
+# Rebuild and inspect the initramfs before removing build dependencies.
+# If this preflight fails, the live-build chroot can safely rerun this hook.
+/usr/local/libexec/aureaos/validate-chroot-boot.sh
+
+# Remove only explicitly listed build tools and development headers after all
+# failure-prone compilation, session and boot checks have completed. Do not run
+# autoremove: runtime dependencies must remain in the live image.
 DEBIAN_FRONTEND=noninteractive apt-get purge -y -- \
     curl build-essential pkg-config glslang-tools \
     libvulkan-dev libudev-dev libinput-dev libseat-dev libgbm-dev \
     libdrm-dev libxkbcommon-dev libwayland-dev libheif-dev \
     libturbojpeg0-dev
-
-# Rebuild and inspect the initramfs after all package installation and cleanup.
-# This catches a missing live-boot backend before live-build assembles the ISO.
-/usr/local/libexec/aureaos/validate-chroot-boot.sh
 
 # Keep build sources, Rust toolchains and Cargo caches out of the live system.
 rm -rf "$SOURCE" "$CARGO_HOME" "$RUSTUP_HOME"
