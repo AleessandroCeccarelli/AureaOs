@@ -33,7 +33,7 @@ use smithay::{
     wayland::{compositor::with_states, shell::xdg::ToplevelSurface},
 };
 
-use crate::window_manager::WindowManager;
+use crate::{input::cursor_trail::CursorTrailSample, window_manager::WindowManager};
 
 /// Immutable desktop, context-menu, mapped-surface and pointer state for one rendering pass.
 pub struct RenderScene<'a> {
@@ -47,6 +47,7 @@ pub struct RenderScene<'a> {
     native_cursor_pointer_location: Option<Point<f64, Logical>>,
     native_cursor_asset: Option<&'static str>,
     native_cursor_scale: f64,
+    cursor_trail: Vec<CursorTrailSample>,
 }
 
 struct RenderToplevel<'a> {
@@ -76,6 +77,7 @@ impl<'a> RenderScene<'a> {
             native_cursor_pointer_location: None,
             native_cursor_asset: None,
             native_cursor_scale: 1.0,
+            cursor_trail: Vec::new(),
         }
     }
 
@@ -199,6 +201,17 @@ impl<'a> RenderScene<'a> {
     /// Returns the current scale for the compositor-owned cursor image.
     pub fn native_cursor_scale(&self) -> f64 {
         self.native_cursor_scale
+    }
+
+    /// Adds the short-lived historical positions used by the native cursor trail.
+    pub fn with_cursor_trail(mut self, samples: Vec<CursorTrailSample>) -> Self {
+        self.cursor_trail = samples;
+        self
+    }
+
+    /// Returns newest-first cursor trail samples for this render frame.
+    pub fn cursor_trail(&self) -> &[CursorTrailSample] {
+        &self.cursor_trail
     }
 
     /// Returns the toplevel surfaces in this scene.
