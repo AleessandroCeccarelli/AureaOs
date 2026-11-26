@@ -119,6 +119,11 @@ mod tests {
         let mut settings = PointingDeviceSettings::default();
         let mouse = PointerSettings::new(PointerAccelerationProfile::Flat, 0.7, false).unwrap();
         assert!(settings.set_pointer(&devices, InputDeviceId(1), mouse));
+        assert!(!settings.set_pointer(
+            &devices,
+            InputDeviceId(2),
+            PointerSettings::default()
+        ));
         assert_eq!(
             settings.pointer(InputDeviceId(1), PointerSettings::default()),
             mouse
