@@ -2280,3 +2280,5 @@ Extended the locate-trail implementation from input history into render-scene sn
 - Added a tiny built-in high-contrast arrow texture, uploaded once per requested raster size and retained in a bounded four-size fallback cache. It is drawn immediately while the themed cursor loads asynchronously; once the theme upload completes, the selected Xcursor asset takes precedence without changing pointer coordinates or hotspot handling.
 - If the decode worker cannot be started or its queue is temporarily unavailable, the built-in arrow remains available instead of suppressing the pointer. The one-time fallback upload is synchronous and intentionally limited to a small cursor texture; themed file I/O and decoding remain on the worker.
 - No build, formatting, tests or physical boot validation were run.
+
+- Added GPU-independent unit tests for the built-in fallback raster: exact requested dimensions/hotspot/RGBA payload and lower/upper size clamping. These tests are committed but have not been executed.
