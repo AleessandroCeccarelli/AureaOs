@@ -425,3 +425,11 @@ This is the presentation contract/wiring layer only. No Overview or App Exposé 
 Added a technology-independent DesktopWindowPreviewLayout to the Desktop API. It accepts stable window identifiers and source logical dimensions, then calculates output-global logical preview rectangles for a configurable grid. The layout preserves each source aspect ratio, supports configurable columns/margins/gaps, and safely skips invalid source dimensions or identifiers. The same contract can be used by Overview and App Exposé without duplicating geometry rules in the Vulkan renderer.
 
 The model is currently a geometry primitive only: it is not yet populated from mapped XDG toplevels, does not capture or upload thumbnail textures, and is not connected to pointer hit testing or a Vulkan draw pass. Context-menu presentation remains separate. Unit tests were added for aspect-ratio preservation, global output origins, invalid inputs and insufficient layout space; they have not been executed. No build or formatting command was run.
+
+## AureaOS 1.0 pointing-device scope decision — 2026-11-26
+
+For the first release acceptance scope, native mouse and touchpad handling are in scope. The existing touchscreen contact path remains supported as a separate absolute-input family. Wacom pen/tablet and Tablet Pad features are deferred and are not blockers for closing the 1.0 mouse/touchpad block. Smithay 0.7's missing Tablet Pad event path remains documented; no unsupported pad controls are advertised.
+
+The source-level audit confirms separate persistent physical-device profiles for mouse and touchpad, separate live Shell-to-compositor settings channels, global double-click interval persistence, capability-aware touchpad apply reports, and session-reactivation reapplication. The System Settings UI is a later presentation task; backend contracts are present but user-facing controls are not yet complete.
+
+**Release status:** source implementation and static audit substantially complete; grouped Fedora build, tests and physical-device validation remain mandatory before declaring the pointer operationally verified.
