@@ -357,6 +357,10 @@ impl VulkanNativeCursorTexture {
                 animation_started_at: Instant::now(),
             },
         );
+        tracing::info!(
+            requested_size,
+            "AureaOS cursor: built-in fallback arrow uploaded and ready"
+        );
         Ok(())
     }
 
@@ -429,6 +433,11 @@ impl VulkanNativeCursorTexture {
             if textures.len() != pending.metadata.len() || textures.is_empty() {
                 return Err(VulkanNativeCursorTextureError::EmptyUpload);
             }
+            let frame_count = pending.metadata.len();
+            let raster_size = pending.metadata
+                .first()
+                .map(|frame| (frame.width, frame.height))
+                .ok_or(VulkanNativeCursorTextureError::EmptyUpload)?;
             let byte_len = pending.metadata.iter()
                 .map(|frame| frame.rgba8.len())
                 .sum::<usize>();
@@ -460,7 +469,8 @@ impl VulkanNativeCursorTexture {
                 }
             }
             self.cached_bytes = self.cached_bytes.saturating_add(byte_len);
-            self.assets.insert(pending.key, CachedNativeCursorAsset {
+            let asset_key = pending.key;
+            self.assets.insert(asset_key.clone(), CachedNativeCursorAsset {
                 asset: VulkanNativeCursorAsset {
                     frames,
                     animation_started_at: Instant::now(),
@@ -468,6 +478,13 @@ impl VulkanNativeCursorTexture {
                 byte_len,
                 last_used: self.frame,
             });
+            tracing::info!(
+                cursor_asset = %asset_key,
+                width = raster_size.0,
+                height = raster_size.1,
+                frames = frame_count,
+                "AureaOS cursor: themed Xcursor asset uploaded and ready"
+            );
         }
         Ok(())
     }
