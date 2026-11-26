@@ -2336,3 +2336,9 @@ L'audit del percorso Shell → compositor ha evidenziato che `PointerManager` ag
 Corretto l'ordine per mouse e touchpad: il manager verifica prima che il dispositivo registrato sia della classe corretta, salva il profilo persistente quando è disponibile un'identità fisica stabile e aggiorna lo stato runtime soltanto dopo il successo della scrittura. Se la persistenza fallisce, il manager restituisce rifiuto e mantiene il precedente profilo runtime. Per i dispositivi senza identità persistente affidabile, l'aggiornamento resta valido per la sessione, senza inventare una chiave hardware.
 
 Il reset ai valori predefiniti usa i normali oggetti `PointerSettings::default()` e `TouchpadSettings::default()`: viene trattato come un profilo esplicito e persistito, non come cancellazione dell'identità fisica. Nessuna UI di reset è stata aggiunta. Nessuna build, formattazione o test eseguiti; resta la validazione cumulativa su Fedora e il collaudo fisico.
+
+### 26 novembre 2026 — Eliminazione delle scritture ridondanti dei profili puntatore
+
+Le richieste ripetute con un profilo identico non riscrivono più i file persistenti mouse e touchpad. Entrambi gli store confrontano il valore già presente prima di serializzare e sincronizzare il file: una richiesta idempotente termina senza I/O aggiuntivo. L'applicazione live continua a usare i controlli già presenti in libinput per evitare di reimpostare valori invariati.
+
+Il contratto degli esiti resta parzialmente incompleto: il registro input pubblica già `TouchpadConfigurationChanged`, ma non esiste ancora un evento equivalente per il risultato dell'accelerazione mouse. Non è stata aggiunta una falsa conferma: il successo dell'accodamento Shell non equivale all'applicazione hardware. La prossima modifica dovrà introdurre un report mouse basato sui risultati effettivi delle API libinput e renderlo leggibile tramite il provider dei dispositivi. Nessuna build o test eseguiti.
