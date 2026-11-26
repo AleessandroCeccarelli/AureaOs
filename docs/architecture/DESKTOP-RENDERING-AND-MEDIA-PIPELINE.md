@@ -324,3 +324,8 @@ This audit is source inspection only. It does not establish successful compilati
 ### Native cursor completion and redraw scheduling
 
 The DRM event loop keeps output frames flowing while the native cursor texture owner reports pending work. Pending work includes queued/in-flight Xcursor decoding and Vulkan upload fences that have not completed. This status is surfaced through the per-GPU surface pipeline cache and Vulkan backend, so the scheduling policy is shared by direct and CPU-upload compatibility presentation. The loop requests frames at the existing 16 ms animation cadence only while this work remains; once the themed asset is promoted to the ready cache, normal idle dispatch resumes. The built-in fallback arrow remains drawable during the transition.
+
+
+## Desktop item artwork preparation (2026-11-26)
+
+The Vulkan surface pipeline cache now exposes preparation of canonical desktop-item artwork. It resolves the approved asset variant using theme, Trash contents and effective output scale; loads and validates the RGBA8 payload under the configured Human Interfaces root; retains the decoded snapshot by texture key; and queues it in the existing desktop icon texture cache. Unsupported item kinds return no asset. This does not yet render the icon: per-output geometry, descriptor binding and draw submission in `surface_compositor`, plus selected-item highlighting, remain follow-up work. No build/tests were run.
