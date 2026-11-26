@@ -2215,3 +2215,8 @@ Aggiunti test unitari per il rifiuto dei begin duplicati e per la rimozione limi
 
 - Audit ciclo di vita dispositivi: la nuova registrazione dello stesso sysname non viene più considerata la stessa periferica soltanto perché conserva la medesima classificazione. Se cambiano identificativi hardware stabili già noti (persistent ID, vendor ID o product ID), il compositor chiude il vecchio ciclo di vita: rilascia i pulsanti, cancella gli stati input associati e poi registra il nuovo dispositivo. I campi mancanti non provocano da soli un reset.
 - Restano da fare la validazione Rust raggruppata e la prova fisica di scollegamento/ricollegamento.
+
+
+### 26 novembre 2026 — Precisione del report delle opzioni di scorrimento touchpad
+
+Durante l'audit è emerso che, selezionando lo scorrimento a due dita, il report dichiarava anche lo scorrimento ai bordi come "Applied" (e viceversa), pur essendo le due modalità mutuamente esclusive. Aggiunto lo stato API `NotRequested` per distinguere un'opzione volutamente inattiva da una capacità hardware non supportata. `all_applied()` considera correttamente riuscite le opzioni non richieste, mentre continua a segnalare come incomplete quelle non supportate. Aggiunto un test unitario sul contratto del report. Modifiche sorgente non ancora formattate, compilate o testate; verifica rinviata al passaggio cumulativo su Fedora.
