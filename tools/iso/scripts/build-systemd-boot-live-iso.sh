@@ -39,6 +39,8 @@ done
 [[ "$BINARY_DIR" = /* && "$OUTPUT_PATH" = /* ]] || fail "paths must be absolute"
 [[ -d "$BINARY_DIR/live" ]] || fail "Debian Live payload is missing"
 [[ -s "$OS_RELEASE" ]] || fail "AureaOS UKI os-release metadata is missing"
+[[ "$ESP_SIZE_MIB" =~ ^[0-9]+$ ]] || fail "AUREAOS_ESP_SIZE_MIB must be an integer"
+(( ESP_SIZE_MIB >= 64 )) || fail "EFI image must be at least 64 MiB"
 
 for tool in ukify mcopy mmd mkfs.vfat truncate xorriso sort; do
     command -v "$tool" >/dev/null 2>&1 || fail "required tool not found: $tool"
@@ -63,7 +65,7 @@ cleanup() {
 trap cleanup EXIT
 
 readonly ESP_IMAGE="$BINARY_DIR/boot/efi.img"
-mkdir -p "$BINARY_DIR/boot" "$BINARY_DIR/EFI"
+mkdir -p "$BINARY_DIR/boot"
 
 CMDLINE='boot=live components quiet loglevel=3 systemd.show_status=false live-config.nocomponents=user-setup live-config.nottyautologin'
 DEFAULT_ENTRY=""
