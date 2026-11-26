@@ -96,6 +96,7 @@ pub(super) fn register_session_events(
                     .now()
                     .as_millis() as u32;
                 state.compositor.release_all_pointer_buttons(time);
+                state.compositor.cancel_active_pointer_gesture(time);
             }
 
             let cleanup_error = if is_pause {
