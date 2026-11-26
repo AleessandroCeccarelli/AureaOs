@@ -62,3 +62,21 @@ Hardware validation matrix:
 6. Disconnect/reconnect of each peripheral while buttons or pen proximity are active.
 
 Do not claim a particular polling rate, DPI, button, pen axis or feature is supported until libinput/device capability data or physical testing confirms it.
+
+## AureaOS 1.0 input release scope — 2026-11-26
+
+The 1.0 pointing-device scope is the native mouse and touchpad path, plus the existing touchscreen contact path. Wacom pen/tablet and Tablet Pad support are explicitly deferred and are not release blockers for this scope. Do not advertise Wacom pen axes, pad buttons, rings or strips as part of the 1.0 input acceptance criteria.
+
+### Mouse and touchpad implementation audit
+
+- Mouse acceleration profile, speed and shake-to-locate preferences are stored by privacy-preserving physical identity in aureaos/input/pointers.toml; the runtime InputDeviceId is not used as a persistent key.
+- Touchpad preferences are stored separately in aureaos/input/touchpads.toml, keyed by the same class of physical identity and restored before libinput configuration is applied on reconnect.
+- Both stores use versioned TOML, atomic replacement and owner-only permissions. Malformed, invalid or future-version files are preserved read-only; failed persistence rolls back the in-memory store mutation.
+- Mouse and touchpad settings have separate device-scoped Shell-to-compositor channels. Mouse requests are accepted only for registered mouse devices; touchpad requests only for registered touchpads. Touchpad configuration reports Applied, Unsupported or Failed per capability.
+- Global double-click interval is stored separately in desktop-pointer.toml, restored at startup, defaults to 400 ms and is clamped to 150–1000 ms. The 4 logical-pixel spatial threshold remains unchanged.
+- Touchpad configuration is reapplied after libseat session reactivation; mouse and touchpad acceleration profiles are also reapplied to retained libinput handles.
+- The Settings UI is intentionally deferred to the System Settings workstream. The backend contracts and live channels are the prerequisite; this does not mean the user-facing controls are already present.
+
+### Remaining acceptance checks
+
+No claim of runtime completion is made until the agreed grouped Fedora validation has passed. The remaining work is formatting, native DRM build/check, unit tests, then physical mouse and touchpad tests including hotplug, reconnect, session pause/resume, wheel axes and simultaneous devices. Debian 13 remains the target compatibility baseline; Fedora is only the development host.
