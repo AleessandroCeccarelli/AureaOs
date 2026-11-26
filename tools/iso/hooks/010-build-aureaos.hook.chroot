@@ -49,6 +49,21 @@ cargo +stable build \
     --bin aurea-desktop
 
 install -D -m 0755 "$SOURCE/target/release/aurea-desktop" /usr/local/bin/aurea-desktop
+
+# Build both native Xcursor palettes from the canonical SVG masters inside
+# the Debian target. Only the generated Xcursor payload is copied into /usr.
+CURSOR_SOURCE="$SOURCE/aurea-human-interfaces/cursors"
+python3 "$SOURCE/tools/assets/build_cursor_theme.py" \
+    --cursor-dir "$CURSOR_SOURCE" \
+    --output "$CURSOR_SOURCE/generated/AureaOS-Light"
+python3 "$SOURCE/tools/assets/build_cursor_theme.py" \
+    --cursor-dir "$CURSOR_SOURCE" \
+    --manifest "$CURSOR_SOURCE/manifest-dark.toml" \
+    --output "$CURSOR_SOURCE/generated/AureaOS-Dark"
+install -d -m 0755 /usr/share/icons
+cp -a "$CURSOR_SOURCE/generated/AureaOS-Light" /usr/share/icons/
+cp -a "$CURSOR_SOURCE/generated/AureaOS-Dark" /usr/share/icons/
+
 install -D -m 0644 "$SYSTEMD_SOURCE" /etc/systemd/system/aurea-desktop.service
 install -D -m 0644 "$PAM_SOURCE" /etc/pam.d/aurea-desktop
 install -D -m 0755 "$SESSION_SOURCE" /usr/local/bin/aurea-live-session
