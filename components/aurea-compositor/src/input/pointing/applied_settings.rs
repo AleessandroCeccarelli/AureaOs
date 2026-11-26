@@ -31,11 +31,6 @@ impl AppliedTouchpadSettings {
         self.profiles.remove(&device).is_some()
     }
 
-    /// Invalidates only the selected device after its backend state may have reset.
-    pub fn invalidate(&mut self, device: InputDeviceId) -> bool {
-        self.profiles.remove(&device).is_some()
-    }
-
     /// Number of devices with a known applied profile.
     pub fn len(&self) -> usize {
         self.profiles.len()
@@ -49,22 +44,6 @@ impl AppliedTouchpadSettings {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn invalidating_one_device_preserves_other_devices_applied_profiles() {
-        let mut applied = AppliedTouchpadSettings::default();
-        let settings = TouchpadSettings::default();
-        let first = InputDeviceId(1);
-        let second = InputDeviceId(2);
-        applied.mark_applied(first, settings);
-        applied.mark_applied(second, settings);
-
-        assert!(applied.invalidate(first));
-
-        assert_eq!(applied.len(), 1);
-        assert!(applied.needs_apply(first, settings));
-        assert!(!applied.needs_apply(second, settings));
-    }
 
     #[test]
     fn new_or_changed_profile_requires_application() {
