@@ -21,6 +21,7 @@ libwayland-client0
 libwayland-server0
 # Decoder-only HEIC/AVIF runtime: HEVC and AV1 still images.
 libheif1
+libturbojpeg0
 libheif-plugin-libde265
 libheif-plugin-dav1d
 libpam-systemd
@@ -32,6 +33,8 @@ libgbm-dev
 libdrm-dev
 libxkbcommon-dev
 libwayland-dev
+libheif-dev
+libturbojpeg0-dev
 build-essential
 pkg-config
 curl
