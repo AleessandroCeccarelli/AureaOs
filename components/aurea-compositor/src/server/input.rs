@@ -152,15 +152,7 @@ pub(super) fn reapply_pointer_acceleration(state: &mut WaylandState) {
         }
     }
 
-    // Touchpads share the acceleration adapter but retain their own handles
-    // and profile ownership in the touchpad registry.
-    let touchpad_ids = state.touchpad_devices.keys().copied().collect::<Vec<_>>();
-    for id in touchpad_ids {
-        let settings = state.compositor.pointer_settings_for(id);
-        if let Some(device) = state.touchpad_devices.get_mut(&id) {
-            crate::input::pointer_acceleration::apply(device, settings);
-        }
-    }
+
 }
 
 /// Drains shell requests and applies them to the connected mouse immediately.
