@@ -2233,3 +2233,12 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Follow-up: cursor geometry and requested raster selection now use `RenderTarget::effective_scale()`, preserving the exact fractional output scale instead of approximating it from the legacy integer scale.
 - Follow-up: the ISO's final SquashFS validator now extracts and checks both installed themes and all 52 canonical cursor files (26 per palette), in addition to the chroot hook's pre-publication checks.
 - Latest source-only changes remain unbuilt and untested; no GitHub check-runs were reported for the documentation commit.
+
+### 26 November 2026 — Asynchronous cursor decoding and animated Xcursor frames
+
+- Added a dedicated bounded `aurea-xcursor-decode` worker. File metadata checks, file reads, Xcursor parsing and fallback-arrow raster generation now run outside the compositor render callback.
+- The render thread polls completed decode results, creates RGBA8 snapshots, submits Vulkan uploads and polls their fences. It publishes the frame textures only after the upload is complete; no unconditional GPU wait remains in the cursor loading path.
+- Each retained frame keeps its own dimensions, hotspot and Xcursor delay. The renderer selects the current frame using a monotonic timestamp and binds that frame's Vulkan texture.
+- The event loop now keeps 16 ms output scheduling active for the animated `busy` cursor and during a three-second first-use warm-up window. This gives asynchronous decoding/upload time to finish even when no further pointer event arrives.
+- **Not yet complete:** cache memory/LRU limits across cursor names and multiple output scales, reduced-motion behavior, possible `left_ptr_watch` animation, and full visual validation.
+- **Not verified in execution:** no Cargo formatting, build, check, tests, shell validation or ISO build has been run. Continue accumulating source changes before the planned Fedora verification.
