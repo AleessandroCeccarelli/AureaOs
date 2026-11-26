@@ -1002,3 +1002,20 @@ Poi ispezionare checksum/El Torito/ESP e avviare da Ventoy su hardware. Registra
 
 - Follow-up hardening: the Podman wrapper now derives its default build-parent name from the checked-out source commit and refuses a dirty/untracked repository. This prevents `RESUME=1` from silently reusing a completed live-build chroot containing an older desktop binary after a new commit. Resume only the same clean commit; a new commit gets a fresh workspace.
 - The ISO validator's `--iso` mode now extracts `/boot/efi.img` to `$TEMP_DIR/boot/efi.img`, matching its later inspection path. Static fix only; still requires runtime validation.
+
+
+## End-to-end audit — 2026-11-26
+
+The ISO path was statically re-audited from package resolution through the first Wayland client. Corrections committed to `main`:
+
+- Added missing `libheif-dev`, `libturbojpeg0-dev` and runtime `libturbojpeg0` to the target package manifest. `aurea-media` always builds its TurboJPEG C shim; the production desktop also enables HEIF. Build-only headers are purged after the binary is installed.
+- Inner build workspaces now carry `.aureaos-source-commit`; dirty trees, missing markers and mismatched commits are rejected on resume.
+- Chroot hook validates `ldd` output, runs `systemd-analyze verify`, and confirms `aurea-desktop.service` is enabled.
+- Chroot hook generates and installs 26 bounded RGBA8 desktop assets (2 context-menu themes + 24 Trash variants) from repository-owned SVG sources, then purges `librsvg2-bin` and Python. Only the raw runtime assets remain under `/usr/share/aureaos/human-interfaces`.
+- Fixed Trash descriptor paths to be relative to the installed Human Interfaces root.
+- Final-image validator extracts the actual SquashFS rootfs and verifies desktop executable, session launcher, systemd service, PAM definition, enablement symlink and exact asset payload lengths. Podman image now installs `squashfs-tools`.
+- UKI helper passes the checked Debian `linuxx64.efi.stub` explicitly to `ukify`.
+
+**No execution validation has been performed after these changes.** Do not claim the ISO boots. Next grouped checks on Fedora: `bash -n`/ShellCheck for ISO scripts, build/test Rust, run Podman ISO build, inspect the manifest and validation logs, then QEMU/OVMF and Ventoy hardware boot.
+
+Important desktop boundary: source documentation still marks full scene composition and physical scanout validation incomplete. The Welcome client paints a real SHM preview after receiving XDG configure, but historical logs do not prove that configure or a visible frame was received/presented. The hardware test must capture those milestones explicitly.
