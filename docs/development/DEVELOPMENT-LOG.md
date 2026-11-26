@@ -2430,3 +2430,24 @@ Removed this redundant operation. Preferences are applied on device discovery,
 when explicitly changed by the shell, and after session reactivation. Continuous
 motion processing remains with libinput/Smithay. Committed on main as
 `3eb5353`. No build or tests were run; grouped Fedora validation remains pending.
+
+
+## 2026-11-26 — Pointer geometry and device-classification audit
+
+Completed the infrastructure ownership review. Mouse/touchpad classification
+continues to use the capabilities and device-specific configuration exposed by
+libinput: the project's pinned Rust API did not expose a more reliable universal
+device-kind value to replace these checks. The remaining heuristics are limited
+to class distinction and do not replace kernel/udev/libinput hardware discovery.
+
+Global pointer geometry belongs to the compositor. Smithay provides the
+Wayland seat and surface dispatch, while AureaOS must apply its multi-monitor
+layout, keep the pointer within enabled outputs, and define behavior in gaps
+between displays. The shared pointer commit path updates focus, Wayland frames
+and output redraw requests. Cursor artwork remains part of AureaOS visual
+identity and is presented through the native compositor graphics path.
+
+No new abstractions or duplicate driver/input engines were introduced. The only
+functional change in this audit is removal of mouse acceleration reapplication
+on every motion event (commit `3eb5353`). Build, tests and physical-device
+validation remain pending for one grouped Fedora pass.
