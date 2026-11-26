@@ -89,6 +89,8 @@ pub(super) fn build(
         applied_touchpad_settings: AppliedTouchpadSettings::default(),
         #[cfg(feature = "drm")]
         touchpad_devices: std::collections::HashMap::new(),
+        #[cfg(feature = "drm")]
+        mouse_devices: std::collections::HashMap::new(),
 
         #[cfg(feature = "drm")]
         drm_session,
