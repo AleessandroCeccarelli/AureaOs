@@ -27,6 +27,13 @@ EXPECTED_CURSOR_NAMES = {
     "pencil",
     "all-scroll",
     "left_ptr_watch",
+    "up-arrow",
+    "pin",
+    "person",
+    "vertical-text",
+    "zoom-in",
+    "zoom-out",
+    "context-menu",
 }
 
 
