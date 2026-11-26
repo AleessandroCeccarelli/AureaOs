@@ -981,3 +981,9 @@ bash -n tools/iso/tests/validate-live-image.sh
 bash tools/iso/build-live-iso-podman.sh
 ```
 Poi ispezionare checksum/El Torito/ESP e avviare da Ventoy su hardware. Registrare ogni risultato; non dichiarare riuscito ciò che non è stato osservato.
+
+### Correzione successiva al primo pass ISO (26 novembre)
+- Il coordinator ora copia `tests/validate-chroot-boot.sh` dentro `config/includes.chroot/usr/local/libexec/aureaos/validate-chroot-boot.sh`; prima creava la directory ma non copiava lo script invocato dal chroot hook.
+- Il final validator controlla ora le sezioni `.linux`, `.initrd`, `.osrel`, `.cmdline`, il parametro `boot=live` e `ID=aureaos`.
+- La documentazione chiarisce che il payload finale contiene `/live/filesystem.squashfs` e UKI, non kernel/initramfs separati. Ambito UEFI-only.
+- Anche queste correzioni non sono state sottoposte a `bash -n`, build, ukify, ISO o boot fisico.
