@@ -18,7 +18,6 @@ use super::{
 };
 
 const MAX_CURSOR_FILE_BYTES: u64 = 16 * 1024 * 1024;
-const DEFAULT_CURSOR_PIXEL_SIZE: u32 = 32;
 
 /// Errors produced while loading or uploading a named cursor.
 #[derive(Debug)]
@@ -58,14 +57,16 @@ pub(crate) struct VulkanNativeCursorAsset {
 
 impl VulkanNativeCursorAsset {
     pub(crate) fn texture(&self) -> Option<&VulkanShmTexture> {
-        self.frames.first().map(AsRef::as_ref)
+        self.frames.first().map(|texture| texture.as_ref())
     }
 
     pub(crate) fn width(&self) -> u32 { self.width }
     pub(crate) fn height(&self) -> u32 { self.height }
     pub(crate) fn hotspot_x(&self) -> u32 { self.hotspot_x }
     pub(crate) fn hotspot_y(&self) -> u32 { self.hotspot_y }
+    #[allow(dead_code)] // Consumed by the cursor animation scheduler added in the next block.
     pub(crate) fn delay_ms(&self) -> u32 { self.delay_ms }
+    #[allow(dead_code)] // Retained frames are uploaded together for animated cursors.
     pub(crate) fn frame_count(&self) -> usize { self.frames.len() }
 }
 
