@@ -12,7 +12,7 @@ pub mod keyboard;
 pub mod pointer;
 pub mod touchpad;
 mod touchpad_controller;
-mod pointer_controller;
+mod pointer_controller;\nmod desktop_pointer_behavior;
 
 pub use action::InputAction;
 pub use device::{
@@ -29,7 +29,7 @@ pub use touchpad::{
     TouchpadSendEventsMode, TouchpadSettingStatus,
     TouchpadSettings, TouchpadTapButtonMap,
 };
-pub use pointer_controller::{PointerSettingsCommand, PointerSettingsController, pointer_settings_channel};
+pub use pointer_controller::{PointerSettingsCommand, PointerSettingsController, pointer_settings_channel};\npub use desktop_pointer_behavior::{\n    DesktopPointerBehaviorCommand, DesktopPointerBehaviorController,\n    DesktopPointerBehaviorSettings, desktop_pointer_behavior_channel,\n};
 pub use touchpad_controller::{
     TouchpadSettingsCommand, TouchpadSettingsController, touchpad_settings_channel,
 };
