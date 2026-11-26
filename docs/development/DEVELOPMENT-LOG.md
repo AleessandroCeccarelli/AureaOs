@@ -2218,3 +2218,14 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Registered the decoder as a private Vulkan module. No third-party parser dependency or C library is introduced.
 - **Not yet connected to the Vulkan cursor texture cache:** the renderer still uses the built-in arrow. The next change must add theme-path resolution, safe file loading, closest-size selection, cache ownership and actual draw geometry using the decoded hotspot. Animation frame scheduling remains a separate follow-up.
 - No Cargo build or tests were run; this is source-only work accumulated for the planned verification pass.
+
+### 26 November 2026 — Themed Xcursor assets connected to Vulkan rendering
+
+- Replaced the built-in-arrow-only GPU resource with a per-device cache of named Xcursor assets, keyed by theme, cursor name and requested raster size.
+- Added runtime theme lookup under `AUREA_CURSOR_THEME_ROOT` (default `/usr/share/icons`), bounded file-size checks, Xcursor decoding, nearest-size selection and upload of all frames for the selected size through the existing Vulkan SHM texture upload path.
+- The render scene now preserves the global pointer anchor. Native cursor geometry uses the selected Xcursor frame dimensions and per-asset hotspot, while the desktop's existing Light/Dark theme selects the matching cursor palette.
+- Missing/unavailable cursor packages fall back to the built-in high-contrast arrow. The fallback is resized to the requested physical raster size so it remains the intended logical size on HiDPI outputs.
+- Updated Debian Live packaging to stage the canonical cursor sources and builder, install temporary `librsvg2-bin` and `xcursorgen` build dependencies, build both themes in the Debian chroot, install them under `/usr/share/icons`, verify all 26 canonical cursor files and remove the build-only dependencies.
+- Updated cursor documentation with the runtime path, development override and remaining limitations.
+- **Not verified in execution:** no `cargo fmt`, Cargo build/check/test, shell syntax check, Debian ISO build or visual hardware validation was run. This work was accumulated without per-change builds as requested.
+- **Remaining:** the runtime uploads every frame for the selected size but currently draws frame zero only. Implement a frame scheduler for `busy` / `left_ptr_watch`, move file loading and decoding off the render callback, review cache memory across outputs, validate fractional/high-DPI geometry and run the full test suite on Fedora before claiming the integration is verified.
