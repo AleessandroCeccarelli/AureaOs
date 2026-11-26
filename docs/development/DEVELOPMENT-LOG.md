@@ -2073,3 +2073,13 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 ### Verification status
 
 Source changes were committed directly to `main`. No Cargo build, `cargo check`, `cargo fmt`, tests, CI result review or physical-device validation was run. The added tests are therefore not yet confirmed. Run the grouped Rust formatting/build/test checks on Fedora when the user is back at the development machine.
+
+
+
+### 2026-11-26 — Auxiliary mouse buttons, wheel and session restore
+
+- Confirmed that `BTN_SIDE`, `BTN_EXTRA`, `BTN_FORWARD` and `BTN_BACK` already flow through libinput's common pointer-button path and are sent to Wayland unchanged. Restricted desktop context-menu capture to primary and secondary clicks so auxiliary buttons are not swallowed by desktop chrome; added unit coverage for that boundary.
+- Confirmed that horizontal and vertical wheel events are sent as Wayland axis frames, preserving continuous values, high-resolution `v120`, source and relative direction. Existing numeric validation tests remain in place.
+- Added a compositor-owned registry of live mouse libinput handles. It is populated on mouse connection and cleared on removal/reclassification. Pointer preference commands now apply immediately to the active handle.
+- Reapply mouse acceleration profiles after libseat session activation. Touchpad acceleration profiles are restored through their separate live-handle registry. Existing release of held buttons on session pause and device removal is retained.
+- Physical hotplug, auxiliary buttons, wheel and VT pause/resume still need validation on Fedora hardware. No build, rustfmt, cargo check or tests were run in this source-editing session.
