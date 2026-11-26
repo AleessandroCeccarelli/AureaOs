@@ -354,3 +354,46 @@ impl<'a> RenderScene<'a> {
         self.toplevels.is_empty()
     }
 }
+
+#[cfg(test)]
+mod cursor_scene_tests {
+    use super::*;
+    use crate::window_manager::WindowManager;
+
+    #[test]
+    fn default_named_cursor_is_present_in_the_scene_at_the_pointer_location() {
+        let windows = WindowManager::new();
+        let pointer = Point::<f64, Logical>::from((640.0, 360.0));
+        let status = CursorImageStatus::default_named();
+
+        let scene = RenderScene::from_window_manager(&windows)
+            .with_cursor(&status, Some(pointer), 1.0);
+
+        assert_eq!(
+            scene.native_cursor_location(),
+            Some(cursor::default_cursor_origin(pointer))
+        );
+    }
+
+    #[test]
+    fn missing_pointer_location_does_not_create_a_cursor_rectangle() {
+        let windows = WindowManager::new();
+        let status = CursorImageStatus::default_named();
+
+        let scene = RenderScene::from_window_manager(&windows)
+            .with_cursor(&status, None, 1.0);
+
+        assert_eq!(scene.native_cursor_location(), None);
+    }
+
+    #[test]
+    fn explicitly_hidden_cursor_is_not_rendered() {
+        let windows = WindowManager::new();
+        let pointer = Point::<f64, Logical>::from((640.0, 360.0));
+
+        let scene = RenderScene::from_window_manager(&windows)
+            .with_cursor(&CursorImageStatus::Hidden, Some(pointer), 1.0);
+
+        assert_eq!(scene.native_cursor_location(), None);
+    }
+}
