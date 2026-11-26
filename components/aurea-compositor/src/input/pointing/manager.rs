@@ -12,7 +12,7 @@ use aurea_desktop_api::input::{
 };
 
 use super::{PointingDeviceService, PointingDeviceSettings};
-use super::touchpad_store::TouchpadProfileStore;
+use super::{pointer_store::PointerProfileStore, touchpad_store::TouchpadProfileStore};
 
 /// Owns the policy state shared by mouse, touchpad, touchscreen, and tablet paths.
 ///
@@ -25,6 +25,7 @@ pub struct PointerManager {
     devices: PointingDeviceService,
     settings: PointingDeviceSettings,
     persistent_touchpads: TouchpadProfileStore,
+    persistent_pointers: PointerProfileStore,
     pressed_buttons: HashMap<InputDeviceId, HashSet<u32>>,
 }
 
@@ -48,8 +49,17 @@ impl PointerManager {
             return false;
         }
         self.settings.reconcile_kind(id, kind);
-        if kind == aurea_desktop_api::input::InputDeviceKind::Touchpad {
-            if let Some(identity) = persistent_id {
+        if let Some(identity) = persistent_id {
+            if matches!(
+                kind,
+                aurea_desktop_api::input::InputDeviceKind::Mouse
+                    | aurea_desktop_api::input::InputDeviceKind::Touchpad
+            ) {
+                if let Some(profile) = self.persistent_pointers.get(&identity) {
+                    self.settings.set_pointer(&self.devices, id, profile);
+                }
+            }
+            if kind == aurea_desktop_api::input::InputDeviceKind::Touchpad {
                 if let Some(profile) = self.persistent_touchpads.get(&identity) {
                     self.settings.set_touchpad(&self.devices, id, profile);
                 }
@@ -90,7 +100,19 @@ impl PointerManager {
         device: InputDeviceId,
         settings: PointerSettings,
     ) -> bool {
-        self.settings.set_pointer(&self.devices, device, settings)
+        if !self.settings.set_pointer(&self.devices, device, settings) {
+            return false;
+        }
+        if let Some(identity) = self
+            .devices
+            .device(device)
+            .and_then(|descriptor| descriptor.persistent_id)
+        {
+            if let Err(error) = self.persistent_pointers.set(identity, settings) {
+                tracing::warn!(device_id = device.0, %error, "Could not persist pointer preferences");
+            }
+        }
+        true
     }
 
     /// Returns touchpad preferences, falling back to the shared defaults.
