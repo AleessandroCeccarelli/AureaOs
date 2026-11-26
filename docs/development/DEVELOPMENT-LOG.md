@@ -2116,3 +2116,14 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Added store tests for profile round-trip, per-device isolation, malformed/future format preservation, invalid calibration rejection and reset persistence.
 - **Monitor assignment is not yet persisted.** Runtime `OutputId` is explicitly not a persistent monitor identity, and the current logical output registry does not retain the validated DRM connector identity evidence. Persisting `OutputId` would risk silently assigning a tablet to the wrong screen after reboot or topology changes. See `docs/development/TABLET-PROFILES.md` for the safe follow-up architecture.
 - No Cargo build, `cargo fmt`, `cargo check`, unit tests or hardware validation were run. Keep verification grouped on Fedora as agreed.
+
+
+### 2026-11-26 — Continue and harden the pointer/input block
+
+- Kept work within the existing pointer subsystem; no new desktop feature block was started.
+- Removed synchronous `eprintln!` output from pointer-button and scroll-axis dispatch. These are frequent input events and must not block the libinput event loop. Discovery/removal diagnostics remain event-scoped.
+- Hardened both mouse-pointer and touchpad persistent profile stores: failed writes now restore the previous in-memory value (or remove a newly inserted value), preventing memory/disk divergence.
+- Extended failure-path tests to assert the rejected profile is not retained in memory when a malformed, future-version or otherwise unreadable settings file makes the store read-only.
+- Updated `INPUT-PRECISION.md` to reflect the already-added persistent tablet calibration store and the current pointer hot-path guarantees.
+- Existing implementation still provides per-device button aggregation and synthesized releases on disconnect/session pause, side-button capability detection, per-device relative acceleration, multi-axis/high-resolution scroll forwarding, and safe explicit absolute-device output assignment.
+- No build, `cargo fmt`, `cargo check`, unit tests, benchmark or hardware validation was run. Keep the complete verification pass grouped on Fedora as requested.
