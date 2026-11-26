@@ -2127,3 +2127,13 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Updated `INPUT-PRECISION.md` to reflect the already-added persistent tablet calibration store and the current pointer hot-path guarantees.
 - Existing implementation still provides per-device button aggregation and synthesized releases on disconnect/session pause, side-button capability detection, per-device relative acceleration, multi-axis/high-resolution scroll forwarding, and safe explicit absolute-device output assignment.
 - No build, `cargo fmt`, `cargo check`, unit tests, benchmark or hardware validation was run. Keep the complete verification pass grouped on Fedora as requested.
+
+
+### 2026-11-26 — Saturday visible-pointer readiness
+
+- Confirmed the current native path end-to-end at source level: server initializes the Smithay seat pointer; the default named cursor is converted to the built-in 32×32 RGBA arrow; render scenes use the current seat pointer location; Vulkan uploads/caches the arrow texture and draws it after desktop surfaces; relative libinput motion updates the seat pointer and requests output frames; startup centers the pointer and requests an initial frame.
+- Added render-scene tests for the default named cursor, absent pointer location and explicitly hidden cursor state.
+- Added Vulkan cursor-geometry tests for the arrow intersecting the primary output and being clipped from another output.
+- Hardened startup: when one or more active outputs exist, failure to center the pointer now aborts startup with a clear error rather than silently leaving it at a potentially off-screen default coordinate. Added one startup diagnostic line with active output count and placement result.
+- Added `docs/development/SATURDAY-POINTER-BOOT-TEST.md` with the exact Fedora formatting/check/test sequence, native launcher, physical mouse acceptance criteria and diagnostic triage.
+- **Not yet verified:** no build, rustfmt, cargo check, unit tests, native Fedora session, Vulkan presentation or physical mouse test has run in this pass. Saturday success is not claimed until the native test confirms a visible arrow and physical motion.
