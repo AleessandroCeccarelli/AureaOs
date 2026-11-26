@@ -222,6 +222,13 @@ jobs:
           shellcheck tools/run-aurea-native-test.sh tools/collect-previous-boot.sh
           bash -n tools/run-aurea-native-test.sh
           bash -n tools/collect-previous-boot.sh
+          bash -n tools/iso/build-live-iso.sh
+          bash -n tools/iso/build-live-iso-podman.sh
+          bash -n tools/iso/scripts/build-systemd-boot-live-iso.sh
+          bash -n tools/iso/tests/validate-live-image.sh
+          sh -n tools/iso/hooks/010-build-aureaos.hook.chroot
+          sh -n tools/iso/scripts/aurea-live-session
+          sh -n tools/iso/tests/validate-chroot-boot.sh
           bash -n tools/build/bootstrap-debian.sh
           bash -n tools/security/audit-rootfs-permissions.sh
           bash -n tools/security/tests/test-audit-rootfs-permissions.sh
