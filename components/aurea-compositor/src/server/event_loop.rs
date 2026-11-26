@@ -195,7 +195,10 @@ impl WaylandServer {
         let run_result = (|| {
             while !shutdown.load(Ordering::Acquire) {
                 #[cfg(feature = "drm")]
-                let animation_active = self.state.compositor.cursor_animation_active();
+                let animation_active = self.state.compositor.cursor_animation_active()
+                    || self.state.vulkan_backends.values().any(|backend| {
+                        backend.has_pending_native_cursor_work()
+                    });
 
                 #[cfg(not(feature = "drm"))]
                 let animation_active = false;
