@@ -12,6 +12,11 @@ command -v git >/dev/null 2>&1 || {
     exit 1
 }
 readonly SOURCE_COMMIT="$(git -C "$REPO_ROOT" rev-parse --short=12 HEAD)"
+if [[ -n "$(git -C "$REPO_ROOT" status --porcelain)" ]]; then
+    echo "The repository has uncommitted or untracked changes." >&2
+    echo "Commit the intended AureaOS state before creating a reproducible Live ISO." >&2
+    exit 1
+fi
 BUILD_PARENT="${BUILD_PARENT:-${TMPDIR:-/var/tmp}/aureaos-podman-build-$SOURCE_COMMIT}"
 RESUME="${RESUME:-0}"
 readonly BUILD_DIR="$BUILD_PARENT/build"
