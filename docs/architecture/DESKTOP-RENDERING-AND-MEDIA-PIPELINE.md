@@ -309,3 +309,13 @@ The native cursor texture is decoded and uploaded asynchronously, then cached fo
 - Render scenes carry immutable, newest-first snapshots. Output-local geometry reuses the native cursor's hotspot, effective output scale, transform and clipping rules.
 - A dedicated fragment shader and cached Vulkan pipeline apply per-impression opacity through fragment push constants. Impressions are submitted oldest-first and the live native cursor is drawn last.
 - The effect currently applies to the compositor-owned named cursor. Client-provided Wayland cursor surfaces are not converted into trail textures. Runtime visual validation and Fedora build/test verification remain pending.
+
+### Native pointer presentation path audit — 26 November 2026
+
+The compositor-owned named cursor is connected through the complete source-level rendering path: the DRM builder publishes outputs and centers the pointer before starting the initial warm-up; RenderScene snapshots the seat location and cursor role; the Vulkan surface compositor ensures the selected theme texture or built-in fallback, resolves the corresponding hotspot, binds the texture and draws it with output-local scale/transform/clipping. Relative libinput motion is constrained to enabled output bounds, sent through Smithay pointer motion/frame, and requests fresh output frames. Pending output frames are consumed by the DRM renderer using either direct Vulkan scanout or the Vulkan-rendered GBM/CPU-upload compatibility route, with KMS completion events retiring the submitted resources.
+
+The fallback path is verified in source to reach the actual texture binding and draw pass, rather than merely being inserted into a cache. Client-provided Wayland cursor surfaces remain on their separate SHM surface path and use their committed hotspot.
+
+**Scheduling caveat:** the initial three-second warm-up polls for asynchronous Xcursor completion at frame cadence, but it is not a worker-completion signal. If loading exceeds the window while the pointer remains idle, the fallback stays visible until another event requests a frame. A future worker-to-event-loop wakeup is preferable to an unbounded high-frequency polling period.
+
+This audit is source inspection only. It does not establish successful compilation, live Vulkan rendering, KMS presentation, cursor movement on physical hardware, or multi-monitor behavior. No build or tests were run.
