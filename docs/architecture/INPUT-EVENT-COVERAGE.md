@@ -395,3 +395,15 @@ AureaOS desktop bindings are resolved separately: horizontal three-finger swipes
 Shell runtime tests cover compositor-originated panel requests, context-menu position, workspace synchronization and event-loop delivery. A further event-loop test was added for the complete sequence of Overview, App Exposé and context menu. These tests have not been executed.
 
 Important presentation boundary: DesktopPanelState records which surface should be shown and its context-menu position; it is not itself a renderer. The native Overview, App Exposé and context-menu Vulkan presentation/hit-testing paths must be completed and validated separately before claiming that these gestures visibly open finished panels. No hardware or grouped build validation has been performed.
+
+
+## Native desktop panel presentation audit — 2026-11-26
+
+The compositor rendering path has been checked against the Shell gesture state:
+
+- **Context menu:** this is already connected to the Vulkan composition path. `AureaCompositor::render_scene` captures its output-constrained layout and theme; `VulkanSurfaceCompositor` requests the theme-specific pre-rasterized artwork, obtains a cached texture binding, computes output-local geometry and draws it after ordinary Wayland surfaces. Client cursor surfaces and the compositor cursor remain above it. Pointer hit testing uses the same logical menu layout and sends command/dismiss interactions to the Shell.
+- **Asset dependency:** context-menu presentation requires the generated `icons/generated/context-menu/context-menu-{light,dark}-256.rgba` payload beneath `/usr/share/aureaos/human-interfaces` (or `AUREA_HUMAN_INTERFACES_ROOT` for development). If loading fails, the current renderer logs the failure and skips the menu draw; the interaction state and hit regions can still exist. The generated asset payload and visual appearance must be verified separately.
+- **Overview and App Exposé:** completed gestures reach the Shell and update `DesktopPanelState`, but the compositor render scene has no corresponding panel snapshot, layout, texture preparation or draw pass. These panels are therefore not visually implemented by the current Vulkan path. A shared panel presentation contract and actual panel content/layout are still required; do not report the gesture-to-state wiring as a visible panel.
+- **Validation boundary:** source-level tests cover gesture dispatch, Shell event-loop state changes and context-menu geometry. No build, automated test run, generated-asset visual inspection or physical monitor test was performed during this audit.
+
+Next implementation step: define an immutable, technology-independent panel presentation snapshot (active panel, output-local placement and panel-specific content) shared from Shell to compositor; then implement separate bounded artwork/content preparation and Vulkan draw passes for Overview and App Exposé. Keep context-menu command hit testing and visual geometry sourced from the same layout contract.
