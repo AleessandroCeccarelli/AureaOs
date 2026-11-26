@@ -211,3 +211,12 @@ Other source-audit findings:
 Scope decision: Wacom pen/tablet and Tablet Pad remain deferred as previously agreed. Settings-page presentation of pointer speed, double-click interval and touchpad controls is a separate shell/UI task; the compositor-side settings and persistence contracts are present. Overview/App Exposé visual presentation is also a desktop renderer task, not a missing mouse/touchpad event route.
 
 Remaining before declaring the block operationally verified: grouped rustfmt/build/tests on Fedora, then physical testing with a mouse and at least one touchpad (including tap/click, scrolling, gestures, unplug/reconnect and VT pause/resume). The source audit does not establish runtime or hardware success.
+
+
+### Gesture cancellation on physical removal — 26 November 2026
+
+A second lifecycle gap was found during the follow-up audit. When the touchpad owning an active swipe, pinch or hold was physically removed, AureaOS cleared its internal owner and semantic state but did not send the matching cancelled end event to Wayland pointer-gesture clients. A client could therefore retain an unfinished protocol gesture.
+
+The disconnect path now takes the active gesture only when the removed device owns it, cancels the semantic sequence, sends the corresponding Wayland end event with `cancelled = true`, and frames the pointer before unregistering the device. Other devices' gesture ownership is not disturbed. The owner also rejects duplicate begin events instead of resetting an already active sequence.
+
+Added unit coverage for duplicate begin rejection and device-scoped owner removal. Source changes are committed but have not been compiled or executed; grouped validation remains pending.
