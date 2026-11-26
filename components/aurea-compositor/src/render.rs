@@ -386,6 +386,20 @@ mod cursor_scene_tests {
     }
 
     #[test]
+    fn named_cursor_selection_is_carried_into_the_render_scene() {
+        let windows = WindowManager::new();
+        let pointer = Point::<f64, Logical>::from((640.0, 360.0));
+        let status = CursorImageStatus::Named(
+            smithay::input::pointer::CursorIcon::Help,
+        );
+
+        let scene = RenderScene::from_window_manager(&windows)
+            .with_cursor(&status, Some(pointer), 1.0);
+
+        assert_eq!(scene.native_cursor_asset(), Some("help"));
+    }
+
+    #[test]
     fn missing_pointer_location_does_not_create_a_cursor_rectangle() {
         let windows = WindowManager::new();
         let status = CursorImageStatus::default_named();
