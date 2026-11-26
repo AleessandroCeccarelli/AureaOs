@@ -13,7 +13,7 @@ Original AureaOS SVG pointer artwork and the future cursor-theme build contract 
 
 ## Current inventory
 
-Nineteen SVG masters cover normal selection, link, text, precision, help, unavailable, copy, alias, open/closed hand, move/all-scroll, horizontal/vertical/diagonal resize, handwriting, busy and working-in-background. The source artwork currently ships in the high-contrast light-pointer palette (white fill, dark outline).
+Nineteen SVG masters cover normal selection, link, text, precision, help, unavailable, copy, alias, open/closed hand, move/all-scroll, horizontal/vertical/diagonal resize, handwriting, busy and working-in-background. Both high-contrast palettes are provided: light pointers (white fill, dark outline) and dark pointers (dark fill, white outline).
 
 ## Platform role coverage
 
@@ -36,10 +36,10 @@ python3 tools/assets/validate_cursors.py
 python3 -m unittest discover -s tools/assets/tests -p 'test_*.py' -v
 ```
 
-The validator uses only the Python standard library. It checks manifest structure, unique cursor names, source-path containment, hotspot bounds, SVG geometry, external resource references, scripts, event handlers and animation policy. Build the theme after validation with `python3 tools/assets/build_cursor_theme.py`. The build requires `rsvg-convert` (Fedora: `librsvg2-tools`; Debian: `librsvg2-bin`) and `xcursorgen`. Output is created at `generated/AureaOS/`; the builder refuses to overwrite an existing theme. Move the old output aside before rebuilding. GitHub Actions builds and publishes the generated theme as a workflow artifact.
+The validator uses only the Python standard library. It checks manifest structure, unique cursor names, source-path containment, hotspot bounds, SVG geometry, external resource references, scripts, event handlers and animation policy. Build the light theme after validation with `python3 tools/assets/build_cursor_theme.py --output aurea-human-interfaces/cursors/generated/AureaOS-Light`. Build the dark theme with `python3 tools/assets/build_cursor_theme.py --manifest aurea-human-interfaces/cursors/manifest-dark.toml --output aurea-human-interfaces/cursors/generated/AureaOS-Dark`. The build requires `rsvg-convert` (Fedora: `librsvg2-tools`; Debian: `librsvg2-bin`) and `xcursorgen`. Output is created at `generated/AureaOS/`; the builder refuses to overwrite an existing theme. Move the old output aside before rebuilding. GitHub Actions builds and publishes the generated theme as a workflow artifact.
 
 The Rust/Vulkan compositor does not yet consume generated Xcursor assets.
 
 ## Not yet implemented
 
-Xcursor build pipeline, compatibility alias generation, separate light/dark palettes, Smithay cursor loading/state selection, fractional scaling and high-DPI review, reduced-motion fallback and pointer-state tests. SVG sources are not an installed or working cursor theme.
+Xcursor compatibility alias generation, Smithay cursor loading/state selection, fractional scaling and high-DPI review, reduced-motion fallback and pointer-state tests. SVG masters and manifests are source assets; they are not yet installed or consumed by the Rust/Vulkan compositor.
