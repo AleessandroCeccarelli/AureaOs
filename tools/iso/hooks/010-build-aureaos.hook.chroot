@@ -54,13 +54,10 @@ install -D -m 0755 "$SESSION_SOURCE" /usr/local/bin/aurea-live-session
 # payloads are installed; librsvg, Python, SVGs and font sources stay out of
 # the final runtime image.
 bash "$SOURCE/tools/assets/render-context-menu.sh"
-bash "$SOURCE/tools/assets/render-trash-icons.sh"
 ASSET_SOURCE="$SOURCE/aurea-human-interfaces"
 ASSET_DESTINATION="/usr/share/aureaos/human-interfaces"
 asset_count=0
-for asset in \
-    "$ASSET_SOURCE"/icons/generated/context-menu/*.rgba \
-    "$ASSET_SOURCE"/icons/generated/trash/*.rgba; do
+for asset in "$ASSET_SOURCE"/icons/generated/context-menu/*.rgba; do
     [ -s "$asset" ] || {
         echo "Generated AureaOS desktop artwork is missing: $asset" >&2
         exit 1
