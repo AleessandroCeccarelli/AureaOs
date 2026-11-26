@@ -258,7 +258,7 @@ if [[ -z "$ISO_PATH" || ! -s "$ISO_PATH" ]]; then
     exit 1
 fi
 
-# Record build provenance before the assembly helper removes split kernel/initramfs files.
+# Record build provenance before the isolated UKI assembly snapshot is prepared.
 BUILD_TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 BUILD_ID="$BUILD_TIMESTAMP-$(git -C "$REPO_ROOT" rev-parse --short=12 HEAD)"
 COMMIT="$(git -C "$REPO_ROOT" rev-parse HEAD)"
@@ -338,6 +338,9 @@ manifest = {
     },
     "validation": {
         "chroot_live_boot_preflight": "passed",
+        "debian_13_rootfs": "passed",
+        "systemd_multi_user_target": "passed",
+        "embedded_uki_scripts_live": "passed",
         "assembly_tree": "passed",
         "iso_payload": "passed",
         "sha256": os.environ["ISO_SHA256"],
