@@ -39,7 +39,7 @@ while (($#)); do
     esac
 done
 
-for command_name in lb git tar sudo sha256sum realpath find install; do
+for command_name in lb git tar sudo sha256sum realpath find install chmod date awk stat python3; do
     command -v "$command_name" >/dev/null 2>&1 || {
         echo "Required build command not found: $command_name" >&2
         exit 1
@@ -180,7 +180,7 @@ else
     fi
 
     mkdir -p -- "$BUILD_ROOT"
-    printf '%s\\n' "$SOURCE_COMMIT" > "$SOURCE_MARKER"
+    printf '%s\n' "$SOURCE_COMMIT" > "$SOURCE_MARKER"
     chmod 0644 "$SOURCE_MARKER"
     cd "$BUILD_ROOT"
 
