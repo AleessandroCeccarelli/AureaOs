@@ -356,17 +356,25 @@ impl VulkanSurfacePipelineCache {
         self.wallpaper_texture_cache.clear();
     }
 
-    /// Starts or polls the compositor-owned arrow upload without waiting for the GPU.
+    /// Loads the selected themed cursor and uploads its frames to persistent GPU textures.
     pub(crate) fn ensure_native_cursor_texture(
         &mut self,
+        asset: &str,
+        theme: DesktopTheme,
+        requested_size: u32,
     ) -> Result<bool, VulkanSurfacePipelineCacheError> {
         self.native_cursor_texture
-            .ensure(Arc::clone(&self.device))
+            .ensure(Arc::clone(&self.device), asset, theme, requested_size)
             .map_err(VulkanSurfacePipelineCacheError::NativeCursor)
     }
 
-    pub(crate) fn native_cursor_texture(&self) -> Option<&VulkanShmTexture> {
-        self.native_cursor_texture.texture()
+    pub(crate) fn native_cursor_asset(
+        &self,
+        asset: &str,
+        theme: DesktopTheme,
+        requested_size: u32,
+    ) -> Option<&super::native_cursor_texture::VulkanNativeCursorAsset> {
+        self.native_cursor_texture.asset(asset, theme, requested_size)
     }
 
     pub(crate) fn pipeline(&self, format: vk::Format) -> Option<&VulkanGraphicsPipeline<'static>> {
