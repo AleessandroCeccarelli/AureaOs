@@ -2104,3 +2104,5 @@ Aggiunto begin_cursor_asset_warmup(), richiamato soltanto dopo la pubblicazione 
 ### 26 novembre 2026 — Freccia nativa immediata
 
 Il renderer non deve più aspettare la lettura, la decodifica e l'upload del tema Xcursor per mostrare il puntatore. Aggiunta una piccola freccia AureaOS ad alto contrasto, caricata una sola volta per dimensione raster e conservata in una cache limitata a quattro dimensioni. La freccia di base viene disegnata subito mentre il tema viene preparato in background; quando la texture del tema è pronta, sostituisce automaticamente la freccia provvisoria mantenendo coordinate e hotspot. Se il worker non parte o la sua coda è momentaneamente piena, il puntatore di base resta comunque disponibile. L'upload sincrono riguarda soltanto questa piccola immagine; lettura e decodifica Xcursor restano asincrone. Nessuna build, formattazione, test o prova fisica eseguiti.
+
+Aggiunti anche test unitari indipendenti dalla GPU per dimensioni, hotspot, payload RGBA e limiti minimo/massimo della freccia provvisoria. I test sono nel repository ma non sono ancora stati eseguiti.
