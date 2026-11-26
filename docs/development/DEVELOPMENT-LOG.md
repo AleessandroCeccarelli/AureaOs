@@ -2137,3 +2137,18 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Hardened startup: when one or more active outputs exist, failure to center the pointer now aborts startup with a clear error rather than silently leaving it at a potentially off-screen default coordinate. Added one startup diagnostic line with active output count and placement result.
 - Added `docs/development/SATURDAY-POINTER-BOOT-TEST.md` with the exact Fedora formatting/check/test sequence, native launcher, physical mouse acceptance criteria and diagnostic triage.
 - **Not yet verified:** no build, rustfmt, cargo check, unit tests, native Fedora session, Vulkan presentation or physical mouse test has run in this pass. Saturday success is not claimed until the native test confirms a visible arrow and physical motion.
+
+
+## 2026-11-26 — Live ISO Factory: systemd-boot and UKI path
+
+- Confirmed the approved Roma 1.0 boot policy in `docs/architecture/SYSTEMD-BOOT-AND-UKI.md`: UEFI-only, systemd-boot primary, UKI boot artifacts, Secure Boot disabled, no GRUB in the installed/default product path. This work is limited to a development Live ISO; installer, disk partitioning, Btrfs installation and recovery are explicitly deferred.
+- Added `tools/iso/os-release` for AureaOS identity metadata embedded in the UKI.
+- Added `tools/iso/scripts/build-systemd-boot-live-iso.sh`. It takes the exact versioned kernel/initramfs pairs staged by Debian Live, builds UKIs with Trixie's `ukify` and systemd EFI stub, creates a FAT EFI boot image with systemd-boot at the UEFI removable-media fallback path, writes systemd-boot entries, and remasters the ISO with an El Torito EFI boot image and hybrid GPT data.
+- The final image is UEFI-only. The intermediate GRUB payload created by live-build is removed before final ISO mastering; no GRUB configuration is intended to ship in the final image.
+- Updated the Fedora/Podman wrapper to install Debian Trixie's `systemd-boot-efi`, `systemd-ukify`, `mtools` and `dosfstools` in the disposable builder container.
+- Updated the ISO coordinator to call the systemd-boot/UKI assembly stage and the image validator before copying the candidate to the user's output directory.
+- Replaced GRUB-specific image validation with checks for the EFI fallback loader, systemd-boot configuration, UKI contents and embedded `boot=live`, the Debian Live filesystem, and the ISO El Torito EFI catalog.
+- Updated `ISO-FACTORY.md` to describe the Live-only scope and new boot path. The existing Aurea desktop binary and PAM/logind session service remain the runtime payload; the image builder does not substitute a demo desktop.
+- Debian reference checks: Trixie's `live-boot` requires `boot=live` and uses initramfs-tools to locate the `/live` filesystem; Trixie packages systemd-boot EFI binaries and systemd-ukify. The UKI generator embeds kernel, initramfs, os-release and the controlled command line.
+- **Not verified yet:** no ISO build, shellcheck/syntax run, ukify invocation, FAT-image inspection, El Torito inspection, Cargo checks, QEMU/OVMF boot or physical hardware boot was run. The previous `/scripts/live` kernel panic remains unresolved until the new UKI image is actually booted. The new preflight and final-image checks reduce the chance of repeating the missing-initramfs-script failure but do not prove boot success.
+- Keep the established workflow: accumulate source changes, then run grouped Fedora `cargo fmt`, workspace check/tests, build the ISO, inspect logs and test via Ventoy on hardware. Do not generate an ISO during this source-editing pass.
