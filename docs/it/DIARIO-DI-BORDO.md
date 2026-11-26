@@ -1949,3 +1949,41 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Alla riattivazione della sessione libseat, ad esempio tornando da un altro terminale virtuale, i profili di accelerazione vengono riapplicati ai mouse collegati; viene ripristinato anche il profilo di accelerazione dei touchpad attraverso il loro registro separato.
 - Alla disconnessione o riclassificazione del dispositivo, l'handle viene rimosso. La gestione esistente rilascia inoltre i pulsanti rimasti premuti prima della pausa della sessione e durante la rimozione.
 - Da verificare fisicamente su Fedora: hot-plug, pulsanti laterali, rotellina e sospensione/riattivazione VT. Nessuna build, `cargo fmt`, `cargo check` o test eseguiti in questa sessione.
+
+
+## 26 novembre 2026 — ISO Live: migrazione a systemd-boot e UKI
+
+### Ambito concordato
+
+- La ISO serve esclusivamente ad avviare in modalità Live il desktop AureaOS realmente presente nel repository e a verificarne i progressi su hardware fisico.
+- Installer, partizionamento, installazione su Btrfs, aggiornamenti di sistema e ambiente di ripristino sono rinviati a quando desktop e applicazioni saranno completi.
+- La politica Roma 1.0 approvata resta UEFI-only, systemd-boot, UKI e Secure Boot disabilitato. GRUB non deve essere presente nell'immagine finale.
+- Si mantiene il flusso Fedora + Podman + Debian Trixie. Nessuna ISO viene generata durante questa sessione di modifica del sorgente.
+
+### Modifiche pubblicate su main
+
+- Creato `tools/iso/os-release` con l'identità AureaOS da incorporare nelle UKI.
+- Creato `tools/iso/scripts/build-systemd-boot-live-iso.sh`: usa le coppie kernel/initramfs prodotte da Debian Live, genera UKI con `ukify` e lo stub EFI Debian, prepara un'immagine EFI FAT con systemd-boot e voci di avvio, e rimasterizza la ISO con catalogo El Torito EFI e struttura GPT ibrida.
+- L'immagine EFI usa il percorso rimovibile standard `EFI/BOOT/BOOTX64.EFI`; systemd-boot carica le UKI dalla stessa ESP. La riga di comando UKI incorpora `boot=live` e le opzioni Live già selezionate.
+- La fase finale elimina i file GRUB intermedi e i kernel/initramfs separati dalla directory `/live`: nella ISO rimane il filesystem Live, mentre kernel e initramfs sono contenuti nella UKI.
+- Aggiornato `build-live-iso.sh` per richiamare il generatore UKI e il validatore prima di pubblicare la candidata.
+- Aggiornato il wrapper Podman per installare nel container Debian Trixie `systemd-boot-efi`, `systemd-ukify`, `mtools` e `dosfstools`.
+- Riscritto `validate-live-image.sh`: controlla loader EFI, configurazione systemd-boot, UKI e parametro `boot=live`, filesystem Live e riferimento El Torito EFI. Rimosso il vecchio hook di branding GRUB.
+- Aggiornati i documenti ISO Factory in inglese e italiano, il log di sviluppo e il checkpoint README.
+
+### Percorso di avvio previsto
+
+1. Firmware UEFI avvia `EFI/BOOT/BOOTX64.EFI` dall'immagine EFI El Torito.
+2. systemd-boot mostra la voce AureaOS Live e carica la UKI selezionata.
+3. La UKI avvia kernel Debian e initramfs con `boot=live`.
+4. live-boot cerca il supporto Live e prepara il filesystem `/live/filesystem.squashfs`.
+5. systemd raggiunge il target multi-user e avvia `aurea-desktop.service`.
+6. PAM/logind registrano la sessione; il servizio esegue il binario Rust `aurea-desktop`.
+7. Il compositor Smithay usa DRM/KMS e Vulkan per presentare il desktop e il puntatore.
+
+### Verifica e limiti
+
+- La documentazione Debian Trixie conferma che live-boot è un hook initramfs-tools e viene attivato dal parametro `boot=live`; Trixie fornisce systemd-boot EFI e systemd-ukify.
+- Il vecchio panic `/scripts/live` resta una diagnosi aperta: il nuovo preflight controlla la presenza dello script nell'initramfs e il validatore finale controlla la UKI, ma soltanto un avvio reale potrà dimostrare che la catena è corretta.
+- **Non verificato:** nessuna build ISO, verifica di sintassi Bash, invocazione ukify, ispezione immagine FAT, report El Torito, boot QEMU/OVMF o avvio fisico è stato eseguito. Nessun comando Cargo è stato eseguito.
+- Il prossimo ciclo di verifica deve essere raggruppato su Fedora: sincronizzazione `main`, `cargo fmt`, check/test workspace, generazione ISO, controlli automatici e infine avvio tramite la chiavetta Ventoy già esistente.
