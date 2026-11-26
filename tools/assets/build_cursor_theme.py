@@ -167,10 +167,11 @@ def build_theme(
             if target_path.is_file() and not alias_path.exists():
                 alias_path.symlink_to(target)
 
+        theme_name = manifest.get("theme_name", "AureaOS")
         (staging / "index.theme").write_text(
             "[Icon Theme]\n"
-            "Name=AureaOS\n"
-            "Comment=Native AureaOS cursor theme\n"
+            f"Name={theme_name}\n"
+            f"Comment={theme_name} native cursor theme\n"
             "Directories=cursors\n\n"
             "[cursors]\n"
             "Size=32\n"
