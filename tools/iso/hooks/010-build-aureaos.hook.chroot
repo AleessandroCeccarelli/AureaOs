@@ -89,12 +89,13 @@ if grep -Fq 'not found' /tmp/aurea-desktop.ldd; then
 fi
 rm -f /tmp/aurea-desktop.ldd
 
-# Validate the exact unit file with Debian's systemd before enabling it.
-systemd-analyze verify /etc/systemd/system/aurea-desktop.service
-
 if ! id aurea >/dev/null 2>&1; then
     useradd --create-home --shell /bin/bash aurea
 fi
+
+# Validate the exact unit file with Debian's systemd after its configured user
+# exists, then enable the session service.
+systemd-analyze verify /etc/systemd/system/aurea-desktop.service
 
 # The dedicated PAM service calls pam_systemd directly. Explicit session
 # metadata associates the unprivileged compositor with seat0 on tty1.
