@@ -18,6 +18,7 @@ pub enum DesktopPanelKind {
 }
 
 /// A desktop position expressed in logical output coordinates.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DesktopPosition {
     pub x: i32,
     pub y: i32,
