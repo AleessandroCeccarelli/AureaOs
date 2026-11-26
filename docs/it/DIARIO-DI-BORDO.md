@@ -2092,3 +2092,10 @@ Aggiunto `input/cursor_trail.rs` per una cronologia limitata a tre posizioni, co
 ## 26 novembre 2026 — Rendering Vulkan della scia del puntatore
 
 Estesa la scia dalla cronologia degli input fino agli snapshot della scena e alla geometria specifica per ogni uscita video. Il movimento registra posizioni logiche globali mentre l'animazione di localizzazione è attiva; il ciclo eventi continua a richiedere frame finché i campioni sono visibili. Aggiunto `surface_compositor/cursor_trail_geometry.rs`, che riutilizza hotspot, trasformazioni del monitor, scala frazionaria e clipping del cursore nativo. Aggiunti shader dedicato `cursor_trail.frag` e pipeline Vulkan memorizzata per formato; l'opacità viene passata agli shader tramite push constants del fragment stage e le impronte vengono composte prima del cursore corrente. La pipeline delle superfici normali e il rendering dei cursori Wayland dei client restano invariati. Restano da verificare su Fedora: compilazione shader, rustfmt/check/test, blending Vulkan reale e configurazioni multi-monitor. Nessuna build o test eseguito.
+
+
+### 26 novembre 2026 — Correzione del primo avvio del cursore
+
+Durante la revisione è emerso un problema concreto: la finestra di tre secondi usata per il caricamento asincrono del cursore partiva dalla costruzione del compositor, prima della ricerca DRM, dell'inizializzazione Vulkan e della pubblicazione dei monitor. Su hardware lento poteva scadere prima del primo frame; il desktop veniva quindi disegnato senza freccia e, se il mouse restava fermo, non era garantito un altro frame.
+
+Aggiunto begin_cursor_asset_warmup(), richiamato soltanto dopo la pubblicazione delle uscite e il corretto centraggio del puntatore. La finestra viene così riavviata nel momento giusto e vengono richiesti subito nuovi frame, consentendo al worker Xcursor e all'upload Vulkan di completarsi anche senza movimento del mouse o del trackpad. Modifica sorgente non ancora compilata o verificata su hardware.
