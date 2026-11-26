@@ -155,7 +155,7 @@ pub(super) fn reapply_pointer_acceleration(state: &mut WaylandState) {
 }
 
 /// Drains shell requests and applies them to the connected mouse immediately.
-/// Mouse handles are retained only for the lifetime of their DeviceAdded event.
+/// Live handles remain available for preference updates and session restoration.
 pub(super) fn apply_pending_pointer_settings(state: &mut WaylandState) {
     loop {
         let command = match state.pointer_settings_receiver.try_recv() {
