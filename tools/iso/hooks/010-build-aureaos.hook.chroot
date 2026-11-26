@@ -31,8 +31,11 @@ export CARGO_INCREMENTAL=0
 
 # Debian Trixie's packaged Rust compiler is older than the MSRV of some
 # locked AureaOS dependencies. Use the official stable toolchain only here.
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
-    sh -s -- -y --profile minimal --default-toolchain stable --no-modify-path
+RUSTUP_INSTALLER=/tmp/aureaos-rustup-init.sh
+curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+    --silent --show-error --output "$RUSTUP_INSTALLER" https://sh.rustup.rs
+sh "$RUSTUP_INSTALLER" -y --profile minimal --default-toolchain stable --no-modify-path
+rm -f "$RUSTUP_INSTALLER"
 export PATH="$CARGO_HOME/bin:$PATH"
 
 rustc +stable --version
