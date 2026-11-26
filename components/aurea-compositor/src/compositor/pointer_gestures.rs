@@ -70,9 +70,51 @@ impl PointerGestureOwner {
             self.0 = None;
         }
     }
+
+    fn take(&mut self) -> Option<(aurea_desktop_api::input::InputDeviceId, PointerGestureKind)> {
+        self.0.take()
+    }
 }
 
 impl AureaCompositor {
+    /// Cancels the active Wayland gesture stream when the native session pauses.
+    ///
+    /// A VT switch can interrupt libinput without delivering the matching end
+    /// event. Clear both the semantic gesture accumulator and the protocol
+    /// stream so a later activation cannot complete a stale desktop action.
+    #[cfg(feature = "drm")]
+    pub(crate) fn cancel_active_pointer_gesture(&mut self, time: u32) {
+        let Some((device, kind)) = self.pointer_gesture_owner.take() else {
+            return;
+        };
+
+        match kind {
+            PointerGestureKind::Swipe => self.interaction_engine.end_swipe(device, true),
+            PointerGestureKind::Pinch => self.interaction_engine.end_pinch(device, true),
+            PointerGestureKind::Hold => self.interaction_engine.end_hold(device, true),
+        }
+
+        let Some(pointer) = self.seat.get_pointer() else {
+            return;
+        };
+        let serial = SERIAL_COUNTER.next_serial();
+        match kind {
+            PointerGestureKind::Swipe => pointer.gesture_swipe_end(
+                self,
+                &GestureSwipeEndEvent { serial, time, cancelled: true },
+            ),
+            PointerGestureKind::Pinch => pointer.gesture_pinch_end(
+                self,
+                &GesturePinchEndEvent { serial, time, cancelled: true },
+            ),
+            PointerGestureKind::Hold => pointer.gesture_hold_end(
+                self,
+                &GestureHoldEndEvent { serial, time, cancelled: true },
+            ),
+        }
+        pointer.frame(self);
+    }
+
     /// Drops any unfinished gesture sequence owned by a disconnected device.
     pub(crate) fn clear_pointing_device_state(&mut self, device: aurea_desktop_api::input::InputDeviceId) {
         self.pointer_gesture_owner.remove_device(device);
