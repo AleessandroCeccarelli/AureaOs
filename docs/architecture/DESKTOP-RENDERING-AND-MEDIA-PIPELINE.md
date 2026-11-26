@@ -301,3 +301,10 @@ The native arrow texture is initialized once and cached for the Vulkan device li
 - Follow-up: native cursor cache residency is capped at 32 assets / 16 MiB with LRU eviction. A single animation is capped at 4 MiB; oversized sequences keep their first frame.
 - Added GPU-independent tests for per-frame delay selection, frame boundaries, loop wraparound and zero-delay normalization.
 - The current manifest defines `busy` as 12 frames / 1100 ms; `left_ptr_watch` is a static image, so it does not need a frame scheduler.
+
+### Native cursor locate trail — 26 November 2026
+
+- A bounded three-position history is captured only while the compositor's shake-to-locate animation is active. Samples are throttled to 24 ms and fade over 220 ms.
+- Render scenes carry immutable, newest-first snapshots. Output-local geometry reuses the native cursor's hotspot, effective output scale, transform and clipping rules.
+- A dedicated fragment shader and cached Vulkan pipeline apply per-impression opacity through fragment push constants. Impressions are submitted oldest-first and the live native cursor is drawn last.
+- The effect currently applies to the compositor-owned named cursor. Client-provided Wayland cursor surfaces are not converted into trail textures. Runtime visual validation and Fedora build/test verification remain pending.
