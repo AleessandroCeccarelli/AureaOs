@@ -49,14 +49,16 @@ impl ShellRuntime {
 
     /// Creates a runtime connected to the compositor's shared display policy.
     pub fn with_display_color(display_color: DisplayColorController) -> Self {
-        let (touchpad_settings, _receiver) = touchpad_settings_channel();
-        Self::with_controllers(display_color, touchpad_settings)
+        let (touchpad_settings, _touchpad_receiver) = touchpad_settings_channel();
+        let (pointer_settings, _pointer_receiver) = pointer_settings_channel();
+        Self::with_controllers(display_color, touchpad_settings, pointer_settings)
     }
 
-    /// Creates a runtime with shared display and touchpad policy channels.
+    /// Creates a runtime with shared display, touchpad and pointer policy channels.
     pub fn with_controllers(
         display_color: DisplayColorController,
         touchpad_settings: TouchpadSettingsController,
+        pointer_settings: PointerSettingsController,
     ) -> Self {
         Self {
             lifecycle: ShellLifecycle::new(),
@@ -64,6 +66,7 @@ impl ShellRuntime {
             desktop: DesktopState::default(),
             display_color,
             touchpad_settings,
+            pointer_settings,
             pending_desktop_interactions: VecDeque::new(),
             desktop_selection: DesktopSelectionController::default(),
         }
