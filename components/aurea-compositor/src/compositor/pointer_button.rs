@@ -17,6 +17,10 @@ use super::AureaCompositor;
 const BTN_LEFT: u32 = 0x110;
 const BTN_RIGHT: u32 = 0x111;
 
+fn is_desktop_context_button(button: u32) -> bool {
+    matches!(button, BTN_LEFT | BTN_RIGHT)
+}
+
 // BTN_SIDE/BTN_EXTRA and BTN_FORWARD/BTN_BACK are intentionally not
 // intercepted by desktop chrome: they are delivered unchanged to Wayland clients.
 
@@ -46,7 +50,7 @@ impl AureaCompositor {
         // Desktop menus own only primary/secondary clicks. Auxiliary mouse
         // buttons (including browser back/forward) must always reach clients.
         if state == ButtonState::Pressed
-            && matches!(button, BTN_LEFT | BTN_RIGHT)
+            && is_desktop_context_button(button)
             && self.desktop_interactions.context_menu_is_open()
         {
             let location = pointer.current_location();
@@ -204,5 +208,23 @@ impl AureaCompositor {
             );
         }
         pointer.frame(self);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_desktop_context_button;
+
+    #[test]
+    fn auxiliary_mouse_buttons_are_not_claimed_by_desktop_context_menus() {
+        for button in [0x112, 0x113, 0x114, 0x115, 0x116] {
+            assert!(!is_desktop_context_button(button));
+        }
+    }
+
+    #[test]
+    fn primary_and_secondary_buttons_remain_desktop_context_buttons() {
+        assert!(is_desktop_context_button(0x110));
+        assert!(is_desktop_context_button(0x111));
     }
 }
