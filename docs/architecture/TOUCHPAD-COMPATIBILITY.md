@@ -192,3 +192,22 @@ The DeviceAdded path now registers the discovered device before applying touchpa
 The runtime audit confirms that touchpad settings are capability-gated and each setting reports Applied, Unsupported or Failed. Device removal clears transient per-device state and active gesture ownership; persisted profiles remain available for reconnection. Session activation invalidates the applied-settings cache and reapplies profiles to retained live handles.
 
 Still outstanding: grouped compile/format/test validation, physical hardware testing, and verification of the Settings UI read/write path. Gesture recognition and shell action execution must also be distinguished: libinput events are forwarded to Wayland pointer-gesture clients, while completed AureaOS desktop actions are dispatched through the compositor-to-shell interaction channel. No claim of hardware validation is made.
+
+
+## Pointer and touchpad source audit — 26 November 2026
+
+The focused source audit covered libinput discovery/dispatch, relative pointer motion, absolute-pointer routing, button aggregation, axis frames, touchpad configuration, per-device settings, gesture ownership, device removal/reclassification and libseat pause/resume.
+
+A concrete lifecycle gap was found and fixed: a VT/libseat pause released held pointer buttons but did not terminate an in-progress swipe, pinch or hold sequence. If libinput did not deliver the matching end event while the session was inactive, the gesture owner and semantic accumulator could survive the pause and accept a later update/end after activation. The compositor now takes and clears the active gesture owner, marks the matching semantic sequence cancelled, sends the corresponding cancelled Wayland pointer-gesture end event, and frames the pointer before the session is paused. A unit test covers clearing the owner and allowing a new sequence. This is a source change; it has not yet been compiled or executed.
+
+Other source-audit findings:
+- Relative mouse/touchpad motion is finite-value checked, constrained to enabled output rectangles, committed through one shared focus/frame path and requests redraws on all outputs. The pointer therefore crosses adjoining/overlapping display layouts without being stranded in gaps.
+- Absolute pointer motion is intentionally separate. It routes automatically only on a single enabled output; multi-output absolute devices require an explicit output assignment. This is not a limitation for ordinary relative mice/touchpads.
+- Physical button holds are tracked per device and aggregated at the shared Wayland seat. Duplicate transitions are suppressed, auxiliary buttons are passed through, and disconnect/session pause synthesize releases.
+- Scroll frames preserve horizontal/vertical continuous values, v120 high-resolution values, source and relative direction, while rejecting non-finite or unrepresentable values.
+- Touchpad configuration is applied capability-by-capability and reports Applied, Unsupported or Failed. Saved profiles are restored on discovery and session activation; mouse acceleration is likewise reapplied on activation.
+- Device removal and device-class changes clear device-scoped settings, held buttons, gesture ownership and transient pointing state.
+
+Scope decision: Wacom pen/tablet and Tablet Pad remain deferred as previously agreed. Settings-page presentation of pointer speed, double-click interval and touchpad controls is a separate shell/UI task; the compositor-side settings and persistence contracts are present. Overview/App Exposé visual presentation is also a desktop renderer task, not a missing mouse/touchpad event route.
+
+Remaining before declaring the block operationally verified: grouped rustfmt/build/tests on Fedora, then physical testing with a mouse and at least one touchpad (including tap/click, scrolling, gestures, unplug/reconnect and VT pause/resume). The source audit does not establish runtime or hardware success.
