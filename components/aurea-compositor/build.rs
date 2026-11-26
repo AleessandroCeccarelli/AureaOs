@@ -19,6 +19,7 @@ fn main() {
     for shader in [
         "surface_texture.vert",
         "surface_texture.frag",
+        "cursor_trail.frag",
         "wallpaper_texture.vert",
         "wallpaper_texture.frag",
         "display_color.vert",
@@ -54,6 +55,16 @@ fn main() {
     println!(
         "cargo:rustc-env=AUREA_SURFACE_TEXTURE_FRAG_SPV={}",
         output_dir.join("surface_texture.frag.spv").display()
+    );
+
+    compile_shader(
+        &shader_dir.join("cursor_trail.frag"),
+        &output_dir.join("cursor_trail.frag.spv"),
+        "frag",
+    );
+    println!(
+        "cargo:rustc-env=AUREA_CURSOR_TRAIL_FRAG_SPV={}",
+        output_dir.join("cursor_trail.frag.spv").display()
     );
 
     compile_shader(
