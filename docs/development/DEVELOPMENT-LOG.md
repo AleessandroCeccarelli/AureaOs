@@ -2312,3 +2312,8 @@ A source-level audit followed the named-cursor path from startup through physica
 ## 2026-11-26 — Desktop artwork Vulkan preparation
 
 Added `VulkanSurfacePipelineCache::prepare_desktop_item_texture`. It resolves the desktop item through the canonical asset descriptor (theme, Trash contents and effective output scale), loads the generated RGBA8 file beneath `AUREA_HUMAN_INTERFACES_ROOT` (default `/usr/share/aureaos/human-interfaces`), validates it through the existing loader, retains the CPU snapshot by texture key, and queues the texture in the existing Vulkan desktop-icon cache. Missing/unapproved item artwork returns `None` rather than substituting an unrelated icon. This is the preparation stage only: the per-output geometry and draw/binding path are not yet connected to `surface_compositor`; selection highlighting and visible desktop icon rendering remain pending. No build or tests were run.
+
+
+## 2026-11-26 — Configurable desktop double-click interval
+
+Replaced the fixed 400 ms comparison constant with per-compositor tracker state. The default remains 400 ms; the compositor now exposes setter/getter methods in milliseconds. The accepted range is clamped to 150–1000 ms, and changing the value cancels any pending first click to prevent mixing two timing policies. The 4-logical-pixel movement threshold is unchanged. Added source tests for interval updates and clamping. The Settings UI and persistence connection are still pending; no build or tests were run.
