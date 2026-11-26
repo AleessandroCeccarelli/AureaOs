@@ -29,7 +29,7 @@ while (($#)); do
 done
 [[ -n "$MODE" && -n "$TARGET" ]] || usage
 
-for tool in mdir mcopy mtype ukify grep; do
+for tool in mdir mcopy mtype ukify grep unsquashfs readlink; do
     command -v "$tool" >/dev/null 2>&1 || fail "required validation tool not found: $tool"
 done
 
@@ -63,6 +63,41 @@ ESP_IMAGE="$ROOT/boot/efi.img"
 [[ -s "$LIVE_DIR/filesystem.squashfs" ]] ||
     fail "Debian Live filesystem.squashfs is missing or empty"
 [[ -s "$ESP_IMAGE" ]] || fail "systemd-boot EFI image is missing or empty"
+
+# Inspect the actual compressed root filesystem, not just the outer ISO
+# directory. This catches a missing desktop binary, service, PAM hook or
+# systemd enablement link before an image is published.
+ROOTFS="$TEMP_DIR/rootfs"
+mkdir -p "$ROOTFS"
+unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
+    usr/local/bin/aurea-desktop \
+    usr/local/bin/aurea-live-session \
+    etc/systemd/system/aurea-desktop.service \
+    etc/pam.d/aurea-desktop \
+    etc/systemd/system/multi-user.target.wants/aurea-desktop.service \
+    >/dev/null 2>&1 || fail "cannot inspect the AureaOS desktop session inside filesystem.squashfs"
+
+[[ -x "$ROOTFS/usr/local/bin/aurea-desktop" ]] ||
+    fail "AureaOS desktop executable is missing or not executable in the Live rootfs"
+[[ -x "$ROOTFS/usr/local/bin/aurea-live-session" ]] ||
+    fail "AureaOS Live session launcher is missing or not executable"
+[[ -s "$ROOTFS/etc/systemd/system/aurea-desktop.service" ]] ||
+    fail "AureaOS systemd service is missing from the Live rootfs"
+[[ -s "$ROOTFS/etc/pam.d/aurea-desktop" ]] ||
+    fail "AureaOS PAM session definition is missing from the Live rootfs"
+grep -Fq 'PAMName=aurea-desktop' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
+    fail "AureaOS systemd service does not register the dedicated PAM session"
+grep -Fq 'User=aurea' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
+    fail "AureaOS systemd service does not run as the unprivileged aurea user"
+grep -Fq 'ExecStart=/usr/local/bin/aurea-live-session' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
+    fail "AureaOS systemd service does not start the Live session launcher"
+grep -Fq 'pam_systemd.so' "$ROOTFS/etc/pam.d/aurea-desktop" ||
+    fail "AureaOS PAM service does not invoke pam_systemd"
+ENABLED_SERVICE="$ROOTFS/etc/systemd/system/multi-user.target.wants/aurea-desktop.service"
+[[ -L "$ENABLED_SERVICE" ]] ||
+    fail "AureaOS desktop service is not enabled in multi-user.target"
+[[ "$(readlink -f "$ENABLED_SERVICE")" == "$ROOTFS/etc/systemd/system/aurea-desktop.service" ]] ||
+    fail "AureaOS desktop service enablement link has an unexpected target"
 
 # The final image is UEFI-only. No GRUB configuration or split kernel/initrd
 # files should remain in the published Live payload.
