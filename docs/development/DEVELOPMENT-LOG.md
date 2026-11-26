@@ -2083,3 +2083,13 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Added a compositor-owned registry of live mouse libinput handles. It is populated on mouse connection and cleared on removal/reclassification. Pointer preference commands now apply immediately to the active handle.
 - Reapply mouse acceleration profiles after libseat session activation. Touchpad acceleration profiles are restored through their separate live-handle registry. Existing release of held buttons on session pause and device removal is retained.
 - Physical hotplug, auxiliary buttons, wheel and VT pause/resume still need validation on Fedora hardware. No build, rustfmt, cargo check or tests were run in this source-editing session.
+
+
+### 2026-11-26 — Persist mouse and pointer profiles across reconnection
+
+- Added a dedicated pointer-profile store keyed by the privacy-preserving physical device identity, not the transient libinput/session device ID.
+- Mouse and touchpad pointer acceleration profile, speed and shake-to-locate preference are restored when the same physical device reconnects. Touchpad-specific settings remain in their separate store.
+- Pointer preferences are persisted under the user's XDG configuration directory in `aureaos/input/pointers.toml`, with owner-only file permissions and atomic replacement.
+- Malformed, invalid or newer-version files are opened read-only and are never overwritten. Devices without a reliable persistent identity continue to use session preferences/defaults rather than being guessed by name or vendor.
+- Added store round-trip, device-isolation, malformed/future-format and invalid-speed source tests.
+- No Cargo build, `cargo fmt`, `cargo check`, tests or physical-device validation were run. Keep verification grouped on Fedora as agreed.
