@@ -75,7 +75,7 @@ unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
     etc/systemd/system/aurea-desktop.service \
     etc/pam.d/aurea-desktop \
     etc/systemd/system/multi-user.target.wants/aurea-desktop.service \
-    etc/os-release etc/debian_version usr/lib/systemd/systemd sbin/init \
+    etc/os-release usr/lib/os-release etc/debian_version usr/lib/systemd/systemd sbin/init \
     usr/lib/systemd/system/multi-user.target etc/systemd/system/default.target \
     var/lib/dpkg/status \
     usr/share/aureaos/human-interfaces/icons/generated/context-menu \
@@ -85,8 +85,8 @@ unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
     fail "AureaOS desktop executable is missing or not executable in the Live rootfs"
 [[ -x "$ROOTFS/usr/local/bin/aurea-live-session" ]] ||
     fail "AureaOS Live session launcher is missing or not executable"
-[[ -s "$ROOTFS/etc/os-release" ]] ||
-    fail "Debian os-release metadata is missing from the Live rootfs"
+[[ -s "$ROOTFS/usr/lib/os-release" && -s "$ROOTFS/etc/os-release" ]] ||
+    fail "Debian os-release metadata or its /etc/os-release link target is missing from the Live rootfs"
 grep -Fxq 'ID=debian' "$ROOTFS/etc/os-release" ||
     fail "Live rootfs is not identified as Debian"
 grep -Fxq 'VERSION_CODENAME=trixie' "$ROOTFS/etc/os-release" ||
