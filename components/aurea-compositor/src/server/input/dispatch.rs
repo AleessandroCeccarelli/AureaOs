@@ -5,8 +5,6 @@
 
 //! Dispatches libinput events to the compositor's input subsystems.
 
-use std::sync::atomic::{AtomicU64, Ordering};
-
 use smithay::backend::{
     input::{
         AbsolutePositionEvent, Axis, Event, GestureBeginEvent, GestureEndEvent,
@@ -23,8 +21,6 @@ use crate::input::pointing;
 
 use super::{refresh_touchpad_settings, wayland_time};
 use super::super::state::WaylandState;
-
-static POINTER_MOTION_EVENTS: AtomicU64 = AtomicU64::new(0);
 
 fn is_registered_pointing_device(state: &WaylandState, device: InputDeviceId) -> bool {
     state.compositor.pointing_devices().device(device).is_some()
@@ -198,18 +194,6 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
         }
         InputEvent::PointerMotion { event } => {
             let delta = event.delta();
-            let count = POINTER_MOTION_EVENTS.fetch_add(1, Ordering::Relaxed) + 1;
-            if count == 1 || count % 120 == 0 {
-                let device = event.device();
-                eprintln!(
-                    "AureaOS input: pointer motion count={} device={:?} sysname={:?} delta=({:.3},{:.3})",
-                    count,
-                    device.name(),
-                    device.sysname(),
-                    delta.x,
-                    delta.y
-                );
-            }
             let unaccelerated_delta = event.delta_unaccel();
 
             let mut device = event.device();
@@ -218,8 +202,25 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 return;
             }
             refresh_touchpad_settings(state, &mut device);
-            let settings = state.compositor.pointer_settings_for(device_id);
-            crate::input::pointer_acceleration::apply(&mut device, settings);
+
+            // Acceleration is a mouse/touchpad policy. Absolute digitizers,
+            // tablets and touchscreens must never pass through this path.
+            if state
+                .compositor
+                .pointing_devices()
+                .device(device_id)
+                .is_some_and(|descriptor| {
+                    matches!(
+                        descriptor.kind,
+                        aurea_desktop_api::input::InputDeviceKind::Mouse
+                            | aurea_desktop_api::input::InputDeviceKind::Touchpad
+                    )
+                })
+            {
+                let settings = state.compositor.pointer_settings_for(device_id);
+                crate::input::pointer_acceleration::apply(&mut device, settings);
+            }
+
             state.compositor.handle_pointer_motion(
                 device_id,
                 delta,
