@@ -379,6 +379,13 @@ impl AureaCompositor {
         &mut self,
         device: aurea_desktop_api::input::InputDeviceId,
     ) -> bool {
+        // A physical unplug can happen while a mouse button or touchpad
+        // click is held. Deliver the seat-level release before the manager
+        // drops the device's pressed-button bookkeeping.
+        let time = smithay::utils::Clock::<smithay::utils::Monotonic>::new()
+            .now()
+            .as_millis() as u32;
+        self.release_pointer_buttons_for_device(device, time);
         self.clear_pointing_device_state(device);
         self.pointer_manager.disconnect(device)
     }
