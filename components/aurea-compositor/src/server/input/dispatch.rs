@@ -207,15 +207,15 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             let unaccelerated_delta = event.delta_unaccel();
 
             let mut device = event.device();
-            if !is_registered_pointing_device(state, pointing::id_for(&device)) {
+            let device_id = pointing::id_for(&device);
+            if !is_registered_pointing_device(state, device_id) {
                 return;
             }
             refresh_touchpad_settings(state, &mut device);
-            let settings = state
-                .compositor
-                .pointer_settings_for(pointing::id_for(&device));
+            let settings = state.compositor.pointer_settings_for(device_id);
             crate::input::pointer_acceleration::apply(&mut device, settings);
             state.compositor.handle_pointer_motion(
+                device_id,
                 delta,
                 unaccelerated_delta,
                 wayland_time(event.time()),
