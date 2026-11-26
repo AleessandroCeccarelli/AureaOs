@@ -41,7 +41,7 @@ impl CursorTrail {
             return;
         }
         self.samples.push((position, now));
-        self.samples.truncate(MAX_CURSOR_TRAIL_SAMPLES);
+        if self.samples.len() > MAX_CURSOR_TRAIL_SAMPLES { self.samples.remove(0); }
         self.last_sample = Some(now);
     }
 
