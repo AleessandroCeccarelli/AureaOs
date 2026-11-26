@@ -2355,3 +2355,10 @@ Added a focused 2× output-scale test for native cursor placement, covering logi
 ### 2026-11-26 — Shared pointer location commit path
 
 Extracted the common final stage for relative and absolute pointer motion into `compositor/pointer.rs`: surface-focus calculation, Smithay location update, Wayland pointer frame dispatch, and output-frame scheduling. Device-specific coordinate mapping and bounds remain separate; only the commit/presentation invariant is shared. This removes duplicated behavior and prevents the two paths from drifting in redraw scheduling. No build or tests were run.
+
+### 2026-11-26 — Release held buttons on pointer-device removal
+
+- The lifecycle audit found that session pause synthesized button releases, but physical device removal discarded the device's pressed-button bookkeeping without first delivering the final seat-level release to Wayland clients.
+- Fixed `disconnect_pointing_device`: it now synthesizes releases with a monotonic timestamp before clearing device state and inventory. The `PointerManager` still preserves a seat button while another physical device holds that same button.
+- This prevents applications from retaining a logically pressed mouse/touchpad button after unplug.
+- Commit: `90dec90c`. No build or tests were run; validation remains grouped as requested.
