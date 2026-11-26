@@ -5,6 +5,9 @@
 
 //! Detects deliberate alternating pointer motion to locate the cursor.
 
+use std::collections::HashMap;
+
+use aurea_desktop_api::input::InputDeviceId;
 use smithay::utils::{Logical, Point};
 
 const WINDOW_MS: u32 = 650;
@@ -107,6 +110,32 @@ impl PointerShakeDetector {
     }
 }
 
+/// Owns independent shake histories for every connected physical pointer.
+#[derive(Debug, Default)]
+pub struct PointerShakeManager {
+    detectors: HashMap<InputDeviceId, PointerShakeDetector>,
+}
+
+impl PointerShakeManager {
+    /// Updates one device's history and reports a completed shake.
+    pub fn update(
+        &mut self,
+        device: InputDeviceId,
+        delta: Point<f64, Logical>,
+        time_ms: u32,
+    ) -> bool {
+        self.detectors
+            .entry(device)
+            .or_default()
+            .update(delta, time_ms)
+    }
+
+    /// Drops motion history when a device disconnects or disables the feature.
+    pub fn remove(&mut self, device: InputDeviceId) -> bool {
+        self.detectors.remove(&device).is_some()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -162,6 +191,36 @@ mod tests {
                 offset == 180
             );
         }
+    }
+
+    #[test]
+    fn interleaved_devices_cannot_combine_motion_into_a_false_shake() {
+        let mut manager = PointerShakeManager::default();
+        let first = InputDeviceId(1);
+        let second = InputDeviceId(2);
+
+        for (time, first_delta, second_delta) in [
+            (0, 70.0, -70.0),
+            (60, 70.0, -70.0),
+            (120, 70.0, -70.0),
+            (180, 70.0, -70.0),
+        ] {
+            assert!(!manager.update(first, delta(first_delta, 0.0), time));
+            assert!(!manager.update(second, delta(second_delta, 0.0), time));
+        }
+    }
+
+    #[test]
+    fn removing_a_device_drops_only_its_shake_history() {
+        let mut manager = PointerShakeManager::default();
+        let first = InputDeviceId(3);
+        let second = InputDeviceId(4);
+
+        assert!(!manager.update(first, delta(70.0, 0.0), 0));
+        assert!(!manager.update(second, delta(-70.0, 0.0), 0));
+        assert!(manager.remove(first));
+        assert!(!manager.remove(first));
+        assert!(!manager.update(second, delta(-70.0, 0.0), 60));
     }
 
     #[test]
