@@ -16,6 +16,56 @@ from cursor_rasterizer import rasterize_cursor
 from cursor_svg import validate_svg
 from xcursor_config import write_cursor_config
 
+# Standard Xcursor names and common toolkit aliases. Aliases share the exact
+# same Xcursor payload so their hotspot and animation timing stay identical.
+CURSOR_ALIASES = {
+    "left_ptr": "default",
+    "arrow": "default",
+    "top_left_arrow": "default",
+    "hand2": "pointer",
+    "hand1": "pointer",
+    "pointing_hand": "pointer",
+    "xterm": "text",
+    "ibeam": "text",
+    "cross": "crosshair",
+    "question_arrow": "help",
+    "whats_this": "help",
+    "watch": "busy",
+    "wait": "busy",
+    "progress": "left_ptr_watch",
+    "no-drop": "not-allowed",
+    "forbidden": "not-allowed",
+    "openhand": "grab",
+    "closedhand": "grabbing",
+    "fleur": "move",
+    "size_all": "move",
+    "size_hor": "ew-resize",
+    "sb_h_double_arrow": "ew-resize",
+    "col-resize": "ew-resize",
+    "size_ver": "ns-resize",
+    "sb_v_double_arrow": "ns-resize",
+    "row-resize": "ns-resize",
+    "nwse-resize": "resize-nwse",
+    "size_fdiag": "resize-nwse",
+    "bd_double_arrow": "resize-nwse",
+    "nesw-resize": "resize-nesw",
+    "size_bdiag": "resize-nesw",
+    "fd_double_arrow": "resize-nesw",
+    "pencil": "pencil",
+    "up_arrow": "up-arrow",
+    "copy": "copy",
+    "alias": "alias",
+    "pin": "pin",
+    "person": "person",
+    "vertical-text": "vertical-text",
+    "zoom-in": "zoom-in",
+    "zoom-out": "zoom-out",
+    "context-menu": "context-menu",
+    "dnd-copy": "copy",
+    "dnd-link": "alias",
+    "dnd-no-drop": "not-allowed",
+}
+
 
 def _require_tool(name: str) -> str:
     executable = shutil.which(name)
@@ -110,6 +160,12 @@ def build_theme(
                 capture_output=True,
                 text=True,
             )
+
+        for alias, target in CURSOR_ALIASES.items():
+            alias_path = cursors_dir / alias
+            target_path = cursors_dir / target
+            if target_path.is_file() and not alias_path.exists():
+                alias_path.symlink_to(target)
 
         (staging / "index.theme").write_text(
             "[Icon Theme]\n"
