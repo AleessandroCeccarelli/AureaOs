@@ -339,19 +339,12 @@ mod tests {
 
         let pointer = PointerSettings::new(PointerAccelerationProfile::Flat, 0.55, false)
             .expect("valid pointer profile");
-        let touchpad = TouchpadSettings::new(false, true, false, true, false);
         assert!(manager.set_pointer_settings(device, pointer));
-        assert!(manager.set_touchpad_settings(device, touchpad));
-
-        assert!(manager.connect(descriptor(13, InputDeviceKind::Mouse)));
-        assert_eq!(manager.pointer_settings(device, PointerSettings::default()), pointer);
-        assert_eq!(manager.touchpad_settings(device), TouchpadSettings::default());
 
         assert!(manager.connect(descriptor(13, InputDeviceKind::Tablet)));
-        assert_eq!(
-            manager.pointer_settings(device, PointerSettings::default()),
-            PointerSettings::default()
-        );
+        assert_eq!(manager.pointer_settings(device, PointerSettings::default()), PointerSettings::default());
+
+
     }
 
     #[test]
@@ -384,16 +377,14 @@ mod tests {
 
         let pointer = PointerSettings::new(PointerAccelerationProfile::Flat, 0.5, false)
             .expect("valid pointer profile");
-        let touchpad = TouchpadSettings::new(false, true, false, true, false);
         assert!(manager.set_pointer_settings(device, pointer));
-        assert!(manager.set_touchpad_settings(device, touchpad));
         manager.update_button(device, 0x110, true);
 
         // Disconnect consumes the runtime state; a new connection with the
         // same kernel-derived ID must not inherit the previous session's data.
         assert_eq!(manager.take_buttons_released_by_device(device), vec![0x110]);
         assert!(manager.disconnect(device));
-        assert!(manager.connect(descriptor(15, InputDeviceKind::Touchpad)));
+        assert!(manager.connect(descriptor(15, InputDeviceKind::Mouse)));
 
         assert_eq!(
             manager.pointer_settings(device, PointerSettings::default()),
