@@ -130,6 +130,8 @@ pub struct AureaCompositor {
     context_menu_consumed_buttons: HashSet<(aurea_desktop_api::input::InputDeviceId, u32)>,
     pointer_shake: PointerShakeDetector,
     cursor_locate_animation: CursorLocateAnimation,
+    /// Defers output-driven pointer recentering until any active client grab ends.
+    pointer_recenter_pending: bool,
 }
 
 impl TabletSeatHandler for AureaCompositor {}
@@ -204,6 +206,7 @@ impl AureaCompositor {
             context_menu_consumed_buttons: HashSet::new(),
             pointer_shake: PointerShakeDetector::default(),
             cursor_locate_animation: CursorLocateAnimation::default(),
+            pointer_recenter_pending: false,
         }
     }
 
