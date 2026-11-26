@@ -79,7 +79,8 @@ impl AureaCompositor {
             .desktop_interactions
             .context_menu_position()
             .and_then(|anchor| self.context_menu_layout(anchor));
-        RenderScene::from_window_manager(&self.window_manager)\n            .with_active_panel(self.desktop_interactions.active_panel())
+        RenderScene::from_window_manager(&self.window_manager)
+            .with_active_panel(self.desktop_interactions.active_panel())
             .with_context_menu(context_menu, self.desktop_manager.theme())
             .with_desktop(self.desktop_manager.snapshot())
             .with_desktop_items(
