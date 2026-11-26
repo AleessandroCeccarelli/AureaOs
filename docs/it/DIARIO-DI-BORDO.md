@@ -2136,3 +2136,8 @@ Aggiunti anche test unitari indipendenti dalla GPU per dimensioni, hotspot, payl
 ## 26 novembre 2026 — Preparazione asset icone desktop
 
 Aggiunto in `VulkanSurfacePipelineCache` il caricamento/preparazione dell'asset di ciascun elemento desktop: risoluzione tramite descrittore canonico (tema, stato del Cestino e densità effettiva dell'output), lettura RGBA8 validata dalla directory `AUREA_HUMAN_INTERFACES_ROOT` (predefinita `/usr/share/aureaos/human-interfaces`), conservazione dello snapshot CPU per chiave e inserimento nella cache texture Vulkan già esistente. Se un elemento non ha ancora un asset approvato, non viene scelta un'icona arbitraria. Attenzione: questo è solo il livello di preparazione. Il collegamento di geometrie, binding e draw nel `surface_compositor`, la resa visibile delle icone e l'evidenziazione della selezione restano da completare. Nessuna build o test eseguiti.
+
+
+### 26 novembre 2026 — Intervallo doppio clic configurabile
+
+Il tracker del desktop non usa più un intervallo fisso nel confronto: ogni istanza del compositor conserva il proprio valore. Il predefinito resta 400 ms; sono disponibili metodi pubblici per impostarlo e leggerlo in millisecondi. Il valore viene limitato all'intervallo 150–1000 ms. Quando cambia, il primo clic eventualmente in attesa viene azzerato, così non si combinano due clic misurati con impostazioni differenti. La distanza massima resta 4 pixel logici. Aggiunti test sorgente per modifica e limiti del valore. Il collegamento alla schermata Impostazioni e la persistenza della preferenza sono ancora da realizzare. Nessuna build o test eseguiti.
