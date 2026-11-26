@@ -2330,3 +2330,7 @@ Added a dedicated global preference contract and channel for desktop pointer beh
 - Confirmed the System Settings UI is not part of this backend completion and remains a later task, as previously decided. No temporary settings UI was added.
 - Release boundary: Wacom pen/tablet and Tablet Pad are deferred from AureaOS 1.0 acceptance. Tablet Pad controls remain unsupported through Smithay 0.7 and are not advertised. Existing touchscreen contact routing remains a separate input path.
 - No cargo fmt, build, cargo check, tests or physical-device validation were run. The code-level audit does not replace grouped Fedora validation; do not claim runtime operation until that validation succeeds.
+
+### 2026-11-26 — Cursor trail sampling regression coverage
+
+Named the 24 ms cursor-trail sampling interval and added unit tests for high-frequency event throttling, sample ordering and full history/throttle reset after `clear()`. No build or tests were run; verification remains grouped for the planned Fedora session.
