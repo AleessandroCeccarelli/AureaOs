@@ -2327,3 +2327,12 @@ Verificato il percorso di connessione, riconnessione, riclassificazione, disconn
 Alla pausa vengono rilasciati i pulsanti logici e cancellati i gesti attivi; alla riattivazione, dopo il ripristino della sessione, i profili touchpad e accelerazione mouse vengono riapplicati agli handle vivi. Non è emersa una duplicazione del lavoro di libinput né una correzione funzionale necessaria in questo passaggio. Corrette due annotazioni sorgente non più coerenti con il comportamento effettivo: il movimento non riapplica l'accelerazione e gli handle mouse sono conservati per aggiornamenti e ripristino sessione.
 
 Nessuna build o test eseguiti; resta la validazione cumulativa su Fedora e il collaudo fisico con mouse e touchpad.
+
+
+### 26 novembre 2026 — Rifiuto delle preferenze quando il salvataggio persistente fallisce
+
+L'audit del percorso Shell → compositor ha evidenziato che `PointerManager` aggiornava prima il profilo runtime e poi tentava la scrittura su disco. In caso di errore, il warning veniva registrato ma il metodo restituiva comunque successo: la richiesta appariva accettata anche se il profilo non sarebbe sopravvissuto alla riconnessione.
+
+Corretto l'ordine per mouse e touchpad: il manager verifica prima che il dispositivo registrato sia della classe corretta, salva il profilo persistente quando è disponibile un'identità fisica stabile e aggiorna lo stato runtime soltanto dopo il successo della scrittura. Se la persistenza fallisce, il manager restituisce rifiuto e mantiene il precedente profilo runtime. Per i dispositivi senza identità persistente affidabile, l'aggiornamento resta valido per la sessione, senza inventare una chiave hardware.
+
+Il reset ai valori predefiniti usa i normali oggetti `PointerSettings::default()` e `TouchpadSettings::default()`: viene trattato come un profilo esplicito e persistito, non come cancellazione dell'identità fisica. Nessuna UI di reset è stata aggiunta. Nessuna build, formattazione o test eseguiti; resta la validazione cumulativa su Fedora e il collaudo fisico.
