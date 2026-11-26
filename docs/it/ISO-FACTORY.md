@@ -3,7 +3,7 @@
 # AureaOS ISO Factory
 
 **Stato:** procedura operativa e specifica obiettivo  
-**Ultima revisione:** 23 novembre 2026  
+**Ultima revisione:** 26 novembre 2026  
 **Repository:** `AleessandroCeccarelli/AureaOs`  
 **Branch principale:** `main`  
 **Piattaforma prevista:** Debian GNU/Linux 13 (Trixie), amd64
@@ -121,7 +121,8 @@ Lo script interno prepara il sorgente tramite `git archive HEAD`. Quindi compila
 Nel repository sono già presenti due script specifici:
 
 - `tools/iso/tests/validate-chroot-boot.sh` — controlla nel chroot i pacchetti di boot richiesti e l'integrazione initramfs di live-boot, rigenera l'initramfs e verifica la presenza di `scripts/live`.
-- `tools/iso/tests/validate-live-image.sh` — controlla nel tree binary o nella ISO estratta kernel/initramfs, `scripts/live`, file GRUB, voce AureaOS, parametro `boot=live`, voce predefinita e timeout.
+- `tools/iso/scripts/build-systemd-boot-live-iso.sh` — genera una UKI dalla coppia kernel/initramfs Debian esatta, crea un'immagine EFI FAT con systemd-boot e le voci UKI, rimuove il payload GRUB intermedio e rimasterizza la ISO UEFI-only.
+- `tools/iso/tests/validate-live-image.sh` — controlla immagine EFI, percorso fallback systemd-boot, voce di avvio, sezioni UKI e parametro `boot=live`, filesystem Debian Live e catalogo El Torito EFI.
 
 L'hook di build richiama il validatore del chroot dopo l'installazione e la pulizia dei pacchetti. Il coordinatore controlla il payload binary e successivamente la ISO copiata.
 
@@ -132,11 +133,12 @@ I livelli di validazione devono coprire almeno:
 3. Generazione corretta dell'initramfs per il kernel installato.
 4. Presenza di `scripts/live` in ogni initramfs selezionato.
 5. File kernel e initramfs non vuoti e coerenti nel payload Live.
-6. Configurazione GRUB e relativo file globale incluso.
-7. Etichetta AureaOS, parametro `boot=live`, voce predefinita e timeout.
-8. Leggibilità della ISO e presenza del payload atteso dopo l'estrazione.
-9. Strutture di boot BIOS e UEFI, comprese le evidenze El Torito/EFI, con gli strumenti di ispezione ISO disponibili.
-10. Checksum SHA-256 e report di validazione leggibile anche da strumenti automatici.
+6. Immagine EFI FAT con `EFI/BOOT/BOOTX64.EFI`, systemd-boot e configurazione loader.
+7. Una o più UKI con kernel, initramfs, metadati os-release AureaOS e parametro `boot=live` incorporato.
+8. Voci systemd-boot corrispondenti e voce predefinita valida.
+9. Assenza di GRUB e di kernel/initramfs separati nell'immagine finale.
+10. Leggibilità della ISO e catalogo El Torito EFI che punta all'immagine systemd-boot.
+11. Checksum SHA-256 e report di validazione leggibile anche da strumenti automatici.
 
 Un controllo non implementato o non eseguito deve risultare in sospeso, non essere considerato superato per supposizione.
 
@@ -147,7 +149,7 @@ L'ispezione automatica non sostituisce un avvio reale. Copiamo la ISO candidata 
 Registriamo separatamente:
 
 - Ventoy ha caricato l'immagine?
-- GRUB ha mostrato la voce AureaOS?
+- systemd-boot ha mostrato la voce AureaOS Live?
 - Il kernel è stato caricato?
 - L'initramfs è terminato correttamente e ha trovato il filesystem Live?
 - systemd ha raggiunto il target previsto?
@@ -208,7 +210,8 @@ Il repository dispone già di una base funzionante, ma ISO Factory non è ancora
 - Lista pacchetti di boot che include `live-boot-initramfs-tools`.
 - Script di validazione del boot nel chroot.
 - Script di validazione del payload binary e della ISO.
-- Personalizzazione GRUB e controlli della sua configurazione.
+- Assemblaggio dell'immagine EFI systemd-boot + UKI e rimasterizzazione ISO UEFI-only.
+- Ispezione UKI per parametri Live incorporati e validazione dell'immagine finale.
 - Conservazione del workspace dopo il successo o il fallimento nello script interno attuale.
 - Generazione del file SHA-256.
 
@@ -223,20 +226,20 @@ Il repository dispone già di una base funzionante, ma ISO Factory non è ancora
 - Conservare log completi con timestamp e un riepilogo finale sia per le build riuscite sia per quelle fallite.
 - Aggiungere controlli di pulizia espliciti e sicuri; non cancellare automaticamente workspace o artefatti storici utili per diagnosi e rollback.
 - Valutare caching/versionamento del container builder per evitare reinstallazioni superflue, senza compromettere aggiornamenti e tracciabilità.
-- Verificare il boot BIOS e UEFI e l'effettiva sessione Live su hardware fisico.
+- Verificare il boot UEFI-only con systemd-boot/UKI e l'effettiva sessione Live su hardware fisico.
 
 Questi punti sono requisiti e attività future, non funzionalità che dichiariamo già completate.
 
 ## 5. Problema di boot attualmente aperto
 
-La prima ISO generata era leggibile, aveva un checksum SHA-256 valido e conteneva le strutture BIOS/UEFI riportate dagli strumenti di ispezione. Al primo test reale tramite Ventoy, GRUB ha caricato il kernel Debian, ma init è fallito prima dell'avvio del desktop:
+La prima ISO di test basata su GRUB era leggibile e aveva un checksum SHA-256 valido. Al primo test reale tramite Ventoy, GRUB ha caricato il kernel Debian, ma init è fallito prima dell'avvio del desktop:
 
 ```text
 init: line 249: can't open '/scripts/live': No such file or directory
 Kernel panic - not syncing: Attempted to kill init: exitcode=0x00000200
 ```
 
-Il fatto accertato è che `/scripts/live` non era disponibile quando init ha provato a eseguirlo. Il kernel panic è seguito a quel fallimento. La causa non è ancora stata isolata. La prossima sessione ISO deve iniziare con l'ispezione in sola lettura dell'initramfs della ISO esistente e della relativa configurazione di boot, non con una ricompilazione alla cieca.
+Il fatto accertato è che `/scripts/live` non era disponibile quando init ha provato a eseguirlo. Il kernel panic è seguito a quel fallimento. La causa non è ancora stata isolata. La nuova factory mantiene il preflight nel chroot, rigenera l'initramfs dopo l'installazione dei pacchetti, verifica `scripts/live` e incorpora quello stesso initramfs nella UKI. È una protezione automatica più forte, non la prova che la causa precedente sia stata risolta: servirà avviare la nuova immagine.
 
 Questo errore non dimostra un problema GPU, Vulkan o Smithay: il sistema non ha raggiunto l'avvio del compositor.
 
@@ -265,7 +268,8 @@ Questo errore non dimostra un problema GPU, Vulkan o Smithay: il sistema non ha 
 - `tools/iso/build-live-iso.sh` — coordinatore Debian live-build.
 - `tools/iso/package-lists/aureaos.list.chroot` — manifest dei pacchetti target.
 - `tools/iso/hooks/010-build-aureaos.hook.chroot` — build desktop e integrazione chroot.
-- `tools/iso/hooks/020-brand-boot-menu.hook.binary` — personalizzazione GRUB.
+- `tools/iso/scripts/build-systemd-boot-live-iso.sh` — UKI, immagine EFI e assemblaggio ISO finale.
+- `tools/iso/os-release` — identità AureaOS incorporata nella UKI.
 - `tools/iso/tests/validate-chroot-boot.sh` — preflight boot nel chroot.
 - `tools/iso/tests/validate-live-image.sh` — validazione immagine e ISO.
 - [Diario di bordo](DIARIO-DI-BORDO.md).
