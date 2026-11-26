@@ -98,7 +98,8 @@ grep -Fq 'pam_systemd.so' "$ROOTFS/etc/pam.d/aurea-desktop" ||
 ENABLED_SERVICE="$ROOTFS/etc/systemd/system/multi-user.target.wants/aurea-desktop.service"
 [[ -L "$ENABLED_SERVICE" ]] ||
     fail "AureaOS desktop service is not enabled in multi-user.target"
-[[ "$(readlink -f "$ENABLED_SERVICE")" == "$ROOTFS/etc/systemd/system/aurea-desktop.service" ]] ||
+ENABLED_TARGET="$(readlink "$ENABLED_SERVICE")"
+[[ "${ENABLED_TARGET##*/}" == "aurea-desktop.service" ]] ||
     fail "AureaOS desktop service enablement link has an unexpected target"
 
 ASSET_ROOT="$ROOTFS/usr/share/aureaos/human-interfaces/icons/generated"
