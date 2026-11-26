@@ -196,7 +196,8 @@ pub(super) fn render_frame(
     let active_surface_ids = scene.surface_ids();
     let snapshots = scene.shm_snapshots();
     let visible = visible_surfaces(snapshots, target)?;
-    let cursor = native_cursor_geometry(scene, target);
+    let cursor_needed = scene.native_cursor_asset().is_some()
+        && scene.native_cursor_pointer_location().is_some();
     let wallpaper_asset_id = scene.desktop().wallpaper().map(|wallpaper| wallpaper.asset().id());
     if wallpaper_asset_id.is_none() {
         surface_cache.clear_wallpaper_texture();
@@ -217,7 +218,7 @@ pub(super) fn render_frame(
         .map_err(VulkanSurfaceCompositionError::from_surface_texture_cache_error)?;
 
     if visible.is_empty()
-        && cursor.is_none()
+        && !cursor_needed
         && context_menu_draw.is_none()
         && wallpaper_asset_id.is_none_or(|asset_id| {
             surface_cache.wallpaper_texture_for_asset(asset_id).is_none()
@@ -289,9 +290,17 @@ pub(super) fn render_frame(
         None => (view, previous_image_state),
     };
 
-    let cursor_texture_ready = if cursor.is_some() {
+    let cursor_theme = scene.context_menu_theme();
+    let cursor_name = scene.native_cursor_asset().unwrap_or("default");
+    let output_scale = target
+        .fractional_scale()
+        .unwrap_or_else(|| f64::from(target.scale()));
+    let requested_cursor_size = (32.0 * scene.native_cursor_scale() * output_scale)
+        .round()
+        .clamp(16.0, 256.0) as u32;
+    let cursor_texture_ready = if cursor_needed {
         surface_cache
-            .ensure_native_cursor_texture()
+            .ensure_native_cursor_texture(cursor_name, cursor_theme, requested_cursor_size)
             .map_err(|error| match error {
                 super::surface_pipeline_cache::VulkanSurfacePipelineCacheError::NativeCursor(
                     VulkanNativeCursorTextureError::Texture(error),
@@ -304,6 +313,19 @@ pub(super) fn render_frame(
     } else {
         false
     };
+    let cursor_asset = if cursor_texture_ready {
+        surface_cache.native_cursor_asset(cursor_name, cursor_theme, requested_cursor_size)
+    } else {
+        None
+    };
+    let cursor = cursor_asset.and_then(|asset| {
+        native_cursor_geometry(
+            scene,
+            target,
+            (asset.width(), asset.height()),
+            (asset.hotspot_x(), asset.hotspot_y()),
+        )
+    });
 
     surface_cache
         .ensure_pipeline(composition_view.format())
@@ -410,11 +432,13 @@ pub(super) fn render_frame(
     };
 
     let cursor_binding = if cursor_texture_ready {
-        let texture = surface_cache.native_cursor_texture().ok_or_else(|| {
-            VulkanSurfaceCompositionError::Texture(
-                "The native cursor texture was not initialized".to_owned(),
-            )
-        })?;
+        let texture = cursor_asset
+            .and_then(|asset| asset.texture())
+            .ok_or_else(|| {
+                VulkanSurfaceCompositionError::Texture(
+                    "The selected native cursor texture was not initialized".to_owned(),
+                )
+            })?;
         Some(
             VulkanTextureBinding::new_in_pool(
                 device,
