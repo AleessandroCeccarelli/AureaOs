@@ -289,3 +289,11 @@ The native arrow texture is initialized once and cached for the Vulkan device li
 - The native cursor draw uses the decoded image dimensions and per-asset hotspot. Missing files fall back to a raster-size-adjusted built-in arrow.
 - Debian Live packaging builds both SVG themes with `rsvg-convert` and `xcursorgen`, installs them in `/usr/share/icons`, and validates the canonical cursor payload.
 - Current limitation: first-use file read/decode/upload still occurs synchronously on the render path; all selected frames are uploaded but only frame zero is drawn. Animation scheduling, asynchronous preparation, cache-budget review and physical fractional/high-DPI validation remain open. No build or test was run for this source change.
+
+### Asynchronous native cursor loading and frame animation — 26 November 2026
+
+- A bounded `aurea-xcursor-decode` worker performs file I/O, parser work and fallback raster generation away from the render callback.
+- The compositor polls worker results and fence-backed Vulkan uploads. Cursor textures are exposed only after upload completion.
+- Each Xcursor frame retains independent size, hotspot and delay metadata. Frame selection uses monotonic elapsed time.
+- The event loop requests 16 ms output frames while the animated `busy` cursor is selected and for a three-second first-use warm-up period, allowing asynchronous first-load work to complete.
+- Cache byte limits/LRU, reduced-motion handling, `left_ptr_watch` animation and physical validation remain open. No Cargo build or test has been run for this change.
