@@ -205,6 +205,9 @@ impl WaylandServer {
                     .map_err(io::Error::other)?;
 
                 #[cfg(feature = "drm")]
+                self.state.compositor.apply_deferred_pointer_recenter();
+
+                #[cfg(feature = "drm")]
                 super::input::apply_pending_touchpad_settings(&mut self.state);
 
                 #[cfg(feature = "drm")]
