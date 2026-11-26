@@ -219,9 +219,8 @@ impl AureaCompositor {
             pointer_shake: PointerShakeManager::default(),
             cursor_locate_animation: CursorLocateAnimation::default(),
             cursor_trail: CursorTrail::default(),
-            cursor_asset_warmup_until: Some(
-                std::time::Instant::now() + std::time::Duration::from_secs(3),
-            ),
+            // The DRM builder starts this only after outputs are ready.
+            cursor_asset_warmup_until: None,
             pointer_recenter_pending: false,
         }
     }
