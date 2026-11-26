@@ -295,7 +295,7 @@ The native arrow texture is initialized once and cached for the Vulkan device li
 - A bounded `aurea-xcursor-decode` worker performs file I/O, parser work and fallback raster generation away from the render callback.
 - The compositor polls worker results and fence-backed Vulkan uploads. Cursor textures are exposed only after upload completion.
 - Each Xcursor frame retains independent size, hotspot and delay metadata. Frame selection uses monotonic elapsed time.
-- The event loop requests 16 ms output frames while the animated `busy` cursor is selected and for a three-second first-use warm-up period, allowing asynchronous first-load work to complete.
+- The event loop requests 16 ms output frames while the animated `busy` cursor is selected and during a three-second first-use warm-up period. The warm-up is explicitly restarted after DRM/GPU discovery, output publication and successful startup pointer placement; this prevents slow device initialization from consuming the window before the first frame. The compositor requests output frames immediately so asynchronous decoding/upload can complete while the pointer is idle.
 - Cache byte limits/LRU, reduced-motion handling, `left_ptr_watch` animation and physical validation remain open. No Cargo build or test has been run for this change.
 
 - Follow-up: native cursor cache residency is capped at 32 assets / 16 MiB with LRU eviction. A single animation is capped at 4 MiB; oversized sequences keep their first frame.
