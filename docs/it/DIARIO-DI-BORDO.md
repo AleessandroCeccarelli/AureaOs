@@ -2145,3 +2145,12 @@ Il tracker del desktop non usa più un intervallo fisso nel confronto: ogni ista
 ### 26 novembre 2026 — Preferenza globale comportamento puntatore
 
 Aggiunto un contratto e un canale dedicati alle preferenze globali del puntatore, distinti dai profili dei singoli mouse e trackpad. Il canale attraversa Shell, composition root desktop, servizio compositor e ciclo eventi Calloop. Il compositor salva l'intervallo del doppio clic in `desktop-pointer.toml` nella directory di configurazione input di AureaOS, con formato TOML versionato, scrittura atomica e permessi 0600. File malformati o di versione futura vengono preservati e aperti in sola lettura. Il valore salvato viene ripristinato all'avvio; il predefinito è 400 ms e i limiti sono 150–1000 ms. La schermata Impostazioni e la verifica su hardware reale restano da realizzare. Nessuna build o test eseguiti.
+
+### 26 novembre 2026 — Perimetro del blocco mouse e touchpad
+
+- Riesaminato il collegamento delle preferenze live dalla Shell al compositor: mouse e touchpad usano canali distinti e aggiornano i rispettivi dispositivi libinput.
+- Confermata la persistenza separata dei profili fisici: pointers.toml per mouse, touchpads.toml per touchpad e desktop-pointer.toml per l'intervallo globale del doppio clic. Gli ID temporanei eventN non vengono usati come identità persistenti.
+- Confermato il ripristino dei profili touchpad alla riconnessione e dopo la riattivazione della sessione libseat; l'accelerazione viene riapplicata anche a mouse e touchpad.
+- Decisione per AureaOS 1.0: tavolette Wacom e controlli Tablet Pad sono rinviati e non bloccano il completamento del blocco mouse/touchpad. Il percorso touchscreen resta una famiglia input separata.
+- L'interfaccia grafica delle preferenze sarà realizzata nella successiva attività Impostazioni di sistema: il backend è predisposto, ma i controlli visibili non sono ancora presenti.
+- Non eseguiti cargo fmt, build, cargo check, test o prove fisiche. Il blocco potrà essere dichiarato verificato solo dopo il controllo cumulativo su Fedora e le prove con mouse e touchpad reali.
