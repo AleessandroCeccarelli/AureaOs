@@ -2212,3 +2212,6 @@ Aggiunti test unitari per il rifiuto dei begin duplicati e per la rimozione limi
 
 - Audit accelerazione mouse/touchpad: eliminata la doppia applicazione dei profili. Il mouse usa `PointerSettings`; il touchpad usa esclusivamente il proprio `TouchpadSettings` per velocità e curva. La vecchia applicazione generica poteva sovrascrivere il profilo touchpad all'avvio, al movimento o alla riattivazione della sessione.
 - I profili generici sono ora accettati e ripristinati solo per i mouse; aggiunte asserzioni per impedire l'assegnazione di un profilo mouse a un touchpad.
+
+- Audit ciclo di vita dispositivi: la nuova registrazione dello stesso sysname non viene più considerata la stessa periferica soltanto perché conserva la medesima classificazione. Se cambiano identificativi hardware stabili già noti (persistent ID, vendor ID o product ID), il compositor chiude il vecchio ciclo di vita: rilascia i pulsanti, cancella gli stati input associati e poi registra il nuovo dispositivo. I campi mancanti non provocano da soli un reset.
+- Restano da fare la validazione Rust raggruppata e la prova fisica di scollegamento/ricollegamento.
