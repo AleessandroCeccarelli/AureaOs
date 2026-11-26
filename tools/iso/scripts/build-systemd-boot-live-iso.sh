@@ -29,6 +29,7 @@ while (($#)); do
             else
                 [[ -z "$OUTPUT_PATH" ]] || usage
                 OUTPUT_PATH="$2"
+            fi
             shift 2
             ;;
         *) usage ;;
