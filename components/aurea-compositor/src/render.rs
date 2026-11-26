@@ -44,6 +44,7 @@ pub struct RenderScene<'a> {
     toplevels: Vec<RenderToplevel<'a>>,
     cursor_surface: Option<(WlSurface, Point<i32, Logical>, Point<i32, Logical>)>,
     native_cursor_location: Option<Point<i32, Logical>>,
+    native_cursor_pointer_location: Option<Point<f64, Logical>>,
     native_cursor_asset: Option<&'static str>,
     native_cursor_scale: f64,
 }
@@ -72,6 +73,7 @@ impl<'a> RenderScene<'a> {
                 .collect(),
             cursor_surface: None,
             native_cursor_location: None,
+            native_cursor_pointer_location: None,
             native_cursor_asset: None,
             native_cursor_scale: 1.0,
         }
@@ -146,6 +148,7 @@ impl<'a> RenderScene<'a> {
             CursorImageStatus::Hidden => {}
             CursorImageStatus::Named(icon) => {
                 self.native_cursor_location = Some(cursor::default_cursor_origin(pointer_location));
+                self.native_cursor_pointer_location = Some(pointer_location);
                 self.native_cursor_asset = Some(
                     crate::input::cursor_theme::asset_name_for_icon(icon.name()),
                 );
@@ -181,6 +184,11 @@ impl<'a> RenderScene<'a> {
     /// Client-provided cursor surfaces are kept in the regular Wayland surface tree.
     pub fn native_cursor_location(&self) -> Option<Point<i32, Logical>> {
         self.native_cursor_location
+    }
+
+    /// Returns the global logical pointer position used to anchor a named cursor.
+    pub fn native_cursor_pointer_location(&self) -> Option<Point<f64, Logical>> {
+        self.native_cursor_pointer_location
     }
 
     /// Returns the canonical AureaOS asset selected for a named cursor.
