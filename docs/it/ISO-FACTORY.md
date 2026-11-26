@@ -213,16 +213,15 @@ Il repository dispone già di una base funzionante, ma ISO Factory non è ancora
 - Assemblaggio dell'immagine EFI systemd-boot + UKI e rimasterizzazione ISO UEFI-only.
 - Ispezione UKI per parametri Live incorporati e validazione dell'immagine finale.
 - Conservazione del workspace dopo il successo o il fallimento nello script interno attuale.
-- Generazione del file SHA-256.
+- File SHA-256 sia per la candidata con nome univoco sia per l'alias stabile.
+- Manifest JSON di provenienza per ogni candidata validata, con commit sorgente esatto, versione kernel, dimensione/hash dell'immagine e stato della verifica hardware.
+- Promozione atomica dell'alias stabile `AureaOS.iso` soltanto dopo la validazione della ISO temporanea esatta; le candidate storiche con nomi univoci vengono conservate.
 
 ### Lavoro ancora necessario prima di definire ISO Factory pronta per le release
 
 - Ispezionare su Fedora l'initramfs della ISO che non ha superato il primo avvio, prima di eseguire una nuova build.
 - Determinare perché il boot reale ha segnalato che `/scripts/live` non era accessibile. La causa esatta non è ancora confermata.
 - Verificare le ipotesi del validatore rispetto all'immagine UEFI effettivamente generata e al percorso El Torito EFI.
-- Rendere atomica la pubblicazione: validare una candidata temporanea prima di sostituire la ISO stabile `AureaOS.iso`. Una validazione fallita non deve mai sovrascrivere l'ultima candidata conservata.
-- Conservare ISO storiche con nomi univoci, manifest, report e log, invece di mantenere un solo nome mutabile.
-- Generare un manifest con commit esatto e risultati effettivi dei controlli.
 - Conservare log completi con timestamp e un riepilogo finale sia per le build riuscite sia per quelle fallite.
 - Aggiungere controlli di pulizia espliciti e sicuri; non cancellare automaticamente workspace o artefatti storici utili per diagnosi e rollback.
 - Valutare caching/versionamento del container builder per evitare reinstallazioni superflue, senza compromettere aggiornamenti e tracciabilità.
@@ -256,7 +255,7 @@ Questo errore non dimostra un problema GPU, Vulkan o Smithay: il sistema non ha 
 - [ ] Finché il problema di boot è aperto, ispezionare prima l'initramfs esistente.
 - [ ] Eseguire l'entry point ISO Podman mantenuto solo dopo la diagnosi/decisione.
 - [ ] Verificare i report di validazione chroot e immagine.
-- [ ] Verificare checksum e strutture BIOS/UEFI.
+- [ ] Verificare checksum e struttura UEFI-only con catalogo El Torito, systemd-boot e UKI.
 - [ ] Avviare tramite la configurazione Ventoy esistente su hardware reale.
 - [ ] Registrare risultati di boot, desktop e periferiche di input.
 - [ ] Conservare ISO, manifest, log e report.
