@@ -43,7 +43,8 @@ impl CompositorFactory for DesktopCompositorFactory {
         &self,
         display_color: DisplayColorController,
         interactions: DesktopInteractionSender,
-        touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,\n        pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
+        touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
+        pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         // Read the initial Trash state in the desktop composition root.
         // The compositor receives only the semantic value, never filesystem access.
