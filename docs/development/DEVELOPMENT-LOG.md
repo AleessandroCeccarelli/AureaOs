@@ -2374,11 +2374,11 @@ integrates the stream into the Wayland compositor. AureaOS owns desktop policy,
 gesture-to-action mapping and the user-facing settings surface. No parallel
 external-mouse detector or duplicate hardware-processing service is to be added.
 
-Changed the touchpad apply report so DeviceDefault click method and acceleration
-profile are represented as NotRequested: libinput retains ownership of those
-defaults, and AureaOS no longer claims it applied or lacks a setting it did not
-request. all_applied() now treats any NotRequested field as satisfied while
-still distinguishing unsupported capabilities and real failures.
+Changed DeviceDefault handling for click method and acceleration profile: the
+compositor now asks libinput for the device's own default and reapplies it when
+the pinned binding exposes that value. If no default is available, the report
+uses NotRequested. all_applied() treats NotRequested as satisfied while still
+distinguishing unsupported capabilities and real failures.
 
 Source and documentation updates are committed on main. No rustfmt, build,
 Cargo check or tests were run; grouped Fedora validation remains pending.
