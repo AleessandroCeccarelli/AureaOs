@@ -143,7 +143,7 @@ pub(crate) fn desktop_icon_asset(
             pixel_size,
         },
         relative_path: format!(
-            "aurea-human-interfaces/icons/generated/trash/trash-{theme_name}-{state_name}-{pixel_size}.rgba"
+            "icons/generated/trash/trash-{theme_name}-{state_name}-{pixel_size}.rgba"
         ),
     })
 }
