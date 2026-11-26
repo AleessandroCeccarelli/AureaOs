@@ -235,23 +235,32 @@ pub struct TouchpadApplyReport {
     pub send_events_mode: TouchpadSettingStatus,
 }
 
+impl TouchpadSettingStatus {
+    /// A setting is satisfied when it was applied or deliberately left to libinput.
+    const fn is_satisfied(self) -> bool {
+        matches!(self, Self::Applied | Self::NotRequested)
+    }
+}
+
 impl TouchpadApplyReport {
+    /// Returns true when every requested setting succeeded; unsupported and failed
+    /// options remain visible without turning device defaults into false failures.
     pub const fn all_applied(self) -> bool {
-        matches!(self.tap_to_click, TouchpadSettingStatus::Applied)
-            && matches!(self.tap_and_drag, TouchpadSettingStatus::Applied)
-            && matches!(self.tap_drag_lock, TouchpadSettingStatus::Applied)
-            && matches!(self.tap_button_map, TouchpadSettingStatus::Applied)
-            && matches!(self.two_finger_scroll, TouchpadSettingStatus::Applied | TouchpadSettingStatus::NotRequested)
-            && matches!(self.edge_scrolling, TouchpadSettingStatus::Applied | TouchpadSettingStatus::NotRequested)
-            && matches!(self.natural_scrolling, TouchpadSettingStatus::Applied)
-            && matches!(self.disable_while_typing, TouchpadSettingStatus::Applied)
-            && matches!(self.disable_while_trackpointing, TouchpadSettingStatus::Applied)
-            && matches!(self.click_method, TouchpadSettingStatus::Applied)
-            && matches!(self.left_handed, TouchpadSettingStatus::Applied)
-            && matches!(self.middle_button_emulation, TouchpadSettingStatus::Applied)
-            && matches!(self.pointer_speed, TouchpadSettingStatus::Applied)
-            && matches!(self.acceleration_profile, TouchpadSettingStatus::Applied)
-            && matches!(self.send_events_mode, TouchpadSettingStatus::Applied)
+        self.tap_to_click.is_satisfied()
+            && self.tap_and_drag.is_satisfied()
+            && self.tap_drag_lock.is_satisfied()
+            && self.tap_button_map.is_satisfied()
+            && self.two_finger_scroll.is_satisfied()
+            && self.edge_scrolling.is_satisfied()
+            && self.natural_scrolling.is_satisfied()
+            && self.disable_while_typing.is_satisfied()
+            && self.disable_while_trackpointing.is_satisfied()
+            && self.click_method.is_satisfied()
+            && self.left_handed.is_satisfied()
+            && self.middle_button_emulation.is_satisfied()
+            && self.pointer_speed.is_satisfied()
+            && self.acceleration_profile.is_satisfied()
+            && self.send_events_mode.is_satisfied()
     }
 
     /// Returns true when libinput rejected at least one supported setting.
@@ -282,6 +291,11 @@ impl TouchpadApplyReport {
         assert!(!result.has_failures());
 
         result.edge_scrolling = TouchpadSettingStatus::Unsupported;
+        assert!(!result.all_applied());
+
+        result = report(TouchpadSettingStatus::NotRequested);
+        assert!(result.all_applied());
+        result.pointer_speed = TouchpadSettingStatus::Failed;
         assert!(!result.all_applied());
     }
 
