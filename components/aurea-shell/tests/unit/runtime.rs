@@ -496,7 +496,8 @@ fn selected_context_menu_command_closes_menu_and_is_retained_for_service_dispatc
 #[test]
 fn runtime_forwards_mouse_preferences_to_compositor_channel() {
     use aurea_desktop_api::input::{
-        InputDeviceId, PointerSettings, pointer_settings_channel, touchpad_settings_channel,
+        InputDeviceId, PointerSettings, desktop_pointer_behavior_channel, pointer_settings_channel,
+        touchpad_settings_channel,
     };
 
     let (touchpad_controller, _touchpad_receiver) = touchpad_settings_channel();
