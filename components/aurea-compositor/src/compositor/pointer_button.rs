@@ -43,7 +43,12 @@ impl AureaCompositor {
             return;
         };
 
-        if state == ButtonState::Pressed && self.desktop_interactions.context_menu_is_open() {
+        // Desktop menus own only primary/secondary clicks. Auxiliary mouse
+        // buttons (including browser back/forward) must always reach clients.
+        if state == ButtonState::Pressed
+            && matches!(button, BTN_LEFT | BTN_RIGHT)
+            && self.desktop_interactions.context_menu_is_open()
+        {
             let location = pointer.current_location();
             let logical = DesktopPoint::new(location.x.round() as i32, location.y.round() as i32);
             let menu_layout = self.desktop_interactions
