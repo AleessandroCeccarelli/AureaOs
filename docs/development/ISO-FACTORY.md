@@ -103,7 +103,8 @@ The wrapper currently:
 - mounts the repository read-only;
 - uses a persistent build-parent directory and a workspace lock;
 - delegates the actual image generation to `tools/iso/build-live-iso.sh`;
-- writes the current candidate to `~/Documenti/AureaOS.iso` by default and creates a SHA-256 sidecar.
+- publishes a uniquely named, validated historical candidate plus JSON manifest and SHA-256 sidecar in `~/Documenti` by default;
+- updates the stable `AureaOS.iso` convenience alias and checksum only after both binary-tree and exact-ISO validation pass.
 
 For an interrupted build, the current wrapper supports resuming the same workspace:
 
@@ -200,7 +201,7 @@ The manifest should record at least:
 
 The repository already has a working foundation, but ISO Factory is not yet a fully finished release-management system.
 
-### Implemented in the repository as inspected on 2026-11-23
+### Implemented in the repository as inspected on 2026-11-26
 
 - Debian Trixie amd64 live-build configuration.
 - Production desktop build enables the opt-in `heif` feature, while ordinary development builds remain free of a mandatory native libheif dependency.
