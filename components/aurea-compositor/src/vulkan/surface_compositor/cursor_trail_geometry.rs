@@ -96,6 +96,31 @@ mod tests {
     }
 
     #[test]
+    fn older_impressions_are_composited_before_the_newest_cursor() {
+        let windows = WindowManager::new();
+        let start = Instant::now();
+        let mut trail = CursorTrail::default();
+        trail.record(Point::<f64, Logical>::from((900.0, 500.0)), start);
+        trail.record(
+            Point::<f64, Logical>::from((960.0, 540.0)),
+            start + Duration::from_millis(30),
+        );
+        let samples = trail.visible_at(start + Duration::from_millis(50));
+        let scene = RenderScene::from_window_manager(&windows)
+            .with_cursor(
+                &CursorImageStatus::default_named(),
+                Some(Point::from((960.0, 540.0))),
+                1.0,
+            )
+            .with_cursor_trail(samples);
+
+        let draws = cursor_trail_draws(&scene, &target(), (32, 32), (5, 3));
+        assert_eq!(draws.len(), 2);
+        assert!(draws[0].opacity < draws[1].opacity);
+        assert!(draws[0].viewport.x < draws[1].viewport.x);
+    }
+
+    #[test]
     fn trail_impressions_outside_an_output_are_clipped_away() {
         let windows = WindowManager::new();
         let start = Instant::now();
