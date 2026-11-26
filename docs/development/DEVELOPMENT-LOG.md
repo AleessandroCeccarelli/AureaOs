@@ -2346,3 +2346,7 @@ Extended `RenderScene` tests: the default named cursor must preserve the global 
 ### 2026-11-26 — Native cursor readiness diagnostics
 
 Added `tracing::info` diagnostics at the two readiness boundaries needed for first hardware validation: successful Vulkan upload of the built-in fallback arrow and publication of the themed Xcursor asset into the cache, including asset key, raster dimensions and frame count. Fedora logs can now distinguish asset-loading failures from geometry or KMS-presentation failures. No build or tests were run.
+
+### 2026-11-26 — HiDPI native cursor geometry coverage
+
+Added a focused 2× output-scale test for native cursor placement, covering logical-to-physical coordinate conversion, 64×64 raster sizing and scaled hotspot placement. This complements the existing 1× primary-output and off-output clipping cases. Not executed; no build started.
