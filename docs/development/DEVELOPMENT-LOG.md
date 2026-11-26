@@ -2364,3 +2364,21 @@ Extracted the common final stage for relative and absolute pointer motion into `
 - Commit: `90dec90c`. No build or tests were run; validation remains grouped as requested.
 
 - Extended the lifecycle fix to libinput reclassification: when the same sysname is re-announced with a different device class, the compositor now closes the previous lifecycle, synthesizes pending button releases, and clears stale per-device/gesture state before registering the new class. Commit: `a99c0b60`.
+
+## 2026-11-26 — Input stack simplification boundary
+
+Reaffirmed the ownership split: Debian kernel drivers handle hardware transport;
+udev/libinput handle device classification, quirks, normalized input, pointer
+acceleration, touchpad configuration and supported gesture recognition; Smithay
+integrates the stream into the Wayland compositor. AureaOS owns desktop policy,
+gesture-to-action mapping and the user-facing settings surface. No parallel
+external-mouse detector or duplicate hardware-processing service is to be added.
+
+Changed the touchpad apply report so DeviceDefault click method and acceleration
+profile are represented as NotRequested: libinput retains ownership of those
+defaults, and AureaOS no longer claims it applied or lacks a setting it did not
+request. all_applied() now treats any NotRequested field as satisfied while
+still distinguishing unsupported capabilities and real failures.
+
+Source and documentation updates are committed on main. No rustfmt, build,
+Cargo check or tests were run; grouped Fedora validation remains pending.
