@@ -2122,3 +2122,12 @@ Aggiunti anche test unitari indipendenti dalla GPU per dimensioni, hotspot, payl
 **Limite individuato:** il warm-up di tre secondi è una finestra temporizzata, non una notifica di completamento del worker. Se lettura, decodifica o upload Xcursor superano tale finestra e il mouse resta immobile, il fallback continua a essere mostrato fino alla richiesta di un nuovo frame (ad esempio al successivo movimento). La freccia di fallback resta comunque disponibile e il puntatore continua a funzionare. La soluzione corretta, in futuro, è notificare il loop al completamento del worker, non prolungare indefinitamente il rendering ad alta frequenza.
 
 **Verifica:** revisione statica dei sorgenti e dei collegamenti tra i componenti. Non sono stati eseguiti cargo fmt, build, cargo check, test, boot o prove fisiche su DRM/KMS/Vulkan. Il collegamento architetturale è presente; il funzionamento reale sul laptop deve ancora essere verificato.
+
+
+### Follow-up — Aggiornamento automatico del cursore dopo il caricamento
+
+- Aggiunta una verifica del lavoro pendente nel gestore della texture nativa: resta attiva finché una richiesta di decodifica Xcursor è in coda oppure finché una o più fence di upload Vulkan non risultano completate.
+- Lo stato è esposto dalla cache delle pipeline e dal backend Vulkan.
+- Il loop DRM considera ora questo lavoro come attività di animazione: richiede nuovi frame ogni 16 ms e torna automaticamente all'intervallo inattivo di 100 ms quando decodifica e upload sono terminati.
+- Il meccanismo è comune ai due percorsi: presentazione Vulkan diretta e compatibilità con upload CPU condividono la stessa cache per GPU.
+- La freccia integrata di fallback resta disponibile durante l'intera operazione. Nessuna build o prova runtime è stata eseguita in questa modifica sorgente; la verifica è rinviata al controllo cumulativo su Fedora.
