@@ -319,6 +319,19 @@ impl AureaCompositor {
             .scale_at(std::time::Instant::now())
     }
 
+    /// Starts the first-use native cursor loading window after outputs are ready.
+    ///
+    /// This must run after DRM discovery: GPU/output initialization can take
+    /// longer than the warm-up window started by the compositor constructor.
+    /// Keeping frames scheduled here lets the asynchronous Xcursor worker and
+    /// Vulkan upload finish even when the pointer is never moved after boot.
+    pub(crate) fn begin_cursor_asset_warmup(&mut self) {
+        self.cursor_asset_warmup_until = Some(
+            std::time::Instant::now() + std::time::Duration::from_secs(3),
+        );
+        self.request_all_output_frames();
+    }
+
     /// Reports whether the locate effect still needs scheduled frames.
     pub fn cursor_animation_active(&self) -> bool {
         let now = std::time::Instant::now();
