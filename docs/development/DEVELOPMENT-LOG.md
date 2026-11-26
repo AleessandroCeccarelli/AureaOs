@@ -2397,3 +2397,15 @@ Removed the redundant AppliedTouchpadSettings::invalidate method: it performed
 the same operation as remove and had no distinct runtime consumer. The cache
 now exposes one removal operation. No build, rustfmt, Cargo check or tests were run;
 grouped Fedora validation remains pending.
+
+
+## 2026-11-26 — Preserve selected touchpad scroll mode result
+
+The report previously marked both mutually exclusive scroll toggles as
+NotRequested for NoScroll, but discarded the result returned by libinput when
+selecting NoScroll. Added a dedicated `scroll_method` status to
+`TouchpadApplyReport`; the two UI toggle statuses retain their NotRequested
+meaning while the selected mode's Applied/Unsupported/Failed result remains
+observable. Aggregate success/failure helpers now include the selected mode,
+and registry test fixtures were updated. Source changes are committed on main;
+no rustfmt, build or tests have been run yet.
