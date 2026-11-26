@@ -2166,3 +2166,7 @@ Centralizzato l'avvio del warm-up del cursore in `center_pointer_on_primary_outp
 ### 26 novembre 2026 — Verifica del contratto della freccia predefinita
 
 Estesi i test di `RenderScene`: con il cursore predefinito nominato, la scena deve conservare sia la posizione globale del puntatore sia il nome asset canonico `default`, oltre all'origine con hotspot. Con `CursorImageStatus::Hidden`, posizione, asset e rettangolo nativo devono restare assenti. Sono controlli mirati al percorso minimo della freccia, non nuove funzionalità. Test aggiunti ma non eseguiti; nessuna build lanciata.
+
+### 26 novembre 2026 — Diagnostica della disponibilità del puntatore nativo
+
+Aggiunti log `tracing::info` nei due passaggi che servono a diagnosticare il primo avvio su hardware: upload Vulkan completato della freccia integrata di riserva e pubblicazione in cache dell'asset Xcursor del tema, con nome asset, dimensioni raster e numero di fotogrammi. Al collaudo Fedora questi messaggi permetteranno di distinguere un problema di caricamento asset da uno di geometria/presentazione KMS. Nessuna build o test eseguiti.
