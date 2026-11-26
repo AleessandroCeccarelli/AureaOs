@@ -2131,3 +2131,8 @@ Aggiunti anche test unitari indipendenti dalla GPU per dimensioni, hotspot, payl
 - Il loop DRM considera ora questo lavoro come attività di animazione: richiede nuovi frame ogni 16 ms e torna automaticamente all'intervallo inattivo di 100 ms quando decodifica e upload sono terminati.
 - Il meccanismo è comune ai due percorsi: presentazione Vulkan diretta e compatibilità con upload CPU condividono la stessa cache per GPU.
 - La freccia integrata di fallback resta disponibile durante l'intera operazione. Nessuna build o prova runtime è stata eseguita in questa modifica sorgente; la verifica è rinviata al controllo cumulativo su Fedora.
+
+
+## 26 novembre 2026 — Preparazione asset icone desktop
+
+Aggiunto in `VulkanSurfacePipelineCache` il caricamento/preparazione dell'asset di ciascun elemento desktop: risoluzione tramite descrittore canonico (tema, stato del Cestino e densità effettiva dell'output), lettura RGBA8 validata dalla directory `AUREA_HUMAN_INTERFACES_ROOT` (predefinita `/usr/share/aureaos/human-interfaces`), conservazione dello snapshot CPU per chiave e inserimento nella cache texture Vulkan già esistente. Se un elemento non ha ancora un asset approvato, non viene scelta un'icona arbitraria. Attenzione: questo è solo il livello di preparazione. Il collegamento di geometrie, binding e draw nel `surface_compositor`, la resa visibile delle icone e l'evidenziazione della selezione restano da completare. Nessuna build o test eseguiti.
