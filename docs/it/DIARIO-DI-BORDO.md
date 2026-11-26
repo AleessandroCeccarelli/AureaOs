@@ -1996,3 +1996,13 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Rafforzata la validazione UKI finale: devono essere presenti le sezioni PE `.linux`, `.initrd`, `.osrel`, `.cmdline`, il parametro incorporato `boot=live` e l'identità AureaOS `ID=aureaos`.
 - Corretta la documentazione ISO Factory EN/IT: il supporto Live finale contiene il filesystem squashfs e la UKI, non kernel/initramfs separati; l'unico percorso di avvio previsto è UEFI.
 - Nessuna build, verifica sintassi shell, invocazione ukify, generazione ISO, test QEMU/OVMF o prova hardware è stata eseguita. Correzione sorgente in attesa della verifica raggruppata su Fedora.
+
+### 26 novembre 2026 — Pubblicazione sicura e tracciabilità delle ISO Live
+
+- Irrigidito `tools/iso/build-live-iso.sh`: una ISO non validata non può più sovrascrivere il nome stabile `AureaOS.iso`.
+- Il coordinatore verifica prima il tree binary, copia poi la ISO in un file candidato temporaneo nascosto e valida proprio quel file. Solo dopo calcola SHA-256 e dimensione e pubblica una candidata storica con timestamp UTC e commit sorgente nel nome.
+- Aggiunto un manifest JSON accanto a ogni candidata: remote/branch/commit, stato pulito o modificato del working tree, target Debian Trixie amd64, politica systemd-boot/UKI, versione kernel, dimensione/hash ISO e stato esplicito delle verifiche automatiche e hardware.
+- Il nome stabile `AureaOS.iso` e il relativo checksum vengono sostituiti atomicamente soltanto dopo il superamento di entrambe le validazioni automatiche. Le candidate storiche e i manifest con nomi univoci non vengono sovrascritti.
+- Il container Debian del wrapper Podman installa esplicitamente Python 3 per generare il manifest JSON.
+- Installer, partizionamento, installazione Btrfs, Aurea Update e Aurea Recovery restano fuori ambito. Questo traguardo riguarda soltanto l'avvio Live del desktop reale già presente nel repository.
+- **Non verificato:** nessun controllo di sintassi shell, esecuzione del manifest Python, live-build, generazione UKI, validazione ISO, QEMU/OVMF o avvio fisico è stato eseguito. Il precedente panic `/scripts/live` resta aperto fino all'avvio della nuova immagine su hardware reale.
