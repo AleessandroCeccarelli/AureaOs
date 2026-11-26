@@ -243,6 +243,13 @@ pub(super) fn build(
             "AureaOS: active display outputs are available, but the Wayland pointer could not be placed on the primary output",
         ));
     }
+    // Start the native cursor's asynchronous first-load window only now:
+    // DRM/GPU discovery above may have consumed the constructor's initial
+    // warm-up period before the first output frame can be rendered.
+    if pointer_centered {
+        state.compositor.begin_cursor_asset_warmup();
+    }
+
     eprintln!(
         "AureaOS pointer: startup capability ready; active_outputs={} centered={}",
         active_outputs, pointer_centered
