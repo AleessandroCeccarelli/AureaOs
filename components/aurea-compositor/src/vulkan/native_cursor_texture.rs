@@ -58,7 +58,7 @@ impl fmt::Display for VulkanNativeCursorTextureError {
 
 impl Error for VulkanNativeCursorTextureError {}
 
-struct VulkanNativeCursorFrame {
+pub(crate) struct VulkanNativeCursorFrame {
     texture: Arc<VulkanShmTexture>,
     width: u32,
     height: u32,
