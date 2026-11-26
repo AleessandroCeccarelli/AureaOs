@@ -101,18 +101,19 @@ bash tools/iso/build-live-iso-podman.sh
 Attualmente il wrapper:
 - utilizza un container Debian Trixie slim per l'ambiente live-build;
 - monta il repository in sola lettura;
-- usa una directory persistente per la build e un lock del workspace;
+- usa per impostazione predefinita una directory persistente distinta per ogni commit sorgente e un lock del workspace;
+- rifiuta la build se il repository contiene modifiche non committate o file non tracciati, perché lo snapshot viene creato con `git archive HEAD`;
 - delega la generazione effettiva a `tools/iso/build-live-iso.sh`;
-- scrive per impostazione predefinita la candidata in `~/Documenti/AureaOS.iso` e crea il relativo file SHA-256.
+- pubblica una candidata storica con nome univoco, manifest JSON e checksum SHA-256;
+- aggiorna l'alias stabile `AureaOS.iso` soltanto dopo la validazione del tree binary e della ISO effettiva.
 
-Per riprendere una build interrotta, il wrapper supporta attualmente il riutilizzo dello stesso workspace:
+Per riprendere una build interrotta, riesegui il wrapper dallo stesso checkout pulito e dallo stesso commit:
 
 ```bash
-RESUME=1 BUILD_PARENT=/percorso/assoluto/a/aureaos-podman-build \
-  bash tools/iso/build-live-iso-podman.sh
+RESUME=1 bash tools/iso/build-live-iso-podman.sh
 ```
 
-Va utilizzato lo stesso build parent che contiene il workspace interrotto. Non si avvia una seconda build sullo stesso workspace e non si cancella una build fallita prima di averne esaminato log e causa.
+Il percorso predefinito del workspace contiene l'ID del commit sorgente: un nuovo commit riceve quindi un workspace nuovo, evitando di riutilizzare per errore un chroot completato che contiene un vecchio binario `aurea-desktop`. Se `BUILD_PARENT` è stato personalizzato, va passato esattamente lo stesso valore anche durante la ripresa. Non si avvia una seconda build sullo stesso workspace e non si cancella una build fallita prima di averne esaminato log e causa.
 
 Lo script interno prepara il sorgente tramite `git archive HEAD`. Quindi compila il commit locale attualmente selezionato, non esegue automaticamente un fetch di GitHub. La sincronizzazione Fedora e i controlli della fase precedente garantiscono che quel commit locale corrisponda allo stato `main` che intendiamo verificare. Durante la build lo script non deve cambiare branch né eseguire pull silenziosi.
 
