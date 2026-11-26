@@ -5,7 +5,7 @@ set -Eeuo pipefail
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 readonly ISO_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd -P)"
 readonly OS_RELEASE="$ISO_DIR/os-release"
-readonly ESP_SIZE_MIB="${AUREAOS_ESP_SIZE_MIB:-256}"
+readonly ESP_SIZE_MIB="${AUREAOS_ESP_SIZE_MIB:-31}"
 
 usage() {
     echo "Usage: $0 --binary-dir PATH --output PATH" >&2
@@ -40,7 +40,7 @@ done
 [[ -d "$BINARY_DIR/live" ]] || fail "Debian Live payload is missing"
 [[ -s "$OS_RELEASE" ]] || fail "AureaOS UKI os-release metadata is missing"
 [[ "$ESP_SIZE_MIB" =~ ^[0-9]+$ ]] || fail "AUREAOS_ESP_SIZE_MIB must be an integer"
-(( ESP_SIZE_MIB >= 64 )) || fail "EFI image must be at least 64 MiB"
+(( ESP_SIZE_MIB >= 16 && ESP_SIZE_MIB <= 31 )) || fail "El Torito EFI image must be between 16 and 31 MiB"
 
 for tool in ukify mcopy mmd mkfs.vfat truncate xorriso sort; do
     command -v "$tool" >/dev/null 2>&1 || fail "required tool not found: $tool"
@@ -106,7 +106,7 @@ done
 # created and no host disk is touched by this build-time operation.
 rm -f -- "$ESP_IMAGE"
 truncate -s "${ESP_SIZE_MIB}M" "$ESP_IMAGE"
-mkfs.vfat -F 32 -n AUREAOS "$ESP_IMAGE" >/dev/null
+mkfs.vfat -F 16 -n AUREAOS "$ESP_IMAGE" >/dev/null
 
 for directory in EFI EFI/BOOT EFI/Linux EFI/systemd loader loader/entries; do
     mmd -i "$ESP_IMAGE" "::/$directory"
@@ -154,7 +154,7 @@ xorriso -as mkisofs \
     -eltorito-alt-boot \
     -e boot/efi.img \
     -no-emul-boot \
-    -isohybrid-gpt-basdat \
+    -efi-boot-part --efi-boot-image \
     "$BINARY_DIR"
 
 [[ -s "$TEMP_ISO" ]] || fail "xorriso did not create the final ISO"
@@ -162,5 +162,5 @@ mv -f -- "$TEMP_ISO" "$OUTPUT_PATH"
 
 echo "Created UEFI-only AureaOS Live ISO with systemd-boot and UKI:"
 echo "  $OUTPUT_PATH"
-echo "  ESP: $ESP_IMAGE (${ESP_SIZE_MIB} MiB)"
+echo "  ESP: $ESP_IMAGE (${ESP_SIZE_MIB} MiB FAT16; El Torito size limit respected)"
 echo "  Default entry: $DEFAULT_ENTRY"
