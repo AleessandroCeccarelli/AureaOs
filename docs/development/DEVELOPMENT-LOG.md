@@ -2451,3 +2451,12 @@ No new abstractions or duplicate driver/input engines were introduced. The only
 functional change in this audit is removal of mouse acceleration reapplication
 on every motion event (commit `3eb5353`). Build, tests and physical-device
 validation remain pending for one grouped Fedora pass.
+
+
+## 2026-11-26 — Mouse/touchpad lifecycle and session-resume audit
+
+Reviewed discovery, reconnect, reclassification, disconnect and libseat session-resume paths. Live libinput handles for mice and touchpads are retained only while their devices are connected and are removed together with applied-profile cache entries on disconnect. Re-announcing a sysname with a changed class or conflicting physical identity closes the old lifecycle first, releases seat state and clears incompatible runtime state. Persistent profiles remain keyed by stable physical identity and are restored on the next connection.
+
+Session pause releases logical seat buttons and cancels active gestures. After session activation, touchpad profiles and mouse acceleration are reapplied to the retained live handles. No duplicate libinput functionality or additional functional fix was identified in this pass. Corrected two stale source comments: mouse acceleration is no longer reapplied in the motion path, and retained mouse handles support live preference updates and session restoration.
+
+No build or tests were run. Grouped Fedora validation and physical mouse/touchpad testing remain pending.
