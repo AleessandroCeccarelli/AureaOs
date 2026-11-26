@@ -220,3 +220,18 @@ A second lifecycle gap was found during the follow-up audit. When the touchpad o
 The disconnect path now takes the active gesture only when the removed device owns it, cancels the semantic sequence, sends the corresponding Wayland end event with `cancelled = true`, and frames the pointer before unregistering the device. Other devices' gesture ownership is not disturbed. The owner also rejects duplicate begin events instead of resetting an already active sequence.
 
 Added unit coverage for duplicate begin rejection and device-scoped owner removal. Source changes are committed but have not been compiled or executed; grouped validation remains pending.
+
+## Gesture begin guards and owner-test consistency — 26 November 2026
+
+A follow-up source audit found that the swipe, pinch, and hold begin handlers
+claimed gesture ownership and initialized semantic state before confirming that
+the Wayland seat exposed a pointer. The handlers now acquire the pointer first,
+so an unavailable pointer cannot leave an orphaned gesture owner or accumulator.
+
+The same audit found one owner unit test still calling the removed
+`remove_device` helper. It now verifies the current `take_device` contract and
+checks that the removed device's gesture kind is returned before another device
+claims the stream.
+
+These are source changes only. The grouped Rust formatting, compile, and test
+pass remains pending, as requested; no hardware validation has been performed.
