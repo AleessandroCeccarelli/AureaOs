@@ -53,7 +53,8 @@ done
 for required in \
     "$SCRIPT_DIR/package-lists/aureaos.list.chroot" \
     "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" \
-    "$SCRIPT_DIR/hooks/020-brand-boot-menu.hook.binary" \
+    "$SCRIPT_DIR/scripts/build-systemd-boot-live-iso.sh" \
+    "$SCRIPT_DIR/os-release" \
     "$SCRIPT_DIR/systemd/aurea-desktop.service" \
     "$SCRIPT_DIR/pam/aurea-desktop" \
     "$SCRIPT_DIR/scripts/aurea-live-session" \
@@ -101,8 +102,6 @@ refresh_inputs() {
         "$CONFIG_DIR/package-lists/aureaos.list.chroot"
     install -m 0755 "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" \
         "$CONFIG_DIR/hooks/live/010-build-aureaos.hook.chroot"
-    install -m 0755 "$SCRIPT_DIR/hooks/020-brand-boot-menu.hook.binary" \
-        "$CONFIG_DIR/hooks/live/020-brand-boot-menu.hook.binary"
 
     # Replace only the staged source snapshot, never the live-build chroot.
     rm -rf -- "$SOURCE_DIR"
@@ -161,7 +160,7 @@ else
         --distribution trixie \
         --architectures amd64 \
         --binary-image iso-hybrid \
-        --bootloaders "grub-pc grub-efi" \
+        --bootloaders "grub-efi" \
         --archive-areas "main contrib non-free non-free-firmware" \
         --firmware-chroot true \
         --firmware-binary true \
@@ -202,9 +201,6 @@ cd "$BUILD_ROOT"
 echo "Building Debian Trixie amd64 Live ISO..."
 sudo lb build
 
-# Validate the files live-build staged before accepting or copying the ISO.
-bash "$SCRIPT_DIR/tests/validate-live-image.sh" --binary-dir "$BUILD_ROOT/binary"
-
 ISO_PATH="$(find "$BUILD_ROOT" -maxdepth 1 -type f -name '*.iso' -print -quit)"
 if [[ -z "$ISO_PATH" || ! -s "$ISO_PATH" ]]; then
     echo "Live Build completed without producing a non-empty ISO." >&2
@@ -213,6 +209,13 @@ if [[ -z "$ISO_PATH" || ! -s "$ISO_PATH" ]]; then
 fi
 
 DESTINATION="$OUTPUT_DIR/AureaOS.iso"
+# Replace Debian Live's intermediate GRUB image with the approved systemd-boot + UKI path.
+bash "$SCRIPT_DIR/scripts/build-systemd-boot-live-iso.sh" \
+    --binary-dir "$BUILD_ROOT/binary" \
+    --output "$ISO_PATH"
+
+# Validate the final staged tree and the exact ISO before publication.
+bash "$SCRIPT_DIR/tests/validate-live-image.sh" --binary-dir "$BUILD_ROOT/binary"
 install -m 0644 "$ISO_PATH" "$DESTINATION"
 # Re-open the actual ISO and validate its extracted boot payload, not only the workspace.
 bash "$SCRIPT_DIR/tests/validate-live-image.sh" --iso "$DESTINATION"
