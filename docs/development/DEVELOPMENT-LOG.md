@@ -2321,3 +2321,12 @@ Replaced the fixed 400 ms comparison constant with per-compositor tracker state.
 ## 2026-11-26 — Global desktop pointer behavior channel and persistence
 
 Added a dedicated global preference contract and channel for desktop pointer behavior, avoiding confusion with physical-device mouse/touchpad profiles. The channel is forwarded from `aurea-shell` through the desktop factory and compositor service into the Calloop event loop. The compositor now persists the double-click interval in versioned `desktop-pointer.toml` beneath the AureaOS input configuration directory, with atomic replacement and mode 0600. Malformed or newer-version files are opened read-only and are not overwritten. The stored interval is restored at startup; the default is 400 ms and accepted values are clamped to 150–1000 ms. The Settings UI and hardware validation are not yet implemented. No build or tests were run.
+
+## 2026-11-26 — Mouse/touchpad block audit and Wacom deferral
+
+- Re-audited the current main implementation and its wiring: mouse and touchpad preferences use distinct device-scoped channels from Shell to the compositor; live mouse changes update the retained libinput device, and touchpad changes apply through capability-aware libinput configuration.
+- Confirmed physical-device persistence is separate from transient input event IDs. Mouse profiles are stored in pointers.toml, touchpad profiles in touchpads.toml, and global double-click behavior in desktop-pointer.toml; each store has version validation and safe atomic persistence.
+- Confirmed touchpad profiles are restored before configuration on discovery and reapplied after libseat session activation. Pointer acceleration is reapplied for retained mouse and touchpad handles after session activation.
+- Confirmed the System Settings UI is not part of this backend completion and remains a later task, as previously decided. No temporary settings UI was added.
+- Release boundary: Wacom pen/tablet and Tablet Pad are deferred from AureaOS 1.0 acceptance. Tablet Pad controls remain unsupported through Smithay 0.7 and are not advertised. Existing touchscreen contact routing remains a separate input path.
+- No cargo fmt, build, cargo check, tests or physical-device validation were run. The code-level audit does not replace grouped Fedora validation; do not claim runtime operation until that validation succeeds.
