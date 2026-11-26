@@ -11,7 +11,14 @@ use crate::desktop::DesktopContextMenuCommand;
 
 /// A desktop position expressed in logical output coordinates.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum DesktopPanelKind {\n    Overview,\n    AppExpose,\n    ContextMenu,\n}\n\n/// A desktop position expressed in logical output coordinates.\npub struct DesktopPosition {
+pub enum DesktopPanelKind {
+    Overview,
+    AppExpose,
+    ContextMenu,
+}
+
+/// A desktop position expressed in logical output coordinates.
+pub struct DesktopPosition {
     pub x: i32,
     pub y: i32,
 }
@@ -67,7 +74,8 @@ pub struct DesktopInteractionSender {
     sender: Sender<DesktopInteraction>,
     selection: DesktopSelectionController,
     context_menu_open: std::sync::Arc<std::sync::atomic::AtomicBool>,
-    context_menu_position: std::sync::Arc<std::sync::RwLock<Option<DesktopPosition>>>,\n    active_panel: std::sync::Arc<std::sync::RwLock<Option<DesktopPanelKind>>>,
+    context_menu_position: std::sync::Arc<std::sync::RwLock<Option<DesktopPosition>>>,
+    active_panel: std::sync::Arc<std::sync::RwLock<Option<DesktopPanelKind>>>,
 }
 
 impl DesktopInteractionSender {
@@ -81,7 +89,12 @@ impl DesktopInteractionSender {
         self.context_menu_open.load(std::sync::atomic::Ordering::Acquire)
     }
 
-    /// Returns the active panel kind as an owned frame-safe snapshot.\n    pub fn active_panel(&self) -> Option<DesktopPanelKind> {\n        *self.active_panel.read().unwrap_or_else(std::sync::PoisonError::into_inner)\n    }\n\n    /// Returns the global logical anchor of the currently open desktop menu.
+    /// Returns the active panel kind as an owned frame-safe snapshot.
+    pub fn active_panel(&self) -> Option<DesktopPanelKind> {
+        *self.active_panel.read().unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    /// Returns the global logical anchor of the currently open desktop menu.
     pub fn context_menu_position(&self) -> Option<DesktopPosition> {
         *self.context_menu_position.read().unwrap_or_else(std::sync::PoisonError::into_inner)
     }
@@ -99,7 +112,18 @@ impl DesktopInteractionSender {
         let result = self.sender.send(interaction.clone());
         if result.is_ok() {
             match interaction {
-                DesktopInteraction::ShowOverview => {\n                    *self.active_panel.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(DesktopPanelKind::Overview);\n                    *self.context_menu_position.write().unwrap_or_else(std::sync::PoisonError::into_inner) = None;\n                    self.context_menu_open.store(false, std::sync::atomic::Ordering::Release);\n                }\n                DesktopInteraction::ShowAppExpose => {\n                    *self.active_panel.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(DesktopPanelKind::AppExpose);\n                    *self.context_menu_position.write().unwrap_or_else(std::sync::PoisonError::into_inner) = None;\n                    self.context_menu_open.store(false, std::sync::atomic::Ordering::Release);\n                }\n                DesktopInteraction::ShowContextMenu { position } => {\n                    *self.active_panel.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(DesktopPanelKind::ContextMenu);
+                DesktopInteraction::ShowOverview => {
+                    *self.active_panel.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(DesktopPanelKind::Overview);
+                    *self.context_menu_position.write().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+                    self.context_menu_open.store(false, std::sync::atomic::Ordering::Release);
+                }
+                DesktopInteraction::ShowAppExpose => {
+                    *self.active_panel.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(DesktopPanelKind::AppExpose);
+                    *self.context_menu_position.write().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+                    self.context_menu_open.store(false, std::sync::atomic::Ordering::Release);
+                }
+                DesktopInteraction::ShowContextMenu { position } => {
+                    *self.active_panel.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(DesktopPanelKind::ContextMenu);
                     *self.context_menu_position.write().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(position);
                     self.context_menu_open.store(true, std::sync::atomic::Ordering::Release);
                 }
@@ -107,6 +131,7 @@ impl DesktopInteractionSender {
                 | DesktopInteraction::ContextMenuCommandSelected { .. } => {
                     *self.context_menu_position.write().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
                     self.context_menu_open.store(false, std::sync::atomic::Ordering::Release);
+                    *self.active_panel.write().unwrap_or_else(std::sync::PoisonError::into_inner) = None;
                 }
                 _ => {}
             }
@@ -143,13 +168,15 @@ pub fn desktop_interaction_channel() -> (DesktopInteractionSender, DesktopIntera
     let (sender, receiver) = mpsc::channel();
     let selection = DesktopSelectionController::default();
     let context_menu_open = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-    let context_menu_position = std::sync::Arc::new(std::sync::RwLock::new(None));\n    let active_panel = std::sync::Arc::new(std::sync::RwLock::new(None));
+    let context_menu_position = std::sync::Arc::new(std::sync::RwLock::new(None));
+    let active_panel = std::sync::Arc::new(std::sync::RwLock::new(None));
     (
         DesktopInteractionSender {
             sender,
             selection: selection.clone(),
             context_menu_open: context_menu_open.clone(),
-            context_menu_position: context_menu_position.clone(),\n            active_panel: active_panel.clone(),
+            context_menu_position: context_menu_position.clone(),
+            active_panel: active_panel.clone(),
         },
         DesktopInteractionReceiver { receiver, selection },
     )
