@@ -142,6 +142,7 @@ pub enum TabletCalibrationError {
     ActiveAreaOutOfBounds,
     InvalidDeviceAspectRatio,
     UnknownDevice,
+    PersistenceFailure,
 }
 
 /// Stores independent calibration profiles keyed by physical tablet ID.
