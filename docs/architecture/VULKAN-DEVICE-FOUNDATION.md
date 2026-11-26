@@ -86,3 +86,9 @@ cargo test -p aurea-compositor --features vulkan --test unit -- --ignored
 ```
 
 The test checks the output byte count, an opaque-black corner outside the triangle and a non-black opaque pixel at the triangle center. It remains ignored in ordinary test runs so hosts without Vulkan are not required to provide a GPU. GitHub Actions explicitly enables it with Mesa lavapipe after discovering the installed ICD.
+
+
+
+### Cursor trail pipeline
+
+The compositor owns a format-cached cursor-trail pipeline separate from ordinary surface draws. It reuses the sampled native Xcursor frame and the surface-texture vertex shader; the fragment shader multiplies premultiplied RGB and alpha by a per-impression opacity supplied at byte offset 4. The shared transform value remains at byte offset 0. The pipeline layout exposes an eight-byte push-constant range to vertex and fragment stages, and the blend state follows the compositor's premultiplied-alpha contract. This path is enabled only when trail samples intersect the current output.
