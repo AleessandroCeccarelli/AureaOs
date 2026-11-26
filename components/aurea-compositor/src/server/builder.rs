@@ -7,7 +7,7 @@
 
 use aurea_desktop_api::{
     desktop_interaction::DesktopInteractionSender, display::DisplayColorController,
-    input::{PointerSettingsCommand, TouchpadSettingsCommand},
+    input::{DesktopPointerBehaviorCommand, PointerSettingsCommand, TouchpadSettingsCommand},
 };
 use std::sync::mpsc::Receiver;
 
@@ -50,6 +50,7 @@ pub(super) fn build(
     desktop_interactions: DesktopInteractionSender,
     touchpad_settings_receiver: Receiver<TouchpadSettingsCommand>,
     pointer_settings_receiver: Receiver<PointerSettingsCommand>,
+    desktop_pointer_behavior_receiver: Receiver<DesktopPointerBehaviorCommand>,
 ) -> io::Result<(EventLoop<'static, WaylandState>, WaylandState)> {
     let event_loop = EventLoop::<WaylandState>::try_new().map_err(io::Error::other)?;
 
@@ -72,7 +73,7 @@ pub(super) fn build(
     }
 
     #[cfg(not(feature = "drm"))]
-    let _ = (touchpad_settings_receiver, pointer_settings_receiver);
+    let _ = (touchpad_settings_receiver, pointer_settings_receiver, desktop_pointer_behavior_receiver);
 
     let mut state = WaylandState {
         display,
@@ -85,6 +86,8 @@ pub(super) fn build(
         touchpad_settings_receiver,
         #[cfg(feature = "drm")]
         pointer_settings_receiver,
+        #[cfg(feature = "drm")]
+        desktop_pointer_behavior_receiver,
         #[cfg(feature = "drm")]
         applied_touchpad_settings: AppliedTouchpadSettings::default(),
         #[cfg(feature = "drm")]
