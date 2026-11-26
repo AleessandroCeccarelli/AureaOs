@@ -2420,3 +2420,13 @@ Checked the pinned input 0.9.1 documentation: config_click_default_method and
 config_accel_default_profile, together with their setters, are available.
 This confirms API availability but does not replace the pending Fedora Cargo
 check and test run. No build or tests were executed in this pass.
+
+
+## 2026-11-26 — Remove mouse configuration from the motion hot path
+
+The audit found that the acceleration profile was reapplied on every
+PointerMotion event even though libinput had already processed the movement.
+Removed this redundant operation. Preferences are applied on device discovery,
+when explicitly changed by the shell, and after session reactivation. Continuous
+motion processing remains with libinput/Smithay. Committed on main as
+`3eb5353`. No build or tests were run; grouped Fedora validation remains pending.
