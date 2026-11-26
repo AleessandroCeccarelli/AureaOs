@@ -76,6 +76,7 @@ unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
     etc/pam.d/aurea-desktop \
     etc/systemd/system/multi-user.target.wants/aurea-desktop.service \
     etc/os-release etc/debian_version usr/lib/systemd/systemd sbin/init \
+    usr/lib/systemd/system/multi-user.target etc/systemd/system/default.target \
     var/lib/dpkg/status \
     usr/share/aureaos/human-interfaces/icons/generated/context-menu \
     >/dev/null 2>&1 || fail "cannot inspect the AureaOS desktop session and artwork inside filesystem.squashfs"
@@ -95,6 +96,13 @@ DEBIAN_VERSION="$(head -n 1 "$ROOTFS/etc/debian_version")"
     fail "Live rootfs is not Debian 13"
 [[ -x "$ROOTFS/usr/lib/systemd/systemd" && -L "$ROOTFS/sbin/init" ]] ||
     fail "Debian systemd PID 1 integration is missing from the Live rootfs"
+[[ -s "$ROOTFS/usr/lib/systemd/system/multi-user.target" ]] ||
+    fail "Debian systemd multi-user target is missing"
+[[ -L "$ROOTFS/etc/systemd/system/default.target" ]] ||
+    fail "Debian systemd default target is not configured"
+DEFAULT_TARGET="$(readlink "$ROOTFS/etc/systemd/system/default.target")"
+[[ "${DEFAULT_TARGET##*/}" == "multi-user.target" ]] ||
+    fail "Debian Live default target is not multi-user.target"
 for package in live-boot live-boot-initramfs-tools live-config live-config-systemd systemd-sysv; do
     status="$(dpkg-query --admindir="$ROOTFS/var/lib/dpkg" -W -f='${db:Status-Status}' "$package" 2>/dev/null)" ||
         fail "Debian Live boot package is missing: $package"
