@@ -108,6 +108,11 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                     state.touchpad_devices.remove(&device_id);
                     state.applied_touchpad_settings.remove(device_id);
                 }
+                if descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Mouse {
+                    state.mouse_devices.insert(device_id, device.clone());
+                } else {
+                    state.mouse_devices.remove(&device_id);
+                }
                 if let Some(report) = touchpad_report {
                     state
                         .compositor
@@ -125,6 +130,7 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 state.compositor.disconnect_pointing_device(device_id);
                 state.applied_touchpad_settings.remove(device_id);
                 state.touchpad_devices.remove(&device_id);
+                state.mouse_devices.remove(&device_id);
                 state.compositor.sync_touchscreen_capability();
             }
         }
@@ -167,6 +173,7 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
             state.compositor.disconnect_pointing_device(id);
             state.applied_touchpad_settings.remove(id);
             state.touchpad_devices.remove(&id);
+            state.mouse_devices.remove(&id);
             state.compositor.sync_touchscreen_capability();
         }
         InputEvent::Keyboard { event } => {
