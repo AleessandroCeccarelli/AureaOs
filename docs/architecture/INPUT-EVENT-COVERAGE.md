@@ -419,3 +419,9 @@ The Shell-to-compositor panel state now has a frame-safe shared projection:
 - A Desktop API regression test covers the transitions and context-menu anchor lifecycle.
 
 This is the presentation contract/wiring layer only. No Overview or App Exposé layout, window-thumbnail model, Vulkan texture upload, draw pass, or panel-specific hit testing has been implemented yet. The renderer must still consume this snapshot and build the actual visual surfaces. Context-menu drawing continues through its existing dedicated geometry/asset path.
+
+## Window preview geometry for Overview and App Exposé — 2026-11-26
+
+Added a technology-independent DesktopWindowPreviewLayout to the Desktop API. It accepts stable window identifiers and source logical dimensions, then calculates output-global logical preview rectangles for a configurable grid. The layout preserves each source aspect ratio, supports configurable columns/margins/gaps, and safely skips invalid source dimensions or identifiers. The same contract can be used by Overview and App Exposé without duplicating geometry rules in the Vulkan renderer.
+
+The model is currently a geometry primitive only: it is not yet populated from mapped XDG toplevels, does not capture or upload thumbnail textures, and is not connected to pointer hit testing or a Vulkan draw pass. Context-menu presentation remains separate. Unit tests were added for aspect-ratio preservation, global output origins, invalid inputs and insufficient layout space; they have not been executed. No build or formatting command was run.
