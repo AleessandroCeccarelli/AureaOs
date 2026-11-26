@@ -2051,3 +2051,25 @@ Added an inventory guard to pointer motion, buttons, axes, touchpad swipe/pinch/
 - Added `PointerShakeManager` with independent unaccelerated-motion histories per mouse/touchpad. Device disconnect and per-device feature disable clear only the matching history.
 - Added source tests proving that interleaved motion from two devices cannot combine into a false shake and that cleanup is device-scoped. Tests were not executed.
 - No build, rustfmt or check was run.
+
+
+## 2026-11-26 — Live mouse preference channel
+
+### Changes committed to `main`
+
+- Added `PointerSettingsController`, `PointerSettingsCommand`, and a channel factory to the technology-independent desktop API.
+- Added the shell runtime entry point for device-scoped mouse settings and connected the channel during application startup.
+- Forwarded the receiver through the desktop factory, compositor factory, Wayland server and Calloop-owned state.
+- Added compositor-side command draining with validation: unknown devices and non-mouse devices are ignored; accepted profiles update the compositor's per-device pointer settings.
+- The existing libinput acceleration adapter samples the new profile on the next pointer-motion event. No mouse libinput handles are retained, avoiding stale handles after hot-unplug.
+- Added a unit test for shell-to-compositor command delivery and updated compositor-factory test doubles.
+- Updated the input event coverage audit and Italian engineering diary.
+
+### Deferred by design
+
+- No temporary pointer settings UI was created.
+- Pointer speed/profile and double-click controls remain scheduled for the future System Settings input page alongside touchpad settings. The existing desktop double-click interval was not changed.
+
+### Verification status
+
+Source changes were committed directly to `main`. No Cargo build, `cargo check`, `cargo fmt`, tests, CI result review or physical-device validation was run. The added tests are therefore not yet confirmed. Run the grouped Rust formatting/build/test checks on Fedora when the user is back at the development machine.
