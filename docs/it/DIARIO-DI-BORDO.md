@@ -2073,3 +2073,14 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Correzione successiva: cache delle texture native limitata a 32 risorse / 16 MiB, con espulsione LRU. Una singola animazione è limitata a 4 MiB; se supera il limite viene mantenuto il primo fotogramma, evitando di esaurire il budget GPU condiviso.
 - Aggiunti test unitari indipendenti dalla GPU per durate Xcursor, confini esatti dei fotogrammi, ripetizione ciclica e gestione dei ritardi pari a zero.
 - Verificato nel manifest che `busy` definisce 12 fotogrammi / 1100 ms, mentre `left_ptr_watch` è attualmente un'immagine statica; per questo viene animato soltanto `busy`.
+
+### 26 novembre 2026 — Posizione iniziale e individuazione del puntatore
+
+- Verificato il percorso di avvio DRM: il server inizializza il puntatore Wayland, pubblica le uscite video e chiama `center_pointer_on_primary_output()` prima di registrare il socket Wayland. L'immagine iniziale è `CursorImageStatus::default_named()`; il renderer nativo dispone già della garanzia di primo fotogramma. L'obiettivo è quindi mostrare la freccia AureaOS al centro del primo monitor attivo, senza posizione casuale.
+- La selezione attuale prende la prima uscita attiva nell'ordine del registro; non esiste ancora un'identità persistente del monitor principale scelto dall'utente. Per un singolo monitor è adeguata; per configurazioni multi-monitor complesse introdurremo la selezione esplicita del display principale nelle impostazioni schermo.
+- Aggiunti test sorgente per il calcolo del centro, inclusi monitor con origine negativa, dimensioni logiche dispari e geometrie non valide. Non eseguiti.
+- Verificato che il rilevamento dello shake esiste già ed è attivo per impostazione predefinita. Usa il movimento relativo non accelerato, conserva cronologie separate per ogni dispositivo fisico e riconosce tre inversioni di direzione entro una finestra limitata di tempo e distanza. L'animazione attuale ingrandisce la freccia fino a 2,4× e la riporta alla dimensione normale in circa un secondo.
+- La documentazione ufficiale Apple conferma che la funzione è disponibile sia con mouse sia con trackpad: basta muovere rapidamente il mouse o il dito sul trackpad. Non serve disegnare un cerchio; l'interazione documentata è un movimento rapido avanti e indietro.
+- **Ancora da implementare:** la scia visiva. Apple documenta l'ingrandimento temporaneo; la scia sarà un'aggiunta grafica proprietaria AureaOS. La soluzione prevista conserva per poco tempo le posizioni recenti e disegna dietro al puntatore alcune copie traslucide che svaniscono, con supporto a reduced-motion e preferenza per dispositivo.
+- Il rilevamento usa il percorso comune di movimento relativo libinput per mouse e trackpad registrati. La compatibilità fisica dei trackpad resta da provare; gli eventi gesture swipe/pinch sono separati e non devono attivare l'effetto.
+- Nessuna build, `cargo fmt`, check o test eseguiti.
