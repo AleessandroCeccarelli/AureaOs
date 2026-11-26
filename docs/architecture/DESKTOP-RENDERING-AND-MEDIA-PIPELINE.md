@@ -295,6 +295,7 @@ The native cursor texture is decoded and uploaded asynchronously, then cached fo
 - A bounded `aurea-xcursor-decode` worker performs file I/O, parser work and fallback raster generation away from the render callback.
 - The compositor polls worker results and fence-backed Vulkan uploads. Cursor textures are exposed only after upload completion.
 - Each Xcursor frame retains independent size, hotspot and delay metadata. Frame selection uses monotonic elapsed time.
+- A small built-in high-contrast arrow is uploaded once per requested raster size and drawn immediately while the selected Xcursor theme asset is prepared asynchronously; the fallback cache is bounded to four sizes and the themed asset takes precedence once ready.
 - The event loop requests 16 ms output frames while the animated `busy` cursor is selected and during a three-second first-use warm-up period. The warm-up is explicitly restarted after DRM/GPU discovery, output publication and successful startup pointer placement; this prevents slow device initialization from consuming the window before the first frame. The compositor requests output frames immediately so asynchronous decoding/upload can complete while the pointer is idle.
 - Cache byte limits/LRU, reduced-motion handling, `left_ptr_watch` animation and physical validation remain open. No Cargo build or test has been run for this change.
 
