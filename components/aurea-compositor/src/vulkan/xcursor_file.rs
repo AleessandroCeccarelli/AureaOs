@@ -94,18 +94,18 @@ pub(crate) fn decode_xcursor(bytes: &[u8]) -> Result<Vec<XcursorFrame>, XcursorF
 
         let chunk_header = read_u32(bytes, position)? as usize;
         let chunk_type = read_u32(bytes, position + 4)?;
-        let chunk_version = read_u32(bytes, position + 8)?;
+        let chunk_version = read_u32(bytes, position + 12)?;
         if chunk_header < IMAGE_HEADER_BYTES
             || chunk_type != IMAGE_CHUNK_TYPE
             || chunk_version == 0
         {
             return Err(XcursorFileError::InvalidImageChunk);
         }
-        let width = read_u32(bytes, position + 12)?;
-        let height = read_u32(bytes, position + 16)?;
-        let hotspot_x = read_u32(bytes, position + 20)?;
-        let hotspot_y = read_u32(bytes, position + 24)?;
-        let delay_ms = read_u32(bytes, position + 28)?;
+        let width = read_u32(bytes, position + 16)?;
+        let height = read_u32(bytes, position + 20)?;
+        let hotspot_x = read_u32(bytes, position + 24)?;
+        let hotspot_y = read_u32(bytes, position + 28)?;
+        let delay_ms = read_u32(bytes, position + 32)?;
         if width == 0 || height == 0 || width > MAX_CURSOR_DIMENSION || height > MAX_CURSOR_DIMENSION {
             return Err(XcursorFileError::InvalidDimensions);
         }
@@ -169,7 +169,8 @@ mod tests {
         bytes.extend_from_slice(&(28_u32).to_le_bytes());
         bytes.extend_from_slice(&(IMAGE_HEADER_BYTES as u32).to_le_bytes());
         bytes.extend_from_slice(&IMAGE_CHUNK_TYPE.to_le_bytes());
-        bytes.extend_from_slice(&1_u32.to_le_bytes());
+        bytes.extend_from_slice(&1_u32.to_le_bytes()); // subtype
+        bytes.extend_from_slice(&1_u32.to_le_bytes()); // image version
         bytes.extend_from_slice(&width.to_le_bytes());
         bytes.extend_from_slice(&height.to_le_bytes());
         bytes.extend_from_slice(&hotspot.0.to_le_bytes());
