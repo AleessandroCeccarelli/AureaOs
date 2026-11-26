@@ -432,4 +432,19 @@ For the first release acceptance scope, native mouse and touchpad handling are i
 
 The source-level audit confirms separate persistent physical-device profiles for mouse and touchpad, separate live Shell-to-compositor settings channels, global double-click interval persistence, capability-aware touchpad apply reports, and session-reactivation reapplication. The System Settings UI is a later presentation task; backend contracts are present but user-facing controls are not yet complete.
 
-**Release status:** source implementation and static audit substantially complete; grouped Fedora build, tests and physical-device validation remain mandatory before declaring the pointer operationally verified.
+**Release status:** source implementation and static audit substantially complete; grouped Fedora build, tests and physical-device validation remain mandatory before declaring the pointer operationally verified. 
+
+## Device replacement identity boundary — 26 November 2026
+
+The lifecycle audit found that a repeated libinput `DeviceAdded` for an
+existing sysname reset runtime state only when the classified device kind
+changed. If the same sysname was re-announced for a different physical unit
+of the same kind, old per-device state could survive. Registration now also
+treats conflicting non-empty stable identity fields (persistent ID, vendor ID,
+or product ID) as a replacement boundary. The compositor releases held
+buttons and cancels device-owned input state before registering the new
+descriptor. Missing identity fields alone do not force a reset, avoiding
+unnecessary teardown when libinput supplies additional metadata later.
+
+Source-level change only; grouped Rust formatting, compilation, and tests are
+still pending. Physical hot-unplug/replug validation is also pending.
