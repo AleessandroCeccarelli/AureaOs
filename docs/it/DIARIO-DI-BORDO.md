@@ -2318,3 +2318,12 @@ Non sono state introdotte nuove astrazioni né duplicati di driver o motori inpu
 La sola modifica funzionale di questo audit è la rimozione della riapplicazione
 dell'accelerazione mouse ad ogni movimento (commit `3eb5353`). Build, test e
 verifica fisica restano da eseguire in un unico passaggio su Fedora.
+
+
+### 26 novembre 2026 — Audit lifecycle mouse/touchpad e riattivazione sessione
+
+Verificato il percorso di connessione, riconnessione, riclassificazione, disconnessione e riattivazione libseat. Gli handle libinput di mouse e touchpad sono conservati soltanto mentre il dispositivo risulta connesso; alla rimozione vengono eliminati insieme alla cache dei profili applicati. Una riclassificazione dello stesso sysname chiude prima il vecchio ciclo di vita, rilascia lo stato del seat e cancella i dati runtime incompatibili. I profili persistenti restano associati all'identità fisica stabile e vengono ricaricati alla nuova connessione.
+
+Alla pausa vengono rilasciati i pulsanti logici e cancellati i gesti attivi; alla riattivazione, dopo il ripristino della sessione, i profili touchpad e accelerazione mouse vengono riapplicati agli handle vivi. Non è emersa una duplicazione del lavoro di libinput né una correzione funzionale necessaria in questo passaggio. Corrette due annotazioni sorgente non più coerenti con il comportamento effettivo: il movimento non riapplica l'accelerazione e gli handle mouse sono conservati per aggiornamenti e ripristino sessione.
+
+Nessuna build o test eseguiti; resta la validazione cumulativa su Fedora e il collaudo fisico con mouse e touchpad.
