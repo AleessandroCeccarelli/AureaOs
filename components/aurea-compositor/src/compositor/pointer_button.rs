@@ -17,6 +17,9 @@ use super::AureaCompositor;
 const BTN_LEFT: u32 = 0x110;
 const BTN_RIGHT: u32 = 0x111;
 
+// BTN_SIDE/BTN_EXTRA and BTN_FORWARD/BTN_BACK are intentionally not
+// intercepted by desktop chrome: they are delivered unchanged to Wayland clients.
+
 impl AureaCompositor {
     /// Sends a physical button event and focuses/raises the clicked toplevel.
     pub fn handle_pointer_button(
