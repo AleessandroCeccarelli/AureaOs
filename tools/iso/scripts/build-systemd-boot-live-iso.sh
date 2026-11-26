@@ -56,6 +56,13 @@ readonly UKI_STUB="/usr/lib/systemd/boot/efi/linuxx64.efi.stub"
 # resumable binary tree until a final ISO has been validated.
 WORK_DIR="$(mktemp -d "$(dirname -- "$BINARY_DIR")/.aureaos-uki.XXXXXX")"
 ASSEMBLY_DIR="$WORK_DIR/binary"
+TEMP_ISO="${OUTPUT_PATH}.tmp.$$"
+cleanup() {
+    rm -rf -- "$WORK_DIR"
+    rm -f -- "$TEMP_ISO"
+}
+trap cleanup EXIT
+
 mkdir -p "$ASSEMBLY_DIR"
 cp -al -- "$BINARY_DIR/." "$ASSEMBLY_DIR/" ||
     fail "cannot create a same-filesystem assembly snapshot"
@@ -162,8 +169,8 @@ done
 # Remove all intermediate GRUB/legacy boot payloads before mastering the
 # final UEFI-only ISO. GRUB may be used by live-build internally to stage the
 # binary tree, but it is never included in the published AureaOS image.
-rm -rf -- "$BINARY_DIR/boot/grub" "$BINARY_DIR/boot/isolinux" \
-    "$BINARY_DIR/isolinux" "$BINARY_DIR/syslinux"
+rm -rf -- "$ASSEMBLY_DIR/boot/grub" "$ASSEMBLY_DIR/boot/isolinux" \
+    "$ASSEMBLY_DIR/isolinux" "$ASSEMBLY_DIR/syslinux"
 
 mkdir -p -- "$(dirname -- "$OUTPUT_PATH")"
 rm -f -- "$TEMP_ISO"
