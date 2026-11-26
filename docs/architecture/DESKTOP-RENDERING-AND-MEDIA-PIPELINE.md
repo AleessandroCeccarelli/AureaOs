@@ -319,3 +319,8 @@ The fallback path is verified in source to reach the actual texture binding and 
 **Scheduling caveat:** the initial three-second warm-up polls for asynchronous Xcursor completion at frame cadence, but it is not a worker-completion signal. If loading exceeds the window while the pointer remains idle, the fallback stays visible until another event requests a frame. A future worker-to-event-loop wakeup is preferable to an unbounded high-frequency polling period.
 
 This audit is source inspection only. It does not establish successful compilation, live Vulkan rendering, KMS presentation, cursor movement on physical hardware, or multi-monitor behavior. No build or tests were run.
+
+
+### Native cursor completion and redraw scheduling
+
+The DRM event loop keeps output frames flowing while the native cursor texture owner reports pending work. Pending work includes queued/in-flight Xcursor decoding and Vulkan upload fences that have not completed. This status is surfaced through the per-GPU surface pipeline cache and Vulkan backend, so the scheduling policy is shared by direct and CPU-upload compatibility presentation. The loop requests frames at the existing 16 ms animation cadence only while this work remains; once the themed asset is promoted to the ready cache, normal idle dispatch resumes. The built-in fallback arrow remains drawable during the transition.
