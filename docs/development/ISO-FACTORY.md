@@ -123,7 +123,7 @@ The current source tree contains a chroot preflight, a UKI/ISO assembly helper, 
 
 - `tools/iso/tests/validate-chroot-boot.sh` — checks required boot packages and live-boot initramfs integration in the target chroot, regenerates initramfs and checks for `scripts/live`.
 - `tools/iso/scripts/build-systemd-boot-live-iso.sh` — assembles an unsigned UKI from the exact Debian kernel/initramfs pair, builds a FAT EFI boot image containing systemd-boot and the UKI entries, removes intermediate GRUB payloads, and remasters the UEFI-only ISO.
-- `tools/iso/tests/validate-live-image.sh` — checks the final EFI image, systemd-boot fallback path, loader entry, UKI sections and embedded `boot=live` command line, plus the actual SquashFS rootfs: desktop executable, session launcher, systemd unit, PAM definition, service enablement link and 26 generated RGBA8 desktop assets with exact byte lengths. It also checks the El Torito EFI catalog.
+- `tools/iso/tests/validate-live-image.sh` — checks the final EFI image, systemd-boot fallback path, loader entry, UKI sections and embedded `boot=live` command line, plus the actual SquashFS rootfs: desktop executable, session launcher, systemd unit, PAM definition, service enablement link and both context-menu RGBA8 assets with exact byte lengths. It also checks the El Torito EFI catalog.
 
 The coordinator explicitly stages the chroot boot validator under `/usr/local/libexec/aureaos/` before live-build runs the hook. The hook invokes it after package installation and cleanup. The coordinator then assembles the UKI/EFI image and validates both the staged binary tree and the copied ISO.
 
@@ -140,7 +140,7 @@ The validation layers should cover, at minimum:
 9. No GRUB or split kernel/initramfs boot payload in the final image.
 10. ISO readability and an El Torito EFI boot catalog referencing the systemd-boot image.
 11. The actual SquashFS rootfs contains the executable desktop, session launcher, systemd/PAM wiring and enabled service.
-12. The two context-menu and 24 Trash RGBA8 assets exist beneath `/usr/share/aureaos/human-interfaces` and have exact expected lengths.
+12. Both context-menu RGBA8 assets exist beneath `/usr/share/aureaos/human-interfaces` and have exact expected lengths.
 13. SHA-256 checksum and a machine-readable validation report.
 
 A test that is not implemented or not executed must be marked as pending, not assumed to pass.
