@@ -96,31 +96,11 @@ impl AureaCompositor {
             return;
         };
 
-        let focus = {
-            let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
-            scene.surface_under(location).map(|(surface, origin, _)| {
-                (
-                    surface,
-                    Point::from((f64::from(origin.x), f64::from(origin.y))),
-                )
-            })
-        };
-
-        pointer.motion(
-            self,
-            focus,
-            &MotionEvent {
-                location,
-                serial: SERIAL_COUNTER.next_serial(),
-                time,
-            },
-        );
-        pointer.frame(self);
+        self.commit_pointer_location(location, time);
         let trail_sample_time = std::time::Instant::now();
         if self.cursor_locate_animation.is_active(trail_sample_time) {
             self.cursor_trail.record(location, trail_sample_time);
         }
-        self.request_all_output_frames();
     }
 
     /// Routes an absolute pointer device to its assigned enabled output.
@@ -185,18 +165,29 @@ impl AureaCompositor {
             return false;
         };
 
+        self.commit_pointer_location(location, time)
+    }
+
+    /// Commits a validated global pointer location to Smithay and schedules
+    /// presentation on every enabled output.
+    ///
+    /// Relative and absolute devices share this final stage so focus updates,
+    /// Wayland pointer frames and native cursor redraws cannot diverge.
+    fn commit_pointer_location(
+        &mut self,
+        location: Point<f64, smithay::utils::Logical>,
+        time: u32,
+    ) -> bool {
         let Some(pointer) = self.seat.get_pointer() else {
             return false;
         };
+
         let focus = {
             let scene = crate::render::RenderScene::from_window_manager(&self.window_manager);
-            scene.surface_under(location).map(|(surface, surface_origin, _)| {
+            scene.surface_under(location).map(|(surface, origin, _)| {
                 (
                     surface,
-                    Point::from((
-                        f64::from(surface_origin.x),
-                        f64::from(surface_origin.y),
-                    )),
+                    Point::from((f64::from(origin.x), f64::from(origin.y))),
                 )
             })
         };
