@@ -40,6 +40,12 @@ The validator uses only the Python standard library. It checks manifest structur
 
 The builder emits standard Xcursor names plus common Linux/toolkit aliases as symlinks to the canonical images. The compositor normalizes Smithay/W3C names in `input/cursor_theme.rs`, resolves the selected `AureaOS-Light` or `AureaOS-Dark` Xcursor file, decodes the closest supported raster size, converts ARGB pixels to RGBA8 and uploads the selected frames to a per-device Vulkan texture cache. The asset hotspot and actual image dimensions drive per-output geometry. A missing theme or cursor safely falls back to the built-in arrow.
 
-## Not yet implemented
+## Runtime integration and remaining verification
 
-Runtime Xcursor image loading and Vulkan texture selection, fractional scaling and high-DPI review, reduced-motion fallback, animated busy-frame scheduling and full pointer-state tests. Smithay cursor-name normalization is implemented, but the native Vulkan path still renders its built-in arrow for every named cursor. SVG masters and manifests remain source assets until the Xcursor packages are installed and the runtime loader is integrated.
+The compositor resolves the selected `AureaOS-Light` or `AureaOS-Dark` Xcursor file from `AUREA_CURSOR_THEME_ROOT` (default `/usr/share/icons`). A dedicated bounded worker performs file I/O and Xcursor decoding off the render thread. The render thread polls decoded results, submits the selected raster frames to Vulkan, and publishes textures only after their upload fences signal. The selected frame uses its own dimensions and hotspot.
+
+Xcursor animation timing is read from each frame's `delay_ms`; the compositor selects the current frame from a monotonic clock. The event loop schedules 16 ms frames while the `busy` cursor is active and during a short first-use warm-up window so asynchronous decoding/upload can complete without a client input event. Missing theme files continue to fall back to the built-in arrow.
+
+The Debian Live hook builds both palettes from the SVG masters using `rsvg-convert` and `xcursorgen`, installs them under `/usr/share/icons/AureaOS-Light` and `/usr/share/icons/AureaOS-Dark`, and validates all 26 canonical cursor files per theme. The final SquashFS validator repeats the check against the packaged image.
+
+Still open: reduced-motion policy, bounded/LRU cache accounting across many cursor names and monitor scales, animated `left_ptr_watch` if/when its asset becomes animated, fractional/high-DPI visual review, pointer-state tests, and a full Fedora Cargo/ISO verification. These source changes have not yet been built or tested.
