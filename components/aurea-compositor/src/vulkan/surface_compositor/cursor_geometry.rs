@@ -26,7 +26,16 @@ pub(super) fn native_cursor_geometry(
     image_size: (u32, u32),
     hotspot: (u32, u32),
 ) -> Option<(SurfaceGeometry, SurfaceScissor, u32)> {
-    let pointer = scene.native_cursor_pointer_location()?;
+    native_cursor_geometry_at(scene.native_cursor_pointer_location()?, target, image_size, hotspot)
+}
+
+/// Resolves a native cursor rectangle at an arbitrary historical pointer position.
+pub(super) fn native_cursor_geometry_at(
+    pointer: smithay::utils::Point<f64, smithay::utils::Logical>,
+    target: &RenderTarget,
+    image_size: (u32, u32),
+    hotspot: (u32, u32),
+) -> Option<(SurfaceGeometry, SurfaceScissor, u32)> {
     let output_scale = target.effective_scale();
     if !output_scale.is_finite() || output_scale <= 0.0 {
         return None;
