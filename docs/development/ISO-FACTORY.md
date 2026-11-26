@@ -115,7 +115,7 @@ RESUME=1 bash tools/iso/build-live-iso-podman.sh
 
 The default build parent includes the source commit ID, so a new commit receives a fresh workspace instead of accidentally reusing a completed chroot that contains an older `aurea-desktop` binary. If `BUILD_PARENT` was explicitly overridden, pass that exact same value when resuming. Do not start a second build against the same workspace. Do not delete a failed workspace before its logs and cause have been examined.
 
-The inner script stages source using `git archive HEAD`. Therefore, it builds the local checked-out commit, not an automatic live fetch of GitHub. The Fedora synchronization and quality gates above are what ensure that this local commit is the intended current `main` state. The script must not silently pull or change branches during a build.
+The inner script stages source using `git archive HEAD`. It now refuses dirty working trees and writes the full source commit to `.aureaos-source-commit` in each workspace. Resume is allowed only when that marker matches the current commit; legacy workspaces without a marker are rejected rather than trusted. Therefore, it builds the local checked-out commit, not an automatic live fetch of GitHub. The Fedora synchronization and quality gates above ensure that this local commit is the intended current `main` state. The script must not silently pull or change branches during a build.
 
 ### Phase E — Automatic image validation
 
@@ -123,7 +123,7 @@ The current source tree contains a chroot preflight, a UKI/ISO assembly helper, 
 
 - `tools/iso/tests/validate-chroot-boot.sh` — checks required boot packages and live-boot initramfs integration in the target chroot, regenerates initramfs and checks for `scripts/live`.
 - `tools/iso/scripts/build-systemd-boot-live-iso.sh` — assembles an unsigned UKI from the exact Debian kernel/initramfs pair, builds a FAT EFI boot image containing systemd-boot and the UKI entries, removes intermediate GRUB payloads, and remasters the UEFI-only ISO.
-- `tools/iso/tests/validate-live-image.sh` — checks the final EFI image, systemd-boot fallback path, loader entry, UKI sections and embedded `boot=live` command line, plus the Debian Live filesystem and El Torito EFI catalog.
+- `tools/iso/tests/validate-live-image.sh` — checks the final EFI image, systemd-boot fallback path, loader entry, UKI sections and embedded `boot=live` command line, plus the actual SquashFS rootfs: desktop executable, session launcher, systemd unit, PAM definition, service enablement link and 26 generated RGBA8 desktop assets with exact byte lengths. It also checks the El Torito EFI catalog.
 
 The coordinator explicitly stages the chroot boot validator under `/usr/local/libexec/aureaos/` before live-build runs the hook. The hook invokes it after package installation and cleanup. The coordinator then assembles the UKI/EFI image and validates both the staged binary tree and the copied ISO.
 
@@ -133,13 +133,15 @@ The validation layers should cover, at minimum:
 2. Presence and execution of the live-boot initramfs hook and early-boot script.
 3. Successful initramfs generation for the installed kernel.
 4. Presence of `scripts/live` in every selected initramfs.
-5. A non-empty Live filesystem image at `/live/filesystem.squashfs`.
+5. A non-empty Live filesystem image at `/live/filesystem.squashfs`, with the real desktop binary and session integration present inside it.
 6. A FAT EFI image containing `EFI/BOOT/BOOTX64.EFI`, systemd-boot and loader configuration.
 7. One or more UKIs containing the kernel, initramfs, AureaOS os-release metadata and embedded `boot=live` command line.
 8. Matching systemd-boot entries and a valid default entry.
 9. No GRUB or split kernel/initramfs boot payload in the final image.
 10. ISO readability and an El Torito EFI boot catalog referencing the systemd-boot image.
-11. SHA-256 checksum and a machine-readable validation report.
+11. The actual SquashFS rootfs contains the executable desktop, session launcher, systemd/PAM wiring and enabled service.
+12. The two context-menu and 24 Trash RGBA8 assets exist beneath `/usr/share/aureaos/human-interfaces` and have exact expected lengths.
+13. SHA-256 checksum and a machine-readable validation report.
 
 A test that is not implemented or not executed must be marked as pending, not assumed to pass.
 
@@ -209,13 +211,15 @@ The repository already has a working foundation, but ISO Factory is not yet a fu
 - Podman wrapper using a Debian Trixie container.
 - Persistent live-build workspace and workspace serialization with `flock`.
 - Resume path for an interrupted build.
-- Chroot hook that builds and installs the AureaOS desktop binary and session integration.
+- Chroot hook that builds and installs the AureaOS desktop binary and session integration, checks shared-library resolution and systemd unit validity, and generates/installs only the raw RGBA8 runtime artwork.
 - Explicit boot package list including `live-boot-initramfs-tools`.
 - Chroot boot validation script.
-- Binary-tree/ISO boot payload validation script.
+- Binary-tree/ISO boot payload validation script, including inspection of the actual SquashFS rootfs.
 - systemd-boot + UKI EFI image assembly and final UEFI-only ISO mastering.
 - UKI inspection for embedded Live boot parameters and final image validation.
 - Workspace preservation after success or failure in the current inner build script.
+- Source-commit marker and strict same-commit resume guard in the inner coordinator.
+- Debian target dependencies for the always-built TurboJPEG C shim and the enabled HEIF feature; build-only headers and artwork-generation tools are purged after use.
 - SHA-256 sidecars for both the uniquely named candidate and the stable convenience alias.
 - JSON provenance manifest for each validated candidate, including exact source commit, kernel version, image size/hash and hardware-validation state.
 - Atomic promotion of the stable `AureaOS.iso` alias only after validation of the exact temporary ISO; uniquely named historical candidates are preserved.
