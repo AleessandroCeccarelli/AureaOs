@@ -122,14 +122,27 @@ impl TabletProfileStore {
     }
 
     pub fn set(&mut self, identity: String, profile: TabletCalibration) -> io::Result<()> {
-        self.profiles.insert(identity, profile);
-        self.persist()
+        let previous = self.profiles.insert(identity.clone(), profile);
+        if let Err(error) = self.persist() {
+            if let Some(previous) = previous {
+                self.profiles.insert(identity, previous);
+            } else {
+                self.profiles.remove(&identity);
+            }
+            return Err(error);
+        }
+        Ok(())
     }
 
     pub fn remove(&mut self, identity: &str) -> io::Result<bool> {
-        let removed = self.profiles.remove(identity).is_some();
-        if removed { self.persist()?; }
-        Ok(removed)
+        let Some(previous) = self.profiles.remove(identity) else {
+            return Ok(false);
+        };
+        if let Err(error) = self.persist() {
+            self.profiles.insert(identity.to_string(), previous);
+            return Err(error);
+        }
+        Ok(true)
     }
 
     fn persist(&self) -> io::Result<()> {
