@@ -2246,3 +2246,14 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Follow-up: added bounded native cursor texture residency (32 assets / 16 MiB) with least-recently-used eviction. A single animation is limited to 4 MiB; oversized animation data retains its first frame rather than exhausting the shared GPU texture budget.
 - Added pure timing tests for Xcursor per-frame delays, exact frame boundaries, wraparound and zero-delay handling.
 - Verified from the cursor manifest that `busy` defines 12 frames / 1100 ms, while `left_ptr_watch` is currently a static artwork asset; only `busy` is therefore scheduled continuously.
+
+### 2026-11-26 — Startup pointer placement and shake-to-locate review
+
+- Verified the DRM server builder initializes the Wayland pointer before output discovery, publishes the initial outputs, and then calls `center_pointer_on_primary_output()` before registering the Wayland socket. The default cursor image is `CursorImageStatus::default_named()`; the compositor's native cursor path has a first-frame guarantee, so the intended startup presentation is a visible AureaOS arrow at the center of the first enabled output.
+- The current helper selects the first enabled output in registry order; it does not yet model a user-selected primary display. This is sufficient for a single display, but explicit primary-display identity should be added with display settings before relying on it for complex multi-monitor layouts.
+- Added source tests for center-coordinate math, including negative monitor origins, odd logical dimensions and invalid geometry. These tests have not been executed.
+- Verified that shake detection already exists and is enabled by default. It uses each physical device's unaccelerated relative motion, separate per-device histories, three direction reversals and a bounded time/distance window. The existing smooth scale animation peaks at 2.4× and returns to normal in about one second.
+- Apple Support confirms that macOS supports the same locate gesture on both a mouse and a trackpad: quickly move the mouse or finger on the trackpad to temporarily enlarge the pointer. The user does not need to draw a circle; a quick back-and-forth shake is the documented interaction.
+- **Not implemented yet:** a visual pointer trail/ghost effect. Apple's documented built-in feature is temporary enlargement; a trail would be an additional AureaOS visual treatment. The next implementation should keep a short, time-decayed history of pointer positions and render translucent cursor echoes behind the live pointer, with reduced-motion support and a per-device setting.
+- Current detection is fed by the common libinput relative-motion path for registered mice and touchpads. Trackpad hardware validation remains pending; libinput gesture swipe/pinch streams are separate and must not trigger this effect.
+- No Cargo build, rustfmt, check or tests were run.
