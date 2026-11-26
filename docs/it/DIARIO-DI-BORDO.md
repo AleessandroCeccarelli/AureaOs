@@ -2056,3 +2056,7 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Aggiornata la documentazione dei puntatori con percorsi runtime, override per lo sviluppo e limitazioni ancora aperte.
 - **Non verificato in esecuzione:** non sono stati eseguiti `cargo fmt`, build/check/test Cargo, controlli di sintassi shell, build ISO Debian o prove visive su hardware. Le modifiche sono state accumulate senza build a ogni correzione, come concordato.
 - **Da completare:** tutti i fotogrammi vengono caricati nella cache, ma al momento viene disegnato solo il primo. Restano scheduler per le animazioni `busy` / `left_ptr_watch`, caricamento e decodifica fuori dal callback di rendering, revisione della memoria cache multi-monitor, verifica fractional/high-DPI e suite completa su Fedora.
+
+- Correzione successiva: geometria e selezione raster usano ora `RenderTarget::effective_scale()`, mantenendo la scala frazionaria esatta di ogni monitor invece di approssimarla con la vecchia scala intera.
+- Correzione successiva: il validatore dello SquashFS finale estrae e controlla entrambi i temi installati e tutti i 52 file cursore canonici (26 per palette), oltre ai controlli già eseguiti nel chroot.
+- Le ultime modifiche sorgente non sono ancora state compilate né testate; per il commit documentale non risultano check GitHub.
