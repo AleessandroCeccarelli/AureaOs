@@ -2201,3 +2201,9 @@ Correzione pubblicata su `main`:
 - rifiuta i begin duplicati sulla stessa sequenza, evitando di azzerarne gli accumulatori.
 
 Aggiunti test unitari per il rifiuto dei begin duplicati e per la rimozione limitata al dispositivo proprietario. Modifiche sorgente non ancora compilate né eseguite; formattazione, build e test restano da effettuare in un unico passaggio concordato.
+
+### Audit puntatore — protezione avvio gesti (26 novembre 2026)
+
+- Gli handler di inizio swipe, pinch e hold ora verificano prima la disponibilità del puntatore Wayland e solo dopo acquisiscono la proprietà del gesto e inizializzano lo stato semantico. Evitato così uno stato orfano in caso di seat senza puntatore.
+- Corretto un test rimasto agganciato al vecchio metodo `remove_device`: ora verifica `take_device`, coerentemente con l'API effettiva del proprietario dei gesti.
+- Modifiche sorgente e documentazione registrate su `main`. Nessuna build o suite eseguita in questa fase: la validazione Rust resta da eseguire in un unico blocco, come concordato.
