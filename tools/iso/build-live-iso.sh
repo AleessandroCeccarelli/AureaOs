@@ -103,6 +103,9 @@ refresh_inputs() {
     install -m 0755 "$SCRIPT_DIR/hooks/010-build-aureaos.hook.chroot" \
         "$CONFIG_DIR/hooks/live/010-build-aureaos.hook.chroot"
 
+    install -m 0755 "$SCRIPT_DIR/tests/validate-chroot-boot.sh" \
+        "$BOOT_TEST_DIR/validate-chroot-boot.sh"
+
     # Replace only the staged source snapshot, never the live-build chroot.
     rm -rf -- "$SOURCE_DIR"
     mkdir -p -- "$SOURCE_DIR"
