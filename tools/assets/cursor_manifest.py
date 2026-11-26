@@ -17,6 +17,16 @@ EXPECTED_CURSOR_NAMES = {
     "resize-nesw",
     "resize-nwse",
     "busy",
+    "crosshair",
+    "help",
+    "not-allowed",
+    "copy",
+    "alias",
+    "ew-resize",
+    "ns-resize",
+    "pencil",
+    "all-scroll",
+    "left_ptr_watch",
 }
 
 
