@@ -36,7 +36,8 @@ pub struct ShellRuntime {
     session: DesktopSession,
     desktop: DesktopState,
     display_color: DisplayColorController,
-    touchpad_settings: TouchpadSettingsController,\n    pointer_settings: PointerSettingsController,
+    touchpad_settings: TouchpadSettingsController,
+    pointer_settings: PointerSettingsController,
     pending_desktop_interactions: VecDeque<DesktopInteraction>,
     desktop_selection: DesktopSelectionController,
 }
@@ -92,7 +93,12 @@ impl ShellRuntime {
         self.touchpad_settings.set(device, settings).is_ok()
     }
 
-    /// Requests a live profile update for one connected mouse.\n    pub fn set_pointer_settings(&self, device: InputDeviceId, settings: PointerSettings) -> bool {\n        self.pointer_settings.set(device, settings).is_ok()\n    }\n\n    /// Returns the latest effective display adjustment.
+    /// Requests a live profile update for one connected mouse.
+    pub fn set_pointer_settings(&self, device: InputDeviceId, settings: PointerSettings) -> bool {
+        self.pointer_settings.set(device, settings).is_ok()
+    }
+
+    /// Returns the latest effective display adjustment.
     pub fn display_color_adjustment(&self) -> DisplayColorAdjustment {
         self.display_color.adjustment()
     }
