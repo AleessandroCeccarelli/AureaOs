@@ -50,6 +50,24 @@ install -D -m 0644 "$SYSTEMD_SOURCE" /etc/systemd/system/aurea-desktop.service
 install -D -m 0644 "$PAM_SOURCE" /etc/pam.d/aurea-desktop
 install -D -m 0755 "$SESSION_SOURCE" /usr/local/bin/aurea-live-session
 
+# Catch missing runtime libraries while still inside the Debian target rootfs.
+# This is especially important because Cargo only guarantees a successful link
+# against the build container's libraries, not the final Live image contents.
+if ! ldd /usr/local/bin/aurea-desktop > /tmp/aurea-desktop.ldd 2>&1; then
+    cat /tmp/aurea-desktop.ldd >&2
+    echo "Unable to inspect the AureaOS desktop runtime dependencies." >&2
+    exit 1
+fi
+if grep -Fq 'not found' /tmp/aurea-desktop.ldd; then
+    cat /tmp/aurea-desktop.ldd >&2
+    echo "AureaOS desktop has unresolved shared-library dependencies in Debian." >&2
+    exit 1
+fi
+rm -f /tmp/aurea-desktop.ldd
+
+# Validate the exact unit file with Debian's systemd before enabling it.
+systemd-analyze verify /etc/systemd/system/aurea-desktop.service
+
 if ! id aurea >/dev/null 2>&1; then
     useradd --create-home --shell /bin/bash aurea
 fi
@@ -59,6 +77,10 @@ fi
 systemctl --root=/ mask getty@.service
 systemctl --root=/ enable aurea-desktop.service
 systemctl --root=/ set-default multi-user.target
+systemctl --root=/ is-enabled aurea-desktop.service >/dev/null || {
+    echo "AureaOS desktop service was not enabled in the target system." >&2
+    exit 1
+}
 
 # Remove only explicitly listed build tools and development headers.
 # Do not run autoremove: runtime dependencies must remain in the live image.
