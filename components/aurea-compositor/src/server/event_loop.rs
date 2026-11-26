@@ -76,6 +76,7 @@ impl WaylandServer {
         let drm_session = session::create_session()?;
         let (interactions, _receiver) = desktop_interaction_channel();
         let (_touchpad_controller, touchpad_settings) = touchpad_settings_channel();
+        let (_pointer_controller, pointer_settings) = pointer_settings_channel();
         Self::build(
             socket_name,
             Some(drm_session),
@@ -107,6 +108,7 @@ impl WaylandServer {
             display_color,
             interactions,
             touchpad_settings,
+            pointer_settings,
         )
     }
 
@@ -215,6 +217,7 @@ impl WaylandServer {
 
                 #[cfg(feature = "drm")]
                 super::input::apply_pending_touchpad_settings(&mut self.state);
+                #[cfg(feature = "drm")]
                 super::input::apply_pending_pointer_settings(&mut self.state);
 
                 #[cfg(feature = "drm")]
