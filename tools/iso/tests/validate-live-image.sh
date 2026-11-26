@@ -42,10 +42,10 @@ trap cleanup EXIT
 if [[ "$MODE" == "--iso" ]]; then
     [[ -s "$TARGET" ]] || fail "ISO is missing or empty: $TARGET"
     command -v xorriso >/dev/null 2>&1 || fail "xorriso is required to inspect the ISO"
-    mkdir -p "$TEMP_DIR/live"
+    mkdir -p "$TEMP_DIR/live" "$TEMP_DIR/boot"
     xorriso -osirrox on -indev "$TARGET" \
         -extract /live "$TEMP_DIR/live" \
-        -extract /boot/efi.img "$TEMP_DIR/efi.img" >/dev/null 2>&1 ||
+        -extract /boot/efi.img "$TEMP_DIR/boot/efi.img" >/dev/null 2>&1 ||
         fail "cannot extract the Live payload or EFI boot image"
     ROOT="$TEMP_DIR"
     REPORT="$(xorriso -indev "$TARGET" -report_el_torito as_mkisofs 2>&1)" ||
