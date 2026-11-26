@@ -271,3 +271,8 @@ No build or test run was performed; the grouped validation remains pending.
 ## Reporting mutuamente esclusivo delle modalità di scorrimento
 
 Il report touchpad distingue tre casi: `Applied` quando la modalità richiesta è stata impostata, `Unsupported` quando il dispositivo non espone la capacità e `NotRequested` quando l'opzione è inattiva perché è stata scelta la modalità alternativa. Lo scorrimento a due dita e quello ai bordi sono mutuamente esclusivi: il report non deve presentare entrambe le modalità come applicate. `all_applied()` ignora `NotRequested` ma non `Unsupported` o `Failed`.
+
+
+### Modalità senza scorrimento
+
+Quando l'utente sceglie esplicitamente `NoScroll`, entrambe le modalità di scorrimento (a due dita e dai bordi) sono `NotRequested`. Non vanno riportate come `Applied`: il successo riguarda la scelta di non usare quei gesti, non l'applicazione di una delle due modalità.
