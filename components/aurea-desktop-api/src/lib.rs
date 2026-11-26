@@ -78,6 +78,6 @@ pub trait CompositorFactory: Send + Sync + 'static {
         display_color: DisplayColorController,
         interactions: DesktopInteractionSender,
         touchpad_settings: std::sync::mpsc::Receiver<input::TouchpadSettingsCommand>,
-        pointer_settings: std::sync::mpsc::Receiver<input::PointerSettingsCommand>,
+        pointer_settings: std::sync::mpsc::Receiver<input::PointerSettingsCommand>,\n        desktop_pointer_behavior: std::sync::mpsc::Receiver<input::DesktopPointerBehaviorCommand>,
     ) -> io::Result<Box<dyn CompositorService>>;
 }
