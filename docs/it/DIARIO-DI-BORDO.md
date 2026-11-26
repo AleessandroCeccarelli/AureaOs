@@ -2174,3 +2174,8 @@ Aggiunti log `tracing::info` nei due passaggi che servono a diagnosticare il pri
 ### 26 novembre 2026 — Geometria della freccia su monitor HiDPI
 
 Aggiunto un test mirato per il posizionamento del cursore nativo su output con scala 2×: verifica conversione coordinate logiche/fisiche, dimensioni raster 64×64 e hotspot scalato. Il test completa i casi già presenti per monitor primario 1× e puntatore collocato su un altro monitor. Non eseguito; nessuna build avviata.
+
+
+### 26 novembre 2026 — Percorso comune di aggiornamento del puntatore
+
+Separata in `compositor/pointer.rs` la fase finale comune ai movimenti relativi e assoluti: calcolo del focus sulla superficie, aggiornamento Smithay, invio del frame Wayland e richiesta dei frame di output. Mouse/touchpad e dispositivi assoluti mantengono distinti i rispettivi calcoli e vincoli; condividono soltanto il commit della posizione già validata. La modifica riduce duplicazione e impedisce che i due percorsi divergano nella richiesta di ridisegno. Nessuna build o test eseguiti.
