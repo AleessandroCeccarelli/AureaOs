@@ -86,6 +86,7 @@ for KERNEL in "${KERNELS[@]}"; do
     UKI_PATH="$WORK_DIR/$UKI_NAME"
 
     ukify build \
+        --stub="$UKI_STUB" \
         --linux="$KERNEL" \
         --initrd="$INITRD" \
         --cmdline="$CMDLINE" \
