@@ -404,7 +404,7 @@ impl AureaCompositor {
             .now()
             .as_millis() as u32;
         self.release_pointer_buttons_for_device(device, time);
-        self.clear_pointing_device_state(device);
+        self.clear_pointing_device_state(device, time);
         self.pointer_manager.disconnect(device)
     }
 
