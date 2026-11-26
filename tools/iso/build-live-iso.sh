@@ -121,10 +121,9 @@ refresh_inputs() {
     mkdir -p -- "$SOURCE_DIR"
     git -C "$REPO_ROOT" archive --format=tar HEAD \
         Cargo.toml Cargo.lock components tools/iso/pam tools/iso/systemd tools/iso/scripts \
-        tools/assets/render-context-menu.sh tools/assets/render-trash-icons.sh tools/assets/png_to_rgba.py \
+        tools/assets/render-context-menu.sh tools/assets/png_to_rgba.py \
         aurea-human-interfaces/fonts/source/google-fonts/noto-sans \
-        aurea-human-interfaces/icons/source/system/context-menu \
-        aurea-human-interfaces/icons/source/system/trash |
+        aurea-human-interfaces/icons/source/system/context-menu |
         tar -xf - -C "$SOURCE_DIR"
 
     [[ -s "$SOURCE_DIR/Cargo.toml" && -s "$SOURCE_DIR/Cargo.lock" ]] || {
