@@ -274,6 +274,30 @@ mod tests {
     }
 
     #[test]
+    fn panel_snapshot_tracks_overview_expose_and_dismissal() {
+        let (sender, receiver) = desktop_interaction_channel();
+
+        sender.send(DesktopInteraction::ShowOverview).unwrap();
+        assert_eq!(sender.active_panel(), Some(DesktopPanelKind::Overview));
+        assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::ShowOverview));
+
+        sender.send(DesktopInteraction::ShowAppExpose).unwrap();
+        assert_eq!(sender.active_panel(), Some(DesktopPanelKind::AppExpose));
+        assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::ShowAppExpose));
+
+        let position = DesktopPosition { x: 80, y: 120 };
+        sender.send(DesktopInteraction::ShowContextMenu { position }).unwrap();
+        assert_eq!(sender.active_panel(), Some(DesktopPanelKind::ContextMenu));
+        assert_eq!(sender.context_menu_position(), Some(position));
+        assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::ShowContextMenu { position }));
+
+        sender.send(DesktopInteraction::DismissContextMenu).unwrap();
+        assert_eq!(sender.active_panel(), None);
+        assert_eq!(sender.context_menu_position(), None);
+        assert_eq!(receiver.try_recv(), Ok(DesktopInteraction::DismissContextMenu));
+    }
+
+    #[test]
     fn receiver_reports_disconnected_sender() {
         let (sender, receiver) = desktop_interaction_channel();
         drop(sender);
