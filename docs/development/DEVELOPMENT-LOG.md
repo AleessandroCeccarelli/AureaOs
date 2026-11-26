@@ -2338,3 +2338,7 @@ Named the 24 ms cursor-trail sampling interval and added unit tests for high-fre
 ### 2026-11-26 — Cursor warm-up after hotplug and session resume
 
 Centralized cursor warm-up in `center_pointer_on_primary_output()`. The initial asset-loading window now restarts after pointer recentering caused by output publication/hotplug or libseat session restoration, not only during the first server startup. This keeps frames flowing while a stationary pointer's texture is prepared for the newly available output. Removed the duplicate warm-up call from the DRM builder. Source-only change; not yet built or physically verified on Fedora.
+
+### 2026-11-26 — Default cursor scene contract regression checks
+
+Extended `RenderScene` tests: the default named cursor must preserve the global pointer anchor and canonical `default` asset name, in addition to its hotspot-adjusted origin. `CursorImageStatus::Hidden` must leave the native cursor location, anchor and asset absent. These checks protect the minimum visible-arrow path rather than adding features. Tests were added but not run; no build was started.
