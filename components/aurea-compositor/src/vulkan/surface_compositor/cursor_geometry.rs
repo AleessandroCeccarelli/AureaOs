@@ -64,3 +64,48 @@ pub(super) fn native_cursor_geometry(
 
     Some((geometry, scissor, texture_transform))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        output::{DisplayOutput, OutputMode},
+        window_manager::WindowManager,
+    };
+    use smithay::input::pointer::CursorImageStatus;
+    use smithay::utils::{Logical, Point};
+
+    fn target() -> RenderTarget {
+        let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
+        let output = DisplayOutput::new(7, "DP-1", vec![mode], mode, 1).unwrap();
+        RenderTarget::from_output(&output, (0, 0)).unwrap()
+    }
+
+    #[test]
+    fn default_arrow_has_drawable_geometry_on_the_primary_output() {
+        let windows = WindowManager::new();
+        let pointer = Point::<f64, Logical>::from((960.0, 540.0));
+        let status = CursorImageStatus::default_named();
+        let scene = RenderScene::from_window_manager(&windows)
+            .with_cursor(&status, Some(pointer), 1.0);
+
+        let geometry = native_cursor_geometry(&scene, &target());
+
+        assert!(geometry.is_some(), "default arrow must intersect its output");
+        let (surface, scissor, _) = geometry.unwrap();
+        assert_eq!(surface.width(), 32);
+        assert_eq!(surface.height(), 32);
+        assert!(scissor.width > 0 && scissor.height > 0);
+    }
+
+    #[test]
+    fn cursor_on_another_monitor_is_not_drawn_on_this_output() {
+        let windows = WindowManager::new();
+        let pointer = Point::<f64, Logical>::from((2200.0, 540.0));
+        let status = CursorImageStatus::default_named();
+        let scene = RenderScene::from_window_manager(&windows)
+            .with_cursor(&status, Some(pointer), 1.0);
+
+        assert!(native_cursor_geometry(&scene, &target()).is_none());
+    }
+}
