@@ -101,19 +101,19 @@ bash tools/iso/build-live-iso-podman.sh
 The wrapper currently:
 - uses a Debian Trixie slim container for the live-build environment;
 - mounts the repository read-only;
-- uses a persistent build-parent directory and a workspace lock;
+- uses a persistent, source-commit-specific build-parent directory by default and a workspace lock;
+- refuses to build when the repository contains uncommitted or untracked changes, because the source snapshot is created from `git archive HEAD`;
 - delegates the actual image generation to `tools/iso/build-live-iso.sh`;
 - publishes a uniquely named, validated historical candidate plus JSON manifest and SHA-256 sidecar in `~/Documenti` by default;
 - updates the stable `AureaOS.iso` convenience alias and checksum only after both binary-tree and exact-ISO validation pass.
 
-For an interrupted build, the current wrapper supports resuming the same workspace:
+For an interrupted build, rerun from the same clean checkout and commit:
 
 ```bash
-RESUME=1 BUILD_PARENT=/absolute/path/to/aureaos-podman-build \
-  bash tools/iso/build-live-iso-podman.sh
+RESUME=1 bash tools/iso/build-live-iso-podman.sh
 ```
 
-Use the same build parent that contains the interrupted workspace. Do not start a second build against the same workspace. Do not delete a failed workspace before its logs and cause have been examined.
+The default build parent includes the source commit ID, so a new commit receives a fresh workspace instead of accidentally reusing a completed chroot that contains an older `aurea-desktop` binary. If `BUILD_PARENT` was explicitly overridden, pass that exact same value when resuming. Do not start a second build against the same workspace. Do not delete a failed workspace before its logs and cause have been examined.
 
 The inner script stages source using `git archive HEAD`. Therefore, it builds the local checked-out commit, not an automatic live fetch of GitHub. The Fedora synchronization and quality gates above are what ensure that this local commit is the intended current `main` state. The script must not silently pull or change branches during a build.
 
