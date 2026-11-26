@@ -1011,7 +1011,7 @@ The ISO path was statically re-audited from package resolution through the first
 - Added missing `libheif-dev`, `libturbojpeg0-dev` and runtime `libturbojpeg0` to the target package manifest. `aurea-media` always builds its TurboJPEG C shim; the production desktop also enables HEIF. Build-only headers are purged after the binary is installed.
 - Inner build workspaces now carry `.aureaos-source-commit`; dirty trees, missing markers and mismatched commits are rejected on resume.
 - Chroot hook validates `ldd` output, runs `systemd-analyze verify`, and confirms `aurea-desktop.service` is enabled.
-- Chroot hook generates and installs 26 bounded RGBA8 desktop assets (2 context-menu themes + 24 Trash variants) from repository-owned SVG sources, then purges `librsvg2-bin` and Python. Only the raw runtime assets remain under `/usr/share/aureaos/human-interfaces`.
+- Chroot hook generates and installs the two bounded context-menu RGBA8 assets from repository-owned SVG sources, then purges `librsvg2-bin` and Python. Only the artwork currently consumed by the compositor is included under `/usr/share/aureaos/human-interfaces`; Trash rasters remain deferred until the desktop-item draw pass uses them.
 - Fixed Trash descriptor paths to be relative to the installed Human Interfaces root.
 - Final-image validator extracts the actual SquashFS rootfs and verifies desktop executable, session launcher, systemd service, PAM definition, enablement symlink and exact asset payload lengths. Podman image now installs `squashfs-tools`.
 - UKI helper passes the checked Debian `linuxx64.efi.stub` explicitly to `ukify`.
