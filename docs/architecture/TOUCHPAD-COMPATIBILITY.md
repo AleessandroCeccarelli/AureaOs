@@ -306,3 +306,22 @@ but do not duplicate libinput's device-processing logic.
 The mouse/touchpad backend is limited to this integration boundary. Settings UI
 and shell presentation are separate product work; Wacom/tablet support remains
 deferred.
+
+## Focused code audit — 26 November 2026
+
+The current code audit found no justification for replacing the kernel/libinput/Smithay
+input path with another AureaOS service. The existing pointing-device manager and
+registry are retained because they own state that libinput does not own for AureaOS:
+Wayland seat button aggregation across physical devices, per-device preferences,
+device lifecycle notifications and the latest settings-application report.
+
+Removed one redundant API from the touchpad applied-profile cache: invalidate() was
+identical to remove() and had no separate runtime use. The cache now has one operation
+for dropping a device's applied-profile record. No libinput device handle is stored in
+that cache; live handles remain owned by the compositor for as long as the device is
+connected.
+
+The capability snapshot and apply report are retained as integration data for the
+future Settings UI and trusted desktop clients. They are not a second hardware
+capability detector: all values originate from the active libinput device. Do not
+add further status layers or parallel device discovery.
