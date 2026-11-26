@@ -987,3 +987,15 @@ Poi ispezionare checksum/El Torito/ESP e avviare da Ventoy su hardware. Registra
 - Il final validator controlla ora le sezioni `.linux`, `.initrd`, `.osrel`, `.cmdline`, il parametro `boot=live` e `ID=aureaos`.
 - La documentazione chiarisce che il payload finale contiene `/live/filesystem.squashfs` e UKI, non kernel/initramfs separati. Ambito UEFI-only.
 - Anche queste correzioni non sono state sottoposte a `bash -n`, build, ukify, ISO o boot fisico.
+
+## 2026-11-26 — Current Live desktop milestone
+
+- The immediate product target is a bootable Debian Live image that starts the real `aurea-desktop` binary from the repository. Do not begin the installer, disk partitioning, installed-system Btrfs setup, Aurea Update or Aurea Recovery in this milestone.
+- Approved boot policy remains UEFI-only, systemd-boot + UKI, Secure Boot disabled. GRUB may remain an internal `live-build` staging dependency only if required by Debian live-build; it must not remain in the published ISO boot path.
+- `tools/iso/scripts/build-systemd-boot-live-iso.sh` assembles the systemd-boot EFI image and UKI from the Debian Live kernel/initramfs. `tools/iso/tests/validate-chroot-boot.sh` checks the live-boot hook/script and confirms `scripts/live` is embedded in the generated initramfs. `validate-live-image.sh` validates the final UEFI payload.
+- `tools/iso/build-live-iso.sh` now validates the binary tree and exact temporary ISO before publication. It retains uniquely named candidate ISOs, SHA-256 sidecars and JSON provenance manifests; the stable `AureaOS.iso` alias is promoted only after validation.
+- The manifest records the exact Git commit and working-tree cleanliness. The source archive is `git archive HEAD`; uncommitted changes are therefore not included even when the manifest records a dirty working tree. Always commit and push the intended desktop state before generating a release candidate.
+- The Podman wrapper installs the Debian Trixie build tools, including Python 3 for manifest generation. Run the same documented Fedora command; do not install build dependencies on the Fedora host beyond Podman/Git/sudo.
+- **No verification has yet been performed for this publication change:** do not claim the script passes shell syntax checks, UKI generation, ISO validation, QEMU/OVMF or physical boot until those checks are actually run. The previous `/scripts/live` kernel panic is still an open hardware-validation issue.
+- The current ESP image sizing is deliberately guarded. If the UKI does not fit, fail with the explicit size diagnostic; do not silently truncate the UKI or publish an image without it. Measure real Trixie kernel/initramfs/UKI sizes before changing the EFI image sizing strategy.
+- Keep work focused on getting the current desktop and pointer visible in Live mode. No fake/demo desktop and no speculative new applications.
