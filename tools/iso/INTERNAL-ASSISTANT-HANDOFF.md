@@ -1015,6 +1015,7 @@ The ISO path was statically re-audited from package resolution through the first
 - Fixed Trash descriptor paths to be relative to the installed Human Interfaces root.
 - Final-image validator extracts the actual SquashFS rootfs and verifies desktop executable, session launcher, systemd service, PAM definition, enablement symlink and exact asset payload lengths. Podman image now installs `squashfs-tools`.
 - UKI helper passes the checked Debian `linuxx64.efi.stub` explicitly to `ukify`.
+- Added explicit `live-config-systemd` because the image disables APT recommends; the chroot boot preflight now verifies the systemd late-userspace backend as well.
 
 **No execution validation has been performed after these changes.** Do not claim the ISO boots. Next grouped checks on Fedora: `bash -n`/ShellCheck for ISO scripts, build/test Rust, run Podman ISO build, inspect the manifest and validation logs, then QEMU/OVMF and Ventoy hardware boot.
 
