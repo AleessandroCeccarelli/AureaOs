@@ -29,7 +29,6 @@ while (($#)); do
             else
                 [[ -z "$OUTPUT_PATH" ]] || usage
                 OUTPUT_PATH="$2"
-            fi
             shift 2
             ;;
         *) usage ;;
@@ -67,6 +66,9 @@ mkdir -p "$BINARY_DIR/boot" "$BINARY_DIR/EFI"
 
 CMDLINE='boot=live components quiet loglevel=3 systemd.show_status=false live-config.nocomponents=user-setup live-config.nottyautologin'
 DEFAULT_ENTRY=""
+LATEST_KERNEL="$(printf '%s\n' "${KERNELS[@]}" | sort -V | tail -n 1)"
+LATEST_VERSION="${LATEST_KERNEL##*/vmlinuz-}"
+DEFAULT_ENTRY="aureaos-live-$LATEST_VERSION.conf"
 
 # A UKI is generated from the exact kernel/initramfs pair live-build staged.
 # Every installed kernel receives a matching entry; the newest version is default.
@@ -96,9 +98,6 @@ for KERNEL in "${KERNELS[@]}"; do
     printf 'title AureaOS Live (Linux %s)\nefi /EFI/Linux/%s\n' \
         "$VERSION" "$UKI_NAME" > "$WORK_DIR/$ENTRY_NAME"
 
-    if [[ -z "$DEFAULT_ENTRY" ]] || [[ "$(printf '%s\n' "$VERSION" "${DEFAULT_ENTRY#aureaos-live-}" | sed 's/\.conf$//')" != "$VERSION" ]]; then
-        DEFAULT_ENTRY="$ENTRY_NAME"
-    fi
 done
 
 # systemd-boot scans this FAT image as its ESP. No firmware NVRAM entries are
