@@ -448,3 +448,10 @@ unnecessary teardown when libinput supplies additional metadata later.
 
 Source-level change only; grouped Rust formatting, compilation, and tests are
 still pending. Physical hot-unplug/replug validation is also pending.
+
+
+## Per-device preference persistence contract — 2026-11-26
+
+Mouse and touchpad preference updates are accepted only for a currently registered device of the matching class. When the descriptor provides a stable physical identity, the profile store must persist the new profile before the runtime profile is changed. A storage error rejects the update and preserves the previous runtime settings; it must not be reported as a successful live update. If no reliable persistent identity is available, settings may be changed for the current connection/session but are not claimed to be durable.
+
+Default reset values are represented by the standard `PointerSettings::default()` and `TouchpadSettings::default()` values. Saving these values creates/updates an explicit default-valued per-device profile; it does not delete the physical-device profile. A future UI must present this distinction consistently.
