@@ -248,8 +248,6 @@ trap cleanup EXIT
 }
 
 cd "$BUILD_ROOT"
-# Never accept a stale ISO left by an interrupted/resumed build as fresh output.
-find "$BUILD_ROOT" -maxdepth 1 -type f -name '*.iso' -delete
 echo "Building Debian Trixie amd64 Live ISO..."
 sudo lb build
 
