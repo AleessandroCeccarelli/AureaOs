@@ -361,6 +361,24 @@ impl AureaCompositor {
         let device_id = descriptor.id;
         let is_tablet = descriptor.kind == aurea_desktop_api::input::InputDeviceKind::Tablet;
         let persistent_id = descriptor.persistent_id.clone();
+
+        // libinput can re-announce a sysname with a changed capability set.
+        // Treat a class change as a lifecycle boundary so held buttons,
+        // gesture ownership and class-specific state cannot leak across it.
+        if self
+            .pointer_manager
+            .devices()
+            .device(device_id)
+            .is_some_and(|current| current.kind != descriptor.kind)
+        {
+            tracing::info!(
+                device_id = device_id.0,
+                new_kind = ?descriptor.kind,
+                "Pointing device classification changed; resetting its runtime state"
+            );
+            self.disconnect_pointing_device(device_id);
+        }
+
         if !self.pointer_manager.connect(descriptor) {
             return false;
         }
