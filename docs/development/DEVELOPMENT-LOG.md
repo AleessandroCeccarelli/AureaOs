@@ -2298,3 +2298,12 @@ A source-level audit followed the named-cursor path from startup through physica
 **Remaining limitation:** the three-second warm-up is a bounded polling window, not a worker-completion notification. If initial Xcursor file access, decode or upload takes longer than that window and the pointer is never moved, the built-in fallback remains visible until another frame is requested (for example by pointer motion). The pointer itself remains drawable and usable. A future improvement should wake/schedule the compositor from cursor-worker completion rather than extending the high-frequency warm-up arbitrarily.
 
 **Verification boundary:** this was a repository source audit only. No Rust formatting, build, Cargo check/test, boot, physical mouse test or live KMS/Vulkan presentation test was run. The end-to-end path is structurally connected, but hardware operation is not yet proven.
+
+
+### Follow-up — Render polling until native cursor upload completion
+
+- Added a pending-work query to the native cursor texture owner. It remains active while an Xcursor decode request is queued or while one or more Vulkan upload fences are incomplete.
+- Exposed that state through the surface pipeline cache and Vulkan backend.
+- The DRM event loop now treats pending native cursor work as animation activity, requests output frames every 16 ms, and naturally returns to its 100 ms idle dispatch once decode and upload are complete.
+- This polling is backend-independent: both direct Vulkan presentation and the CPU-upload compatibility route use the same per-GPU surface pipeline cache.
+- The built-in fallback arrow remains available throughout. No build or runtime test was run in this source-only change; validation is deferred to the planned Fedora batch check.
