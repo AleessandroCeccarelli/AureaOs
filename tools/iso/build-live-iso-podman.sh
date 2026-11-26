@@ -7,7 +7,12 @@ readonly REPO_ROOT="$(cd -- "$SCRIPT_DIR/../.." && pwd -P)"
 readonly IMAGE="docker.io/library/debian:trixie-slim"
 
 OUTPUT_DIR="${OUTPUT_DIR:-$HOME/Documenti}"
-BUILD_PARENT="${BUILD_PARENT:-${TMPDIR:-/var/tmp}/aureaos-podman-build}"
+command -v git >/dev/null 2>&1 || {
+    echo "Required host command not found: git" >&2
+    exit 1
+}
+readonly SOURCE_COMMIT="$(git -C "$REPO_ROOT" rev-parse --short=12 HEAD)"
+BUILD_PARENT="${BUILD_PARENT:-${TMPDIR:-/var/tmp}/aureaos-podman-build-$SOURCE_COMMIT}"
 RESUME="${RESUME:-0}"
 readonly BUILD_DIR="$BUILD_PARENT/build"
 
@@ -23,7 +28,7 @@ Resume:
 
 Environment:
   OUTPUT_DIR   ISO destination (default: ~/Documenti)
-  BUILD_PARENT Parent of the persistent build workspace
+  BUILD_PARENT Parent of the persistent build workspace (default is commit-specific)
   RESUME       0 for fresh build, 1 to resume a failed build
 USAGE
 }
