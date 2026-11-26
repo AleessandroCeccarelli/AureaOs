@@ -2207,3 +2207,5 @@ Aggiunti test unitari per il rifiuto dei begin duplicati e per la rimozione limi
 - Gli handler di inizio swipe, pinch e hold ora verificano prima la disponibilità del puntatore Wayland e solo dopo acquisiscono la proprietà del gesto e inizializzano lo stato semantico. Evitato così uno stato orfano in caso di seat senza puntatore.
 - Corretto un test rimasto agganciato al vecchio metodo `remove_device`: ora verifica `take_device`, coerentemente con l'API effettiva del proprietario dei gesti.
 - Modifiche sorgente e documentazione registrate su `main`. Nessuna build o suite eseguita in questa fase: la validazione Rust resta da eseguire in un unico blocco, come concordato.
+
+- Audit configurazione touchpad: corretto il report della modalità `NoScroll`. In caso di rifiuto o errore da libinput, le opzioni di scorrimento non vengono più dichiarate erroneamente applicate. Il risultato effettivo di libinput viene propagato al report.
