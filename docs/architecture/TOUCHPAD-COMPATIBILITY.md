@@ -113,12 +113,12 @@ For USB and Bluetooth touchpads, the same capability-driven path is used as for 
 
 ## Next implementation sequence
 
-1. Audit gesture begin/update/end/cancel handling and map only gestures actually emitted by libinput, including cancellation and device removal.
-2. Add detailed capability reporting (tap finger count, supported scroll/click methods, gesture support and DWT/DWTP) for the Settings UI.
+1. Finish the code-level audit of gesture sequencing, cancellation, ownership and action dispatch; keep Wayland client gesture forwarding separate from AureaOS shell actions.
+2. Expose and consume the live touchpad capability and apply-report snapshots in the Settings UI, hiding or disabling unsupported controls.
 3. Verify stable identity behavior on real I2C, PS/2, USB and Bluetooth devices, especially USB port changes and composite input devices.
 4. Verify Debian target kernel driver coverage for representative Synaptics, ELAN, ALPS, Apple and generic HID devices.
 5. Test internal and external USB/Bluetooth HID touchpads, hotplug, suspend/resume and reconnect.
-6. Perform grouped build, formatting, unit tests and hardware validation after the pointing-device work is complete.
+6. Perform grouped formatting, build and unit-test validation after the pointing-device work is complete, followed by physical hardware validation.
 
 ## Research references
 
