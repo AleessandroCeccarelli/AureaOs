@@ -1907,3 +1907,12 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - La riconciliazione della topologia controlla anche se la posizione corrente è diventata esterna all'unione dei monitor attivi durante un grab; in tal caso registra il riposizionamento differito.
 - Dopo ogni dispatch Calloop, il loop DRM ritenta solo se esiste una richiesta pendente. Quando il grab termina, il puntatore viene ricentrato su un output attivo e vengono richiesti i frame.
 - Nessuna build, `cargo fmt`, check o test eseguiti. La verifica di hot-unplug e popup grab resta da fare su Fedora insieme al ciclo di test concordato.
+
+
+### 26 novembre 2026 — Preferenze e shake del puntatore isolate per dispositivo
+
+- Il percorso di movimento relativo ora passa al compositor anche l'identificativo fisico del dispositivo, senza perdere la provenienza dell'evento.
+- La preferenza `shake_to_locate` viene letta dal profilo effettivo del singolo mouse/touchpad, coerentemente con il profilo di accelerazione già applicato in fase di dispatch.
+- Creato `PointerShakeManager`: ogni dispositivo mantiene una cronologia indipendente dei movimenti non accelerati. Lo stato viene eliminato quando il dispositivo viene scollegato o quando la funzione viene disattivata per quel dispositivo.
+- Aggiunti test sorgente per impedire che movimenti alternati provenienti da due dispositivi diversi generino un falso shake e per verificare la pulizia selettiva. Non eseguiti.
+- Nessuna build, `cargo fmt`, check o test eseguiti.
