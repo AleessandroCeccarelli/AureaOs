@@ -29,7 +29,7 @@ while (($#)); do
 done
 [[ -n "$MODE" && -n "$TARGET" ]] || usage
 
-for tool in mdir mcopy mtype ukify grep unsquashfs readlink; do
+for tool in mdir mcopy mtype ukify grep unsquashfs readlink stat; do
     command -v "$tool" >/dev/null 2>&1 || fail "required validation tool not found: $tool"
 done
 
@@ -75,7 +75,9 @@ unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
     etc/systemd/system/aurea-desktop.service \
     etc/pam.d/aurea-desktop \
     etc/systemd/system/multi-user.target.wants/aurea-desktop.service \
-    >/dev/null 2>&1 || fail "cannot inspect the AureaOS desktop session inside filesystem.squashfs"
+    usr/share/aureaos/human-interfaces/icons/generated/context-menu \
+    usr/share/aureaos/human-interfaces/icons/generated/trash \
+    >/dev/null 2>&1 || fail "cannot inspect the AureaOS desktop session and artwork inside filesystem.squashfs"
 
 [[ -x "$ROOTFS/usr/local/bin/aurea-desktop" ]] ||
     fail "AureaOS desktop executable is missing or not executable in the Live rootfs"
@@ -98,6 +100,28 @@ ENABLED_SERVICE="$ROOTFS/etc/systemd/system/multi-user.target.wants/aurea-deskto
     fail "AureaOS desktop service is not enabled in multi-user.target"
 [[ "$(readlink -f "$ENABLED_SERVICE")" == "$ROOTFS/etc/systemd/system/aurea-desktop.service" ]] ||
     fail "AureaOS desktop service enablement link has an unexpected target"
+
+ASSET_ROOT="$ROOTFS/usr/share/aureaos/human-interfaces/icons/generated"
+asset_count=0
+for theme in light dark; do
+    asset="$ASSET_ROOT/context-menu/context-menu-$theme-256.rgba"
+    [[ -s "$asset" ]] || fail "missing $theme context-menu artwork in the Live rootfs"
+    [[ "$(stat -c '%s' "$asset")" == 262144 ]] ||
+        fail "invalid byte length for $theme context-menu artwork"
+    asset_count=$((asset_count + 1))
+
+    for state in empty half full; do
+        for size in 64 96 128 192; do
+            asset="$ASSET_ROOT/trash/trash-$theme-$state-$size.rgba"
+            [[ -s "$asset" ]] || fail "missing Trash artwork: $theme/$state/$size"
+            expected_bytes=$((size * size * 4))
+            [[ "$(stat -c '%s' "$asset")" == "$expected_bytes" ]] ||
+                fail "invalid byte length for Trash artwork: $theme/$state/$size"
+            asset_count=$((asset_count + 1))
+        done
+    done
+done
+[[ "$asset_count" == 26 ]] || fail "expected 26 generated desktop artwork assets, found $asset_count"
 
 # The final image is UEFI-only. No GRUB configuration or split kernel/initrd
 # files should remain in the published Live payload.
