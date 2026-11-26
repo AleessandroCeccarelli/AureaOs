@@ -472,6 +472,11 @@ impl VulkanNativeCursorTexture {
         Ok(())
     }
 
+    /// Reports decode or GPU-upload work that still needs another render poll.
+    pub(crate) fn has_pending_work(&self) -> bool {
+        !self.pending_keys.is_empty() || !self.pending_uploads.is_empty()
+    }
+
     pub(crate) fn asset(
         &self,
         name: &str,
