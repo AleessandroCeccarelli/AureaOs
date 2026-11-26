@@ -10,7 +10,7 @@ use std::io;
 use aurea_desktop_api::{
     CompositorFactory, CompositorService, ShutdownSignal,
     desktop_interaction::DesktopInteractionSender, display::DisplayColorController,
-    input::TouchpadSettingsCommand, keyboard::KeyboardLayoutId, desktop::DesktopTrashState,
+    input::{PointerSettingsCommand, TouchpadSettingsCommand}, keyboard::KeyboardLayoutId, desktop::DesktopTrashState,
 };
 
 use crate::WaylandServer;
@@ -65,7 +65,7 @@ impl CompositorFactory for WaylandCompositorFactory {
         &self,
         display_color: DisplayColorController,
         interactions: DesktopInteractionSender,
-        touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
+        touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,\n        pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         let mut server = WaylandServer::new_with_primary_drm(
             &self.socket_name,
