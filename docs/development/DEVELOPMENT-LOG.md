@@ -2471,3 +2471,9 @@ Changed both mouse and touchpad update paths to validate the registered device c
 Reset semantics were also checked: callers can submit the normal `PointerSettings::default()` or `TouchpadSettings::default()` value. This is stored as an explicit default-valued profile for that physical device, not interpreted as deletion of its identity/profile. No reset UI or delete-profile operation was added.
 
 Source change committed on main. No rustfmt, build, Cargo check or tests were run; grouped Fedora validation and physical mouse/touchpad testing remain pending.
+
+## 2026-11-26 — Avoid redundant mouse/touchpad profile writes
+
+Repeated requests that submit a profile identical to the currently stored per-device value now return without serializing, syncing or renaming the persistent profile file. Both pointer and touchpad stores perform the equality check before mutating their maps. The live libinput configuration path already avoids reapplying unchanged acceleration values and uses its applied-settings cache for touchpad profiles.
+
+The outcome contract remains incomplete: the input registry publishes `TouchpadConfigurationChanged`, but there is no equivalent mouse acceleration result event yet. No synthetic success status was added; queue acceptance is not hardware-application confirmation. The next implementation step is a mouse report derived from actual libinput setter outcomes and exposed through the trusted input-device provider. No build or tests were run.
