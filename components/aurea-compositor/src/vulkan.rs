@@ -73,6 +73,7 @@ mod texture_binding;
 mod texture_layout;
 mod upload_batch;
 mod upload_buffer;
+mod xcursor_file;
 mod wallpaper_texture;
 mod wallpaper_texture_cache;
 
