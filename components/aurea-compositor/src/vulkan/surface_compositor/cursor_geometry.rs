@@ -117,6 +117,6 @@ mod tests {
         let scene = RenderScene::from_window_manager(&windows)
             .with_cursor(&status, Some(pointer), 1.0);
 
-        assert!(native_cursor_geometry(&scene, &target()).is_none());
+        assert!(native_cursor_geometry(&scene, &target(), (32, 32), (5, 3)).is_none());
     }
 }
