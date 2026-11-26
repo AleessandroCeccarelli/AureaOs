@@ -332,7 +332,8 @@ impl AureaCompositor {
                     "busy"
                 )
         );
-        locate_active || cursor_warmup || named_cursor_animated
+        let trail_active = self.cursor_trail.is_active(now);
+        locate_active || trail_active || cursor_warmup || named_cursor_animated
     }
 
     /// Returns the seat-wide registry of connected pointing devices.
