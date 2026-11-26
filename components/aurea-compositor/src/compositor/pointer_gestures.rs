@@ -195,7 +195,7 @@ impl AureaCompositor {
         }
     }
 
-    /// Sends a touchpad swipe-begin event to the focused Wayland client.
+    /// Starts semantic swipe handling and, when present, notifies the focused Wayland client.
     pub fn handle_swipe_begin(
         &mut self,
         device: aurea_desktop_api::input::InputDeviceId,
