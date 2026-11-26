@@ -2362,3 +2362,5 @@ Extracted the common final stage for relative and absolute pointer motion into `
 - Fixed `disconnect_pointing_device`: it now synthesizes releases with a monotonic timestamp before clearing device state and inventory. The `PointerManager` still preserves a seat button while another physical device holds that same button.
 - This prevents applications from retaining a logically pressed mouse/touchpad button after unplug.
 - Commit: `90dec90c`. No build or tests were run; validation remains grouped as requested.
+
+- Extended the lifecycle fix to libinput reclassification: when the same sysname is re-announced with a different device class, the compositor now closes the previous lifecycle, synthesizes pending button releases, and clears stale per-device/gesture state before registering the new class. Commit: `a99c0b60`.
