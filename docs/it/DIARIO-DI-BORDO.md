@@ -2084,3 +2084,7 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - **Ancora da implementare:** la scia visiva. Apple documenta l'ingrandimento temporaneo; la scia sarà un'aggiunta grafica proprietaria AureaOS. La soluzione prevista conserva per poco tempo le posizioni recenti e disegna dietro al puntatore alcune copie traslucide che svaniscono, con supporto a reduced-motion e preferenza per dispositivo.
 - Il rilevamento usa il percorso comune di movimento relativo libinput per mouse e trackpad registrati. La compatibilità fisica dei trackpad resta da provare; gli eventi gesture swipe/pinch sono separati e non devono attivare l'effetto.
 - Nessuna build, `cargo fmt`, check o test eseguiti.
+
+## 26 novembre 2026 — Fondamenta modulari della scia del puntatore
+
+Aggiunto `input/cursor_trail.rs` per una cronologia limitata a tre posizioni, con validazione delle coordinate e dissolvenza lineare di 220 ms; aggiunto `input/cursor_trail_animation.rs` per isolare la durata dei frame della scia. Registrati entrambi i moduli in `input/mod.rs`. I test unitari coprono limite dei campioni, ordinamento dal più recente, dissolvenza/scadenza e coordinate non valide. La fase di disegno Vulkan non è dichiarata completata: manca ancora il rendering delle impronte con alpha corretto, che richiede un percorso dedicato di texture/shader e l'integrazione nella scena. Nessuna build o test eseguito, rispettando il flusso di verifica differita.
