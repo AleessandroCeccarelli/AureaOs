@@ -2295,3 +2295,26 @@ alla modifica esplicita da parte della shell e alla riattivazione della sessione
 L'elaborazione continua del movimento resta interamente a libinput/Smithay.
 Modifica su main, commit `3eb5353`. Nessuna build o test eseguiti; la verifica
 Rust resta nel passaggio cumulativo su Fedora.
+
+
+### 26 novembre 2026 — Verifica geometria puntatore e classificazione dispositivi
+
+Completato il passaggio sull'infrastruttura del puntatore. La classificazione
+mouse/touchpad continua a basarsi sulle capability e sulle opzioni specifiche
+esposte da libinput: nell'API Rust bloccata dal progetto non è emerso un tipo
+universale più affidabile da usare al posto di questi controlli. Le euristiche
+restano limitate alla distinzione delle classi, senza sostituire il rilevamento
+hardware di kernel/udev/libinput.
+
+La geometria globale del puntatore è una responsabilità del compositor: Smithay
+fornisce il seat Wayland e il dispatch verso le superfici, mentre AureaOS deve
+applicare la propria disposizione multi-monitor, impedire che il puntatore resti
+fuori dai display attivi e definire il comportamento nei vuoti tra monitor.
+Il percorso comune di commit aggiorna focus, frame Wayland e richieste di redraw.
+La grafica del cursore resta invece parte dell'identità visiva AureaOS; il
+compositor la presenta usando il percorso grafico nativo.
+
+Non sono state introdotte nuove astrazioni né duplicati di driver o motori input.
+La sola modifica funzionale di questo audit è la rimozione della riapplicazione
+dell'accelerazione mouse ad ogni movimento (commit `3eb5353`). Build, test e
+verifica fisica restano da eseguire in un unico passaggio su Fedora.
