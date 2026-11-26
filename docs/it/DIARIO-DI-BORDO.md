@@ -2188,3 +2188,16 @@ Separata in `compositor/pointer.rs` la fase finale comune ai movimenti relativi 
 - Commit: `90dec90c`. Nessuna build o test eseguiti: le verifiche restano raggruppate come concordato.
 
 - Esteso il fix anche alla riclassificazione dello stesso dispositivo da parte di libinput: se un sysname viene riannunciato con una classe diversa, il compositor chiude prima il vecchio ciclo di vita, sintetizza eventuali rilasci e azzera stato/gesti prima di registrare la nuova classe. Commit: `a99c0b60`.
+
+
+### Audit puntatore — correzione del ciclo di vita gesture (26 novembre 2026)
+
+Nel controllo successivo del blocco mouse/touchpad è stato individuato un secondo caso limite: scollegando fisicamente il touchpad proprietario di una gesture swipe, pinch o hold ancora attiva, il compositor cancellava il proprio stato interno ma non inviava ai client Wayland il corrispondente evento di fine gesture annullata. Un client avrebbe potuto conservare una sequenza protocollo incompleta.
+
+Correzione pubblicata su `main`:
+- prima di rimuovere il dispositivo, il compositor verifica se è il proprietario della gesture attiva;
+- annulla l'accumulatore semantico e invia il relativo evento Wayland di fine con `cancelled = true`;
+- non modifica la gesture eventualmente posseduta da un altro dispositivo;
+- rifiuta i begin duplicati sulla stessa sequenza, evitando di azzerarne gli accumulatori.
+
+Aggiunti test unitari per il rifiuto dei begin duplicati e per la rimozione limitata al dispositivo proprietario. Modifiche sorgente non ancora compilate né eseguite; formattazione, build e test restano da effettuare in un unico passaggio concordato.
