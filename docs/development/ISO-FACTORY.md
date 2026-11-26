@@ -3,7 +3,7 @@
 # AureaOS ISO Factory
 
 **Status:** operating procedure and target specification  
-**Last reviewed:** 2026-11-25  
+**Last reviewed:** 2026-11-26  
 **Repository:** `AleessandroCeccarelli/AureaOs`  
 **Primary branch:** `main`  
 **Target platform:** Debian GNU/Linux 13 (Trixie), amd64
@@ -121,7 +121,8 @@ The inner script stages source using `git archive HEAD`. Therefore, it builds th
 The current source tree contains two focused validation scripts:
 
 - `tools/iso/tests/validate-chroot-boot.sh` — checks required boot packages and live-boot initramfs integration in the target chroot, regenerates initramfs and checks for `scripts/live`.
-- `tools/iso/tests/validate-live-image.sh` — checks the staged binary tree or extracted ISO for kernel/initramfs payload, `scripts/live`, GRUB files, the AureaOS menu entry, `boot=live`, default entry and timeout.
+- `tools/iso/scripts/build-systemd-boot-live-iso.sh` — assembles an unsigned UKI from the exact Debian kernel/initramfs pair, builds a FAT EFI boot image containing systemd-boot and the UKI entries, removes intermediate GRUB payloads, and remasters the UEFI-only ISO.
+- `tools/iso/tests/validate-live-image.sh` — checks the final EFI image, systemd-boot fallback path, loader entry, UKI sections and embedded `boot=live` command line, plus the Debian Live filesystem and El Torito EFI catalog.
 
 The build hook invokes the chroot boot validator after package installation and cleanup. The build coordinator validates the staged binary payload and then validates the copied ISO.
 
@@ -132,11 +133,12 @@ The validation layers should cover, at minimum:
 3. Successful initramfs generation for the installed kernel.
 4. Presence of `scripts/live` in every selected initramfs.
 5. Matching, non-empty kernel and initramfs files under the Live image payload.
-6. GRUB configuration and its included global configuration.
-7. AureaOS boot menu label, `boot=live`, default entry and timeout.
-8. ISO readability and expected boot payload after extraction.
-9. BIOS and UEFI boot structures, including El Torito/EFI evidence, using the available ISO inspection tools.
-10. SHA-256 checksum and a machine-readable validation report.
+6. A FAT EFI image containing `EFI/BOOT/BOOTX64.EFI`, systemd-boot and loader configuration.
+7. One or more UKIs containing the kernel, initramfs, AureaOS os-release metadata and embedded `boot=live` command line.
+8. Matching systemd-boot entries and a valid default entry.
+9. No GRUB or split kernel/initramfs boot payload in the final image.
+10. ISO readability and an El Torito EFI boot catalog referencing the systemd-boot image.
+11. SHA-256 checksum and a machine-readable validation report.
 
 A test that is not implemented or not executed must be marked as pending, not assumed to pass.
 
@@ -147,7 +149,7 @@ Automatic inspection cannot replace a real boot. Copy the candidate ISO to the e
 Record the following separately:
 
 - Did Ventoy load the image?
-- Did GRUB display the AureaOS entry?
+- Did systemd-boot display the AureaOS Live entry?
 - Did the kernel load?
 - Did initramfs complete and locate the Live filesystem?
 - Did systemd reach the expected target?
@@ -210,7 +212,8 @@ The repository already has a working foundation, but ISO Factory is not yet a fu
 - Explicit boot package list including `live-boot-initramfs-tools`.
 - Chroot boot validation script.
 - Binary-tree/ISO boot payload validation script.
-- GRUB branding and configuration checks.
+- systemd-boot + UKI EFI image assembly and final UEFI-only ISO mastering.
+- UKI inspection for embedded Live boot parameters and final image validation.
 - Workspace preservation after success or failure in the current inner build script.
 - SHA-256 sidecar generation.
 
@@ -231,14 +234,14 @@ These are requirements and follow-up tasks, not claims that they are already imp
 
 ## 5. Boot failure currently under investigation
 
-The first generated ISO was readable, had a valid SHA-256, and contained reported BIOS/UEFI boot structures. On the first real Ventoy test, GRUB loaded the Debian kernel, but init failed before the desktop:
+The first GRUB-based test ISO was readable and had a valid SHA-256. On the first real Ventoy test, GRUB loaded the Debian kernel, but init failed before the desktop:
 
 ```text
 init: line 249: can't open '/scripts/live': No such file or directory
 Kernel panic - not syncing: Attempted to kill init: exitcode=0x00000200
 ```
 
-The established fact is that `/scripts/live` was unavailable when init attempted to execute it. The kernel panic followed that init failure. The cause has not yet been isolated. The next ISO session must begin with read-only inspection of the existing ISO's initramfs and related boot configuration, not with a blind rebuild.
+The established fact is that `/scripts/live` was unavailable when init attempted to execute it. The kernel panic followed that init failure. The cause has not yet been isolated. The new factory retains the chroot preflight, regenerates the initramfs after package installation, validates `scripts/live`, and embeds that exact initramfs in the UKI. This is a stronger automated guard, not proof that the previous root cause is fixed until the new image is booted.
 
 No evidence from this failure establishes a GPU, Vulkan or Smithay fault: the system did not reach compositor startup.
 
@@ -267,7 +270,8 @@ No evidence from this failure establishes a GPU, Vulkan or Smithay fault: the sy
 - `tools/iso/build-live-iso.sh` — Debian live-build coordinator.
 - `tools/iso/package-lists/aureaos.list.chroot` — target package manifest.
 - `tools/iso/hooks/010-build-aureaos.hook.chroot` — desktop build and chroot integration.
-- `tools/iso/hooks/020-brand-boot-menu.hook.binary` — GRUB branding.
+- `tools/iso/scripts/build-systemd-boot-live-iso.sh` — UKI, EFI system partition image and final ISO assembly.
+- `tools/iso/os-release` — AureaOS identity embedded in the UKI.
 - `tools/iso/tests/validate-chroot-boot.sh` — chroot boot preflight.
 - `tools/iso/tests/validate-live-image.sh` — staged-image and ISO validation.
 - [Development log](../development/DEVELOPMENT-LOG.md).
