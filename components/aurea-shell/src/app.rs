@@ -56,7 +56,8 @@ fn run_with_shutdown_handler(
 ) -> Result<(), ShellError> {
     let display_color = DisplayColorController::new();
     let (touchpad_settings, touchpad_receiver) = touchpad_settings_channel();
-    let mut runtime = ShellRuntime::with_controllers(display_color.clone(), touchpad_settings);
+    let (pointer_settings, pointer_receiver) = pointer_settings_channel();
+    let mut runtime = ShellRuntime::with_controllers(display_color.clone(), touchpad_settings, pointer_settings);
     let (event_bus, receiver) = EventBus::new();
     let (interaction_sender, interaction_receiver) = desktop_interaction_channel();
 
