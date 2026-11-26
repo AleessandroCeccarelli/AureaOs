@@ -34,6 +34,7 @@ use crate::{
     frame::FrameScheduler,
     input::{
         cursor_animation::CursorLocateAnimation,
+        cursor_trail::CursorTrail,
         interaction::{GestureProfile, InteractionEngine},
         pointer_settings::PointerSettings,
         pointer_shake::PointerShakeManager,
@@ -132,6 +133,7 @@ pub struct AureaCompositor {
     /// Independent shake-detection history for each physical pointer device.
     pointer_shake: PointerShakeManager,
     cursor_locate_animation: CursorLocateAnimation,
+    cursor_trail: CursorTrail,
     /// Keeps frames flowing briefly while the first native cursor asset is decoded and uploaded.
     cursor_asset_warmup_until: Option<std::time::Instant>,
     /// Defers output-driven pointer recentering until any active client grab ends.
@@ -216,6 +218,7 @@ impl AureaCompositor {
             context_menu_consumed_buttons: HashSet::new(),
             pointer_shake: PointerShakeManager::default(),
             cursor_locate_animation: CursorLocateAnimation::default(),
+            cursor_trail: CursorTrail::default(),
             cursor_asset_warmup_until: Some(
                 std::time::Instant::now() + std::time::Duration::from_secs(3),
             ),
