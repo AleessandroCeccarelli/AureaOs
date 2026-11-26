@@ -13,7 +13,13 @@ Original AureaOS SVG pointer artwork and the future cursor-theme build contract 
 
 ## Current inventory
 
-Nine SVG masters: default, pointer, text, grab, grabbing, move, resize-nwse, resize-nesw and busy. Monochrome pointers use the approved white fill and dark outline; the busy indicator is a deliberate color exception.
+Nineteen SVG masters cover normal selection, link, text, precision, help, unavailable, copy, alias, open/closed hand, move/all-scroll, horizontal/vertical/diagonal resize, handwriting, busy and working-in-background. The source artwork currently ships in the high-contrast light-pointer palette (white fill, dark outline).
+
+## Platform role coverage
+
+The theme must package canonical Linux/Xcursor names and compatibility aliases, including `left_ptr`, `default`, `arrow`, `hand2`, `pointer`, `xterm`, `ibeam`, `crosshair`, `help`, `watch`, `wait`, `left_ptr_watch`, `progress`, `not-allowed`, `forbidden`, `no-drop`, `copy`, `alias`, `grab`, `grabbing`, `fleur`, `all-scroll`, `ew-resize`, `ns-resize`, `nwse-resize`, `nesw-resize`, `size_hor`, `size_ver`, `size_fdiag`, `size_bdiag`, `pencil`, `openhand` and `closedhand`. Names are mapped to shared artwork where their semantics match; the theme must not invent visually different meanings for aliases.
+
+Windows additionally distinguishes alternate select, pen, row/column sizing and activity states. macOS distinguishes copy/alias drag feedback, open/closed hand, screenshot selection and directional resize. AureaOS should implement the shared desktop roles first and expose screenshot-specific pointers only in the screenshot tool.
 
 ## Runtime destination
 
@@ -36,4 +42,4 @@ The Rust/Vulkan compositor does not yet consume generated Xcursor assets.
 
 ## Not yet implemented
 
-Xcursor build pipeline, hotspot manifest, automated validation, Smithay cursor loading/state selection, fractional scaling and high-DPI review, reduced-motion fallback and pointer-state tests. SVG sources are not an installed or working cursor theme.
+Xcursor build pipeline, compatibility alias generation, separate light/dark palettes, Smithay cursor loading/state selection, fractional scaling and high-DPI review, reduced-motion fallback and pointer-state tests. SVG sources are not an installed or working cursor theme.
