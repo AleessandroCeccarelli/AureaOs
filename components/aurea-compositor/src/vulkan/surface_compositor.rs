@@ -37,6 +37,7 @@ use crate::{
 };
 
 use cursor_geometry::native_cursor_geometry;
+use cursor_trail_geometry::cursor_trail_draws;
 
 use super::{
     VulkanClearPass, VulkanColorLoad, VulkanCommandBuffer, VulkanDisplayColorPass, VulkanDrawPass,
@@ -330,9 +331,31 @@ pub(super) fn render_frame(
         None
     };
 
+    let cursor_trail = if cursor_texture_ready && !scene.cursor_trail().is_empty() {
+        surface_cache
+            .native_cursor_asset(cursor_name, cursor_theme, requested_cursor_size)
+            .map(|asset| {
+                let frame = asset.frame_at(cursor_frame_time);
+                cursor_trail_draws(
+                    scene,
+                    target,
+                    (frame.width(), frame.height()),
+                    (frame.hotspot_x(), frame.hotspot_y()),
+                )
+            })
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+
     surface_cache
         .ensure_pipeline(composition_view.format())
         .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
+    if !cursor_trail.is_empty() {
+        surface_cache
+            .ensure_cursor_trail_pipeline(composition_view.format())
+            .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
+    }
     let wallpaper_ready = wallpaper_asset_id.is_some_and(|asset_id| {
         surface_cache.wallpaper_texture_for_asset(asset_id).is_some()
     });
@@ -653,6 +676,37 @@ pub(super) fn render_frame(
             surface.texture_transform,
         )
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+    }
+
+    // Historical impressions are composited with their own alpha pipeline.
+    if let Some(binding) = cursor_binding.as_ref() {
+        if !cursor_trail.is_empty() {
+            let trail_pipeline = surface_cache
+                .cursor_trail_pipeline(composition_view.format())
+                .ok_or_else(|| VulkanSurfaceCompositionError::Pipeline(
+                    "The cursor trail pipeline was not cached".to_owned(),
+                ))?;
+            for impression in &cursor_trail {
+                let mut push_constants = [0_u8; 8];
+                push_constants[0..4].copy_from_slice(&impression.texture_transform.to_ne_bytes());
+                push_constants[4..8].copy_from_slice(&impression.opacity.to_ne_bytes());
+                VulkanDrawPass::record_textured_region_with_stage_push_constants(
+                    command_buffer.handle(),
+                    composition_view,
+                    trail_pipeline,
+                    binding,
+                    0,
+                    VulkanImageState::General,
+                    VulkanImageState::General,
+                    VulkanColorLoad::Load,
+                    impression.viewport,
+                    impression.scissor,
+                    &push_constants,
+                    vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT,
+                )
+                .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+            }
+        }
     }
 
     if let (Some((geometry, scissor, texture_transform)), Some(binding)) =
