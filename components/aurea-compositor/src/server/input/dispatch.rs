@@ -97,7 +97,6 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                 if matches!(
                     descriptor.kind,
                     aurea_desktop_api::input::InputDeviceKind::Mouse
-                        | aurea_desktop_api::input::InputDeviceKind::Touchpad
                 ) {
                     let settings = state.compositor.pointer_settings_for(device_id);
                     crate::input::pointer_acceleration::apply(&mut device, settings);
@@ -221,7 +220,6 @@ pub(super) fn dispatch_input_event(event: InputEvent<LibinputInputBackend>, stat
                     matches!(
                         descriptor.kind,
                         aurea_desktop_api::input::InputDeviceKind::Mouse
-                            | aurea_desktop_api::input::InputDeviceKind::Touchpad
                     )
                 })
             {
