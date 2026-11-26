@@ -2006,3 +2006,4 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - Il container Debian del wrapper Podman installa esplicitamente Python 3 per generare il manifest JSON.
 - Installer, partizionamento, installazione Btrfs, Aurea Update e Aurea Recovery restano fuori ambito. Questo traguardo riguarda soltanto l'avvio Live del desktop reale già presente nel repository.
 - **Non verificato:** nessun controllo di sintassi shell, esecuzione del manifest Python, live-build, generazione UKI, validazione ISO, QEMU/OVMF o avvio fisico è stato eseguito. Il precedente panic `/scripts/live` resta aperto fino all'avvio della nuova immagine su hardware reale.
+- Una revisione statica successiva ha individuato e corretto un percorso incoerente nel validatore ISO: l'immagine EFI viene ora estratta in `boot/efi.img`, esattamente dove il validatore la cerca per i controlli successivi. Commit: `9de7855e`. Correzione non ancora verificata in esecuzione.
