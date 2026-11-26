@@ -407,3 +407,15 @@ The compositor rendering path has been checked against the Shell gesture state:
 - **Validation boundary:** source-level tests cover gesture dispatch, Shell event-loop state changes and context-menu geometry. No build, automated test run, generated-asset visual inspection or physical monitor test was performed during this audit.
 
 Next implementation step: define an immutable, technology-independent panel presentation snapshot (active panel, output-local placement and panel-specific content) shared from Shell to compositor; then implement separate bounded artwork/content preparation and Vulkan draw passes for Overview and App Exposé. Keep context-menu command hit testing and visual geometry sourced from the same layout contract.
+
+
+## Shared panel presentation snapshot — 2026-11-26
+
+The Shell-to-compositor panel state now has a frame-safe shared projection:
+
+- `DesktopInteractionSender` publishes the active panel kind (Overview, App Exposé or Context Menu) through an owned, lock-protected snapshot whenever the corresponding interaction is accepted by the channel.
+- Dismissing the context menu or selecting a context-menu command clears the active-panel projection; opening Overview or App Exposé replaces the previous panel and clears the context-menu anchor.
+- `AureaCompositor::render_scene` samples the active kind and stores it in immutable `RenderScene` state. A render backend can now distinguish panel requests without reaching into Shell state or retaining a lock during GPU work.
+- A Desktop API regression test covers the transitions and context-menu anchor lifecycle.
+
+This is the presentation contract/wiring layer only. No Overview or App Exposé layout, window-thumbnail model, Vulkan texture upload, draw pass, or panel-specific hit testing has been implemented yet. The renderer must still consume this snapshot and build the actual visual surfaces. Context-menu drawing continues through its existing dedicated geometry/asset path.
