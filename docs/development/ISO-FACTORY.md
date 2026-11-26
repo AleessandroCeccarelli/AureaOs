@@ -118,13 +118,13 @@ The inner script stages source using `git archive HEAD`. Therefore, it builds th
 
 ### Phase E — Automatic image validation
 
-The current source tree contains two focused validation scripts:
+The current source tree contains a chroot preflight, a UKI/ISO assembly helper, and a focused final-image validator:
 
 - `tools/iso/tests/validate-chroot-boot.sh` — checks required boot packages and live-boot initramfs integration in the target chroot, regenerates initramfs and checks for `scripts/live`.
 - `tools/iso/scripts/build-systemd-boot-live-iso.sh` — assembles an unsigned UKI from the exact Debian kernel/initramfs pair, builds a FAT EFI boot image containing systemd-boot and the UKI entries, removes intermediate GRUB payloads, and remasters the UEFI-only ISO.
 - `tools/iso/tests/validate-live-image.sh` — checks the final EFI image, systemd-boot fallback path, loader entry, UKI sections and embedded `boot=live` command line, plus the Debian Live filesystem and El Torito EFI catalog.
 
-The build hook invokes the chroot boot validator after package installation and cleanup. The build coordinator validates the staged binary payload and then validates the copied ISO.
+The coordinator explicitly stages the chroot boot validator under `/usr/local/libexec/aureaos/` before live-build runs the hook. The hook invokes it after package installation and cleanup. The coordinator then assembles the UKI/EFI image and validates both the staged binary tree and the copied ISO.
 
 The validation layers should cover, at minimum:
 
@@ -132,7 +132,7 @@ The validation layers should cover, at minimum:
 2. Presence and execution of the live-boot initramfs hook and early-boot script.
 3. Successful initramfs generation for the installed kernel.
 4. Presence of `scripts/live` in every selected initramfs.
-5. Matching, non-empty kernel and initramfs files under the Live image payload.
+5. A non-empty Live filesystem image at `/live/filesystem.squashfs`.
 6. A FAT EFI image containing `EFI/BOOT/BOOTX64.EFI`, systemd-boot and loader configuration.
 7. One or more UKIs containing the kernel, initramfs, AureaOS os-release metadata and embedded `boot=live` command line.
 8. Matching systemd-boot entries and a valid default entry.
@@ -221,14 +221,14 @@ The repository already has a working foundation, but ISO Factory is not yet a fu
 
 - Inspect the existing failed-boot ISO's initramfs on Fedora before another rebuild.
 - Establish why the real boot reported that `/scripts/live` could not be opened. The exact root cause remains unconfirmed.
-- Verify the validator's assumptions against the actual generated image and both BIOS/UEFI paths.
+- Verify the validator's assumptions against the actual generated UEFI image and El Torito EFI path.
 - Make publication atomic: validate a temporary candidate before replacing the stable `AureaOS.iso`. A failed validation must never overwrite the last known candidate.
 - Preserve uniquely named historical ISO artifacts, manifests, reports and logs rather than retaining only one mutable filename.
 - Generate a manifest containing the exact source commit and actual validation results.
 - Persist complete timestamped logs and a concise final report for successful and failed runs.
 - Add explicit, safe cleanup controls; never automatically delete a workspace or historical artifact needed for diagnosis or rollback.
 - Consider caching/versioning the builder container so package installation does not needlessly repeat, without compromising updates or reproducibility.
-- Verify BIOS and UEFI boot and the real Live session on physical hardware.
+- Verify UEFI systemd-boot/UKI boot and the real Live session on physical hardware.
 
 These are requirements and follow-up tasks, not claims that they are already implemented.
 
@@ -255,10 +255,10 @@ No evidence from this failure establishes a GPU, Vulkan or Smithay fault: the sy
 - [ ] Run `cargo test --workspace`.
 - [ ] Run relevant feature-specific checks.
 - [ ] Record command results and exceptions.
-- [ ] Inspect the existing initramfs first while the boot issue remains open.
-- [ ] Run the maintained Podman ISO entry point only after the diagnosis/decision.
+- [ ] If the previous failed ISO is still available, inspect its initramfs and retain the old diagnosis.
+- [ ] Run the maintained Podman ISO entry point after grouped Fedora Rust checks.
 - [ ] Confirm chroot and image validation reports pass.
-- [ ] Verify checksum and BIOS/UEFI image structure.
+- [ ] Verify checksum and UEFI El Torito/systemd-boot/UKI image structure.
 - [ ] Boot via the existing Ventoy setup on real hardware.
 - [ ] Record boot, desktop and input-device results.
 - [ ] Preserve ISO, manifest, logs and validation reports.
