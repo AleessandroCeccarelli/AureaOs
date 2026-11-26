@@ -2093,3 +2093,14 @@ Source changes were committed directly to `main`. No Cargo build, `cargo check`,
 - Malformed, invalid or newer-version files are opened read-only and are never overwritten. Devices without a reliable persistent identity continue to use session preferences/defaults rather than being guessed by name or vendor.
 - Added store round-trip, device-isolation, malformed/future-format and invalid-speed source tests.
 - No Cargo build, `cargo fmt`, `cargo check`, tests or physical-device validation were run. Keep verification grouped on Fedora as agreed.
+
+
+### 2026-11-26 — Professional pointer precision and high-rate event path
+
+- Removed periodic synchronous `eprintln!` diagnostics from the relative pointer-motion dispatch and compositor hot path. High-polling-rate mice must not block the input event loop for diagnostic output.
+- Added finite-value validation for accelerated and unaccelerated relative motion samples. Invalid NaN/infinite samples are discarded; valid floating-point sub-pixel deltas are not rounded or quantized.
+- Restricted pointer acceleration application in the motion dispatch path to registered mouse and touchpad classes. Tablet and touchscreen input remain on their dedicated absolute/pen paths.
+- Audited the current scroll path: horizontal/vertical continuous values, v120 values, axis source and relative direction are passed through to the compositor's Wayland axis frame. Existing axis handling validates values and retains high-resolution v120 data.
+- Audited the tablet path: Smithay tablet-tool updates already forward pressure, distance, tilt, rotation, slider and wheel changes when reported by libinput; tablet-tool events are routed separately from mouse acceleration.
+- Added `docs/development/INPUT-PRECISION.md` with professional peripheral requirements, current implementation boundaries and a Fedora hardware-validation matrix.
+- No Cargo build, `cargo fmt`, `cargo check`, unit tests, benchmarks or physical-device validation were run. Keep verification grouped on Fedora as agreed.
