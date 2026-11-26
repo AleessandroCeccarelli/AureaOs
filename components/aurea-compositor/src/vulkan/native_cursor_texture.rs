@@ -184,6 +184,9 @@ struct CachedNativeCursorAsset {
 /// are fence-polled by the render thread and never waited on during normal frames.
 pub(crate) struct VulkanNativeCursorTexture {
     assets: HashMap<String, CachedNativeCursorAsset>,
+    /// Small built-in arrows are uploaded once per requested raster size and
+    /// remain available while the themed Xcursor asset is decoded.
+    fallback_assets: HashMap<u32, VulkanNativeCursorAsset>,
     pending_keys: HashSet<String>,
     pending_uploads: Vec<PendingCursorUpload>,
     decode_tx: Option<SyncSender<CursorDecodeRequest>>,
@@ -221,6 +224,7 @@ impl VulkanNativeCursorTexture {
 
         Self {
             assets: HashMap::new(),
+            fallback_assets: HashMap::new(),
             pending_keys: HashSet::new(),
             pending_uploads: Vec::new(),
             decode_tx: worker.map(|_| request_tx),
@@ -250,7 +254,13 @@ impl VulkanNativeCursorTexture {
     ) -> Result<bool, VulkanNativeCursorTextureError> {
         self.frame = self.frame.wrapping_add(1);
         self.poll_uploads()?;
-        self.poll_decoded_frames(device)?;
+        self.poll_decoded_frames(Arc::clone(&device))?;
+
+        // Never leave the desktop without a pointer while file I/O, Xcursor
+        // decoding or the themed texture upload is still in flight. The
+        // built-in 32x32-derived arrow is tiny and is uploaded only once for
+        // each output raster size; the themed asset replaces it when ready.
+        self.ensure_fallback_cursor(Arc::clone(&device), requested_size)?;
 
         let key = Self::cache_key(name, theme, requested_size);
         if let Some(entry) = self.assets.get_mut(&key) {
@@ -258,11 +268,11 @@ impl VulkanNativeCursorTexture {
             return Ok(true);
         }
         if self.pending_keys.contains(&key) {
-            return Ok(false);
+            return Ok(self.fallback_assets.contains_key(&requested_size));
         }
 
         let Some(sender) = &self.decode_tx else {
-            return Err(VulkanNativeCursorTextureError::WorkerUnavailable);
+            return Ok(self.fallback_assets.contains_key(&requested_size));
         };
         let request = CursorDecodeRequest {
             key: key.clone(),
@@ -276,10 +286,62 @@ impl VulkanNativeCursorTexture {
             }
             Err(TrySendError::Full(_)) => {}
             Err(TrySendError::Disconnected(_)) => {
-                return Err(VulkanNativeCursorTextureError::WorkerUnavailable);
+                return Ok(self.fallback_assets.contains_key(&requested_size));
             }
         }
-        Ok(false)
+        Ok(self.fallback_assets.contains_key(&requested_size))
+    }
+
+    fn ensure_fallback_cursor(
+        &mut self,
+        device: Arc<VulkanLogicalDevice>,
+        requested_size: u32,
+    ) -> Result<(), VulkanNativeCursorTextureError> {
+        if self.fallback_assets.contains_key(&requested_size) {
+            return Ok(());
+        }
+
+        let mut metadata = built_in_arrow_frame(requested_size)?
+            .into_iter()
+            .next()
+            .ok_or(VulkanNativeCursorTextureError::EmptyUpload)?;
+        let snapshot = ShmBufferSnapshot::from_rgba8(
+            metadata.width,
+            metadata.height,
+            metadata.rgba8.clone(),
+        )
+        .map_err(|error| VulkanNativeCursorTextureError::Snapshot(error.to_string()))?;
+        // This one-time upload is deliberately synchronous and extremely small:
+        // the initial arrow must be drawable on the first output frame.
+        let texture = Arc::new(
+            VulkanShmTexture::from_snapshot(device, snapshot)
+                .map_err(VulkanNativeCursorTextureError::Texture)?,
+        );
+        let frame = VulkanNativeCursorFrame {
+            texture,
+            width: metadata.width,
+            height: metadata.height,
+            hotspot_x: metadata.hotspot_x,
+            hotspot_y: metadata.hotspot_y,
+            delay_ms: 0,
+        };
+        metadata.rgba8.clear();
+
+        // Four raster sizes cover normal and high-DPI outputs without allowing
+        // fallback textures to grow without bound.
+        if self.fallback_assets.len() >= 4 {
+            if let Some(oldest_size) = self.fallback_assets.keys().next().copied() {
+                self.fallback_assets.remove(&oldest_size);
+            }
+        }
+        self.fallback_assets.insert(
+            requested_size,
+            VulkanNativeCursorAsset {
+                frames: vec![frame],
+                animation_started_at: Instant::now(),
+            },
+        );
+        Ok(())
     }
 
     fn poll_decoded_frames(
@@ -402,6 +464,7 @@ impl VulkanNativeCursorTexture {
     ) -> Option<&VulkanNativeCursorAsset> {
         self.assets.get(&Self::cache_key(name, theme, requested_size))
             .map(|entry| &entry.asset)
+            .or_else(|| self.fallback_assets.get(&requested_size))
     }
 }
 
