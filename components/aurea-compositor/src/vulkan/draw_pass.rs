@@ -106,6 +106,7 @@ impl VulkanDrawPass {
             None,
             None,
             None,
+            vk::ShaderStageFlags::VERTEX,
         )
     }
 
