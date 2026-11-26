@@ -65,7 +65,8 @@ impl CompositorFactory for WaylandCompositorFactory {
         &self,
         display_color: DisplayColorController,
         interactions: DesktopInteractionSender,
-        touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,\n        pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
+        touchpad_settings: std::sync::mpsc::Receiver<TouchpadSettingsCommand>,
+        pointer_settings: std::sync::mpsc::Receiver<PointerSettingsCommand>,
     ) -> io::Result<Box<dyn CompositorService>> {
         let mut server = WaylandServer::new_with_primary_drm(
             &self.socket_name,
