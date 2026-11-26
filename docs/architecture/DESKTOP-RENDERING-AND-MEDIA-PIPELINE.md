@@ -297,3 +297,7 @@ The native arrow texture is initialized once and cached for the Vulkan device li
 - Each Xcursor frame retains independent size, hotspot and delay metadata. Frame selection uses monotonic elapsed time.
 - The event loop requests 16 ms output frames while the animated `busy` cursor is selected and for a three-second first-use warm-up period, allowing asynchronous first-load work to complete.
 - Cache byte limits/LRU, reduced-motion handling, `left_ptr_watch` animation and physical validation remain open. No Cargo build or test has been run for this change.
+
+- Follow-up: native cursor cache residency is capped at 32 assets / 16 MiB with LRU eviction. A single animation is capped at 4 MiB; oversized sequences keep their first frame.
+- Added GPU-independent tests for per-frame delay selection, frame boundaries, loop wraparound and zero-delay normalization.
+- The current manifest defines `busy` as 12 frames / 1100 ms; `left_ptr_watch` is a static image, so it does not need a frame scheduler.
