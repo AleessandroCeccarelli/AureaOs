@@ -10,7 +10,6 @@ use smithay::utils::Transform;
 use crate::{
     render::{
         RenderScene,
-        cursor::scaled_cursor_origin,
         geometry::{
             SurfaceGeometry, SurfaceScissor, compose_surface_transforms, surface_geometry,
             surface_geometry_with_fractional_scale, surface_transform_index,
@@ -24,17 +23,29 @@ use crate::{
 pub(super) fn native_cursor_geometry(
     scene: &RenderScene<'_>,
     target: &RenderTarget,
+    image_size: (u32, u32),
+    hotspot: (u32, u32),
 ) -> Option<(SurfaceGeometry, SurfaceScissor, u32)> {
-    let location = scene.native_cursor_location()?;
-    let scale = scene.native_cursor_scale();
-    let scaled_width = (crate::render::cursor::DEFAULT_CURSOR_WIDTH as f64 * scale).round() as u32;
-    let scaled_height =
-        (crate::render::cursor::DEFAULT_CURSOR_HEIGHT as f64 * scale).round() as u32;
-    let scaled_location = scaled_cursor_origin(location, scale).into();
+    let pointer = scene.native_cursor_pointer_location()?;
+    let output_scale = target
+        .fractional_scale()
+        .unwrap_or_else(|| f64::from(target.scale()));
+    if !output_scale.is_finite() || output_scale <= 0.0 {
+        return None;
+    }
+    let logical_width = (f64::from(image_size.0) / output_scale).round().max(1.0) as u32;
+    let logical_height = (f64::from(image_size.1) / output_scale).round().max(1.0) as u32;
+    let logical_hotspot_x = f64::from(hotspot.0) / output_scale;
+    let logical_hotspot_y = f64::from(hotspot.1) / output_scale;
+    let location = (
+        (pointer.x - logical_hotspot_x).round() as i32,
+        (pointer.y - logical_hotspot_y).round() as i32,
+    );
+    let scaled_location = location;
     let geometry = if let Some(scale) = target.fractional_scale() {
         surface_geometry_with_fractional_scale(
             scaled_location,
-            (scaled_width, scaled_height),
+            (logical_width, logical_height),
             1,
             Transform::Normal,
             target.logical_origin(),
@@ -43,7 +54,7 @@ pub(super) fn native_cursor_geometry(
     } else {
         surface_geometry(
             scaled_location,
-            (scaled_width, scaled_height),
+            (logical_width, logical_height),
             1,
             Transform::Normal,
             target.logical_origin(),
@@ -89,7 +100,7 @@ mod tests {
         let scene = RenderScene::from_window_manager(&windows)
             .with_cursor(&status, Some(pointer), 1.0);
 
-        let geometry = native_cursor_geometry(&scene, &target());
+        let geometry = native_cursor_geometry(&scene, &target(), (32, 32), (5, 3));
 
         assert!(geometry.is_some(), "default arrow must intersect its output");
         let (surface, scissor, _) = geometry.unwrap();
