@@ -116,8 +116,9 @@ impl AureaCompositor {
             },
         );
         pointer.frame(self);
-        if self.cursor_locate_animation.is_active(std::time::Instant::now()) {
-            self.cursor_trail.record(location, std::time::Instant::now());
+        let trail_sample_time = std::time::Instant::now();
+        if self.cursor_locate_animation.is_active(trail_sample_time) {
+            self.cursor_trail.record(location, trail_sample_time);
         }
         self.request_all_output_frames();
     }
