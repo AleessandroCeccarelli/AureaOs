@@ -2284,3 +2284,14 @@ Verificata nella documentazione della versione Rust `input 0.9.1` la presenza de
 getter `config_click_default_method()` e `config_accel_default_profile()` e dei
 relativi setter. La verifica documentale conferma l'API, ma non sostituisce Cargo
 check e i test sul target Fedora: la validazione cumulativa resta da eseguire.
+
+
+### 26 novembre 2026 — Rimozione della configurazione mouse dal percorso di movimento
+
+L'audit ha rilevato che il profilo di accelerazione veniva nuovamente applicato
+ad ogni evento PointerMotion, anche se libinput aveva già elaborato il movimento.
+Rimosso il passaggio ridondante: le preferenze vengono applicate alla connessione,
+alla modifica esplicita da parte della shell e alla riattivazione della sessione.
+L'elaborazione continua del movimento resta interamente a libinput/Smithay.
+Modifica su main, commit `3eb5353`. Nessuna build o test eseguiti; la verifica
+Rust resta nel passaggio cumulativo su Fedora.
