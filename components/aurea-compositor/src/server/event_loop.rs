@@ -83,6 +83,7 @@ impl WaylandServer {
             DisplayColorController::new(),
             interactions,
             touchpad_settings,
+            pointer_settings,
         )
     }
 
@@ -141,6 +142,7 @@ impl WaylandServer {
         display_color: DisplayColorController,
         interactions: DesktopInteractionSender,
         touchpad_settings: Receiver<TouchpadSettingsCommand>,
+        pointer_settings: Receiver<PointerSettingsCommand>,
     ) -> io::Result<Self> {
         let (event_loop, state) = super::builder::build(
             socket_name,
