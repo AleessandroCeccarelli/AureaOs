@@ -14,6 +14,7 @@ Branch di lavoro: main
 - Da lunedì 23 novembre si lavora sul DESKTOP AureaOS in GitHub.
 - L'utente ha richiesto esplicitamente la migrazione della ISO Factory a systemd-boot + UKI e l'avvio del desktop reale in modalità Live. Le modifiche ISO sono autorizzate su main.
 - La ISO serve soltanto come ambiente Live di sviluppo/test. Installer, partizionamento, installazione Btrfs, Aurea Update e Aurea Recovery sono rinviati.
+- L'utente chiede di non disperdere tempo su manutenzione ripetitiva di boot Debian già stabile: verificare la catena base come prerequisito e concentrare i controlli della factory sul fatto che produca un Debian Live coerente, senza attribuire a Debian i problemi sopra il punto di consegna AureaOS.
 - Non generare ISO né eseguire build/test Rust remoti in questa sessione. L'utente eseguirà la verifica raggruppata su Fedora.
 - L'utente usa Ventoy: copia direttamente `AureaOS.iso` nella partizione dati di Ventoy e la seleziona al boot. NON proporre di preparare/formattare una nuova chiavetta.
 - Lavorare su `main`, senza creare branch salvo richiesta esplicita.
@@ -103,7 +104,7 @@ File letti direttamente da GitHub main e relativi blob SHA:
 - supporta `--resume`; migra vecchio workspace annidato `BUILD_ROOT/config/config` se la struttura è esattamente quella prevista.
 - se resume e chroot esiste ma stage `.build/chroot_hooks` manca, esegue `sudo lb chroot_includes_after_packages --force`.
 - alla fine esegue `sudo lb build`, cerca la ISO, la copia in output e calcola SHA-256.
-- ATTENZIONE: il trap `cleanup` elimina con `sudo rm -rf BUILD_ROOT` l'intero workspace quando la build finisce con status 0. Quindi una build riuscita distrugge il workspace/cache e rende impossibile riutilizzarlo per una successiva build incrementale. Questo è un punto da riprogettare venerdì: preservare workspace e cache in modo sicuro, con pulizia esplicita/opzionale e non automatica dopo successo. Non modificare fino a venerdì.
+- Lo script attuale preserva workspace e cache sia in caso di successo sia di errore; la vecchia nota sul trap che cancellava il workspace è storica e non descrive più `main`.
 - Il controllo di successo attuale verifica solo che esista un file ISO non vuoto e che `lb build` sia terminato: non verifica initramfs, `/scripts/live`, kernel, moduli, pacchetti runtime o boot entries.
 
 ### build-live-iso-podman.sh — comportamento attuale
@@ -116,7 +117,7 @@ File letti direttamente da GitHub main e relativi blob SHA:
 - serializza il workspace con `flock -n`.
 - `RESUME=1` abilita resume.
 - output atteso `~/Documenti/AureaOS.iso` e sidecar sha.
-- Non assumere che un workspace sia preservato dopo una build riuscita: lo script interno lo cancella col trap.
+- Il workspace live-build viene preservato anche dopo il successo; l'assemblaggio UKI ora usa una copia isolata e non consuma i file kernel/initramfs necessari per riprendere una build.
 
 ### 010-build-aureaos.hook.chroot — comportamento attuale
 - verifica sorgenti Cargo e integrazioni sessione.
@@ -1017,6 +1018,6 @@ The ISO path was statically re-audited from package resolution through the first
 - UKI helper passes the checked Debian `linuxx64.efi.stub` explicitly to `ukify`.
 - Added explicit `live-config-systemd` because the image disables APT recommends; the chroot boot preflight now verifies the systemd late-userspace backend as well.
 
-**No execution validation has been performed after these changes.** Do not claim the ISO boots. Next grouped checks on Fedora: `bash -n`/ShellCheck for ISO scripts, build/test Rust, run Podman ISO build, inspect the manifest and validation logs, then QEMU/OVMF and Ventoy hardware boot.
+**No execution validation has been performed after these changes.** Do not claim the ISO boots. The next grouped Fedora check must first run shell syntax checks and the Podman ISO build, then inspect the manifest and validation logs. The Debian base gate is: Debian Trixie rootfs, systemd PID 1, required `live-boot`/`live-config` packages, and `scripts/live` present in the initramfs extracted from the exact UKI. Only after this gate passes should the test continue to the AureaOS service and desktop.
 
 Important desktop boundary: source documentation still marks full scene composition and physical scanout validation incomplete. The Welcome client paints a real SHM preview after receiving XDG configure, but historical logs do not prove that configure or a visible frame was received/presented. The hardware test must capture those milestones explicitly.
