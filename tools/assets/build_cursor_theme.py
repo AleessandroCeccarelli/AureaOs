@@ -27,9 +27,13 @@ def _require_tool(name: str) -> str:
     return executable
 
 
-def build_theme(cursor_directory: Path, output_directory: Path) -> list[str]:
+def build_theme(
+    cursor_directory: Path,
+    output_directory: Path,
+    manifest_path: Path | None = None,
+) -> list[str]:
     cursor_directory = cursor_directory.resolve()
-    manifest_path = cursor_directory / "manifest.toml"
+    manifest_path = (manifest_path or (cursor_directory / "manifest.toml")).resolve()
     manifest = load_manifest(manifest_path)
     errors = validate_manifest(manifest, manifest_path)
     if errors:
@@ -132,6 +136,11 @@ def main(argv: list[str] | None = None) -> int:
         default=Path(__file__).resolve().parents[2] / "aurea-human-interfaces/cursors",
     )
     parser.add_argument(
+        "--manifest",
+        type=Path,
+        help="cursor manifest (use manifest-dark.toml for the dark palette)",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         help="output theme directory (must be inside cursors/generated)",
@@ -141,7 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     output = arguments.output or default_output
 
     try:
-        generated = build_theme(arguments.cursor_dir, output)
+        generated = build_theme(arguments.cursor_dir, output, arguments.manifest)
     except (OSError, RuntimeError, ValueError, subprocess.CalledProcessError) as error:
         print(f"Cursor theme build failed: {error}", file=sys.stderr)
         return 1
