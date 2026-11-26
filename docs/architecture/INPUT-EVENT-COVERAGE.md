@@ -377,3 +377,8 @@ AureaOS's requested trail remains a separate feature: retain a short bounded poi
 ## Native cursor locate trail
 
 The locate gesture records up to three recent global logical pointer positions. Samples are throttled to one every 24 ms and fade linearly over 220 ms. The immutable render-scene snapshot carries these samples to a dedicated Vulkan trail geometry module, which reuses native cursor hotspot handling, output transforms, fractional scaling and per-output clipping. A separate fragment shader receives per-impression opacity through fragment-stage push constants; the trail is composited immediately before the live native cursor. The compositor event loop continues 16 ms frame scheduling while either the locate animation or trail lifetime is active. Client-provided Wayland cursor surfaces and normal surface rendering keep their existing pipeline.
+
+
+## Desktop double-click timing control — 2026-11-26
+
+The desktop click tracker no longer hard-codes its interval in the comparison path. It now stores an interval per compositor instance, defaults to 400 ms, and exposes compositor setter/getter methods in milliseconds. Values are clamped to 150–1000 ms; changing the interval clears a pending first click so two clicks measured under different policies cannot be combined. The spatial threshold remains 4 logical pixels. Unit tests were added for runtime interval changes and clamping. This is a compositor control surface, not yet a Settings UI or persisted user preference. No build or tests were run.
