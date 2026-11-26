@@ -276,3 +276,33 @@ Il report touchpad distingue tre casi: `Applied` quando la modalità richiesta �
 ### Modalità senza scorrimento
 
 Quando l'utente sceglie esplicitamente `NoScroll`, entrambe le modalità di scorrimento (a due dita e dai bordi) sono `NotRequested`. Non vanno riportate come `Applied`: il successo riguarda la scelta di non usare quei gesti, non l'applicazione di una delle due modalità.
+
+## Simplification rule — reuse the Linux input stack
+
+AureaOS does not implement hardware protocols, pointer acceleration, touchpad filtering,
+palm rejection, gesture recognition or external-mouse detection when those functions
+are already provided by the Debian kernel and libinput. The compositor consumes the
+normalized events and capability/configuration API; AureaOS owns only the desktop
+policy, gesture-to-action mapping and user-facing preferences.
+
+In particular:
+- Kernel drivers and evdev remain responsible for hardware transport.
+- udev/libinput remain responsible for device quirks, classification, normalization
+  and supported touchpad gesture recognition.
+- Smithay remains the Wayland compositor integration layer.
+- AureaOS maps supported gestures to workspace/overview actions and exposes only
+  settings advertised by the connected device.
+- DisabledOnExternalMouse is delegated to libinput; AureaOS must not add a parallel
+  external-mouse detector.
+- DeviceDefault means leave the choice to libinput. The apply report marks it
+  NotRequested, not Applied or Unsupported; this avoids claiming AureaOS configured
+  a value it deliberately did not set.
+
+Do not add a new service, registry or capability abstraction unless a concrete
+compositor or shell consumer requires it. Keep the input lifecycle state needed
+for Wayland correctness (for example, button release and gesture cancellation),
+but do not duplicate libinput's device-processing logic.
+
+The mouse/touchpad backend is limited to this integration boundary. Settings UI
+and shell presentation are separate product work; Wacom/tablet support remains
+deferred.
