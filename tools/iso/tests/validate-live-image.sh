@@ -104,10 +104,14 @@ for UKI in "${UKIS[@]}"; do
 
     ukify inspect --all "$UKI" > "$TEMP_DIR/$UKI_NAME.inspect" ||
         fail "ukify cannot inspect $UKI_NAME"
+    for section in .linux .initrd .osrel .cmdline; do
+        grep -Fq "$section" "$TEMP_DIR/$UKI_NAME.inspect" ||
+            fail "$UKI_NAME is missing UKI section $section"
+    done
     grep -Fq 'boot=live' "$TEMP_DIR/$UKI_NAME.inspect" ||
         fail "$UKI_NAME does not embed boot=live"
-    grep -Eiq 'initrd' "$TEMP_DIR/$UKI_NAME.inspect" ||
-        fail "$UKI_NAME has no inspectable initramfs section"
+    grep -Fq 'ID=aureaos' "$TEMP_DIR/$UKI_NAME.inspect" ||
+        fail "$UKI_NAME does not identify AureaOS in .osrel"
     mcopy -i "$ESP_IMAGE" "::/loader/entries/aureaos-live-$VERSION.conf" "$ENTRY" >/dev/null ||
         fail "boot entry for $UKI_NAME is missing"
     grep -Fq "efi /EFI/Linux/$UKI_NAME" "$ENTRY" ||
