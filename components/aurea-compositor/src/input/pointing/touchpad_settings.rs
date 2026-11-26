@@ -80,7 +80,10 @@ pub(super) fn apply(
     let (two_finger_scroll, edge_scrolling) = match requested_scroll_method {
         ScrollMethod::TwoFinger => (selected_scroll_status, TouchpadSettingStatus::NotRequested),
         ScrollMethod::Edge => (TouchpadSettingStatus::NotRequested, selected_scroll_status),
-        ScrollMethod::NoScroll => (selected_scroll_status, selected_scroll_status),
+        ScrollMethod::NoScroll => (
+            TouchpadSettingStatus::NotRequested,
+            TouchpadSettingStatus::NotRequested,
+        ),
         _ => (TouchpadSettingStatus::Unsupported, TouchpadSettingStatus::Unsupported),
     };
 
