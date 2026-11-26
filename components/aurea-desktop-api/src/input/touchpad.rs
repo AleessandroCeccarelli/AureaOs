@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 /// Preferred software clickpad behavior.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum TouchpadClickMethod {
-    /// Preserve the hardware/libinput default for this device.
+    /// Do not request an explicit click-method override from libinput.
     #[default]
     DeviceDefault,
     /// Use the physical/software button areas exposed by the device.
@@ -22,7 +22,7 @@ pub enum TouchpadClickMethod {
 /// Preferred pointer acceleration curve.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum TouchpadAccelerationProfile {
-    /// Preserve the profile selected by libinput for this device.
+    /// Do not request an explicit acceleration-profile override from libinput.
     #[default]
     DeviceDefault,
     /// Constant acceleration factor.
@@ -283,22 +283,6 @@ impl TouchpadApplyReport {
             || matches!(self.send_events_mode, TouchpadSettingStatus::Failed)
     }
 
-    #[test]
-    fn mutually_exclusive_scroll_option_is_reported_as_not_requested() {
-        let mut result = report(TouchpadSettingStatus::Applied);
-        result.edge_scrolling = TouchpadSettingStatus::NotRequested;
-        assert!(result.all_applied());
-        assert!(!result.has_failures());
-
-        result.edge_scrolling = TouchpadSettingStatus::Unsupported;
-        assert!(!result.all_applied());
-
-        result = report(TouchpadSettingStatus::NotRequested);
-        assert!(result.all_applied());
-        result.pointer_speed = TouchpadSettingStatus::Failed;
-        assert!(!result.all_applied());
-    }
-
 }
 
 #[cfg(test)]
@@ -370,6 +354,22 @@ mod tests {
             acceleration_profile: status,
             send_events_mode: status,
         }
+    }
+
+
+    #[test]
+    fn not_requested_settings_are_satisfied_without_hiding_failures() {
+        let mut result = report(TouchpadSettingStatus::NotRequested);
+        assert!(result.all_applied());
+        assert!(!result.has_failures());
+
+        result.pointer_speed = TouchpadSettingStatus::Unsupported;
+        assert!(!result.all_applied());
+        assert!(!result.has_failures());
+
+        result.pointer_speed = TouchpadSettingStatus::Failed;
+        assert!(!result.all_applied());
+        assert!(result.has_failures());
     }
 
     #[test]
