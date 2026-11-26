@@ -72,12 +72,6 @@ shopt -s nullglob
 KERNELS=("$LIVE_DIR"/vmlinuz-*)
 (("${#KERNELS[@]}" > 0)) || fail "no Debian kernel found in /live"
 
-TEMP_ISO="${OUTPUT_PATH}.tmp.$"
-cleanup() {
-    rm -rf -- "$WORK_DIR"
-    rm -f -- "$TEMP_ISO"
-}
-trap cleanup EXIT
 
 readonly ESP_IMAGE="$ASSEMBLY_DIR/boot/efi.img"
 mkdir -p "$ASSEMBLY_DIR/boot"
