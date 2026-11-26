@@ -2034,3 +2034,14 @@ Solo revisione statica del sorgente AureaOS e dell'API Smithay 0.7. Nessuna buil
 - I metadati dei pacchetti Debian Trixie confermano che `live-config` richiede anche un backend per l'init system; poiché l'immagine disabilita le raccomandazioni APT, aggiunto esplicitamente `live-config-systemd` e reso obbligatorio nel preflight chroot.
 - **Non verificato in esecuzione:** non sono stati eseguiti controlli di sintassi shell, build/test Cargo, live-build Debian, generazione UKI, validazione SquashFS, QEMU/OVMF o avvio fisico dopo queste modifiche. Il precedente panic `/scripts/live` resta aperto fino all'avvio della nuova ISO.
 - **Limite desktop:** documentazione e codice del repository indicano ancora incompleta la presentazione fisica e la composizione completa della scena. Il client Wayland Welcome esiste e disegna una superficie preview 720×440 dopo aver ricevuto XDG configure, ma un vecchio log si fermava a “waiting for configure”: non dimostra che la finestra sia apparsa sul monitor. La prova hardware deve includere configure ricevuto, frame SHM inviato, presentazione Vulkan/KMS e immagine visibile.
+
+### 26 novembre 2026 — Inventario e doppia palette dei puntatori
+
+- Confrontati i ruoli dei puntatori di Windows 11, macOS e i nomi convenzionali Xcursor/Linux.
+- Esteso il catalogo AureaOS da 9 a 26 sorgenti SVG: selezione alternativa, aiuto, precisione, divieto, copia, alias, pin, persona, testo verticale, zoom, menu contestuale, penna, ridimensionamento orizzontale/verticale e attività in background, oltre ai ruoli già presenti.
+- Creati 26 master SVG per la palette chiara (riempimento bianco e contorno scuro) e 26 varianti scure (riempimento scuro e contorno bianco).
+- Aggiunti manifest separati `manifest.toml` e `manifest-dark.toml` con hotspot e nomi tema distinti.
+- Il builder ora accetta un manifest alternativo e produce alias Xcursor/Linux comuni (ad esempio `left_ptr`, `hand2`, `xterm`, `watch`, `not-allowed`, `fleur` e le varianti di resize).
+- Aggiornata la CI per costruire e conservare entrambi i temi.
+- Non eseguiti build o test in questa sessione: validazione automatica e packaging sono demandati alla CI; resta da verificare l'aspetto a schermo e l'integrazione runtime Smithay/Vulkan.
+- Decisione UX: palette chiara/scura selezionabile; modalità invertita e colori personalizzati sono una successiva funzione di accessibilità a livello compositor, non un terzo set statico.
