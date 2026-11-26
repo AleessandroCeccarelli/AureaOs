@@ -13,7 +13,7 @@ use crate::{
     desktop::{
         DesktopIconTextureKey, DesktopTheme, WallpaperAsset, WallpaperDecodeService,
         WallpaperDecodeServiceError, WallpaperPixels, desktop_context_menu_asset,
-        load_desktop_icon_snapshot,
+        desktop_icon_asset, load_desktop_icon_snapshot,
     },
     render::shm_buffer::ShmBufferSnapshot,
 };
@@ -311,6 +311,46 @@ impl VulkanSurfacePipelineCache {
             self.context_menu_assets.insert(key, snapshot);
         }
 
+        let Some(snapshot) = self.context_menu_assets.get(&key).and_then(Option::as_ref) else {
+            return Ok(None);
+        };
+        if self.desktop_icon_texture_cache.texture(key).is_none() {
+            self.desktop_icon_texture_cache
+                .prepare(&[(key, snapshot.clone())])
+                .map_err(|error| error.to_string())?;
+        }
+        Ok(Some(key))
+    }
+
+    /// Loads and prepares the canonical artwork for one desktop item.
+    ///
+    /// Decoded RGBA snapshots are retained by texture key, so filesystem access
+    /// occurs only when an artwork variant is first requested. The key includes
+    /// theme, Trash state and raster density through the asset descriptor.
+    pub(crate) fn prepare_desktop_item_texture(
+        &mut self,
+        item: &aurea_desktop_api::desktop::DesktopItem,
+        theme: DesktopTheme,
+        trash_state: aurea_desktop_api::desktop::DesktopTrashState,
+        output_scale: f64,
+    ) -> Result<Option<DesktopIconTextureKey>, String> {
+        let Some(descriptor) = desktop_icon_asset(item, theme, trash_state, output_scale) else {
+            return Ok(None);
+        };
+        let key = descriptor.key;
+        if !self.context_menu_assets.contains_key(&key) {
+            let asset_root = std::env::var_os("AUREA_HUMAN_INTERFACES_ROOT")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("/usr/share/aureaos/human-interfaces"));
+            let snapshot = match load_desktop_icon_snapshot(&asset_root, &descriptor) {
+                Ok((_, snapshot)) => Some(snapshot),
+                Err(error) => {
+                    eprintln!("AureaOS: desktop item artwork unavailable: {error}");
+                    None
+                }
+            };
+            self.context_menu_assets.insert(key, snapshot);
+        }
         let Some(snapshot) = self.context_menu_assets.get(&key).and_then(Option::as_ref) else {
             return Ok(None);
         };
