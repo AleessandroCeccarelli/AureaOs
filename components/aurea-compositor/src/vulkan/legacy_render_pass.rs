@@ -3,56 +3,55 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Vulkan 1.0 render-pass/framebuffer target for the compatibility renderer.
+//! Reusable Vulkan 1.0 render passes and per-image framebuffer targets.
 
 use std::{error::Error, fmt};
 
 use smithay::reexports::ash::vk;
 
-use super::{VulkanColorLoad, VulkanImageView};
+use super::{VulkanColorLoad, VulkanDeviceOwner, VulkanImageView, VulkanLogicalDevice};
 
-/// Errors raised while creating a legacy render-pass target.
+/// Errors raised while creating a legacy render pass or framebuffer target.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VulkanLegacyRenderPassError {
     Creation(vk::Result),
     DeviceMismatch,
+    FormatMismatch,
 }
 
 impl fmt::Display for VulkanLegacyRenderPassError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Creation(error) => {
-                write!(
-                    formatter,
-                    "Legacy Vulkan render-pass creation failed: {error:?}"
-                )
+                write!(formatter, "Legacy Vulkan render-pass creation failed: {error:?}")
             }
             Self::DeviceMismatch => formatter
-                .write_str("Legacy render target and image view use different Vulkan devices"),
+                .write_str("Legacy render pass and image view use different Vulkan devices"),
+            Self::FormatMismatch => formatter
+                .write_str("Legacy render pass and image view use different color formats"),
         }
     }
 }
 
 impl Error for VulkanLegacyRenderPassError {}
 
-/// Owns a traditional render pass and framebuffer for one color image view.
+/// Owns a reusable traditional render pass for one color format.
 ///
-/// The image view is borrowed for the target lifetime. Its image must already
-/// be in COLOR_ATTACHMENT_OPTIMAL before a scope begins and remains in that
-/// layout after the scope ends; callers use VulkanImageTransition for barriers.
-pub struct VulkanLegacyRenderTarget<'view, 'image, 'device> {
-    view: &'view VulkanImageView<'image, 'device>,
+/// The render pass is independent of any particular image view. Create one
+/// framebuffer target per image view with [`Self::create_target`].
+pub struct VulkanLegacyRenderPass<'device> {
+    device: VulkanDeviceOwner<'device>,
     render_pass: vk::RenderPass,
-    framebuffer: vk::Framebuffer,
+    format: vk::Format,
 }
 
-impl<'view, 'image, 'device> VulkanLegacyRenderTarget<'view, 'image, 'device> {
-    /// Creates a one-attachment, single-subpass render pass and framebuffer.
+impl<'device> VulkanLegacyRenderPass<'device> {
+    /// Creates a one-attachment, single-subpass render pass for the view format.
     pub fn new(
-        view: &'view VulkanImageView<'image, 'device>,
+        view: &VulkanImageView<'_, 'device>,
         load: VulkanColorLoad,
     ) -> Result<Self, VulkanLegacyRenderPassError> {
-        let device = view.device().handle();
+        let device = view.device();
         let load_op = match load {
             VulkanColorLoad::Clear(_) => vk::AttachmentLoadOp::CLEAR,
             VulkanColorLoad::Load => vk::AttachmentLoadOp::LOAD,
@@ -92,37 +91,95 @@ impl<'view, 'image, 'device> VulkanLegacyRenderTarget<'view, 'image, 'device> {
                 .src_access_mask(vk::AccessFlags::COLOR_ATTACHMENT_WRITE)
                 .dst_access_mask(vk::AccessFlags::empty()),
         ];
-        let render_pass_info = vk::RenderPassCreateInfo::default()
+        let create_info = vk::RenderPassCreateInfo::default()
             .attachments(&attachment)
             .subpasses(&subpass)
             .dependencies(&dependencies);
-        let render_pass = unsafe { device.create_render_pass(&render_pass_info, None) }
+        let render_pass = unsafe { device.handle().create_render_pass(&create_info, None) }
             .map_err(VulkanLegacyRenderPassError::Creation)?;
 
+        Ok(Self {
+            device: VulkanDeviceOwner::Borrowed(device),
+            render_pass,
+            format: view.format(),
+        })
+    }
+
+    pub fn handle(&self) -> vk::RenderPass {
+        self.render_pass
+    }
+
+    pub fn format(&self) -> vk::Format {
+        self.format
+    }
+
+    /// Creates a framebuffer for one image view without recreating the render pass.
+    pub fn create_target<'pass, 'view, 'image>(
+        &'pass self,
+        view: &'view VulkanImageView<'image, 'device>,
+    ) -> Result<VulkanLegacyRenderTarget<'pass, 'view, 'image, 'device>, VulkanLegacyRenderPassError>
+    {
+        if view.device().handle().handle() != self.device.device().handle().handle() {
+            return Err(VulkanLegacyRenderPassError::DeviceMismatch);
+        }
+        if view.format() != self.format {
+            return Err(VulkanLegacyRenderPassError::FormatMismatch);
+        }
+
         let attachments = [view.handle()];
-        let framebuffer_info = vk::FramebufferCreateInfo::default()
-            .render_pass(render_pass)
+        let create_info = vk::FramebufferCreateInfo::default()
+            .render_pass(self.render_pass)
             .attachments(&attachments)
             .width(view.width())
             .height(view.height())
             .layers(1);
-        let framebuffer = match unsafe { device.create_framebuffer(&framebuffer_info, None) } {
-            Ok(framebuffer) => framebuffer,
-            Err(error) => {
-                unsafe { device.destroy_render_pass(render_pass, None) };
-                return Err(VulkanLegacyRenderPassError::Creation(error));
-            }
-        };
+        let framebuffer = unsafe {
+            self.device
+                .device()
+                .handle()
+                .create_framebuffer(&create_info, None)
+        }
+        .map_err(VulkanLegacyRenderPassError::Creation)?;
 
-        Ok(Self {
+        Ok(VulkanLegacyRenderTarget {
+            render_pass: self,
             view,
-            render_pass,
             framebuffer,
         })
     }
+}
 
+impl Drop for VulkanLegacyRenderPass<'_> {
+    fn drop(&mut self) {
+        unsafe {
+            self.device
+                .device()
+                .handle()
+                .destroy_render_pass(self.render_pass, None);
+        }
+    }
+}
+
+/// Owns a framebuffer and borrows the render pass and image view it connects.
+///
+/// Rust prevents this target from outliving either dependency. The image must
+/// be in COLOR_ATTACHMENT_OPTIMAL before a scope begins and remains in that
+/// layout afterwards; callers use VulkanImageTransition for barriers.
+pub struct VulkanLegacyRenderTarget<'pass, 'view, 'image, 'device> {
+    render_pass: &'pass VulkanLegacyRenderPass<'device>,
+    view: &'view VulkanImageView<'image, 'device>,
+    framebuffer: vk::Framebuffer,
+}
+
+impl<'pass, 'view, 'image, 'device>
+    VulkanLegacyRenderTarget<'pass, 'view, 'image, 'device>
+{
     pub fn render_pass(&self) -> vk::RenderPass {
-        self.render_pass
+        self.render_pass.handle()
+    }
+
+    pub fn framebuffer(&self) -> vk::Framebuffer {
+        self.framebuffer
     }
 
     pub fn extent(&self) -> vk::Extent2D {
@@ -141,14 +198,14 @@ impl<'view, 'image, 'device> VulkanLegacyRenderTarget<'view, 'image, 'device> {
         &'target self,
         command_buffer: vk::CommandBuffer,
         clear_color: [f32; 4],
-    ) -> VulkanLegacyRenderPassScope<'target, 'view, 'image, 'device> {
+    ) -> VulkanLegacyRenderPassScope<'target, 'pass, 'view, 'image, 'device> {
         let clear_values = [vk::ClearValue {
             color: vk::ClearColorValue {
                 float32: clear_color,
             },
         }];
         let begin_info = vk::RenderPassBeginInfo::default()
-            .render_pass(self.render_pass)
+            .render_pass(self.render_pass.handle())
             .framebuffer(self.framebuffer)
             .render_area(vk::Rect2D {
                 offset: vk::Offset2D { x: 0, y: 0 },
@@ -171,13 +228,13 @@ impl<'view, 'image, 'device> VulkanLegacyRenderTarget<'view, 'image, 'device> {
 }
 
 /// RAII guard that balances vkCmdBeginRenderPass with vkCmdEndRenderPass.
-pub struct VulkanLegacyRenderPassScope<'target, 'view, 'image, 'device> {
-    target: &'target VulkanLegacyRenderTarget<'view, 'image, 'device>,
+pub struct VulkanLegacyRenderPassScope<'target, 'pass, 'view, 'image, 'device> {
+    target: &'target VulkanLegacyRenderTarget<'pass, 'view, 'image, 'device>,
     command_buffer: vk::CommandBuffer,
     ended: bool,
 }
 
-impl VulkanLegacyRenderPassScope<'_, '_, '_, '_> {
+impl VulkanLegacyRenderPassScope<'_, '_, '_, '_, '_> {
     pub fn end(mut self) {
         self.end_recording();
     }
@@ -196,18 +253,19 @@ impl VulkanLegacyRenderPassScope<'_, '_, '_, '_> {
     }
 }
 
-impl Drop for VulkanLegacyRenderPassScope<'_, '_, '_, '_> {
+impl Drop for VulkanLegacyRenderPassScope<'_, '_, '_, '_, '_> {
     fn drop(&mut self) {
         self.end_recording();
     }
 }
 
-impl Drop for VulkanLegacyRenderTarget<'_, '_, '_> {
+impl Drop for VulkanLegacyRenderTarget<'_, '_, '_, '_> {
     fn drop(&mut self) {
-        let device = self.view.device().handle();
         unsafe {
-            device.destroy_framebuffer(self.framebuffer, None);
-            device.destroy_render_pass(self.render_pass, None);
+            self.view
+                .device()
+                .handle()
+                .destroy_framebuffer(self.framebuffer, None);
         }
     }
 }
