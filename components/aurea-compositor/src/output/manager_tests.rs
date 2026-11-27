@@ -297,7 +297,7 @@ fn staged_multi_output_configuration_rejects_duplicate_ids_without_mutation() {
         ),
     ]);
 
-    assert_eq!(result, Err(OutputManagerError::DuplicateOutput(23)));
+    assert!(matches!(result, Err(OutputManagerError::DuplicateOutput(23))));
     assert_eq!(manager.registry().get(23).unwrap().current_mode(), original);
     assert_eq!(manager.layout().get(23).unwrap().x(), 0);
 }
