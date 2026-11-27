@@ -401,5 +401,8 @@ fn foreign_acquire_eligibility_requires_kms_release_and_resolved_presentation() 
     assert!(!resource.can_acquire_from_foreign());
     resource.mark_foreign_acquired().unwrap();
     assert!(!resource.can_acquire_from_foreign());
+    assert!(!resource.is_available());
+
+    resource.mark_gpu_complete().unwrap();
     assert!(resource.is_available());
 }
