@@ -360,20 +360,38 @@ pub(super) fn render_frame_legacy<K: Copy>(
         ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
 
-    if let Some(readback) = readback {
+    let submit_result = if let Some(readback) = readback {
         readback.record_transition_and_copy_rgba8(
             device, command_buffer.handle(), output_view, VulkanImageState::General,
-        ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+        ).map_err(|error| VulkanLegacyFrameRecorderError::Command(error.to_string()))?;
         VulkanLegacyFrameRecorder::submit_readback(
             &mut command_buffer, device, output_view, on_submitted,
-        ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+        )
     } else {
         // The scene pass (and optional display-color pass) leaves the output
         // in GENERAL. Do not reuse the pre-frame state after recording has
         // already transitioned and written the image.
         VulkanLegacyFrameRecorder::release_and_submit(
             &mut command_buffer, device, output_view, VulkanImageState::General, on_submitted,
-        ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+        )
+    };
+
+    if let Err(error) = submit_result {
+        if let VulkanLegacyFrameRecorderError::QueueSubmit(queue_error) = error {
+            if queue_error.is_uncertain() {
+                // A failed fence wait plus failed device-idle fallback does not
+                // prove GPU completion. Intentionally retain every frame-owned
+                // framebuffer and the descriptor pool rather than destroy
+                // objects that an in-flight command buffer may still reference.
+                std::mem::forget(clear_target);
+                std::mem::forget(load_target);
+                std::mem::forget(display_target);
+                std::mem::forget(binding_pool);
+                return Err(VulkanSurfaceCompositionError::from_queue_submit_error(queue_error));
+            }
+            return Err(VulkanSurfaceCompositionError::from_queue_submit_error(queue_error));
+        }
+        return Err(VulkanSurfaceCompositionError::Command(error.to_string()));
     }
 
     Ok(())
