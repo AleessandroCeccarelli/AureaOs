@@ -221,3 +221,84 @@ fn staged_configuration_does_not_mutate_live_manager_until_installed() {
     live = staged;
     assert_eq!(live.registry().get(15).unwrap().current_mode(), requested);
 }
+
+#[test]
+fn staged_multi_output_configuration_is_atomic_and_keeps_live_state_unchanged() {
+    let original = OutputMode::new(1920, 1080, 60_000).unwrap();
+    let requested = OutputMode::new(1280, 720, 60_000).unwrap();
+    let mut manager = OutputManager::new();
+    manager
+        .register(
+            DisplayOutput::new(21, "DP-1", vec![original, requested], original, 1).unwrap(),
+            (0, 0),
+        )
+        .unwrap();
+    manager
+        .register(
+            DisplayOutput::new(22, "HDMI-A-1", vec![original, requested], original, 1).unwrap(),
+            (1920, 0),
+        )
+        .unwrap();
+
+    let staged = manager
+        .staged_configurations(&[
+            (
+                21,
+                OutputConfiguration {
+                    mode: Some(requested),
+                    position: Some((0, 0)),
+                    ..OutputConfiguration::default()
+                },
+            ),
+            (
+                22,
+                OutputConfiguration {
+                    mode: Some(requested),
+                    position: Some((1280, 0)),
+                    ..OutputConfiguration::default()
+                },
+            ),
+        ])
+        .unwrap();
+
+    assert_eq!(manager.registry().get(21).unwrap().current_mode(), original);
+    assert_eq!(manager.registry().get(22).unwrap().current_mode(), original);
+    assert_eq!(staged.registry().get(21).unwrap().current_mode(), requested);
+    assert_eq!(staged.registry().get(22).unwrap().current_mode(), requested);
+    assert_eq!(staged.layout().get(22).unwrap().x(), 1280);
+}
+
+#[test]
+fn staged_multi_output_configuration_rejects_duplicate_ids_without_mutation() {
+    let original = OutputMode::new(1920, 1080, 60_000).unwrap();
+    let requested = OutputMode::new(1280, 720, 60_000).unwrap();
+    let mut manager = OutputManager::new();
+    manager
+        .register(
+            DisplayOutput::new(23, "DP-2", vec![original, requested], original, 1).unwrap(),
+            (0, 0),
+        )
+        .unwrap();
+
+    let result = manager.staged_configurations(&[
+        (
+            23,
+            OutputConfiguration {
+                mode: Some(requested),
+                ..OutputConfiguration::default()
+            },
+        ),
+        (
+            23,
+            OutputConfiguration {
+                position: Some((100, 100)),
+                ..OutputConfiguration::default()
+            },
+        ),
+    ]);
+
+    assert_eq!(result, Err(OutputManagerError::DuplicateOutput(23)));
+    assert_eq!(manager.registry().get(23).unwrap().current_mode(), original);
+    assert_eq!(manager.layout().get(23).unwrap().x(), 0);
+}
+
