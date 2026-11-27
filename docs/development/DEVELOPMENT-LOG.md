@@ -2719,3 +2719,12 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - Corrected feedback refresh ordering in failed DRM integration rollback: remove the failed Vulkan backend and DRM device before reconciling the active renderer set.
 - Remaining block work: define a safe feedback state for the no-renderer/session-paused case, and complete surface-specific feedback only where a reliable output-to-render-device mapping exists. Multi-GPU surfaces spanning outputs must not receive arbitrary device preferences.
 - No build, formatting, tests, CI or hardware validation was run, as requested until the video block is complete.
+
+### 2026-11-27 — DMA-BUF feedback withdrawal during renderer loss
+
+- Preserved the last known DRM main-device identity alongside the published feedback state. This identity is retained across a VT pause, where DRM resources are temporarily released and no Vulkan backend remains available.
+- The reconciliation path now publishes a feedback object with an empty main tranche when there are no active renderers or no common safe format/modifier pairs. It also clears the active DMA-BUF import-validation device set, so new DMA-BUF imports fail instead of being acknowledged against stale renderer capabilities.
+- Session pause invokes this reconciliation only after KMS surfaces have been cleared and GBM/Vulkan resources have been torn down. Resume rebuilds the renderer set and replaces the empty feedback through the same path.
+- This uses Smithay 0.7's DmabufFeedbackBuilder::new(main_device, empty_formats) path; its builder accepts an empty format collection and produces an empty main tranche. The global remains alive, avoiding an unsafe destroy/recreate cycle with clients holding existing bindings.
+- Per-surface preference tranches remain intentionally absent: AureaOS currently has no direct-scanout capability contract or authoritative surface-to-render-device mapping, and a surface may span outputs. The conservative global intersection remains the truthful compositing contract; inventing a per-surface GPU preference would be unsafe.
+- No build, formatting, tests, CI or hardware validation was run, in accordance with the instruction to validate only after the complete video block is integrated.
