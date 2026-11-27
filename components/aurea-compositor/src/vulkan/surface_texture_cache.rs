@@ -85,6 +85,9 @@ impl VulkanSurfaceTextureCache {
         active_surface_ids: &[ObjectId],
         visible_surfaces: &[(ObjectId, u64, Arc<ShmBufferSnapshot>)],
     ) -> Result<(), VulkanSurfaceTextureCacheError> {
+        if self.device.is_unusable() {
+            return Err(VulkanSurfaceTextureCacheError::Texture(VulkanShmTextureError::Device(vk::Result::ERROR_DEVICE_LOST)));
+        }
         self.reap_completed_uploads()?;
         self.frame = self.frame.wrapping_add(1);
         let active: HashSet<_> = active_surface_ids.iter().cloned().collect();
