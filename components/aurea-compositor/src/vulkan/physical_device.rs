@@ -112,6 +112,18 @@ impl VulkanContext {
         AureaAdaptiveGraphics::select(&self.adaptive_graphics_candidates())
     }
 
+    /// Returns the AAG plan for one already-discovered physical-device index.
+    pub(super) fn adaptive_graphics_plan_for_device(
+        &self,
+        device_index: usize,
+    ) -> Option<crate::adaptive_graphics::AdaptiveGraphicsPlan> {
+        let candidate = self
+            .adaptive_graphics_candidates()
+            .into_iter()
+            .find(|candidate| candidate.device_index == device_index)?;
+        AureaAdaptiveGraphics::select(&[candidate])
+    }
+
     fn rendering_compatibility_error(
         device: &PhysicalDevice,
         has_graphics_queue: bool,
