@@ -8,6 +8,7 @@
 mod cursor_geometry;
 mod cursor_trail_geometry;
 mod error;
+mod legacy_layers;
 mod readback;
 mod readback_entry;
 mod release;
