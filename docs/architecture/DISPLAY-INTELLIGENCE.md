@@ -332,3 +332,20 @@ A completed VBlank clears the retained previous mode and disarms the unused
 presentation backend. This closes the pre-submission render-abandonment gap;
 it does not yet defer the logical output registry/Wayland mode publication
 until physical VBlank, which remains the outstanding transaction boundary.
+
+## Two-phase output configuration
+
+The compositor now separates validation from publication for output changes.
+`OutputManager::staged_configuration` returns a fully validated candidate
+without mutating the live registry or layout. The compositor exposes
+`prepare_output_configuration` and `commit_prepared_output_configuration`:
+the candidate can be retained while the DRM backend stages the native timing,
+submits the matching framebuffer, and waits for VBlank. Only then should the
+caller commit the candidate and publish the replacement Wayland output.
+
+The existing `configure_output` convenience method still performs an
+immediate logical-only change. It must not be used as the physical modeset
+entry point. The staged API and its isolation test are in place, but the
+end-to-end request queue from display settings through KMS completion to the
+Wayland commit is not yet connected. Until that integration is complete,
+physical mode changes must not be advertised as fully transactional.
