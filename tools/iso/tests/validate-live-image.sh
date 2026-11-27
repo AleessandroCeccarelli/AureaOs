@@ -79,6 +79,7 @@ unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
     usr/lib/systemd/system/multi-user.target etc/systemd/system/default.target \
     var/lib/dpkg/status \
     usr/lib/modules usr/lib/firmware/amdgpu \
+    usr/share/vulkan/icd.d usr/lib/x86_64-linux-gnu/libvulkan_radeon.so \
     usr/share/aureaos/human-interfaces/icons/generated/context-menu \
     usr/share/icons/AureaOS-Light usr/share/icons/AureaOS-Dark \
     >/dev/null 2>&1 || fail "cannot inspect the AureaOS desktop session and artwork inside filesystem.squashfs"
@@ -136,8 +137,12 @@ find "$ROOTFS/usr/lib/firmware/amdgpu" -type f \
     \( -name '*.bin' -o -name '*.bin.xz' -o -name '*.bin.zst' \) \
     -print -quit | grep -q . ||
     fail "AMD GPU firmware payload is missing from the Live rootfs"
-[[ -s "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.x86_64.json" ]] ||
+[[ -s "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.json" ]] ||
     fail "Mesa RADV Vulkan ICD manifest is missing from the Live rootfs"
+grep -Fq '"library_path" : "libvulkan_radeon.so"' "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.json" ||
+    fail "Mesa RADV ICD manifest does not reference the expected Radeon Vulkan driver"
+[[ -s "$ROOTFS/usr/lib/x86_64-linux-gnu/libvulkan_radeon.so" ]] ||
+    fail "Mesa RADV Vulkan driver library is missing from the Live rootfs"
 
 [[ -s "$ROOTFS/etc/systemd/system/aurea-desktop.service" ]] ||
     fail "AureaOS systemd service is missing from the Live rootfs"
