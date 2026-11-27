@@ -301,23 +301,22 @@ impl DrmSurfaceManager {
                 continue;
             }
 
-            // KMS has confirmed that the surface is disabled. Retire only
-            // Vulkan frames whose independent GPU/KMS/foreign ownership
-            // tracker also proves them reusable. The final scanout frame may
-            // remain conservatively quarantined until its lifecycle is resolved.
-            let retirement = {
+            // The successful clear ioctl proves that KMS no longer scans
+            // out the current frame. Convert that external release into an
+            // explicit lifecycle transition, then wait for Vulkan to reacquire
+            // foreign-owned images before releasing their backing allocations.
+            let retirement = (|| {
                 let coordinator = managed.presentation.frame_coordinator_mut();
-                managed.frame_pool.retire_available(coordinator)
-            };
+                if let Some(current) = coordinator.output_disabled()? {
+                    managed
+                        .frame_pool
+                        .acquire_after_foreign_release(current, coordinator)?;
+                }
+                managed.frame_pool.retire_all(coordinator)?;
+                Ok::<(), VulkanDrmFramePoolError>(())
+            })();
             if let Err(error) = retirement {
                 errors.push(format!("output {output_id}: {error}"));
-                continue;
-            }
-            if !managed.frame_pool.is_empty() {
-                errors.push(format!(
-                    "output {output_id}: {} Vulkan scanout frame(s) remain quarantined because their lifecycle is unresolved",
-                    managed.frame_pool.len()
-                ));
                 continue;
             }
 
