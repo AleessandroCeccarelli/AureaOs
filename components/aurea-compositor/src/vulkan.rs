@@ -45,6 +45,7 @@ mod image_allocator;
 mod image_transition;
 mod image_view;
 mod legacy_render_pass;
+mod legacy_render_pass_manager;
 mod logical_device;
 mod logical_device_factory;
 mod memory_type;
@@ -184,6 +185,7 @@ pub use upload_buffer::{VulkanUploadBuffer, VulkanUploadError};
 pub use wallpaper_texture::{VulkanWallpaperTexture, VulkanWallpaperTextureError};
 
 pub(super) use device_owner::VulkanDeviceOwner;
+pub(crate) use legacy_render_pass_manager::VulkanLegacyRenderPassManager;
 pub(super) use pending_upload::VulkanPendingUpload;
 pub(super) use queue_submitter::VulkanQueueSubmitter;
 pub(super) use upload_batch::VulkanUploadBatch;
