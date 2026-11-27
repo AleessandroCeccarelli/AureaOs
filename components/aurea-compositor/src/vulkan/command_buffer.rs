@@ -159,6 +159,9 @@ impl<'device> VulkanCommandBuffer<'device> {
 
 impl Drop for VulkanCommandBuffer<'_> {
     fn drop(&mut self) {
+        if self.device.is_unusable() {
+            return;
+        }
         if self.state == CommandBufferState::Pending {
             let wait_result = unsafe { self.device.handle().device_wait_idle() };
 
