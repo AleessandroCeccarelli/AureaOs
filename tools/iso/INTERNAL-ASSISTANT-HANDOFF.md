@@ -1581,3 +1581,8 @@ The atomic `VulkanLogicalDevice::device_unusable` state is now checked by primar
 ### Vulkan teardown fail-stop audit — 2026-11-27
 
 Extended the terminal-device guard across Vulkan resource destructors: images, image views, framebuffers, render passes, graphics pipelines/layouts, shader modules, samplers, descriptor pools, upload/readback buffers and their memory allocations skip Vulkan destroy/free calls once `VulkanLogicalDevice::is_unusable()` is set. Both borrowed and shared device-owner wrappers are covered. `VulkanLogicalDevice::drop` skips `device_wait_idle` after terminal device loss and intentionally retains the parent instance context. Queue submission checks the atomic before fence creation and again while holding the queue lock. No rustfmt, build, tests, CI or validation-layer run has been performed.
+
+
+### Vulkan cache/pool fail-stop boundary — 2026-11-27
+
+Capture-target and readback-buffer pools reject preparation/acquisition after logical-device loss. SHM surface, desktop-icon and wallpaper caches stop preparation before polling or creating more uploads. Capture-target pool exposes a typed `DeviceLost` error. Partial frame-scheduler construction now quarantines already-created slots if device loss occurs during later slot creation, rather than destroying Vulkan synchronization objects and command pools on the lost device. Pool leases retain their pool/device owner; underlying resource Drop paths skip Vulkan destruction in fail-stop. No formatting, compilation, tests, CI or validation-layer run has been performed.
