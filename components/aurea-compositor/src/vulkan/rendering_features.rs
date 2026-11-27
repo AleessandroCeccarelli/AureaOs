@@ -94,29 +94,37 @@ impl VulkanRenderingCapabilities {
 /// Verified Vulkan 1.3 features required by the currently implemented renderer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VulkanRenderingFeaturePlan {
+    mode: VulkanRendererMode,
     dynamic_rendering: bool,
     synchronization2: bool,
 }
 
 impl VulkanRenderingFeaturePlan {
-    /// Creates a feature plan only for the currently implemented modern renderer.
-    /// CompatibilityPending is deliberately not accepted until its render-pass
-    /// pipelines, render scopes and synchronization path are integrated.
+    /// Creates a feature plan from the capabilities actually exposed by the GPU.
+    ///
+    /// Vulkan 1.0–1.2 devices receive a compatibility plan with no Vulkan 1.3
+    /// feature chain. This only makes logical-device creation possible; it does
+    /// not advertise the compatibility renderer as ready for frame rendering.
     pub fn from_device(device: &PhysicalDevice) -> Result<Self, String> {
         let capabilities = VulkanRenderingCapabilities::inspect(device);
 
-        if capabilities.mode() != VulkanRendererMode::ModernDynamic {
-            return Err(format!(
-                "GPU '{}' exposes Vulkan API version {} but does not satisfy the implemented modern renderer; compatibility rendering is not yet integrated",
-                device.name(),
-                capabilities.api_version()
-            ));
+        match capabilities.mode() {
+            VulkanRendererMode::ModernDynamic => Ok(Self {
+                mode: VulkanRendererMode::ModernDynamic,
+                dynamic_rendering: capabilities.supports_dynamic_rendering(),
+                synchronization2: capabilities.supports_synchronization2(),
+            }),
+            VulkanRendererMode::CompatibilityPending => Ok(Self {
+                mode: VulkanRendererMode::CompatibilityPending,
+                dynamic_rendering: false,
+                synchronization2: false,
+            }),
         }
+    }
 
-        Ok(Self {
-            dynamic_rendering: capabilities.supports_dynamic_rendering(),
-            synchronization2: capabilities.supports_synchronization2(),
-        })
+    /// Rendering path represented by this logical-device feature plan.
+    pub fn mode(&self) -> VulkanRendererMode {
+        self.mode
     }
 
     /// Whether Vulkan dynamic rendering was verified and enabled.
@@ -129,10 +137,15 @@ impl VulkanRenderingFeaturePlan {
         self.synchronization2
     }
 
-    /// Builds the feature structure passed to vkCreateDevice.
-    pub(super) fn enabled_features(&self) -> vk::PhysicalDeviceVulkan13Features<'static> {
-        vk::PhysicalDeviceVulkan13Features::default()
-            .dynamic_rendering(self.dynamic_rendering)
-            .synchronization2(self.synchronization2)
+    /// Builds the Vulkan 1.3 feature structure only for the modern path.
+    /// Legacy devices must not receive Vulkan 1.3 feature structures.
+    pub(super) fn enabled_features(
+        &self,
+    ) -> Option<vk::PhysicalDeviceVulkan13Features<'static>> {
+        (self.mode == VulkanRendererMode::ModernDynamic).then(|| {
+            vk::PhysicalDeviceVulkan13Features::default()
+                .dynamic_rendering(self.dynamic_rendering)
+                .synchronization2(self.synchronization2)
+        })
     }
 }
