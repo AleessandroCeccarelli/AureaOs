@@ -203,13 +203,13 @@ impl VulkanBackend {
         &self.surface_pipeline
     }
 
-    /// Returns whether native cursor decoding or texture upload still needs frame polling.
+    /// Returns whether asynchronous cursor or wallpaper assets need frame polling.
     #[cfg(feature = "drm")]
-    pub(crate) fn has_pending_native_cursor_work(&self) -> bool {
+    pub(crate) fn has_pending_render_resource_work(&self) -> bool {
         self.surface_pipeline
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .has_pending_native_cursor_work()
+            .has_pending_render_resource_work()
     }
 
     /// Records an empty one-time command buffer.
