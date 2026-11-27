@@ -92,3 +92,16 @@ The test checks the output byte count, an opaque-black corner outside the triang
 ### Cursor trail pipeline
 
 The compositor owns a format-cached cursor-trail pipeline separate from ordinary surface draws. It reuses the sampled native Xcursor frame and the surface-texture vertex shader; the fragment shader multiplies premultiplied RGB and alpha by a per-impression opacity supplied at byte offset 4. The shared transform value remains at byte offset 0. The pipeline layout exposes an eight-byte push-constant range to vertex and fragment stages, and the blend state follows the compositor's premultiplied-alpha contract. This path is enabled only when trail samples intersect the current output.
+
+
+## Roma 1.0 hardware support baseline
+
+The product-level CPU/GPU family boundaries are defined in [HARDWARE-REQUIREMENTS.md](HARDWARE-REQUIREMENTS.md) and are deliberately capability-gated rather than PCI-ID allowlists:
+
+- CPU ISA floor: x86-64-v3; practical desktop target: 4 cores / 8 threads or better. 8 GiB RAM is the minimum, 16 GiB is recommended.
+- Intel integrated graphics: Gen9.5 (UHD 620/630, Iris Plus class) and newer.
+- AMD integrated graphics: Vega and newer; discrete: Polaris / RX 400–500 and newer.
+- NVIDIA discrete graphics: Pascal / GeForce GTX 10 and newer, initially through the proprietary Vulkan driver. NVK is a separate path that must be certified before it is treated as a supported production route.
+- Baseline experience target: one 1080p/60 Hz output with correct composition, wallpaper, pointer, browser UI and supported video playback. Higher modes and multiple displays need separate performance certification.
+
+These are intended product-support families, not unconditional compatibility claims. Each physical GPU must still pass the live Vulkan 1.3, Dynamic Rendering, Synchronization 2, DRM/KMS, GBM allocation and output-presentation checks. The current renderer's legacy-render-pass helper is not a complete fallback backend; the AAG compatibility path remains disabled. The policy must not be weakened by accepting an API version without the features the active renderer actually uses.
