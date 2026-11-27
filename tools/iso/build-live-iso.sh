@@ -125,6 +125,7 @@ refresh_inputs() {
         tools/assets/build_cursor_theme.py tools/assets/cursor_manifest.py \
         tools/assets/cursor_rasterizer.py tools/assets/cursor_svg.py \
         tools/assets/xcursor_config.py aurea-human-interfaces/cursors \
+        aurea-human-interfaces/resources/wallpapers \
         aurea-human-interfaces/fonts/source/google-fonts/noto-sans \
         aurea-human-interfaces/icons/source/system/context-menu |
         tar -xf - -C "$SOURCE_DIR"
@@ -149,6 +150,11 @@ refresh_inputs() {
         }
         install -m 0644 "$asset" "$ASSET_INCLUDE/"
     done
+
+    [[ -s "$SOURCE_DIR/aurea-human-interfaces/resources/wallpapers/aureaos-blue-flow.jpg" ]] || {
+        echo "The official AureaOS default wallpaper is missing from the staged source snapshot." >&2
+        return 1
+    }
 
     [[ -s "$SOURCE_DIR/Cargo.toml" && -s "$SOURCE_DIR/Cargo.lock" ]] || {
         echo "The staged AureaOS source snapshot is incomplete." >&2
