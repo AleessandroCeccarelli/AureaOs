@@ -1,31 +1,52 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 
-# AureaOS Roma 1.0 — Minimum Hardware Requirements
+# AureaOS Roma 1.0 — Hardware Requirements and Graphics Support Policy
 
-This is the supported hardware floor for the first AureaOS desktop release. It applies to every supported computer; no GPU vendor, model, or developer machine is the reference platform.
+This document defines the supported hardware floor for the first AureaOS desktop release. It is a capability policy, not a vendor/model whitelist. The minimum profile targets a polished 1080p/60 Hz desktop session with a browser, video playback, wallpaper, pointer, and standard desktop effects. Higher resolutions, refresh rates, multiple displays, and heavier effects require correspondingly stronger hardware.
 
-## Installation floor
+## Minimum installation and runtime floor
 
-- **CPU:** AMD64 / x86-64 with the x86-64-v3 feature level.
-- **Memory:** at least 8 GiB RAM.
-- **Graphics:** at least one hardware Vulkan 1.3-capable integrated or discrete GPU.
-- **Vulkan features:** the selected rendering device must support dynamicRendering and synchronization2.
+- **Architecture / CPU:** AMD64 / x86-64 with the complete x86-64-v3 feature level.
+- **CPU performance floor:** a modern 4-core / 8-thread processor is the practical target for a responsive desktop and browser. The ISA floor remains capability-based; Intel and AMD model names are not runtime gates.
+- **Memory:** at least 8 GiB RAM. 16 GiB is the recommended configuration for everyday browser, video, and multitasking use.
+- **Graphics:** at least one hardware integrated or discrete GPU with Vulkan 1.3 and the required renderer features dynamicRendering and synchronization2.
 - **Display:** a working Linux DRM/KMS driver and at least one connected, usable output.
 - **Modesetting:** atomic KMS on every output enabled by AureaOS.
 - **Buffer allocation:** GBM on the display's DRM device, with at least one primary-plane format allocatable for CPU writing and scanout.
 - **Session:** working libseat-compatible access to the DRM device.
 
-CPU vendor is not a policy input: Intel and AMD processors are accepted when the running Linux kernel exposes the complete x86-64-v3 feature set. The installer checks active CPU feature flags, not a marketing name or CPU generation.
+The x86-64-v3 CPU check is vendor-neutral and tests active kernel-exposed CPU feature flags, not marketing names. It is the architectural floor, not a promise that every processor at that floor will deliver the same browser or multitasking performance. The installer preflight is tools/installer/check-hardware-requirements.sh. It is deliberately separate from tools/build/bootstrap-debian.sh: creating a Debian root filesystem on a build host must not be blocked by the build host's hardware.
 
-The preflight script is tools/installer/check-hardware-requirements.sh. It is deliberately separate from tools/build/bootstrap-debian.sh: creating a Debian root filesystem on a build host must not be blocked by the build host's hardware.
+## Supported GPU families — practical baseline
 
-## GPU and driver policy
+The following families define the intended Roma 1.0 support starting points. A model is eligible only when its actual Linux driver reports the required Vulkan API/features and the DRM/KMS path works. A generation label or Vulkan loader presence is never sufficient proof.
 
-AureaOS does not whitelist GPU vendors or model names. AMD, Intel, NVIDIA, and other GPUs are eligible only when their installed kernel and userspace drivers satisfy the platform contract. GPU vendor, PCI generation, integrated/discrete classification, or the presence of a Vulkan loader is not proof of compatibility.
+| Vendor / class | Intended minimum family | Driver path | Notes |
+|---|---|---|---|
+| Intel integrated graphics | Gen9.5 / Kaby Lake–Coffee Lake class (e.g. UHD 620/630, Iris Plus) and newer | Intel i915 + Mesa ANV | Gen8/older Intel graphics are not the Roma 1.0 baseline. Newer Iris Xe and Arc are preferred. |
+| AMD integrated graphics | Vega-class APUs and newer | amdgpu + Mesa RADV | Actual Vulkan features and KMS presentation must pass runtime checks. |
+| AMD discrete graphics | Polaris / Radeon RX 400–500 family and newer | amdgpu + Mesa RADV | Vega and RDNA generations are preferred. |
+| NVIDIA discrete graphics | Pascal / GeForce GTX 10 family and newer | NVIDIA proprietary Vulkan driver as the initial supported path; NVK may be enabled after validation | Maxwell and older are outside the intended Roma 1.0 performance baseline even where a driver can expose Vulkan 1.3. Turing/RTX 20 and newer are preferred. |
 
-The current preflight checks for at least one non-CPU Vulkan 1.3 device. This is an installation screening check only. Runtime device selection additionally verifies the Vulkan 1.3 feature plan, including dynamicRendering and synchronization2. A Vulkan API version alone is insufficient.
+These family boundaries are product-support targets, not hard-coded PCI-ID allowlists. If a newer or otherwise unlisted GPU meets the complete runtime contract and passes the relevant certification tests, it can be supported without changing a model whitelist. Conversely, a model from a listed family is not certified merely by its family name.
 
-The baseline rendering path is Vulkan scene composition followed by host readback and GBM/KMS presentation. DMA-BUF export, DRM format modifiers, explicit sync-file export, foreign queue-family ownership, and direct Vulkan scanout are optional acceleration capabilities, not minimum requirements. Their absence must select a compatible fallback rather than disqualify an otherwise usable rendering GPU.
+The Intel Vulkan 1.3 conformant-product records include UHD 620/630-class and Iris Xe products; AMD RADV documents Vulkan 1.3 for GFX6–7 and Vulkan 1.4 for GFX8 and newer; NVIDIA's published Vulkan driver support includes Pascal and newer families. These upstream API statements do not replace AureaOS's own feature and presentation tests.
+
+## Visual quality and performance tiers
+
+- **Baseline supported experience:** 1920×1080 at 60 Hz, one display, desktop composition, wallpaper, cursor, ordinary transitions, browser UI and video playback when the selected codec is supported by the platform media stack.
+- **Recommended everyday configuration:** 16 GiB RAM, 4–8 modern CPU cores, and a GPU with at least 4 GiB dedicated VRAM where applicable. Integrated GPUs use shared system memory and must be evaluated by measured capability.
+- **High-resolution / high-refresh / multi-display:** require a stronger GPU and memory bandwidth. The compositor must measure output mode, render cost, and presentation timing rather than promise 4K/high-refresh on the minimum tier.
+
+AureaOS must preserve visual correctness across tiers. Adaptive policy may reduce expensive optional workload (for example, blur radius, animation complexity, or frame rate under sustained pressure) to maintain responsiveness, but must not silently substitute a broken or visibly degraded rendering path. The user-facing effects policy and its thresholds must be explicitly designed and tested.
+
+## Vulkan and renderer policy
+
+The native renderer currently requires Vulkan 1.3 core Dynamic Rendering and Synchronization 2. Both features are queried on each physical device and explicitly enabled during logical-device creation. A Vulkan API version alone is insufficient.
+
+The compatibility-renderer enum/path is reserved for a separately implemented and validated legacy backend. It must remain unavailable until the complete renderer path—resource creation, render passes, pipeline compatibility, synchronization, wallpaper/surface/cursor composition, and presentation—has been implemented and tested. A render-pass helper alone does not qualify a GPU for compatibility mode.
+
+The baseline rendering path is Vulkan scene composition followed by host readback and GBM/KMS presentation. DMA-BUF export, DRM format modifiers, explicit sync-file export, foreign queue-family ownership, and direct Vulkan scanout are optional acceleration capabilities, not minimum requirements. Their absence must select a compatible, validated fallback rather than disqualify an otherwise usable rendering GPU.
 
 Atomic KMS and a CPU-writable GBM scanout buffer are currently mandatory for physical output. Outputs that do not meet those requirements are outside the Roma 1.0 support floor; they must be reported explicitly rather than treated as generic GPU failures.
 
@@ -42,11 +63,14 @@ Cross-GPU rendering is not guaranteed merely because two GPUs are present. It re
 - CPUs that do not expose x86-64-v3.
 - Systems with less than 8 GiB RAM.
 - Systems without a hardware Vulkan 1.3 GPU exposing dynamicRendering and synchronization2.
+- Intel integrated graphics older than the intended Gen9.5 baseline.
+- AMD graphics older than Vega (integrated) / Polaris (discrete) for the Roma 1.0 performance baseline.
+- NVIDIA graphics older than Pascal for the Roma 1.0 performance baseline.
 - Systems without a usable DRM/KMS output or atomic KMS on the selected output.
 - Display devices for which GBM cannot allocate a CPU-writable primary-plane scanout buffer.
 - Systems without a usable libseat-managed DRM session.
 
-These are deliberate minimum requirements for Roma 1.0, not claims that every Linux graphics device is supported. Older hardware may become eligible in a later release if a separately maintained backend is implemented and validated.
+These are deliberate product-support boundaries for Roma 1.0. They are not claims that older GPUs cannot run Linux or that no Vulkan driver exists for them.
 
 ## Validation status
 
@@ -56,9 +80,10 @@ These are deliberate minimum requirements for Roma 1.0, not claims that every Li
 - [x] Runtime Vulkan 1.3 dynamicRendering and synchronization2 feature validation.
 - [ ] Installer preflight check for the required Vulkan 1.3 features.
 - [ ] Per-output atomic KMS and GBM CPU-scanout capability validation in installer preflight.
-- [ ] Cross-GPU DMA-BUF import and synchronization.
-- [ ] Intel, AMD, and NVIDIA physical scanout matrix.
+- [ ] Intel Gen9.5+, AMD Vega/Polaris+, and NVIDIA Pascal+ physical scanout matrix.
 - [ ] Hybrid-laptop display/render routing matrix.
+- [ ] Cross-GPU DMA-BUF import and synchronization.
 - [ ] Physical atomic KMS scanout tests.
+- [ ] Frame-time and visual-quality certification at 1080p/60 Hz on minimum-tier hardware.
 
-The installer preflight is not full hardware certification. Actual support claims require validation on representative AMD, Intel, and NVIDIA hardware and on both integrated and discrete GPU configurations.
+The installer preflight is not full hardware certification. Actual support claims require representative physical systems from each GPU family, current supported Linux drivers, and both integrated and discrete/hybrid configurations.
