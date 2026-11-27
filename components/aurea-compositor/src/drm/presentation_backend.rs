@@ -87,6 +87,7 @@ pub struct DrmPresentationBackend {
     node: DrmNode,
     crtc: crtc::Handle,
     frames: DrmOutputFrameCoordinator,
+    pending_mode_rollback: Option<smithay::reexports::drm::control::Mode>,
 }
 
 impl DrmPresentationBackend {
@@ -96,7 +97,28 @@ impl DrmPresentationBackend {
             node,
             crtc: surface.crtc(),
             frames: DrmOutputFrameCoordinator::new(),
+            pending_mode_rollback: None,
         }
+    }
+
+    /// Arms restoration of the active mode if the next modeset presentation fails.
+    pub fn arm_mode_rollback(&mut self, previous: smithay::reexports::drm::control::Mode) {
+        self.pending_mode_rollback = Some(previous);
+    }
+
+    /// Cancels an armed mode rollback after the caller abandons the staged mode.
+    pub fn cancel_mode_rollback(&mut self) {
+        self.pending_mode_rollback = None;
+    }
+
+    fn rollback_mode_change(&mut self, surface: &DrmSurface) -> Result<(), String> {
+        if let Some(previous) = self.pending_mode_rollback.take() {
+            surface.use_mode(previous).map_err(|error| {
+                self.pending_mode_rollback = Some(previous);
+                error.to_string()
+            })?;
+        }
+        Ok(())
     }
 
     /// Returns the DRM device associated with this presentation surface.
@@ -190,9 +212,11 @@ impl DrmPresentationBackend {
         require_in_fence: bool,
     ) -> Result<(), DrmPresentationBackendError> {
         if surface.is_legacy() {
+            let _ = self.rollback_mode_change(surface);
             return Err(DrmPresentationBackendError::LegacySurfaceUnsupported);
         }
         if surface.crtc() != self.crtc {
+            let _ = self.rollback_mode_change(surface);
             return Err(DrmPresentationBackendError::UnexpectedCrtc);
         }
 
@@ -201,15 +225,22 @@ impl DrmPresentationBackend {
             .filter_map(|plane| plane.config.as_ref())
             .map(|config| config.fence.is_some())
             .collect::<Vec<_>>();
-        Self::validate_plane_synchronization(&active_plane_fences, require_in_fence)?;
+        if let Err(error) = Self::validate_plane_synchronization(&active_plane_fences, require_in_fence) {
+            let _ = self.rollback_mode_change(surface);
+            return Err(error);
+        }
 
         let requires_modeset = surface.commit_pending();
         self.frames.begin_presentation(candidate)?;
 
         if let Err(error) = surface.test_state(planes.iter().cloned(), requires_modeset) {
             let operation = format!("Atomic TEST_ONLY rejected the Vulkan framebuffer: {error}");
+            let rollback = self.rollback_mode_change(surface);
             return match self.frames.presentation_test_failed() {
-                Ok(_) => Err(DrmPresentationBackendError::KmsOperation(operation)),
+                Ok(_) => Err(DrmPresentationBackendError::KmsOperation(match rollback {
+                    Ok(()) => operation,
+                    Err(restore) => format!("{operation}; restoring previous KMS mode failed: {restore}"),
+                })),
                 Err(lifecycle) => Err(DrmPresentationBackendError::Recovery {
                     operation,
                     lifecycle,
@@ -238,8 +269,12 @@ impl DrmPresentationBackend {
 
         if let Err(error) = submission {
             let operation = format!("KMS rejected the Vulkan framebuffer commit: {error}");
+            let rollback = self.rollback_mode_change(surface);
             return match self.frames.presentation_commit_failed() {
-                Ok(_) => Err(DrmPresentationBackendError::KmsOperation(operation)),
+                Ok(_) => Err(DrmPresentationBackendError::KmsOperation(match rollback {
+                    Ok(()) => operation,
+                    Err(restore) => format!("{operation}; restoring previous KMS mode failed: {restore}"),
+                })),
                 Err(lifecycle) => Err(DrmPresentationBackendError::Recovery {
                     operation,
                     lifecycle,
@@ -271,8 +306,8 @@ impl DrmPresentationBackend {
                 DrmOutputFrameError::NoPendingFrame,
             ))?;
 
-        self.frames
-            .page_flip_complete(displayed)
-            .map_err(Into::into)
+        let released = self.frames.page_flip_complete(displayed).map_err(DrmPresentationBackendError::from)?;
+        self.pending_mode_rollback = None;
+        Ok(released)
     }
 }
