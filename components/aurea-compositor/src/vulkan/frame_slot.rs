@@ -218,7 +218,18 @@ impl VulkanFrameSlot {
             .handle_type(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD);
         let loader =
             ash::khr::external_semaphore_fd::Device::new(device.instance(), device.handle());
-        let raw_fd = unsafe { loader.get_semaphore_fd(&fd_info) }?;
+        let raw_fd = match unsafe { loader.get_semaphore_fd(&fd_info) } {
+            Ok(fd) => fd,
+            Err(error) => {
+                if error == vk::Result::ERROR_DEVICE_LOST {
+                    device.mark_unusable();
+                    self.quarantined = true;
+                }
+                // Submission was already accepted. Keep the fence and retained
+                // resources in this slot; prepare() will wait before reuse.
+                return Err(error);
+            }
+        };
         Ok(unsafe { OwnedFd::from_raw_fd(raw_fd) })
     }
 
