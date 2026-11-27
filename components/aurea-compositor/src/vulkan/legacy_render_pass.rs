@@ -109,6 +109,10 @@ impl<'device> VulkanLegacyRenderPass<'device> {
         self.render_pass
     }
 
+    pub fn device_handle(&self) -> vk::Device {
+        self.device.device().handle().handle()
+    }
+
     pub fn format(&self) -> vk::Format {
         self.format
     }
