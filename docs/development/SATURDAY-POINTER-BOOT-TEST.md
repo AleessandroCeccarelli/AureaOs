@@ -16,6 +16,24 @@ Scope: the first visible and moving AureaOS pointer on the native desktop. Do no
 
 These are source-level findings. They do not prove the native Fedora hardware path has succeeded; only a boot and physical mouse test can establish that.
 
+## First-frame wallpaper acceptance
+
+The default `aureaos-midnight-flow.jpg` is embedded in the compositor binary. The
+first output frame starts bounded worker decoding and a fence-backed Vulkan
+texture upload. The event loop must continue requesting frames while either
+operation is pending; otherwise an idle desktop can remain on the clear-color
+background forever after its first frame.
+
+The readiness path now includes pending wallpaper decode and upload work in the
+same frame-polling condition used by native cursor assets. On the physical boot:
+
+1. Confirm the default wallpaper appears without moving the mouse or opening a window.
+2. Confirm it fills the active output without stretching or leaving unintended margins.
+3. Confirm the pointer is visible over the wallpaper on the first desktop frame.
+
+If the wallpaper does not appear, inspect the decode worker, upload-fence state,
+and the `Wallpaper texture cache` diagnostics before changing image assets.
+
 ## Before the native run
 
 On Fedora, from the repository root:
