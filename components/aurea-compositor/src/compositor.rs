@@ -294,10 +294,14 @@ impl AureaCompositor {
         devices: Vec<std::sync::Arc<crate::vulkan::VulkanLogicalDevice>>,
         feedback: DmabufFeedback,
     ) -> bool {
-        if devices.is_empty() || self.dmabuf_global.is_some() {
+        if devices.is_empty() {
             return false;
         }
         self.dmabuf_devices = devices;
+        if let Some(global) = self.dmabuf_global.as_ref() {
+            self.dmabuf_state.set_default_feedback(global, &feedback);
+            return true;
+        }
         self.dmabuf_global = Some(
             self.dmabuf_state.create_global_with_default_feedback::<Self>(display, &feedback),
         );
