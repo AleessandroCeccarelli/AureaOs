@@ -192,7 +192,11 @@ impl TouchpadProfileStore {
 
         let document = StoredProfiles {
             format_version: FORMAT_VERSION,
-            devices: self\n                .profiles\n                .iter()\n                .map(|(identity, settings)| (identity.clone(), (*settings).into()))\n                .collect(),
+            devices: self
+                .profiles
+                .iter()
+                .map(|(identity, settings)| (identity.clone(), (*settings).into()))
+                .collect(),
         };
         let encoded = toml::to_string_pretty(&document)
             .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
@@ -256,7 +260,11 @@ fn load_profiles(path: &Path) -> io::Result<HashMap<String, TouchpadSettings>> {
             ),
         ));
     }
-    Ok(stored\n        .devices\n        .into_iter()\n        .map(|(identity, settings)| (identity, settings.into()))\n        .collect())
+    Ok(stored
+        .devices
+        .into_iter()
+        .map(|(identity, settings)| (identity, settings.into()))
+        .collect())
 }
 
 #[cfg(test)]
