@@ -59,7 +59,7 @@ impl VulkanLegacyFrameRecorder {
     pub(crate) fn textured_region(
         command_buffer: vk::CommandBuffer,
         render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
-        view: &VulkanImageView<'_, 'static>,
+        view: &VulkanImageView<'_, '_>,
         pipeline: &VulkanSharedLegacyGraphicsPipeline,
         source: &VulkanImageView<'_, '_>,
         binding: &VulkanTextureBinding<'_, '_, '_, '_>,
