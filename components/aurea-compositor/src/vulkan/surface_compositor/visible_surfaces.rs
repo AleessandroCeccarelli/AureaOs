@@ -33,7 +33,6 @@ pub(super) struct VisibleSurface {
     pub(super) geometry: SurfaceGeometry,
     pub(super) scissor: SurfaceScissor,
     pub(super) texture_transform: u32,
-    pub(super) is_cursor: bool,
 }
 
 pub(super) fn visible_surfaces(
@@ -178,7 +177,6 @@ pub(super) fn visible_dmabuf_surfaces(
         if visible.len() >= MAX_COMPOSITED_SURFACES {
             return Err(VulkanSurfaceCompositionError::TooManySurfaces);
         }
-        let is_cursor = snapshot.surface.data_map().get::<smithay::input::pointer::CursorImageSurfaceData>().is_some();
         let texture_transform = surface_transform_index(
             compose_surface_transforms(snapshot.buffer_transform, target.transform())
                 .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
@@ -189,7 +187,6 @@ pub(super) fn visible_dmabuf_surfaces(
             geometry,
             scissor,
             texture_transform,
-            is_cursor,
         });
     }
     Ok(visible)
