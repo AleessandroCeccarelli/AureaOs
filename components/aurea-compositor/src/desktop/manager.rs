@@ -77,7 +77,7 @@ mod tests {
                 .snapshot()
                 .wallpaper()
                 .map(|wallpaper| wallpaper.asset().id()),
-            Some("aureaos-midnight-flow")
+            Some("aureaos-blue-flow")
         );
     }
 
