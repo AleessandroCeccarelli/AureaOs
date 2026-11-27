@@ -2370,3 +2370,13 @@ Le modifiche sono pubblicate su `main`, ma non sono ancora state compilate né p
 - Aggiunto un controllo preventivo su firma JPEG e dimensioni e un controllo sul filesystem SquashFS finale per verificare la presenza dell'identificatore del wallpaper nel binario installato.
 - Confermata la sessione Live minimale: niente client Welcome; a schermo sono previsti soltanto wallpaper e puntatore nativo. L'hook installa entrambi i temi Xcursor e la validazione verifica i 52 cursori canonici.
 - La CI Rust relativa all'ultima modifica di codice dello script ISO è in attesa. In questo ambiente non è stata generata una ISO né eseguita una prova di avvio fisica: restano passaggi di accettazione obbligatori.
+
+
+### Integrazione orchestratore Vulkan legacy — 27 novembre 2026
+
+- Aggiunto un orchestratore dedicato per i frame Vulkan 1.0–1.2. Riutilizza le superfici visibili e le texture già preparate dal compositor comune, creando soltanto le viste e i descriptor binding necessari al singolo frame.
+- Collegato l'ordine dei livelli già definito: clear, wallpaper, superfici normali, menu contestuale, cursori client, scia del puntatore e cursore nativo.
+- Collegato il passaggio legacy per display color e i due finali alternativi: copia RGBA8 per readback oppure rilascio della coda verso DRM/KMS.
+- La compatibilità resta **disabilitata per impostazione predefinita**. La nuova feature Cargo `legacy-vulkan-frame` implica DRM ma non è inclusa nelle feature predefinite. Senza attivarla, i dispositivi in modalità `CompatibilityPending` continuano a fallire in modo controllato.
+- Il percorso rapido per la scena vuota viene saltato in modalità legacy, così il clear usa il render pass tradizionale e non quello Vulkan 1.3.
+- Nessuna build, `cargo fmt`, `cargo check`, test, compilazione shader, CI o prova hardware è stata eseguita. Restano da verificare su Fedora la compilazione con `--features legacy-vulkan-frame`, i lifetime Rust e il comportamento Vulkan reale. Non abilitare la feature di default prima del superamento di queste verifiche.
