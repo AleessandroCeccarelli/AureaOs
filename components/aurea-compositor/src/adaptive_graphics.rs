@@ -152,6 +152,17 @@ mod tests {
     }
 
     #[test]
+    fn rejects_vulkan_13_devices_missing_required_core_features() {
+        let mut candidate = candidate(5, "Incomplete Vulkan 1.3 GPU", false, true, false);
+        candidate.capabilities.synchronization2 = false;
+        assert!(AureaAdaptiveGraphics::select(&[candidate]).is_none());
+
+        let mut candidate = candidate(6, "GPU without dynamic rendering", false, true, false);
+        candidate.capabilities.dynamic_rendering = false;
+        assert!(AureaAdaptiveGraphics::select(&[candidate]).is_none());
+    }
+
+    #[test]
     fn selects_compatibility_hardware_only_when_legacy_backend_is_available() {
         let candidates = [candidate(2, "Legacy GPU", false, false, true)];
         let plan = AureaAdaptiveGraphics::select(&candidates).unwrap();
