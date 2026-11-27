@@ -34,7 +34,13 @@ impl<T> VulkanPendingUpload<T> {
         let pool_info = vk::CommandPoolCreateInfo::default()
             .queue_family_index(device.graphics_queue_family())
             .flags(vk::CommandPoolCreateFlags::TRANSIENT);
-        let command_pool = unsafe { device.handle().create_command_pool(&pool_info, None) }?;
+        let command_pool = match unsafe { device.handle().create_command_pool(&pool_info, None) } {
+            Ok(pool) => pool,
+            Err(error) => {
+                mark_device_lost(&device, error);
+                return Err(error);
+            }
+        };
 
         let allocation = vk::CommandBufferAllocateInfo::default()
             .command_pool(command_pool)
@@ -96,14 +102,21 @@ impl<T> VulkanPendingUpload<T> {
 
     /// Ends and submits the command buffer without waiting for the GPU.
     pub(super) fn submit(mut self) -> Result<Self, vk::Result> {
-        unsafe {
-            self.device
-                .handle()
-                .end_command_buffer(self.command_buffer)?
-        };
+        if let Err(error) = unsafe {
+            self.device.handle().end_command_buffer(self.command_buffer)
+        } {
+            mark_device_lost(&self.device, error);
+            return Err(error);
+        }
 
         let fence_info = vk::FenceCreateInfo::default();
-        self.fence = unsafe { self.device.handle().create_fence(&fence_info, None) }?;
+        self.fence = match unsafe { self.device.handle().create_fence(&fence_info, None) } {
+            Ok(fence) => fence,
+            Err(error) => {
+                mark_device_lost(&self.device, error);
+                return Err(error);
+            }
+        };
         if let Err(error) = self.device.submit_async(self.command_buffer, self.fence) {
             if error.is_uncertain() || self.device.is_unusable() {
                 // Device loss makes queue acceptance uncertain. Keep every
@@ -128,7 +141,10 @@ impl<T> VulkanPendingUpload<T> {
         match unsafe { self.device.handle().wait_for_fences(&[self.fence], true, 0) } {
             Ok(()) => Ok(true),
             Err(vk::Result::TIMEOUT) => Ok(false),
-            Err(error) => Err(error),
+            Err(error) => {
+                mark_device_lost(&self.device, error);
+                Err(error)
+            }
         }
     }
 
@@ -136,9 +152,14 @@ impl<T> VulkanPendingUpload<T> {
     pub(super) fn wait(mut self) -> Result<T, vk::Result> {
         if !self.is_complete()? {
             unsafe {
-                self.device
+                if let Err(error) = self
+                    .device
                     .handle()
-                    .wait_for_fences(&[self.fence], true, u64::MAX)?;
+                    .wait_for_fences(&[self.fence], true, u64::MAX)
+                {
+                    mark_device_lost(&self.device, error);
+                    return Err(error);
+                }
             }
         }
 
@@ -190,9 +211,10 @@ impl<T> Drop for VulkanPendingUpload<T> {
                     .handle()
                     .wait_for_fences(&[self.fence], true, u64::MAX)
             };
-            if fence_result.is_err() && unsafe { self.device.handle().device_wait_idle() }.is_err()
-            {
-                self.device.mark_unusable();
+            if let Err(error) = fence_result {
+                mark_device_lost(&self.device, error);
+                if unsafe { self.device.handle().device_wait_idle() }.is_err() {
+                    self.device.mark_unusable();
                 if let Some(staging) = self.staging.take() {
                     mem::forget(staging);
                 }
@@ -202,10 +224,18 @@ impl<T> Drop for VulkanPendingUpload<T> {
                 mem::forget(Arc::clone(&self.device));
                 self.fence = vk::Fence::null();
                 self.command_pool = vk::CommandPool::null();
-                self.submitted = false;
-                return;
+                    self.submitted = false;
+                    return;
+                }
             }
         }
         self.cleanup();
+    }
+}
+
+/// Propagates terminal Vulkan device loss into the shared fail-stop state.
+fn mark_device_lost(device: &VulkanLogicalDevice, error: vk::Result) {
+    if error == vk::Result::ERROR_DEVICE_LOST {
+        device.mark_unusable();
     }
 }
