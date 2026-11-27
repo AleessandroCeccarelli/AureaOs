@@ -5,7 +5,10 @@
 
 //! Vulkan renderer lifecycle for DRM-owned outputs.
 
-use smithay::backend::drm::DrmNode;
+use smithay::{
+    backend::drm::DrmNode,
+    wayland::dmabuf::DmabufFeedbackBuilder,
+};
 
 use crate::{
     gpu::GpuSelectionMetadata,
@@ -26,8 +29,9 @@ pub(super) fn initialize_vulkan_backends(state: &mut WaylandState) {
         initialize_vulkan_backend(state, node);
     }
 
-    // linux-dmabuf v3 has one global format list. Advertise only the
-    // intersection that every initialized renderer can import and sample.
+    // Keep the main tranche restricted to formats every active renderer can
+    // import and sample. This also provides the compatibility format list to
+    // clients that bind linux-dmabuf v3 or lower.
     let devices = state
         .vulkan_backends
         .values()
@@ -41,11 +45,35 @@ pub(super) fn initialize_vulkan_backends(state: &mut WaylandState) {
         let supported = VulkanDmabufImportSupport::supported_formats(device);
         formats.retain(|format| supported.contains(format));
     }
-    let display_handle = state.display.handle();
-    if state.compositor.initialize_dmabuf_global(&display_handle, devices, formats) {
-        tracing::info!("AureaOS: linux-dmabuf v3 global published with cross-GPU importable formats");
-    } else {
+    let main_device = state.vulkan_backends.values().find_map(|backend| {
+        let physical = backend.selected_physical_device();
+        physical
+            .primary_node()
+            .ok()
+            .flatten()
+            .or_else(|| physical.render_node().ok().flatten())
+            .and_then(|node| node.dev_id().ok())
+    });
+    let Some(main_device) = main_device else {
+        tracing::warn!("AureaOS: linux-dmabuf disabled; no Vulkan renderer exposes a DRM device identity");
+        return;
+    };
+    if formats.is_empty() {
         tracing::info!("AureaOS: linux-dmabuf disabled; no common safe DMA-BUF import formats");
+        return;
+    }
+    let feedback = match DmabufFeedbackBuilder::new(main_device, formats).build() {
+        Ok(feedback) => feedback,
+        Err(error) => {
+            tracing::warn!(%error, "AureaOS: unable to build linux-dmabuf default feedback");
+            return;
+        }
+    };
+    let display_handle = state.display.handle();
+    if state.compositor.initialize_dmabuf_global(&display_handle, devices, feedback) {
+        tracing::info!("AureaOS: linux-dmabuf feedback global published with cross-GPU importable formats");
+    } else {
+        tracing::info!("AureaOS: linux-dmabuf disabled; no compatible Vulkan device set");
     }
 }
 
