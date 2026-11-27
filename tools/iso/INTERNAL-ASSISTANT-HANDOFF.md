@@ -1352,3 +1352,11 @@ Cautions:
   - The clear recorder validates clear/load compatibility and records a full-target draw.
 - These recorders are primitives for the later frame orchestrator; they do not yet replace `surface_compositor::render_frame` or make the legacy backend selectable.
 - No build, test, rustfmt, shader compilation, or ISO build was run.
+
+
+## Legacy pipeline-cache error propagation audit — 2026-11-27
+
+- `128042c`: corrected `ensure_shared_legacy_surface_pipeline` to use direct `?` propagation and corrected `ensure_shared_legacy_cursor_trail_pipeline` to preserve the original `VulkanLegacyRenderPassError`.
+- Previously, the cursor-trail cache converted any render-pass creation failure into a synthetic `ERROR_INITIALIZATION_FAILED` graphics-pipeline error. The cache now reports the actual render-pass error through `VulkanSurfacePipelineCacheError::LegacyRenderPass`.
+- This is an error-reporting correctness fix only; it does not change renderer selection or enable the compatibility path.
+- Build/test/rustfmt/shader/ISO validation remains intentionally deferred until the grouped Fedora validation session.
