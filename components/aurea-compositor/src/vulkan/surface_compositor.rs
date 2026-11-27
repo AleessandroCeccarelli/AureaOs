@@ -208,6 +208,10 @@ pub(super) fn render_frame(
     #[cfg(feature = "drm")]
     let visible_dmabuf = visible_dmabuf_surfaces(scene.dmabuf_snapshots(), target)?;
     #[cfg(feature = "drm")]
+    if visible.len() + visible_dmabuf.len() > MAX_COMPOSITED_SURFACES {
+        return Err(VulkanSurfaceCompositionError::TooManySurfaces);
+    }
+    #[cfg(feature = "drm")]
     let dmabuf_images = visible_dmabuf
         .iter()
         .map(|surface| {
