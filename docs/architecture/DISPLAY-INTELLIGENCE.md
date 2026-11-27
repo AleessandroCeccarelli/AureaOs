@@ -251,3 +251,25 @@ transactionally applied to an existing KMS surface. Do not claim live mode
 switching, exact selection among colliding native timings, or rollback support
 until that path is implemented and tested. Refresh-rate precision remains
 limited by the current integer `vrefresh()` conversion.
+
+
+## Native KMS mode staging (2026-11-27)
+
+The native timing list is now copied into each `ManagedDrmSurface`. The
+surface manager exposes `stage_mode(output_id, logical_mode)`, which:
+- resolves the logical mode only when exactly one native DRM timing matches;
+- rejects unsupported and ambiguous mappings without changing KMS state;
+- stages the native timing with Smithay 0.7 `DrmSurface::use_mode()`;
+- returns the previously active native mode for explicit restoration.
+
+`restore_mode()` stages that previous timing again. Both operations are
+staging operations: the new state becomes active only when the caller submits
+a framebuffer through the existing presentation backend, which performs
+atomic TEST_ONLY and then the KMS commit/modeset.
+
+**Integration still required:** the display configuration transaction must
+coordinate this API with allocation/rendering of a framebuffer at the target
+size, call `restore_mode()` when rendering or presentation is abandoned, and
+publish the new logical `OutputMode` only after the KMS commit completes.
+The current output manager still updates logical state independently. No
+build, test, or physical monitor validation has been run for this change.
