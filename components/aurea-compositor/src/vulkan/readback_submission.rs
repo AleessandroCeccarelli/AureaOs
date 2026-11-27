@@ -67,6 +67,7 @@ impl VulkanReadbackSubmission {
             .shared_device_owner()
             .ok_or(VulkanReadbackError::ImageNotOwned)?;
         if device.is_unusable() {
+            quarantine_readback_inputs(&device, view, None, capture_target);
             return Err(VulkanReadbackError::Submission(vk::Result::ERROR_DEVICE_LOST));
         }
         if !pool.owns_device(&device) {
@@ -84,7 +85,12 @@ impl VulkanReadbackSubmission {
                 .handle()
                 .begin_command_buffer(command_buffer, &begin_info)
         } {
-            device.free_command_buffer(command_buffer);
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                device.mark_unusable();
+                quarantine_readback_inputs(&device, view, Some(readback), capture_target);
+            } else {
+                device.free_command_buffer(command_buffer);
+            }
             return Err(VulkanReadbackError::CommandBuffer(error));
         }
 
@@ -95,12 +101,24 @@ impl VulkanReadbackSubmission {
                     .reset_command_buffer(command_buffer, vk::CommandBufferResetFlags::empty())
                     .ok();
             }
+            if let VulkanReadbackError::CommandBuffer(result) = error {
+                if result == vk::Result::ERROR_DEVICE_LOST {
+                    device.mark_unusable();
+                    quarantine_readback_inputs(&device, view, Some(readback), capture_target);
+                    return Err(VulkanReadbackError::CommandBuffer(result));
+                }
+            }
             device.free_command_buffer(command_buffer);
             return Err(error);
         }
 
         if let Err(error) = unsafe { device.handle().end_command_buffer(command_buffer) } {
-            device.free_command_buffer(command_buffer);
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                device.mark_unusable();
+                quarantine_readback_inputs(&device, view, Some(readback), capture_target);
+            } else {
+                device.free_command_buffer(command_buffer);
+            }
             return Err(VulkanReadbackError::CommandBuffer(error));
         }
 
@@ -108,7 +126,12 @@ impl VulkanReadbackSubmission {
         let fence = match unsafe { device.handle().create_fence(&fence_info, None) } {
             Ok(fence) => fence,
             Err(error) => {
-                device.free_command_buffer(command_buffer);
+                if error == vk::Result::ERROR_DEVICE_LOST {
+                    device.mark_unusable();
+                    quarantine_readback_inputs(&device, view, Some(readback), capture_target);
+                } else {
+                    device.free_command_buffer(command_buffer);
+                }
                 return Err(VulkanReadbackError::FenceCreation(error));
             }
         };
@@ -228,4 +251,20 @@ impl Drop for VulkanReadbackSubmission {
         unsafe { self.device.handle().destroy_fence(self.fence, None) };
         self.device.free_command_buffer(self.command_buffer);
     }
+}
+
+
+/// Retains every resource whose destructor may touch a lost Vulkan device.
+fn quarantine_readback_inputs(
+    device: &Arc<VulkanLogicalDevice>,
+    view: VulkanImageView<'static, 'static>,
+    readback: Option<VulkanReadbackBufferLease>,
+    capture_target: Option<VulkanCaptureTargetLease>,
+) {
+    std::mem::forget(view);
+    if let Some(readback) = readback {
+        std::mem::forget(readback);
+    }
+    std::mem::forget(capture_target);
+    std::mem::forget(Arc::clone(device));
 }
