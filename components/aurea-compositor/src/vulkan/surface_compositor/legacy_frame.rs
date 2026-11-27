@@ -16,8 +16,7 @@ use crate::{
 };
 
 use super::{
-    VulkanCommandBuffer, VulkanDisplayColorPassError, VulkanImageState, VulkanImageView,
-    VulkanLegacyFrameRecorder, VulkanReadbackBuffer, VulkanSharedLegacyDisplayColorPass,
+    VulkanCommandBuffer, VulkanImageState, VulkanImageView, VulkanReadbackBuffer,
     VulkanSurfaceCompositionError, VulkanSurfacePipelineCache, VulkanTextureBinding,
     cursor_trail_geometry::CursorTrailDraw,
     legacy_layers::{
@@ -26,6 +25,9 @@ use super::{
     },
     surface_pipeline_cache::LegacyPipelineLoad,
     visible_surfaces::VisibleSurface,
+};
+use super::super::{
+    VulkanDisplayColorPassError, VulkanLegacyFrameRecorder, VulkanSharedLegacyDisplayColorPass,
 };
 
 /// Records a complete compatibility frame using the resources already prepared
