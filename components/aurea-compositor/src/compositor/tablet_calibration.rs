@@ -45,7 +45,11 @@ impl AureaCompositor {
             self.tablet_profiles
                 .set(identity, profile)
                 .map_err(|error| {
-                    tracing::warn!(device_id = device.0, %error, "Could not persist tablet calibration");
+                    tracing::warn!(
+                        device_id = device.0,
+                        %error,
+                        "Could not persist tablet calibration"
+                    );
                     TabletCalibrationError::PersistenceFailure
                 })?;
         }
@@ -64,7 +68,11 @@ impl AureaCompositor {
             match self.tablet_profiles.remove(&identity) {
                 Ok(removed) => removed,
                 Err(error) => {
-                    tracing::warn!(device_id = device.0, %error, "Could not persist tablet calibration reset");
+                    tracing::warn!(
+                        device_id = device.0,
+                        %error,
+                        "Could not persist tablet calibration reset"
+                    );
                     return false;
                 }
             }
