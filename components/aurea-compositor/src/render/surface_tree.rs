@@ -5,7 +5,7 @@
 
 //! Ordered SHM snapshots for complete Wayland surface trees.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use smithay::{
     reexports::wayland_server::{
@@ -255,6 +255,74 @@ pub fn collect_surface_tree_dmabuf_snapshots(
     );
 
     snapshots
+}
+
+/// Tracks the DMA-BUF currently retained by one surface.
+///
+/// A replaced buffer is released from the compositor commit hook. Aurea's
+/// Vulkan frame submission is synchronous, so that hook runs only after any
+/// previous sampling submission has completed.
+#[cfg(feature = "drm")]
+#[derive(Default)]
+struct SurfaceDmabufBufferState {
+    current: Option<WlBuffer>,
+}
+
+/// Updates retained DMA-BUF ownership throughout a committed surface tree.
+///
+/// A buffer remains unreleased while it is the surface's current attachment.
+/// Replacing it, detaching it, or switching to SHM releases the old buffer.
+#[cfg(feature = "drm")]
+pub fn update_surface_tree_dmabuf_buffer_lifecycle(root: &WlSurface) {
+    use smithay::backend::renderer::utils::Buffer as SmithayBuffer;
+    use smithay::wayland::dmabuf::get_dmabuf;
+
+    with_surface_tree_downward(
+        root,
+        (),
+        |_, _, _| TraversalAction::DoChildren(()),
+        |surface, _, _| {
+            let previous = with_surface_states(surface, |states| {
+                let next = {
+                    let mut attributes = states.cached_state.get::<SurfaceAttributes>();
+                    match attributes.current().buffer.as_ref() {
+                        Some(BufferAssignment::NewBuffer(buffer))
+                            if get_dmabuf(buffer).is_ok() =>
+                        {
+                            Some(buffer.clone())
+                        }
+                        Some(BufferAssignment::NewBuffer(_))
+                        | Some(BufferAssignment::Removed) => None,
+                        None => return None,
+                    }
+                };
+
+                let state = states
+                    .data_map
+                    .get_or_insert_threadsafe(SurfaceDmabufBufferState::default);
+                let mut state = state
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                if state.current == next {
+                    return None;
+                }
+                std::mem::replace(&mut state.current, next)
+            });
+
+            if let Some(previous) = previous {
+                SmithayBuffer::with_implicit(previous).release();
+            }
+        },
+        |_, _, _| true,
+    );
+}
+
+#[cfg(feature = "drm")]
+fn with_surface_states<T>(
+    surface: &WlSurface,
+    callback: impl FnOnce(&SurfaceData) -> T,
+) -> T {
+    smithay::wayland::compositor::with_states(surface, callback)
 }
 
 #[cfg(feature = "drm")]
