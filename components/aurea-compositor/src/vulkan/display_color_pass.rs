@@ -93,14 +93,16 @@ impl<'device> VulkanDisplayColorPass<'device> {
         let sampler = VulkanSampler::linear_clamp(device)
             .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
 
-        let vertex = VulkanShaderModule::from_bytes(
+        let vertex = VulkanShaderModule::from_renderer_variants(
             device,
             include_bytes!(env!("AUREA_DISPLAY_COLOR_VERT_SPV")),
+            include_bytes!(env!("AUREA_DISPLAY_COLOR_VERT_COMPAT_SPV")),
         )
         .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
-        let fragment = VulkanShaderModule::from_bytes(
+        let fragment = VulkanShaderModule::from_renderer_variants(
             device,
             include_bytes!(env!("AUREA_DISPLAY_COLOR_FRAG_SPV")),
+            include_bytes!(env!("AUREA_DISPLAY_COLOR_FRAG_COMPAT_SPV")),
         )
         .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
 
@@ -154,14 +156,16 @@ impl<'device> VulkanDisplayColorPass<'device> {
                 .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
         let sampler = VulkanSampler::linear_clamp_shared(std::sync::Arc::clone(&device))
             .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
-        let vertex = VulkanShaderModule::from_bytes(
+        let vertex = VulkanShaderModule::from_renderer_variants(
             device_ref,
             include_bytes!(env!("AUREA_DISPLAY_COLOR_VERT_SPV")),
+            include_bytes!(env!("AUREA_DISPLAY_COLOR_VERT_COMPAT_SPV")),
         )
         .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
-        let fragment = VulkanShaderModule::from_bytes(
+        let fragment = VulkanShaderModule::from_renderer_variants(
             device_ref,
             include_bytes!(env!("AUREA_DISPLAY_COLOR_FRAG_SPV")),
+            include_bytes!(env!("AUREA_DISPLAY_COLOR_FRAG_COMPAT_SPV")),
         )
         .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
         let descriptor_handles = [descriptor_layout.handle()];
