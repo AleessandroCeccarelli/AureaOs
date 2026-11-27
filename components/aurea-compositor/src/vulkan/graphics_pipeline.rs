@@ -209,6 +209,17 @@ impl VulkanSharedLegacyGraphicsPipeline {
         Arc::ptr_eq(&self.render_pass, render_pass)
             && self.pipeline.is_compatible_with_render_pass(device, color_format, render_pass.handle())
     }
+
+    /// Checks compatibility against a framebuffer target's borrowed render pass.
+    pub fn is_compatible_with_target(
+        &self,
+        device: &VulkanLogicalDevice,
+        color_format: vk::Format,
+        render_pass: &VulkanLegacyRenderPass<'_>,
+    ) -> bool {
+        self.pipeline.is_compatible_with_render_pass(device, color_format, render_pass.handle())
+            && self.render_pass.handle() == render_pass.handle()
+    }
 }
 
 impl<'device> VulkanGraphicsPipeline<'device> {
