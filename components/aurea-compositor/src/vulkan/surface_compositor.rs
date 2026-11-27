@@ -54,7 +54,7 @@ use super::{
 use super::{DmabufSyncWaitSet, VulkanDmabufImage};
 
 pub(super) const MAX_COMPOSITED_SURFACES: usize = 128;
-pub(super) const MAX_COMPOSITED_SHM_BYTES: usize = 256 * 1024 * 1024;
+pub(super) const MAX_COMPOSITED_BUFFER_BYTES: usize = 256 * 1024 * 1024;
 
 /// Converts the menu's logical artwork canvas into output-local physical geometry.
 /// This deliberately reuses the same scale and transform rules as Wayland surfaces.
