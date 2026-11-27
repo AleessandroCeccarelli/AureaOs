@@ -1245,3 +1245,15 @@ Limiti ancora aperti:
 - La compatibilità delle dipendenze e gli stage/access mask delle barriere vanno riesaminati durante l'integrazione end-to-end.
 - Il load operation è fissato alla creazione del render pass; per usare `LOAD` occorre un render pass creato esplicitamente con `VulkanColorLoad::Load` e un recorder dedicato che non presuma il clear.
 - Nessun build/test/ISO eseguito: come richiesto, le verifiche saranno eseguite domani su Fedora.
+
+
+## 2026-11-27 — Legacy textured-region recorder
+
+- Added `VulkanDrawPass::record_legacy_textured_region` in `components/aurea-compositor/src/vulkan/draw_pass.rs`.
+- The recorder uses the lifetime-bound `VulkanLegacyGraphicsPipeline`, a live `VulkanTextureBinding`, descriptor-set binding, caller-provided push constants and shader stages, and the same destination viewport/clipped-scissor model used by the dynamic textured-region path.
+- It validates target color-attachment usage, pipeline/render-pass/device/format compatibility, finite image-state/load parameters, push-constant alignment/size, and scissor/viewport bounds before recording.
+- The requested `VulkanColorLoad` is checked against the render pass's actual attachment load operation. This enables a future compositor sequence to use `LOAD` when overlaying a surface on an already-rendered wallpaper rather than clearing the output.
+- The existing basic legacy recorder remains clear-only and unchanged; the modern dynamic-rendering path was not modified.
+- Commit: `b6ce0e80`.
+- No build, rustfmt, cargo check, tests, shader compilation, CI, ISO build or hardware validation was run, per the grouped Fedora verification plan.
+- Important remaining integration work: legacy surface/wallpaper/cursor pipeline creation and persistent render-pass ownership in the per-format cache; legacy display-color pipeline/recording; end-to-end frame recording and presentation; and mode-aware logical-device creation/selection. AAG compatibility must remain disabled until these are complete and validated.
