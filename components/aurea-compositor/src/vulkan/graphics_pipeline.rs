@@ -313,6 +313,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
     ) -> bool {
         self.device.device().handle().handle() == device.handle().handle()
             && self.color_format == color_format
+            && self.render_pass.is_none()
     }
 
     pub(super) fn is_compatible_with_render_pass(
