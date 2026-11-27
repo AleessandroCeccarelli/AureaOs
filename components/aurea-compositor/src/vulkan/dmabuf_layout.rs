@@ -102,9 +102,16 @@ impl DmabufImportLayout {
             if stride == 0 {
                 return Err(DmabufLayoutError::ZeroStride { plane: index });
             }
-            offset
-                .checked_add(stride)
+            // A one-plane image uses this stride for every row. Validate
+            // the full addressed byte range, not merely offset + one stride,
+            // before passing the layout to Vulkan.
+            let addressed_bytes = stride
+                .checked_mul(size.h as u32)
+                .and_then(|bytes| offset.checked_add(bytes))
                 .ok_or(DmabufLayoutError::PlaneLayoutOverflow { plane: index })?;
+            if addressed_bytes <= offset {
+                return Err(DmabufLayoutError::PlaneLayoutOverflow { plane: index });
+            }
             planes.push(DmabufPlaneLayout { offset, stride });
         }
 
