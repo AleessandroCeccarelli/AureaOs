@@ -311,6 +311,7 @@ impl Drop for VulkanLegacyRenderPassScope<'_, '_, '_, '_, '_, '_> {
 
 impl Drop for VulkanLegacyRenderTarget<'_, '_, '_, '_, '_> {
     fn drop(&mut self) {
+        if self.view.device().is_unusable() { return; }
         unsafe {
             self.view
                 .device()
