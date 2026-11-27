@@ -21,9 +21,7 @@ use super::{
 /// Stateless recorder for operations that form one legacy-rendered frame.
 ///
 /// The caller owns command-buffer lifecycle, submission, image-state tracking,
-/// and all sampled resources until GPU completion. Each call creates and
-/// destroys its framebuffer locally, preventing a framebuffer from escaping
-/// the lifetime of the image view or render pass it references.
+/// sampled resources, and framebuffer targets until GPU completion.
 pub(crate) struct VulkanLegacyFrameRecorder;
 
 impl VulkanLegacyFrameRecorder {
