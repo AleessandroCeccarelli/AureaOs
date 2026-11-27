@@ -183,14 +183,13 @@ pub(super) fn visible_dmabuf_surfaces(
                 .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
         )
         .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+        let is_cursor = snapshot.is_cursor;
         visible.push(VisibleDmabufSurface {
             snapshot,
             geometry,
             scissor,
             texture_transform,
-            // DMA-BUF cursor buffers are not currently routed through the
-            // client cursor surface path; keep them in the normal surface layer.
-            is_cursor: false,
+            is_cursor,
         });
     }
     Ok(visible)
