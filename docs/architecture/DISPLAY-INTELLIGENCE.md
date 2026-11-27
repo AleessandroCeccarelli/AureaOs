@@ -178,8 +178,8 @@ The work should be delivered incrementally:
 1. **Display identity and output foundations — initial implementation available.** The compositor already provides stable output identities, connector discovery, output registration, removal, and logical layout management.
 2. **DRM device and output lifecycle — initial implementation available.** Device discovery, lifecycle integration, output reconciliation, and Wayland output publication are present in the compositor.
 3. **Physical display pipeline — incomplete.** Implement the Vulkan rendering and presentation path and a DRM/KMS mode-application boundary with explicit ownership and error reporting.
-4. **Capability reporting — API contract defined; provider incomplete.** Extend discovered output information into reliable per-display capability profiles and implement the service provider behind the shared desktop API.
-5. **Fixed-refresh configuration — planned.** Implement and validate fixed-mode selection as the first reliable configuration strategy.
+4. **Capability reporting — API contract defined; provider incomplete.** Extend discovered output information into reliable per-display capability profiles and implement the service provider behind the shared desktop API. A hardware-independent mode selector now chooses only from reported modes, requires an exact supported mode in Manual mode, and uses VRR only when a verified effective range is covered by the selected mode.
+5. **Fixed-refresh configuration — policy foundation implemented; KMS application planned.** The shared API now provides deterministic automatic mode selection using supported resolution, measured frame cadence, animation/fullscreen context, and battery state. The selected mode is not yet applied to a physical KMS output.
 6. **VRR capability detection — planned.** Detect effective support across the complete display pipeline.
 7. **Controlled VRR enablement — planned.** Add VRR only where the complete pipeline supports it and safe transitions can be guaranteed.
 8. **Display policy — planned.** Implement context-aware policy, safeguards, and per-display settings.
@@ -217,12 +217,12 @@ The compositor currently provides:
 - Wayland output publication.
 - Initial DRM hotplug and session lifecycle integration.
 
-The shared API contracts are present for display modes, capability profiles, VRR ranges, output layout and scale, automatic/manual policy, lifecycle events, and transactional configuration. They do not yet have a concrete provider or application-facing IPC implementation.\n\nThe following capabilities are not yet implemented as complete features:
+The shared API contracts are present for display modes, capability profiles, VRR ranges, output layout and scale, automatic/manual policy, lifecycle events, and transactional configuration. A pure mode-selection policy is implemented in source, but it is not yet wired to a concrete hardware capability provider, KMS mode application, or application-facing IPC. Tests have not yet been executed in this work pass.\n\nThe following capabilities are not yet implemented as complete features:
 
 - Physical display mode setting.
 - Complete Vulkan frame rendering and physical presentation.
 - VRR control.
-- Fixed-refresh selection policy.
+- Runtime fixed-refresh configuration and KMS mode application.
 - Adaptive refresh policy.
 - Per-display automatic configuration.
 - Settings → Display & Video interface.
