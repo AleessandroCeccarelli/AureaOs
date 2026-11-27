@@ -321,3 +321,156 @@ impl<'device> VulkanDisplayColorPass<'device> {
         Ok(())
     }
 }
+
+
+/// Traditional-render-pass display-color pipeline for the Vulkan 1.0 path.
+///
+/// The pass borrows its persistent render pass so the graphics pipeline cannot
+/// outlive the render-pass object it was created against.
+pub struct VulkanLegacyDisplayColorPass<'pass, 'device> {
+    pipeline: super::VulkanLegacyGraphicsPipeline<'pass, 'device>,
+    descriptor_layout: VulkanTextureDescriptorSetLayout<'device>,
+    sampler: VulkanSampler<'device>,
+}
+
+impl<'pass, 'device> VulkanLegacyDisplayColorPass<'pass, 'device> {
+    pub fn new(
+        device: &'device VulkanLogicalDevice,
+        render_pass: &'pass super::VulkanLegacyRenderPass<'device>,
+    ) -> Result<Self, VulkanDisplayColorPassError> {
+        if render_pass.device_handle() != device.handle().handle() {
+            return Err(VulkanDisplayColorPassError::IncompatibleImages);
+        }
+        if render_pass.load_op() != vk::AttachmentLoadOp::DONT_CARE {
+            return Err(VulkanDisplayColorPassError::IncompatibleImages);
+        }
+
+        let descriptor_layout = VulkanTextureDescriptorSetLayout::new(device)
+            .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
+        let sampler = VulkanSampler::linear_clamp(device)
+            .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
+        let vertex = VulkanShaderModule::from_renderer_variants(
+            device,
+            include_bytes!(env!("AUREA_DISPLAY_COLOR_VERT_SPV")),
+            include_bytes!(env!("AUREA_DISPLAY_COLOR_VERT_COMPAT_SPV")),
+        )
+        .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
+        let fragment = VulkanShaderModule::from_renderer_variants(
+            device,
+            include_bytes!(env!("AUREA_DISPLAY_COLOR_FRAG_SPV")),
+            include_bytes!(env!("AUREA_DISPLAY_COLOR_FRAG_COMPAT_SPV")),
+        )
+        .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
+        let descriptor_layouts = [&descriptor_layout];
+        let push_ranges = [vk::PushConstantRange::default()
+            .stage_flags(vk::ShaderStageFlags::FRAGMENT)
+            .offset(0)
+            .size(std::mem::size_of::<f32>() as u32)];
+        let pipeline = super::VulkanLegacyGraphicsPipeline::new(
+            device,
+            render_pass,
+            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            &descriptor_layouts,
+            &push_ranges,
+        )
+        .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
+
+        Ok(Self { pipeline, descriptor_layout, sampler })
+    }
+
+    pub fn bind_source<'resources, 'image, 'image_device>(
+        &'resources self,
+        source: &'resources VulkanImageView<'image, 'image_device>,
+    ) -> Result<
+        VulkanTextureBinding<'resources, 'image, 'image_device, 'device>,
+        VulkanDisplayColorPassError,
+    >
+    where
+        'device: 'image_device,
+        'resources: 'image_device,
+        'image: 'image_device,
+    {
+        let device = source.device();
+        if self.descriptor_layout.device_handle() != device.handle().handle()
+            || self.sampler.device_handle() != device.handle().handle()
+        {
+            return Err(VulkanDisplayColorPassError::IncompatibleImages);
+        }
+        if !source.usage().contains(vk::ImageUsageFlags::SAMPLED) {
+            return Err(VulkanDisplayColorPassError::MissingSampledUsage);
+        }
+        VulkanTextureBinding::new(device, &self.descriptor_layout, source, &self.sampler)
+            .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))
+    }
+
+    pub fn record(
+        &self,
+        device: &VulkanLogicalDevice,
+        command_buffer: vk::CommandBuffer,
+        source: &VulkanImageView<'_, '_>,
+        target: &super::VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        binding: &VulkanTextureBinding<'_, '_, '_, '_>,
+        previous_source_state: VulkanImageState,
+        previous_target_state: VulkanImageState,
+        final_state: VulkanImageState,
+        warmth_percent: u8,
+    ) -> Result<(), VulkanDisplayColorPassError> {
+        let view = target.view();
+        if warmth_percent > 100 {
+            return Err(VulkanDisplayColorPassError::InvalidIntensity);
+        }
+        if previous_source_state == VulkanImageState::Undefined
+            || final_state == VulkanImageState::Undefined
+        {
+            return Err(VulkanDisplayColorPassError::UndefinedImageState);
+        }
+        if !source.usage().contains(vk::ImageUsageFlags::SAMPLED) {
+            return Err(VulkanDisplayColorPassError::MissingSampledUsage);
+        }
+        if !binding.references_view(source) {
+            return Err(VulkanDisplayColorPassError::BindingSourceMismatch);
+        }
+        if !binding.uses_layout(&self.descriptor_layout) {
+            return Err(VulkanDisplayColorPassError::BindingLayoutMismatch);
+        }
+        if source.image_handle() == view.image_handle() {
+            return Err(VulkanDisplayColorPassError::AliasedImages);
+        }
+        if source.device().handle().handle() != device.handle().handle()
+            || view.device().handle().handle() != device.handle().handle()
+            || source.width() != view.width()
+            || source.height() != view.height()
+            || source.format() != view.format()
+            || !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT)
+            || !self.pipeline.is_compatible_with(device, view.format(), target.render_pass_ref())
+        {
+            return Err(VulkanDisplayColorPassError::IncompatibleImages);
+        }
+
+        VulkanImageTransition::record_color(
+            device, command_buffer, source.image_handle(),
+            previous_source_state, VulkanImageState::ShaderRead,
+        );
+        VulkanImageTransition::record_color(
+            device, command_buffer, view.image_handle(),
+            previous_target_state, VulkanImageState::ColorAttachment,
+        );
+
+        let scope = target.begin(command_buffer, [0.0; 4]);
+        self.pipeline.bind(command_buffer);
+        binding.bind(command_buffer, self.pipeline.layout(), 0);
+        self.pipeline.set_viewport_and_scissor(command_buffer, view.width(), view.height());
+        let strength = (warmth_percent as f32) / 100.0;
+        self.pipeline.push_constants(
+            command_buffer, vk::ShaderStageFlags::FRAGMENT, 0, &strength.to_ne_bytes(),
+        );
+        self.pipeline.draw(command_buffer, 3, 1);
+        scope.end();
+
+        VulkanImageTransition::record_color(
+            device, command_buffer, view.image_handle(),
+            VulkanImageState::ColorAttachment, final_state,
+        );
+        Ok(())
+    }
+}
