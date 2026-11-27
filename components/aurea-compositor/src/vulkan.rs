@@ -152,7 +152,9 @@ pub use image_allocator::{
 pub use image_transition::{VulkanImageState, VulkanImageTransition, VulkanImageTransitionError};
 pub use image_view::{VulkanImageView, VulkanImageViewError};
 pub use logical_device::VulkanLogicalDevice;
-pub use legacy_render_pass::{VulkanLegacyRenderPassError, VulkanLegacyRenderPassScope, VulkanLegacyRenderTarget};
+pub use legacy_render_pass::{
+    VulkanLegacyRenderPassError, VulkanLegacyRenderPassScope, VulkanLegacyRenderTarget,
+};
 pub use memory_type::select_memory_type_index;
 pub(crate) use native_cursor_texture::{VulkanNativeCursorTexture, VulkanNativeCursorTextureError};
 pub use offscreen_renderer::{VulkanOffscreenError, VulkanOffscreenRenderer};
