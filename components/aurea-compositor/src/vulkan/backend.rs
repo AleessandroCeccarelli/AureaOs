@@ -14,10 +14,7 @@ use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 #[cfg(feature = "drm")]
 use smithay::backend::drm::DrmNode;
 
-use crate::{
-    adaptive_graphics::AdaptiveGraphicsPlan,
-    renderer::RenderPreference,
-};
+use crate::{adaptive_graphics::AdaptiveGraphicsPlan, renderer::RenderPreference};
 
 use super::{
     VulkanCommandBuffer, VulkanContext, VulkanDeviceExtensionPlan, VulkanDeviceInfo,
