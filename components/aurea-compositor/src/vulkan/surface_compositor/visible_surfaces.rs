@@ -21,7 +21,7 @@ use crate::{
     renderer::RenderTarget,
 };
 
-use super::{MAX_COMPOSITED_SHM_BYTES, MAX_COMPOSITED_SURFACES, VulkanSurfaceCompositionError};
+use super::{MAX_COMPOSITED_BUFFER_BYTES, MAX_COMPOSITED_SURFACES, VulkanSurfaceCompositionError};
 
 #[cfg(feature = "drm")]
 use crate::render::surface_tree::SurfaceTreeDmabufSnapshot;
@@ -104,7 +104,7 @@ pub(super) fn visible_surfaces(
         total_bytes = total_bytes
             .checked_add(snapshot.snapshot.pixels().len())
             .ok_or(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded)?;
-        if total_bytes > MAX_COMPOSITED_SHM_BYTES {
+        if total_bytes > MAX_COMPOSITED_BUFFER_BYTES {
             return Err(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded);
         }
 
@@ -161,7 +161,7 @@ pub(super) fn visible_dmabuf_surfaces(
         total_bytes = total_bytes
             .checked_add(plane_bytes)
             .ok_or(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded)?;
-        if total_bytes > MAX_COMPOSITED_SHM_BYTES {
+        if total_bytes > MAX_COMPOSITED_BUFFER_BYTES {
             return Err(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded);
         }
 
