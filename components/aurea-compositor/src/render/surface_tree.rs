@@ -207,6 +207,8 @@ pub struct SurfaceTreeDmabufSnapshot {
     pub buffer_scale: i32,
     /// Committed Wayland buffer transform.
     pub buffer_transform: Transform,
+    /// Whether this snapshot belongs to the client-provided cursor surface tree.
+    pub is_cursor: bool,
 }
 
 /// Collects DMA-BUF-backed surfaces in the same stacking order as SHM snapshots.
@@ -245,6 +247,7 @@ pub fn collect_surface_tree_dmabuf_snapshots(
                     layout: snapshot.layout,
                     buffer_scale: snapshot.buffer_scale,
                     buffer_transform: snapshot.buffer_transform,
+                    is_cursor: false,
                 });
             }
         },
