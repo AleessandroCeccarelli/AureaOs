@@ -80,6 +80,67 @@ fn record_surface_class(
     Ok(())
 }
 
+
+/// Records the desktop context-menu artwork between normal surfaces and client cursors.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn record_context_menu(
+    command_buffer: vk::CommandBuffer,
+    render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
+    target: &VulkanImageView<'_, '_>,
+    pipeline: &VulkanSharedLegacyGraphicsPipeline,
+    source: &VulkanImageView<'_, '_>,
+    binding: &VulkanTextureBinding<'_, '_, '_, '_>,
+    viewport: vk::Viewport,
+    scissor: vk::Rect2D,
+    texture_transform: u32,
+) -> Result<(), VulkanSurfaceCompositionError> {
+    VulkanLegacyFrameRecorder::surface_region(
+        command_buffer,
+        render_pass,
+        target,
+        pipeline,
+        source,
+        binding,
+        VulkanImageState::General,
+        VulkanImageState::General,
+        VulkanImageState::General,
+        viewport,
+        scissor,
+        texture_transform,
+    )
+    .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))
+}
+
+/// Records the desktop wallpaper using its dedicated four-float UV transform ABI.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn record_wallpaper(
+    command_buffer: vk::CommandBuffer,
+    render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
+    target: &VulkanImageView<'_, '_>,
+    pipeline: &VulkanSharedLegacyGraphicsPipeline,
+    source: &VulkanImageView<'_, '_>,
+    binding: &VulkanTextureBinding<'_, '_, '_, '_>,
+    viewport: vk::Viewport,
+    scissor: vk::Rect2D,
+    uv_transform: [f32; 4],
+) -> Result<(), VulkanSurfaceCompositionError> {
+    VulkanLegacyFrameRecorder::wallpaper_region(
+        command_buffer,
+        render_pass,
+        target,
+        pipeline,
+        source,
+        binding,
+        VulkanImageState::ShaderRead,
+        VulkanImageState::General,
+        VulkanImageState::General,
+        viewport,
+        scissor,
+        uv_transform,
+    )
+    .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))
+}
+
 /// Records ordinary client surfaces first and client cursor surfaces afterwards.
 ///
 /// The caller places the context menu between the two calls when preserving the
