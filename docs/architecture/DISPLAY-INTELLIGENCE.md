@@ -228,3 +228,26 @@ The shared API contracts are present for display modes, capability profiles, VRR
 - Settings → Display & Video interface.
 
 The existing implementation is the foundation on which Display Intelligence will be built. It must not be confused with a completed display-management service.
+
+
+## Native DRM timing retention (2026-11-27)
+
+DRM discovery now retains the complete list of native connector timings as
+pairs with their corresponding `DrmModeInfo` values on
+`DrmOutputDescriptor`. The hardware-independent `DisplayOutput` registry
+collapses duplicate logical modes rather than rejecting the entire output.
+This prevents two timings that map to the same logical width, height and
+reported millihertz from making an otherwise usable connector disappear.
+
+`DrmOutputDescriptor::native_mode_for` currently resolves a logical mode to
+the first retained native timing that maps to it. This is deterministic but
+not a unique identity when multiple native timings collapse to one logical
+mode. The current descriptor also retains the preferred native mode for
+initial surface creation.
+
+**Still incomplete:** native timing identity is not yet represented in
+`OutputMode`; the output manager's mode changes are logical-only and are not
+transactionally applied to an existing KMS surface. Do not claim live mode
+switching, exact selection among colliding native timings, or rollback support
+until that path is implemented and tested. Refresh-rate precision remains
+limited by the current integer `vrefresh()` conversion.
