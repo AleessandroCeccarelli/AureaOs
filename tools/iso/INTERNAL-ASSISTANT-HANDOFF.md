@@ -1441,3 +1441,11 @@ Cautions:
 - This is a recording building block, not yet called by `render_frame`. The active compositor still fails closed for `CompatibilityPending`; AAG remains disabled. Wallpaper, context-menu, cursor-trail, native cursor, display-color and final readback/DRM dispatch still need a unified legacy frame orchestrator.
 - No build, tests, rustfmt, shader compilation or hardware validation was run.
 
+### Legacy desktop-artwork and cursor layer recorders (2026-11-27)
+
+- Extended `surface_compositor/legacy_layers.rs` with dedicated wallpaper and context-menu recorders. Wallpaper uses the existing four-float UV push-constant ABI; context-menu artwork uses the surface texture-transform ABI.
+- Added native-cursor recording and a cursor-trail loop that preserves the supplied back-to-front impression order and uses the existing vertex+fragment transform/opacity ABI.
+- The helpers accept already prepared views, descriptor bindings, geometry and shared legacy pipelines. They do not decode assets, allocate descriptors, or change scene geometry.
+- These are still recording primitives, not a complete frame path. They are not dispatched from `render_frame`; the legacy fail-closed guard remains in place. In particular, no claim is made that display-color, output transitions, readback, or foreign KMS release are integrated.
+- No build, tests, rustfmt, shader compilation or hardware validation was run.
+
