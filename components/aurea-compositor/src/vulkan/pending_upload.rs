@@ -215,15 +215,15 @@ impl<T> Drop for VulkanPendingUpload<T> {
                 mark_device_lost(&self.device, error);
                 if unsafe { self.device.handle().device_wait_idle() }.is_err() {
                     self.device.mark_unusable();
-                if let Some(staging) = self.staging.take() {
-                    mem::forget(staging);
-                }
-                if let Some(resources) = self.resources.take() {
-                    mem::forget(resources);
-                }
-                mem::forget(Arc::clone(&self.device));
-                self.fence = vk::Fence::null();
-                self.command_pool = vk::CommandPool::null();
+                    if let Some(staging) = self.staging.take() {
+                        mem::forget(staging);
+                    }
+                    if let Some(resources) = self.resources.take() {
+                        mem::forget(resources);
+                    }
+                    mem::forget(Arc::clone(&self.device));
+                    self.fence = vk::Fence::null();
+                    self.command_pool = vk::CommandPool::null();
                     self.submitted = false;
                     return;
                 }
