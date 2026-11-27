@@ -23,6 +23,9 @@ use crate::{
 
 use super::{MAX_COMPOSITED_SHM_BYTES, MAX_COMPOSITED_SURFACES, VulkanSurfaceCompositionError};
 
+#[cfg(feature = "drm")]
+use crate::render::surface_tree::SurfaceTreeDmabufSnapshot;
+
 pub(super) struct VisibleSurface {
     pub(super) surface_id: smithay::reexports::wayland_server::backend::ObjectId,
     pub(super) revision: u64,
@@ -120,5 +123,74 @@ pub(super) fn visible_surfaces(
         });
     }
 
+    Ok(visible)
+}
+
+
+/// Geometry for one visible DMA-BUF surface, independent of its Vulkan image import.
+#[cfg(feature = "drm")]
+pub(super) struct VisibleDmabufSurface {
+    pub(super) snapshot: SurfaceTreeDmabufSnapshot,
+    pub(super) geometry: SurfaceGeometry,
+    pub(super) scissor: SurfaceScissor,
+    pub(super) texture_transform: u32,
+    pub(super) is_cursor: bool,
+}
+
+/// Resolves output clipping and Wayland buffer transforms for DMA-BUF snapshots.
+#[cfg(feature = "drm")]
+pub(super) fn visible_dmabuf_surfaces(
+    snapshots: Vec<SurfaceTreeDmabufSnapshot>,
+    target: &RenderTarget,
+) -> Result<Vec<VisibleDmabufSurface>, VulkanSurfaceCompositionError> {
+    let mut visible = Vec::new();
+    for snapshot in snapshots {
+        let geometry = if let Some(scale) = target.fractional_scale() {
+            surface_geometry_with_fractional_scale(
+                (snapshot.location.x, snapshot.location.y),
+                (snapshot.layout.width(), snapshot.layout.height()),
+                snapshot.buffer_scale,
+                snapshot.buffer_transform,
+                target.logical_origin(),
+                scale,
+            )
+        } else {
+            surface_geometry(
+                (snapshot.location.x, snapshot.location.y),
+                (snapshot.layout.width(), snapshot.layout.height()),
+                snapshot.buffer_scale,
+                snapshot.buffer_transform,
+                target.logical_origin(),
+                target.scale(),
+            )
+        }
+        .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+        let geometry = transform_geometry_for_output(
+            geometry,
+            target.width(),
+            target.height(),
+            target.transform(),
+        )
+        .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+        let Some(scissor) = geometry.scissor(target.width(), target.height()) else {
+            continue;
+        };
+        if visible.len() >= MAX_COMPOSITED_SURFACES {
+            return Err(VulkanSurfaceCompositionError::TooManySurfaces);
+        }
+        let is_cursor = snapshot.surface.data_map().get::<smithay::input::pointer::CursorImageSurfaceData>().is_some();
+        let texture_transform = surface_transform_index(
+            compose_surface_transforms(snapshot.buffer_transform, target.transform())
+                .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+        )
+        .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+        visible.push(VisibleDmabufSurface {
+            snapshot,
+            geometry,
+            scissor,
+            texture_transform,
+            is_cursor,
+        });
+    }
     Ok(visible)
 }
