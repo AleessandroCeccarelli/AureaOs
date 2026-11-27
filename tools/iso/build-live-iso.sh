@@ -127,7 +127,8 @@ refresh_inputs() {
         tools/assets/xcursor_config.py aurea-human-interfaces/cursors \
         aurea-human-interfaces/resources/wallpapers \
         aurea-human-interfaces/fonts/source/google-fonts/noto-sans \
-        aurea-human-interfaces/icons/source/system/context-menu |
+        aurea-human-interfaces/icons/source/system/context-menu \
+        aurea-human-interfaces/icons/source/system/trash |
         tar -xf - -C "$SOURCE_DIR"
 
     # Generate only the artwork consumed by the current compositor. Rasterize
