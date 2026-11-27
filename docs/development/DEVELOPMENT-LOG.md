@@ -2736,3 +2736,11 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - Replaced that approach with a fail-closed import policy: preserve the last valid feedback object and main-device identity, but clear the active renderer import-validation set while the session is paused or no common safe formats exist. `dmabuf_imported` rejects new imports until a valid renderer set is restored.
 - This avoids emitting malformed feedback and avoids destroying/recreating a global that clients may already have bound. The stale format list remains an allocation hint only during the unavailable interval; actual imports are rejected.
 - No build, formatting, tests, CI or hardware validation was run.
+
+
+### DMA-BUF client-surface integration audit — 2026-11-27
+
+- Confirmed the source now connects Wayland client DMA-BUF snapshots to Vulkan surface composition; the previous scanout and device-foundation status text incorrectly described client DMA-BUF import as wholly unimplemented.
+- The current importer validates and retains the client buffer layout, accepts only a single memory plane, checks the exact DRM modifier and sampled/external-memory capabilities on each active renderer, imports the DMA-BUF as a sampled Vulkan image, exports a Linux read sync-file and imports it as a temporary Vulkan SYNC_FD semaphore before queue sampling.
+- Multi-plane image binding, implicit producer synchronization, and full Y-inversion/transform handling remain outside the implemented contract. The compositor rejects unsupported layouts rather than guessing. Per-surface GPU preference feedback remains intentionally absent because surfaces may span outputs and no authoritative surface-to-render-device mapping exists; the conservative global renderer intersection remains the truthful contract.
+- Updated `VULKAN-SCANOUT-STATUS.md` and `VULKAN-DEVICE-FOUNDATION.md` to reflect source reality and preserve the remaining limitations. No build, formatting, tests, CI or hardware validation was run, as requested until the video block is complete.
