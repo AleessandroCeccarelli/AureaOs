@@ -107,7 +107,7 @@ impl VulkanDrawPass {
     /// deliberately supports the basic full-target draw path only.
     pub fn record_legacy(
         command_buffer: vk::CommandBuffer,
-        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
         pipeline: &VulkanLegacyGraphicsPipeline<'_, '_>,
         previous_state: VulkanImageState,
         final_state: VulkanImageState,
@@ -169,7 +169,7 @@ impl VulkanDrawPass {
     #[allow(clippy::too_many_arguments)]
     pub fn record_legacy_textured_region(
         command_buffer: vk::CommandBuffer,
-        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
         pipeline: &VulkanLegacyGraphicsPipeline<'_, '_>,
         source: &VulkanImageView<'_, '_>,
         texture: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -246,7 +246,7 @@ impl VulkanDrawPass {
     }
 
     fn legacy_load_matches(
-        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
         load: VulkanColorLoad,
     ) -> bool {
         let expected = match load {
@@ -265,7 +265,7 @@ impl VulkanDrawPass {
     #[allow(clippy::too_many_arguments)]
     pub fn record_shared_legacy_textured_region(
         command_buffer: vk::CommandBuffer,
-        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
         pipeline: &VulkanSharedLegacyGraphicsPipeline,
         source: &VulkanImageView<'_, '_>,
         texture: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -333,7 +333,7 @@ impl VulkanDrawPass {
     /// Records a full-target clear draw with a cached shared legacy pipeline.
     pub fn record_shared_legacy_clear(
         command_buffer: vk::CommandBuffer,
-        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
         pipeline: &VulkanSharedLegacyGraphicsPipeline,
         previous_state: VulkanImageState,
         final_state: VulkanImageState,
