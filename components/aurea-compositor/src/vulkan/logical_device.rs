@@ -36,6 +36,15 @@ pub struct VulkanLogicalDevice {
 }
 
 impl VulkanLogicalDevice {
+    /// Whether uncertain completion or device loss permanently disabled this device.
+    pub fn is_unusable(&self) -> bool {
+        self.device_unusable.load(Ordering::Acquire)
+    }
+
+    fn mark_unusable(&self) {
+        self.device_unusable.store(true, Ordering::Release);
+    }
+
     /// Returns the underlying Vulkan device handle.
     pub(super) fn handle(&self) -> &ash::Device {
         &self.device
