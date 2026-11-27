@@ -29,9 +29,13 @@ pub(super) fn initialize_vulkan_backends(state: &mut WaylandState) {
         initialize_vulkan_backend(state, node);
     }
 
-    // Keep the main tranche restricted to formats every active renderer can
-    // import and sample. This also provides the compatibility format list to
-    // clients that bind linux-dmabuf v3 or lower.
+    refresh_dmabuf_feedback(state);
+}
+
+/// Reconciles the feedback global and import validation set with active Vulkan devices.
+pub(super) fn refresh_dmabuf_feedback(state: &mut WaylandState) {
+    // The main tranche is intentionally conservative: every advertised pair
+    // must be importable and sampleable on every active renderer.
     let devices = state
         .vulkan_backends
         .values()
@@ -55,11 +59,11 @@ pub(super) fn initialize_vulkan_backends(state: &mut WaylandState) {
             .and_then(|node| node.dev_id().ok())
     });
     let Some(main_device) = main_device else {
-        tracing::warn!("AureaOS: linux-dmabuf disabled; no Vulkan renderer exposes a DRM device identity");
+        tracing::warn!("AureaOS: linux-dmabuf feedback not refreshed; no Vulkan renderer exposes a DRM device identity");
         return;
     };
     if formats.is_empty() {
-        tracing::info!("AureaOS: linux-dmabuf disabled; no common safe DMA-BUF import formats");
+        tracing::info!("AureaOS: linux-dmabuf feedback not refreshed; no common safe DMA-BUF formats");
         return;
     }
     let feedback = match DmabufFeedbackBuilder::new(main_device, formats).build() {
@@ -71,9 +75,7 @@ pub(super) fn initialize_vulkan_backends(state: &mut WaylandState) {
     };
     let display_handle = state.display.handle();
     if state.compositor.initialize_dmabuf_global(&display_handle, devices, feedback) {
-        tracing::info!("AureaOS: linux-dmabuf feedback global published with cross-GPU importable formats");
-    } else {
-        tracing::info!("AureaOS: linux-dmabuf disabled; no compatible Vulkan device set");
+        tracing::info!("AureaOS: linux-dmabuf feedback reconciled with active Vulkan renderers");
     }
 }
 
