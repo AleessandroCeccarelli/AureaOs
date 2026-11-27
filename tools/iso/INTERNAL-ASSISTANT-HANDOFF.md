@@ -1257,3 +1257,15 @@ Limiti ancora aperti:
 - Commit: `b6ce0e80`.
 - No build, rustfmt, cargo check, tests, shader compilation, CI, ISO build or hardware validation was run, per the grouped Fedora verification plan.
 - Important remaining integration work: legacy surface/wallpaper/cursor pipeline creation and persistent render-pass ownership in the per-format cache; legacy display-color pipeline/recording; end-to-end frame recording and presentation; and mode-aware logical-device creation/selection. AAG compatibility must remain disabled until these are complete and validated.
+
+
+## 2026-11-27 — Legacy surface/wallpaper/cursor pipeline factories
+
+- Added explicit traditional-render-pass pipeline factory methods to `VulkanSurfacePipelineCache`: surface texture, wallpaper texture, and cursor trail. Each factory uses the corresponding modern/compatibility shader pair and the existing descriptor-set/push-constant ABI.
+- The factories return `VulkanLegacyGraphicsPipeline` values borrowing the supplied `VulkanLegacyRenderPass`; this deliberately avoids a self-referential cache and prevents a pipeline from outliving the render pass it was created against. The caller must retain the cache, render pass, and returned pipeline for their respective lifetimes.
+- The cursor-trail vertex module now uses the renderer-variant selector too, rather than unconditionally loading the modern vertex SPIR-V.
+- Strengthened `VulkanDrawPass::record_legacy_textured_region`: it now receives the source image view, verifies sampled usage and exact descriptor/source identity, rejects source/target aliasing and cross-device resources, transitions the source to shader-read and the target to color-attachment, then records the legacy textured region.
+- Fixed the basic `record_legacy` path to remain independent of texture resources; it continues to validate and draw its own clear-enabled attachment.
+- Commits: `bfa34c3d` (pipeline factories), `30f32017` (initial texture-source validation change), `78721c94` (corrected recorder placement and source/target transitions).
+- These are source changes only. No build, rustfmt, cargo check, tests, CI, shader compilation, ISO generation or hardware validation was run. Tomorrow's grouped Fedora verification remains the gate.
+- Compatibility is still not end-to-end: current logical-device creation remains Vulkan 1.3-only, and the renderer-variant selector cannot yet instantiate a legacy logical device. These factories prepare pipeline creation but do not activate AAG compatibility or prove wallpaper/surface/cursor presentation on older Vulkan hardware.
