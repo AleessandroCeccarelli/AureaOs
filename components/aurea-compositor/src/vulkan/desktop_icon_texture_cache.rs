@@ -83,6 +83,9 @@ impl VulkanDesktopIconTextureCache {
         &mut self,
         requested: &[(DesktopIconTextureKey, ShmBufferSnapshot)],
     ) -> Result<(), VulkanDesktopIconTextureCacheError> {
+        if self.device.is_unusable() {
+            return Err(VulkanDesktopIconTextureCacheError::Texture(VulkanShmTextureError::Device(vk::Result::ERROR_DEVICE_LOST)));
+        }
         self.reap_completed_uploads()?;
         let requested_keys = requested
             .iter()
