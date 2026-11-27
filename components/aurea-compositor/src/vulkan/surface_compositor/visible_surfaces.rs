@@ -178,8 +178,20 @@ pub(super) fn visible_dmabuf_surfaces(
         if visible.len() >= MAX_COMPOSITED_SURFACES {
             return Err(VulkanSurfaceCompositionError::TooManySurfaces);
         }
+        // linux-dmabuf's y_inverted flag describes the pixel orientation
+        // independently from wl_surface.buffer_transform. Convert it to the
+        // equivalent vertical-flip transform before composing output rotation.
+        let buffer_transform = if snapshot.layout.y_inverted() {
+            compose_surface_transforms(
+                snapshot.buffer_transform,
+                smithay::utils::Transform::Flipped180,
+            )
+            .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?
+        } else {
+            snapshot.buffer_transform
+        };
         let texture_transform = surface_transform_index(
-            compose_surface_transforms(snapshot.buffer_transform, target.transform())
+            compose_surface_transforms(buffer_transform, target.transform())
                 .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
         )
         .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
