@@ -2436,3 +2436,8 @@ Esteso il controllo `device_unusable` oltre il punto di submission: allocazione 
 ### 27 novembre 2026 — Teardown Vulkan dopo device loss
 
 Completato un ulteriore passaggio sull'audit di distruzione: i Drop di immagini, image view, framebuffer legacy, render pass, pipeline/layout, shader, sampler, descriptor pool, buffer upload/readback e memoria ora evitano le chiamate Vulkan quando `VulkanLogicalDevice::is_unusable()` è attivo. Anche `VulkanTextureBindingPool` e il logical device stesso rispettano il fail-stop: il device non tenta `device_wait_idle` dopo device loss e mantiene vivo il contesto Vulkan genitore invece di distruggere un device in stato terminale. `VulkanQueueSubmitter` controlla lo stato anche prima della creazione della fence, oltre al controllo serializzato sotto il lock della queue. Modifiche statiche su `main`; nessun build, rustfmt, test o validation layer eseguito.
+
+
+### 27 novembre 2026 — Cache e pool durante il fail-stop
+
+Esteso il fail-stop agli ingressi dei pool e delle cache Vulkan: capture-target pool e readback-buffer pool rifiutano prepare/acquire quando il logical device è inutilizzabile; cache SHM, icone desktop e wallpaper interrompono prepare prima di avviare nuovi upload o polling. Aggiunto un errore tipizzato `DeviceLost` per il capture-target pool. Corretto anche il rollback di `VulkanFrameScheduler::with_frame_count`: se la creazione di uno slot fallisce perché il device è diventato inutilizzabile, gli slot già creati vengono quarantinati invece di distruggere fence, semafori e command pool sul device perso. I lease restituiti ai pool mantengono il pool e il logical device in vita; le risorse sottostanti hanno Drop fail-stop. Nessun build, rustfmt, test o validation layer eseguito.
