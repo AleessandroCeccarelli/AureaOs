@@ -85,6 +85,9 @@ impl<'device> VulkanQueueSubmitter<'device> {
         command_buffer: vk::CommandBuffer,
         on_submitted: impl FnOnce(),
     ) -> Result<(), VulkanQueueSubmitError> {
+        if self.device_unusable.load(Ordering::Acquire) {
+            return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
+        }
         let command_buffers = [command_buffer];
         let submit_info = [vk::SubmitInfo::default().command_buffers(&command_buffers)];
         let fence_info = vk::FenceCreateInfo::default();
