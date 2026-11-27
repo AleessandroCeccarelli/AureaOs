@@ -28,7 +28,7 @@ pub(crate) fn render_and_readback(
         &VulkanImageView<'_, '_>,
         VulkanImageState,
     )>,
-    readback: &VulkanReadbackBuffer<'_>,
+    readback: &mut Option<VulkanReadbackBuffer<'_>>,
 ) -> Result<(), VulkanSurfaceCompositionError> {
     render_frame(
         device,
