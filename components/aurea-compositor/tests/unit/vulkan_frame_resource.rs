@@ -380,3 +380,26 @@ fn accepted_submission_cannot_be_cancelled_as_unsubmitted() {
     );
     assert!(!resource.is_available());
 }
+
+#[test]
+fn foreign_acquire_eligibility_requires_kms_release_and_resolved_presentation() {
+    let mut resource = VulkanFrameResource::new();
+    assert!(!resource.can_acquire_from_foreign());
+
+    resource.begin_render().unwrap();
+    resource.mark_submitted().unwrap();
+    resource.mark_foreign_release_submitted().unwrap();
+    assert!(!resource.can_acquire_from_foreign());
+
+    resource.mark_kms_committed_with_sync_fd().unwrap();
+    assert!(!resource.can_acquire_from_foreign());
+
+    resource.mark_kms_released().unwrap();
+    assert!(resource.can_acquire_from_foreign());
+
+    resource.mark_foreign_acquire_submitted().unwrap();
+    assert!(!resource.can_acquire_from_foreign());
+    resource.mark_foreign_acquired().unwrap();
+    assert!(!resource.can_acquire_from_foreign());
+    assert!(resource.is_available());
+}
