@@ -1464,3 +1464,13 @@ Cautions:
 - This is a source-level layout/availability correction, not proof of a complete renderer. No build, tests or hardware validation were run.
 - Remaining integration work: frame-scoped bindings/views for the shared legacy resources, a legacy display-color route for both DRM and readback, and the common `render_frame` mode dispatch. Keep the fail-closed compatibility guard and availability false until all are wired.
 
+### Frame orchestration integration audit (2026-11-27)
+
+- Re-read the complete active `surface_compositor::render_frame`, legacy layer recorders, output helpers and cache APIs before attempting dispatch integration.
+- Confirmed that the active frame already shares one composition target for both terminal paths: when `readback` is present it records the copy and submits without foreign ownership release; otherwise it releases the output image to the KMS queue. Therefore legacy mode selection must happen once in this common function, not in the DRM/readback leaf helpers.
+- Confirmed the current legacy layer helpers accept the existing frame-scoped `VisibleSurface`, image-view and texture-binding collections, so those collections can be reused rather than rebuilding or reordering the scene.
+- Important integration constraint: `VulkanLegacyFrameRecorder`, `VulkanDisplayColorPass` and the whole `surface_compositor` module are currently behind the `drm` feature. The readback branch is an alternate terminal path inside this DRM-enabled compositor, not an independently compiled non-DRM compositor. Do not infer that the earlier non-DRM resource-preparation helper makes the full legacy compositor available in non-DRM builds.
+- The existing shared legacy display-color pass is a traditional-render-pass implementation and must be used instead of the modern `VulkanDisplayColorPass` when recording a legacy frame. Its source binding and output render target must remain alive through the same synchronous submission.
+- No speculative dispatch was added in this pass: the current function still prepares modern pipelines/bindings after the compatibility guard, so simply removing the guard would call Vulkan 1.3-only code. The next safe change must introduce a distinct legacy preparation branch before modern pipeline creation, then record all layers and choose exactly one of the existing readback/release terminal paths.
+- No build, tests, rustfmt, shader compilation or hardware validation were run.
+
