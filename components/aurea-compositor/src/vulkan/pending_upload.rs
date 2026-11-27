@@ -192,6 +192,7 @@ impl<T> Drop for VulkanPendingUpload<T> {
             };
             if fence_result.is_err() && unsafe { self.device.handle().device_wait_idle() }.is_err()
             {
+                self.device.mark_unusable();
                 if let Some(staging) = self.staging.take() {
                     mem::forget(staging);
                 }
