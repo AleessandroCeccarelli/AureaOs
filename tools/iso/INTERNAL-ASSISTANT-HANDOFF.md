@@ -1294,3 +1294,16 @@ Limiti ancora aperti:
 - The display-color pass remains unintegrated with `VulkanDisplayColorManager` and `render_frame`; no compatibility renderer is advertised or enabled.
 - No build, rustfmt, cargo check, tests, shader compilation, CI, ISO build or hardware validation was run. Changes remain source-level and unverified.
 - Next: make the legacy graphics-pipeline wrapper own a shared render-pass reference (rather than a borrowed reference) and add shared descriptor-layout/sampler ownership for the display-color pass. Then build a per-format legacy resource manager and frame-scoped framebuffer targets. Only after that should a separate legacy frame-recording path be introduced.
+
+
+## 2026-11-27 — Shared ownership for legacy graphics pipelines
+
+- Added `VulkanSharedLegacyGraphicsPipeline` in `graphics_pipeline.rs`. It owns a traditional graphics pipeline plus an `Arc<VulkanLegacyRenderPass<'static>>`, so a long-lived resource owner can cache the pipeline without a self-referential borrow.
+- Its constructor accepts a shared logical device, the shared render pass, descriptor-set-layout handles and push-constant ranges. It validates that the render pass belongs to the same Vulkan device and creates the pipeline against that exact render-pass handle (without `VkPipelineRenderingCreateInfo`).
+- The wrapper exposes bind, draw, viewport/scissor and push-constant operations, and compatibility checks require the same shared render-pass allocation.
+- Exported the new wrapper from the compositor Vulkan module. Existing borrowed legacy pipelines and all modern dynamic-rendering constructors remain available.
+- Commits: `f07b83ee` (shared wrapper), `091704b8` (render-pass identity check), `b169249b` (public export).
+- Descriptor-layout and sampler types already provide shared-device constructors, so no duplicate ownership abstraction was introduced.
+- This is still resource-lifetime groundwork: no per-format manager, frame-target integration, display-color-manager integration or legacy frame orchestration has been added. The Vulkan 1.3 logical-device gate and AAG compatibility=false remain unchanged.
+- No build, rustfmt, cargo check, tests, shader compilation, CI, ISO build or hardware validation was run. All changes remain unverified source-level work.
+- Next: introduce a narrowly scoped per-format legacy resource owner that retains the shared render pass, shared descriptor layout/sampler and shared pipeline objects; create framebuffer targets per frame/image without storing self-referential borrows. Then integrate that owner with display-color and frame recording.
