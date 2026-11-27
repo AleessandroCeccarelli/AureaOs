@@ -3,7 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! SHM surface composition into a Vulkan DRM scanout image.
+//! SHM and DMA-BUF surface composition into a Vulkan DRM scanout image.
 
 mod cursor_geometry;
 mod cursor_trail_geometry;
@@ -413,6 +413,15 @@ pub(super) fn render_frame(
     });
     let context_menu_ready =
         context_menu_key.is_some_and(|key| surface_cache.desktop_icon_texture(key).is_some());
+
+    #[cfg(feature = "drm")]
+    if device.rendering_mode() == super::VulkanRendererMode::CompatibilityPending
+        && !visible_dmabuf.is_empty()
+    {
+        return Err(VulkanSurfaceCompositionError::Texture(
+            "DMA-BUF client surfaces require the modern Vulkan dynamic-rendering path".to_owned(),
+        ));
+    }
 
     if device.rendering_mode() == super::VulkanRendererMode::CompatibilityPending {
         #[cfg(feature = "legacy-vulkan-frame")]
