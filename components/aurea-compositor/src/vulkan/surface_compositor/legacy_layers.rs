@@ -238,7 +238,7 @@ pub(super) struct LegacyFrameLayers<'pass, 'view, 'image, 'pass_device, 'view_de
 /// intentionally left to the caller, after all scene layers have been recorded.
 pub(super) fn record_legacy_frame_layers(
     command_buffer: vk::CommandBuffer,
-    layers: LegacyFrameLayers<'_, '_, '_, '_>,
+    layers: LegacyFrameLayers<'_, '_, '_, '_, '_, '_, '_, '_, '_>,
     previous_target_state: VulkanImageState,
 ) -> Result<(), VulkanSurfaceCompositionError> {
     if layers.visible.len() != layers.surface_views.len()
