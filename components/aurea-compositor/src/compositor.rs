@@ -281,7 +281,7 @@ impl AureaCompositor {
         self.dmabuf_buffer_uses.buffer_destroyed(buffer);
     }
 
-    /// Returns the devices against which advertised DMA-BUF imports are validated.
+    /// Returns the last published feedback main-device identity, retained across VT pause.
     #[cfg(feature = "drm")]
     pub(crate) fn dmabuf_main_device(&self) -> Option<libc::dev_t> {
         self.dmabuf_main_device
