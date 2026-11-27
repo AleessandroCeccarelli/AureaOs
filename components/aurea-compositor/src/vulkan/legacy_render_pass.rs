@@ -151,10 +151,13 @@ impl<'device> VulkanLegacyRenderPass<'device> {
     }
 
     /// Creates a framebuffer for one image view without recreating the render pass.
-    pub fn create_target<'pass, 'view, 'image>(
+    pub fn create_target<'pass, 'view, 'image, 'view_device>(
         &'pass self,
-        view: &'view VulkanImageView<'image, 'device>,
-    ) -> Result<VulkanLegacyRenderTarget<'pass, 'view, 'image, 'device>, VulkanLegacyRenderPassError>
+        view: &'view VulkanImageView<'image, 'view_device>,
+    ) -> Result<
+        VulkanLegacyRenderTarget<'pass, 'view, 'image, 'device, 'view_device>,
+        VulkanLegacyRenderPassError,
+    >
     {
         if view.device().handle().handle() != self.device.device().handle().handle() {
             return Err(VulkanLegacyRenderPassError::DeviceMismatch);
@@ -202,20 +205,20 @@ impl Drop for VulkanLegacyRenderPass<'_> {
 /// Rust prevents this target from outliving either dependency. The image must
 /// be in COLOR_ATTACHMENT_OPTIMAL before a scope begins and remains in that
 /// layout afterwards; callers use VulkanImageTransition for barriers.
-pub struct VulkanLegacyRenderTarget<'pass, 'view, 'image, 'device> {
-    render_pass: &'pass VulkanLegacyRenderPass<'device>,
-    view: &'view VulkanImageView<'image, 'device>,
+pub struct VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device> {
+    render_pass: &'pass VulkanLegacyRenderPass<'pass_device>,
+    view: &'view VulkanImageView<'image, 'view_device>,
     framebuffer: vk::Framebuffer,
 }
 
-impl<'pass, 'view, 'image, 'device>
-    VulkanLegacyRenderTarget<'pass, 'view, 'image, 'device>
+impl<'pass, 'view, 'image, 'pass_device, 'view_device>
+    VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>
 {
     pub fn render_pass(&self) -> vk::RenderPass {
         self.render_pass.handle()
     }
 
-    pub fn render_pass_ref(&self) -> &'pass VulkanLegacyRenderPass<'device> {
+    pub fn render_pass_ref(&self) -> &'pass VulkanLegacyRenderPass<'pass_device> {
         self.render_pass
     }
 
@@ -230,7 +233,7 @@ impl<'pass, 'view, 'image, 'device>
         }
     }
 
-    pub fn view(&self) -> &VulkanImageView<'image, 'device> {
+    pub fn view(&self) -> &VulkanImageView<'image, 'view_device> {
         self.view
     }
 
@@ -239,7 +242,9 @@ impl<'pass, 'view, 'image, 'device>
         &'target self,
         command_buffer: vk::CommandBuffer,
         clear_color: [f32; 4],
-    ) -> VulkanLegacyRenderPassScope<'target, 'pass, 'view, 'image, 'device> {
+    ) -> VulkanLegacyRenderPassScope<
+        'target, 'pass, 'view, 'image, 'pass_device, 'view_device,
+    > {
         let clear_values = [vk::ClearValue {
             color: vk::ClearColorValue {
                 float32: clear_color,
@@ -269,13 +274,17 @@ impl<'pass, 'view, 'image, 'device>
 }
 
 /// RAII guard that balances vkCmdBeginRenderPass with vkCmdEndRenderPass.
-pub struct VulkanLegacyRenderPassScope<'target, 'pass, 'view, 'image, 'device> {
-    target: &'target VulkanLegacyRenderTarget<'pass, 'view, 'image, 'device>,
+pub struct VulkanLegacyRenderPassScope<
+    'target, 'pass, 'view, 'image, 'pass_device, 'view_device,
+> {
+    target: &'target VulkanLegacyRenderTarget<
+        'pass, 'view, 'image, 'pass_device, 'view_device,
+    >,
     command_buffer: vk::CommandBuffer,
     ended: bool,
 }
 
-impl VulkanLegacyRenderPassScope<'_, '_, '_, '_, '_> {
+impl VulkanLegacyRenderPassScope<'_, '_, '_, '_, '_, '_> {
     pub fn end(mut self) {
         self.end_recording();
     }
@@ -294,13 +303,13 @@ impl VulkanLegacyRenderPassScope<'_, '_, '_, '_, '_> {
     }
 }
 
-impl Drop for VulkanLegacyRenderPassScope<'_, '_, '_, '_, '_> {
+impl Drop for VulkanLegacyRenderPassScope<'_, '_, '_, '_, '_, '_> {
     fn drop(&mut self) {
         self.end_recording();
     }
 }
 
-impl Drop for VulkanLegacyRenderTarget<'_, '_, '_, '_> {
+impl Drop for VulkanLegacyRenderTarget<'_, '_, '_, '_, '_> {
     fn drop(&mut self) {
         unsafe {
             self.view
