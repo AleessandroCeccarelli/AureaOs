@@ -31,6 +31,9 @@ pub struct DmabufImportLayout {
     width: u32,
     height: u32,
     format: smithay::backend::allocator::Format,
+    /// Strong owner for every plane FD used by the Vulkan import operation.
+    /// Cloning this layout keeps the client buffer alive across asynchronous GPU work.
+    dmabuf: Dmabuf,
     planes: Vec<DmabufPlaneLayout>,
     y_inverted: bool,
 }
@@ -109,6 +112,7 @@ impl DmabufImportLayout {
             width: size.w as u32,
             height: size.h as u32,
             format: dmabuf.format(),
+            dmabuf: dmabuf.clone(),
             planes,
             y_inverted: dmabuf.y_inverted(),
         })
@@ -125,6 +129,11 @@ impl DmabufImportLayout {
     /// DRM FourCC and modifier pair.
     pub fn format(&self) -> smithay::backend::allocator::Format {
         self.format
+    }
+    /// Strong reference to the original client buffer and its borrowed plane handles.
+    /// Keep this owner alive until every Vulkan operation using an imported plane completes.
+    pub fn dmabuf(&self) -> &Dmabuf {
+        &self.dmabuf
     }
     /// Per-plane offsets and row strides in plane-index order.
     pub fn planes(&self) -> &[DmabufPlaneLayout] {
