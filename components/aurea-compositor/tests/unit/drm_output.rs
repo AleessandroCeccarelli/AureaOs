@@ -35,15 +35,17 @@ fn rejects_invalid_mode() {
 }
 
 #[test]
-fn rejects_duplicate_modes() {
+fn collapses_duplicate_logical_modes_without_rejecting_the_output() {
     let mode = DrmModeInfo::new(1920, 1080, 60_000);
 
     let descriptor = DrmOutputDescriptor::new(1, "HDMI-A-1", vec![mode, mode], mode, 1);
 
-    assert_eq!(
-        descriptor.into_display_output(),
-        Err(DrmOutputError::DuplicateMode),
-    );
+    let output = descriptor
+        .into_display_output()
+        .expect("duplicate logical entries must not invalidate a usable output");
+
+    assert_eq!(output.modes().len(), 1);
+    assert_eq!(output.current_mode(), output.modes()[0]);
 }
 
 #[test]
