@@ -1474,3 +1474,11 @@ Cautions:
 - No speculative dispatch was added in this pass: the current function still prepares modern pipelines/bindings after the compatibility guard, so simply removing the guard would call Vulkan 1.3-only code. The next safe change must introduce a distinct legacy preparation branch before modern pipeline creation, then record all layers and choose exactly one of the existing readback/release terminal paths.
 - No build, tests, rustfmt, shader compilation or hardware validation were run.
 
+### Legacy display-color render-pass identity fix (2026-11-27)
+
+- Found a correctness hazard in the display-color primitive: `VulkanSharedLegacyDisplayColorPass` creates its graphics pipeline against a specific retained `VulkanLegacyRenderPass`, but the frame recorder previously accepted a separate render-pass argument and created the framebuffer from that. A second render pass with the same format/load operation is not interchangeable with the exact render-pass instance retained by this pipeline.
+- Added `VulkanSharedLegacyGraphicsPipeline::render_pass()` and exposed it through `VulkanSharedLegacyDisplayColorPass::render_pass()`.
+- Changed `VulkanLegacyFrameRecorder::display_color` to create its per-frame framebuffer from the display-color pass' own retained render pass. Removed the independent render-pass argument, making this mismatch unrepresentable at the recorder API.
+- Repository search found no production call sites of `VulkanLegacyFrameRecorder::display_color` yet, so no call sites required migration. The helper remains unintegrated into `render_frame`.
+- No build, tests, rustfmt, shader compilation or hardware validation were run. This is a source-level ownership/compatibility correction.
+
