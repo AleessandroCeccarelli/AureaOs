@@ -1557,3 +1557,5 @@ Cautions:
 ## 2026-11-27 — Readback ownership follow-up
 
 The legacy Vulkan frame path now retains the host-visible readback allocation on uncertain queue submission/completion. `render_and_readback` accepts a mutable owned-buffer slot; `legacy_frame` removes and leaks the buffer only on the uncertain error path; CPU scanout reads from the slot after successful composition. This closes the previously identified staging-buffer lifetime hole, but does not certify all frame-resource lifetimes: output/intermediate images are still owned outside the frame function and need a dedicated uncertain-completion audit. No compilation, formatting, tests, or GPU execution performed.
+
+Follow-up: applied the same uncertain-submission readback retention to the regular Vulkan scene-composition path in `surface_compositor.rs`, including its frame-scoped descriptor pool. Both regular and legacy submission paths now quarantine the staging allocation when completion cannot be established.
