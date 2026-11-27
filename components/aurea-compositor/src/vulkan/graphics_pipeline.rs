@@ -603,6 +603,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
 
 impl Drop for VulkanGraphicsPipeline<'_> {
     fn drop(&mut self) {
+        if self.device.device().is_unusable() { return; }
         unsafe {
             self.device
                 .device()
