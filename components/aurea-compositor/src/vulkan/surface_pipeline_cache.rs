@@ -448,6 +448,28 @@ impl VulkanSurfacePipelineCache {
         Ok(())
     }
 
+    /// Prepares every legacy pipeline needed by one composited frame.
+    ///
+    /// The initial clear uses the dedicated legacy clear pass; all subsequent
+    /// layers load the existing attachment contents. Keeping this preparation
+    /// in one cache operation ensures the frame recorder never has to create
+    /// pipelines while command-buffer recording is in progress.
+    pub(crate) fn prepare_shared_legacy_frame_pipelines(
+        &mut self,
+        format: vk::Format,
+        wallpaper: bool,
+        cursor_trail: bool,
+    ) -> Result<(), VulkanSurfacePipelineCacheError> {
+        self.ensure_shared_legacy_surface_pipeline(format, LegacyPipelineLoad::Load)?;
+        if wallpaper {
+            self.ensure_shared_legacy_wallpaper_pipeline(format, LegacyPipelineLoad::Load)?;
+        }
+        if cursor_trail {
+            self.ensure_shared_legacy_cursor_trail_pipeline(format, LegacyPipelineLoad::Load)?;
+        }
+        Ok(())
+    }
+
     pub(crate) fn shared_legacy_surface_pipeline(
         &self, format: vk::Format, load: LegacyPipelineLoad,
     ) -> Option<&super::VulkanSharedLegacyGraphicsPipeline> {
