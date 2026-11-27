@@ -89,7 +89,7 @@ impl VulkanDmabufImage {
             .tiling(vk::ImageTiling::DRM_FORMAT_MODIFIER_EXT)
             .usage(vk::ImageUsageFlags::SAMPLED)
             .sharing_mode(vk::SharingMode::EXCLUSIVE)
-            .initial_layout(vk::ImageLayout::UNDEFINED)
+            .initial_layout(vk::ImageLayout::GENERAL)
             .push_next(&mut explicit_modifier)
             .push_next(&mut external_image);
 
