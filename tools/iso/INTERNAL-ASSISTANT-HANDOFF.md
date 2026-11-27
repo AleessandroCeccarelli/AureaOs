@@ -1449,3 +1449,10 @@ Cautions:
 - These are still recording primitives, not a complete frame path. They are not dispatched from `render_frame`; the legacy fail-closed guard remains in place. In particular, no claim is made that display-color, output transitions, readback, or foreign KMS release are integrated.
 - No build, tests, rustfmt, shader compilation or hardware validation was run.
 
+### Cursor-trail recorder contract correction (2026-11-27)
+
+- Updated `record_cursor_trail` to consume the compositor's actual `CursorTrailDraw` geometry records rather than a parallel tuple representation. This preserves the established geometry producer as the single source of viewport, scissor, transform and opacity.
+- Removed an unnecessary delegation from the native-cursor helper through the context-menu helper; both now call the shared surface recorder directly.
+- This is a source-level contract alignment only. No build or tests were run, so Rust type/lifetime correctness remains unverified.
+- The next integration blocker remains substantial: active frame preparation currently builds modern-only pipeline bindings and display-color bindings, while the legacy path needs shared legacy pipeline resources, a legacy display-color recorder and output-state/submission routing. Do not remove the compatibility fail-closed guard until those paths are integrated together.
+
