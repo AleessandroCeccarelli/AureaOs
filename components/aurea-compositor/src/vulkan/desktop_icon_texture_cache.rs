@@ -84,7 +84,7 @@ impl VulkanDesktopIconTextureCache {
         requested: &[(DesktopIconTextureKey, ShmBufferSnapshot)],
     ) -> Result<(), VulkanDesktopIconTextureCacheError> {
         if self.device.is_unusable() {
-            return Err(VulkanDesktopIconTextureCacheError::Texture(VulkanShmTextureError::Command(vk::Result::ERROR_DEVICE_LOST)));
+            return Err(VulkanDesktopIconTextureCacheError::Texture(VulkanShmTextureError::Command(smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST)));
         }
         self.reap_completed_uploads()?;
         let requested_keys = requested
