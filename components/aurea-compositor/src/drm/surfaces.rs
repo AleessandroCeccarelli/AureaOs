@@ -97,6 +97,7 @@ pub struct ManagedDrmSurface {
     cpu_frame_pool: GbmCpuFramebufferPool,
     cpu_presentation: CpuPresentationBackend,
     direct_scanout_disabled: bool,
+    staged_previous_mode: Option<smithay::reexports::drm::control::Mode>,
 }
 
 impl ManagedDrmSurface {
@@ -155,8 +156,36 @@ impl ManagedDrmSurface {
         })?;
         self.presentation.arm_mode_rollback(previous);
         self.cpu_presentation.arm_mode_rollback(previous);
+        self.staged_previous_mode = Some(previous);
         Ok(())
     }
+    /// Abandons a staged mode when rendering fails before KMS submission.
+    /// A submitted/pending frame must be completed through its normal VBlank path.
+    pub(crate) fn abort_staged_mode(&mut self) -> Result<(), DrmSurfaceManagerError> {
+        let Some(previous) = self.staged_previous_mode else {
+            return Ok(());
+        };
+        if self.presentation.pending().is_some() || self.cpu_frame_pool.pending().is_some() {
+            return Err(DrmSurfaceManagerError::ModeChange {
+                output_id: self.output_id,
+                message: "cannot abort a mode while a KMS page flip is pending".into(),
+            });
+        }
+        self.surface.use_mode(previous).map_err(|error| DrmSurfaceManagerError::ModeChange {
+            output_id: self.output_id,
+            message: format!("failed to restore abandoned mode: {error}"),
+        })?;
+        self.presentation.cancel_mode_rollback();
+        self.cpu_presentation.cancel_mode_rollback();
+        self.staged_previous_mode = None;
+        Ok(())
+    }
+
+    /// Marks a staged mode as physically active after a completed VBlank.
+    fn confirm_staged_mode(&mut self) {
+        self.staged_previous_mode = None;
+    }
+
     /// Permanently disables direct Vulkan scanout for this output after a
     /// connector-specific allocation failure; compatibility presentation remains available.
     pub(crate) fn disable_direct_scanout(&mut self) {
@@ -339,6 +368,7 @@ impl DrmSurfaceManager {
             .on_vblank(node, crtc, &mut output.cpu_frame_pool)?;
         if completed.is_some() {
             output.presentation.cancel_mode_rollback();
+            output.confirm_staged_mode();
         }
         Ok(completed)
     }
@@ -373,6 +403,7 @@ impl DrmSurfaceManager {
         let completed = output.presentation_mut().on_vblank(node, crtc)?;
         if completed.is_some() {
             output.cpu_presentation.cancel_mode_rollback();
+            output.confirm_staged_mode();
         }
         Ok(completed)
     }
