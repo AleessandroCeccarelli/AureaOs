@@ -81,13 +81,21 @@ impl VulkanContext {
             .enumerate()
             .map(|(device_index, device)| {
                 let has_graphics_queue = self.graphics_queue_family(device).is_some();
+                let properties = unsafe {
+                    device
+                        .instance()
+                        .handle()
+                        .get_physical_device_properties(device.handle())
+                };
+                let api_major = vk::api_version_major(properties.api_version);
+                let api_minor = vk::api_version_minor(properties.api_version);
                 let modern_renderer = VulkanRenderingFeaturePlan::from_device(device).is_ok();
                 GraphicsCandidate {
                     device_index,
                     name: device.name().to_owned(),
                     capabilities: GraphicsCapabilities {
-                        api_major: 1,
-                        api_minor: if modern_renderer { 3 } else { 0 },
+                        api_major,
+                        api_minor,
                         dynamic_rendering: modern_renderer,
                         synchronization2: modern_renderer,
                         compatibility_renderer_available: false,
