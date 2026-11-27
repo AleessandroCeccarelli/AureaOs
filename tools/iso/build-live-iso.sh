@@ -191,6 +191,16 @@ PY
         echo "The staged AureaOS source snapshot is incomplete." >&2
         return 1
     }
+
+    # Aurea Shell embeds the six approved Trash SVGs with include_bytes!.
+    # Keep their source directory in the archive and fail before live-build
+    # starts if any compile-time asset is absent from the snapshot.
+    for asset in light/trash-empty.svg light/trash-half.svg light/trash-full.svg dark/trash-empty.svg dark/trash-half.svg dark/trash-full.svg; do
+        [[ -s "$SOURCE_DIR/aurea-human-interfaces/icons/source/system/trash/$asset" ]] || {
+            echo "Required compile-time Trash artwork is missing from the staged source: $asset" >&2
+            return 1
+        }
+    done
 }
 
 if "$RESUME"; then
