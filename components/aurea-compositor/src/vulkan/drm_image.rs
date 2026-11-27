@@ -75,6 +75,12 @@ pub struct VulkanDrmImageAllocator {
 }
 
 impl VulkanDrmImageAllocator {
+    fn mark_device_lost(&self, error: vk::Result) {
+        if error == vk::Result::ERROR_DEVICE_LOST {
+            self.device.mark_unusable();
+        }
+    }
+
     pub fn new(device: Arc<VulkanLogicalDevice>) -> Result<Self, VulkanDrmImageError> {
         if !device.extension_plan().supports_dmabuf_interop() {
             return Err(VulkanDrmImageError::MissingInteropExtensions);
@@ -128,7 +134,10 @@ impl VulkanDrmImageAllocator {
                     &mut image_properties,
                 )
         }
-        .map_err(VulkanDrmImageError::ModifierImageQuery)?;
+        .map_err(|error| {
+            self.mark_device_lost(error);
+            VulkanDrmImageError::ModifierImageQuery(error)
+        })?;
         let limits = image_properties.image_format_properties;
         let external_memory = external_properties.external_memory_properties;
         let dma_buf_handle = vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT;
@@ -169,8 +178,10 @@ impl VulkanDrmImageAllocator {
             .push_next(&mut external_image);
 
         let raw = self.device.handle();
-        let image = unsafe { raw.create_image(&image_info, None) }
-            .map_err(VulkanDrmImageError::ImageCreation)?;
+        let image = unsafe { raw.create_image(&image_info, None) }.map_err(|error| {
+            self.mark_device_lost(error);
+            VulkanDrmImageError::ImageCreation(error)
+        })?;
         let requirements = unsafe { raw.get_image_memory_requirements(image) };
         let memory_type_index = match select_memory_type_index(
             self.device.memory_properties(),
@@ -197,15 +208,21 @@ impl VulkanDrmImageAllocator {
         let memory = match unsafe { raw.allocate_memory(&allocation_info, None) } {
             Ok(memory) => memory,
             Err(error) => {
-                unsafe { raw.destroy_image(image, None) };
+                self.mark_device_lost(error);
+                if error != vk::Result::ERROR_DEVICE_LOST {
+                    unsafe { raw.destroy_image(image, None) };
+                }
                 return Err(VulkanDrmImageError::MemoryAllocation(error));
             }
         };
 
         if let Err(error) = unsafe { raw.bind_image_memory(image, memory, 0) } {
-            unsafe {
-                raw.free_memory(memory, None);
-                raw.destroy_image(image, None);
+            self.mark_device_lost(error);
+            if error != vk::Result::ERROR_DEVICE_LOST {
+                unsafe {
+                    raw.free_memory(memory, None);
+                    raw.destroy_image(image, None);
+                }
             }
             return Err(VulkanDrmImageError::MemoryBinding(error));
         }
@@ -217,9 +234,12 @@ impl VulkanDrmImageAllocator {
         let raw_fd = match unsafe { fd_loader.get_memory_fd(&fd_info) } {
             Ok(fd) => fd,
             Err(error) => {
-                unsafe {
-                    raw.destroy_image(image, None);
-                    raw.free_memory(memory, None);
+                self.mark_device_lost(error);
+                if error != vk::Result::ERROR_DEVICE_LOST {
+                    unsafe {
+                        raw.destroy_image(image, None);
+                        raw.free_memory(memory, None);
+                    }
                 }
                 return Err(VulkanDrmImageError::DmabufExport(error));
             }
