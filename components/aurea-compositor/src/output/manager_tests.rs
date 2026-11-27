@@ -302,3 +302,48 @@ fn staged_multi_output_configuration_rejects_duplicate_ids_without_mutation() {
     assert_eq!(manager.layout().get(23).unwrap().x(), 0);
 }
 
+#[test]
+fn staged_multi_output_configuration_discards_earlier_candidates_on_later_failure() {
+    let original = OutputMode::new(1920, 1080, 60_000).unwrap();
+    let requested = OutputMode::new(1280, 720, 60_000).unwrap();
+    let unsupported = OutputMode::new(2560, 1440, 60_000).unwrap();
+    let mut manager = OutputManager::new();
+    manager
+        .register(
+            DisplayOutput::new(24, "DP-3", vec![original, requested], original, 1).unwrap(),
+            (0, 0),
+        )
+        .unwrap();
+    manager
+        .register(
+            DisplayOutput::new(25, "HDMI-A-2", vec![original, requested], original, 1).unwrap(),
+            (1920, 0),
+        )
+        .unwrap();
+
+    let result = manager.staged_configurations(&[
+        (
+            24,
+            OutputConfiguration {
+                mode: Some(requested),
+                ..OutputConfiguration::default()
+            },
+        ),
+        (
+            25,
+            OutputConfiguration {
+                mode: Some(unsupported),
+                ..OutputConfiguration::default()
+            },
+        ),
+    ]);
+
+    assert!(matches!(
+        result,
+        Err(OutputManagerError::InvalidMode { output: 25, mode })
+            if mode == unsupported
+    ));
+    assert_eq!(manager.registry().get(24).unwrap().current_mode(), original);
+    assert_eq!(manager.registry().get(25).unwrap().current_mode(), original);
+}
+
