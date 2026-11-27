@@ -235,3 +235,153 @@ pub(super) fn record_client_cursor_surfaces(
         command_buffer, render_pass, target, pipeline, surfaces, views, bindings, true,
     )
 }
+
+/// Optional wallpaper draw resources and output-local geometry.
+pub(super) struct LegacyWallpaperLayer<'a> {
+    pub source: &'a VulkanImageView<'a, 'a>,
+    pub binding: &'a VulkanTextureBinding<'a, 'a, 'a, 'a>,
+    pub pipeline: &'a VulkanSharedLegacyGraphicsPipeline,
+    pub render_pass: &'a Arc<VulkanLegacyRenderPass<'static>>,
+    pub viewport: vk::Viewport,
+    pub scissor: vk::Rect2D,
+    pub uv_transform: [f32; 4],
+}
+
+/// Optional context-menu artwork and its already-resolved geometry.
+pub(super) struct LegacyContextMenuLayer<'a> {
+    pub source: &'a VulkanImageView<'a, 'a>,
+    pub binding: &'a VulkanTextureBinding<'a, 'a, 'a, 'a>,
+    pub viewport: vk::Viewport,
+    pub scissor: vk::Rect2D,
+    pub texture_transform: u32,
+}
+
+/// Optional compositor-owned cursor draw.
+pub(super) struct LegacyNativeCursorLayer<'a> {
+    pub source: &'a VulkanImageView<'a, 'a>,
+    pub binding: &'a VulkanTextureBinding<'a, 'a, 'a, 'a>,
+    pub viewport: vk::Viewport,
+    pub scissor: vk::Rect2D,
+    pub texture_transform: u32,
+}
+
+/// Optional cursor-trail draw resources.
+pub(super) struct LegacyCursorTrailLayer<'a> {
+    pub source: &'a VulkanImageView<'a, 'a>,
+    pub binding: &'a VulkanTextureBinding<'a, 'a, 'a, 'a>,
+    pub pipeline: &'a VulkanSharedLegacyGraphicsPipeline,
+    pub impressions: &'a [CursorTrailDraw],
+}
+
+/// All resources required to record the legacy scene layers for one frame.
+pub(super) struct LegacyFrameLayers<'a> {
+    pub clear_render_pass: &'a Arc<VulkanLegacyRenderPass<'static>>,
+    pub load_render_pass: &'a Arc<VulkanLegacyRenderPass<'static>>,
+    pub target: &'a VulkanImageView<'a, 'a>,
+    pub clear_color: [f32; 4],
+    pub visible: &'a [VisibleSurface],
+    pub surface_views: &'a [VulkanImageView<'a, 'a>],
+    pub surface_bindings: &'a [VulkanTextureBinding<'a, 'a, 'a, 'a>],
+    pub surface_pipeline: &'a VulkanSharedLegacyGraphicsPipeline,
+    pub wallpaper: Option<LegacyWallpaperLayer<'a>>,
+    pub context_menu: Option<LegacyContextMenuLayer<'a>>,
+    pub cursor_trail: Option<LegacyCursorTrailLayer<'a>>,
+    pub native_cursor: Option<LegacyNativeCursorLayer<'a>>,
+}
+
+/// Records the complete scene in the compositor's established back-to-front order.
+///
+/// Output display-color processing and the terminal DRM/readback operation are
+/// intentionally left to the caller, after all scene layers have been recorded.
+pub(super) fn record_legacy_frame_layers(
+    command_buffer: vk::CommandBuffer,
+    layers: LegacyFrameLayers<'_>,
+    previous_target_state: VulkanImageState,
+) -> Result<(), VulkanSurfaceCompositionError> {
+    VulkanLegacyFrameRecorder::clear(
+        command_buffer,
+        layers.clear_render_pass,
+        layers.target,
+        previous_target_state,
+        VulkanImageState::General,
+        layers.clear_color,
+    )
+    .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+
+    if let Some(wallpaper) = layers.wallpaper {
+        record_wallpaper(
+            command_buffer,
+            wallpaper.render_pass,
+            layers.target,
+            wallpaper.pipeline,
+            wallpaper.source,
+            wallpaper.binding,
+            wallpaper.viewport,
+            wallpaper.scissor,
+            wallpaper.uv_transform,
+        )?;
+    }
+
+    record_normal_surfaces(
+        command_buffer,
+        layers.load_render_pass,
+        layers.target,
+        layers.surface_pipeline,
+        layers.visible,
+        layers.surface_views,
+        layers.surface_bindings,
+    )?;
+
+    if let Some(menu) = layers.context_menu {
+        record_context_menu(
+            command_buffer,
+            layers.load_render_pass,
+            layers.target,
+            layers.surface_pipeline,
+            menu.source,
+            menu.binding,
+            menu.viewport,
+            menu.scissor,
+            menu.texture_transform,
+        )?;
+    }
+
+    record_client_cursor_surfaces(
+        command_buffer,
+        layers.load_render_pass,
+        layers.target,
+        layers.surface_pipeline,
+        layers.visible,
+        layers.surface_views,
+        layers.surface_bindings,
+    )?;
+
+    if let Some(trail) = layers.cursor_trail {
+        record_cursor_trail(
+            command_buffer,
+            layers.load_render_pass,
+            layers.target,
+            trail.pipeline,
+            trail.source,
+            trail.binding,
+            trail.impressions,
+        )?;
+    }
+
+    if let Some(cursor) = layers.native_cursor {
+        record_native_cursor(
+            command_buffer,
+            layers.load_render_pass,
+            layers.target,
+            layers.surface_pipeline,
+            cursor.source,
+            cursor.binding,
+            cursor.viewport,
+            cursor.scissor,
+            cursor.texture_transform,
+        )?;
+    }
+
+    Ok(())
+}
+
