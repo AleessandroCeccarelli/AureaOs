@@ -1505,3 +1505,11 @@ Cautions:
 - Added a preflight count check at the beginning of `record_legacy_frame_layers()`. Visible-surface snapshots, image views and descriptor bindings must have identical lengths before even the clear pass is recorded. A malformed frame therefore fails before partially recording its command buffer.
 - The orchestrator still is not dispatched by `render_frame()`. This change tightens its source-level contract only; it does not enable Vulkan 1.0–1.2 rendering.
 - No build, tests, rustfmt, shader compilation, CI or hardware validation was run. Rust lifetime/type correctness remains unverified until grouped Fedora validation.
+
+### Legacy pipeline/render-pass identity preflight — 2026-11-27
+
+- Extended `record_legacy_frame_layers()` preflight to validate the exact retained render-pass instance for the surface, wallpaper and cursor-trail pipelines before recording the clear operation.
+- The surface and cursor-trail pipelines must reference the frame load pass; the wallpaper pipeline must reference the render pass supplied with its wallpaper layer. Pointer identity is checked with `Arc::ptr_eq`, matching the recorder's framebuffer/pipeline compatibility invariant.
+- A mismatch now fails before any frame commands are recorded instead of being discovered after the clear or an earlier layer has already modified the command buffer.
+- This remains an orchestration safety improvement only. `render_frame()` still has the compatibility fail-closed guard; no renderer selection or runtime compatibility has been enabled.
+- No build, tests, rustfmt, shader compilation, CI or hardware validation was run.
