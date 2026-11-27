@@ -187,7 +187,7 @@ impl VulkanLegacyFrameRecorder {
             .map_err(|error| VulkanLegacyFrameRecorderError::Command(error.to_string()))?;
         command_buffer
             .submit_and_wait_with(on_submitted)
-            .map_err(|error| VulkanLegacyFrameRecorderError::Command(format!("{error:?}")))?;
+            .map_err(VulkanLegacyFrameRecorderError::QueueSubmit)?;
 
         Ok(())
     }
@@ -212,7 +212,7 @@ impl VulkanLegacyFrameRecorder {
             .map_err(|error| VulkanLegacyFrameRecorderError::Command(error.to_string()))?;
         command_buffer
             .submit_and_wait_with(on_submitted)
-            .map_err(|error| VulkanLegacyFrameRecorderError::Command(format!("{error:?}")))?;
+            .map_err(VulkanLegacyFrameRecorderError::QueueSubmit)?;
 
         Ok(())
     }
@@ -273,6 +273,7 @@ pub(crate) enum VulkanLegacyFrameRecorderError {
     Transition(super::VulkanImageTransitionError),
     DeviceMismatch,
     RenderPassMismatch,
+    QueueSubmit(super::queue_submitter::VulkanQueueSubmitError),
     Command(String),
 }
 
@@ -285,6 +286,7 @@ impl std::fmt::Display for VulkanLegacyFrameRecorderError {
             Self::Transition(error) => write!(formatter, "Legacy frame output release: {error}"),
             Self::DeviceMismatch => formatter.write_str("Legacy frame output belongs to a different Vulkan device"),
             Self::RenderPassMismatch => formatter.write_str("Legacy frame pipeline and framebuffer use different render-pass instances"),
+            Self::QueueSubmit(error) => write!(formatter, "Legacy frame queue submission: {error:?}"),
             Self::Command(error) => write!(formatter, "Legacy frame command submission: {error}"),
         }
     }
