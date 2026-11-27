@@ -2441,3 +2441,8 @@ Completato un ulteriore passaggio sull'audit di distruzione: i Drop di immagini,
 ### 27 novembre 2026 — Cache e pool durante il fail-stop
 
 Esteso il fail-stop agli ingressi dei pool e delle cache Vulkan: capture-target pool e readback-buffer pool rifiutano prepare/acquire quando il logical device è inutilizzabile; cache SHM, icone desktop e wallpaper interrompono prepare prima di avviare nuovi upload o polling. Aggiunto un errore tipizzato `DeviceLost` per il capture-target pool. Corretto anche il rollback di `VulkanFrameScheduler::with_frame_count`: se la creazione di uno slot fallisce perché il device è diventato inutilizzabile, gli slot già creati vengono quarantinati invece di distruggere fence, semafori e command pool sul device perso. I lease restituiti ai pool mantengono il pool e il logical device in vita; le risorse sottostanti hanno Drop fail-stop. Nessun build, rustfmt, test o validation layer eseguito.
+
+
+### 27 novembre 2026 — Propagazione del fail-stop nei percorsi di teardown
+
+Proseguito l'audit dei due percorsi: submission asincrona e teardown/shutdown. Corretti i rollback parziali durante la creazione di `VulkanPendingUpload` e `VulkanFrameSlot`: se un'operazione di setup segnala `ERROR_DEVICE_LOST`, il logical device entra nel fail-stop e non vengono distrutti pool/fence sul device perso. Il `FrameSlot::prepare` ora marca il device come inutilizzabile e mette lo slot in quarantena quando il wait della fence restituisce device lost. Anche i fallback di attesa in `VulkanPendingUpload::drop`, `VulkanReadbackSubmission::drop`, `VulkanCommandBuffer::drop` e `VulkanFrameScheduler::drop` propagano il device loss allo stato globale. Nessun test locale eseguito; verifiche GitHub Actions da consultare sui commit sorgente.
