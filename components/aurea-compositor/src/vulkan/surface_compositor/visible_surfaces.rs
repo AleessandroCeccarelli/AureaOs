@@ -30,6 +30,7 @@ pub(super) struct VisibleSurface {
     pub(super) surface_id: smithay::reexports::wayland_server::backend::ObjectId,
     pub(super) revision: u64,
     pub(super) snapshot: Arc<ShmBufferSnapshot>,
+    pub(super) is_cursor: bool,
     pub(super) geometry: SurfaceGeometry,
     pub(super) scissor: SurfaceScissor,
     pub(super) texture_transform: u32,
@@ -111,6 +112,7 @@ pub(super) fn visible_surfaces(
             surface_id: snapshot.surface_id,
             revision: snapshot.revision,
             snapshot: Arc::clone(&snapshot.snapshot),
+            is_cursor: snapshot.cursor_anchor.is_some(),
             geometry,
             scissor,
             is_cursor: snapshot.cursor_anchor.is_some(),
@@ -187,6 +189,9 @@ pub(super) fn visible_dmabuf_surfaces(
             geometry,
             scissor,
             texture_transform,
+            // DMA-BUF cursor buffers are not currently routed through the
+            // client cursor surface path; keep them in the normal surface layer.
+            is_cursor: false,
         });
     }
     Ok(visible)
