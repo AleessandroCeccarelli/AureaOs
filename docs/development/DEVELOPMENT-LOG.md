@@ -2723,8 +2723,16 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 ### 2026-11-27 — DMA-BUF feedback withdrawal during renderer loss
 
 - Preserved the last known DRM main-device identity alongside the published feedback state. This identity is retained across a VT pause, where DRM resources are temporarily released and no Vulkan backend remains available.
-- The reconciliation path now publishes a feedback object with an empty main tranche when there are no active renderers or no common safe format/modifier pairs. It also clears the active DMA-BUF import-validation device set, so new DMA-BUF imports fail instead of being acknowledged against stale renderer capabilities.
-- Session pause invokes this reconciliation only after KMS surfaces have been cleared and GBM/Vulkan resources have been torn down. Resume rebuilds the renderer set and replaces the empty feedback through the same path.
-- This uses Smithay 0.7's DmabufFeedbackBuilder::new(main_device, empty_formats) path; its builder accepts an empty format collection and produces an empty main tranche. The global remains alive, avoiding an unsafe destroy/recreate cycle with clients holding existing bindings.
+- The reconciliation path clears the active DMA-BUF import-validation device set when there are no active renderers or no common safe format/modifier pairs. New DMA-BUF imports therefore fail instead of being acknowledged against stale renderer capabilities.
+- Session pause invokes this fail-closed reset only after KMS surfaces have been cleared and GBM/Vulkan resources have been torn down. Resume rebuilds the renderer set and republishes the refreshed feedback through the same path.
+- A zero-format feedback replacement is deliberately not sent: Smithay omits empty tranches, while the linux-dmabuf feedback protocol requires a main-device tranche. The last valid feedback table is retained, but imports are rejected until a renderer returns. The global is not destroyed/recreated, avoiding invalidation of existing client bindings.
 - Per-surface preference tranches remain intentionally absent: AureaOS currently has no direct-scanout capability contract or authoritative surface-to-render-device mapping, and a surface may span outputs. The conservative global intersection remains the truthful compositing contract; inventing a per-surface GPU preference would be unsafe.
 - No build, formatting, tests, CI or hardware validation was run, in accordance with the instruction to validate only after the complete video block is integrated.
+
+
+### 2026-11-27 — Empty feedback protocol validation correction
+
+- A protocol-source review showed that Smithay omits empty tranches when building feedback, while linux-dmabuf feedback requires a main-device tranche. Replacing the global feedback with an empty format table would therefore be an invalid withdrawal strategy.
+- Replaced that approach with a fail-closed import policy: preserve the last valid feedback object and main-device identity, but clear the active renderer import-validation set while the session is paused or no common safe formats exist. `dmabuf_imported` rejects new imports until a valid renderer set is restored.
+- This avoids emitting malformed feedback and avoids destroying/recreating a global that clients may already have bound. The stale format list remains an allocation hint only during the unavailable interval; actual imports are rejected.
+- No build, formatting, tests, CI or hardware validation was run.
