@@ -1156,3 +1156,14 @@ Nessuna build Rust, build ISO o prova hardware è stata eseguita durante queste 
 - The selector assumes both SPIR-V variants are built from equivalent shader interfaces; this has not yet been verified by shader compilation or SPIR-V reflection. The build script currently exposes the compatibility shader environment variables added in the earlier shader groundwork.
 - No build, rustfmt, cargo check, tests, CI rerun, ISO build or physical hardware test was run for these commits. Do not mark compatibility rendering implemented.
 - Next implementation step: add an explicit renderer mode to the logical-device feature plan, querying Vulkan 1.0 core features safely for older devices, while preserving the modern 1.3 feature chain. Only after logical-device creation can instantiate a legacy device should the persistent render-pass/pipeline lifetime and render-scope integration proceed.
+
+## 2026-11-27 — Vulkan capability inventory separated from backend activation
+
+- Added `VulkanRenderingCapabilities::inspect` and `VulkanRendererMode` in `rendering_features.rs`. The inventory always queries Vulkan 1.0 core features and only chains `PhysicalDeviceVulkan13Features` when the physical device reports API 1.3 or newer.
+- The inventory distinguishes `ModernDynamic` from `CompatibilityPending`. This is intentionally a statement about the current renderer implementation, not a claim that every older GPU is already renderable.
+- Updated AAG candidate construction to report the actual queried `dynamicRendering` and `synchronization2` bits instead of deriving both from one modern-renderer boolean. The compatibility flag remains false, so no legacy GPU can be selected prematurely.
+- Kept `VulkanRenderingFeaturePlan::from_device` strict: logical-device creation still accepts only the modern backend. This preserves the known-working code path and avoids creating a legacy device before traditional pipelines, render scopes and synchronization are integrated.
+- Exported the capability model for subsequent backend negotiation and diagnostics.
+- Commits: `8983a412` (capability inventory and explicit renderer mode), `786c084e` (AAG feature reporting), `429ef9b1` (public exports).
+- Not yet run: rustfmt, cargo check, workspace tests, CI, shader compilation, ISO build or hardware tests. This is source-level implementation only.
+- Next: inspect all active pipeline/render-scope call sites and design the persistent legacy render-pass lifetime. Then implement a mode-aware logical-device create-info that omits Vulkan 1.3 feature structures for the compatibility backend; do not enable that backend in AAG until its full render path is integrated.
