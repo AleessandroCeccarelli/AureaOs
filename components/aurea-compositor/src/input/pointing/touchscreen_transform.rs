@@ -108,14 +108,38 @@ mod tests {
     #[test]
     fn all_eight_orientations_map_all_four_pixel_corners_without_edge_drift() {
         let cases = [
-            (Transform::Normal, [(0.0, 0.0), (99.0, 0.0), (0.0, 59.0), (99.0, 59.0)]),
-            (Transform::_90, [(59.0, 0.0), (59.0, 99.0), (0.0, 0.0), (0.0, 99.0)]),
-            (Transform::_180, [(99.0, 59.0), (0.0, 59.0), (99.0, 0.0), (0.0, 0.0)]),
-            (Transform::_270, [(0.0, 99.0), (0.0, 0.0), (59.0, 99.0), (59.0, 0.0)]),
-            (Transform::Flipped, [(99.0, 0.0), (0.0, 0.0), (99.0, 59.0), (0.0, 59.0)]),
-            (Transform::Flipped90, [(0.0, 0.0), (0.0, 99.0), (59.0, 0.0), (59.0, 99.0)]),
-            (Transform::Flipped180, [(0.0, 59.0), (99.0, 59.0), (0.0, 0.0), (99.0, 0.0)]),
-            (Transform::Flipped270, [(59.0, 0.0), (59.0, 99.0), (0.0, 0.0), (0.0, 99.0)]),
+            (
+                Transform::Normal,
+                [(0.0, 0.0), (99.0, 0.0), (0.0, 59.0), (99.0, 59.0)],
+            ),
+            (
+                Transform::_90,
+                [(59.0, 0.0), (59.0, 99.0), (0.0, 0.0), (0.0, 99.0)],
+            ),
+            (
+                Transform::_180,
+                [(99.0, 59.0), (0.0, 59.0), (99.0, 0.0), (0.0, 0.0)],
+            ),
+            (
+                Transform::_270,
+                [(0.0, 99.0), (0.0, 0.0), (59.0, 99.0), (59.0, 0.0)],
+            ),
+            (
+                Transform::Flipped,
+                [(99.0, 0.0), (0.0, 0.0), (99.0, 59.0), (0.0, 59.0)],
+            ),
+            (
+                Transform::Flipped90,
+                [(0.0, 0.0), (0.0, 99.0), (59.0, 0.0), (59.0, 99.0)],
+            ),
+            (
+                Transform::Flipped180,
+                [(0.0, 59.0), (99.0, 59.0), (0.0, 0.0), (99.0, 0.0)],
+            ),
+            (
+                Transform::Flipped270,
+                [(59.0, 0.0), (59.0, 99.0), (0.0, 0.0), (0.0, 99.0)],
+            ),
         ];
         let corners = [(0.0, 0.0), (99.0, 0.0), (0.0, 59.0), (99.0, 59.0)];
 
@@ -133,8 +157,13 @@ mod tests {
     #[test]
     fn single_pixel_extents_remain_well_defined() {
         for transform in [
-            Transform::Normal, Transform::_90, Transform::_180, Transform::_270,
-            Transform::Flipped, Transform::Flipped90, Transform::Flipped180,
+            Transform::Normal,
+            Transform::_90,
+            Transform::_180,
+            Transform::_270,
+            Transform::Flipped,
+            Transform::Flipped90,
+            Transform::Flipped180,
             Transform::Flipped270,
         ] {
             assert_eq!(
