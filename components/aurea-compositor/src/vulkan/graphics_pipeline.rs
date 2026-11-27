@@ -49,6 +49,7 @@ pub struct VulkanGraphicsPipeline<'device> {
     layout: vk::PipelineLayout,
     pipeline: vk::Pipeline,
     color_format: vk::Format,
+    render_pass: Option<vk::RenderPass>,
 }
 
 impl<'device> VulkanGraphicsPipeline<'device> {
@@ -89,6 +90,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
             color_format,
             &handles,
             push_constant_ranges,
+            None,
         )
     }
 
@@ -119,6 +121,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
             color_format,
             &handles,
             &[],
+            None,
         )
     }
 
@@ -140,6 +143,41 @@ impl<'device> VulkanGraphicsPipeline<'device> {
             color_format,
             descriptor_layout_handles,
             push_constant_ranges,
+            None,
+        )
+    }
+
+    /// Creates a traditional render-pass-compatible graphics pipeline.
+    ///
+    /// The render pass must remain alive for the lifetime of this pipeline and
+    /// must be compatible with the supplied color format and subpass zero.
+    pub fn new_with_render_pass(
+        device: &'device VulkanLogicalDevice,
+        shaders: VulkanGraphicsShaders<'_, 'device>,
+        color_format: vk::Format,
+        render_pass: vk::RenderPass,
+        descriptor_layouts: &[&super::VulkanTextureDescriptorSetLayout<'device>],
+        push_constant_ranges: &[vk::PushConstantRange],
+    ) -> Result<Self, VulkanGraphicsPipelineError> {
+        if render_pass == vk::RenderPass::null()
+            || descriptor_layouts
+                .iter()
+                .any(|layout| layout.device_handle() != device.handle().handle())
+        {
+            return Err(VulkanGraphicsPipelineError::DeviceMismatch);
+        }
+        let handles = descriptor_layouts
+            .iter()
+            .map(|layout| layout.handle())
+            .collect::<Vec<_>>();
+        Self::create(
+            device,
+            VulkanDeviceOwner::Borrowed(device),
+            shaders,
+            color_format,
+            &handles,
+            push_constant_ranges,
+            Some(render_pass),
         )
     }
 
@@ -150,6 +188,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         color_format: vk::Format,
         descriptor_layout_handles: &[vk::DescriptorSetLayout],
         push_constant_ranges: &[vk::PushConstantRange],
+        render_pass: Option<vk::RenderPass>,
     ) -> Result<VulkanGraphicsPipeline<'owner>, VulkanGraphicsPipelineError> {
         if shaders.vertex.device_handle() != device.handle().handle()
             || shaders.fragment.device_handle() != device.handle().handle()
@@ -211,7 +250,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         let mut rendering =
             vk::PipelineRenderingCreateInfo::default().color_attachment_formats(&color_formats);
 
-        let pipeline_info = [vk::GraphicsPipelineCreateInfo::default()
+        let mut pipeline_info = vk::GraphicsPipelineCreateInfo::default()
             .stages(&stages)
             .vertex_input_state(&vertex_input)
             .input_assembly_state(&input_assembly)
@@ -221,9 +260,12 @@ impl<'device> VulkanGraphicsPipeline<'device> {
             .color_blend_state(&blend)
             .dynamic_state(&dynamic)
             .layout(layout)
-            .render_pass(vk::RenderPass::null())
-            .subpass(0)
-            .push_next(&mut rendering)];
+            .render_pass(render_pass.unwrap_or(vk::RenderPass::null()))
+            .subpass(0);
+        if render_pass.is_none() {
+            pipeline_info.push_next(&mut rendering);
+        }
+        let pipeline_info = [pipeline_info];
 
         let pipeline = match unsafe {
             device.handle().create_graphics_pipelines(
@@ -253,6 +295,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
             layout,
             pipeline,
             color_format,
+            render_pass,
         })
     }
 
@@ -270,6 +313,17 @@ impl<'device> VulkanGraphicsPipeline<'device> {
     ) -> bool {
         self.device.device().handle().handle() == device.handle().handle()
             && self.color_format == color_format
+    }
+
+    pub(super) fn is_compatible_with_render_pass(
+        &self,
+        device: &VulkanLogicalDevice,
+        color_format: vk::Format,
+        render_pass: vk::RenderPass,
+    ) -> bool {
+        self.device.device().handle().handle() == device.handle().handle()
+            && self.color_format == color_format
+            && self.render_pass == Some(render_pass)
     }
 
     /// Binds this pipeline to a recording graphics command buffer.
