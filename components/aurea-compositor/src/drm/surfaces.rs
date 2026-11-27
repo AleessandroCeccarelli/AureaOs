@@ -287,9 +287,39 @@ impl DrmSurfaceManager {
     /// failed surfaces and their CRTC ownership remain retained so callers can
     /// retry teardown and must not release dependent GBM/Vulkan resources.
     pub fn clear(&mut self) -> Result<(), String> {
-        let errors = clear_and_retain(&mut self.surfaces, |managed| {
-            managed.surface.clear().map_err(|error| error.to_string())
-        });
+        let output_ids: Vec<_> = self.surfaces.keys().copied().collect();
+        let mut errors = Vec::new();
+        let mut cleared = Vec::new();
+
+        for output_id in output_ids {
+            let Some(managed) = self.surfaces.get_mut(&output_id) else {
+                continue;
+            };
+
+            if let Err(error) = managed.surface.clear() {
+                errors.push(format!("output {output_id}: {}", error));
+                continue;
+            }
+
+            // KMS has confirmed that the surface is disabled. Retire only
+            // Vulkan frames whose independent GPU/KMS/foreign ownership
+            // tracker also proves them reusable. The final scanout frame may
+            // remain conservatively quarantined until its lifecycle is resolved.
+            let retirement = {
+                let coordinator = managed.presentation.frame_coordinator_mut();
+                managed.frame_pool.retire_available(coordinator)
+            };
+            if let Err(error) = retirement {
+                errors.push(format!("output {output_id}: {error}"));
+                continue;
+            }
+
+            cleared.push(output_id);
+        }
+
+        for output_id in cleared {
+            self.surfaces.remove(&output_id);
+        }
 
         self.crtc_owners
             .retain(|_, output_id| self.surfaces.contains_key(output_id));
