@@ -72,17 +72,20 @@ pub(super) fn refresh_dmabuf_feedback(state: &mut WaylandState) {
                 .or_else(|| physical.render_node().ok().flatten())
                 .and_then(|node| node.dev_id().ok())
         });
-    // When all renderers disappear (for example during VT pause), retain the
-    // last known DRM identity but publish an empty main tranche. This withdraws
-    // stale allocation promises without permanently disabling the global.
+    // An empty feedback table has no main-device tranche and is not a valid
+    // replacement for this feedback global. Keep the last published table,
+    // but fail closed by clearing import targets until a renderer returns.
+    if devices.is_empty() || formats.is_empty() {
+        state.compositor.clear_dmabuf_devices();
+        tracing::info!("AureaOS: DMA-BUF imports disabled; no active renderer intersection is available");
+        return;
+    }
     let main_device = main_device.or_else(|| state.compositor.dmabuf_main_device());
     let Some(main_device) = main_device else {
+        state.compositor.clear_dmabuf_devices();
         tracing::warn!("AureaOS: linux-dmabuf feedback not refreshed; no known DRM device identity");
         return;
     };
-    if formats.is_empty() {
-        tracing::info!("AureaOS: publishing empty linux-dmabuf feedback; no common safe DMA-BUF formats");
-    }
     let feedback = match DmabufFeedbackBuilder::new(main_device, formats).build() {
         Ok(feedback) => feedback,
         Err(error) => {
