@@ -225,7 +225,7 @@ impl WaylandServer {
                         .state
                         .vulkan_backends
                         .values()
-                        .any(|backend| backend.has_pending_native_cursor_work());
+                        .any(|backend| backend.has_pending_render_resource_work());
 
                 #[cfg(not(feature = "drm"))]
                 let animation_active = false;
