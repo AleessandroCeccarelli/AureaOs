@@ -305,9 +305,13 @@ impl DrmSurfaceManager {
         let Some(output) = self.surfaces.get_mut(&output_id) else {
             return Ok(None);
         };
-        output
+        let completed = output
             .cpu_presentation
-            .on_vblank(node, crtc, &mut output.cpu_frame_pool)
+            .on_vblank(node, crtc, &mut output.cpu_frame_pool)?;
+        if completed.is_some() {
+            output.presentation.cancel_mode_rollback();
+        }
+        Ok(completed)
     }
 
     /// Retires a CPU framebuffer after its page flip released KMS ownership.
@@ -337,7 +341,11 @@ impl DrmSurfaceManager {
         if output.presentation().pending().is_none() {
             return Ok(None);
         }
-        output.presentation_mut().on_vblank(node, crtc)
+        let completed = output.presentation_mut().on_vblank(node, crtc)?;
+        if completed.is_some() {
+            output.cpu_presentation.cancel_mode_rollback();
+        }
+        Ok(completed)
     }
 
     /// Releases userspace references after Udev confirms physical device removal.
