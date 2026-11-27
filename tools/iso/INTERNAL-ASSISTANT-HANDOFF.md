@@ -1307,3 +1307,15 @@ Limiti ancora aperti:
 - This is still resource-lifetime groundwork: no per-format manager, frame-target integration, display-color-manager integration or legacy frame orchestration has been added. The Vulkan 1.3 logical-device gate and AAG compatibility=false remain unchanged.
 - No build, rustfmt, cargo check, tests, shader compilation, CI, ISO build or hardware validation was run. All changes remain unverified source-level work.
 - Next: introduce a narrowly scoped per-format legacy resource owner that retains the shared render pass, shared descriptor layout/sampler and shared pipeline objects; create framebuffer targets per frame/image without storing self-referential borrows. Then integrate that owner with display-color and frame recording.
+
+
+## 2026-11-27 — Per-format legacy render-pass cache
+
+- Added `VulkanLegacyRenderPassManager` in `legacy_render_pass_manager.rs`. It owns persistent shared render passes, keyed separately by format and attachment load operation (`CLEAR`, `LOAD`, `DONT_CARE`).
+- Framebuffer targets are deliberately excluded from this manager: they remain per-image/per-frame objects borrowing both the cached render pass and their image view.
+- Integrated the manager into `VulkanSurfacePipelineCache` and exposed internal accessors for clear, load and discard render passes.
+- Added shared-ownership legacy pipeline factories for surface texture, wallpaper texture and cursor trail. These factories build the Vulkan 1.0 render-pass pipelines against the exact shared render-pass allocation and use the existing descriptor-layout and push-constant ABI.
+- Commits: `741390ab` (manager), `56c114c8` (module wiring), `6d24c140` (cache integration), `7256ba7c` (device ownership initialization order), `b3e688f9` (shared pipeline factories).
+- Important boundary: these factories currently return owned pipeline wrappers; the cache caller is responsible for retaining them in a format/load-op keyed collection. The manager caches render passes only. Existing modern caches and borrowed legacy factories remain unchanged.
+- No build, rustfmt, cargo check, tests, shader compilation, CI, ISO build or hardware validation was run. All work remains unverified source-level changes.
+- Next: introduce a dedicated legacy pipeline resource collection keyed by format and load operation, then create a shared-ownership legacy display-color pass and connect it to a legacy display-color manager. After that, wire per-frame framebuffer targets and a separate legacy frame-recording path. Keep Vulkan 1.3 logical-device creation and AAG compatibility disabled until the full path is integrated and validated.
