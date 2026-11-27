@@ -98,7 +98,7 @@ The compositor owns a format-cached cursor-trail pipeline separate from ordinary
 
 The product-level CPU/GPU family boundaries are defined in [HARDWARE-REQUIREMENTS.md](HARDWARE-REQUIREMENTS.md) and are deliberately capability-gated rather than PCI-ID allowlists:
 
-- CPU ISA floor: x86-64-v3; practical desktop target: 4 cores / 8 threads or better. 8 GiB RAM is the minimum, 16 GiB is recommended.
+- CPU ISA floor: x86-64-v3; practical family target: Intel Core 8th generation (Coffee Lake)+ or AMD Ryzen 2000-series (Zen+)+, 4 cores / 8 threads or better. 8 GiB RAM is the minimum, 16 GiB is recommended.
 - Intel integrated graphics: Gen9.5 (UHD 620/630, Iris Plus class) and newer.
 - AMD integrated graphics: Vega and newer; discrete: Polaris / RX 400–500 and newer.
 - NVIDIA discrete graphics: Pascal / GeForce GTX 10 and newer, initially through the proprietary Vulkan driver. NVK is a separate path that must be certified before it is treated as a supported production route.
