@@ -161,11 +161,14 @@ impl VulkanContext {
     /// Vulkan renders into host-readable images, while GBM/KMS remains owned
     /// by the physical display GPU.
     pub fn select_software_device(&self) -> Option<&PhysicalDevice> {
-        self.physical_devices.iter().find(|device| {
-            Self::classify_device(device) == VulkanDeviceType::Cpu
-                && self.graphics_queue_family(device).is_some()
-                && Self::rendering_compatibility_error(device, true).is_none()
-        })
+        let candidates = self
+            .adaptive_graphics_candidates()
+            .into_iter()
+            .filter(|candidate| candidate.capabilities.software_device)
+            .collect::<Vec<_>>();
+        AureaAdaptiveGraphics::select(&candidates)
+            .filter(|plan| plan.path == crate::adaptive_graphics::GraphicsPath::SoftwareVulkan)
+            .and_then(|plan| self.physical_devices.get(plan.device_index))
     }
 
     /// Selects a graphics-capable Vulkan device matching a DRM node.
