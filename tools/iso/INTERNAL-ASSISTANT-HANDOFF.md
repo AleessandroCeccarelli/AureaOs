@@ -1416,3 +1416,12 @@ Cautions:
 - This is a recording primitive, not a complete frame orchestrator. The active `surface_compositor::render_frame` still records the Vulkan 1.3 dynamic-rendering path; compatibility selection remains intentionally disabled.
 - Next integration work: build legacy-specific texture bindings and command recording for the same exact layer order (clear, wallpaper, non-cursor surfaces, context menu, client cursor surfaces, cursor trail, native cursor, optional display color), then connect readback/foreign-queue release and submission. Keep all cache-owned resources borrowed until the submission completion point.
 - No build, tests, rustfmt, shader compilation, CI, or ISO build were run.
+
+### Vulkan legacy logical-device negotiation update (2026-11-27)
+
+- `VulkanRenderingFeaturePlan::from_device` now produces an explicit `CompatibilityPending` plan for Vulkan 1.0–1.2 devices instead of rejecting logical-device creation outright.
+- `logical_device_factory.rs` attaches the Vulkan 1.3 feature structure only for `ModernDynamic`; legacy plans create the logical device without a Vulkan 1.3 feature pNext chain.
+- `VulkanLogicalDevice::rendering_mode()` exposes the mode used for device creation.
+- Device inventory deliberately continues to report `CompatibilityPending` as not render-ready, and `physical_device.rs` keeps `compatibility_renderer_available: false`. AAG must not select legacy hardware until the complete frame compositor, shaders, transitions, submission and DRM/readback presentation path are integrated and validated.
+- No build, tests, rustfmt, shader compilation or hardware validation was run for this change. The new negotiation and ash pNext typing still require a grouped Fedora validation before being considered compile-verified.
+
