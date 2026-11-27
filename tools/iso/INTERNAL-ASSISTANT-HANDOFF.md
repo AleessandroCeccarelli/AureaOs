@@ -1360,3 +1360,15 @@ Cautions:
 - Previously, the cursor-trail cache converted any render-pass creation failure into a synthetic `ERROR_INITIALIZATION_FAILED` graphics-pipeline error. The cache now reports the actual render-pass error through `VulkanSurfacePipelineCacheError::LegacyRenderPass`.
 - This is an error-reporting correctness fix only; it does not change renderer selection or enable the compatibility path.
 - Build/test/rustfmt/shader/ISO validation remains intentionally deferred until the grouped Fedora validation session.
+
+
+## Legacy frame integration boundary audit — 2026-11-27
+
+- Re-read the current `surface_compositor::render_frame`, `VulkanOutputScanoutBackend`, `VulkanCpuOutputBackend`, and `VulkanLogicalDevice` from `main`.
+- The active SHM compositor is still a Vulkan 1.3 dynamic-rendering implementation: clear, wallpaper, normal surfaces, context menu, client cursor surfaces, cursor trail, native cursor, and optional display-color processing all use the dynamic-rendering `VulkanDrawPass` / `VulkanDisplayColorPass` path.
+- The atomic DMA-BUF scanout backend invokes this compositor through its presentation module. The CPU readback backend also invokes the same compositor. Therefore changing only the DRM scanout caller would not produce a complete fallback; the composition path itself must select and record the legacy backend.
+- The output scanout image is allocated with `COLOR_ATTACHMENT` usage. The compositor's optional display-color intermediate additionally needs `SAMPLED` usage. The final display-color operation currently renders into the scanout image before foreign-queue release or readback.
+- Legacy framebuffer targets are correctly per-image/per-frame resources: `VulkanLegacyRenderPass::create_target` creates a framebuffer borrowing the persistent render pass and image view. They must not be stored in the device-wide pipeline cache.
+- The current render-pass manager has clear/load/discard render passes; the shared pipeline cache has load-keyed surface, wallpaper, and cursor-trail pipelines. The display-color legacy pass has a separate cache. There is not yet a frame-level legacy recorder that owns the frame command buffer, creates each transient framebuffer target, records every layer in order, and submits/releases the output.
+- Do not add a runtime selector yet. The logical-device creation path and some synchronization/presentation pieces still assume Vulkan 1.3 or modern feature setup. The safe next implementation unit is a dedicated legacy frame recorder with explicit frame-scoped targets and bindings, followed by routing both scanout backends through a shared renderer strategy only after the full layer sequence is covered.
+- No source change to active rendering was made during this audit. No build, test, rustfmt, shader compile, CI, or ISO validation was run.
