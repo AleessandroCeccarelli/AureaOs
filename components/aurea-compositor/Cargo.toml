@@ -13,6 +13,8 @@ license = "GPL-3.0-or-later"
 
 [features]
 default = []
+# Opt-in only: enable the Vulkan 1.0–1.2 frame recorder after Fedora validation.
+legacy-vulkan-frame = ["drm"]
 heif = ["aurea-media/heif"]
 
 # Native Linux desktop backend.
