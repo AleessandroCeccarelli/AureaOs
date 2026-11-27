@@ -68,6 +68,7 @@ pub struct DrmOutputDescriptor {
     scale: u32,
     connector: Option<connector::Handle>,
     native_mode: Option<Mode>,
+    native_modes: Vec<(DrmModeInfo, Mode)>,
     edid: Option<EdidInfo>,
     physical_identity: Option<DrmConnectorIdentity>,
 }
@@ -91,6 +92,7 @@ impl DrmOutputDescriptor {
             scale,
             connector: None,
             native_mode: None,
+            native_modes: Vec::new(),
             edid: None,
             physical_identity: None,
         }
@@ -101,6 +103,32 @@ impl DrmOutputDescriptor {
         self.connector = Some(connector);
         self.native_mode = Some(mode);
         self
+    }
+
+    /// Retains every connector timing alongside the logical mode it describes.
+    ///
+    /// Multiple native timings may map to the same logical dimensions and
+    /// refresh rate. They remain available here even though the shared output
+    /// model intentionally exposes unique logical modes only.
+    pub fn with_native_modes(mut self, modes: Vec<(DrmModeInfo, Mode)>) -> Self {
+        self.native_modes = modes;
+        self
+    }
+
+    /// Resolves a logical mode to the first matching native DRM timing.
+    ///
+    /// Until the public output model carries a native timing identity, callers
+    /// must treat this as a deterministic fallback, not as a unique mapping.
+    pub fn native_mode_for(&self, mode: OutputMode) -> Option<Mode> {
+        self.native_modes
+            .iter()
+            .find(|(info, _)| info.to_output_mode() == Some(mode))
+            .map(|(_, native)| *native)
+    }
+
+    /// Returns all retained native timing alternatives.
+    pub fn native_modes(&self) -> &[(DrmModeInfo, Mode)] {
+        &self.native_modes
     }
 
     /// Attaches validated monitor EDID metadata when the connector provides it.
@@ -179,11 +207,17 @@ impl DrmOutputDescriptor {
             .collect::<Option<Vec<_>>>()
             .ok_or(DrmOutputError::InvalidMode)?;
 
-        for index in 0..modes.len() {
-            if modes[..index].contains(&modes[index]) {
-                return Err(DrmOutputError::DuplicateMode);
+        // Distinct DRM timings can collapse to one logical mode (for example,
+        // when the kernel's integer vrefresh accessor rounds nearby rates).
+        // Keep native alternatives on the descriptor and expose each logical
+        // mode only once to the hardware-independent output registry.
+        let mut unique_modes = Vec::with_capacity(modes.len());
+        for mode in modes {
+            if !unique_modes.contains(&mode) {
+                unique_modes.push(mode);
             }
         }
+        let modes = unique_modes;
 
         let current_mode = self
             .current_mode
@@ -203,7 +237,6 @@ impl DrmOutputDescriptor {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DrmOutputError {
     InvalidMode,
-    DuplicateMode,
     UnsupportedCurrentMode,
     InvalidOutput,
     DuplicateOutputId,
@@ -213,7 +246,6 @@ impl fmt::Display for DrmOutputError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::InvalidMode => formatter.write_str("DRM reported an invalid display mode"),
-            Self::DuplicateMode => formatter.write_str("DRM reported duplicate display modes"),
             Self::UnsupportedCurrentMode => {
                 formatter.write_str("The current display mode is not in the supported mode list")
             }
