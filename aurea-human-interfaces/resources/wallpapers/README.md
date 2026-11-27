@@ -14,19 +14,19 @@ Nine original AI-assisted wallpaper concepts are retained: three abstract color 
 
 ## Current default selection
 
-**Selected default wallpaper:** `aureaos-midnight-flow.jpg`
+**Selected default wallpaper:** `aureaos-blue-flow.jpg`
 
-Repository path: `aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg`
+Repository path: `aurea-human-interfaces/resources/wallpapers/aureaos-blue-flow.jpg`
 
-GitHub preview: https://github.com/AleessandroCeccarelli/AureaOs/blob/main/aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg
+GitHub preview: https://github.com/AleessandroCeccarelli/AureaOs/blob/main/aurea-human-interfaces/resources/wallpapers/aureaos-blue-flow.jpg
 
-This is the provisional default for the AureaOS desktop. The dark midnight-blue abstract composition best supports the established AureaOS blue identity while keeping the desktop visually calm and providing contrast for windows, icons and the floating dock. It is a design selection, not yet confirmation that the compositor or shell loads it at runtime.
+This is the official default wallpaper for AureaOS 1.0 Roma. The blue abstract composition establishes the system's visual identity and is embedded directly into the compositor.
 
 The other wallpapers remain available as alternatives; selecting this default does not remove or rename any artwork.
 
 ## Asset quality and future work
 
-The artwork was generated as a contact sheet and individual panels were cropped and upscaled. Fine detail may be softer than native 4K artwork. Validate actual dimensions and quality before release packaging.
+The artwork was generated as a contact sheet and individual panels were cropped and upscaled. Fine detail may be softer than native 4K artwork. The selected asset is intended for 3840 × 2160 output; the compositor validates the JPEG header before decoding.
 
 Future work: distinguish source and preview files, add thumbnail metadata, dark/light suitability, focal-point guidance for overlays, multi-display aspect ratios and per-image provenance. The collection does not imply that every image is a final default selection.
 
