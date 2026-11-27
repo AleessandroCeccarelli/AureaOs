@@ -12,7 +12,7 @@ cc -std=c11 -Wall -Wextra -Werror -O2 \
   -o /tmp/aurea-turbojpeg-probe -lturbojpeg
 
 /tmp/aurea-turbojpeg-probe \
-  aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg
+  aurea-human-interfaces/resources/wallpapers/aureaos-blue-flow.jpg
 ```
 
 The expected output includes the JPEG dimensions, RGBA8 byte count, and successful opaque-alpha validation. The committed wallpaper should report 3840 x 2160 and 33,177,600 RGBA8 bytes.
