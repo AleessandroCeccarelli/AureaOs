@@ -2586,3 +2586,8 @@ Reviewed SHM texture uploads: `VulkanPendingUpload` owns staging, image resource
 - Hardened partial `VulkanFrameScheduler::with_frame_count` rollback: if device loss occurs while constructing slots, already-created slots are quarantined rather than destroying their fences, semaphores or command pools.
 - Lease objects continue to retain their pool/device ownership; resource destructors now honor the fail-stop state.
 - Source-only changes. No rustfmt, build, tests, CI or Vulkan validation-layer execution.
+
+
+### 2026-11-27 — Fail-stop propagation through teardown paths
+
+Continued the two-path audit (asynchronous submission and teardown/shutdown). Partial setup rollback in `VulkanPendingUpload::new` and `VulkanFrameSlot::new` now enters permanent fail-stop on `ERROR_DEVICE_LOST` and avoids destroying command pools/fences through a lost device. `VulkanFrameSlot::prepare` quarantines the slot and marks the logical device unusable when its completion-fence wait reports device loss. Failed completion fallbacks in `VulkanPendingUpload::drop`, `VulkanReadbackSubmission::drop`, `VulkanCommandBuffer::drop`, and `VulkanFrameScheduler::drop` now propagate terminal loss into the shared device state. GitHub Actions checks are being used where available; no local Fedora build/test has been run.
