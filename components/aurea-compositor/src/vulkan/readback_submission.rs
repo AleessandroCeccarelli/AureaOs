@@ -66,6 +66,9 @@ impl VulkanReadbackSubmission {
         let device = view
             .shared_device_owner()
             .ok_or(VulkanReadbackError::ImageNotOwned)?;
+        if device.is_unusable() {
+            return Err(VulkanReadbackError::Submission(vk::Result::ERROR_DEVICE_LOST));
+        }
         if !pool.owns_device(&device) {
             return Err(VulkanReadbackError::DeviceMismatch);
         }
@@ -184,6 +187,19 @@ impl VulkanReadbackSubmission {
 
 impl Drop for VulkanReadbackSubmission {
     fn drop(&mut self) {
+        if self.device.is_unusable() {
+            if let Some(readback) = self.readback.take() {
+                std::mem::forget(readback);
+            }
+            if let Some(view) = self.source_view.take() {
+                std::mem::forget(view);
+            }
+            if let Some(target) = self._capture_target.take() {
+                std::mem::forget(target);
+            }
+            std::mem::forget(std::sync::Arc::clone(&self.device));
+            return;
+        }
         // This fallback preserves resource safety for callers that release an
         // unfinished capture. Normal operation polls to completion on a worker.
         if !self.completed {
