@@ -391,6 +391,37 @@ impl<'a> RenderScene<'a> {
         snapshots
     }
 
+    /// Returns retained DMA-BUF snapshots in the same order as SHM surfaces.
+    ///
+    /// This is the renderer-facing acquisition boundary. The Vulkan importer
+    /// must still validate device-specific format/modifier support before use.
+    #[cfg(feature = "drm")]
+    pub fn dmabuf_snapshots(&self) -> Vec<surface_tree::SurfaceTreeDmabufSnapshot> {
+        let mut snapshots = Vec::new();
+        for toplevel in &self.toplevels {
+            let root = toplevel.surface.wl_surface();
+            snapshots.extend(surface_tree::collect_surface_tree_dmabuf_snapshots(
+                root,
+                toplevel.location,
+            ));
+            for (popup, popup_offset) in PopupManager::popups_for_surface(root) {
+                let popup_origin = toplevel.location + popup_offset - popup.geometry().loc;
+                snapshots.extend(surface_tree::collect_surface_tree_dmabuf_snapshots(
+                    popup.wl_surface(),
+                    popup_origin,
+                ));
+            }
+        }
+
+        if let Some((surface, location, _)) = &self.cursor_surface {
+            snapshots.extend(surface_tree::collect_surface_tree_dmabuf_snapshots(
+                surface, *location,
+            ));
+        }
+
+        snapshots
+    }
+
     /// Returns the number of mapped toplevels in this scene.
     pub fn len(&self) -> usize {
         self.toplevels.len()
