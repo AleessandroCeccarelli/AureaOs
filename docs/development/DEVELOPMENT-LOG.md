@@ -2609,3 +2609,8 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - The final frame still marked active in the coordinator is not force-reset. If ambiguous, it remains quarantined by pool `Drop`. A dedicated lifecycle transition for confirmed output disable is still needed to avoid this conservative leak.
 - CPU/GBM resources are removed only after successful KMS clear.
 - No build/tests or successful CI result were verified.
+
+
+### Shutdown reporting refinement — 2026-11-27
+
+`DrmSurfaceManager::clear` now refuses to remove an output manager entry when Vulkan scanout frames remain unresolved after KMS disable. It reports the quarantined frame count to the caller, keeping the owner reachable for diagnosis/retry. The conservative pool Drop remains a last-resort leak guard, not a successful retirement path. Physical device-removal cleanup remains a distinct path and still requires proof that GPU ownership is resolved before Vulkan resources can be destroyed.
