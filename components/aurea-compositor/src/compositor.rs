@@ -29,6 +29,8 @@ use smithay::{
         shell::xdg::XdgShellState,
         shm::ShmState,
         tablet_manager::{TabletManagerState, TabletSeatHandler},
+        #[cfg(feature = "drm")]
+        dmabuf::{DmabufGlobal, DmabufState},
     },
 };
 
@@ -94,6 +96,12 @@ pub struct AureaCompositor {
     compositor_state: CompositorState,
     display_handle: DisplayHandle,
     shm_state: ShmState,
+    #[cfg(feature = "drm")]
+    dmabuf_state: DmabufState,
+    #[cfg(feature = "drm")]
+    dmabuf_global: Option<DmabufGlobal>,
+    #[cfg(feature = "drm")]
+    dmabuf_devices: Vec<std::sync::Arc<crate::vulkan::VulkanLogicalDevice>>,
     xdg_shell_state: XdgShellState,
     _fractional_scale_manager_state:
         smithay::wayland::fractional_scale::FractionalScaleManagerState,
@@ -171,6 +179,8 @@ impl AureaCompositor {
         // Welcome and application clients use the two mandatory Wayland SHM formats.
         // Advertising no formats prevents clients from creating their first buffer.
         let shm_state = ShmState::new::<Self>(display, vec![Format::Argb8888, Format::Xrgb8888]);
+        #[cfg(feature = "drm")]
+        let dmabuf_state = DmabufState::new();
         let xdg_shell_state = XdgShellState::new::<Self>(display);
         let fractional_scale_manager_state = fractional_scale::create_manager(display);
         let pointer_gestures_state =
@@ -183,6 +193,12 @@ impl AureaCompositor {
             compositor_state,
             display_handle: display.clone(),
             shm_state,
+            #[cfg(feature = "drm")]
+            dmabuf_state,
+            #[cfg(feature = "drm")]
+            dmabuf_global: None,
+            #[cfg(feature = "drm")]
+            dmabuf_devices: Vec::new(),
             xdg_shell_state,
             _fractional_scale_manager_state: fractional_scale_manager_state,
             seat_state,
@@ -230,6 +246,25 @@ impl AureaCompositor {
     /// Returns the Smithay shared-memory protocol state.
     pub(crate) fn wayland_shm_state(&self) -> &ShmState {
         &self.shm_state
+    }
+
+    /// Publishes linux-dmabuf v3 only after every active Vulkan renderer has
+    /// reported a common, importable single-plane format/modifier set.
+    #[cfg(feature = "drm")]
+    pub(crate) fn initialize_dmabuf_global(
+        &mut self,
+        display: &DisplayHandle,
+        devices: Vec<std::sync::Arc<crate::vulkan::VulkanLogicalDevice>>,
+        formats: Vec<smithay::backend::allocator::Format>,
+    ) -> bool {
+        if devices.is_empty() || formats.is_empty() || self.dmabuf_global.is_some() {
+            return false;
+        }
+        self.dmabuf_devices = devices;
+        self.dmabuf_global = Some(
+            self.dmabuf_state.create_global::<Self>(display, formats),
+        );
+        true
     }
 
     /// Returns the Smithay compositor protocol state.
