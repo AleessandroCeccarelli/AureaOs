@@ -145,6 +145,69 @@ pub(crate) fn destroy_imported_sync_file_semaphore(
     }
 }
 
+/// Owns imported producer-fence semaphores until the waiting queue submission completes.
+pub(crate) struct DmabufSyncWaitSet {
+    device: std::sync::Arc<VulkanLogicalDevice>,
+    semaphores: Vec<vk::Semaphore>,
+    quarantined: bool,
+}
+
+impl DmabufSyncWaitSet {
+    pub(crate) fn new(device: std::sync::Arc<VulkanLogicalDevice>) -> Self {
+        Self { device, semaphores: Vec::new(), quarantined: false }
+    }
+
+    pub(crate) fn import_layout(
+        &mut self,
+        layout: &DmabufImportLayout,
+    ) -> Result<(), DmabufSyncWaitError> {
+        let sync_file = export_read_sync_file(layout).map_err(DmabufSyncWaitError::Export)?;
+        let semaphore = import_sync_file_semaphore(&self.device, sync_file)
+            .map_err(DmabufSyncWaitError::Import)?;
+        self.semaphores.push(semaphore);
+        Ok(())
+    }
+
+    pub(crate) fn wait_semaphores(&self) -> &[vk::Semaphore] {
+        &self.semaphores
+    }
+
+    /// Prevents destruction when queue acceptance or completion is uncertain.
+    pub(crate) fn quarantine(mut self) {
+        self.quarantined = true;
+        std::mem::forget(self);
+    }
+}
+
+impl Drop for DmabufSyncWaitSet {
+    fn drop(&mut self) {
+        if self.quarantined || self.device.is_unusable() {
+            return;
+        }
+        for semaphore in self.semaphores.drain(..) {
+            destroy_imported_sync_file_semaphore(&self.device, semaphore);
+        }
+    }
+}
+
+/// Failure while exporting or importing one DMA-BUF producer fence.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DmabufSyncWaitError {
+    Export(DmabufSyncFileError),
+    Import(vk::Result),
+}
+
+impl fmt::Display for DmabufSyncWaitError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Export(error) => write!(formatter, "{error}"),
+            Self::Import(error) => write!(formatter, "Vulkan SYNC_FD import failed: {error:?}"),
+        }
+    }
+}
+
+impl Error for DmabufSyncWaitError {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
