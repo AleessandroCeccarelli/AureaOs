@@ -26,7 +26,11 @@ fn record_surface_class(
     views: &[VulkanImageView<'_, '_>],
     bindings: &[VulkanTextureBinding<'_, '_, '_, '_>],
     cursor_surfaces: bool,
-) -> Result<(), VulkanSurfaceCompositionError> {
+ ) -> Result<(), VulkanSurfaceCompositionError> {
+    if surfaces.len() != views.len() || views.len() != bindings.len() {
+        return Err(VulkanSurfaceCompositionError::FrameResourceCountMismatch);
+    }
+
     for ((surface, source), binding) in surfaces.iter().zip(views).zip(bindings) {
         if surface.is_cursor != cursor_surfaces {
             continue;
