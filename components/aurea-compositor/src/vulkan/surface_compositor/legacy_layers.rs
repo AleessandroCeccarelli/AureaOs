@@ -141,6 +141,57 @@ pub(super) fn record_wallpaper(
     .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))
 }
 
+
+/// Records the compositor-owned native cursor above the cursor-trail layer.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn record_native_cursor(
+    command_buffer: vk::CommandBuffer,
+    render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
+    target: &VulkanImageView<'_, '_>,
+    pipeline: &VulkanSharedLegacyGraphicsPipeline,
+    source: &VulkanImageView<'_, '_>,
+    binding: &VulkanTextureBinding<'_, '_, '_, '_>,
+    viewport: vk::Viewport,
+    scissor: vk::Rect2D,
+    texture_transform: u32,
+) -> Result<(), VulkanSurfaceCompositionError> {
+    record_context_menu(
+        command_buffer, render_pass, target, pipeline, source, binding,
+        viewport, scissor, texture_transform,
+    )
+}
+
+/// Records cursor-trail impressions in their supplied back-to-front order.
+pub(super) fn record_cursor_trail(
+    command_buffer: vk::CommandBuffer,
+    render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
+    target: &VulkanImageView<'_, '_>,
+    pipeline: &VulkanSharedLegacyGraphicsPipeline,
+    source: &VulkanImageView<'_, '_>,
+    binding: &VulkanTextureBinding<'_, '_, '_, '_>,
+    impressions: &[(vk::Viewport, vk::Rect2D, u32, f32)],
+) -> Result<(), VulkanSurfaceCompositionError> {
+    for (viewport, scissor, texture_transform, opacity) in impressions {
+        VulkanLegacyFrameRecorder::cursor_trail_region(
+            command_buffer,
+            render_pass,
+            target,
+            pipeline,
+            source,
+            binding,
+            VulkanImageState::General,
+            VulkanImageState::General,
+            VulkanImageState::General,
+            *viewport,
+            *scissor,
+            *texture_transform,
+            *opacity,
+        )
+        .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+    }
+    Ok(())
+}
+
 /// Records ordinary client surfaces first and client cursor surfaces afterwards.
 ///
 /// The caller places the context menu between the two calls when preserving the
