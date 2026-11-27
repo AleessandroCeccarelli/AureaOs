@@ -5,17 +5,15 @@
 
 //! Frame-scoped Vulkan 1.0 recording helpers.
 //!
-//! Render passes and pipelines are persistent cache resources. Framebuffers,
-//! image views, and descriptor bindings remain borrowed only for the duration
-//! of each recording operation and are never retained by this module.
-
-use std::sync::Arc;
+//! Render passes and pipelines are persistent cache resources. The frame owner
+//! creates one framebuffer per render-pass/image-view pair and retains those
+//! targets until the command buffer has completed GPU execution.
 
 use smithay::reexports::ash::vk;
 
 use super::{
     VulkanClearPass, VulkanClearPassError, VulkanImageState, VulkanImageView,
-    VulkanLegacyRenderPass, VulkanLegacyRenderPassError, VulkanSharedLegacyGraphicsPipeline,
+    VulkanLegacyRenderPassError, VulkanLegacyRenderTarget, VulkanSharedLegacyGraphicsPipeline,
     VulkanTextureBinding, VulkanDrawPass, VulkanDrawPassError,
     VulkanSharedLegacyDisplayColorPass, VulkanDisplayColorPassError,
 };
@@ -32,18 +30,14 @@ impl VulkanLegacyFrameRecorder {
     /// Records the frame's initial clear into a legacy color attachment.
     pub(crate) fn clear(
         command_buffer: vk::CommandBuffer,
-        render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
-        view: &VulkanImageView<'_, '_>,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
         previous_state: VulkanImageState,
         next_state: VulkanImageState,
         color: [f32; 4],
     ) -> Result<(), VulkanLegacyFrameRecorderError> {
-        let target = render_pass
-            .create_target(view)
-            .map_err(VulkanLegacyFrameRecorderError::RenderPass)?;
         VulkanClearPass::record_legacy_color(
             command_buffer,
-            &target,
+            target,
             previous_state,
             next_state,
             color,
@@ -59,8 +53,7 @@ impl VulkanLegacyFrameRecorder {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn surface_region(
         command_buffer: vk::CommandBuffer,
-        render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
-        view: &VulkanImageView<'_, '_>,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
         pipeline: &VulkanSharedLegacyGraphicsPipeline,
         source: &VulkanImageView<'_, '_>,
         binding: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -72,7 +65,7 @@ impl VulkanLegacyFrameRecorder {
         texture_transform: u32,
     ) -> Result<(), VulkanLegacyFrameRecorderError> {
         Self::textured_region(
-            command_buffer, render_pass, view, pipeline, source, binding, 0,
+            command_buffer, target, pipeline, source, binding, 0,
             previous_source_state, previous_target_state, next_target_state,
             super::VulkanColorLoad::Load, viewport, scissor,
             &texture_transform.to_ne_bytes(), vk::ShaderStageFlags::VERTEX,
@@ -83,8 +76,7 @@ impl VulkanLegacyFrameRecorder {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn wallpaper_region(
         command_buffer: vk::CommandBuffer,
-        render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
-        view: &VulkanImageView<'_, '_>,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
         pipeline: &VulkanSharedLegacyGraphicsPipeline,
         source: &VulkanImageView<'_, '_>,
         binding: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -100,7 +92,7 @@ impl VulkanLegacyFrameRecorder {
             bytes[index * 4..(index + 1) * 4].copy_from_slice(&value.to_ne_bytes());
         }
         Self::textured_region(
-            command_buffer, render_pass, view, pipeline, source, binding, 0,
+            command_buffer, target, pipeline, source, binding, 0,
             previous_source_state, previous_target_state, next_target_state,
             super::VulkanColorLoad::Load, viewport, scissor,
             &bytes, vk::ShaderStageFlags::VERTEX,
@@ -111,8 +103,7 @@ impl VulkanLegacyFrameRecorder {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn cursor_trail_region(
         command_buffer: vk::CommandBuffer,
-        render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
-        view: &VulkanImageView<'_, '_>,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
         pipeline: &VulkanSharedLegacyGraphicsPipeline,
         source: &VulkanImageView<'_, '_>,
         binding: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -128,7 +119,7 @@ impl VulkanLegacyFrameRecorder {
         bytes[0..4].copy_from_slice(&texture_transform.to_ne_bytes());
         bytes[4..8].copy_from_slice(&opacity.to_ne_bytes());
         Self::textured_region(
-            command_buffer, render_pass, view, pipeline, source, binding, 0,
+            command_buffer, target, pipeline, source, binding, 0,
             previous_source_state, previous_target_state, next_target_state,
             super::VulkanColorLoad::Load, viewport, scissor,
             &bytes, vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT,
@@ -147,7 +138,7 @@ impl VulkanLegacyFrameRecorder {
         device: &super::VulkanLogicalDevice,
         command_buffer: vk::CommandBuffer,
         source: &VulkanImageView<'_, '_>,
-        target: &VulkanImageView<'_, '_>,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
         binding: &VulkanTextureBinding<'_, '_, '_, '_>,
         previous_source_state: VulkanImageState,
         previous_target_state: VulkanImageState,
@@ -156,10 +147,6 @@ impl VulkanLegacyFrameRecorder {
     ) -> Result<(), VulkanLegacyFrameRecorderError> {
         // The framebuffer must use the exact render-pass instance retained by
         // the display-color pipeline, not another cached pass with the same format.
-        let target = pass
-            .render_pass()
-            .create_target(target)
-            .map_err(VulkanLegacyFrameRecorderError::RenderPass)?;
         pass.record(
             device,
             command_buffer,
@@ -240,8 +227,7 @@ impl VulkanLegacyFrameRecorder {
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn textured_region(
         command_buffer: vk::CommandBuffer,
-        render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
-        view: &VulkanImageView<'_, '_>,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
         pipeline: &VulkanSharedLegacyGraphicsPipeline,
         source: &VulkanImageView<'_, '_>,
         binding: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -257,15 +243,12 @@ impl VulkanLegacyFrameRecorder {
     ) -> Result<(), VulkanLegacyFrameRecorderError> {
         // A framebuffer created from a merely equivalent render pass is not
         // sufficient: it must reference the exact pass retained by the pipeline.
-        if !Arc::ptr_eq(render_pass, pipeline.render_pass()) {
+        if !std::ptr::eq(target.render_pass_ref(), pipeline.render_pass().as_ref()) {
             return Err(VulkanLegacyFrameRecorderError::RenderPassMismatch);
         }
-        let target = render_pass
-            .create_target(view)
-            .map_err(VulkanLegacyFrameRecorderError::RenderPass)?;
         VulkanDrawPass::record_shared_legacy_textured_region(
             command_buffer,
-            &target,
+            target,
             pipeline,
             source,
             binding,
