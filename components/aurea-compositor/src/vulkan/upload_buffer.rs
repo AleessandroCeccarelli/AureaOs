@@ -275,7 +275,9 @@ impl<'device> VulkanUploadBuffer<'device> {
 
 impl Drop for VulkanUploadBuffer<'_> {
     fn drop(&mut self) {
-        if self.device.device().is_unusable() { return; }
+        if self.device.is_unusable() {
+            return;
+        }
         unsafe {
             self.device.handle().destroy_buffer(self.buffer, None);
             self.device.handle().free_memory(self.memory, None);
