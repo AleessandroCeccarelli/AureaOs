@@ -34,12 +34,12 @@ Gli shader per la composizione vengono compilati da `build.rs` con `glslangValid
 ## Limiti ancora aperti
 
 - La composizione iniziale supporta i buffer Wayland SHM ARGB8888 e XRGB8888 già normalizzati dal percorso di snapshot. Gli snapshot vengono aggiornati anche quando un client riutilizza lo stesso wl_buffer e invia nuovo damage; per ora viene ricopiato l'intero buffer.
-- I buffer Wayland DMA-BUF non sono ancora importati come superfici; non vanno confusi con il DMA-BUF usato come destinazione di scanout.
+- L'import dei buffer DMA-BUF Wayland come superfici è ora collegato al percorso di composizione: il compositor valida e conserva dimensioni, FourCC, modifier, offset/stride e FD, verifica l'importabilità sul set dei renderer attivi, importa immagini Vulkan campionabili e attende il producer fence Linux tramite SYNC_FD prima del sampling. L'importer attuale accetta esclusivamente immagini a singolo memory-plane; formati multi-plane e sincronizzazione implicita sono rifiutati. Questo percorso è implementato nel sorgente ma non ancora certificato su hardware fisico.
 - Le trasformazioni buffer diverse da `Transform::Normal` vengono rifiutate esplicitamente: non vengono presentate texture ruotate o specchiate in modo scorretto.
 - Il codice include `VulkanPendingUpload`, upload raggruppati e una cache limitata delle texture SHM indicizzata per superficie/revisione. Questa implementazione ha superato compilazione e test CI, ma non è ancora stata validata su hardware fisico.
 - Pipeline grafica SHM, descriptor-set layout e sampler sono mantenuti in cache per dispositivo. Compilazione, test automatizzati e smoke test Vulkan offscreen sono passati; non vanno comunque considerati prova di una pipeline pronta per l'uso quotidiano prima della validazione fisica.
 - Il limite aggregato del frame è 256 MiB di snapshot SHM visibili e 128 superfici; i singoli snapshot hanno inoltre il proprio limite.
-- Il percorso fisico deve ancora essere verificato su hardware reale, inclusi formati/modifier, DMA-BUF export, ownership delle queue, blending, atomic KMS, VBlank, hotplug e teardown.
+- Il percorso fisico deve ancora essere verificato su hardware reale, inclusi formati/modifier di scanout e import client, producer fence SYNC_FD, ownership delle queue, blending SHM/DMA-BUF, atomic KMS, VBlank, hotplug e teardown. L'import multi-plane resta fuori dal perimetro.
 - Il successo di una build o dei test unitari non dimostra che il monitor mostri correttamente le finestre.
 
 ## Prossimi passi, in ordine
