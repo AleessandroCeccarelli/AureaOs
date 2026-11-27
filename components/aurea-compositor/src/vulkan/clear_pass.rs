@@ -20,6 +20,7 @@ pub enum VulkanClearPassError {
     NonFiniteClearColor,
     UndefinedFinalState,
     MissingColorAttachmentUsage,
+    IncompatibleLoadOperation,
 }
 
 impl fmt::Display for VulkanClearPassError {
@@ -34,6 +35,9 @@ impl fmt::Display for VulkanClearPassError {
             Self::MissingColorAttachmentUsage => {
                 formatter.write_str("The Vulkan image was not created with color-attachment usage")
             }
+            Self::IncompatibleLoadOperation => formatter.write_str(
+                "The legacy render pass was not created with a clear load operation",
+            ),
         }
     }
 }
@@ -77,6 +81,9 @@ impl VulkanClearPass {
         clear_color: [f32; 4],
     ) -> Result<(), VulkanClearPassError> {
         Self::validate(clear_color, final_state)?;
+        if target.render_pass_ref().load_op() != vk::AttachmentLoadOp::CLEAR {
+            return Err(VulkanClearPassError::IncompatibleLoadOperation);
+        }
         let view = target.view();
         if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
             return Err(VulkanClearPassError::MissingColorAttachmentUsage);
