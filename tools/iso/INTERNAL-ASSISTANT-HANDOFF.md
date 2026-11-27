@@ -1513,3 +1513,14 @@ Cautions:
 - A mismatch now fails before any frame commands are recorded instead of being discovered after the clear or an earlier layer has already modified the command buffer.
 - This remains an orchestration safety improvement only. `render_frame()` still has the compatibility fail-closed guard; no renderer selection or runtime compatibility has been enabled.
 - No build, tests, rustfmt, shader compilation, CI or hardware validation was run.
+
+
+### Opt-in legacy frame orchestration — 2026-11-27
+
+- Added `surface_compositor/legacy_frame.rs` as the dedicated Vulkan 1.0–1.2 frame orchestrator. It consumes the same visible-surface snapshots and texture caches prepared by the common compositor path, then creates frame-scoped views and descriptor bindings without using Vulkan 1.3 dynamic rendering.
+- Wired the compatibility dispatch in `render_frame()` to the legacy orchestrator when the explicit `legacy-vulkan-frame` Cargo feature is enabled. The orchestrator records clear, wallpaper, normal surfaces, context menu, client cursor surfaces, cursor trail and native cursor in the existing authoritative order.
+- Connected the legacy display-color pass using its own retained render pass and descriptor layout. Kept composition-image state and scanout-image state separate, then routes the same completed frame to either RGBA8 readback submission or KMS foreign-queue release/submission.
+- Added `legacy-vulkan-frame = ["drm"]` as an opt-in feature. It is not enabled by default. Without it, `CompatibilityPending` still returns `CompatibilityRendererNotIntegrated`; therefore compatibility remains disabled until grouped Fedora validation is explicitly approved.
+- The empty-scene fast path is deliberately bypassed for compatibility mode so even an empty legacy frame uses the traditional-render-pass clear instead of the Vulkan 1.3 clear path.
+- Commits: `014f1ee5` (legacy frame module), `a9c4d661` (separate output state), `3209cf1b` (mode dispatch), `f9329fc5` (display-pass preparation and wallpaper scissor validation), `6c5a28a6` (module imports), `049265ea` (opt-in feature), `5e642e81` (default-off dispatch gate).
+- No build, `cargo fmt`, `cargo check`, tests, shader compilation, CI or hardware validation was run. Rust type/lifetime correctness and actual Vulkan behavior remain unverified. The next step is a source review followed by the agreed grouped Fedora validation with `--features legacy-vulkan-frame`; do not enable the feature by default before that succeeds.
