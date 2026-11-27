@@ -26,6 +26,9 @@ pub(super) struct VulkanFrameSlot {
 
 impl VulkanFrameSlot {
     pub(super) fn new(device: &VulkanLogicalDevice, queue_family: u32) -> Result<Self, vk::Result> {
+        if device.is_unusable() {
+            return Err(vk::Result::ERROR_DEVICE_LOST);
+        }
         let pool_info = vk::CommandPoolCreateInfo::default()
             .queue_family_index(queue_family)
             .flags(vk::CommandPoolCreateFlags::TRANSIENT);
@@ -76,7 +79,8 @@ impl VulkanFrameSlot {
         &mut self,
         device: &VulkanLogicalDevice,
     ) -> Result<vk::CommandBuffer, vk::Result> {
-        if self.quarantined {
+        if self.quarantined || device.is_unusable() {
+            self.quarantined = true;
             return Err(vk::Result::ERROR_DEVICE_LOST);
         }
         if self.completion_fence == vk::Fence::null() {
@@ -166,6 +170,10 @@ impl VulkanFrameSlot {
         command_buffer: vk::CommandBuffer,
         signal_semaphore: Option<vk::Semaphore>,
     ) -> Result<(), vk::Result> {
+        if device.is_unusable() {
+            self.quarantined = true;
+            return Err(vk::Result::ERROR_DEVICE_LOST);
+        }
         unsafe {
             device.handle().end_command_buffer(command_buffer)?;
             device.handle().reset_fences(&[self.completion_fence])?;
@@ -178,7 +186,7 @@ impl VulkanFrameSlot {
         );
 
         if let Err(error) = result {
-            if error.is_uncertain() {
+            if error.is_uncertain() || device.is_unusable() {
                 // Never reset/reuse a slot after a submission whose acceptance
                 // became uncertain because the device was lost.
                 self.quarantined = true;
