@@ -195,3 +195,29 @@ fn invalid_integer_scale_does_not_mutate_output() {
     );
     assert_eq!(manager.registry().get(13).unwrap().scale(), 1);
 }
+
+#[test]
+fn staged_configuration_does_not_mutate_live_manager_until_installed() {
+    let original = OutputMode::new(1920, 1080, 60_000).unwrap();
+    let requested = OutputMode::new(1280, 720, 60_000).unwrap();
+    let output = DisplayOutput::new(15, "DP-7", vec![original, requested], original, 1).unwrap();
+    let mut live = OutputManager::new();
+    live.register(output, (0, 0)).unwrap();
+
+    let staged = live
+        .staged_configuration(
+            15,
+            OutputConfiguration {
+                mode: Some(requested),
+                ..OutputConfiguration::default()
+            },
+        )
+        .unwrap();
+
+    assert_eq!(live.registry().get(15).unwrap().current_mode(), original);
+    assert_eq!(staged.registry().get(15).unwrap().current_mode(), requested);
+
+    // The caller installs the candidate only after physical KMS confirmation.
+    live = staged;
+    assert_eq!(live.registry().get(15).unwrap().current_mode(), requested);
+}
