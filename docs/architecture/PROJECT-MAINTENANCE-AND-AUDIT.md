@@ -932,3 +932,10 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - I rollback di image/memory e buffer/memory non invocano più `destroy_*` o `free_memory` dopo un errore terminale di device loss: gli handle restano intenzionalmente non rilasciati insieme al device, invece di effettuare chiamate Vulkan su un device perso.
 - Per errori ordinari diversi da device loss, il rollback continua a liberare le risorse parziali create prima dell'errore.
 - Verifica: modifiche sorgente su `main`; nessuna compilazione, formattazione o suite test eseguita. Rimangono da verificare gli altri allocator/rollback e i percorsi di polling delle submission.
+
+
+### Readback polling e mapping: device loss terminale — 27 novembre 2026
+
+- `VulkanReadbackSubmission::poll` marca ora il logical device come inutilizzabile quando `get_fence_status` restituisce `ERROR_DEVICE_LOST`; il successivo Drop entra quindi nel percorso di quarantena invece di trattare il device come ancora operativo.
+- `VulkanReadbackBuffer::read_rgba8` propaga il device-lost sia dal mapping sia dall'invalidazione della memoria. In caso di device loss durante invalidazione non tenta un ulteriore `unmap_memory` sul device perso.
+- Questi interventi completano un altro gruppo di errori espliciti nella lettura asincrona, ma non chiudono ancora l'audit generale.
