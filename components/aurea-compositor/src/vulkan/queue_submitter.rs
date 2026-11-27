@@ -5,7 +5,7 @@
 
 //! Vulkan command submission and fence synchronization.
 
-use std::sync::Mutex;
+use std::sync::{\n    Mutex,\n    atomic::{AtomicBool, Ordering},\n};
 
 use smithay::reexports::ash::{self, vk};
 
@@ -96,7 +96,15 @@ impl<'device> VulkanQueueSubmitter<'device> {
                     return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_UNKNOWN));
                 }
             };
-            unsafe { self.device.queue_submit(self.queue, &submit_info, fence) }
+            if self.device_unusable.load(Ordering::Acquire) {
+                unsafe { self.device.destroy_fence(fence, None) };
+                return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
+            }
+            let result = unsafe { self.device.queue_submit(self.queue, &submit_info, fence) };
+            if result == Err(vk::Result::ERROR_DEVICE_LOST) {
+                self.device_unusable.store(true, Ordering::Release);
+            }
+            result
         };
 
         if let Err(error) = submit_result {
@@ -128,6 +136,7 @@ impl<'device> VulkanQueueSubmitter<'device> {
         }
 
         // Keep the fence alive while completion remains uncertain.
+        self.device_unusable.store(true, Ordering::Release);
         Err(VulkanQueueSubmitError::CompletionUncertain {
             wait_error: wait_result.expect_err("wait result checked above"),
             idle_error: idle_result.expect_err("idle result checked above"),
