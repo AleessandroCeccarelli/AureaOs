@@ -159,7 +159,7 @@ mod native_tests {
     use crate::{DecodeError, DecodeLimits};
 
     const DEFAULT_WALLPAPER: &[u8] = include_bytes!(
-        "../../../aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg"
+        "../../../aurea-human-interfaces/resources/wallpapers/aureaos-blue-flow.jpg"
     );
 
     #[test]
