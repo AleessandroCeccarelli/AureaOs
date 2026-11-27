@@ -470,6 +470,41 @@ impl VulkanSurfacePipelineCache {
         Ok(())
     }
 
+    /// Prepares the persistent resources required before recording one legacy frame.
+    ///
+    /// The clear and load render passes are materialized first, followed by the
+    /// exact textured pipelines required by the selected frame layers. When
+    /// display-color processing is enabled, its independent shared pass is also
+    /// created here so descriptor/pipeline allocation stays outside recording.
+    #[cfg(feature = "drm")]
+    pub(crate) fn prepare_shared_legacy_frame_resources(
+        &mut self,
+        format: vk::Format,
+        wallpaper: bool,
+        cursor_trail: bool,
+        display_color: bool,
+    ) -> Result<Option<Arc<VulkanSharedLegacyDisplayColorPass>>, VulkanSurfacePipelineCacheError> {
+        self.legacy_clear_render_pass(format)
+            .map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
+        self.legacy_load_render_pass(format)
+            .map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
+        self.prepare_shared_legacy_frame_pipelines(format, wallpaper, cursor_trail)?;
+        if display_color {
+            self.legacy_display_color_pass(format)
+                .map(Some)
+                .map_err(|error| {
+                    VulkanSurfacePipelineCacheError::Pipeline(
+                        VulkanGraphicsPipelineError::Creation(
+                            // Preserve the original diagnostic without inventing a Vulkan result.
+                            smithay::reexports::ash::vk::Result::ERROR_UNKNOWN,
+                        ),
+                    )
+                })
+        } else {
+            Ok(None)
+        }
+    }
+
     pub(crate) fn shared_legacy_surface_pipeline(
         &self, format: vk::Format, load: LegacyPipelineLoad,
     ) -> Option<&super::VulkanSharedLegacyGraphicsPipeline> {
