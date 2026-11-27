@@ -44,6 +44,28 @@ impl VulkanLogicalDevice {
         } else {
             false
         };
+        let supports_sync_fd_import = if extension_plan.supports_sync_fd() {
+            let semaphore_info = vk::PhysicalDeviceExternalSemaphoreInfo::default()
+                .handle_type(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD);
+            let mut semaphore_properties = vk::ExternalSemaphoreProperties::default();
+            unsafe {
+                physical_device
+                    .instance()
+                    .handle()
+                    .get_physical_device_external_semaphore_properties(
+                        physical_device.handle(),
+                        &semaphore_info,
+                        &mut semaphore_properties,
+                    );
+            }
+            let features = semaphore_properties.external_semaphore_features;
+            features.contains(vk::ExternalSemaphoreFeatureFlags::IMPORTABLE)
+                && semaphore_properties
+                    .compatible_handle_types
+                    .contains(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD)
+        } else {
+            false
+        };
         let rendering_features = VulkanRenderingFeaturePlan::from_device(physical_device)
             .map_err(VulkanInitError::new)?;
         let priorities = [1.0_f32];
@@ -107,6 +129,7 @@ impl VulkanLogicalDevice {
             instance: physical_device.instance().handle().clone(),
             physical_device: physical_device.handle(),
             supports_sync_fd,
+            supports_sync_fd_import,
             supports_foreign_queue_family,
             device_unusable: AtomicBool::new(false),
         })
