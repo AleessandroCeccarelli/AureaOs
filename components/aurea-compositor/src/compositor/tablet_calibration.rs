@@ -56,17 +56,24 @@ impl AureaCompositor {
 
     /// Restores identity mapping for one connected tablet.
     pub fn reset_tablet_calibration(&mut self, device: InputDeviceId) -> bool {
-        let removed = self.tablet_calibrations.remove_device(device);
-        if let Some(identity) = self
+        let persisted_removed = if let Some(identity) = self
             .pointing_devices()
             .device(device)
             .and_then(|descriptor| descriptor.persistent_id)
         {
-            if let Err(error) = self.tablet_profiles.remove(&identity) {
-                tracing::warn!(device_id = device.0, %error, "Could not persist tablet calibration reset");
+            match self.tablet_profiles.remove(&identity) {
+                Ok(removed) => removed,
+                Err(error) => {
+                    tracing::warn!(device_id = device.0, %error, "Could not persist tablet calibration reset");
+                    return false;
+                }
             }
-        }
-        removed
+        } else {
+            false
+        };
+
+        let runtime_removed = self.tablet_calibrations.remove_device(device);
+        runtime_removed || persisted_removed
     }
 
     /// Returns the configured tablet calibration, or identity by default.
