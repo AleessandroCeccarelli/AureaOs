@@ -209,6 +209,7 @@ impl Drop for VulkanReadbackSubmission {
                     .wait_for_fences(&[self.fence], true, u64::MAX)
             };
             if wait.is_err() && unsafe { self.device.handle().device_wait_idle() }.is_err() {
+                self.device.mark_unusable();
                 // Device loss leaves completion uncertain. Leak every resource
                 // that may still be referenced by submitted GPU work.
                 if let Some(readback) = self.readback.take() {
