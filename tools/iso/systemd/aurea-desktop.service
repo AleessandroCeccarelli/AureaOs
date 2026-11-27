@@ -26,6 +26,7 @@ TTYVTDisallocate=yes
 UtmpIdentifier=tty1
 UtmpMode=user
 Environment=RUST_BACKTRACE=1
+Environment=AUREAOS_LIVE_MINIMAL=1
 Environment=LIBSEAT_BACKEND=logind
 Environment=XDG_SESSION_TYPE=wayland
 Environment=XDG_SESSION_CLASS=user
