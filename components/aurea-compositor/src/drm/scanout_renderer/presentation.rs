@@ -106,6 +106,11 @@ pub(super) fn render_and_present(
         crate::vulkan::surface_compositor::VulkanSurfaceCompositionError::DeviceLost(result) => {
             VulkanScanoutError::device_lost(format!("Vulkan device lost: {result:?}"))
         }
+        crate::vulkan::surface_compositor::VulkanSurfaceCompositionError::UncertainSubmission(error) => {
+            VulkanScanoutError::device_lost(format!(
+                "Vulkan submission completion is uncertain: {error:?}"
+            ))
+        }
         other => VulkanScanoutError::new(other.to_string()),
     })?;
 
