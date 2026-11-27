@@ -22,7 +22,10 @@ use smithay::{
 
 use crate::{
     AureaCompositor, compositor::window_placement::center_first_mapped_window,
-    render::shm_surface::update_surface_tree_snapshots,
+    render::{
+        shm_surface::update_surface_tree_snapshots,
+        surface_tree::update_surface_tree_dmabuf_buffer_lifecycle,
+    },
 };
 
 /// State attached to each connected Wayland client.
@@ -68,6 +71,9 @@ impl CompositorHandler for AureaCompositor {
 
     fn commit(&mut self, surface: &WlSurface) {
         self.commit_popup_surface(surface);
+        #[cfg(feature = "drm")]
+        update_surface_tree_dmabuf_buffer_lifecycle(surface);
+
         let mapped = with_states(surface, |states| {
             let mut cached_state = states.cached_state.get::<SurfaceAttributes>();
             let current = cached_state.current();
