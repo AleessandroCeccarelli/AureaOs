@@ -74,6 +74,7 @@ impl From<GbmCpuFramebufferPoolError> for CpuPresentationError {
 pub struct CpuPresentationBackend {
     node: DrmNode,
     crtc: crtc::Handle,
+    pending_mode_rollback: Option<smithay::reexports::drm::control::Mode>,
 }
 
 impl CpuPresentationBackend {
@@ -82,7 +83,28 @@ impl CpuPresentationBackend {
         Self {
             node,
             crtc: surface.crtc(),
+            pending_mode_rollback: None,
         }
+    }
+
+    /// Arms restoration of the active mode if the next CPU modeset presentation fails.
+    pub fn arm_mode_rollback(&mut self, previous: smithay::reexports::drm::control::Mode) {
+        self.pending_mode_rollback = Some(previous);
+    }
+
+    /// Cancels an armed mode rollback after the caller abandons the staged mode.
+    pub fn cancel_mode_rollback(&mut self) {
+        self.pending_mode_rollback = None;
+    }
+
+    fn rollback_mode_change(&mut self, surface: &DrmSurface) -> Result<(), String> {
+        if let Some(previous) = self.pending_mode_rollback.take() {
+            surface.use_mode(previous).map_err(|error| {
+                self.pending_mode_rollback = Some(previous);
+                error.to_string()
+            })?;
+        }
+        Ok(())
     }
 
     /// Submits a CPU-uploaded frame after its buffer write has completed.
@@ -97,9 +119,11 @@ impl CpuPresentationBackend {
         planes: &[PlaneState<'_>],
     ) -> Result<(), CpuPresentationError> {
         if surface.is_legacy() {
+            let _ = self.rollback_mode_change(surface);
             return Err(CpuPresentationError::LegacySurfaceUnsupported);
         }
         if surface.crtc() != self.crtc {
+            let _ = self.rollback_mode_change(surface);
             return Err(CpuPresentationError::UnexpectedCrtc);
         }
         let expected_framebuffer = pool.framebuffer(candidate)?;
@@ -112,6 +136,7 @@ impl CpuPresentationBackend {
                     .is_some_and(|config| config.fb == *expected_framebuffer)
         });
         if !candidate_is_primary {
+            let _ = self.rollback_mode_change(surface);
             return Err(CpuPresentationError::CandidateFramebufferNotConfigured);
         }
 
@@ -120,8 +145,12 @@ impl CpuPresentationBackend {
 
         if let Err(error) = surface.test_state(planes.iter().cloned(), requires_modeset) {
             let operation = format!("Atomic TEST_ONLY rejected the CPU framebuffer: {error}");
+            let rollback = self.rollback_mode_change(surface);
             return match pool.test_failed() {
-                Ok(_) => Err(CpuPresentationError::KmsOperation(operation)),
+                Ok(_) => Err(CpuPresentationError::KmsOperation(match rollback {
+                    Ok(()) => operation,
+                    Err(restore) => format!("{operation}; restoring previous KMS mode failed: {restore}"),
+                })),
                 Err(lifecycle) => Err(CpuPresentationError::Recovery {
                     operation,
                     lifecycle,
@@ -138,8 +167,12 @@ impl CpuPresentationBackend {
 
         if let Err(error) = submission {
             let operation = format!("KMS rejected the CPU framebuffer commit: {error}");
+            let rollback = self.rollback_mode_change(surface);
             return match pool.commit_failed() {
-                Ok(_) => Err(CpuPresentationError::KmsOperation(operation)),
+                Ok(_) => Err(CpuPresentationError::KmsOperation(match rollback {
+                    Ok(()) => operation,
+                    Err(restore) => format!("{operation}; restoring previous KMS mode failed: {restore}"),
+                })),
                 Err(lifecycle) => Err(CpuPresentationError::Recovery {
                     operation,
                     lifecycle,
@@ -164,6 +197,8 @@ impl CpuPresentationBackend {
         let Some(displayed) = pool.pending() else {
             return Ok(None);
         };
-        pool.page_flip_complete(displayed).map_err(Into::into)
+        let released = pool.page_flip_complete(displayed).map_err(CpuPresentationError::from)?;
+        self.pending_mode_rollback = None;
+        Ok(released)
     }
 }
