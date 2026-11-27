@@ -315,11 +315,8 @@ impl DrmSurfaceManager {
             // foreign-owned images before releasing their backing allocations.
             let retirement = (|| {
                 let coordinator = managed.presentation.frame_coordinator_mut();
-                if let Some(current) = coordinator.output_disabled()? {
-                    managed
-                        .frame_pool
-                        .acquire_after_foreign_release(current, coordinator)?;
-                }
+                coordinator.output_disabled()?;
+                managed.frame_pool.acquire_all_released(coordinator)?;
                 managed.frame_pool.retire_all(coordinator)?;
                 Ok::<(), VulkanDrmFramePoolError>(())
             })();
