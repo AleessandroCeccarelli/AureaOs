@@ -126,7 +126,16 @@ impl CpuPresentationBackend {
             let _ = self.rollback_mode_change(surface);
             return Err(CpuPresentationError::UnexpectedCrtc);
         }
-        let expected_framebuffer = pool.framebuffer(candidate)?;
+        let expected_framebuffer = match pool.framebuffer(candidate) {
+            Ok(framebuffer) => framebuffer,
+            Err(error) => {
+                let rollback = self.rollback_mode_change(surface);
+                return Err(CpuPresentationError::KmsOperation(match rollback {
+                    Ok(()) => format!("CPU framebuffer lookup failed: {error}"),
+                    Err(restore) => format!("CPU framebuffer lookup failed: {error}; restoring previous KMS mode failed: {restore}"),
+                }));
+            }
+        };
         let primary_plane = surface.plane();
         let candidate_is_primary = planes.iter().any(|plane| {
             plane.handle == primary_plane
@@ -140,7 +149,13 @@ impl CpuPresentationBackend {
             return Err(CpuPresentationError::CandidateFramebufferNotConfigured);
         }
 
-        pool.begin_test(candidate)?;
+        if let Err(error) = pool.begin_test(candidate) {
+            let rollback = self.rollback_mode_change(surface);
+            return Err(CpuPresentationError::KmsOperation(match rollback {
+                Ok(()) => format!("Unable to begin CPU framebuffer test: {error}"),
+                Err(restore) => format!("Unable to begin CPU framebuffer test: {error}; restoring previous KMS mode failed: {restore}"),
+            }));
+        }
         let requires_modeset = surface.commit_pending();
 
         if let Err(error) = surface.test_state(planes.iter().cloned(), requires_modeset) {
@@ -158,7 +173,13 @@ impl CpuPresentationBackend {
             };
         }
 
-        pool.test_passed()?;
+        if let Err(error) = pool.test_passed() {
+            let rollback = self.rollback_mode_change(surface);
+            return Err(CpuPresentationError::KmsOperation(match rollback {
+                Ok(()) => format!("CPU framebuffer lifecycle rejected successful TEST_ONLY: {error}"),
+                Err(restore) => format!("CPU framebuffer lifecycle rejected successful TEST_ONLY: {error}; restoring previous KMS mode failed: {restore}"),
+            }));
+        }
         let submission = if requires_modeset {
             surface.commit(planes.iter().cloned(), true)
         } else {
