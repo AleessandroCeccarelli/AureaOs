@@ -2389,3 +2389,12 @@ Le modifiche sono pubblicate su `main`, ma non sono ancora state compilate né p
 - Ricontrollata la sequenza degli stati immagine: clear e livelli lasciano il target di composizione in GENERAL; il display color legge da GENERAL e lascia l'uscita in GENERAL; readback e rilascio KMS partono da GENERAL.
 - Ricontrollati i controlli sull'identità esatta dei render pass usati da pipeline e framebuffer.
 - È un audit del sorgente, non una prova di compilazione o di funzionamento GPU. Nessuna build, compilazione shader, formattazione, test, CI o verifica hardware è stata eseguita. Le verifiche su Fedora restano obbligatorie prima di abilitare la compatibilità per impostazione predefinita.
+
+
+### Correzione lifetime dei framebuffer Vulkan legacy — 27 novembre 2026
+
+- Un audit più approfondito ha individuato un problema reale: i vecchi helper creavano il framebuffer, registravano i comandi e lo distruggevano al ritorno della funzione, prima della submission del command buffer. Non è una durata di vita valida per Vulkan.
+- Corretto il modello di proprietà: `render_frame_legacy` crea e mantiene un target per il clear, uno per i draw con load e, quando serve, uno per il display color. Tutti i livelli riutilizzano questi target senza crearne altri durante la registrazione.
+- I framebuffer restano vivi fino al ritorno di `submit_and_wait_with`, sia nel percorso KMS sia nel percorso readback. In caso di errore prima della submission, il command buffer locale viene distrutto prima dei target creati in precedenza.
+- Il controllo di identità esatta del render pass viene mantenuto sui target usati dalle pipeline.
+- La correzione sostituisce il precedente modello con framebuffer temporanei per singola draw. Nessuna build, formattazione, compilazione, test, CI o prova hardware è stata eseguita: la correttezza dei lifetime Rust e la validazione Vulkan vanno ancora verificate su Fedora.
