@@ -3,7 +3,7 @@
 // AureaOS
 // Copyright (C) 2026 Alessandro Ceccarelli
 
-//! Explicit Synchronization 2 transitions for color images.
+//! Vulkan 1.0-compatible explicit image transitions for color images.
 
 use std::{error::Error, fmt};
 
@@ -37,26 +37,26 @@ impl VulkanImageState {
         }
     }
 
-    fn stage(self) -> vk::PipelineStageFlags2 {
+    fn stage(self) -> vk::PipelineStageFlags {
         match self {
-            Self::Undefined => vk::PipelineStageFlags2::NONE,
-            Self::ColorAttachment => vk::PipelineStageFlags2::COLOR_ATTACHMENT_OUTPUT,
-            Self::ShaderRead => vk::PipelineStageFlags2::FRAGMENT_SHADER,
-            Self::TransferSource | Self::TransferDestination => vk::PipelineStageFlags2::TRANSFER,
-            Self::General => vk::PipelineStageFlags2::ALL_COMMANDS,
+            Self::Undefined => vk::PipelineStageFlags::TOP_OF_PIPE,
+            Self::ColorAttachment => vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT,
+            Self::ShaderRead => vk::PipelineStageFlags::FRAGMENT_SHADER,
+            Self::TransferSource | Self::TransferDestination => vk::PipelineStageFlags::TRANSFER,
+            Self::General => vk::PipelineStageFlags::ALL_COMMANDS,
         }
     }
 
-    fn access(self) -> vk::AccessFlags2 {
+    fn access(self) -> vk::AccessFlags {
         match self {
-            Self::Undefined => vk::AccessFlags2::NONE,
+            Self::Undefined => vk::AccessFlags::empty(),
             Self::ColorAttachment => {
-                vk::AccessFlags2::COLOR_ATTACHMENT_READ | vk::AccessFlags2::COLOR_ATTACHMENT_WRITE
+                vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE
             }
-            Self::ShaderRead => vk::AccessFlags2::SHADER_READ,
-            Self::TransferSource => vk::AccessFlags2::TRANSFER_READ,
-            Self::TransferDestination => vk::AccessFlags2::TRANSFER_WRITE,
-            Self::General => vk::AccessFlags2::MEMORY_READ | vk::AccessFlags2::MEMORY_WRITE,
+            Self::ShaderRead => vk::AccessFlags::SHADER_READ,
+            Self::TransferSource => vk::AccessFlags::TRANSFER_READ,
+            Self::TransferDestination => vk::AccessFlags::TRANSFER_WRITE,
+            Self::General => vk::AccessFlags::MEMORY_READ | vk::AccessFlags::MEMORY_WRITE,
         }
     }
 }
@@ -78,7 +78,7 @@ impl fmt::Display for VulkanImageTransitionError {
 
 impl Error for VulkanImageTransitionError {}
 
-/// Records explicit image transitions using vkCmdPipelineBarrier2.
+/// Records explicit image transitions using the Vulkan 1.0 vkCmdPipelineBarrier command.
 pub struct VulkanImageTransition;
 
 impl VulkanImageTransition {
@@ -101,7 +101,7 @@ impl VulkanImageTransition {
             return Err(VulkanImageTransitionError::ForeignQueueFamilyUnsupported);
         }
 
-        let barrier = [vk::ImageMemoryBarrier2::default()
+        let barrier = [vk::ImageMemoryBarrier::default()
             .src_stage_mask(old_state.stage())
             .src_access_mask(old_state.access())
             .dst_stage_mask(vk::PipelineStageFlags2::NONE)
@@ -113,11 +113,17 @@ impl VulkanImageTransition {
             .image(image)
             .subresource_range(Self::color_subresource_range())];
 
-        let dependency = vk::DependencyInfo::default().image_memory_barriers(&barrier);
+        
         unsafe {
-            device
-                .handle()
-                .cmd_pipeline_barrier2(command_buffer, &dependency);
+            device.handle().cmd_pipeline_barrier(
+                command_buffer,
+                old_state.stage(),
+                vk::PipelineStageFlags::BOTTOM_OF_PIPE,
+                vk::DependencyFlags::empty(),
+                &[],
+                &[],
+                &barrier,
+            );
         }
         Ok(())
     }
@@ -151,9 +157,15 @@ impl VulkanImageTransition {
 
         let dependency = vk::DependencyInfo::default().image_memory_barriers(&barrier);
         unsafe {
-            device
-                .handle()
-                .cmd_pipeline_barrier2(command_buffer, &dependency);
+            device.handle().cmd_pipeline_barrier(
+                command_buffer,
+                vk::PipelineStageFlags::TOP_OF_PIPE,
+                new_state.stage(),
+                vk::DependencyFlags::empty(),
+                &[],
+                &[],
+                &barrier,
+            );
         }
         Ok(())
     }
@@ -179,10 +191,6 @@ impl VulkanImageTransition {
         new_state: VulkanImageState,
     ) {
         let barrier = [vk::ImageMemoryBarrier2::default()
-            .src_stage_mask(old_state.stage())
-            .src_access_mask(old_state.access())
-            .dst_stage_mask(new_state.stage())
-            .dst_access_mask(new_state.access())
             .old_layout(old_state.layout())
             .new_layout(new_state.layout())
             .src_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
@@ -193,9 +201,15 @@ impl VulkanImageTransition {
         let dependency = vk::DependencyInfo::default().image_memory_barriers(&barrier);
 
         unsafe {
-            device
-                .handle()
-                .cmd_pipeline_barrier2(command_buffer, &dependency);
+            device.handle().cmd_pipeline_barrier(
+                command_buffer,
+                old_state.stage(),
+                new_state.stage(),
+                vk::DependencyFlags::empty(),
+                &[],
+                &[],
+                &barrier,
+            );
         }
     }
 }
