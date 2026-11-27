@@ -2359,3 +2359,14 @@ La verifica della catena di avvio reale ha evidenziato che `aurea-live-session` 
 Aggiunta la variabile esplicita `AUREAOS_LIVE_MINIMAL=1` al servizio systemd dell'immagine Live. Con questa opzione la factory non avvia il client Welcome; le normali sessioni di sviluppo mantengono il comportamento precedente. Il validatore dell'ISO controlla ora che il servizio installato contenga la variabile. Aggiornato il test di sabato: niente finestra Welcome, icone, dock, launcher, menu o impostazioni; soltanto monitor, wallpaper predefinito e puntatore fisico visibile e mobile.
 
 Le modifiche sono pubblicate su `main`, ma non sono ancora state compilate né provate su hardware. CI, build ISO e collaudo fisico restano da eseguire.
+
+
+### 27 novembre 2026 — Collegamento wallpaper e avvio Live
+
+- Selezionato `aureaos-blue-flow.jpg` come wallpaper predefinito ufficiale di AureaOS 1.0 Roma (dimensioni JPEG verificate: 3840 × 2160).
+- Aggiornati l'asset incorporato nel compositor, i manager del wallpaper/desktop e i test JPEG.
+- Rimosso il vecchio asset di prova `aureaos-midnight-flow.jpg` dopo aver sostituito i riferimenti nel runtime, nei test, nella documentazione e nella CI.
+- Corretto l'archivio sorgente usato dalla ISO Live: ora include `aurea-human-interfaces/resources/wallpapers`, necessario per la compilazione tramite `include_bytes!`.
+- Aggiunto un controllo preventivo su firma JPEG e dimensioni e un controllo sul filesystem SquashFS finale per verificare la presenza dell'identificatore del wallpaper nel binario installato.
+- Confermata la sessione Live minimale: niente client Welcome; a schermo sono previsti soltanto wallpaper e puntatore nativo. L'hook installa entrambi i temi Xcursor e la validazione verifica i 52 cursori canonici.
+- La CI Rust relativa all'ultima modifica di codice dello script ISO è in attesa. In questo ambiente non è stata generata una ISO né eseguita una prova di avvio fisica: restano passaggi di accettazione obbligatori.
