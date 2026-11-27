@@ -89,6 +89,20 @@ impl AureaAdaptiveGraphics {
             .or_else(|| {
                 candidates
                     .iter()
+                    .filter(|candidate| !candidate.capabilities.software_device)
+                    .find(|candidate| {
+                        candidate.capabilities.has_graphics_queue
+                            && candidate.capabilities.compatibility_renderer_available
+                    })
+                    .map(|candidate| AdaptiveGraphicsPlan {
+                        device_index: candidate.device_index,
+                        device_name: candidate.name.clone(),
+                        path: GraphicsPath::CompatibilityVulkan,
+                    })
+            })
+            .or_else(|| {
+                candidates
+                    .iter()
                     .filter(|candidate| candidate.capabilities.software_device)
                     .find(|candidate| candidate.capabilities.supports_vulkan_13())
                     .map(|candidate| AdaptiveGraphicsPlan {
@@ -139,8 +153,16 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_is_not_selected_until_legacy_backend_is_wired() {
+    fn selects_compatibility_hardware_only_when_legacy_backend_is_available() {
         let candidates = [candidate(2, "Legacy GPU", false, false, true)];
+        let plan = AureaAdaptiveGraphics::select(&candidates).unwrap();
+        assert_eq!(plan.device_index, 2);
+        assert_eq!(plan.path, GraphicsPath::CompatibilityVulkan);
+    }
+
+    #[test]
+    fn does_not_select_legacy_hardware_without_legacy_backend() {
+        let candidates = [candidate(3, "Older GPU", false, false, false)];
         assert!(AureaAdaptiveGraphics::select(&candidates).is_none());
     }
 
