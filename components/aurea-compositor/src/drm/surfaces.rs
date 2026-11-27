@@ -128,6 +128,35 @@ impl ManagedDrmSurface {
     pub fn frame_pool_mut(&mut self) -> &mut VulkanDrmFramePool {
         &mut self.frame_pool
     }
+
+    /// Stages the unique native timing matching a requested logical output mode.
+    /// The frame renderer must allocate a framebuffer at this mode's dimensions
+    /// and submit it before the staged KMS change can take effect.
+    pub(crate) fn stage_native_mode(
+        &mut self,
+        mode: crate::output::OutputMode,
+    ) -> Result<(), DrmSurfaceManagerError> {
+        let mut matches = self.native_modes.iter().filter(|(info, _)| {
+            info.to_output_mode() == Some(mode)
+        });
+        let native = matches.next().map(|(_, native)| *native).ok_or(
+            DrmSurfaceManagerError::UnsupportedMode { output_id: self.output_id }
+        )?;
+        if matches.next().is_some() {
+            return Err(DrmSurfaceManagerError::AmbiguousNativeMode { output_id: self.output_id });
+        }
+        if self.surface.current_mode() == native {
+            return Ok(());
+        }
+        let previous = self.surface.current_mode();
+        self.surface.use_mode(native).map_err(|error| DrmSurfaceManagerError::ModeChange {
+            output_id: self.output_id,
+            message: error.to_string(),
+        })?;
+        self.presentation.arm_mode_rollback(previous);
+        self.cpu_presentation.arm_mode_rollback(previous);
+        Ok(())
+    }
     /// Permanently disables direct Vulkan scanout for this output after a
     /// connector-specific allocation failure; compatibility presentation remains available.
     pub(crate) fn disable_direct_scanout(&mut self) {
