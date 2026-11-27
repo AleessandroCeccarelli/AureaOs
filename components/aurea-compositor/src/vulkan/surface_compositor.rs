@@ -9,6 +9,7 @@ mod cursor_geometry;
 mod cursor_trail_geometry;
 mod error;
 mod legacy_layers;
+mod legacy_frame;
 mod readback;
 mod readback_entry;
 mod release;
@@ -159,14 +160,6 @@ pub(super) fn render_frame(
     readback: Option<&VulkanReadbackBuffer<'_>>,
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
-    // Never send a Vulkan 1.0–1.2 device through the active Vulkan 1.3
-    // dynamic-rendering implementation. The dedicated legacy frame path
-    // will replace this fail-closed guard once every layer and output path
-    // is wired into the same frame lifecycle.
-    if device.rendering_mode() == super::VulkanRendererMode::CompatibilityPending {
-        return Err(VulkanSurfaceCompositionError::CompatibilityRendererNotIntegrated);
-    }
-
     let desktop_snapshot = scene.desktop();
     let background_color = desktop_snapshot.surface().background_color();
     let wallpaper = desktop_snapshot.wallpaper();
@@ -231,7 +224,8 @@ pub(super) fn render_frame(
         .prepare_surface_textures(&active_surface_ids, &texture_requests)
         .map_err(VulkanSurfaceCompositionError::from_surface_texture_cache_error)?;
 
-    if visible.is_empty()
+    if device.rendering_mode() != super::VulkanRendererMode::CompatibilityPending
+        && visible.is_empty()
         && !cursor_needed
         && context_menu_draw.is_none()
         && wallpaper_asset_id.is_none_or(|asset_id| {
@@ -362,6 +356,40 @@ pub(super) fn render_frame(
         Vec::new()
     };
 
+    let wallpaper_ready = wallpaper_asset_id.is_some_and(|asset_id| {
+        surface_cache
+            .wallpaper_texture_for_asset(asset_id)
+            .is_some()
+    });
+    let context_menu_ready =
+        context_menu_key.is_some_and(|key| surface_cache.desktop_icon_texture(key).is_some());
+
+    if device.rendering_mode() == super::VulkanRendererMode::CompatibilityPending {
+        return legacy_frame::render_frame_legacy(
+            device,
+            view,
+            composition_view,
+            target,
+            scene,
+            surface_cache,
+            composition_previous_state,
+            previous_image_state,
+            &visible,
+            wallpaper_asset_id,
+            context_menu_key,
+            context_menu_draw,
+            cursor,
+            &cursor_trail,
+            cursor_texture_ready,
+            cursor_name,
+            requested_cursor_size,
+            cursor_frame_time,
+            display_color.map(|(_, warmth, _, _)| warmth),
+            readback,
+            on_submitted,
+        );
+    }
+
     surface_cache
         .ensure_pipeline(composition_view.format())
         .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
@@ -370,13 +398,6 @@ pub(super) fn render_frame(
             .ensure_cursor_trail_pipeline(composition_view.format())
             .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
     }
-    let wallpaper_ready = wallpaper_asset_id.is_some_and(|asset_id| {
-        surface_cache
-            .wallpaper_texture_for_asset(asset_id)
-            .is_some()
-    });
-    let context_menu_ready =
-        context_menu_key.is_some_and(|key| surface_cache.desktop_icon_texture(key).is_some());
     if wallpaper_ready {
         surface_cache
             .ensure_wallpaper_pipeline(composition_view.format())
