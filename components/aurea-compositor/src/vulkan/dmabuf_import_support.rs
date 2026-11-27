@@ -53,6 +53,9 @@ impl VulkanDmabufImportSupport {
         use smithay::backend::allocator::{Format, Modifier};
         use smithay::backend::allocator::vulkan::format::{get_vk_format, known_formats};
 
+        if device.is_unusable() {
+            return Vec::new();
+        }
         let extensions = device.extension_plan();
         if !extensions.supports_dmabuf_interop()
             || !extensions.supports_drm_format_modifier()
