@@ -21,6 +21,7 @@ pub const VULKAN_CAPTURE_FORMAT: vk::Format = vk::Format::R8G8B8A8_UNORM;
 #[derive(Debug)]
 pub enum VulkanCaptureTargetError {
     InvalidDimensions,
+    DeviceLost,
     UnsupportedFormat(vk::Format),
     Image(VulkanSharedImageError),
     InvalidPoolLimits,
@@ -32,6 +33,7 @@ pub enum VulkanCaptureTargetError {
 impl fmt::Display for VulkanCaptureTargetError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::DeviceLost => formatter.write_str("Vulkan logical device is unusable after device loss"),
             Self::InvalidDimensions => {
                 formatter.write_str("Capture target dimensions must be non-zero")
             }
