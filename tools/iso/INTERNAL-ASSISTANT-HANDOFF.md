@@ -1198,3 +1198,26 @@ Vincoli e stato:
 - La creazione del render pass è ora indipendente dalla singola image view.
 - La pipeline legacy usa ancora il costruttore con raw `vk::RenderPass`: la relazione di lifetime tra pipeline e render pass non è ancora codificata nei tipi. È il prossimo intervento, da fare senza rompere i costruttori moderni o i cache esistenti.
 - Nessuna build, test o ISO eseguiti, in accordo con la richiesta dell'utente: verifiche raggruppate domani su Fedora.
+
+
+## 27 NOVEMBRE — PIPELINE LEGACY VINCOLATA AL RENDER PASS
+
+Modifiche aggiuntive pubblicate su `main`:
+- `b4339833` / `6b596c28` — corretto l'export Rust dei tipi legacy nel modulo Vulkan (la precedente modifica aveva introdotto un separatore newline letterale errato).
+- `7d1098a9` — aggiunto `VulkanLegacyGraphicsPipeline<'pass, 'device>`. Il wrapper possiede la pipeline Vulkan e prende in prestito `VulkanLegacyRenderPass<'device>`; il render pass non può quindi essere distrutto prima della pipeline. Il costruttore raw con `vk::RenderPass` è ora privato al modulo.
+- `128f817c` — aggiunto il controllo dell'identità del dispositivo nel render pass.
+- `3be59903` — esportato il nuovo wrapper.
+
+Contratto:
+- La pipeline legacy si costruisce da un riferimento tipizzato al render pass, non da un handle grezzo esposto al chiamante.
+- Il wrapper espone le operazioni necessarie di bind, draw, viewport/scissor e push constants.
+- La pipeline dinamica `VulkanGraphicsPipeline` e le cache moderne restano invariate.
+- Il wrapper controlla che device e render pass coincidano; il formato è preso direttamente dal render pass, evitando divergenze tra formato dichiarato e formato effettivo.
+- La durata del render pass è ora vincolata staticamente alla durata della pipeline legacy.
+
+Prossimo blocco:
+- Integrare il target e la pipeline legacy nel recorder di disegno senza confondere i due tipi di scope.
+- Aggiungere un percorso clear tradizionale e verificare che le transizioni immagine siano compatibili con gli initial/final layout del render pass.
+- Solo dopo collegare il percorso al selettore renderer compatibile.
+
+Nessuna build, test o ISO eseguiti: le verifiche restano programmate su Fedora domani.
