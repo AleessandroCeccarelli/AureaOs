@@ -1490,3 +1490,12 @@ Cautions:
 - This is a fail-closed safety check; it does not yet implement the legacy frame orchestration or enable compatibility mode.
 - No build, tests, rustfmt, shader compilation or hardware validation were run.
 
+### Ordered legacy frame-layer orchestrator (2026-11-27)
+
+- Added typed, frame-borrowed layer resource descriptions in `surface_compositor/legacy_layers.rs`: `LegacyWallpaperLayer`, `LegacyContextMenuLayer`, `LegacyCursorTrailLayer`, `LegacyNativeCursorLayer`, and `LegacyFrameLayers`.
+- Added `record_legacy_frame_layers()`, which records the clear and scene layers in one authoritative order: clear, wallpaper, normal surfaces, context menu, client cursor surfaces, cursor trail, native cursor.
+- The helper deliberately stops before display-color processing and before the terminal output operation. Those remain caller-owned so the same recorded scene can end in either readback copy/submission or DRM foreign-queue release/submission.
+- This is a recording/orchestration primitive only. It is not yet called by `render_frame()`; legacy frame resource preparation, pipeline selection, display-color target composition, output transitions, and final dispatch still need integration.
+- Existing Vulkan 1.3 rendering and its fail-closed compatibility guard remain unchanged.
+- No build, tests, rustfmt, shader compilation or hardware validation were run.
+
