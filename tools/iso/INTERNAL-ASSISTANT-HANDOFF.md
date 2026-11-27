@@ -1609,3 +1609,8 @@ Next: integrate `retire_all` into the DRM output owner's shutdown/hot-unplug pat
 - The pool retires only frames proven available by the GPU/KMS/foreign-ownership coordinator. Ambiguous final scanout resources remain quarantined rather than force-reset.
 - Follow-up: design a dedicated coordinator transition for a confirmed disabled output that safely resolves its last current framebuffer, while still requiring GPU completion and foreign-queue ownership resolution. Do not weaken `VulkanFrameResourceRegistry::unregister`.
 - No compilation/test/CI success established.
+
+
+### Shutdown reporting refinement — 2026-11-27
+
+`DrmSurfaceManager::clear` now refuses to remove an output manager entry when Vulkan scanout frames remain unresolved after KMS disable. It reports the quarantined frame count to the caller, keeping the owner reachable for diagnosis/retry. The conservative pool Drop remains a last-resort leak guard, not a successful retirement path. Physical device-removal cleanup remains a distinct path and still requires proof that GPU ownership is resolved before Vulkan resources can be destroyed.
