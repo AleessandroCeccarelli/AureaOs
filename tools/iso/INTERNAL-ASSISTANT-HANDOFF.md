@@ -1021,3 +1021,34 @@ The ISO path was statically re-audited from package resolution through the first
 **No execution validation has been performed after these changes.** Do not claim the ISO boots. The next grouped Fedora check must first run shell syntax checks and the Podman ISO build, then inspect the manifest and validation logs. The Debian base gate is: Debian Trixie rootfs, systemd PID 1, required `live-boot`/`live-config` packages, and `scripts/live` present in the initramfs extracted from the exact UKI. Only after this gate passes should the test continue to the AureaOS service and desktop.
 
 Important desktop boundary: source documentation still marks full scene composition and physical scanout validation incomplete. The Welcome client paints a real SHM preview after receiving XDG configure, but historical logs do not prove that configure or a visible frame was received/presented. The hardware test must capture those milestones explicitly.
+
+
+## AGGIORNAMENTO ISO FACTORY — 2026-11-27
+
+### Perimetro attuale richiesto dall'utente
+La prima sessione Live deve limitarsi a:
+1. boot da USB/Ventoy;
+2. rilevamento del monitor e modalità video corretta;
+3. wallpaper ufficiale `aureaos-blue-flow.jpg` (3840x2160) adattato all'output;
+4. puntatore visibile e realmente mobile.
+
+Nessun dock, launcher, icone desktop, Welcome window o altra UI in questa prova. Non ampliare il perimetro.
+
+### Correzione sorgente ISO
+- `tools/iso/build-live-iso.sh` crea lo snapshot con `git archive HEAD`; il repository deve essere pulito e le modifiche desiderate devono essere già committate. Non include modifiche non committate.
+- Audit del 27 novembre: l'archivio includeva wallpaper e menu contestuale, ma ometteva `aurea-human-interfaces/icons/source/system/trash`. `components/aurea-shell/src/desktop/trash_artwork.rs` usa sei `include_bytes!` per gli SVG Light/Dark (empty/half/full). La cartella è stata aggiunta all'archivio e lo script ora verifica i sei file nello snapshot prima di avviare live-build.
+- Il controllo preventivo del wallpaper 3840x2160 rimane attivo.
+- Cursor source, manifest e tool Python sono inclusi nello snapshot; le due palette Xcursor vengono generate nel chroot e installate in `/usr/share/icons`.
+
+### Dipendenze runtime e verifica finale
+- La package list già dichiara kernel Debian, `firmware-amd-graphics`, `libvulkan1`, `mesa-vulkan-drivers`, DRM, GBM, libinput, libseat, udev, PAM/logind, TurboJPEG, libheif e plugin HEVC/AV1.
+- Audit del 27 novembre: il validatore ISO ora verifica nel vero SquashFS i pacchetti runtime e i payload AMD amdgpu module/firmware, RADV ICD JSON, Vulkan loader, TurboJPEG e libheif.
+- Questo controlla il contenuto dell'immagine, non la riuscita dell'inizializzazione GPU, del DRM/KMS scanout o del movimento fisico del mouse. Serve ancora il test Ventoy sul portatile.
+
+### Commit delle modifiche di audit
+- `46e5f42a75f665a5e72cf52cee81c738adab4f88` — aggiunta directory SVG Trash allo snapshot.
+- `cfcfe9db7e0c2533d0f1d939e74fab78ddee129c` — preflight dei sei asset compile-time.
+- `6ada63efdf940527fb4448721e7adaf3d144796c` — validazione dipendenze grafiche/media nel filesystem SquashFS.
+- `952acde760e04f48e4f760fbbde0575cc089d728` — aggiornamento ISO Factory.
+
+Nessuna build Rust, build ISO o prova hardware è stata eseguita durante queste modifiche. Prima della prossima ISO, controllare lo stato CI e poi lasciare che l'utente esegua la build Fedora/Podman secondo il flusso documentato.
