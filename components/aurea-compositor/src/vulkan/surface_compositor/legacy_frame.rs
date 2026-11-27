@@ -90,6 +90,15 @@ pub(super) fn render_frame_legacy<K: Copy>(
         .legacy_load_render_pass(format)
         .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
 
+    // Framebuffers are command-buffer resources: keep each target alive until
+    // submit_and_wait returns, not merely until its draw commands are recorded.
+    let clear_target = clear_render_pass
+        .create_target(composition_view)
+        .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
+    let load_target = load_render_pass
+        .create_target(composition_view)
+        .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
+
     let surface_pipeline = surface_cache
         .shared_legacy_surface_pipeline(format, LegacyPipelineLoad::Load)
         .ok_or_else(|| VulkanSurfaceCompositionError::Pipeline(
@@ -228,7 +237,6 @@ pub(super) fn render_frame_legacy<K: Copy>(
                 source,
                 binding,
                 pipeline,
-                render_pass: &load_render_pass,
                 viewport: vk::Viewport {
                     x: destination.x() as f32,
                     y: destination.y() as f32,
@@ -303,9 +311,8 @@ pub(super) fn render_frame_legacy<K: Copy>(
     };
 
     let layers = LegacyFrameLayers {
-        clear_render_pass: &clear_render_pass,
-        load_render_pass: &load_render_pass,
-        target: composition_view,
+        clear_target: &clear_target,
+        load_target: &load_target,
         clear_color: scene.desktop().surface().background_color(),
         visible,
         surface_views: &surface_views,
@@ -320,6 +327,11 @@ pub(super) fn render_frame_legacy<K: Copy>(
     let display_binding = legacy_display_pass.as_ref().map(|pass| {
         pass.bind_source(composition_view)
             .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
+    }).transpose()?;
+
+    let display_target = legacy_display_pass.as_ref().map(|pass| {
+        pass.render_pass().create_target(output_view)
+            .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))
     }).transpose()?;
 
     let mut command_buffer = VulkanCommandBuffer::new(device)
@@ -339,7 +351,7 @@ pub(super) fn render_frame_legacy<K: Copy>(
             device,
             command_buffer.handle(),
             composition_view,
-            output_view,
+            display_target.as_ref().expect("display pass has a retained framebuffer"),
             binding,
             VulkanImageState::General,
             previous_output_state,
