@@ -202,9 +202,7 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
                 // neither fence completion nor device-idle fallback was proven.
                 std::mem::forget(view);
                 std::mem::forget(image);
-                if let Some(intermediate_view) = intermediate_view {
-                    std::mem::forget(intermediate_view);
-                }
+                std::mem::forget(intermediate_view);
                 if let Some(intermediate) = intermediate {
                     std::mem::forget(intermediate);
                 }
