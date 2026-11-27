@@ -279,6 +279,84 @@ impl VulkanSurfacePipelineCache {
         .map_err(VulkanSurfacePipelineCacheError::Pipeline)
     }
 
+    /// Creates a shared-ownership legacy surface pipeline suitable for a long-lived cache.
+    pub(crate) fn create_shared_legacy_surface_pipeline(
+        &self,
+        render_pass: Arc<super::VulkanLegacyRenderPass<'static>>,
+    ) -> Result<super::VulkanSharedLegacyGraphicsPipeline, VulkanSurfacePipelineCacheError> {
+        let vertex = VulkanShaderModule::from_renderer_variants(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_COMPAT_SPV")),
+        ).map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let fragment = VulkanShaderModule::from_renderer_variants(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_SPV")),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_COMPAT_SPV")),
+        ).map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let layouts = [self.descriptor_layout.handle()];
+        let ranges = [vk::PushConstantRange::default()
+            .stage_flags(vk::ShaderStageFlags::VERTEX).offset(0)
+            .size(std::mem::size_of::<u32>() as u32)];
+        super::VulkanSharedLegacyGraphicsPipeline::new(
+            Arc::clone(&self.device), render_pass,
+            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            &layouts, &ranges,
+        ).map_err(VulkanSurfacePipelineCacheError::Pipeline)
+    }
+
+    /// Creates a shared-ownership legacy wallpaper pipeline.
+    pub(crate) fn create_shared_legacy_wallpaper_pipeline(
+        &self,
+        render_pass: Arc<super::VulkanLegacyRenderPass<'static>>,
+    ) -> Result<super::VulkanSharedLegacyGraphicsPipeline, VulkanSurfacePipelineCacheError> {
+        let vertex = VulkanShaderModule::from_renderer_variants(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_VERT_SPV")),
+            include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_VERT_COMPAT_SPV")),
+        ).map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let fragment = VulkanShaderModule::from_renderer_variants(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_FRAG_SPV")),
+            include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_FRAG_COMPAT_SPV")),
+        ).map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let layouts = [self.descriptor_layout.handle()];
+        let ranges = [vk::PushConstantRange::default()
+            .stage_flags(vk::ShaderStageFlags::VERTEX).offset(0)
+            .size((4 * std::mem::size_of::<f32>()) as u32)];
+        super::VulkanSharedLegacyGraphicsPipeline::new(
+            Arc::clone(&self.device), render_pass,
+            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            &layouts, &ranges,
+        ).map_err(VulkanSurfacePipelineCacheError::Pipeline)
+    }
+
+    /// Creates a shared-ownership legacy cursor-trail pipeline.
+    pub(crate) fn create_shared_legacy_cursor_trail_pipeline(
+        &self,
+        render_pass: Arc<super::VulkanLegacyRenderPass<'static>>,
+    ) -> Result<super::VulkanSharedLegacyGraphicsPipeline, VulkanSurfacePipelineCacheError> {
+        let vertex = VulkanShaderModule::from_renderer_variants(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_COMPAT_SPV")),
+        ).map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let fragment = VulkanShaderModule::from_renderer_variants(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_CURSOR_TRAIL_FRAG_SPV")),
+            include_bytes!(env!("AUREA_CURSOR_TRAIL_FRAG_COMPAT_SPV")),
+        ).map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let layouts = [self.descriptor_layout.handle()];
+        let ranges = [vk::PushConstantRange::default()
+            .stage_flags(vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT)
+            .offset(0).size((2 * std::mem::size_of::<u32>()) as u32)];
+        super::VulkanSharedLegacyGraphicsPipeline::new(
+            Arc::clone(&self.device), render_pass,
+            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            &layouts, &ranges,
+        ).map_err(VulkanSurfacePipelineCacheError::Pipeline)
+    }
+
     /// Creates a wallpaper-specific pipeline with an independent UV push-constant ABI.
     pub(crate) fn ensure_wallpaper_pipeline(
         &mut self,
