@@ -237,9 +237,9 @@ pub(super) fn record_client_cursor_surfaces(
 }
 
 /// Optional wallpaper draw resources and output-local geometry.
-pub(super) struct LegacyWallpaperLayer<'a> {
-    pub source: &'a VulkanImageView<'a, 'a>,
-    pub binding: &'a VulkanTextureBinding<'a, 'a, 'a, 'a>,
+pub(super) struct LegacyWallpaperLayer<'r, 'i, 'id, 'rd> {
+    pub source: &'r VulkanImageView<'i, 'id>,
+    pub binding: &'r VulkanTextureBinding<'r, 'i, 'id, 'rd>,
     pub pipeline: &'a VulkanSharedLegacyGraphicsPipeline,
     pub render_pass: &'a Arc<VulkanLegacyRenderPass<'static>>,
     pub viewport: vk::Viewport,
@@ -248,45 +248,45 @@ pub(super) struct LegacyWallpaperLayer<'a> {
 }
 
 /// Optional context-menu artwork and its already-resolved geometry.
-pub(super) struct LegacyContextMenuLayer<'a> {
-    pub source: &'a VulkanImageView<'a, 'a>,
-    pub binding: &'a VulkanTextureBinding<'a, 'a, 'a, 'a>,
+pub(super) struct LegacyContextMenuLayer<'r, 'i, 'id, 'rd> {
+    pub source: &'r VulkanImageView<'i, 'id>,
+    pub binding: &'r VulkanTextureBinding<'r, 'i, 'id, 'rd>,
     pub viewport: vk::Viewport,
     pub scissor: vk::Rect2D,
     pub texture_transform: u32,
 }
 
 /// Optional compositor-owned cursor draw.
-pub(super) struct LegacyNativeCursorLayer<'a> {
-    pub source: &'a VulkanImageView<'a, 'a>,
-    pub binding: &'a VulkanTextureBinding<'a, 'a, 'a, 'a>,
+pub(super) struct LegacyNativeCursorLayer<'r, 'i, 'id, 'rd> {
+    pub source: &'r VulkanImageView<'i, 'id>,
+    pub binding: &'r VulkanTextureBinding<'r, 'i, 'id, 'rd>,
     pub viewport: vk::Viewport,
     pub scissor: vk::Rect2D,
     pub texture_transform: u32,
 }
 
 /// Optional cursor-trail draw resources.
-pub(super) struct LegacyCursorTrailLayer<'a> {
-    pub source: &'a VulkanImageView<'a, 'a>,
-    pub binding: &'a VulkanTextureBinding<'a, 'a, 'a, 'a>,
+pub(super) struct LegacyCursorTrailLayer<'r, 'i, 'id, 'rd> {
+    pub source: &'r VulkanImageView<'i, 'id>,
+    pub binding: &'r VulkanTextureBinding<'r, 'i, 'id, 'rd>,
     pub pipeline: &'a VulkanSharedLegacyGraphicsPipeline,
-    pub impressions: &'a [CursorTrailDraw],
+    pub impressions: &'r [CursorTrailDraw],
 }
 
 /// All resources required to record the legacy scene layers for one frame.
-pub(super) struct LegacyFrameLayers<'a> {
-    pub clear_render_pass: &'a Arc<VulkanLegacyRenderPass<'static>>,
-    pub load_render_pass: &'a Arc<VulkanLegacyRenderPass<'static>>,
-    pub target: &'a VulkanImageView<'a, 'a>,
+pub(super) struct LegacyFrameLayers<'r, 'i, 'id, 'rd> {
+    pub clear_render_pass: &'r Arc<VulkanLegacyRenderPass<'static>>,
+    pub load_render_pass: &'r Arc<VulkanLegacyRenderPass<'static>>,
+    pub target: &'r VulkanImageView<'i, 'id>,
     pub clear_color: [f32; 4],
-    pub visible: &'a [VisibleSurface],
-    pub surface_views: &'a [VulkanImageView<'a, 'a>],
-    pub surface_bindings: &'a [VulkanTextureBinding<'a, 'a, 'a, 'a>],
-    pub surface_pipeline: &'a VulkanSharedLegacyGraphicsPipeline,
-    pub wallpaper: Option<LegacyWallpaperLayer<'a>>,
-    pub context_menu: Option<LegacyContextMenuLayer<'a>>,
-    pub cursor_trail: Option<LegacyCursorTrailLayer<'a>>,
-    pub native_cursor: Option<LegacyNativeCursorLayer<'a>>,
+    pub visible: &'r [VisibleSurface],
+    pub surface_views: &'r [VulkanImageView<'i, 'id>],
+    pub surface_bindings: &'r [VulkanTextureBinding<'r, 'i, 'id, 'rd>],
+    pub surface_pipeline: &'r VulkanSharedLegacyGraphicsPipeline,
+    pub wallpaper: Option<LegacyWallpaperLayer<'r, 'i, 'id, 'rd>>,
+    pub context_menu: Option<LegacyContextMenuLayer<'r, 'i, 'id, 'rd>>,
+    pub cursor_trail: Option<LegacyCursorTrailLayer<'r, 'i, 'id, 'rd>>,
+    pub native_cursor: Option<LegacyNativeCursorLayer<'r, 'i, 'id, 'rd>>,
 }
 
 /// Records the complete scene in the compositor's established back-to-front order.
@@ -295,7 +295,7 @@ pub(super) struct LegacyFrameLayers<'a> {
 /// intentionally left to the caller, after all scene layers have been recorded.
 pub(super) fn record_legacy_frame_layers(
     command_buffer: vk::CommandBuffer,
-    layers: LegacyFrameLayers<'_>,
+    layers: LegacyFrameLayers<'_, '_, '_, '_>,
     previous_target_state: VulkanImageState,
 ) -> Result<(), VulkanSurfaceCompositionError> {
     VulkanLegacyFrameRecorder::clear(
