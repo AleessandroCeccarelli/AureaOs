@@ -72,13 +72,16 @@ pub(super) fn refresh_dmabuf_feedback(state: &mut WaylandState) {
                 .or_else(|| physical.render_node().ok().flatten())
                 .and_then(|node| node.dev_id().ok())
         });
+    // When all renderers disappear (for example during VT pause), retain the
+    // last known DRM identity but publish an empty main tranche. This withdraws
+    // stale allocation promises without permanently disabling the global.
+    let main_device = main_device.or_else(|| state.compositor.dmabuf_main_device());
     let Some(main_device) = main_device else {
-        tracing::warn!("AureaOS: linux-dmabuf feedback not refreshed; no Vulkan renderer exposes a DRM device identity");
+        tracing::warn!("AureaOS: linux-dmabuf feedback not refreshed; no known DRM device identity");
         return;
     };
     if formats.is_empty() {
-        tracing::info!("AureaOS: linux-dmabuf feedback not refreshed; no common safe DMA-BUF formats");
-        return;
+        tracing::info!("AureaOS: publishing empty linux-dmabuf feedback; no common safe DMA-BUF formats");
     }
     let feedback = match DmabufFeedbackBuilder::new(main_device, formats).build() {
         Ok(feedback) => feedback,
@@ -88,7 +91,7 @@ pub(super) fn refresh_dmabuf_feedback(state: &mut WaylandState) {
         }
     };
     let display_handle = state.display.handle();
-    if state.compositor.initialize_dmabuf_global(&display_handle, devices, feedback) {
+    if state.compositor.initialize_dmabuf_global(&display_handle, devices, feedback, main_device) {
         tracing::info!("AureaOS: linux-dmabuf feedback reconciled with active Vulkan renderers");
     }
 }
