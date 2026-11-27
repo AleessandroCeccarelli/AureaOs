@@ -2455,3 +2455,12 @@ Proseguito l'audit dei due percorsi: submission asincrona e teardown/shutdown. C
 - Gli errori `ERROR_DEVICE_LOST` nella creazione/preparazione degli slot e nella creazione delle immagini DRM propagano ora il fail-stop; i rollback non distruggono handle Vulkan quando la perdita del device rende incerta la validità delle operazioni.
 - La chiusura del percorso DRM richiede ancora l'integrazione esplicita di `retire_all` nel proprietario dell'output e una verifica dei percorsi di hot-unplug/shutdown. Non dichiarare completato il lifecycle fino a tale integrazione e alla validazione.
 - Nessun build/test locale o risultato CI è stato verificato in questa sessione.
+
+
+### Shutdown effettivo degli output DRM — 2026-11-27
+
+- `DrmSurfaceManager::clear` ora, dopo il successo di `DrmSurface::clear`, chiede al pool Vulkan di ritirare i frame che il coordinatore certifica già disponibili.
+- Aggiunto `VulkanDrmFramePool::retire_available`: unregister e rilascio avvengono soltanto quando GPU, KMS e ownership della foreign queue risultano risolti.
+- Il frame finale ancora registrato nel coordinatore non viene forzatamente resettato: se rimane ambiguo, `Drop` lo mette in quarantena. È una scelta conservativa intenzionale, da completare con una transizione esplicita di lifecycle per l'output disabilitato.
+- Il percorso CPU/GBM viene rilasciato solo dopo il clear KMS riuscito, poiché il manager rimuove la superficie soltanto in quel caso.
+- Nessun build/test o risultato CI è stato verificato.
