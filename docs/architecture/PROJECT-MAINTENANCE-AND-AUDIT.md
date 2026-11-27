@@ -906,3 +906,12 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - I percorsi di allocazione, begin/end/reset dei command buffer propagano `ERROR_DEVICE_LOST` al flag fail-stop. I Drop del command buffer e dello scheduler attivano il fail-stop su qualunque errore di `device_wait_idle`, poiché la completion rimane incerta anche quando l'errore non è device-lost.
 - Aggiunto un test per l'idoneità all'acquire foreign nei diversi stati del lifecycle.
 - Verifica ancora pendente: non sono stati eseguiti `cargo fmt`, `cargo check` o `cargo test`; non è disponibile una run CI associata a questi commit. L'audit statico continua, in particolare sulle distruzioni dirette e sulle dipendenze GBM/DRM in caso di rimozione fisica del device.
+
+
+
+### Pending upload Vulkan: propagazione device-lost — 27 novembre 2026
+
+- Il lifecycle di `VulkanPendingUpload` ora propaga `ERROR_DEVICE_LOST` da creazione command pool, end-command-buffer, creazione fence e attesa fence al fail-stop condiviso del logical device.
+- Un errore di attesa non viene interpretato come completamento: se anche il fallback `device_wait_idle` fallisce, staging, risorse associate, fence/pool e contesto del device restano intenzionalmente in quarantena.
+- L'audit ha individuato che il percorso di rimozione fisica del DRM device resta distinto dallo shutdown ordinario: `release_after_device_removal()` rimuove il manager, mentre i pool adottano ancora una strategia conservativa di retention. Non viene introdotto un rilascio forzato finché non è dimostrato l'ordine sicuro tra KMS rimosso, eventuale lavoro GPU ancora in volo e proprietari GBM/Vulkan.
+- Verifica ancora pendente: nessun build, rustfmt, check o test eseguito; il commit richiede validazione CI/Fedora. L'audit diretto di tutte le distruzioni Vulkan e dei rollback parziali continua.
