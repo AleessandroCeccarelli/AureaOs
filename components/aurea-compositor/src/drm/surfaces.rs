@@ -301,6 +301,14 @@ impl DrmSurfaceManager {
                 continue;
             }
 
+            // CPU-upload buffers have no Vulkan ownership transfer, but
+            // their independent KMS lifecycle must still have no pending flip
+            // before GBM allocations and framebuffer registrations are dropped.
+            if let Err(error) = managed.cpu_frame_pool.output_disabled() {
+                errors.push(format!("output {output_id} CPU framebuffer pool: {error}"));
+                continue;
+            }
+
             // The successful clear ioctl proves that KMS no longer scans
             // out the current frame. Convert that external release into an
             // explicit lifecycle transition, then wait for Vulkan to reacquire
