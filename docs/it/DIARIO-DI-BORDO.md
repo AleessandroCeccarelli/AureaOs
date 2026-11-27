@@ -2350,3 +2350,12 @@ Durante la revisione pre-ISO è emerso un problema di avanzamento nel primo fram
 Aggiunta la segnalazione del lavoro pendente alla cache delle texture wallpaper e alla cache delle risorse del compositor; il backend Vulkan la espone ora al ciclo eventi, che mantiene attivi i frame fino al completamento della decodifica e dell'upload GPU. Non è stato creato un secondo sistema di input o rendering. Aggiornata anche la procedura di collaudo di sabato: lo sfondo predefinito deve apparire senza muovere il mouse e riempire il monitor, con il puntatore visibile al primo frame.
 
 Nella stessa sessione sono stati corretti i problemi di formattazione Rust introdotti dai test dei bordi touchscreen e dai messaggi diagnostici della calibrazione tavoletta. La CI dell'ultimo commit su `main` è ancora in attesa; non sono stati eseguiti build locali su Fedora, avvio su hardware reale o validazione ISO. Obiettivo minimo per domani: avvio Live UEFI, sfondo corretto, puntatore visibile e movimento reale del mouse.
+
+
+### 27 novembre 2026 — Avvio Live minimale: soltanto sfondo e puntatore
+
+La verifica della catena di avvio reale ha evidenziato che `aurea-live-session` avviava il normale eseguibile desktop e che la factory di composizione lanciava anche il client Wayland `Aurea Welcome`, una finestra XDG da 720×440 pixel. Questa finestra avrebbe coperto parte dello sfondo, in contrasto con l'obiettivo concordato per il primo avvio.
+
+Aggiunta la variabile esplicita `AUREAOS_LIVE_MINIMAL=1` al servizio systemd dell'immagine Live. Con questa opzione la factory non avvia il client Welcome; le normali sessioni di sviluppo mantengono il comportamento precedente. Il validatore dell'ISO controlla ora che il servizio installato contenga la variabile. Aggiornato il test di sabato: niente finestra Welcome, icone, dock, launcher, menu o impostazioni; soltanto monitor, wallpaper predefinito e puntatore fisico visibile e mobile.
+
+Le modifiche sono pubblicate su `main`, ma non sono ancora state compilate né provate su hardware. CI, build ISO e collaudo fisico restano da eseguire.
