@@ -5,6 +5,7 @@
 
 //! Wayland compositor component for AureaOS.
 
+pub mod adaptive_graphics;
 pub mod compositor;
 pub mod desktop;
 pub mod frame;
