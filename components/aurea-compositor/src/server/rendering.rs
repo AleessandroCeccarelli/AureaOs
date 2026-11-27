@@ -232,13 +232,18 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                         &mut display_color_manager,
                         warmth_percent,
                     );
-                    compositor
-                        .render_output(&mut compatibility_backend, output_id)
-                        .map_err(|error| {
-                            io::Error::other(format!(
-                                "AureaOS: direct Vulkan and CPU compatibility presentation both failed for output {output_id}: {error}"
-                            ))
-                        })?;
+                    if let Err(error) =
+                        compositor.render_output(&mut compatibility_backend, output_id)
+                    {
+                        if output.presentation().pending().is_none()
+                            && !output.cpu_presentation_pending()
+                        {
+                            output.abort_staged_mode().map_err(io::Error::other)?;
+                        }
+                        return Err(io::Error::other(format!(
+                            "AureaOS: direct Vulkan and CPU compatibility presentation both failed for output {output_id}: {error}"
+                        )));
+                    }
                 }
             }
             PresentationPath::Compatibility => {
@@ -265,13 +270,16 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                     &mut display_color_manager,
                     warmth_percent,
                 );
-                compositor
-                    .render_output(&mut backend, output_id)
-                    .map_err(|error| {
-                        io::Error::other(format!(
-                            "AureaOS: CPU compatibility output {output_id} failed: {error}"
-                        ))
-                    })?;
+                if let Err(error) = compositor.render_output(&mut backend, output_id) {
+                    if output.presentation().pending().is_none()
+                        && !output.cpu_presentation_pending()
+                    {
+                        output.abort_staged_mode().map_err(io::Error::other)?;
+                    }
+                    return Err(io::Error::other(format!(
+                        "AureaOS: CPU compatibility output {output_id} failed: {error}"
+                    )));
+                }
             }
         }
 
