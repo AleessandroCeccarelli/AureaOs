@@ -175,7 +175,7 @@ impl VulkanLogicalDevice {
         if self.is_unusable() {
             return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
         }
-        let result = VulkanQueueSubmitter::new(&self.device, self.graphics_queue, &self.queue_submit_lock)
+        let result = VulkanQueueSubmitter::new(\n            &self.device,\n            self.graphics_queue,\n            &self.queue_submit_lock,\n            &self.device_unusable,\n        )
             .submit_and_wait_with(command_buffer, on_submitted);
         if result.as_ref().is_err_and(|error| error.is_uncertain()) {
             self.mark_unusable();
