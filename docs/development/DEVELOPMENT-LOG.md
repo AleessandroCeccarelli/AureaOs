@@ -2567,3 +2567,12 @@ Reviewed SHM texture uploads: `VulkanPendingUpload` owns staging, image resource
 - `VulkanPendingUpload` and `VulkanReadbackSubmission` now avoid additional wait/destroy calls after fail-stop and intentionally retain their GPU-referenced resources and a device owner.
 - `VulkanCommandBuffer::drop` avoids wait/free operations after device loss.
 - Static source changes only; no rustfmt, build, tests, CI or hardware validation.
+
+
+### 2026-11-27 — Vulkan object teardown after device loss
+
+- Audited Vulkan-owning Drop implementations and added fail-stop guards before destroying images, image views, framebuffers, render passes, pipelines/layouts, shader modules, samplers, descriptor pools, upload/readback buffers and associated memory.
+- Covered both borrowed/shared `VulkanDeviceOwner` paths and Arc-owned logical-device resources.
+- `VulkanLogicalDevice::drop` now skips `device_wait_idle` after terminal device loss and intentionally retains the parent instance context rather than attempting device destruction.
+- `VulkanQueueSubmitter` checks the fail-stop atomic before fence creation and again under the queue external-synchronization lock.
+- Source-only audit. No formatting, build, tests, CI or Vulkan validation were run.
