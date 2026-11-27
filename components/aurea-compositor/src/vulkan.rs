@@ -152,7 +152,7 @@ pub use image_allocator::{
 pub use image_transition::{VulkanImageState, VulkanImageTransition, VulkanImageTransitionError};
 pub use image_view::{VulkanImageView, VulkanImageViewError};
 pub use legacy_render_pass::{
-    VulkanLegacyRenderPassError, VulkanLegacyRenderPassScope, VulkanLegacyRenderTarget,
+    VulkanLegacyRenderPass, VulkanLegacyRenderPassError, VulkanLegacyRenderPassScope,\n    VulkanLegacyRenderTarget,
 };
 pub use logical_device::VulkanLogicalDevice;
 pub use memory_type::select_memory_type_index;
