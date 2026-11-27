@@ -1269,3 +1269,16 @@ Limiti ancora aperti:
 - Commits: `bfa34c3d` (pipeline factories), `30f32017` (initial texture-source validation change), `78721c94` (corrected recorder placement and source/target transitions).
 - These are source changes only. No build, rustfmt, cargo check, tests, CI, shader compilation, ISO generation or hardware validation was run. Tomorrow's grouped Fedora verification remains the gate.
 - Compatibility is still not end-to-end: current logical-device creation remains Vulkan 1.3-only, and the renderer-variant selector cannot yet instantiate a legacy logical device. These factories prepare pipeline creation but do not activate AAG compatibility or prove wallpaper/surface/cursor presentation on older Vulkan hardware.
+
+
+## 2026-11-27 — Legacy display-color pass groundwork
+
+- Added `VulkanLegacyDisplayColorPass<'pass, 'device>` in `components/aurea-compositor/src/vulkan/display_color_pass.rs`.
+- The new pass creates its display-color shaders through the modern/compatibility shader selector, creates a traditional graphics pipeline tied to a caller-owned persistent `VulkanLegacyRenderPass`, and owns its descriptor layout and linear-clamp sampler.
+- Added source binding and a legacy recording method. Recording validates sampled/color-attachment usage, source-binding identity, descriptor-layout identity, device/dimensions/format, non-aliasing, render-pass compatibility and intensity range; it transitions source/target with Vulkan 1.0 image barriers and records the fullscreen triangle inside the traditional render-pass scope.
+- The legacy display-color render pass is deliberately restricted to a render pass configured with `DONT_CARE`, matching the existing dynamic display-color pass semantics. The caller must supply the matching persistent render pass and per-image framebuffer target.
+- Exported `VulkanLegacyDisplayColorPass` from the compositor Vulkan module.
+- Commits: `5ffa53ff` (legacy pass implementation), `c59d6941` (public export).
+- This is not yet connected to frame orchestration or the existing display-color manager, which still owns modern dynamic passes. The legacy render-pass lifetime/cache strategy and actual source/target image lifecycle must be integrated before the backend can be selected.
+- No build, rustfmt, cargo check, tests, shader compilation, CI, ISO build or hardware validation was run. The implementation is source-level only; compile correctness and Vulkan behavior remain unverified until the grouped Fedora verification.
+- Next: audit the frame orchestration and display-color manager interfaces, then introduce an explicit per-backend render-resource owner so the legacy render pass, pipeline, framebuffer targets and sampled bindings share a safe lifetime without self-referential caches. Keep AAG compatibility disabled and keep the logical-device Vulkan 1.3 gate unchanged.
