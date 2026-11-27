@@ -29,6 +29,7 @@ impl<T> VulkanPendingUpload<T> {
         resources: T,
     ) -> Result<Self, vk::Result> {
         if device.is_unusable() {
+            quarantine_upload_inputs(&device, staging, resources);
             return Err(vk::Result::ERROR_DEVICE_LOST);
         }
         let pool_info = vk::CommandPoolCreateInfo::default()
@@ -38,6 +39,9 @@ impl<T> VulkanPendingUpload<T> {
             Ok(pool) => pool,
             Err(error) => {
                 mark_device_lost(&device, error);
+                if device.is_unusable() {
+                    quarantine_upload_inputs(&device, staging, resources);
+                }
                 return Err(error);
             }
         };
