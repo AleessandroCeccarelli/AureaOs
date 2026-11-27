@@ -135,6 +135,8 @@ pub use dmabuf_layout::{DmabufImportLayout, DmabufLayoutError, DmabufPlaneLayout
 pub(crate) use dmabuf_import_support::{VulkanDmabufImportSupport, VulkanDmabufImportSupportError};
 #[cfg(feature = "drm")]
 pub(crate) use dmabuf_image::{VulkanDmabufImage, VulkanDmabufImageError};
+#[cfg(feature = "drm")]
+pub(crate) use dmabuf_sync_file::{DmabufSyncWaitSet, DmabufSyncWaitError};
 pub use draw_pass::{VulkanDrawPass, VulkanDrawPassError};
 #[cfg(feature = "drm")]
 pub use drm_compatibility::{
