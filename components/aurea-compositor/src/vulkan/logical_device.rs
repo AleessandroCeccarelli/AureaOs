@@ -5,7 +5,7 @@
 
 //! Vulkan logical-device and command-pool resource management.
 
-use std::sync::{Arc, Mutex};
+use std::sync::{\n    Arc, Mutex,\n    atomic::{AtomicBool, Ordering},\n};
 
 use smithay::reexports::ash::{self, vk};
 
@@ -142,6 +142,9 @@ impl VulkanLogicalDevice {
         fence: vk::Fence,
         signal_semaphore: Option<vk::Semaphore>,
     ) -> Result<(), VulkanQueueSubmitError> {
+        if self.is_unusable() {
+            return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
+        }
         let _queue_guard = self
             .queue_submit_lock
             .lock()
@@ -152,11 +155,15 @@ impl VulkanLogicalDevice {
         if !signal_semaphores.is_empty() {
             submit_info = submit_info.signal_semaphores(&signal_semaphores);
         }
-        unsafe {
+        let result = unsafe {
             self.device
                 .queue_submit(self.graphics_queue, &[submit_info], fence)
         }
-        .map_err(VulkanQueueSubmitError::from_submit_error)
+        .map_err(VulkanQueueSubmitError::from_submit_error);
+        if result.as_ref().is_err_and(|error| error.is_uncertain()) {
+            self.mark_unusable();
+        }
+        result
     }
 
     /// Submits work and invokes its lifecycle hook only after queue acceptance.
@@ -165,8 +172,15 @@ impl VulkanLogicalDevice {
         command_buffer: vk::CommandBuffer,
         on_submitted: impl FnOnce(),
     ) -> Result<(), VulkanQueueSubmitError> {
-        VulkanQueueSubmitter::new(&self.device, self.graphics_queue, &self.queue_submit_lock)
-            .submit_and_wait_with(command_buffer, on_submitted)
+        if self.is_unusable() {
+            return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
+        }
+        let result = VulkanQueueSubmitter::new(&self.device, self.graphics_queue, &self.queue_submit_lock)
+            .submit_and_wait_with(command_buffer, on_submitted);
+        if result.as_ref().is_err_and(|error| error.is_uncertain()) {
+            self.mark_unusable();
+        }
+        result
     }
 }
 
