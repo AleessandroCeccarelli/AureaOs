@@ -31,6 +31,8 @@ pub struct VulkanLogicalDevice {
     pub(super) physical_device: vk::PhysicalDevice,
     pub(super) supports_sync_fd: bool,
     pub(super) supports_foreign_queue_family: bool,
+    /// Permanently stops new queue work after uncertain completion or device loss.
+    pub(super) device_unusable: AtomicBool,
 }
 
 impl VulkanLogicalDevice {
