@@ -131,7 +131,7 @@ impl VulkanCaptureTargetPool {
         height: u32,
     ) -> Result<VulkanCaptureTargetLease, VulkanCaptureTargetError> {
         if self.inner.device.is_unusable() {
-            return Err(VulkanCaptureTargetError::Device(vk::Result::ERROR_DEVICE_LOST));
+            return Err(VulkanCaptureTargetError::DeviceLost);
         }
         let mut state = match self.inner.state.try_lock() {
             Ok(state) => state,
