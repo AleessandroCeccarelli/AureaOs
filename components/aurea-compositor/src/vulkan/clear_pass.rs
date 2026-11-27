@@ -11,7 +11,7 @@ use smithay::reexports::ash::vk;
 
 use super::{
     VulkanColorLoad, VulkanDynamicRenderingScope, VulkanImageState, VulkanImageTransition,
-    VulkanImageView,
+    VulkanImageView, VulkanLegacyRenderTarget,
 };
 
 /// Invalid requests rejected before any Vulkan command is recorded.
@@ -61,6 +61,45 @@ impl VulkanClearPass {
         if final_state == VulkanImageState::Undefined {
             return Err(VulkanClearPassError::UndefinedFinalState);
         }
+        Ok(())
+    }
+
+    /// Records a traditional render-pass clear for a framebuffer target.
+    ///
+    /// The target's render pass must have been created with
+    /// `VulkanColorLoad::Clear`. Image transitions remain explicit and are
+    /// recorded around the legacy render-pass scope.
+    pub fn record_legacy_color(
+        command_buffer: vk::CommandBuffer,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        previous_state: VulkanImageState,
+        final_state: VulkanImageState,
+        clear_color: [f32; 4],
+    ) -> Result<(), VulkanClearPassError> {
+        Self::validate(clear_color, final_state)?;
+        let view = target.view();
+        if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
+            return Err(VulkanClearPassError::MissingColorAttachmentUsage);
+        }
+
+        VulkanImageTransition::record_color(
+            view.device(),
+            command_buffer,
+            view.image_handle(),
+            previous_state,
+            VulkanImageState::ColorAttachment,
+        );
+
+        let scope = target.begin(command_buffer, clear_color);
+        scope.end();
+
+        VulkanImageTransition::record_color(
+            view.device(),
+            command_buffer,
+            view.image_handle(),
+            VulkanImageState::ColorAttachment,
+            final_state,
+        );
         Ok(())
     }
 
