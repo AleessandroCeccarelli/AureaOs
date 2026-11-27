@@ -18,6 +18,7 @@ libinput10
 libseat1
 libudev1
 libxkbcommon0
+xkb-data
 libwayland-client0
 libwayland-server0
 # Decoder-only HEIC/AVIF runtime: HEVC and AV1 still images.
