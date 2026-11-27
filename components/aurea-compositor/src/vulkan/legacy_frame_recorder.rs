@@ -172,6 +172,39 @@ impl VulkanLegacyFrameRecorder {
         .map_err(VulkanLegacyFrameRecorderError::DisplayColor)
     }
 
+    /// Ends a legacy scanout frame, releases its output image to KMS, and submits it.
+    ///
+    /// This is the terminal path for DMA-BUF scanout frames. Readback frames must
+    /// use their transfer-copy path instead and must not release ownership to KMS.
+    pub(crate) fn release_and_submit(
+        command_buffer: &mut super::VulkanCommandBuffer<'_>,
+        device: &super::VulkanLogicalDevice,
+        output: &VulkanImageView<'_, '_>,
+        previous_output_state: VulkanImageState,
+        on_submitted: impl FnOnce(),
+    ) -> Result<(), VulkanLegacyFrameRecorderError> {
+        if output.device().handle().handle() != device.handle().handle() {
+            return Err(VulkanLegacyFrameRecorderError::DeviceMismatch);
+        }
+
+        super::VulkanImageTransition::record_release_to_foreign(
+            device,
+            command_buffer.handle(),
+            output.image_handle(),
+            previous_output_state,
+        )
+        .map_err(VulkanLegacyFrameRecorderError::Transition)?;
+
+        command_buffer
+            .end()
+            .map_err(|error| VulkanLegacyFrameRecorderError::Command(error.to_string()))?;
+        command_buffer
+            .submit_and_wait_with(on_submitted)
+            .map_err(|error| VulkanLegacyFrameRecorderError::Command(format!("{error:?}")))?;
+
+        Ok(())
+    }
+
     /// Records one textured layer using a traditional render pass.
     ///
     /// This is intentionally one layer per call: it keeps framebuffer lifetime
@@ -225,6 +258,9 @@ pub(crate) enum VulkanLegacyFrameRecorderError {
     Clear(VulkanClearPassError),
     Draw(VulkanDrawPassError),
     DisplayColor(VulkanDisplayColorPassError),
+    Transition(super::VulkanImageTransitionError),
+    DeviceMismatch,
+    Command(String),
 }
 
 impl std::fmt::Display for VulkanLegacyFrameRecorderError {
@@ -234,6 +270,9 @@ impl std::fmt::Display for VulkanLegacyFrameRecorderError {
             Self::Clear(error) => write!(formatter, "Legacy frame clear: {error}"),
             Self::Draw(error) => write!(formatter, "Legacy frame draw: {error}"),
             Self::DisplayColor(error) => write!(formatter, "Legacy frame display color: {error}"),
+            Self::Transition(error) => write!(formatter, "Legacy frame output release: {error}"),
+            Self::DeviceMismatch => formatter.write_str("Legacy frame output belongs to a different Vulkan device"),
+            Self::Command(error) => write!(formatter, "Legacy frame command submission: {error}"),
         }
     }
 }
