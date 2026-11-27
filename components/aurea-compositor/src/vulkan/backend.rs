@@ -14,7 +14,10 @@ use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 #[cfg(feature = "drm")]
 use smithay::backend::drm::DrmNode;
 
-use crate::renderer::RenderPreference;
+use crate::{
+    adaptive_graphics::AdaptiveGraphicsPlan,
+    renderer::RenderPreference,
+};
 
 use super::{
     VulkanCommandBuffer, VulkanContext, VulkanDeviceExtensionPlan, VulkanDeviceInfo,
@@ -40,6 +43,7 @@ pub struct VulkanBackend {
     surface_pipeline: Mutex<super::VulkanSurfacePipelineCache>,
     context: Arc<VulkanContext>,
     selected_device_info: VulkanDeviceInfo,
+    selected_graphics_plan: AdaptiveGraphicsPlan,
     physical_device_index: usize,
     device: Arc<VulkanLogicalDevice>,
 }
@@ -130,6 +134,13 @@ impl VulkanBackend {
         }
 
         let selected_device_info = Self::build_selected_device_info(&context, physical_device);
+        let selected_graphics_plan = context
+            .adaptive_graphics_plan_for_device(physical_device_index)
+            .ok_or_else(|| {
+                VulkanInitError::new(
+                    "Selected Vulkan device has no implemented Aurea graphics path",
+                )
+            })?;
         let device = Arc::new(VulkanLogicalDevice::new(
             physical_device,
             queue_family_index,
@@ -148,6 +159,7 @@ impl VulkanBackend {
             surface_pipeline: Mutex::new(surface_pipeline),
             context,
             selected_device_info,
+            selected_graphics_plan,
             physical_device_index,
             device,
         })
@@ -161,6 +173,11 @@ impl VulkanBackend {
     /// Returns information about the selected physical GPU.
     pub fn selected_device_info(&self) -> &VulkanDeviceInfo {
         &self.selected_device_info
+    }
+
+    /// Returns the exact AAG path selected for this initialized backend.
+    pub fn selected_graphics_plan(&self) -> &AdaptiveGraphicsPlan {
+        &self.selected_graphics_plan
     }
 
     /// Returns the exact physical device used to create this logical device.
