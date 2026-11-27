@@ -25,6 +25,7 @@ use super::{
     VulkanShaderError, VulkanShaderModule, VulkanShmTexture, VulkanTextureBindingError,
     VulkanTextureBindingPool, VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
     VulkanWallpaperTexture, VulkanLegacyRenderPassManager, VulkanLegacyRenderPassError,
+    VulkanLegacyDisplayColorManager, VulkanSharedLegacyDisplayColorPass, VulkanDisplayColorPassError,
     desktop_icon_texture_cache::{
         VulkanDesktopIconTextureCache, VulkanDesktopIconTextureCacheError,
     },
@@ -79,6 +80,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     wallpaper_decode_service: WallpaperDecodeService,
     native_cursor_texture: VulkanNativeCursorTexture,
     legacy_render_passes: VulkanLegacyRenderPassManager,
+    legacy_display_color: VulkanLegacyDisplayColorManager,
     legacy_surface_pipelines: HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
     legacy_wallpaper_pipelines: HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
     legacy_cursor_trail_pipelines: HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
@@ -106,6 +108,7 @@ impl VulkanSurfacePipelineCache {
             .map_err(VulkanSurfacePipelineCacheError::WallpaperDecode)?;
 
         let legacy_render_passes = VulkanLegacyRenderPassManager::new(Arc::clone(&device));
+        let legacy_display_color = VulkanLegacyDisplayColorManager::new(Arc::clone(&device));
 
         Ok(Self {
             device,
@@ -121,6 +124,7 @@ impl VulkanSurfacePipelineCache {
             wallpaper_decode_service,
             native_cursor_texture: VulkanNativeCursorTexture::new(),
             legacy_render_passes,
+            legacy_display_color,
             legacy_surface_pipelines: HashMap::new(),
             legacy_wallpaper_pipelines: HashMap::new(),
             legacy_cursor_trail_pipelines: HashMap::new(),
@@ -149,6 +153,14 @@ impl VulkanSurfacePipelineCache {
         format: vk::Format,
     ) -> Result<Arc<super::VulkanLegacyRenderPass<'static>>, VulkanLegacyRenderPassError> {
         self.legacy_render_passes.discard(format)
+    }
+
+    /// Returns the cached shared legacy display-color pass for an output format.
+    pub(crate) fn legacy_display_color_pass(
+        &mut self,
+        format: vk::Format,
+    ) -> Result<Arc<VulkanSharedLegacyDisplayColorPass>, VulkanDisplayColorPassError> {
+        self.legacy_display_color.get(format)
     }
 
     /// Creates a format-specific pipeline only on its first use.
