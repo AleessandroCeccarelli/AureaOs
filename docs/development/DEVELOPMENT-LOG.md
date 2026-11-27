@@ -2614,3 +2614,12 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 ### Shutdown reporting refinement — 2026-11-27
 
 `DrmSurfaceManager::clear` now refuses to remove an output manager entry when Vulkan scanout frames remain unresolved after KMS disable. It reports the quarantined frame count to the caller, keeping the owner reachable for diagnosis/retry. The conservative pool Drop remains a last-resort leak guard, not a successful retirement path. Physical device-removal cleanup remains a distinct path and still requires proof that GPU ownership is resolved before Vulkan resources can be destroyed.
+
+
+### 2026-11-27 — linux-dmabuf v3 protocol publication and import validation
+
+- Added Smithay DmabufState to the DRM-enabled compositor and registered the delegate_dmabuf!/DmabufHandler path alongside the existing SHM buffer handler.
+- The global is created only after Vulkan backend discovery. Its v3 format/modifier list is the intersection across initialized Vulkan renderers, and each pair is filtered for sampled-image use, external DMA-BUF importability, foreign queue ownership, SYNC_FD import and the current single-plane importer.
+- dmabuf_imported validates the incoming layout and performs a real temporary Vulkan import on every participating device before acknowledging the Wayland buffer. Frame rendering still owns its own imported image lifetime.
+- The compositor intentionally does not publish linux-dmabuf when no common safe format/modifier pair exists. Multi-plane import and v4 feedback remain unsupported.
+- Source-only changes. No rustfmt, Cargo build/check, tests, CI result or hardware validation were run. Hotplug updates to an already-published global and per-output device feedback remain to be addressed.
