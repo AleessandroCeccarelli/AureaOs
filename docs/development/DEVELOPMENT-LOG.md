@@ -2671,3 +2671,13 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - Important remaining limitation: a later GPU add/remove does not yet rebuild the active device intersection or call `DmabufState::set_default_feedback`. The default feedback format table is not a substitute for output-specific renderer compatibility, and legacy v3 clients retain the global format advertisement established at creation. Hotplugged-GPU DMA-BUF rendering therefore remains unguaranteed.
 - Next implementation step: associate each Wayland surface with its actual presentation/render GPU, supply surface feedback using that device's supported formats, and reconcile default feedback after GPU lifecycle events without advertising formats that active outputs cannot sample.
 - No build, formatting, tests, CI or hardware validation was run.
+
+
+### 2026-11-27 — SHM/DMA-BUF client-cursor geometry parity
+
+- Found a real parity gap: SHM cursor snapshots carried the cursor scale and global hotspot anchor, while DMA-BUF cursor snapshots carried only an `is_cursor` flag. As a result, a client cursor backed by DMA-BUF could render at native size and drift away from its hotspot when the compositor cursor scale was changed.
+- Added `cursor_scale` and `cursor_anchor` to retained DMA-BUF surface-tree snapshots.
+- Propagated the same cursor scale and anchor from `RenderScene` to DMA-BUF cursor snapshots.
+- Applied the same integer/fractional output-scale geometry adjustment to DMA-BUF cursor snapshots before output transformation and clipping. SHM and DMA-BUF now share the same hotspot-anchored scaling policy.
+- This change addresses client-provided cursor surfaces; it does not alter compositor-owned named cursor assets.
+- No build, formatting, tests, CI or hardware validation was run, in accordance with the instruction to defer validation until the complete video block is integrated.
