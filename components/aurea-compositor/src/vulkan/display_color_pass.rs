@@ -558,7 +558,7 @@ impl VulkanSharedLegacyDisplayColorPass {
             .offset(0)
             .size(std::mem::size_of::<f32>() as u32)];
         let pipeline = super::VulkanSharedLegacyGraphicsPipeline::new(
-            device, render_pass,
+            std::sync::Arc::clone(&device), render_pass,
             VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
             &layouts, &push_ranges,
         ).map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?;
@@ -574,7 +574,7 @@ impl VulkanSharedLegacyDisplayColorPass {
         VulkanDisplayColorPassError,
     >
     where
-        'image_device: 'resources,
+        'resources: 'image_device,
         'image: 'image_device,
     {
         let device = source.device();
