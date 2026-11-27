@@ -98,6 +98,7 @@ impl VulkanTextureBindingPool {
 
 impl Drop for VulkanTextureBindingPool {
     fn drop(&mut self) {
+        if self.device.is_unusable() { return; }
         unsafe {
             self.device
                 .handle()
