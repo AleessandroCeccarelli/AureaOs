@@ -268,13 +268,59 @@ struct SurfaceDmabufBufferState {
     current: Option<WlBuffer>,
 }
 
+/// Tracks how many live Wayland surfaces currently reference each DMA-BUF.
+///
+/// A wl_buffer may be attached to more than one surface. Sending
+/// wl_buffer.release when only one surface replaces it would let the client
+/// recycle memory still sampled by another surface.
+#[cfg(feature = "drm")]
+#[derive(Default)]
+pub struct DmabufBufferUseRegistry {
+    buffers: std::collections::HashMap<ObjectId, (WlBuffer, usize)>,
+}
+
+#[cfg(feature = "drm")]
+impl DmabufBufferUseRegistry {
+    fn retain(&mut self, buffer: WlBuffer) {
+        let id = buffer.id();
+        self.buffers
+            .entry(id)
+            .and_modify(|(_, uses)| *uses = uses.saturating_add(1))
+            .or_insert((buffer, 1));
+    }
+
+    fn release_surface_use(&mut self, buffer: &WlBuffer) {
+        let id = buffer.id();
+        let should_release = if let Some((_, uses)) = self.buffers.get_mut(&id) {
+            *uses = uses.saturating_sub(1);
+            *uses == 0
+        } else {
+            // Unknown ownership is not proof that the client buffer is idle.
+            false
+        };
+
+        if should_release {
+            if let Some((buffer, _)) = self.buffers.remove(&id) {
+                smithay::backend::renderer::utils::Buffer::with_implicit(buffer).release();
+            }
+        }
+    }
+
+    /// Drops registry ownership when the client destroys the wl_buffer object.
+    pub fn buffer_destroyed(&mut self, buffer: &WlBuffer) {
+        self.buffers.remove(&buffer.id());
+    }
+}
+
 /// Updates retained DMA-BUF ownership throughout a committed surface tree.
 ///
 /// A buffer remains unreleased while it is the surface's current attachment.
 /// Replacing it, detaching it, or switching to SHM releases the old buffer.
 #[cfg(feature = "drm")]
-pub fn update_surface_tree_dmabuf_buffer_lifecycle(root: &WlSurface) {
-    use smithay::backend::renderer::utils::Buffer as SmithayBuffer;
+pub fn update_surface_tree_dmabuf_buffer_lifecycle(
+    root: &WlSurface,
+    registry: &mut DmabufBufferUseRegistry,
+) {
     use smithay::wayland::dmabuf::get_dmabuf;
 
     with_surface_tree_downward(
@@ -309,8 +355,18 @@ pub fn update_surface_tree_dmabuf_buffer_lifecycle(root: &WlSurface) {
                 std::mem::replace(&mut state.current, next)
             });
 
+            if let Some(next) = with_surface_states(surface, |states| {
+                let mut attributes = states.cached_state.get::<SurfaceAttributes>();
+                match attributes.current().buffer.as_ref() {
+                    Some(BufferAssignment::NewBuffer(buffer))
+                        if get_dmabuf(buffer).is_ok() => Some(buffer.clone()),
+                    _ => None,
+                }
+            }) {
+                registry.retain(next);
+            }
             if let Some(previous) = previous {
-                SmithayBuffer::with_implicit(previous).release();
+                registry.release_surface_use(&previous);
             }
         },
         |_, _, _| true,
