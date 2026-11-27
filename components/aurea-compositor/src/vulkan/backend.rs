@@ -141,6 +141,12 @@ impl VulkanBackend {
                     "Selected Vulkan device has no implemented Aurea graphics path",
                 )
             })?;
+        tracing::info!(
+            gpu = %selected_device_info.name,
+            vulkan_api = %selected_device_info.api_version,
+            graphics_path = ?selected_graphics_plan.path,
+            "Aurea Adaptive Graphics selected rendering device"
+        );
         let device = Arc::new(VulkanLogicalDevice::new(
             physical_device,
             queue_family_index,
