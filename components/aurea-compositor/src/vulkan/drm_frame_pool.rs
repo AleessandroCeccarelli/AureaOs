@@ -383,6 +383,27 @@ impl VulkanDrmFramePool {
             .ok_or(VulkanDrmFramePoolError::UnknownFramebuffer(id))
     }
 
+    /// Retires only frames whose GPU, KMS and foreign-queue ownership is resolved.
+    ///
+    /// This is safe after output disable, but deliberately does not force-clear
+    /// coordinator state for the last scanned-out frame. Ambiguous frames remain
+    /// in the pool and are quarantined by Drop.
+    pub fn retire_available(
+        &mut self,
+        coordinator: &mut DrmOutputFrameCoordinator,
+    ) -> Result<usize, VulkanDrmFramePoolError> {
+        let ids: Vec<_> = self.frames.keys().copied().collect();
+        let mut retired = 0;
+        for id in ids {
+            if coordinator.is_available(id)? {
+                coordinator.unregister_framebuffer(id)?;
+                self.frames.remove(&id);
+                retired += 1;
+            }
+        }
+        Ok(retired)
+    }
+
     /// Retires every pooled frame during an orderly output shutdown.
     ///
     /// This operation is all-or-nothing with respect to availability: it first
