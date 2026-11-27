@@ -1524,3 +1524,13 @@ Cautions:
 - The empty-scene fast path is deliberately bypassed for compatibility mode so even an empty legacy frame uses the traditional-render-pass clear instead of the Vulkan 1.3 clear path.
 - Commits: `014f1ee5` (legacy frame module), `a9c4d661` (separate output state), `3209cf1b` (mode dispatch), `f9329fc5` (display-pass preparation and wallpaper scissor validation), `6c5a28a6` (module imports), `049265ea` (opt-in feature), `5e642e81` (default-off dispatch gate).
 - No build, `cargo fmt`, `cargo check`, tests, shader compilation, CI or hardware validation was run. Rust type/lifetime correctness and actual Vulkan behavior remain unverified. The next step is a source review followed by the agreed grouped Fedora validation with `--features legacy-vulkan-frame`; do not enable the feature by default before that succeeds.
+
+
+### Legacy frame static audit — shader and image-state contracts — 2026-11-27
+
+- Re-opened the committed legacy frame orchestrator, compositor dispatch, layer recorder, frame recorder, draw/clear helpers, display-color pass, render-pass managers, shader build script and Cargo feature definitions.
+- Confirmed that all seven compatibility shader artifacts referenced by the shared legacy surface, wallpaper, cursor-trail and display-color pipelines are declared by `build.rs` and compiled with `glslangValidator --target-env vulkan1.0`. Shader build remains under the existing DRM feature gate; `legacy-vulkan-frame` implies DRM, so the required build-script branch is reached when the opt-in feature is selected.
+- Rechecked the frame image-state sequence: clear transitions the composition target to GENERAL; textured layers transition sampled sources to SHADER_READ and preserve the target in GENERAL; optional display color samples the composition target from GENERAL and leaves scanout in GENERAL; readback copies from GENERAL, while KMS release transitions from GENERAL. The legacy path does not pass stale pre-frame state to the terminal operation.
+- Rechecked exact render-pass identity preflight for surface, wallpaper, cursor trail and display-color pipeline/framebuffer pairing.
+- This is a source inspection only. It does not prove that glslangValidator accepts the shaders, that Rust type/lifetime checking succeeds, or that the driver accepts the recorded command stream. No build, formatting, tests, CI or hardware validation was run.
+- Next verification remains the grouped Fedora session with `cargo fmt --all`, `cargo check -p aurea-compositor --features legacy-vulkan-frame`, targeted tests, then Vulkan 1.0–1.2 and Vulkan 1.3 runtime checks. Keep the feature opt-in until all pass.
