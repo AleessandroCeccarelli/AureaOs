@@ -1456,3 +1456,11 @@ Cautions:
 - This is a source-level contract alignment only. No build or tests were run, so Rust type/lifetime correctness remains unverified.
 - The next integration blocker remains substantial: active frame preparation currently builds modern-only pipeline bindings and display-color bindings, while the legacy path needs shared legacy pipeline resources, a legacy display-color recorder and output-state/submission routing. Do not remove the compatibility fail-closed guard until those paths are integrated together.
 
+### Legacy resource preparation and sampled-image layout audit (2026-11-27)
+
+- Extracted common legacy frame preparation into `prepare_shared_legacy_frame_resources_without_display_color`, available in both DRM and non-DRM builds. The DRM-specific wrapper now layers optional display-color pass creation on top of the common render-pass and pipeline preparation.
+- Corrected all legacy surface, context-menu, native-cursor and cursor-trail recorders to declare sampled sources in `VulkanImageState::ShaderRead`. Their descriptor sets declare `SHADER_READ_ONLY_OPTIMAL`; using `General` as the previous source layout would have made the recorded image barrier inconsistent with the descriptor layout.
+- Wallpaper already used `ShaderRead` and remains unchanged.
+- This is a source-level layout/availability correction, not proof of a complete renderer. No build, tests or hardware validation were run.
+- Remaining integration work: frame-scoped bindings/views for the shared legacy resources, a legacy display-color route for both DRM and readback, and the common `render_frame` mode dispatch. Keep the fail-closed compatibility guard and availability false until all are wired.
+
