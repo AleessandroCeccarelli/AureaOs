@@ -37,6 +37,107 @@ pub(crate) enum VulkanDmabufImportSupportError {
 
 /// A capability gate only: success does not import FDs or synchronize access.
 impl VulkanDmabufImportSupport {
+    /// Enumerates only single-plane DRM format/modifier pairs that this exact
+    /// Vulkan device can sample from imported DMA-BUF memory.
+    ///
+    /// The returned set is suitable for linux-dmabuf v3 advertisement. It is
+    /// intentionally narrower than the device's raw modifier list: Aurea
+    /// requires sampled usage, external-memory importability and one memory
+    /// plane because the current importer binds exactly one plane.
+    pub(crate) fn supported_formats(
+        device: &VulkanLogicalDevice,
+    ) -> Vec<smithay::backend::allocator::Format> {
+        use smithay::backend::allocator::{Format, Modifier};
+        use smithay::backend::allocator::vulkan::format::{get_vk_format, known_formats};
+
+        let extensions = device.extension_plan();
+        if !extensions.supports_dmabuf_interop()
+            || !extensions.supports_drm_format_modifier()
+            || !device.supports_foreign_queue_family()
+            || !device.supports_sync_fd_import()
+        {
+            return Vec::new();
+        }
+
+        let mut supported = Vec::new();
+        for fourcc in known_formats().iter().copied() {
+            let Some(format) = get_vk_format(fourcc) else { continue };
+            let mut modifier_list = vk::DrmFormatModifierPropertiesListEXT::default();
+            let mut format_properties =
+                vk::FormatProperties2::default().push_next(&mut modifier_list);
+            unsafe {
+                device.instance().get_physical_device_format_properties2(
+                    device.physical_device(),
+                    format,
+                    &mut format_properties,
+                );
+            }
+            let count = modifier_list.drm_format_modifier_count as usize;
+            if count == 0 { continue; }
+            let mut properties = vec![vk::DrmFormatModifierPropertiesEXT::default(); count];
+            modifier_list.drm_format_modifier_properties = properties.as_mut_ptr();
+            unsafe {
+                device.instance().get_physical_device_format_properties2(
+                    device.physical_device(),
+                    format,
+                    &mut format_properties,
+                );
+            }
+
+            for modifier in properties {
+                if modifier.drm_format_modifier_plane_count != 1
+                    || !modifier
+                        .drm_format_modifier_tiling_features
+                        .contains(vk::FormatFeatureFlags::SAMPLED_IMAGE)
+                {
+                    continue;
+                }
+
+                let mut modifier_info =
+                    vk::PhysicalDeviceImageDrmFormatModifierInfoEXT::default()
+                        .drm_format_modifier(modifier.drm_format_modifier);
+                let mut external_info =
+                    vk::PhysicalDeviceExternalImageFormatInfo::default()
+                        .handle_type(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
+                let image_info = vk::PhysicalDeviceImageFormatInfo2::default()
+                    .format(format)
+                    .ty(vk::ImageType::TYPE_2D)
+                    .tiling(vk::ImageTiling::DRM_FORMAT_MODIFIER_EXT)
+                    .usage(vk::ImageUsageFlags::SAMPLED)
+                    .push_next(&mut modifier_info)
+                    .push_next(&mut external_info);
+                let mut external_properties = vk::ExternalImageFormatProperties::default();
+                let mut image_properties =
+                    vk::ImageFormatProperties2::default().push_next(&mut external_properties);
+                if unsafe {
+                    device.instance().get_physical_device_image_format_properties2(
+                        device.physical_device(),
+                        &image_info,
+                        &mut image_properties,
+                    )
+                }.is_err() {
+                    continue;
+                }
+                let external = external_properties.external_memory_properties;
+                if !external.external_memory_features
+                    .contains(vk::ExternalMemoryFeatureFlags::IMPORTABLE)
+                    || !external.compatible_handle_types
+                        .contains(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT)
+                {
+                    continue;
+                }
+
+                supported.push(Format {
+                    code: fourcc,
+                    modifier: Modifier::from(modifier.drm_format_modifier),
+                });
+            }
+        }
+        supported.sort_by_key(|format| (format.code, u64::from(format.modifier)));
+        supported.dedup();
+        supported
+    }
+
     pub(crate) fn query(
         device: &VulkanLogicalDevice,
         layout: &DmabufImportLayout,
