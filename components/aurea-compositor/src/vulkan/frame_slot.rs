@@ -32,7 +32,15 @@ impl VulkanFrameSlot {
         let pool_info = vk::CommandPoolCreateInfo::default()
             .queue_family_index(queue_family)
             .flags(vk::CommandPoolCreateFlags::TRANSIENT);
-        let command_pool = unsafe { device.handle().create_command_pool(&pool_info, None) }?;
+        let command_pool = match unsafe { device.handle().create_command_pool(&pool_info, None) } {
+            Ok(pool) => pool,
+            Err(error) => {
+                if error == vk::Result::ERROR_DEVICE_LOST {
+                    device.mark_unusable();
+                }
+                return Err(error);
+            }
+        };
 
         let fence_info = vk::FenceCreateInfo::default().flags(vk::FenceCreateFlags::SIGNALED);
         let completion_fence = match unsafe { device.handle().create_fence(&fence_info, None) } {
@@ -55,7 +63,7 @@ impl VulkanFrameSlot {
                     if device.is_unusable() || error == vk::Result::ERROR_DEVICE_LOST {
                         device.mark_unusable();
                         std::mem::forget(completion_fence);
-                        std::mem::forget(command_pool);
+                        // The raw handle is intentionally abandoned after device loss.
                     } else {
                         unsafe {
                             device.handle().destroy_fence(completion_fence, None);
@@ -114,9 +122,16 @@ impl VulkanFrameSlot {
         unsafe {
             // The fence proves the previous submission no longer uses these objects.
             self.retained_resources.clear();
-            device
+            if let Err(error) = device
                 .handle()
-                .reset_command_pool(self.command_pool, vk::CommandPoolResetFlags::empty())?;
+                .reset_command_pool(self.command_pool, vk::CommandPoolResetFlags::empty())
+            {
+                if error == vk::Result::ERROR_DEVICE_LOST {
+                    device.mark_unusable();
+                    self.quarantined = true;
+                }
+                return Err(error);
+            }
         }
 
         // Recreate the export semaphore only after this slot's completion
@@ -126,7 +141,16 @@ impl VulkanFrameSlot {
             unsafe { device.handle().destroy_semaphore(semaphore, None) };
         }
         if device.supports_sync_fd() {
-            self.sync_fd_semaphore = Some(Self::create_sync_fd_semaphore(device)?);
+            self.sync_fd_semaphore = Some(match Self::create_sync_fd_semaphore(device) {
+                Ok(semaphore) => semaphore,
+                Err(error) => {
+                    if error == vk::Result::ERROR_DEVICE_LOST {
+                        device.mark_unusable();
+                        self.quarantined = true;
+                    }
+                    return Err(error);
+                }
+            });
         }
 
         let command_buffer = match self.command_buffer {
@@ -136,8 +160,18 @@ impl VulkanFrameSlot {
                     .command_pool(self.command_pool)
                     .level(vk::CommandBufferLevel::PRIMARY)
                     .command_buffer_count(1);
-                let command_buffer =
-                    unsafe { device.handle().allocate_command_buffers(&allocation) }?[0];
+                let command_buffer = match unsafe {
+                    device.handle().allocate_command_buffers(&allocation)
+                } {
+                    Ok(buffers) => buffers[0],
+                    Err(error) => {
+                        if error == vk::Result::ERROR_DEVICE_LOST {
+                            device.mark_unusable();
+                            self.quarantined = true;
+                        }
+                        return Err(error);
+                    }
+                };
                 self.command_buffer = Some(command_buffer);
                 command_buffer
             }
@@ -145,10 +179,14 @@ impl VulkanFrameSlot {
 
         let begin_info = vk::CommandBufferBeginInfo::default()
             .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
-        unsafe {
-            device
-                .handle()
-                .begin_command_buffer(command_buffer, &begin_info)?;
+        if let Err(error) = unsafe {
+            device.handle().begin_command_buffer(command_buffer, &begin_info)
+        } {
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                device.mark_unusable();
+                self.quarantined = true;
+            }
+            return Err(error);
         }
 
         Ok(command_buffer)
@@ -195,9 +233,19 @@ impl VulkanFrameSlot {
             self.quarantined = true;
             return Err(vk::Result::ERROR_DEVICE_LOST);
         }
-        unsafe {
-            device.handle().end_command_buffer(command_buffer)?;
-            device.handle().reset_fences(&[self.completion_fence])?;
+        if let Err(error) = unsafe { device.handle().end_command_buffer(command_buffer) } {
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                device.mark_unusable();
+                self.quarantined = true;
+            }
+            return Err(error);
+        }
+        if let Err(error) = unsafe { device.handle().reset_fences(&[self.completion_fence]) } {
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                device.mark_unusable();
+                self.quarantined = true;
+            }
+            return Err(error);
         }
 
         let result = device.submit_async_with_signal(
