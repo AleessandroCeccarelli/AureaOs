@@ -145,8 +145,10 @@ pub(super) fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io:
         remove_device_notifier(state, node);
         super::super::gbm_lifecycle::remove_gbm_device(state, node);
         state.vulkan_backends.remove(&node);
-        super::super::vulkan_lifecycle::refresh_dmabuf_feedback(state);
         state.drm_devices.remove(node);
+        // Refresh after all resources for the failed integration have been
+        // removed, so the active renderer set cannot include this device.
+        super::super::vulkan_lifecycle::refresh_dmabuf_feedback(state);
 
         return Err(error);
     }
