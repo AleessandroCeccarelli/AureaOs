@@ -69,6 +69,18 @@ pub(super) fn render_frame_legacy<K: Copy>(
         )
         .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
 
+    // Create the output-only pass before borrowing any cache-owned pipelines or
+    // textures below; its manager mutates the cache on first use.
+    let legacy_display_pass: Option<Arc<VulkanSharedLegacyDisplayColorPass>> =
+        if display_warmth.is_some() {
+            Some(surface_cache.legacy_display_color_pass(output_view.format())
+                .map_err(|error: VulkanDisplayColorPassError| {
+                    VulkanSurfaceCompositionError::Pipeline(error.to_string())
+                })?)
+        } else {
+            None
+        };
+
     let clear_render_pass = surface_cache
         .legacy_clear_render_pass(format)
         .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))?;
@@ -201,12 +213,16 @@ pub(super) fn render_frame_legacy<K: Copy>(
             texture.width(), texture.height(), target.width(), target.height(),
             WallpaperFitMode::Fill,
         ).ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
-        WallpaperDrawGeometry::for_output(
+        if let Some(geometry) = WallpaperDrawGeometry::for_output(
             layout, texture.width(), texture.height(), target.width(), target.height(),
-        ).map(|geometry| {
+        ) {
             let destination = geometry.destination();
+            let scissor_x = i32::try_from(destination.x())
+                .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+            let scissor_y = i32::try_from(destination.y())
+                .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
             let uv = geometry.uv();
-            LegacyWallpaperLayer {
+            Some(LegacyWallpaperLayer {
                 source,
                 binding,
                 pipeline,
@@ -220,18 +236,17 @@ pub(super) fn render_frame_legacy<K: Copy>(
                     max_depth: 1.0,
                 },
                 scissor: vk::Rect2D {
-                    offset: vk::Offset2D {
-                        x: i32::try_from(destination.x()).unwrap_or(0),
-                        y: i32::try_from(destination.y()).unwrap_or(0),
-                    },
+                    offset: vk::Offset2D { x: scissor_x, y: scissor_y },
                     extent: vk::Extent2D {
                         width: destination.width(),
                         height: destination.height(),
                     },
                 },
                 uv_transform: [uv.min()[0], uv.min()[1], uv.max()[0], uv.max()[1]],
-            }
-        })
+            })
+        } else {
+            None
+        }
     } else {
         None
     };
@@ -300,15 +315,6 @@ pub(super) fn render_frame_legacy<K: Copy>(
         native_cursor: native_cursor_layer,
     };
 
-    let legacy_display_pass: Option<Arc<VulkanSharedLegacyDisplayColorPass>> =
-        if display_warmth.is_some() {
-            Some(surface_cache.legacy_display_color_pass(output_view.format())
-                .map_err(|error: VulkanDisplayColorPassError| {
-                    VulkanSurfaceCompositionError::Pipeline(error.to_string())
-                })?)
-        } else {
-            None
-        };
     let display_binding = legacy_display_pass.as_ref().map(|pass| {
         pass.bind_source(composition_view)
             .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
