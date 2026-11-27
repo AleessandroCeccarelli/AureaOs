@@ -382,7 +382,7 @@ Main commits: `542f918`, `2826f2d`, `e0fb92e`.
 
 ## 23 November 2026 — First wallpaper asset-management layer
 
-Implementation has begun for the selected `aureaos-midnight-flow.jpg` asset.
+Implementation has begun for the selected `aureaos-blue-flow.jpg` asset.
 
 ### Code added
 
@@ -425,7 +425,7 @@ No Cargo formatting, compilation, or tests were run remotely. Fedora remains the
 
 The wallpaper system now has a dedicated architecture specification at `docs/design/WALLPAPER-SYSTEM.md`.
 
-The selected `aureaos-midnight-flow.jpg` remains the default wallpaper. Animated support is an expansion of the wallpaper engine, not a replacement of the chosen visual identity.
+The selected `aureaos-blue-flow.jpg` remains the default wallpaper. Animated support is an expansion of the wallpaper engine, not a replacement of the chosen visual identity.
 
 Planned capabilities:
 - looping video or animated-image wallpapers;
