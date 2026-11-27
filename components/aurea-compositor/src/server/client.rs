@@ -72,7 +72,7 @@ impl CompositorHandler for AureaCompositor {
     fn commit(&mut self, surface: &WlSurface) {
         self.commit_popup_surface(surface);
         #[cfg(feature = "drm")]
-        update_surface_tree_dmabuf_buffer_lifecycle(surface);
+        self.update_dmabuf_buffer_lifecycle(surface);
 
         let mapped = with_states(surface, |states| {
             let mut cached_state = states.cached_state.get::<SurfaceAttributes>();
