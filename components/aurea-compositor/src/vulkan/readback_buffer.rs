@@ -257,7 +257,12 @@ impl<'device> VulkanReadbackBuffer<'device> {
                 vk::MemoryMapFlags::empty(),
             )
         }
-        .map_err(VulkanReadbackError::Mapping)?;
+        .map_err(|error| {
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                self.device.device().mark_unusable();
+            }
+            VulkanReadbackError::Mapping(error)
+        })?;
 
         if !self.coherent {
             let ranges = [vk::MappedMemoryRange::default()
@@ -270,7 +275,11 @@ impl<'device> VulkanReadbackBuffer<'device> {
                     .handle()
                     .invalidate_mapped_memory_ranges(&ranges)
             } {
-                unsafe { self.device.device().handle().unmap_memory(self.memory) };
+                if error == vk::Result::ERROR_DEVICE_LOST {
+                    self.device.device().mark_unusable();
+                } else {
+                    unsafe { self.device.device().handle().unmap_memory(self.memory) };
+                }
                 return Err(VulkanReadbackError::Invalidation(error));
             }
         }
