@@ -1221,3 +1221,27 @@ Prossimo blocco:
 - Solo dopo collegare il percorso al selettore renderer compatibile.
 
 Nessuna build, test o ISO eseguiti: le verifiche restano programmate su Fedora domani.
+
+
+## 27 NOVEMBRE — PRIMO RECORDER LEGACY DI CLEAR E DRAW
+
+Modifiche pubblicate su `main`:
+- `9c67cf83` — `VulkanClearPass::record_legacy_color`: transizione immagine → scope render pass tradizionale → transizione finale.
+- `6e3f6045` — il framebuffer target espone un riferimento tipizzato al render pass proprietario.
+- `f7d0b75a` — `VulkanDrawPass::record_legacy`: percorso base di disegno non indicizzato nel target tradizionale, con verifica della compatibilità pipeline/render pass e transizioni esplicite.
+- `085268b4` — il render pass conserva il load operation usato alla creazione.
+- `d4b19210` — il recorder clear rifiuta render pass che non usano `CLEAR`.
+- `67ae41ee` — il recorder draw base applica lo stesso controllo, evitando che il clear value venga passato a un render pass configurato per `LOAD` o `DONT_CARE`.
+
+Stato della catena legacy:
+- Render pass riutilizzabile e framebuffer per-image separati.
+- Pipeline legacy vincolata al render pass tramite borrow Rust.
+- Scope RAII per begin/end.
+- Recorder minimo clear e recorder minimo draw con transizioni immagine prima e dopo.
+- Il percorso moderno dinamico resta separato e non modificato nella sua logica.
+
+Limiti ancora aperti:
+- I recorder legacy supportano al momento il percorso base full-target; non sono ancora integrati i draw textured/region e le varianti display-color.
+- La compatibilità delle dipendenze e gli stage/access mask delle barriere vanno riesaminati durante l'integrazione end-to-end.
+- Il load operation è fissato alla creazione del render pass; per usare `LOAD` occorre un render pass creato esplicitamente con `VulkanColorLoad::Load` e un recorder dedicato che non presuma il clear.
+- Nessun build/test/ISO eseguito: come richiesto, le verifiche saranno eseguite domani su Fedora.
