@@ -313,6 +313,13 @@ impl DrmSurfaceManager {
                 errors.push(format!("output {output_id}: {error}"));
                 continue;
             }
+            if !managed.frame_pool.is_empty() {
+                errors.push(format!(
+                    "output {output_id}: {} Vulkan scanout frame(s) remain quarantined because their lifecycle is unresolved",
+                    managed.frame_pool.len()
+                ));
+                continue;
+            }
 
             cleared.push(output_id);
         }
