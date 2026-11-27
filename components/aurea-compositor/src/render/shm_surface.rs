@@ -177,7 +177,7 @@ fn copy_surface_buffer(
     let snapshot = ShmBufferSnapshot::copy_from_wl_buffer(buffer);
     state.mark_processed(buffer.clone());
 
-    match snapshot {
+    let result = match snapshot {
         Ok(snapshot) => {
             state.replace(Some(snapshot));
             Ok(())
@@ -190,7 +190,12 @@ fn copy_surface_buffer(
             state.replace(None);
             Err(error)
         }
-    }
+    };
+
+    // SHM pixels have been copied into compositor-owned memory, so the
+    // client may safely reuse its wl_buffer immediately after this point.
+    smithay::backend::renderer::utils::Buffer::with_implicit(buffer.clone()).release();
+    result
 }
 
 /// Returns the latest owned SHM snapshot associated with a surface.
