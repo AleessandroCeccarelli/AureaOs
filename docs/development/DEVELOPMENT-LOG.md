@@ -2659,3 +2659,15 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - Therefore hotplugged GPU compatibility is not yet guaranteed for client DMA-BUF surfaces. A renderer may reject an import at frame time; the compositor must not claim cross-GPU hotplug support until device-aware feedback or a safe output-admission/fallback policy is implemented.
 - This limitation is intentionally left visible rather than mutating the active v3 contract or silently advertising unsupported formats. The appropriate architectural follow-up is linux-dmabuf v4 per-surface feedback with device-specific tranches, or an explicit policy that prevents incompatible outputs from presenting DMA-BUF-backed content.
 - No build, formatting, tests, CI or hardware validation was run.
+
+
+
+### 2026-11-27 — linux-dmabuf feedback-enabled global
+
+- Replaced Smithay's legacy `DmabufState::create_global` path with `create_global_with_default_feedback`.
+- The default feedback main tranche is restricted to the intersection of format/modifier pairs that every Vulkan backend currently registered can import and sample. This keeps the legacy format list for clients binding version 3 or lower aligned with the common safe set.
+- The feedback main device is taken from a selected Vulkan physical device's DRM primary node, falling back to its render node only when no primary node is exposed. If no Vulkan device exposes a DRM identity, the DMA-BUF global is not published.
+- This is the feedback-capable protocol path (Smithay 0.7 creates the feedback-enabled global at protocol version 5); it is not yet per-surface or hotplug-aware. No device-specific preference tranches are advertised yet.
+- Important remaining limitation: a later GPU add/remove does not yet rebuild the active device intersection or call `DmabufState::set_default_feedback`. The default feedback format table is not a substitute for output-specific renderer compatibility, and legacy v3 clients retain the global format advertisement established at creation. Hotplugged-GPU DMA-BUF rendering therefore remains unguaranteed.
+- Next implementation step: associate each Wayland surface with its actual presentation/render GPU, supply surface feedback using that device's supported formats, and reconcile default feedback after GPU lifecycle events without advertising formats that active outputs cannot sample.
+- No build, formatting, tests, CI or hardware validation was run.
