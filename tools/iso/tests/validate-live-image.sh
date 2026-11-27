@@ -29,7 +29,7 @@ while (($#)); do
 done
 [[ -n "$MODE" && -n "$TARGET" ]] || usage
 
-for tool in mdir mcopy mtype ukify grep unsquashfs readlink stat lsinitramfs dpkg-query; do
+for tool in mdir mcopy mtype ukify grep unsquashfs readlink stat find lsinitramfs dpkg-query; do
     command -v "$tool" >/dev/null 2>&1 || fail "required validation tool not found: $tool"
 done
 
