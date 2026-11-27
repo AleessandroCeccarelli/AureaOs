@@ -211,6 +211,13 @@ impl VulkanLogicalDevice {
 
 impl Drop for VulkanLogicalDevice {
     fn drop(&mut self) {
+        if self.is_unusable() {
+            // Device loss is terminal: do not issue further device calls.
+            // Keep the parent instance alive for the intentionally retained device.
+            std::mem::forget(Arc::clone(&self._context));
+            return;
+        }
+
         // A failed idle wait does not prove that submitted work has stopped
         // using device-owned objects. Keep the device and its parent instance
         // alive rather than destroying the command pool under uncertain work.
