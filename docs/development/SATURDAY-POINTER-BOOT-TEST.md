@@ -18,7 +18,7 @@ These are source-level findings. They do not prove the native Fedora hardware pa
 
 ## First-frame wallpaper acceptance
 
-The default `aureaos-midnight-flow.jpg` is embedded in the compositor binary. The
+The default `aureaos-blue-flow.jpg` is embedded in the compositor binary. The
 first output frame starts bounded worker decoding and a fence-backed Vulkan
 texture upload. The event loop must continue requesting frames while either
 operation is pending; otherwise an idle desktop can remain on the clear-color
