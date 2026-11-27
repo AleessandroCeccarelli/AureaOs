@@ -30,7 +30,7 @@ use smithay::{
         shm::ShmState,
         tablet_manager::{TabletManagerState, TabletSeatHandler},
         #[cfg(feature = "drm")]
-        dmabuf::{DmabufGlobal, DmabufState},
+        dmabuf::{DmabufFeedback, DmabufGlobal, DmabufState},
     },
 };
 
@@ -285,21 +285,21 @@ impl AureaCompositor {
         &self.dmabuf_devices
     }
 
-    /// Publishes linux-dmabuf v3 only after every active Vulkan renderer has
-    /// reported a common, importable single-plane format/modifier set.
+    /// Publishes linux-dmabuf feedback only after every active Vulkan renderer
+    /// has reported a common, importable single-plane format/modifier set.
     #[cfg(feature = "drm")]
     pub(crate) fn initialize_dmabuf_global(
         &mut self,
         display: &DisplayHandle,
         devices: Vec<std::sync::Arc<crate::vulkan::VulkanLogicalDevice>>,
-        formats: Vec<smithay::backend::allocator::Format>,
+        feedback: DmabufFeedback,
     ) -> bool {
-        if devices.is_empty() || formats.is_empty() || self.dmabuf_global.is_some() {
+        if devices.is_empty() || self.dmabuf_global.is_some() {
             return false;
         }
         self.dmabuf_devices = devices;
         self.dmabuf_global = Some(
-            self.dmabuf_state.create_global::<Self>(display, formats),
+            self.dmabuf_state.create_global_with_default_feedback::<Self>(display, &feedback),
         );
         true
     }
