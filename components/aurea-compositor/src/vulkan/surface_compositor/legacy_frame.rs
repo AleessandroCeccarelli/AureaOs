@@ -53,7 +53,7 @@ pub(super) fn render_frame_legacy<K: Copy>(
     requested_cursor_size: u32,
     cursor_frame_time: Instant,
     display_warmth: Option<u8>,
-    readback: Option<&VulkanReadbackBuffer<'_>>,
+    readback: Option<&mut Option<VulkanReadbackBuffer<'_>>>,
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let format = composition_view.format();
@@ -360,7 +360,7 @@ pub(super) fn render_frame_legacy<K: Copy>(
         ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
 
-    let submit_result = if let Some(readback) = readback {
+    let submit_result = if let Some(readback) = readback.as_ref().and_then(|slot| slot.as_ref()) {
         readback.record_transition_and_copy_rgba8(
             device, command_buffer.handle(), output_view, VulkanImageState::General,
         ).map_err(|error| VulkanLegacyFrameRecorderError::Command(error.to_string()))?;
@@ -388,6 +388,11 @@ pub(super) fn render_frame_legacy<K: Copy>(
                     std::mem::forget(load_target);
                     std::mem::forget(display_target);
                     std::mem::forget(binding_pool);
+                    if let Some(readback_slot) = readback {
+                        if let Some(readback_buffer) = readback_slot.take() {
+                            std::mem::forget(readback_buffer);
+                        }
+                    }
                 }
                 return Err(VulkanSurfaceCompositionError::from_queue_submit_error(queue_error));
             }
