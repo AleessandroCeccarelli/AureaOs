@@ -164,6 +164,11 @@ impl VulkanWallpaperTextureCache {
         Ok(true)
     }
 
+    /// Returns whether a decode or GPU upload still needs another render-frame poll.
+    pub(crate) fn has_pending_work(&self) -> bool {
+        !self.pending.is_empty()
+    }
+
     /// Polls upload fences without blocking; only completed selected textures become visible.
     pub(crate) fn poll(&mut self) -> Result<(), VulkanWallpaperTextureCacheError> {
         if let Some(error) = self.synchronization_error {
