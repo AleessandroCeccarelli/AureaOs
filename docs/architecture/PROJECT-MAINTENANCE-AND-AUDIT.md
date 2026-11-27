@@ -879,3 +879,11 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - Important capability boundary: the current renderer still requires Vulkan 1.3 core dynamicRendering and synchronization2, and shader assets are still compiled for Vulkan 1.3. No Vulkan 1.0–1.2 render-pass backend has been implemented. AAG therefore does not select CompatibilityVulkan in runtime selection. Older GPUs are detected but remain unsupported by the current renderer; Lavapipe is a fallback only when it satisfies the same modern renderer requirements.
 - The existing CPU-upload/GBM presentation path is a presentation fallback, not a legacy Vulkan rendering backend. These concepts must not be conflated.
 - No build, rustfmt, check or tests were run, per the agreed schedule. The source changes require compilation and runtime validation on Fedora before they can be called verified.
+
+
+### Legacy synchronization groundwork for Vulkan compatibility — 27 November 2026
+
+- The shared image-transition helper now records image barriers with the Vulkan 1.0 `vkCmdPipelineBarrier` API and legacy stage/access masks. This removes its dependency on Synchronization2, including foreign queue-family release/acquire transitions.
+- Batched texture upload, single texture upload and readback staging barriers now use the same legacy command. These resource-transfer operations are shared by both renderer paths and no longer require Synchronization2.
+- This is compatibility groundwork, not a completed legacy renderer. Logical-device creation still requires Vulkan 1.3 features; graphics pipelines still use `VkPipelineRenderingCreateInfo`, and render scopes still call dynamic-rendering commands. A traditional render-pass/framebuffer pipeline and its shader target are still required before AAG may advertise or select CompatibilityVulkan.
+- No build, rustfmt, check or tests were run. The changes are source-level only and must be compiled and exercised on Fedora before being considered verified.
