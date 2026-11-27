@@ -1591,3 +1591,13 @@ Capture-target and readback-buffer pools reject preparation/acquisition after lo
 ### Vulkan lifetime follow-up — 2026-11-27
 
 The asynchronous-submission and teardown/shutdown paths received another fail-stop pass. Partial creation rollback in pending-upload and frame-slot setup avoids Vulkan destruction after `ERROR_DEVICE_LOST`; frame-slot fence waits quarantine the slot and poison the shared logical-device state. Failed idle/fence fallback paths in pending-upload, readback-submission, command-buffer and frame-scheduler teardown now mark the device unusable before retaining uncertain resources. GitHub Actions status should be checked against the latest source commit; no Fedora build/test performed in this pass.
+
+
+### Handoff — DRM/KMS retirement guard — 2026-11-27
+
+Recent changes on `main`:
+- `VulkanDrmFramePool::retire_all` adds an explicit orderly retirement path.
+- `VulkanDrmFramePool::drop` leaks remaining frame pairs conservatively if KMS release cannot be proven.
+- Frame-slot and DRM-image construction now mark Vulkan device loss as fail-stop and avoid unsafe partial destruction after `ERROR_DEVICE_LOST`.
+
+Next: integrate `retire_all` into the DRM output owner's shutdown/hot-unplug path; inspect framebuffer lifecycle coordinator teardown; continue direct Vulkan destroy/free audit. Do not mark either async-submission or teardown path complete until static audit and validation finish. No build/test/CI success has been established.
