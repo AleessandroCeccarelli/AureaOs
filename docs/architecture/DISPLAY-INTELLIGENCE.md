@@ -319,3 +319,16 @@ request/acknowledgement path is still required to defer logical publication
 until VBlank and restore the previous logical configuration on failure. This
 integration has not been built or tested and has not been validated on physical
 hardware.
+
+
+## Abandoned render rollback (2026-11-27)
+
+Each managed DRM surface now retains the previous native mode for the lifetime
+of a staged change. If frame rendering fails before either presentation path
+has a KMS flip pending, the server explicitly aborts the staged change and
+restores the previous Smithay mode. It refuses this abort while a Vulkan or
+CPU page flip remains pending, because KMS may still own the submitted frame.
+A completed VBlank clears the retained previous mode and disarms the unused
+presentation backend. This closes the pre-submission render-abandonment gap;
+it does not yet defer the logical output registry/Wayland mode publication
+until physical VBlank, which remains the outstanding transaction boundary.
