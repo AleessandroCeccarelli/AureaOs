@@ -2380,3 +2380,12 @@ Le modifiche sono pubblicate su `main`, ma non sono ancora state compilate né p
 - La compatibilità resta **disabilitata per impostazione predefinita**. La nuova feature Cargo `legacy-vulkan-frame` implica DRM ma non è inclusa nelle feature predefinite. Senza attivarla, i dispositivi in modalità `CompatibilityPending` continuano a fallire in modo controllato.
 - Il percorso rapido per la scena vuota viene saltato in modalità legacy, così il clear usa il render pass tradizionale e non quello Vulkan 1.3.
 - Nessuna build, `cargo fmt`, `cargo check`, test, compilazione shader, CI o prova hardware è stata eseguita. Restano da verificare su Fedora la compilazione con `--features legacy-vulkan-frame`, i lifetime Rust e il comportamento Vulkan reale. Non abilitare la feature di default prima del superamento di queste verifiche.
+
+
+### Audit statico del renderer Vulkan legacy — 27 novembre 2026
+
+- Ricontrollati orchestratore dei frame, dispatch del compositor, registratore dei livelli, helper di clear/draw, display color, gestione dei render pass, script di compilazione shader e feature Cargo.
+- Verificato nel codice che tutti e sette gli artefatti shader di compatibilità richiesti da superfici, wallpaper, scia del cursore e display color siano dichiarati e compilati con target Vulkan 1.0. La compilazione passa dal ramo DRM di `build.rs`, attivato dalla feature opt-in `legacy-vulkan-frame`.
+- Ricontrollata la sequenza degli stati immagine: clear e livelli lasciano il target di composizione in GENERAL; il display color legge da GENERAL e lascia l'uscita in GENERAL; readback e rilascio KMS partono da GENERAL.
+- Ricontrollati i controlli sull'identità esatta dei render pass usati da pipeline e framebuffer.
+- È un audit del sorgente, non una prova di compilazione o di funzionamento GPU. Nessuna build, compilazione shader, formattazione, test, CI o verifica hardware è stata eseguita. Le verifiche su Fedora restano obbligatorie prima di abilitare la compatibilità per impostazione predefinita.
