@@ -1067,3 +1067,9 @@ Nessuna build Rust, build ISO o prova hardware è stata eseguita durante queste 
 - Verificata generazione cursori: usa moduli Python standard library, `rsvg-convert` e `xcursorgen`; i tool sono installati durante la build e rimossi dopo aver copiato i temi Xcursor nel rootfs.
 - BLOCCO ARCHITETTURALE DA NON NASCONDERE: `VulkanRenderingFeaturePlan::from_device` rifiuta GPU con API inferiore a Vulkan 1.3 e richiede `dynamicRendering` e `synchronization2`. Gli shader sono compilati per Vulkan 1.3. La compatibilità 1.0–1.4 discussa in precedenza non è attualmente implementata. Prima di promettere l'avvio sul portatile occorre controllare la versione API esposta dalla GPU fisica (non quella del loader) oppure progettare un percorso renderer compatibile con versioni inferiori.
 - Commit: `32ea575136aaf6a6d2b9a1efbed0c4f87b840b29`, `c9f76cec04d696c0af5e6980bbdd8ea0ba525a74`, `eeddc7a78717a91d3b0bf43fd223a6696bed14e8`.
+
+
+### Terza passata tecnica — 2026-11-27
+- Verificato il percorso di rendering di riserva: se la GPU associata al DRM non soddisfa i requisiti, AureaOS tenta un dispositivo Vulkan CPU (Lavapipe) e continua a presentare tramite GBM/KMS. La riserva richiede comunque Vulkan 1.3, quindi non risolve una mancanza di feature del dispositivo CPU; non va descritta come fallback universale.
+- La factory installa già `mesa-vulkan-drivers`, che in Debian Trixie amd64 fornisce anche `/usr/share/vulkan/icd.d/lvp_icd.json` e `/usr/lib/x86_64-linux-gnu/libvulkan_lvp.so`. Il validatore controllava RADV ma non il payload Lavapipe: ora estrae e verifica anche manifest, riferimento JSON e libreria del driver CPU. Evidenza: file list ufficiale Debian Trixie amd64.
+- La verifica riguarda la presenza dei componenti, non dimostra che Lavapipe riesca a creare il dispositivo o che il fallback sia selezionato correttamente sul portatile. Restano da provare runtime Vulkan e boot fisico.
