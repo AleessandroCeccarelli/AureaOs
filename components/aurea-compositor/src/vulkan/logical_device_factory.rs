@@ -108,6 +108,7 @@ impl VulkanLogicalDevice {
             physical_device: physical_device.handle(),
             supports_sync_fd,
             supports_foreign_queue_family,
+            device_unusable: AtomicBool::new(false),
         })
     }
 }
