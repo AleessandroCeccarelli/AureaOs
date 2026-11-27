@@ -111,6 +111,7 @@ pub(super) fn initialize_vulkan_backend(state: &mut WaylandState, node: DrmNode)
     update_hardware_rendering_metadata(state, node, &backend);
     state.vulkan_backends.insert(node, backend);
     state.gpu_manager.select_primary_by_policy();
+    refresh_dmabuf_feedback(state);
 }
 
 fn update_hardware_rendering_metadata(
