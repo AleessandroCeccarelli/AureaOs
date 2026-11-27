@@ -306,6 +306,29 @@ pub(super) fn record_legacy_frame_layers(
         return Err(VulkanSurfaceCompositionError::FrameResourceCountMismatch);
     }
 
+    // Check render-pass identity for every cached pipeline before recording the
+    // clear. Vulkan requires the framebuffer and graphics pipeline to reference
+    // compatible render passes; format equality alone is not sufficient here.
+    if !Arc::ptr_eq(layers.surface_pipeline.render_pass(), layers.load_render_pass) {
+        return Err(VulkanSurfaceCompositionError::Command(
+            "Legacy surface pipeline does not use the frame load render pass".to_owned(),
+        ));
+    }
+    if let Some(wallpaper) = layers.wallpaper.as_ref() {
+        if !Arc::ptr_eq(wallpaper.pipeline.render_pass(), wallpaper.render_pass) {
+            return Err(VulkanSurfaceCompositionError::Command(
+                "Legacy wallpaper pipeline and render pass do not match".to_owned(),
+            ));
+        }
+    }
+    if let Some(trail) = layers.cursor_trail.as_ref() {
+        if !Arc::ptr_eq(trail.pipeline.render_pass(), layers.load_render_pass) {
+            return Err(VulkanSurfaceCompositionError::Command(
+                "Legacy cursor-trail pipeline does not use the frame load render pass".to_owned(),
+            ));
+        }
+    }
+
     VulkanLegacyFrameRecorder::clear(
         command_buffer,
         layers.clear_render_pass,
