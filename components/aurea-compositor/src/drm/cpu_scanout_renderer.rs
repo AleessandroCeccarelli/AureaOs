@@ -132,11 +132,12 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
         let view = VulkanImageView::color(&image).map_err(|error| {
             VulkanCpuScanoutError(format!("Vulkan output image view failed: {error}"))
         })?;
-        let readback =
+        let mut readback = Some(
             VulkanReadbackBuffer::new(self.vulkan.device(), target.width(), target.height())
                 .map_err(|error| {
                     VulkanCpuScanoutError(format!("Vulkan readback allocation failed: {error}"))
-                })?;
+                })?,
+        );
 
         let display_pass = if self.warmth_percent > 0 {
             self.display_color
@@ -193,12 +194,12 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
             self.surface_cache,
             VulkanImageState::Undefined,
             effective_display,
-            &readback,
+            &mut readback,
         )
         .map_err(|error| {
             VulkanCpuScanoutError(format!("Vulkan scene composition failed: {error}"))
         })?;
-        let pixels = readback.read_rgba8().map_err(|error| {
+        let pixels = readback.as_ref().expect("successful composition retains its readback buffer").read_rgba8().map_err(|error| {
             VulkanCpuScanoutError(format!("Vulkan output readback failed: {error}"))
         })?;
 
