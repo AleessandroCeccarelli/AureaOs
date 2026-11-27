@@ -2540,3 +2540,5 @@ Reviewing the actual Live startup chain showed that `aurea-live-session` launche
 ## 2026-11-27 — Legacy Vulkan readback ownership
 
 Changed the CPU scanout readback handoff from a borrowed buffer reference to an owned `Option<VulkanReadbackBuffer>` slot borrowed mutably by the composition entry point. The legacy frame recorder now takes and intentionally retains the buffer if queue submission/completion is uncertain, preventing its destructor from freeing a staging buffer potentially still referenced by GPU work. The caller reads pixels only after successful composition. Static source inspection only; no build, rustfmt, unit tests, or GPU validation were run. Remaining audit: externally owned output/intermediate image resources on uncertain completion, followed by Fedora compilation and tests.
+
+Follow-up: applied the same uncertain-submission readback retention to the regular Vulkan scene-composition path in `surface_compositor.rs`, including its frame-scoped descriptor pool. Both regular and legacy submission paths now quarantine the staging allocation when completion cannot be established.
