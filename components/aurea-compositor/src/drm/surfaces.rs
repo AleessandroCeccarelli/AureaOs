@@ -29,6 +29,9 @@ mod initialize;
 pub enum DrmSurfaceManagerError {
     Discovery(String),
     MissingNativeConfiguration(OutputId),
+    UnsupportedMode { output_id: OutputId },
+    AmbiguousNativeMode { output_id: OutputId },
+    ModeChange { output_id: OutputId, message: String },
     ConnectorQuery {
         output_id: OutputId,
         message: String,
@@ -54,6 +57,9 @@ impl fmt::Display for DrmSurfaceManagerError {
                 f,
                 "DRM output {id} has no native connector/mode configuration"
             ),
+            Self::UnsupportedMode { output_id } => write!(f, "DRM output {output_id} does not support the requested logical mode"),
+            Self::AmbiguousNativeMode { output_id } => write!(f, "DRM output {output_id} has multiple native timings for the requested logical mode; selection is ambiguous"),
+            Self::ModeChange { output_id, message } => write!(f, "Failed to stage DRM mode for output {output_id}: {message}"),
             Self::ConnectorQuery { output_id, message } => write!(
                 f,
                 "Failed to query connector for output {output_id}: {message}"
@@ -84,6 +90,7 @@ impl Error for DrmSurfaceManagerError {}
 pub struct ManagedDrmSurface {
     output_id: OutputId,
     connector: connector::Handle,
+    native_modes: Vec<(crate::drm::output::DrmModeInfo, smithay::reexports::drm::control::Mode)>,
     surface: DrmSurface,
     presentation: DrmPresentationBackend,
     frame_pool: VulkanDrmFramePool,
@@ -101,6 +108,10 @@ impl ManagedDrmSurface {
     }
     pub fn crtc(&self) -> crtc::Handle {
         self.surface.crtc()
+    }
+    /// Returns the retained native DRM timings for this connector.
+    pub fn native_modes(&self) -> &[(crate::drm::output::DrmModeInfo, smithay::reexports::drm::control::Mode)] {
+        &self.native_modes
     }
     pub fn surface(&self) -> &DrmSurface {
         &self.surface
@@ -194,6 +205,60 @@ impl DrmSurfaceManager {
 
     pub fn get_mut(&mut self, output_id: OutputId) -> Option<&mut ManagedDrmSurface> {
         self.surfaces.get_mut(&output_id)
+    }
+
+    /// Stages a supported logical mode on the native KMS surface.
+    ///
+    /// The caller must render a framebuffer matching `mode` and submit it
+    /// through the normal presentation backend. That backend performs atomic
+    /// TEST_ONLY and commits the pending modeset with the new framebuffer.
+    /// The previous native mode is returned so the caller can explicitly
+    /// restore it if rendering or presentation is abandoned.
+    pub fn stage_mode(
+        &mut self,
+        output_id: OutputId,
+        mode: crate::output::OutputMode,
+    ) -> Result<smithay::reexports::drm::control::Mode, DrmSurfaceManagerError> {
+        let managed = self.surfaces.get_mut(&output_id).ok_or(
+            DrmSurfaceManagerError::UnsupportedMode { output_id }
+        )?;
+        let mut matches = managed.native_modes.iter().filter(|(info, _)| {
+            info.to_output_mode() == Some(mode)
+        });
+        let native = matches.next().map(|(_, native)| *native).ok_or(
+            DrmSurfaceManagerError::UnsupportedMode { output_id }
+        )?;
+        if matches.next().is_some() {
+            return Err(DrmSurfaceManagerError::AmbiguousNativeMode { output_id });
+        }
+        let previous = managed.surface.current_mode();
+        managed.surface.use_mode(native).map_err(|error| {
+            DrmSurfaceManagerError::ModeChange {
+                output_id,
+                message: error.to_string(),
+            }
+        })?;
+        Ok(previous)
+    }
+
+    /// Restores a previously active native mode after an abandoned change.
+    ///
+    /// Restoration is staged and takes effect only when the caller submits a
+    /// framebuffer through the normal TEST_ONLY/commit presentation path.
+    pub fn restore_mode(
+        &mut self,
+        output_id: OutputId,
+        previous: smithay::reexports::drm::control::Mode,
+    ) -> Result<(), DrmSurfaceManagerError> {
+        let managed = self.surfaces.get_mut(&output_id).ok_or(
+            DrmSurfaceManagerError::UnsupportedMode { output_id }
+        )?;
+        managed.surface.use_mode(previous).map_err(|error| {
+            DrmSurfaceManagerError::ModeChange {
+                output_id,
+                message: error.to_string(),
+            }
+        })
     }
 
     /// Completes the Vulkan acquire and retires a framebuffer released by KMS.
