@@ -320,6 +320,25 @@ impl DrmOutputFrameCoordinator {
         Ok(())
     }
 
+    /// Resolves the current KMS-owned frame after a successful output disable.
+    ///
+    /// This is deliberately separate from page-flip completion: the caller may
+    /// invoke it only after the DRM surface has confirmed that the CRTC is
+    /// disabled. Any unresolved atomic transaction prevents the transition.
+    pub fn output_disabled(&mut self) -> Result<Option<DrmFramebufferId>, DrmOutputFrameError> {
+        if self.presentation.has_pending_transaction() {
+            return Err(DrmOutputFrameError::Lifecycle(
+                DrmPresentationError::TransactionInProgress,
+            ));
+        }
+        let current = self.presentation.current();
+        if let Some(framebuffer) = current {
+            let resource = self.resource_for(framebuffer)?;
+            self.resources.mark_kms_released(resource)?;
+        }
+        self.presentation.output_disabled().map_err(Into::into)
+    }
+
     /// Returns the framebuffer currently scanned out by this output.
     pub fn current(&self) -> Option<DrmFramebufferId> {
         self.presentation.current()
