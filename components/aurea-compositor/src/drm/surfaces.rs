@@ -238,6 +238,8 @@ impl DrmSurfaceManager {
                 message: error.to_string(),
             }
         })?;
+        managed.presentation.arm_mode_rollback(previous);
+        managed.cpu_presentation.arm_mode_rollback(previous);
         Ok(previous)
     }
 
@@ -258,7 +260,10 @@ impl DrmSurfaceManager {
                 output_id,
                 message: error.to_string(),
             }
-        })
+        })?;
+        managed.presentation.cancel_mode_rollback();
+        managed.cpu_presentation.cancel_mode_rollback();
+        Ok(())
     }
 
     /// Completes the Vulkan acquire and retires a framebuffer released by KMS.
