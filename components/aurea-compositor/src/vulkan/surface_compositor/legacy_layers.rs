@@ -218,7 +218,7 @@ pub(super) struct LegacyCursorTrailLayer<'r, 'i, 'id, 'rd> {
 }
 
 /// All resources required to record the legacy scene layers for one frame.
-pub(super) struct LegacyFrameLayers<'r, 'i, 'id, 'rd> {
+pub(super) struct LegacyFrameLayers<'pass, 'view, 'image, 'pass_device, 'view_device, 'r, 'i, 'id, 'rd> {
     pub clear_target: &'r VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pub load_target: &'r VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pub clear_color: [f32; 4],
