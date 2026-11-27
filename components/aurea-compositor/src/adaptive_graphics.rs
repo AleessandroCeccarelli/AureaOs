@@ -42,7 +42,6 @@ impl GraphicsCapabilities {
             && self.synchronization2
             && self.has_graphics_queue
     }
-
 }
 
 /// A discovered GPU together with capabilities queried from its Vulkan device.
