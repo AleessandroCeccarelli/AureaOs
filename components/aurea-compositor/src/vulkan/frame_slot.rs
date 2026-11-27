@@ -38,7 +38,12 @@ impl VulkanFrameSlot {
         let completion_fence = match unsafe { device.handle().create_fence(&fence_info, None) } {
             Ok(fence) => fence,
             Err(error) => {
-                unsafe { device.handle().destroy_command_pool(command_pool, None) };
+                if device.is_unusable() || error == vk::Result::ERROR_DEVICE_LOST {
+                    device.mark_unusable();
+                    std::mem::forget(command_pool);
+                } else {
+                    unsafe { device.handle().destroy_command_pool(command_pool, None) };
+                }
                 return Err(error);
             }
         };
@@ -47,9 +52,15 @@ impl VulkanFrameSlot {
             match Self::create_sync_fd_semaphore(device) {
                 Ok(semaphore) => Some(semaphore),
                 Err(error) => {
-                    unsafe {
-                        device.handle().destroy_fence(completion_fence, None);
-                        device.handle().destroy_command_pool(command_pool, None);
+                    if device.is_unusable() || error == vk::Result::ERROR_DEVICE_LOST {
+                        device.mark_unusable();
+                        std::mem::forget(completion_fence);
+                        std::mem::forget(command_pool);
+                    } else {
+                        unsafe {
+                            device.handle().destroy_fence(completion_fence, None);
+                            device.handle().destroy_command_pool(command_pool, None);
+                        }
                     }
                     return Err(error);
                 }
@@ -87,10 +98,20 @@ impl VulkanFrameSlot {
             return Err(vk::Result::ERROR_INITIALIZATION_FAILED);
         }
 
-        unsafe {
+        let fence_wait = unsafe {
             device
                 .handle()
-                .wait_for_fences(&[self.completion_fence], true, u64::MAX)?;
+                .wait_for_fences(&[self.completion_fence], true, u64::MAX)
+        };
+        if let Err(error) = fence_wait {
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                device.mark_unusable();
+                self.quarantined = true;
+            }
+            return Err(error);
+        }
+
+        unsafe {
             // The fence proves the previous submission no longer uses these objects.
             self.retained_resources.clear();
             device
