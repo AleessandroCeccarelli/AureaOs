@@ -219,7 +219,21 @@ impl GbmCpuFramebufferPool {
             .ok_or(GbmCpuFramebufferPoolError::UnknownFramebuffer(id))
     }
 
-    impl Drop for GbmCpuFramebufferPool {
+    fn ensure_registered(&self, id: DrmFramebufferId) -> Result<(), GbmCpuFramebufferPoolError> {
+        self.buffers
+            .contains_key(&id)
+            .then_some(())
+            .ok_or(GbmCpuFramebufferPoolError::UnknownFramebuffer(id))
+    }
+
+    fn is_in_use(&self, id: DrmFramebufferId) -> bool {
+        self.lifecycle.current() == Some(id)
+            || self.lifecycle.pending_candidate() == Some(id)
+            || self.lifecycle.transaction_candidate() == Some(id)
+    }
+}
+
+impl Drop for GbmCpuFramebufferPool {
     fn drop(&mut self) {
         let has_kms_owned_buffers = self
             .buffers
@@ -232,19 +246,5 @@ impl GbmCpuFramebufferPool {
             // than closing GEM/GBM owners underneath an active scanout.
             std::mem::forget(std::mem::take(&mut self.buffers));
         }
-    }
-}
-
-fn ensure_registered(&self, id: DrmFramebufferId) -> Result<(), GbmCpuFramebufferPoolError> {
-        self.buffers
-            .contains_key(&id)
-            .then_some(())
-            .ok_or(GbmCpuFramebufferPoolError::UnknownFramebuffer(id))
-    }
-
-    fn is_in_use(&self, id: DrmFramebufferId) -> bool {
-        self.lifecycle.current() == Some(id)
-            || self.lifecycle.pending_candidate() == Some(id)
-            || self.lifecycle.transaction_candidate() == Some(id)
     }
 }
