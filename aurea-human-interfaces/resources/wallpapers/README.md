@@ -31,6 +31,6 @@ The artwork was generated as a contact sheet and individual panels were cropped 
 Future work: distinguish source and preview files, add thumbnail metadata, dark/light suitability, focal-point guidance for overlays, multi-display aspect ratios and per-image provenance. The collection does not imply that every image is a final default selection.
 
 
-## Runtime integration status — 23 November 2026
+## Runtime integration status — 27 November 2026
 
-The selected JPEG is now embedded by the compositor's wallpaper asset module and its JPEG frame header is validated before it is exposed through the desktop render snapshot. This is asset selection/transport only: JPEG pixel decoding, Vulkan texture upload and on-screen wallpaper rendering are still pending. The default selection remains provisional until validated on Fedora hardware.
+The official `aureaos-blue-flow.jpg` is embedded by the compositor, decoded through the bounded wallpaper worker and uploaded to the Vulkan texture cache. The Live ISO build stages the wallpaper source before compilation; the final-image validator checks that the compositor binary contains the selected default asset. Physical monitor presentation remains a hardware acceptance test.
