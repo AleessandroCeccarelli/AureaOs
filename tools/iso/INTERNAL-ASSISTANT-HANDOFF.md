@@ -1566,3 +1566,8 @@ Additional lifetime hardening: composition errors now preserve a distinct `Uncer
 ## 2026-11-27 — Shared resources and DRM scanout lifetime audit
 
 Reviewed SHM texture uploads: `VulkanPendingUpload` owns staging, image resources, fence, and command pool until completion; if both fence wait and `device_wait_idle` fail, its Drop path quarantines the owned resources. The surface cache retains uploaded textures through `Arc` while the synchronous composition submission is in progress. Found and fixed a missing lifetime in direct DRM scanout: transient output/intermediate image views were destroyed on uncertain completion even though the frame images remained in the DRM frame pool. `drm/scanout_renderer/presentation.rs` now quarantines both views on `UncertainSubmission`; their images remain frame-pool-owned. Commit: `7d43d580`. Static review only; no compilation or tests run.
+
+
+### Vulkan device fail-stop state — 2026-11-27
+
+`VulkanLogicalDevice` now owns an atomic `device_unusable` flag. An uncertain synchronous submission or an uncertain `queue_submit`/device-loss result permanently poisons the logical device. Queue submission checks the flag under the queue lock, preventing a concurrent submit race. New primary command-buffer allocation is rejected; freeing command buffers avoids touching a poisoned command pool. The factory initializes the flag. This deliberately prevents partial reuse after uncertain GPU state; full transactional device recreation remains out of scope. Changes are committed on `main` but have not been formatted, built, or tested.
