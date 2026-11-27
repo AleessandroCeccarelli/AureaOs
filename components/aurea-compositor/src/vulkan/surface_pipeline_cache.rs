@@ -93,6 +93,8 @@ impl VulkanSurfacePipelineCache {
         let wallpaper_decode_service = WallpaperDecodeService::new()
             .map_err(VulkanSurfacePipelineCacheError::WallpaperDecode)?;
 
+        let legacy_render_passes = VulkanLegacyRenderPassManager::new(Arc::clone(&device));
+
         Ok(Self {
             device,
             pipelines: HashMap::new(),
@@ -106,7 +108,7 @@ impl VulkanSurfacePipelineCache {
             context_menu_assets: HashMap::new(),
             wallpaper_decode_service,
             native_cursor_texture: VulkanNativeCursorTexture::new(),
-            legacy_render_passes: VulkanLegacyRenderPassManager::new(Arc::clone(&device)),
+            legacy_render_passes,
         })
     }
 
