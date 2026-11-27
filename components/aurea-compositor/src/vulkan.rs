@@ -47,6 +47,8 @@ mod image_allocator;
 mod image_transition;
 mod image_view;
 mod legacy_render_pass;
+#[cfg(feature = "drm")]
+mod legacy_frame_recorder;
 mod legacy_render_pass_manager;
 mod logical_device;
 mod logical_device_factory;
@@ -190,6 +192,8 @@ pub use wallpaper_texture::{VulkanWallpaperTexture, VulkanWallpaperTextureError}
 
 pub(super) use device_owner::VulkanDeviceOwner;
 pub(crate) use legacy_render_pass_manager::VulkanLegacyRenderPassManager;
+#[cfg(feature = "drm")]
+pub(crate) use legacy_frame_recorder::{VulkanLegacyFrameRecorder, VulkanLegacyFrameRecorderError};
 pub(super) use pending_upload::VulkanPendingUpload;
 pub(super) use queue_submitter::VulkanQueueSubmitter;
 pub(super) use upload_batch::VulkanUploadBatch;
