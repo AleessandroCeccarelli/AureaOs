@@ -2407,3 +2407,8 @@ Le modifiche sono pubblicate su `main`, ma non sono ancora state compilate né p
 - Gli errori di queue submission mantengono la classificazione fatale `DeviceLost` quando è coinvolto `ERROR_DEVICE_LOST`.
 - La submission sincrona continua a usare fence e fallback device-idle: solo una delle due attese riuscita prova il completamento e consente il normale rilascio delle risorse.
 - Nessuna build, rustfmt, cargo check, test o verifica GPU è stata eseguita. Resta da validare la compilazione e verificare anche il lifetime del buffer di readback esterno in caso di completion incerta prima di considerare chiuso questo audit.
+
+
+## 27 novembre 2026 — Proprietà del buffer Readback nel renderer legacy
+
+Il percorso `render_and_readback` ora riceve il buffer tramite `&mut Option<VulkanReadbackBuffer>` invece di un semplice riferimento. Il chiamante CPU mantiene il buffer posseduto nello slot e lo legge solo dopo il completamento riuscito della composizione. Nel renderer Vulkan legacy, se la submission o il completamento restano incerti, il buffer viene estratto dallo slot e intenzionalmente trattenuto (`mem::forget`), evitando che il suo `Drop` distrugga buffer e memoria ancora potenzialmente usati dalla GPU. Modifiche ai file `surface_compositor.rs`, `surface_compositor/legacy_frame.rs`, `surface_compositor/readback_entry.rs` e `drm/cpu_scanout_renderer.rs`. Verifica limitata a ispezione statica del sorgente: nessuna compilazione, rustfmt, test o prova GPU eseguiti. Rimane da verificare l'intero insieme delle risorse immagine esterne al frame in caso di completamento incerto e poi compilare su Fedora.
