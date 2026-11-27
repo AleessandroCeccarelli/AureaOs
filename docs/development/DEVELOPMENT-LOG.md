@@ -2591,3 +2591,12 @@ Reviewed SHM texture uploads: `VulkanPendingUpload` owns staging, image resource
 ### 2026-11-27 — Fail-stop propagation through teardown paths
 
 Continued the two-path audit (asynchronous submission and teardown/shutdown). Partial setup rollback in `VulkanPendingUpload::new` and `VulkanFrameSlot::new` now enters permanent fail-stop on `ERROR_DEVICE_LOST` and avoids destroying command pools/fences through a lost device. `VulkanFrameSlot::prepare` quarantines the slot and marks the logical device unusable when its completion-fence wait reports device loss. Failed completion fallbacks in `VulkanPendingUpload::drop`, `VulkanReadbackSubmission::drop`, `VulkanCommandBuffer::drop`, and `VulkanFrameScheduler::drop` now propagate terminal loss into the shared device state. GitHub Actions checks are being used where available; no local Fedora build/test has been run.
+
+
+### DRM/KMS resource retirement and Vulkan fail-stop — 2026-11-27
+
+- Added `VulkanDrmFramePool::retire_all` for orderly output shutdown. It verifies all pooled framebuffers are reusable before unregistering them and releasing framebuffer/image pairs.
+- The frame-pool `Drop` path now conservatively quarantines any remaining frames because it cannot prove KMS has stopped scanning them out.
+- Device-loss errors during frame-slot setup/preparation and DRM image allocation now propagate the permanent fail-stop state; partial rollback avoids Vulkan destruction calls after `ERROR_DEVICE_LOST`.
+- Remaining integration: call `retire_all` from the output owner after page-flip/hot-unplug resolution, then audit all output shutdown paths. The DRM/KMS lifecycle is not yet complete.
+- No local build/tests or successful CI run were verified in this session.
