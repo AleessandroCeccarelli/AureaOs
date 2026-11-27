@@ -1534,3 +1534,12 @@ Cautions:
 - Rechecked exact render-pass identity preflight for surface, wallpaper, cursor trail and display-color pipeline/framebuffer pairing.
 - This is a source inspection only. It does not prove that glslangValidator accepts the shaders, that Rust type/lifetime checking succeeds, or that the driver accepts the recorded command stream. No build, formatting, tests, CI or hardware validation was run.
 - Next verification remains the grouped Fedora session with `cargo fmt --all`, `cargo check -p aurea-compositor --features legacy-vulkan-frame`, targeted tests, then Vulkan 1.0–1.2 and Vulkan 1.3 runtime checks. Keep the feature opt-in until all pass.
+
+
+### Framebuffer lifetime correction in legacy renderer — 2026-11-27
+
+- A deeper Vulkan object-lifetime audit found that the original stateless recorder created a framebuffer, recorded commands against it, then destroyed it when the helper returned. This was unsafe: a framebuffer referenced by a recorded command buffer must remain alive until the command buffer has completed execution.
+- Corrected ownership: `render_frame_legacy` now creates and retains one clear target and one load target for the composition image, plus a display-color target when that pass is active. All layer and display-color recorder functions accept these pre-created targets instead of creating/destroying framebuffers internally.
+- The target objects remain in scope through the terminal `submit_and_wait_with` call for both KMS and readback. On an early recording error, the command buffer is dropped before the earlier-created targets, so no unsubmitted command buffer is subsequently submitted with a destroyed framebuffer.
+- Updated the legacy layer recorder to validate the exact render-pass object referenced by each pipeline against the retained target before recording.
+- This correction supersedes the earlier short-lived-framebuffer design. No build, rustfmt, cargo check, tests, CI or hardware validation was run; Rust lifetime/type correctness and Vulkan validation remain to be confirmed on Fedora.
