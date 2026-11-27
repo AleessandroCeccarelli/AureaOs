@@ -145,6 +145,7 @@ pub use frame_scheduler::{
 };
 pub use graphics_pipeline::{
     VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
+    VulkanLegacyGraphicsPipeline,
 };
 pub use image_allocator::{
     VulkanImage, VulkanImageAllocator, VulkanImageError, VulkanImageRequest,
