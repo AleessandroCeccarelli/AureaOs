@@ -302,6 +302,24 @@ mod tests {
     }
 
     #[test]
+    fn persisted_pointer_speed_is_clamped_to_the_supported_range() {
+        let path = test_path("speed-bounds");
+        let original = "format_version = 1\n[devices.physical-a]\npointer_speed_percent = 127\n[devices.physical-b]\npointer_speed_percent = -127\n";
+        fs::write(&path, original).unwrap();
+
+        let store = TouchpadProfileStore::with_path(path.clone());
+        assert_eq!(
+            store.get("physical-a").unwrap().pointer_speed_percent(),
+            100
+        );
+        assert_eq!(
+            store.get("physical-b").unwrap().pointer_speed_percent(),
+            -100
+        );
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
     fn malformed_profile_file_is_never_overwritten() {
         let path = test_path("malformed");
         let original = "this is not valid TOML = [";
