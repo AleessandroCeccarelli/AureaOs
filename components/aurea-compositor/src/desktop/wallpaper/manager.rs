@@ -60,7 +60,7 @@ mod tests {
         let manager = WallpaperManager::default();
         assert_eq!(
             manager.selected().map(|asset| asset.id()),
-            Some("aureaos-midnight-flow")
+            Some("aureaos-blue-flow")
         );
     }
 
