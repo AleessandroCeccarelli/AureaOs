@@ -45,8 +45,8 @@ if [[ "$MODE" == "--iso" ]]; then
     mkdir -p "$TEMP_DIR/live" "$TEMP_DIR/boot"
     xorriso -osirrox on -indev "$TARGET" \
         -extract /live "$TEMP_DIR/live" \
-        -extract /boot/efi.img "$TEMP_DIR/boot/efi.img" >/dev/null 2>&1 ||
-        fail "cannot extract the Live payload or EFI boot image"
+        -extract /boot "$TEMP_DIR/boot" >/dev/null 2>&1 || \
+        fail "cannot extract the Live payload or complete boot directory"
     ROOT="$TEMP_DIR"
     REPORT="$(xorriso -indev "$TARGET" -report_el_torito as_mkisofs 2>&1)" ||
         fail "cannot inspect the ISO El Torito boot catalog"
