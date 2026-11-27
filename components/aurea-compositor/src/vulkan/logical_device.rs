@@ -116,6 +116,9 @@ impl VulkanLogicalDevice {
             .command_pool_lock
             .lock()
             .map_err(|_| vk::Result::ERROR_UNKNOWN)?;
+        if self.is_unusable() {
+            return Err(vk::Result::ERROR_DEVICE_LOST);
+        }
         let allocation_info = vk::CommandBufferAllocateInfo::default()
             .command_pool(self.command_pool)
             .level(vk::CommandBufferLevel::PRIMARY)
@@ -126,6 +129,9 @@ impl VulkanLogicalDevice {
 
     /// Frees a command buffer allocated from this device's pool.
     pub(super) fn free_command_buffer(&self, command_buffer: vk::CommandBuffer) {
+        if self.is_unusable() {
+            return;
+        }
         // If synchronization state is poisoned, leaking this handle is safer
         // than making an unsynchronized Vulkan command-pool call.
         let Ok(_pool_guard) = self.command_pool_lock.lock() else {
