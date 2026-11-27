@@ -255,6 +255,11 @@ impl VulkanLegacyFrameRecorder {
         push_constants: &[u8],
         push_constant_stages: vk::ShaderStageFlags,
     ) -> Result<(), VulkanLegacyFrameRecorderError> {
+        // A framebuffer created from a merely equivalent render pass is not
+        // sufficient: it must reference the exact pass retained by the pipeline.
+        if !Arc::ptr_eq(render_pass, pipeline.render_pass()) {
+            return Err(VulkanLegacyFrameRecorderError::RenderPassMismatch);
+        }
         let target = render_pass
             .create_target(view)
             .map_err(VulkanLegacyFrameRecorderError::RenderPass)?;
@@ -287,6 +292,7 @@ pub(crate) enum VulkanLegacyFrameRecorderError {
     DisplayColor(VulkanDisplayColorPassError),
     Transition(super::VulkanImageTransitionError),
     DeviceMismatch,
+    RenderPassMismatch,
     Command(String),
 }
 
@@ -299,6 +305,7 @@ impl std::fmt::Display for VulkanLegacyFrameRecorderError {
             Self::DisplayColor(error) => write!(formatter, "Legacy frame display color: {error}"),
             Self::Transition(error) => write!(formatter, "Legacy frame output release: {error}"),
             Self::DeviceMismatch => formatter.write_str("Legacy frame output belongs to a different Vulkan device"),
+            Self::RenderPassMismatch => formatter.write_str("Legacy frame pipeline and framebuffer use different render-pass instances"),
             Self::Command(error) => write!(formatter, "Legacy frame command submission: {error}"),
         }
     }
