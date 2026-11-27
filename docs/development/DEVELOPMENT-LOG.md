@@ -2710,3 +2710,12 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - Moved the refresh to the end of the confirmed device-removal path, after DRM/udev bookkeeping and primary-GPU reselection. The next refresh now resolves the surviving primary renderer, if one exists.
 - This fixes the confirmed-removal path only. The separate rollback path for a device whose integration fails, and the no-renderer/session-paused feedback policy, remain under review.
 - No build, formatting, tests, CI or hardware validation was run.
+
+
+### 2026-11-27 — DMA-BUF output membership and rollback ordering
+
+- Extended surface/output reconciliation to include validated DMA-BUF snapshots, not only SHM snapshots. DMA-BUF surfaces now calculate logical bounds from their own dimensions, committed buffer scale and transform, then receive the same output enter/leave membership and preferred fractional-scale updates.
+- Kept SHM and DMA-BUF acquisition separate: the change does not import a buffer or claim that the active renderer can sample it. It only reconciles Wayland surface geometry against enabled outputs.
+- Corrected feedback refresh ordering in failed DRM integration rollback: remove the failed Vulkan backend and DRM device before reconciling the active renderer set.
+- Remaining block work: define a safe feedback state for the no-renderer/session-paused case, and complete surface-specific feedback only where a reliable output-to-render-device mapping exists. Multi-GPU surfaces spanning outputs must not receive arbitrary device preferences.
+- No build, formatting, tests, CI or hardware validation was run, as requested until the video block is complete.
