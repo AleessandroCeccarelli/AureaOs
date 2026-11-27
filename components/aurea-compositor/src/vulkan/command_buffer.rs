@@ -135,6 +135,43 @@ impl<'device> VulkanCommandBuffer<'device> {
             .map_err(VulkanQueueSubmitError::result)
     }
 
+    /// Submits after waiting for external producer-fence semaphores.
+    pub(crate) fn submit_and_wait_with_semaphores(
+        &mut self,
+        wait_semaphores: &[vk::Semaphore],
+        on_submitted: impl FnOnce(),
+    ) -> Result<(), VulkanQueueSubmitError> {
+        if self.state != CommandBufferState::Executable {
+            return Err(VulkanQueueSubmitError::Rejected(
+                vk::Result::ERROR_VALIDATION_FAILED_EXT,
+            ));
+        }
+
+        self.state = CommandBufferState::Pending;
+        match self.device.submit_and_wait_with_semaphores(
+            self.handle,
+            wait_semaphores,
+            on_submitted,
+        ) {
+            Ok(()) => {
+                self.state = if self.one_time_submit {
+                    CommandBufferState::Invalid
+                } else {
+                    CommandBufferState::Executable
+                };
+                Ok(())
+            }
+            Err(error @ VulkanQueueSubmitError::Rejected(_)) => {
+                self.state = CommandBufferState::Executable;
+                Err(error)
+            }
+            Err(
+                error @ (VulkanQueueSubmitError::SubmissionUncertain(_)
+                | VulkanQueueSubmitError::CompletionUncertain { .. }),
+            ) => Err(error),
+        }
+    }
+
     /// Calls the lifecycle hook after acceptance or when device loss makes acceptance uncertain.
     pub(crate) fn submit_and_wait_with(
         &mut self,
