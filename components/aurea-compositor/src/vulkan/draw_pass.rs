@@ -26,6 +26,7 @@ pub enum VulkanDrawPassError {
     InvalidViewport,
     InvalidScissor,
     InvalidPushConstants,
+    IncompatibleRenderPassLoad,
 }
 
 impl fmt::Display for VulkanDrawPassError {
@@ -52,6 +53,9 @@ impl fmt::Display for VulkanDrawPassError {
             }
             Self::InvalidPushConstants => formatter.write_str(
                 "Vulkan push constants must be non-empty, four-byte aligned, and at most 128 bytes",
+            ),
+            Self::IncompatibleRenderPassLoad => formatter.write_str(
+                "The legacy draw recorder requires a clear-enabled render pass",
             ),
         }
     }
@@ -105,6 +109,9 @@ impl VulkanDrawPass {
             final_state,
             VulkanColorLoad::Clear(clear_color),
         )?;
+        if target.render_pass_ref().load_op() != vk::AttachmentLoadOp::CLEAR {
+            return Err(VulkanDrawPassError::IncompatibleRenderPassLoad);
+        }
         let view = target.view();
         if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
             return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
