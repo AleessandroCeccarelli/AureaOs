@@ -102,6 +102,8 @@ pub struct AureaCompositor {
     dmabuf_global: Option<DmabufGlobal>,
     #[cfg(feature = "drm")]
     dmabuf_devices: Vec<std::sync::Arc<crate::vulkan::VulkanLogicalDevice>>,
+    #[cfg(feature = "drm")]
+    dmabuf_buffer_uses: crate::render::surface_tree::DmabufBufferUseRegistry,
     xdg_shell_state: XdgShellState,
     _fractional_scale_manager_state:
         smithay::wayland::fractional_scale::FractionalScaleManagerState,
@@ -199,6 +201,8 @@ impl AureaCompositor {
             dmabuf_global: None,
             #[cfg(feature = "drm")]
             dmabuf_devices: Vec::new(),
+            #[cfg(feature = "drm")]
+            dmabuf_buffer_uses: crate::render::surface_tree::DmabufBufferUseRegistry::default(),
             xdg_shell_state,
             _fractional_scale_manager_state: fractional_scale_manager_state,
             seat_state,
@@ -252,6 +256,25 @@ impl AureaCompositor {
     #[cfg(feature = "drm")]
     pub(crate) fn wayland_dmabuf_state(&mut self) -> &mut DmabufState {
         &mut self.dmabuf_state
+    }
+
+    /// Updates per-surface DMA-BUF ownership without prematurely releasing a buffer
+    /// that is still attached to another Wayland surface.
+    #[cfg(feature = "drm")]
+    pub(crate) fn update_dmabuf_buffer_lifecycle(&mut self, root: &WlSurface) {
+        crate::render::surface_tree::update_surface_tree_dmabuf_buffer_lifecycle(
+            root,
+            &mut self.dmabuf_buffer_uses,
+        );
+    }
+
+    /// Forgets registry ownership after the client destroys its wl_buffer resource.
+    #[cfg(feature = "drm")]
+    pub(crate) fn dmabuf_buffer_destroyed(
+        &mut self,
+        buffer: &smithay::reexports::wayland_server::protocol::wl_buffer::WlBuffer,
+    ) {
+        self.dmabuf_buffer_uses.buffer_destroyed(buffer);
     }
 
     /// Returns the devices against which advertised DMA-BUF imports are validated.
