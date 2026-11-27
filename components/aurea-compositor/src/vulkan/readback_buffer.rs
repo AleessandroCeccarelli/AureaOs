@@ -70,7 +70,12 @@ impl<'device> VulkanReadbackBuffer<'device> {
             .usage(vk::BufferUsageFlags::TRANSFER_DST)
             .sharing_mode(vk::SharingMode::EXCLUSIVE);
         let buffer = unsafe { raw_device.handle().create_buffer(&create_info, None) }
-            .map_err(VulkanReadbackError::BufferCreation)?;
+            .map_err(|error| {
+                if error == vk::Result::ERROR_DEVICE_LOST {
+                    raw_device.mark_unusable();
+                }
+                VulkanReadbackError::BufferCreation(error)
+            })?;
         let requirements = unsafe { raw_device.handle().get_buffer_memory_requirements(buffer) };
         let allocation_size = match usize::try_from(requirements.size) {
             Ok(size) => size,
@@ -108,14 +113,22 @@ impl<'device> VulkanReadbackBuffer<'device> {
         let memory = match unsafe { raw_device.handle().allocate_memory(&allocate_info, None) } {
             Ok(memory) => memory,
             Err(error) => {
-                unsafe { raw_device.handle().destroy_buffer(buffer, None) };
+                if error == vk::Result::ERROR_DEVICE_LOST {
+                    raw_device.mark_unusable();
+                } else {
+                    unsafe { raw_device.handle().destroy_buffer(buffer, None) };
+                }
                 return Err(VulkanReadbackError::MemoryAllocation(error));
             }
         };
         if let Err(error) = unsafe { raw_device.handle().bind_buffer_memory(buffer, memory, 0) } {
-            unsafe {
-                raw_device.handle().free_memory(memory, None);
-                raw_device.handle().destroy_buffer(buffer, None);
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                raw_device.mark_unusable();
+            } else {
+                unsafe {
+                    raw_device.handle().free_memory(memory, None);
+                    raw_device.handle().destroy_buffer(buffer, None);
+                }
             }
             return Err(VulkanReadbackError::MemoryBinding(error));
         }
