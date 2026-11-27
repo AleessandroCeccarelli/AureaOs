@@ -887,3 +887,12 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - Batched texture upload, single texture upload and readback staging barriers now use the same legacy command. These resource-transfer operations are shared by both renderer paths and no longer require Synchronization2.
 - This is compatibility groundwork, not a completed legacy renderer. Logical-device creation still requires Vulkan 1.3 features; graphics pipelines still use `VkPipelineRenderingCreateInfo`, and render scopes still call dynamic-rendering commands. A traditional render-pass/framebuffer pipeline and its shader target are still required before AAG may advertise or select CompatibilityVulkan.
 - No build, rustfmt, check or tests were run. The changes are source-level only and must be compiled and exercised on Fedora before being considered verified.
+
+
+### Vulkan async submission e teardown DRM/KMS — 27 novembre 2026
+
+- Il coordinatore DRM espone ora una transizione esplicita di output disabilitato. Può rilasciare il framebuffer corrente soltanto dopo il successo di `DrmSurface::clear()`; se esiste una transazione TEST/READY/PENDING non risolta, la transizione viene rifiutata e l'output resta trattenuto.
+- Dopo la conferma del disable, il frame precedentemente corrente viene marcato come rilasciato da KMS e il pool esegue l'acquire Vulkan dalla foreign queue con submit e attesa sincrona. Solo dopo il completamento dell'acquire `retire_all()` può unregisterare e distruggere tutte le coppie framebuffer/immagine.
+- Restano intenzionalmente in quarantena le risorse per cui il clear KMS fallisce, una transazione atomica è ancora irrisolta, oppure l'acquire Vulkan non termina con certezza. Non vengono indeboliti i controlli di disponibilità del registry.
+- Aggiunti test del lifecycle puro per disable confermato, transazione irrisolta e disable senza framebuffer corrente. Questi test sono stati aggiunti al repository ma non ancora eseguiti.
+- Stato verifica: nessuna build, rustfmt, cargo check o suite test eseguiti in questa sessione; non è disponibile una run CI associata ai commit verificati finora. Il percorso async e quello di teardown restano sotto audit, non dichiarati conclusi.
