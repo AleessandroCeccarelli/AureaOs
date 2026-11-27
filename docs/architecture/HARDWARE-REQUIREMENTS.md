@@ -2,7 +2,7 @@
 
 # AureaOS Roma 1.0 — Hardware Requirements and Graphics Support Policy
 
-This document defines the supported hardware floor for the first AureaOS desktop release. It is a capability policy, not a vendor/model whitelist. The minimum profile targets a polished 1080p/60 Hz desktop session with a browser, video playback, wallpaper, pointer, and standard desktop effects. Higher resolutions, refresh rates, multiple displays, and heavier effects require correspondingly stronger hardware.
+This document defines the supported hardware floor for the first AureaOS desktop release. It is a capability policy, not a vendor/model whitelist. Display support and performance certification are defined in tiers: 1280×720 at 60 Hz is the minimum display-compatibility floor; 1366×768 at 60 Hz is the low-end laptop reference profile; and 1920×1080 or 1920×1200 at 60 Hz is the standard desktop/laptop profile. Higher resolutions, refresh rates, multiple displays, and heavier effects require correspondingly stronger hardware.
 
 ## Minimum installation and runtime floor
 
@@ -34,9 +34,15 @@ The Intel Vulkan 1.3 conformant-product records include UHD 620/630-class and Ir
 
 ## Visual quality and performance tiers
 
-- **Baseline supported experience:** 1920×1080 at 60 Hz, one display, desktop composition, wallpaper, cursor, ordinary transitions, browser UI and video playback when the selected codec is supported by the platform media stack.
+Resolution is a display mode, not a proxy for overall hardware capability. Certification must account for GPU rendering throughput, memory bandwidth, CPU scheduling, video decode support, output refresh rate, and compositor frame times. The same visual-correctness and accessibility requirements apply at every tier.
+
+- **Minimum display compatibility:** 1280×720 at 60 Hz, one display. The system must detect and use a valid mode, render the desktop correctly, and keep the interface legible. This is a compatibility floor, not the primary performance-certification target.
+- **Low-end laptop reference:** 1366×768 at 60 Hz, one display. This is the primary low-end laptop certification profile for wallpaper, pointer, desktop composition, ordinary transitions, browser UI, and supported video playback.
+- **Standard desktop/laptop profile:** 1920×1080 or 1920×1200 at 60 Hz, one display. Both 16:9 and 16:10 modes must be tested; this tier is not a minimum requirement for every laptop.
+- **Advanced profile:** 2560×1440, 2560×1600, 4K, refresh rates above 60 Hz, and/or multiple displays. Each combination requires separate performance and presentation validation.
 - **Recommended everyday configuration:** 16 GiB RAM, 4–8 modern CPU cores, and a GPU with at least 4 GiB dedicated VRAM where applicable. Integrated GPUs use shared system memory and must be evaluated by measured capability.
-- **High-resolution / high-refresh / multi-display:** require a stronger GPU and memory bandwidth. The compositor must measure output mode, render cost, and presentation timing rather than promise 4K/high-refresh on the minimum tier.
+
+The compositor must measure output mode, render cost, and presentation timing rather than promise high-resolution or high-refresh performance on the minimum tier. Lower output resolutions reduce pixel workload, but do not compensate for missing Vulkan features, inadequate drivers, or an unsupported DRM/KMS presentation path.
 
 AureaOS must preserve visual correctness across tiers. Adaptive policy may reduce expensive optional workload (for example, blur radius, animation complexity, or frame rate under sustained pressure) to maintain responsiveness, but must not silently substitute a broken or visibly degraded rendering path. The user-facing effects policy and its thresholds must be explicitly designed and tested.
 
@@ -84,6 +90,8 @@ These are deliberate product-support boundaries for Roma 1.0. They are not claim
 - [ ] Hybrid-laptop display/render routing matrix.
 - [ ] Cross-GPU DMA-BUF import and synchronization.
 - [ ] Physical atomic KMS scanout tests.
-- [ ] Frame-time and visual-quality certification at 1080p/60 Hz on minimum-tier hardware.
+- [ ] Frame-time and visual-quality certification at 1366×768/60 Hz on low-end laptop reference hardware.
+- [ ] Standard-profile certification at 1920×1080 and 1920×1200/60 Hz.
+- [ ] Minimum display-compatibility test at 1280×720/60 Hz.
 
 The installer preflight is not full hardware certification. Actual support claims require representative physical systems from each GPU family, current supported Linux drivers, and both integrated and discrete/hybrid configurations.
