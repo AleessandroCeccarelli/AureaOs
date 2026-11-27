@@ -28,6 +28,8 @@ mod dmabuf_layout;
 mod dmabuf_import_support;
 #[cfg(feature = "drm")]
 mod dmabuf_image;
+#[cfg(feature = "drm")]
+mod dmabuf_sync_file;
 mod draw_pass;
 #[cfg(feature = "drm")]
 mod drm_compatibility;
