@@ -79,6 +79,7 @@ impl<'device> VulkanTextureDescriptorSetLayout<'device> {
 
 impl Drop for VulkanTextureDescriptorSetLayout<'_> {
     fn drop(&mut self) {
+        if self.device.device().is_unusable() { return; }
         unsafe {
             self.device
                 .device()
