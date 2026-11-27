@@ -1401,3 +1401,10 @@ Cautions:
 - All three delegate to the existing validated traditional-render-pass textured recorder, preserve the established load operation, use descriptor set zero, and create/destroy a frame-scoped framebuffer for each draw.
 - These helpers make the shader push-constant ABI explicit at the layer boundary. They do not yet replace calls in the active compositor or provide frame submission/presentation orchestration.
 - No build, test, rustfmt, shader compilation, CI, or ISO build was run. Byte layouts and Rust lifetimes remain unverified until the grouped Fedora validation.
+
+## Legacy frame resource preparation boundary — 2026-11-27
+
+- `8bb566c` added `prepare_shared_legacy_frame_resources` to the DRM surface cache. It materializes the clear/load render passes, prepares the selected surface/wallpaper/cursor-trail pipelines, and optionally creates the shared display-color pass before frame recording.
+- `03f218b` preserves the original display-color initialization error through a dedicated cache error variant rather than collapsing it into a generic Vulkan pipeline error.
+- This is resource preparation only. It does not yet dispatch `surface_compositor::render_frame` through the legacy recorder. The active compositor remains on the dynamic-rendering path; do not enable compatibility mode yet.
+- No build, tests, rustfmt, shader compilation, CI, or ISO build were run.
