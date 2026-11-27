@@ -86,6 +86,8 @@ unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
     fail "AureaOS desktop executable is missing or not executable in the Live rootfs"
 [[ -x "$ROOTFS/usr/local/bin/aurea-live-session" ]] ||
     fail "AureaOS Live session launcher is missing or not executable"
+grep -aFq "aureaos-blue-flow" "$ROOTFS/usr/local/bin/aurea-desktop" ||
+    fail "AureaOS compositor binary does not contain the selected blue-flow default wallpaper"
 [[ -s "$ROOTFS/usr/lib/os-release" && -s "$ROOTFS/etc/os-release" ]] ||
     fail "Debian os-release metadata or its /etc/os-release link target is missing from the Live rootfs"
 grep -Fxq 'ID=debian' "$ROOTFS/etc/os-release" ||
