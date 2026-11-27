@@ -154,6 +154,12 @@ pub fn discover_connected_outputs(
             })
             .collect::<Vec<_>>();
 
+        let native_modes = modes
+            .iter()
+            .copied()
+            .zip(drm_modes.iter().copied())
+            .collect();
+
         let preferred_index = drm_modes
             .iter()
             .position(|mode| mode.mode_type().contains(ModeTypeFlags::PREFERRED))
@@ -191,6 +197,7 @@ pub fn discover_connected_outputs(
         descriptors.push(
             DrmOutputDescriptor::new(output_id, name, modes, current_mode, 1)
                 .with_drm_configuration(*connector_handle, drm_modes[preferred_index])
+                .with_native_modes(native_modes)
                 .with_edid(edid)
                 .with_physical_identity(physical_identity),
         );
