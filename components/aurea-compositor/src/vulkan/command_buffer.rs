@@ -58,11 +58,16 @@ impl<'device> VulkanCommandBuffer<'device> {
 
         let begin_info = vk::CommandBufferBeginInfo::default().flags(usage);
 
-        unsafe {
+        if let Err(error) = unsafe {
             self.device
                 .handle()
-                .begin_command_buffer(self.handle, &begin_info)?
-        };
+                .begin_command_buffer(self.handle, &begin_info)
+        } {
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                self.device.mark_unusable();
+            }
+            return Err(error);
+        }
 
         self.one_time_submit = usage.contains(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
 
@@ -79,7 +84,12 @@ impl<'device> VulkanCommandBuffer<'device> {
             return Err(vk::Result::ERROR_VALIDATION_FAILED_EXT);
         }
 
-        unsafe { self.device.handle().end_command_buffer(self.handle)? };
+        if let Err(error) = unsafe { self.device.handle().end_command_buffer(self.handle) } {
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                self.device.mark_unusable();
+            }
+            return Err(error);
+        }
 
         self.state = CommandBufferState::Executable;
 
@@ -99,11 +109,16 @@ impl<'device> VulkanCommandBuffer<'device> {
             | CommandBufferState::Invalid => {}
         }
 
-        unsafe {
+        if let Err(error) = unsafe {
             self.device
                 .handle()
-                .reset_command_buffer(self.handle, flags)?
-        };
+                .reset_command_buffer(self.handle, flags)
+        } {
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                self.device.mark_unusable();
+            }
+            return Err(error);
+        }
 
         self.state = CommandBufferState::Initial;
         self.one_time_submit = false;
