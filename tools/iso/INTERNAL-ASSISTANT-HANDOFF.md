@@ -1372,3 +1372,14 @@ Cautions:
 - The current render-pass manager has clear/load/discard render passes; the shared pipeline cache has load-keyed surface, wallpaper, and cursor-trail pipelines. The display-color legacy pass has a separate cache. There is not yet a frame-level legacy recorder that owns the frame command buffer, creates each transient framebuffer target, records every layer in order, and submits/releases the output.
 - Do not add a runtime selector yet. The logical-device creation path and some synchronization/presentation pieces still assume Vulkan 1.3 or modern feature setup. The safe next implementation unit is a dedicated legacy frame recorder with explicit frame-scoped targets and bindings, followed by routing both scanout backends through a shared renderer strategy only after the full layer sequence is covered.
 - No source change to active rendering was made during this audit. No build, test, rustfmt, shader compile, CI, or ISO validation was run.
+
+
+## Frame-scoped legacy recorder foundation — 2026-11-27
+
+- Added `vulkan/legacy_frame_recorder.rs` (DRM-gated) with stateless frame-scoped helpers for traditional-render-pass clear and textured-region recording.
+- Each helper creates its framebuffer from the persistent cached render pass and the current image view, records the operation, then drops the framebuffer before returning. It never caches framebuffers or retains frame resources.
+- The textured helper delegates to the shared legacy draw recorder, preserving validation for source binding identity, aliasing, device identity, load operation, viewport/scissor bounds, image transitions, and render-pass compatibility.
+- Decoupled the device lifetime of `VulkanLegacyRenderPass` from the device-borrow lifetime of `VulkanImageView` in `VulkanLegacyRenderTarget`. A cached shared render pass can now safely create a transient framebuffer around an image view borrowing the active logical device; both Vulkan handles are checked for device identity before framebuffer creation.
+- Updated clear, draw, and display-color APIs to accept the target's expanded lifetime type.
+- This is the reusable recording foundation only. The active `surface_compositor::render_frame` has NOT yet been switched to it; wallpaper, surfaces, menu, cursors, display color, submission, and release still require full legacy-path orchestration.
+- No build, test, rustfmt, shader compile, CI, or hardware validation was run. Compilation remains unverified.
