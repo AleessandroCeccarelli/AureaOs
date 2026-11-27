@@ -114,7 +114,7 @@ impl VulkanReadbackSubmission {
         };
 
         if let Err(error) = device.submit_async(command_buffer, fence) {
-            if error.is_uncertain() {
+            if error.is_uncertain() || device.is_unusable() {
                 // Queue acceptance is uncertain. Quarantine the complete
                 // resource set, including the capture target and device owner.
                 std::mem::forget(view);
