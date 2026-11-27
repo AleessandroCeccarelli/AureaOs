@@ -1282,3 +1282,15 @@ Limiti ancora aperti:
 - This is not yet connected to frame orchestration or the existing display-color manager, which still owns modern dynamic passes. The legacy render-pass lifetime/cache strategy and actual source/target image lifecycle must be integrated before the backend can be selected.
 - No build, rustfmt, cargo check, tests, shader compilation, CI, ISO build or hardware validation was run. The implementation is source-level only; compile correctness and Vulkan behavior remain unverified until the grouped Fedora verification.
 - Next: audit the frame orchestration and display-color manager interfaces, then introduce an explicit per-backend render-resource owner so the legacy render pass, pipeline, framebuffer targets and sampled bindings share a safe lifetime without self-referential caches. Keep AAG compatibility disabled and keep the logical-device Vulkan 1.3 gate unchanged.
+
+
+## 2026-11-27 — Shared lifetime foundation for legacy render resources
+
+- Added `VulkanLegacyRenderPass::new_shared(Arc<VulkanLogicalDevice>, format, load)`, returning a render pass with a retained shared device owner and a `'static` Rust lifetime.
+- Refactored borrowed and shared constructors through one internal creation path; render-pass attachment format, load operation, subpass, dependencies and destruction behavior remain common.
+- This is groundwork for a renderer resource owner that can cache render passes independently from a temporary borrow of the Vulkan logical device. It does not yet solve the pipeline's render-pass borrow: `VulkanLegacyGraphicsPipeline` still borrows a render pass, and framebuffer targets still borrow both render pass and image view.
+- Additional display-color hardening: legacy pass now checks the same optimal-tiling format features as the modern pass (color attachment, sampled image, linear filtering) and reports missing target color-attachment usage distinctly. Commit `c83dcc6c`.
+- Shared render-pass commit: `8264360d`.
+- The display-color pass remains unintegrated with `VulkanDisplayColorManager` and `render_frame`; no compatibility renderer is advertised or enabled.
+- No build, rustfmt, cargo check, tests, shader compilation, CI, ISO build or hardware validation was run. Changes remain source-level and unverified.
+- Next: make the legacy graphics-pipeline wrapper own a shared render-pass reference (rather than a borrowed reference) and add shared descriptor-layout/sampler ownership for the display-color pass. Then build a per-format legacy resource manager and frame-scoped framebuffer targets. Only after that should a separate legacy frame-recording path be introduced.
