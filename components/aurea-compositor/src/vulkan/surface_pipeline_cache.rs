@@ -48,6 +48,8 @@ pub(crate) enum VulkanSurfacePipelineCacheError {
     Shader(VulkanShaderError),
     Pipeline(VulkanGraphicsPipelineError),
     LegacyRenderPass(VulkanLegacyRenderPassError),
+    #[cfg(feature = "drm")]
+    DisplayColor(VulkanDisplayColorPassError),
     WallpaperDecode(WallpaperDecodeServiceError),
     NativeCursor(super::VulkanNativeCursorTextureError),
 }
@@ -62,6 +64,8 @@ impl fmt::Display for VulkanSurfacePipelineCacheError {
             Self::Shader(error) => write!(formatter, "Surface shader: {error}"),
             Self::Pipeline(error) => write!(formatter, "Surface pipeline: {error}"),
             Self::LegacyRenderPass(error) => write!(formatter, "Legacy surface render pass: {error}"),
+            #[cfg(feature = "drm")]
+            Self::DisplayColor(error) => write!(formatter, "Legacy display-color pass: {error}"),
             Self::WallpaperDecode(error) => write!(formatter, "Wallpaper decode service: {error}"),
             Self::NativeCursor(error) => write!(formatter, "Native cursor texture: {error}"),
         }
@@ -492,14 +496,7 @@ impl VulkanSurfacePipelineCache {
         if display_color {
             self.legacy_display_color_pass(format)
                 .map(Some)
-                .map_err(|error| {
-                    VulkanSurfacePipelineCacheError::Pipeline(
-                        VulkanGraphicsPipelineError::Creation(
-                            // Preserve the original diagnostic without inventing a Vulkan result.
-                            smithay::reexports::ash::vk::Result::ERROR_UNKNOWN,
-                        ),
-                    )
-                })
+                .map_err(VulkanSurfacePipelineCacheError::DisplayColor)
         } else {
             Ok(None)
         }
