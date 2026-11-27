@@ -2490,3 +2490,14 @@ The same readiness pass corrected rustfmt failures introduced by the touchscreen
 ## 2026-11-27 — Minimal Live presentation: wallpaper and pointer only
 
 Reviewing the actual Live startup chain showed that `aurea-live-session` launches the normal desktop executable, whose composition factory also starts the `Aurea Welcome` Wayland client. That client creates a 720×440 XDG toplevel and would cover part of the wallpaper, contrary to the agreed first-boot target. Added the explicit `AUREAOS_LIVE_MINIMAL=1` service environment flag; the desktop factory now skips only the Welcome client when that flag is set. Normal development sessions keep their existing Welcome behavior. The ISO validator now requires this flag in the installed service, and the Saturday acceptance test explicitly excludes Welcome, icons, dock, launcher, menus and settings. Target remains one monitor, default wallpaper and visible moving physical mouse only. These latest source changes have not yet been built or run; CI and physical validation are pending.
+
+
+### 27 November 2026 — Blue-flow Live boot wiring
+
+- Selected `aureaos-blue-flow.jpg` as the official AureaOS 1.0 Roma default wallpaper (verified JPEG SOF dimensions: 3840 × 2160).
+- Switched the compositor's embedded default asset and updated wallpaper manager, desktop manager and JPEG tests.
+- Removed the obsolete `aureaos-midnight-flow.jpg` test asset after replacing runtime, test, documentation and CI references.
+- Fixed the Live ISO source archive: it now includes `aurea-human-interfaces/resources/wallpapers`, which is required by the compositor's compile-time `include_bytes!`.
+- Added a pre-build JPEG signature/dimension guard and a final SquashFS check that the installed compositor binary contains the selected wallpaper identifier.
+- Retained the minimal Live session: no Welcome client; only wallpaper and the native pointer are expected on screen. The hook builds and installs both Xcursor themes, and image validation checks all 52 canonical cursor files.
+- GitHub Rust CI for the latest code-bearing ISO-script commit is queued/pending. No ISO has been built in this environment and no physical boot has been performed; those remain required acceptance steps.
