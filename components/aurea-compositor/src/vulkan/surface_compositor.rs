@@ -30,16 +30,16 @@ use smithay::reexports::ash::vk;
 use crate::{
     desktop::{WallpaperDrawGeometry, WallpaperFitMode, WallpaperLayout},
     render::{
-        RenderScene,
-        #[cfg(feature = "drm")]
-        OrderedSurfaceBufferSnapshot,
         geometry::{
             compose_surface_transforms, surface_geometry, surface_geometry_with_fractional_scale,
             surface_transform_index, transform_geometry_for_output,
         },
+        RenderScene,
     },
     renderer::RenderTarget,
 };
+#[cfg(feature = "drm")]
+use crate::render::OrderedSurfaceBufferSnapshot;
 
 use cursor_geometry::native_cursor_geometry;
 use cursor_trail_geometry::cursor_trail_draws;
@@ -49,11 +49,9 @@ use super::{
     VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanLogicalDevice,
     VulkanNativeCursorTextureError, VulkanReadbackBuffer, VulkanSurfacePipelineCache,
     VulkanTextureBinding,
-    #[cfg(feature = "drm")]
-    DmabufSyncWaitSet,
-    #[cfg(feature = "drm")]
-    VulkanDmabufImage,
 };
+#[cfg(feature = "drm")]
+use super::{DmabufSyncWaitSet, VulkanDmabufImage};
 
 pub(super) const MAX_COMPOSITED_SURFACES: usize = 128;
 pub(super) const MAX_COMPOSITED_SHM_BYTES: usize = 256 * 1024 * 1024;
