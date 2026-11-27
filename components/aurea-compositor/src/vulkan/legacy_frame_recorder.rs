@@ -50,6 +50,90 @@ impl VulkanLegacyFrameRecorder {
         .map_err(VulkanLegacyFrameRecorderError::Clear)
     }
 
+    /// Records a regular surface or cursor texture using the legacy surface ABI.
+    ///
+    /// The transform is a four-byte vertex-stage push constant, matching the
+    /// normal surface shader. This named entry point avoids callers rebuilding
+    /// the byte representation or accidentally selecting the wrong stage.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn surface_region(
+        command_buffer: vk::CommandBuffer,
+        render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
+        view: &VulkanImageView<'_, '_>,
+        pipeline: &VulkanSharedLegacyGraphicsPipeline,
+        source: &VulkanImageView<'_, '_>,
+        binding: &VulkanTextureBinding<'_, '_, '_, '_>,
+        previous_source_state: VulkanImageState,
+        previous_target_state: VulkanImageState,
+        next_target_state: VulkanImageState,
+        viewport: vk::Viewport,
+        scissor: vk::Rect2D,
+        texture_transform: u32,
+    ) -> Result<(), VulkanLegacyFrameRecorderError> {
+        Self::textured_region(
+            command_buffer, render_pass, view, pipeline, source, binding, 0,
+            previous_source_state, previous_target_state, next_target_state,
+            super::VulkanColorLoad::Load, viewport, scissor,
+            &texture_transform.to_ne_bytes(), vk::ShaderStageFlags::VERTEX,
+        )
+    }
+
+    /// Records a wallpaper region with its four-float UV transform.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn wallpaper_region(
+        command_buffer: vk::CommandBuffer,
+        render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
+        view: &VulkanImageView<'_, '_>,
+        pipeline: &VulkanSharedLegacyGraphicsPipeline,
+        source: &VulkanImageView<'_, '_>,
+        binding: &VulkanTextureBinding<'_, '_, '_, '_>,
+        previous_source_state: VulkanImageState,
+        previous_target_state: VulkanImageState,
+        next_target_state: VulkanImageState,
+        viewport: vk::Viewport,
+        scissor: vk::Rect2D,
+        uv_transform: [f32; 4],
+    ) -> Result<(), VulkanLegacyFrameRecorderError> {
+        let mut bytes = [0_u8; 16];
+        for (index, value) in uv_transform.iter().enumerate() {
+            bytes[index * 4..(index + 1) * 4].copy_from_slice(&value.to_ne_bytes());
+        }
+        Self::textured_region(
+            command_buffer, render_pass, view, pipeline, source, binding, 0,
+            previous_source_state, previous_target_state, next_target_state,
+            super::VulkanColorLoad::Load, viewport, scissor,
+            &bytes, vk::ShaderStageFlags::VERTEX,
+        )
+    }
+
+    /// Records one alpha-faded cursor-trail impression.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn cursor_trail_region(
+        command_buffer: vk::CommandBuffer,
+        render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
+        view: &VulkanImageView<'_, '_>,
+        pipeline: &VulkanSharedLegacyGraphicsPipeline,
+        source: &VulkanImageView<'_, '_>,
+        binding: &VulkanTextureBinding<'_, '_, '_, '_>,
+        previous_source_state: VulkanImageState,
+        previous_target_state: VulkanImageState,
+        next_target_state: VulkanImageState,
+        viewport: vk::Viewport,
+        scissor: vk::Rect2D,
+        texture_transform: u32,
+        opacity: f32,
+    ) -> Result<(), VulkanLegacyFrameRecorderError> {
+        let mut bytes = [0_u8; 8];
+        bytes[0..4].copy_from_slice(&texture_transform.to_ne_bytes());
+        bytes[4..8].copy_from_slice(&opacity.to_ne_bytes());
+        Self::textured_region(
+            command_buffer, render_pass, view, pipeline, source, binding, 0,
+            previous_source_state, previous_target_state, next_target_state,
+            super::VulkanColorLoad::Load, viewport, scissor,
+            &bytes, vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT,
+        )
+    }
+
     /// Records one textured layer using a traditional render pass.
     ///
     /// This is intentionally one layer per call: it keeps framebuffer lifetime
