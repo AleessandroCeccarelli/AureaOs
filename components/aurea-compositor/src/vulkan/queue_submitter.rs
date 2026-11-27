@@ -91,8 +91,15 @@ impl<'device> VulkanQueueSubmitter<'device> {
         let command_buffers = [command_buffer];
         let submit_info = [vk::SubmitInfo::default().command_buffers(&command_buffers)];
         let fence_info = vk::FenceCreateInfo::default();
-        let fence = unsafe { self.device.create_fence(&fence_info, None) }
-            .map_err(VulkanQueueSubmitError::Rejected)?;
+        let fence = match unsafe { self.device.create_fence(&fence_info, None) } {
+            Ok(fence) => fence,
+            Err(error) => {
+                if error == vk::Result::ERROR_DEVICE_LOST {
+                    self.device_unusable.store(true, Ordering::Release);
+                }
+                return Err(VulkanQueueSubmitError::from_submit_error(error));
+            }
+        };
 
         let submit_result = {
             let _queue_guard = match self.queue_submit_lock.lock() {
