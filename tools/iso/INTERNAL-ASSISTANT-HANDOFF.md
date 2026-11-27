@@ -1123,3 +1123,25 @@ Nessuna build Rust, build ISO o prova hardware è stata eseguita durante queste 
 - This is shader-toolchain groundwork only. No runtime code selects or loads the compatibility variants yet; AAG must continue to report CompatibilityVulkan unavailable. The complete legacy render-pass pipeline, legacy render scopes across all passes, device feature negotiation, and the shared wallpaper/surface/cursor frame path remain to be implemented.
 - No build, shader compilation, rustfmt, cargo check, or tests were run. Do not claim the Vulkan 1.0 shader variants compile until the grouped Fedora verification runs.
 - The current display policy is tiered: 1280x720/60 Hz minimum display compatibility, 1366x768/60 Hz low-end laptop reference, 1920x1080 or 1920x1200/60 Hz standard profile, and higher resolutions/refresh/multi-display as advanced certification tiers. This does not change the current Vulkan 1.3 runtime gate.
+
+
+
+## 2026-11-27 — Legacy renderer integration audit
+
+- Re-opened the current implementations on `main` before changing runtime code. The existing `VulkanLegacyRenderTarget` creates a one-color-attachment render pass and framebuffer, and its scope balances `vkCmdBeginRenderPass` / `vkCmdEndRenderPass`. It is still an isolated primitive.
+- Confirmed the exact active-path blockers:
+  1. `graphics_pipeline.rs` always creates pipelines with a null render-pass handle and chains `VkPipelineRenderingCreateInfo`; it has no traditional render-pass pipeline variant.
+  2. `draw_pass.rs` always enters `VulkanDynamicRenderingScope`; it has no legacy target/scope route.
+  3. `clear_pass.rs` and `display_color_pass.rs` also enter dynamic-rendering scopes directly.
+  4. `logical_device_factory.rs` always calls `VulkanRenderingFeaturePlan::from_device`, whose current contract rejects API < 1.3 and requires both Vulkan 1.3 feature bits.
+  5. `physical_device.rs` deliberately sets `compatibility_renderer_available: false`; AAG must remain disabled for legacy devices.
+  6. `context.rs` requests a Vulkan 1.3 instance to ensure Ash's core 1.3 command dispatch is loaded for the active renderer. Lowering this request before removing all core-1.3 calls would reintroduce the known `cmd_begin_rendering` dispatch failure.
+- The shared pipeline cache creates pipelines independently of a frame target, so the legacy render-pass handle must be created/reused in a format-compatible lifetime model; constructing a temporary render pass per draw and destroying it while a cached pipeline references it is not acceptable.
+- Correct implementation order:
+  1. Introduce an explicit renderer backend/feature plan (modern vs legacy) and query only feature structures valid for the physical device's API version; keep modern selection unchanged.
+  2. Extend pipeline creation and cache identity so modern pipelines use dynamic rendering while legacy pipelines are created against a compatible persistent render pass.
+  3. Add a backend-neutral render-scope interface and route draw, clear and display-color passes through it; preserve viewport/scissor, descriptor and push-constant behavior.
+  4. Wire legacy SPIR-V variants into shader-module creation for surface, wallpaper, cursor and display-color pipelines.
+  5. Replace any Vulkan 1.3-only synchronization/submit calls in the legacy frame path with Vulkan 1.0 barriers, fences and queue submission; retain current shared image-state/resource lifetime rules.
+  6. Only then expose legacy capability to AAG and test modern + legacy paths, including wallpaper/surface/cursor composition and DRM presentation.
+- No runtime code was modified in this audit. No build, rustfmt, tests, ISO build or hardware validation was run. This audit prevents a false claim that the isolated render-pass helper already constitutes a usable compatibility renderer.
