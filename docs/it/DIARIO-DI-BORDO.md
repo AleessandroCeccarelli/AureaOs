@@ -2426,3 +2426,8 @@ Verificato il percorso delle texture SHM condivise: le upload asincrone sono cus
 ## 27 novembre 2026 — Fail-stop del logical device Vulkan
 
 Aggiunto uno stato atomico permanente `device_unusable` al logical device. Ogni submission incerta o perdita del device durante `queue_submit` porta il dispositivo in stato non riutilizzabile; il submitter sincrono condivide lo stesso flag e lo controlla mentre detiene il lock della queue, evitando che una submission concorrente venga accettata dopo il fail-stop. Anche l'allocazione di nuovi command buffer viene rifiutata e il rilascio dei command buffer evita chiamate al pool quando il device è già inutilizzabile. Lo stato viene inizializzato esplicitamente durante la creazione del logical device. Questo formalizza il comportamento fail-stop già richiesto dal lifecycle: non si tenta un recupero parziale delle cache o del frame pool. Modifiche non compilate né testate.
+
+
+### 27 novembre 2026 — Propagazione fail-stop a scheduler, upload e readback
+
+Esteso il controllo `device_unusable` oltre il punto di submission: allocazione e rilascio dei command buffer, creazione/preparazione degli slot frame e distruzione dello scheduler ora rispettano lo stato permanente del logical device. Se il device è già inutilizzabile, lo scheduler non tenta `device_wait_idle` né distrugge pool/fence/semafori; trasferisce fuori dalla gestione automatica le risorse retained. Lo stesso vale per `VulkanPendingUpload` e `VulkanReadbackSubmission`: in Drop, se il device è già in fail-stop, non tentano ulteriori wait/destroy e quarantinano staging, immagini, view, target e owner del device. Il command buffer RAII non tenta più wait/free su un device inutilizzabile. Nessun build, rustfmt o test eseguito.
