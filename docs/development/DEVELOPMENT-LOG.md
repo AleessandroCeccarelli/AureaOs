@@ -2510,3 +2510,12 @@ Reviewing the actual Live startup chain showed that `aurea-live-session` launche
 - Kept compatibility disabled by default through the opt-in Cargo feature `legacy-vulkan-frame = ["drm"]`. Without the feature, compatibility devices still fail closed with `CompatibilityRendererNotIntegrated`.
 - The empty-scene fast path is bypassed in compatibility mode to avoid using the Vulkan 1.3 clear pass.
 - This is source integration only. No build, rustfmt, cargo check, tests, shader compilation, CI or hardware validation was performed. Verify on Fedora with the feature explicitly enabled before considering the compatibility path complete.
+
+
+### Static audit of legacy Vulkan frame contracts — 2026-11-27
+
+- Audited the new frame orchestrator against the layer recorder, draw/clear helpers, output recorder, display-color pass, render-pass managers, shader build script and Cargo feature graph.
+- Verified in source that all seven compatibility shader artifacts are declared and compiled with the Vulkan 1.0 target by the DRM build-script path. The opt-in `legacy-vulkan-frame` feature activates that existing path through its DRM dependency.
+- Verified the intended image-state sequence from clear through scene layers, optional display color and the mutually exclusive readback/KMS terminal paths. Scene and output targets end in GENERAL before their next operation.
+- Verified the exact render-pass instance checks for scene pipelines and display-color framebuffer creation.
+- No build, shader compilation, rustfmt, tests, CI or hardware validation was performed. These checks remain mandatory on Fedora before enabling compatibility by default.
