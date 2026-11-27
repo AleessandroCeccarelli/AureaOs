@@ -924,3 +924,11 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - Il reset del command buffer dopo errore di registrazione non ignora più `ERROR_DEVICE_LOST`.
 - Queste correzioni sono state applicate tramite aggiornamenti sorgente su `main`; non sono state compilate né testate localmente. Nessuna run CI è stata osservata per il commit documentale.
 - Restano da esaminare i percorsi di rollback delle allocazioni Vulkan non asincrone e gli errori di fence status/readback poll, oltre alla conferma dell'ordine di distruzione dei proprietari DRM/GBM dopo hot-unplug.
+
+
+### Allocazioni Vulkan: fail-stop anche nei rollback — 27 novembre 2026
+
+- Le allocazioni di immagini native, immagini condivise e buffer readback propagano ora `ERROR_DEVICE_LOST` al flag fail-stop del logical device.
+- I rollback di image/memory e buffer/memory non invocano più `destroy_*` o `free_memory` dopo un errore terminale di device loss: gli handle restano intenzionalmente non rilasciati insieme al device, invece di effettuare chiamate Vulkan su un device perso.
+- Per errori ordinari diversi da device loss, il rollback continua a liberare le risorse parziali create prima dell'errore.
+- Verifica: modifiche sorgente su `main`; nessuna compilazione, formattazione o suite test eseguita. Rimangono da verificare gli altri allocator/rollback e i percorsi di polling delle submission.
