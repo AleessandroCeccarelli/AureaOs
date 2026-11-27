@@ -126,7 +126,9 @@ impl<'device> VulkanShaderModule<'device> {
 
 impl Drop for VulkanShaderModule<'_> {
     fn drop(&mut self) {
-        if self.device.device().is_unusable() { return; }
+        if self.device.is_unusable() {
+            return;
+        }
         unsafe {
             self.device
                 .handle()
