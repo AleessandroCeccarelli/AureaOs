@@ -205,6 +205,14 @@ impl VulkanSharedLegacyGraphicsPipeline {
     pub fn set_viewport_and_scissor_region(&self, command_buffer: vk::CommandBuffer, viewport: vk::Viewport, scissor: vk::Rect2D) {
         self.pipeline.set_viewport_and_scissor_region(command_buffer, viewport, scissor);
     }
+    /// Returns the exact render pass retained by this pipeline.
+    ///
+    /// Framebuffers used with this pipeline must be created from this render
+    /// pass instance, not merely from another pass with the same format/load op.
+    pub(crate) fn render_pass(&self) -> &Arc<VulkanLegacyRenderPass<'static>> {
+        &self.render_pass
+    }
+
     pub fn is_compatible_with(&self, device: &VulkanLogicalDevice, color_format: vk::Format, render_pass: &Arc<VulkanLegacyRenderPass<'static>>) -> bool {
         Arc::ptr_eq(&self.render_pass, render_pass)
             && self.pipeline.is_compatible_with_render_pass(device, color_format, render_pass.handle())
