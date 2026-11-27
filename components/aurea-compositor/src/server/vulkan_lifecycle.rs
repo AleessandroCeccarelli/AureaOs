@@ -49,15 +49,29 @@ pub(super) fn refresh_dmabuf_feedback(state: &mut WaylandState) {
         let supported = VulkanDmabufImportSupport::supported_formats(device);
         formats.retain(|format| supported.contains(format));
     }
-    let main_device = state.vulkan_backends.values().find_map(|backend| {
-        let physical = backend.selected_physical_device();
-        physical
-            .primary_node()
-            .ok()
-            .flatten()
-            .or_else(|| physical.render_node().ok().flatten())
-            .and_then(|node| node.dev_id().ok())
-    });
+    // The protocol main_device must identify the compositor's selected
+    // primary GPU, not an arbitrary HashMap entry (whose iteration order is
+    // intentionally unspecified).
+    let main_device = state
+        .gpu_manager
+        .primary_device()
+        .and_then(|primary| {
+            state
+                .udev_device_ids
+                .iter()
+                .find(|(_, path)| path == primary.path())
+                .map(|(node, _)| *node)
+        })
+        .and_then(|node| state.vulkan_backends.get(&node))
+        .and_then(|backend| {
+            let physical = backend.selected_physical_device();
+            physical
+                .primary_node()
+                .ok()
+                .flatten()
+                .or_else(|| physical.render_node().ok().flatten())
+                .and_then(|node| node.dev_id().ok())
+        });
     let Some(main_device) = main_device else {
         tracing::warn!("AureaOS: linux-dmabuf feedback not refreshed; no Vulkan renderer exposes a DRM device identity");
         return;
