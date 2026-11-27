@@ -137,7 +137,17 @@ impl VulkanContext {
             return Some("No graphics-capable queue family is available".to_owned());
         }
 
-        VulkanRenderingFeaturePlan::from_device(device).err()
+        match VulkanRenderingFeaturePlan::from_device(device) {
+            Err(error) => Some(error),
+            Ok(plan) if plan.mode() == VulkanRendererMode::CompatibilityPending => Some(
+                format!(
+                    "GPU '{}' exposes Vulkan API version {} but the complete compatibility frame renderer is not yet integrated",
+                    device.name(),
+                    device.api_version()
+                ),
+            ),
+            Ok(_) => None,
+        }
     }
 
     /// Returns summaries of all discovered physical devices.
