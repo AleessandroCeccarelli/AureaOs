@@ -44,12 +44,18 @@ impl<'view, 'image, 'device> VulkanLegacyRenderTarget<'view, 'image, 'device> {
     /// Creates a one-attachment, single-subpass render pass and framebuffer.
     pub fn new(
         view: &'view VulkanImageView<'image, 'device>,
+        load: VulkanColorLoad,
     ) -> Result<Self, VulkanLegacyRenderPassError> {
         let device = view.device().handle();
+        let load_op = match load {
+            VulkanColorLoad::Clear(_) => vk::AttachmentLoadOp::CLEAR,
+            VulkanColorLoad::Load => vk::AttachmentLoadOp::LOAD,
+            VulkanColorLoad::DontCare => vk::AttachmentLoadOp::DONT_CARE,
+        };
         let attachment = [vk::AttachmentDescription::default()
             .format(view.format())
             .samples(vk::SampleCountFlags::TYPE_1)
-            .load_op(vk::AttachmentLoadOp::LOAD)
+            .load_op(load_op)
             .store_op(vk::AttachmentStoreOp::STORE)
             .stencil_load_op(vk::AttachmentLoadOp::DONT_CARE)
             .stencil_store_op(vk::AttachmentStoreOp::DONT_CARE)
@@ -118,25 +124,11 @@ impl<'view, 'image, 'device> VulkanLegacyRenderTarget<'view, 'image, 'device> {
     pub fn begin<'target>(
         &'target self,
         command_buffer: vk::CommandBuffer,
-        load: VulkanColorLoad,
+        clear_color: [f32; 4],
     ) -> VulkanLegacyRenderPassScope<'target, 'view, 'image, 'device> {
-        let clear_value = match load {
-            VulkanColorLoad::Clear(color) => vk::ClearValue {
-                color: vk::ClearColorValue { float32: color },
-            },
-            VulkanColorLoad::Load | VulkanColorLoad::DontCare => vk::ClearValue::default(),
-        };
-        let load_op = match load {
-            VulkanColorLoad::Clear(_) => vk::AttachmentLoadOp::CLEAR,
-            VulkanColorLoad::Load => vk::AttachmentLoadOp::LOAD,
-            VulkanColorLoad::DontCare => vk::AttachmentLoadOp::DONT_CARE,
-        };
-
-        // The attachment load operation is selected by the render-pass
-        // description. This target's LOAD pass is retained for pipelines that
-        // preserve existing contents; CLEAR/DONT_CARE need matching variants.
-        let _ = (clear_value, load_op);
-        let clear_values = [clear_value];
+        let clear_values = [vk::ClearValue {
+            color: vk::ClearColorValue { float32: clear_color },
+        }];
         let begin_info = vk::RenderPassBeginInfo::default()
             .render_pass(self.render_pass)
             .framebuffer(self.framebuffer)
