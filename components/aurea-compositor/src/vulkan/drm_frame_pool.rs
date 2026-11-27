@@ -277,6 +277,26 @@ impl VulkanDrmFramePool {
         Ok(None)
     }
 
+    /// Reacquires every frame whose KMS release has been confirmed.
+    ///
+    /// This is used during orderly output shutdown so previously displayed
+    /// buffers, not only the final current buffer, complete the foreign queue
+    /// ownership transfer before their Vulkan allocations are destroyed.
+    pub fn acquire_all_released(
+        &self,
+        coordinator: &mut DrmOutputFrameCoordinator,
+    ) -> Result<usize, VulkanDrmFramePoolError> {
+        let ids: Vec<_> = self.frames.keys().copied().collect();
+        let mut acquired = 0;
+        for id in ids {
+            if coordinator.can_acquire_from_foreign(id)? {
+                self.acquire_after_foreign_release(id, coordinator)?;
+                acquired += 1;
+            }
+        }
+        Ok(acquired)
+    }
+
     /// Retires reusable frames from obsolete modes and trims excess idle allocations.
     /// Busy frames remain owned until the lifecycle coordinator confirms release.
     pub fn prune(
