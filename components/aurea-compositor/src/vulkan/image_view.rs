@@ -238,6 +238,7 @@ impl VulkanImageView<'static, 'static> {
 
 impl Drop for VulkanImageView<'_, '_> {
     fn drop(&mut self) {
+        if self.device.device().is_unusable() { return; }
         unsafe {
             self.device
                 .device()
