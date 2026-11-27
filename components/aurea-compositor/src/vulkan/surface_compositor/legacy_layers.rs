@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use smithay::reexports::ash::vk;
 
-use super::{VulkanSurfaceCompositionError, visible_surfaces::VisibleSurface};
+use super::{VulkanSurfaceCompositionError, visible_surfaces::VisibleSurface, cursor_trail_geometry::CursorTrailDraw};
 use super::super::{
     VulkanImageState, VulkanImageView, VulkanLegacyFrameRecorder,
     VulkanLegacyFrameRecorderError, VulkanLegacyRenderPass,
@@ -169,9 +169,9 @@ pub(super) fn record_cursor_trail(
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     source: &VulkanImageView<'_, '_>,
     binding: &VulkanTextureBinding<'_, '_, '_, '_>,
-    impressions: &[(vk::Viewport, vk::Rect2D, u32, f32)],
+    impressions: &[CursorTrailDraw],
 ) -> Result<(), VulkanSurfaceCompositionError> {
-    for (viewport, scissor, texture_transform, opacity) in impressions {
+    for impression in impressions {
         VulkanLegacyFrameRecorder::cursor_trail_region(
             command_buffer,
             render_pass,
@@ -182,10 +182,10 @@ pub(super) fn record_cursor_trail(
             VulkanImageState::General,
             VulkanImageState::General,
             VulkanImageState::General,
-            *viewport,
-            *scissor,
-            *texture_transform,
-            *opacity,
+            impression.viewport,
+            impression.scissor,
+            impression.texture_transform,
+            impression.opacity,
         )
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
