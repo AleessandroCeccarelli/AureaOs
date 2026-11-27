@@ -155,6 +155,63 @@ impl<'pass, 'device> VulkanLegacyGraphicsPipeline<'pass, 'device> {
     }
 }
 
+
+/// A traditional graphics pipeline that owns a shared reference to its render pass.
+///
+/// Unlike the borrowed wrapper, this form can be stored in a long-lived resource
+/// cache without making the cache self-referential. The render pass and logical
+/// device remain alive for at least as long as the pipeline.
+pub struct VulkanSharedLegacyGraphicsPipeline {
+    pipeline: VulkanGraphicsPipeline<'static>,
+    render_pass: Arc<VulkanLegacyRenderPass<'static>>,
+}
+
+impl VulkanSharedLegacyGraphicsPipeline {
+    pub fn new(
+        device: Arc<VulkanLogicalDevice>,
+        render_pass: Arc<VulkanLegacyRenderPass<'static>>,
+        shaders: VulkanGraphicsShaders<'_, '_>,
+        descriptor_layout_handles: &[vk::DescriptorSetLayout],
+        push_constant_ranges: &[vk::PushConstantRange],
+    ) -> Result<Self, VulkanGraphicsPipelineError> {
+        if render_pass.device_handle() != device.handle().handle() {
+            return Err(VulkanGraphicsPipelineError::DeviceMismatch);
+        }
+        let device_ref = Arc::clone(&device);
+        let pipeline = VulkanGraphicsPipeline::create(
+            device_ref.as_ref(),
+            VulkanDeviceOwner::Shared(device),
+            shaders,
+            render_pass.format(),
+            descriptor_layout_handles,
+            push_constant_ranges,
+            Some(render_pass.handle()),
+        )?;
+        Ok(Self { pipeline, render_pass })
+    }
+
+    pub fn handle(&self) -> vk::Pipeline { self.pipeline.handle() }
+    pub fn layout(&self) -> vk::PipelineLayout { self.pipeline.layout() }
+    pub fn bind(&self, command_buffer: vk::CommandBuffer) { self.pipeline.bind(command_buffer); }
+    pub fn push_constants(&self, command_buffer: vk::CommandBuffer, stages: vk::ShaderStageFlags, offset: u32, data: &[u8]) {
+        self.pipeline.push_constants(command_buffer, stages, offset, data);
+    }
+    pub fn draw(&self, command_buffer: vk::CommandBuffer, vertex_count: u32, instance_count: u32) {
+        self.pipeline.draw(command_buffer, vertex_count, instance_count);
+    }
+    pub fn set_viewport_and_scissor(&self, command_buffer: vk::CommandBuffer, width: u32, height: u32) {
+        self.pipeline.set_viewport_and_scissor(command_buffer, width, height);
+    }
+    pub fn set_viewport_and_scissor_region(&self, command_buffer: vk::CommandBuffer, viewport: vk::Viewport, scissor: vk::Rect2D) {
+        self.pipeline.set_viewport_and_scissor_region(command_buffer, viewport, scissor);
+    }
+    pub fn is_compatible_with(&self, device: &VulkanLogicalDevice, color_format: vk::Format, render_pass: &VulkanLegacyRenderPass<'static>) -> bool {
+        Arc::ptr_eq(&self.render_pass, &self.render_pass)
+            && self.pipeline.is_compatible_with_render_pass(device, color_format, render_pass.handle())
+            && self.render_pass.handle() == render_pass.handle()
+    }
+}
+
 impl<'device> VulkanGraphicsPipeline<'device> {
     /// Creates a minimal graphics pipeline for one color attachment format.
     ///
