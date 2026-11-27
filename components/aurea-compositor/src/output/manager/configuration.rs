@@ -120,6 +120,39 @@ impl OutputManager {
         Ok(staged)
     }
 
+    /// Builds one candidate from a batch of output changes without
+    /// mutating the published manager.
+    ///
+    /// The batch is validated as a whole before a caller can install it.
+    /// Duplicate output IDs are rejected rather than applying order-dependent
+    /// updates to the same output. This is the logical preparation primitive
+    /// for multi-output display transactions; physical KMS coordination and
+    /// VBlank confirmation remain the caller's responsibility.
+    pub fn staged_configurations(
+        &self,
+        configurations: &[(OutputId, OutputConfiguration)],
+    ) -> Result<Self, OutputManagerError> {
+        let mut seen = std::collections::BTreeSet::new();
+        let mut staged = self.clone();
+
+        for (output_id, configuration) in configurations {
+            if !seen.insert(*output_id) {
+                return Err(OutputManagerError::DuplicateOutput(*output_id));
+            }
+            staged = staged.staged_configuration(*output_id, *configuration)?;
+        }
+
+        // Validate the final active-output count after all changes have been
+        // applied, not merely the intermediate states.
+        if staged.active_output_count() > MAX_ACTIVE_OUTPUTS {
+            return Err(OutputManagerError::TooManyActiveOutputs {
+                maximum: MAX_ACTIVE_OUTPUTS,
+            });
+        }
+
+        Ok(staged)
+    }
+
     /// Enables or disables an output after validating the resulting layout.
     pub fn set_enabled(
         &mut self,
