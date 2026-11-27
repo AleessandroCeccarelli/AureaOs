@@ -43,6 +43,7 @@ pub struct VulkanLegacyRenderPass<'device> {
     device: VulkanDeviceOwner<'device>,
     render_pass: vk::RenderPass,
     format: vk::Format,
+    load_op: vk::AttachmentLoadOp,
 }
 
 impl<'device> VulkanLegacyRenderPass<'device> {
@@ -102,6 +103,7 @@ impl<'device> VulkanLegacyRenderPass<'device> {
             device: VulkanDeviceOwner::Borrowed(device),
             render_pass,
             format,
+            load_op,
         })
     }
 
@@ -115,6 +117,10 @@ impl<'device> VulkanLegacyRenderPass<'device> {
 
     pub fn format(&self) -> vk::Format {
         self.format
+    }
+
+    pub fn load_op(&self) -> vk::AttachmentLoadOp {
+        self.load_op
     }
 
     /// Creates a framebuffer for one image view without recreating the render pass.
