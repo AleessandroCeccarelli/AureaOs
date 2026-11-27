@@ -138,6 +138,22 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
             )));
         };
 
+        // Resolve the logical request against the retained native timings before
+        // allocating the frame. The scanout renderer below allocates its Vulkan
+        // image/GBM framebuffer from RenderTarget dimensions, then TEST_ONLY and
+        // commit apply the staged KMS mode together with that matching framebuffer.
+        let requested_mode = compositor
+            .output_manager()
+            .registry()
+            .get(output_id)
+            .map(|logical| logical.current_mode())
+            .ok_or_else(|| io::Error::other(format!(
+                "AureaOS: logical output {output_id} disappeared before modeset"
+            )))?;
+        output
+            .stage_native_mode(requested_mode)
+            .map_err(io::Error::other)?;
+
         let path_name = if matches!(&selected_path, PresentationPath::DirectVulkan) {
             "direct-vulkan"
         } else {
