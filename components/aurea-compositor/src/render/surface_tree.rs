@@ -209,6 +209,10 @@ pub struct SurfaceTreeDmabufSnapshot {
     pub buffer_transform: Transform,
     /// Whether this snapshot belongs to the client-provided cursor surface tree.
     pub is_cursor: bool,
+    /// Scale applied only when this snapshot belongs to the pointer cursor tree.
+    pub cursor_scale: f64,
+    /// Global logical point around which cursor scaling is anchored.
+    pub cursor_anchor: Option<Point<i32, Logical>>,
 }
 
 /// Collects DMA-BUF-backed surfaces in the same stacking order as SHM snapshots.
@@ -248,6 +252,8 @@ pub fn collect_surface_tree_dmabuf_snapshots(
                     buffer_scale: snapshot.buffer_scale,
                     buffer_transform: snapshot.buffer_transform,
                     is_cursor: false,
+                    cursor_scale: 1.0,
+                    cursor_anchor: None,
                 });
             }
         },
