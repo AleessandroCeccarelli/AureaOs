@@ -153,13 +153,15 @@ mod tests {
 
     #[test]
     fn rejects_vulkan_13_devices_missing_required_core_features() {
-        let mut candidate = candidate(5, "Incomplete Vulkan 1.3 GPU", false, true, false);
-        candidate.capabilities.synchronization2 = false;
-        assert!(AureaAdaptiveGraphics::select(&[candidate]).is_none());
+        let mut missing_synchronization2 =
+            candidate(5, "Incomplete Vulkan 1.3 GPU", false, true, false);
+        missing_synchronization2.capabilities.synchronization2 = false;
+        assert!(AureaAdaptiveGraphics::select(&[missing_synchronization2]).is_none());
 
-        let mut candidate = candidate(6, "GPU without dynamic rendering", false, true, false);
-        candidate.capabilities.dynamic_rendering = false;
-        assert!(AureaAdaptiveGraphics::select(&[candidate]).is_none());
+        let mut missing_dynamic_rendering =
+            candidate(6, "GPU without dynamic rendering", false, true, false);
+        missing_dynamic_rendering.capabilities.dynamic_rendering = false;
+        assert!(AureaAdaptiveGraphics::select(&[missing_dynamic_rendering]).is_none());
     }
 
     #[test]
