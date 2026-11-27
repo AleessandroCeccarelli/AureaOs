@@ -145,6 +145,7 @@ pub(super) fn open_and_integrate(state: &mut WaylandState, node: DrmNode) -> io:
         remove_device_notifier(state, node);
         super::super::gbm_lifecycle::remove_gbm_device(state, node);
         state.vulkan_backends.remove(&node);
+        super::super::vulkan_lifecycle::refresh_dmabuf_feedback(state);
         state.drm_devices.remove(node);
 
         return Err(error);
@@ -321,6 +322,7 @@ pub(super) fn remove_device(state: &mut WaylandState, node: DrmNode) -> io::Resu
     super::super::gbm_lifecycle::remove_gbm_device(state, node);
 
     state.vulkan_backends.remove(&node);
+    super::super::vulkan_lifecycle::refresh_dmabuf_feedback(state);
     state.drm_devices.remove(node);
     state.drm_device_registry.remove(node);
 
