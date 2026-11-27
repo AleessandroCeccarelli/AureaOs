@@ -83,6 +83,50 @@ pub(super) fn reconcile(compositor: &mut AureaCompositor) {
         set_surface_preferred_scale(&snapshot.surface, preferred_scale);
     }
 
+    // DMA-BUF-backed surfaces participate in the same Wayland output
+    // membership protocol as SHM surfaces. They are collected separately
+    // because their buffer ownership and import path are device-specific.
+    #[cfg(feature = "drm")]
+    for snapshot in RenderScene::from_window_manager(&compositor.window_manager).dmabuf_snapshots() {
+        let (width, height) = logical_dimensions(
+            snapshot.layout.width(),
+            snapshot.layout.height(),
+            snapshot.buffer_scale,
+            snapshot.buffer_transform,
+        );
+        let Some((width, height)) = width.zip(height) else {
+            compositor.forget_surface_output_membership(&snapshot.surface);
+            continue;
+        };
+        let size = LogicalSize { width, height };
+        let origin = LogicalPoint {
+            x: i64::from(snapshot.location.x),
+            y: i64::from(snapshot.location.y),
+        };
+        let Some(rect) = valid_rect(origin, size) else {
+            compositor.forget_surface_output_membership(&snapshot.surface);
+            continue;
+        };
+
+        let intersecting = active_outputs
+            .iter()
+            .filter(|output| output.bounds.intersects(rect))
+            .collect::<Vec<_>>();
+        let preferred_scale = intersecting
+            .iter()
+            .map(|output| output.scale)
+            .reduce(f64::max)
+            .unwrap_or(1.0);
+
+        compositor.update_surface_output_membership(
+            &snapshot.surface,
+            intersecting
+                .iter()
+                .map(|output| (output.id, output.output.clone())),
+        );
+        set_surface_preferred_scale(&snapshot.surface, preferred_scale);
+    }
+
     compositor.prune_surface_output_membership();
 }
 
