@@ -248,6 +248,20 @@ impl AureaCompositor {
         &self.shm_state
     }
 
+    /// Returns Smithay's linux-dmabuf protocol delegate state.
+    #[cfg(feature = "drm")]
+    pub(crate) fn wayland_dmabuf_state(&mut self) -> &mut DmabufState {
+        &mut self.dmabuf_state
+    }
+
+    /// Returns the devices against which advertised DMA-BUF imports are validated.
+    #[cfg(feature = "drm")]
+    pub(crate) fn dmabuf_devices(
+        &self,
+    ) -> &[std::sync::Arc<crate::vulkan::VulkanLogicalDevice>] {
+        &self.dmabuf_devices
+    }
+
     /// Publishes linux-dmabuf v3 only after every active Vulkan renderer has
     /// reported a common, importable single-plane format/modifier set.
     #[cfg(feature = "drm")]
