@@ -19,9 +19,11 @@ use smithay::{
 use crate::AureaCompositor;
 
 impl BufferHandler for AureaCompositor {
-    fn buffer_destroyed(&mut self, _buffer: &WlBuffer) {
-        // Surface-owned snapshots contain copied pixels, not a reference to
-        // the destroyed client buffer. Surface destruction drops that state.
+    fn buffer_destroyed(&mut self, buffer: &WlBuffer) {
+        // SHM snapshots own copied pixels. DMA-BUF snapshots retain the
+        // original resource until their GPU work has completed.
+        #[cfg(feature = "drm")]
+        self.dmabuf_buffer_destroyed(buffer);
     }
 }
 
