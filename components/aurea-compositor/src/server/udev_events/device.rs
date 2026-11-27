@@ -322,7 +322,6 @@ pub(super) fn remove_device(state: &mut WaylandState, node: DrmNode) -> io::Resu
     super::super::gbm_lifecycle::remove_gbm_device(state, node);
 
     state.vulkan_backends.remove(&node);
-    super::super::vulkan_lifecycle::refresh_dmabuf_feedback(state);
     state.drm_devices.remove(node);
     state.drm_device_registry.remove(node);
 
@@ -338,6 +337,11 @@ pub(super) fn remove_device(state: &mut WaylandState, node: DrmNode) -> io::Resu
             state.gpu_manager.select_primary_by_policy();
         }
     }
+
+    // Recompute feedback only after the GPU policy has selected its new
+    // primary device. Refreshing before this point can still resolve the
+    // unplugged GPU as primary and leave the old feedback published.
+    super::super::vulkan_lifecycle::refresh_dmabuf_feedback(state);
 
     Ok(())
 }
