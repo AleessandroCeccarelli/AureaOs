@@ -1391,3 +1391,13 @@ Cautions:
 - It deliberately does not create framebuffers or retain frame resources; those remain owned by the frame recorder and current frame.
 - This is a cache-preparation step for the upcoming complete layer recorder, not an active renderer switch. The modern compositor remains unchanged.
 - No build, test, rustfmt, shader compilation, CI, or ISO build was run; the new method and prior lifetime edits remain unverified.
+
+## Typed legacy layer recording helpers — 2026-11-27
+
+- `f582161`: extended `VulkanLegacyFrameRecorder` with named recording entry points for:
+  - regular surface/client-cursor regions (four-byte vertex-stage texture transform);
+  - wallpaper regions (four-float vertex-stage UV transform);
+  - cursor-trail impressions (texture transform plus fragment-stage opacity).
+- All three delegate to the existing validated traditional-render-pass textured recorder, preserve the established load operation, use descriptor set zero, and create/destroy a frame-scoped framebuffer for each draw.
+- These helpers make the shader push-constant ABI explicit at the layer boundary. They do not yet replace calls in the active compositor or provide frame submission/presentation orchestration.
+- No build, test, rustfmt, shader compilation, CI, or ISO build was run. Byte layouts and Rust lifetimes remain unverified until the grouped Fedora validation.
