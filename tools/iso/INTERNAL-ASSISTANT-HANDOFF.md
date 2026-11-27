@@ -465,8 +465,8 @@ Non affermare che AureaOS mostra già un desktop funzionante: è stato implement
 - HEAD di partenza verificato tramite cronologia Git: `5486fef16c8834fa4e9197d2f61eda8e456a3f3e`.
 - Letto integralmente questo handoff prima di modificare il repository.
 - Confermata l'esistenza dell'asset selezionato:
-  `aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg`.
-- Il README della raccolta conferma che `aureaos-midnight-flow.jpg` è il wallpaper predefinito provvisorio scelto; il documento dichiara anche che il caricamento runtime non era ancora implementato.
+  `aurea-human-interfaces/resources/wallpapers/aureaos-blue-flow.jpg`.
+- Il README della raccolta conferma che `aureaos-blue-flow.jpg` è il wallpaper predefinito provvisorio scelto; il documento dichiara anche che il caricamento runtime non era ancora implementato.
 - Il workspace `aurea-compositor` non contieneva un decoder JPEG tra le dipendenze dichiarate o nel Cargo.lock. Non è stata aggiunta una dipendenza senza poter rigenerare e verificare il lockfile su Fedora.
 
 ### Codice pubblicato su main
@@ -623,7 +623,7 @@ Nessuna build, formattazione o test Rust è stato eseguito da remoto. I test pre
 
 ## DECISIONE PRODOTTO — SFONDI ANIMATI E DINAMICI (23-11-2026)
 
-L'utente vuole che AureaOS supporti anche sfondi animati, come esperienza aggiuntiva rispetto alla gestione classica di Windows e agli sfondi dinamici/animati di macOS. Il wallpaper già scelto, `aureaos-midnight-flow.jpg`, resta lo sfondo predefinito: non va sostituito.
+L'utente vuole che AureaOS supporti anche sfondi animati, come esperienza aggiuntiva rispetto alla gestione classica di Windows e agli sfondi dinamici/animati di macOS. Il wallpaper già scelto, `aureaos-blue-flow.jpg`, resta lo sfondo predefinito: non va sostituito.
 
 È stato creato `docs/design/WALLPAPER-SYSTEM.md` come specifica di riferimento. Punti vincolanti:
 
