@@ -61,7 +61,7 @@ AureaOS Roma 1.0 è una distribuzione Debian con un livello desktop progettato e
 - Formati previsti: JPEG, PNG, BMP, TIFF, WebP, HEIF/HEIC e AVIF.
 - Modalità: Fill, Fit, Stretch, Center.
 - Sfondi animati in stile macOS restano fuori dallo scope attuale: non implementare GIF/video senza nuova decisione esplicita.
-- Immagine di riferimento: `aureaos-midnight-flow.jpg`, 3840×2160, 16:9.
+- Immagine di riferimento: `aureaos-blue-flow.jpg`, 3840×2160, 16:9.
 
 ## 3. Cronologia tecnica sintetica e passaggio di fase
 
