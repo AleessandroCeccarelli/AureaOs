@@ -27,6 +27,8 @@ pub(crate) enum VulkanDmabufImportSupportError {
     MissingInteropExtensions,
     MissingModifierExtension,
     UnsupportedFormat,
+    UnsupportedModifier,
+    ModifierPlaneCountMismatch,
     UnsupportedPlaneCount,
     InvalidDimensions,
     ImageConfigurationUnsupported,
@@ -58,6 +60,47 @@ impl VulkanDmabufImportSupport {
         let format = get_vk_format(layout.format().code)
             .ok_or(VulkanDmabufImportSupportError::UnsupportedFormat)?;
         let modifier = u64::from(layout.format().modifier);
+
+        // The image-format query below validates the requested usage and
+        // external-memory handle type. First verify that this exact modifier
+        // is advertised for the mapped Vulkan format and that its Vulkan
+        // memory-plane count agrees with the DMA-BUF metadata.
+        let mut modifier_list = vk::DrmFormatModifierPropertiesListEXT::default();
+        let mut format_properties =
+            vk::FormatProperties2::default().push_next(&mut modifier_list);
+        unsafe {
+            device.instance().get_physical_device_format_properties2(
+                device.physical_device(),
+                format,
+                &mut format_properties,
+            )
+        };
+
+        let modifier_count = modifier_list.drm_format_modifier_count as usize;
+        if modifier_count == 0 {
+            return Err(VulkanDmabufImportSupportError::UnsupportedModifier);
+        }
+        let mut modifier_properties = vec![
+            vk::DrmFormatModifierPropertiesEXT::default();
+            modifier_count
+        ];
+        modifier_list.drm_format_modifier_properties = modifier_properties.as_mut_ptr();
+        unsafe {
+            device.instance().get_physical_device_format_properties2(
+                device.physical_device(),
+                format,
+                &mut format_properties,
+            )
+        };
+
+        let modifier_properties = modifier_properties
+            .iter()
+            .find(|properties| properties.drm_format_modifier == modifier)
+            .ok_or(VulkanDmabufImportSupportError::UnsupportedModifier)?;
+        if modifier_properties.drm_format_modifier_plane_count as usize != layout.planes().len() {
+            return Err(VulkanDmabufImportSupportError::ModifierPlaneCountMismatch);
+        }
+
         let mut modifier_query =
             vk::PhysicalDeviceImageDrmFormatModifierInfoEXT::default().drm_format_modifier(modifier);
         let mut external_query = vk::PhysicalDeviceExternalImageFormatInfo::default()
