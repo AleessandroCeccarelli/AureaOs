@@ -26,6 +26,8 @@ mod legacy_display_color_manager;
 mod dmabuf_layout;
 #[cfg(feature = "drm")]
 mod dmabuf_import_support;
+#[cfg(feature = "drm")]
+mod dmabuf_image;
 mod draw_pass;
 #[cfg(feature = "drm")]
 mod drm_compatibility;
@@ -129,6 +131,8 @@ pub use display_color_pass::{VulkanDisplayColorPass, VulkanDisplayColorPassError
 pub use dmabuf_layout::{DmabufImportLayout, DmabufLayoutError, DmabufPlaneLayout};
 #[cfg(feature = "drm")]
 pub(crate) use dmabuf_import_support::{VulkanDmabufImportSupport, VulkanDmabufImportSupportError};
+#[cfg(feature = "drm")]
+pub(crate) use dmabuf_image::{VulkanDmabufImage, VulkanDmabufImageError};
 pub use draw_pass::{VulkanDrawPass, VulkanDrawPassError};
 #[cfg(feature = "drm")]
 pub use drm_compatibility::{
