@@ -287,6 +287,12 @@ impl AureaCompositor {
         self.dmabuf_main_device
     }
 
+    /// Clears active DMA-BUF import targets while retaining the published protocol identity.
+    #[cfg(feature = "drm")]
+    pub(crate) fn clear_dmabuf_devices(&mut self) {
+        self.dmabuf_devices.clear();
+    }
+
     /// Returns the devices against which advertised DMA-BUF imports are validated.
     #[cfg(feature = "drm")]
     pub(crate) fn dmabuf_devices(
