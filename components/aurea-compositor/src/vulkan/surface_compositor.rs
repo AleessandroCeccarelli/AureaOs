@@ -808,7 +808,7 @@ pub(super) fn render_frame(
         .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
 
-    if let Some(readback) = readback {
+    if let Some(readback) = readback.as_ref().and_then(|slot| slot.as_ref()) {
         readback
             .record_transition_and_copy_rgba8(
                 device,
@@ -831,9 +831,20 @@ pub(super) fn render_frame(
         .end()
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
     // All sampled texture uploads are complete before the draw submission.
-    command_buffer
-        .submit_and_wait_with(on_submitted)
-        .map_err(VulkanSurfaceCompositionError::from_queue_submit_error)?;
+    if let Err(queue_error) = command_buffer.submit_and_wait_with(on_submitted) {
+        if queue_error.is_uncertain() {
+            // The readback allocation is referenced by the submitted command
+            // buffer. Keep it alive if neither the fence nor device-idle fallback
+            // can establish that GPU access has ended.
+            if let Some(readback_slot) = readback {
+                if let Some(readback_buffer) = readback_slot.take() {
+                    std::mem::forget(readback_buffer);
+                }
+            }
+            std::mem::forget(binding_pool);
+        }
+        return Err(VulkanSurfaceCompositionError::from_queue_submit_error(queue_error));
+    }
 
     Ok(())
 }
