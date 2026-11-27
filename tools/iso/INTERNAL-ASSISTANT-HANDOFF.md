@@ -1543,3 +1543,12 @@ Cautions:
 - The target objects remain in scope through the terminal `submit_and_wait_with` call for both KMS and readback. On an early recording error, the command buffer is dropped before the earlier-created targets, so no unsubmitted command buffer is subsequently submitted with a destroyed framebuffer.
 - Updated the legacy layer recorder to validate the exact render-pass object referenced by each pipeline against the retained target before recording.
 - This correction supersedes the earlier short-lived-framebuffer design. No build, rustfmt, cargo check, tests, CI or hardware validation was run; Rust lifetime/type correctness and Vulkan validation remain to be confirmed on Fedora.
+
+
+### Legacy Vulkan synchronization hardening — 2026-11-27
+
+- The queue submitter creates a fence, serializes queue submission, notifies resource lifecycle after accepted/uncertain acceptance, waits for the fence, and falls back to device idle. A successful fence wait or idle wait proves completion; if both fail, the queue error is explicitly uncertain.
+- The legacy frame recorder now preserves `VulkanQueueSubmitError` as a typed variant for both KMS release and readback submission.
+- The frame owner leaks/retains framebuffers and the shared descriptor pool on uncertain completion, avoiding destruction of objects potentially referenced by an in-flight command buffer. The command buffer's Pending-state Drop already retains its allocation when device-idle fails.
+- Readback storage is borrowed from outside this frame owner; its lifetime under uncertain completion is a known remaining audit item.
+- No build, rustfmt, cargo check, tests or GPU validation was run. Do not mark synchronization hardening complete until readback ownership is resolved and Fedora verification passes.
