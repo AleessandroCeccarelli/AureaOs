@@ -107,6 +107,9 @@ pub(super) fn register_session_events(
                     None => {
                         super::gbm_lifecycle::clear_gbm_devices(state);
                         state.vulkan_backends.clear();
+                        // Stop advertising formats whose Vulkan import path has
+                        // just been torn down while another VT owns the devices.
+                        super::vulkan_lifecycle::refresh_dmabuf_feedback(state);
                         None
                     }
                     error => error,
