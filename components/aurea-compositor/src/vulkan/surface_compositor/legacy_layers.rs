@@ -240,8 +240,8 @@ pub(super) fn record_client_cursor_surfaces(
 pub(super) struct LegacyWallpaperLayer<'r, 'i, 'id, 'rd> {
     pub source: &'r VulkanImageView<'i, 'id>,
     pub binding: &'r VulkanTextureBinding<'r, 'i, 'id, 'rd>,
-    pub pipeline: &'a VulkanSharedLegacyGraphicsPipeline,
-    pub render_pass: &'a Arc<VulkanLegacyRenderPass<'static>>,
+    pub pipeline: &'r VulkanSharedLegacyGraphicsPipeline,
+    pub render_pass: &'r Arc<VulkanLegacyRenderPass<'static>>,
     pub viewport: vk::Viewport,
     pub scissor: vk::Rect2D,
     pub uv_transform: [f32; 4],
@@ -269,7 +269,7 @@ pub(super) struct LegacyNativeCursorLayer<'r, 'i, 'id, 'rd> {
 pub(super) struct LegacyCursorTrailLayer<'r, 'i, 'id, 'rd> {
     pub source: &'r VulkanImageView<'i, 'id>,
     pub binding: &'r VulkanTextureBinding<'r, 'i, 'id, 'rd>,
-    pub pipeline: &'a VulkanSharedLegacyGraphicsPipeline,
+    pub pipeline: &'r VulkanSharedLegacyGraphicsPipeline,
     pub impressions: &'r [CursorTrailDraw],
 }
 
