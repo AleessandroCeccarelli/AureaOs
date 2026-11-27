@@ -158,7 +158,7 @@ pub(super) fn render_frame(
         &VulkanImageView<'_, '_>,
         VulkanImageState,
     )>,
-    readback: Option<&VulkanReadbackBuffer<'_>>,
+    readback: Option<&mut Option<VulkanReadbackBuffer<'_>>>,
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let desktop_snapshot = scene.desktop();
@@ -238,7 +238,7 @@ pub(super) fn render_frame(
         surface_cache
             .complete_surface_texture_uploads()
             .map_err(VulkanSurfaceCompositionError::from_surface_texture_cache_error)?;
-        if let Some(readback) = readback {
+        if let Some(readback) = readback.as_ref().and_then(|slot| slot.as_ref()) {
             return match display_color {
                 Some((pass, warmth, intermediate_view, intermediate_state)) => {
                     clear_display_and_readback(
