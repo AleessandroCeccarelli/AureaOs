@@ -10,7 +10,10 @@ use smithay::{backend::vulkan::PhysicalDevice, reexports::ash::vk};
 #[cfg(feature = "drm")]
 use smithay::backend::drm::DrmNode;
 
-use crate::renderer::RenderPreference;
+use crate::{
+    adaptive_graphics::{AureaAdaptiveGraphics, GraphicsCandidate, GraphicsCapabilities},
+    renderer::RenderPreference,
+};
 
 use super::{VulkanContext, VulkanExternalMemoryCapabilities, VulkanRenderingFeaturePlan};
 
@@ -69,6 +72,38 @@ impl VulkanDeviceInfo {
 }
 
 impl VulkanContext {
+    /// Builds AAG candidates from the capabilities queried for each physical device.
+    /// The current renderer implements only the Vulkan 1.3 path; no legacy
+    /// Vulkan 1.0–1.2 backend is advertised here.
+    fn adaptive_graphics_candidates(&self) -> Vec<GraphicsCandidate> {
+        self.physical_devices
+            .iter()
+            .enumerate()
+            .map(|(device_index, device)| {
+                let has_graphics_queue = self.graphics_queue_family(device).is_some();
+                let modern_renderer = VulkanRenderingFeaturePlan::from_device(device).is_ok();
+                GraphicsCandidate {
+                    device_index,
+                    name: device.name().to_owned(),
+                    capabilities: GraphicsCapabilities {
+                        api_major: 1,
+                        api_minor: if modern_renderer { 3 } else { 0 },
+                        dynamic_rendering: modern_renderer,
+                        synchronization2: modern_renderer,
+                        compatibility_renderer_available: false,
+                        software_device: Self::classify_device(device) == VulkanDeviceType::Cpu,
+                        has_graphics_queue,
+                    },
+                }
+            })
+            .collect()
+    }
+
+    /// Returns the AAG plan based on the live Vulkan physical-device inventory.
+    pub fn adaptive_graphics_plan(&self) -> Option<crate::adaptive_graphics::AdaptiveGraphicsPlan> {
+        AureaAdaptiveGraphics::select(&self.adaptive_graphics_candidates())
+    }
+
     fn rendering_compatibility_error(
         device: &PhysicalDevice,
         has_graphics_queue: bool,
@@ -107,23 +142,17 @@ impl VulkanContext {
             RenderPreference::Automatic => None,
         };
 
-        self.physical_devices
-            .iter()
-            .filter(|device| {
-                self.graphics_queue_family(device).is_some()
-                    && Self::rendering_compatibility_error(device, true).is_none()
-            })
-            .find(|device| {
-                preferred_type
-                    .map(|kind| Self::classify_device(device) == kind)
-                    .unwrap_or(true)
-            })
-            .or_else(|| {
-                self.physical_devices.iter().find(|device| {
-                    self.graphics_queue_family(device).is_some()
-                        && Self::rendering_compatibility_error(device, true).is_none()
-                })
-            })
+        let mut candidates = self.adaptive_graphics_candidates();
+        candidates.sort_by_key(|candidate| {
+            let kind = Self::classify_device(&self.physical_devices[candidate.device_index]);
+            match preferred_type {
+                Some(preferred) if kind == preferred => 0,
+                _ if candidate.capabilities.software_device => 2,
+                _ => 1,
+            }
+        });
+        AureaAdaptiveGraphics::select(&candidates)
+            .and_then(|plan| self.physical_devices.get(plan.device_index))
     }
 
     /// Selects a Vulkan CPU device for host-readback compatibility rendering.
