@@ -28,6 +28,9 @@ impl<T> VulkanPendingUpload<T> {
         staging: VulkanUploadBatch,
         resources: T,
     ) -> Result<Self, vk::Result> {
+        if device.is_unusable() {
+            return Err(vk::Result::ERROR_DEVICE_LOST);
+        }
         let pool_info = vk::CommandPoolCreateInfo::default()
             .queue_family_index(device.graphics_queue_family())
             .flags(vk::CommandPoolCreateFlags::TRANSIENT);
@@ -137,6 +140,9 @@ impl<T> VulkanPendingUpload<T> {
     }
 
     fn cleanup(&mut self) {
+        if self.device.is_unusable() {
+            return;
+        }
         unsafe {
             if self.fence != vk::Fence::null() {
                 self.device.handle().destroy_fence(self.fence, None);
@@ -155,6 +161,19 @@ impl<T> VulkanPendingUpload<T> {
 
 impl<T> Drop for VulkanPendingUpload<T> {
     fn drop(&mut self) {
+        if self.device.is_unusable() {
+            if let Some(staging) = self.staging.take() {
+                mem::forget(staging);
+            }
+            if let Some(resources) = self.resources.take() {
+                mem::forget(resources);
+            }
+            mem::forget(Arc::clone(&self.device));
+            self.fence = vk::Fence::null();
+            self.command_pool = vk::CommandPool::null();
+            self.submitted = false;
+            return;
+        }
         if self.submitted {
             let fence_result = unsafe {
                 self.device
