@@ -86,7 +86,7 @@ impl VulkanSurfaceTextureCache {
         visible_surfaces: &[(ObjectId, u64, Arc<ShmBufferSnapshot>)],
     ) -> Result<(), VulkanSurfaceTextureCacheError> {
         if self.device.is_unusable() {
-            return Err(VulkanSurfaceTextureCacheError::Texture(VulkanShmTextureError::Device(vk::Result::ERROR_DEVICE_LOST)));
+            return Err(VulkanSurfaceTextureCacheError::Texture(VulkanShmTextureError::Command(vk::Result::ERROR_DEVICE_LOST)));
         }
         self.reap_completed_uploads()?;
         self.frame = self.frame.wrapping_add(1);
