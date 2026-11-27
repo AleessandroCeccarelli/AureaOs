@@ -32,7 +32,7 @@ impl VulkanLegacyFrameRecorder {
     pub(crate) fn clear(
         command_buffer: vk::CommandBuffer,
         render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
-        view: &VulkanImageView<'_, 'static>,
+        view: &VulkanImageView<'_, '_>,
         previous_state: VulkanImageState,
         next_state: VulkanImageState,
         color: [f32; 4],
