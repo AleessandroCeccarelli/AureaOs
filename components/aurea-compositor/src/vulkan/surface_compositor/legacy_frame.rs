@@ -10,7 +10,7 @@ use std::{sync::Arc, time::Instant};
 use smithay::reexports::ash::vk;
 
 use crate::{
-    desktop::{WallpaperDrawGeometry, WallpaperFitMode, WallpaperLayout},
+    desktop::{DesktopIconTextureKey, WallpaperDrawGeometry, WallpaperFitMode, WallpaperLayout},
     render::{RenderScene, geometry::{SurfaceGeometry, SurfaceScissor}},
     renderer::RenderTarget,
 };
@@ -23,17 +23,17 @@ use super::{
         self, LegacyContextMenuLayer, LegacyCursorTrailLayer, LegacyFrameLayers,
         LegacyNativeCursorLayer, LegacyWallpaperLayer,
     },
-    surface_pipeline_cache::LegacyPipelineLoad,
     visible_surfaces::VisibleSurface,
 };
 use super::super::{
-    VulkanDisplayColorPassError, VulkanLegacyFrameRecorder, VulkanSharedLegacyDisplayColorPass,
+    surface_pipeline_cache::LegacyPipelineLoad, VulkanDisplayColorPassError,
+    VulkanLegacyFrameRecorder, VulkanLegacyFrameRecorderError, VulkanSharedLegacyDisplayColorPass,
 };
 
 /// Records a complete compatibility frame using the resources already prepared
 /// by the common scene/cache path. No Vulkan 1.3 dynamic-rendering object is used.
 #[allow(clippy::too_many_arguments)]
-pub(super) fn render_frame_legacy<K: Copy>(
+pub(super) fn render_frame_legacy(
     device: &super::super::VulkanLogicalDevice,
     output_view: &VulkanImageView<'_, '_>,
     composition_view: &VulkanImageView<'_, '_>,
@@ -44,7 +44,7 @@ pub(super) fn render_frame_legacy<K: Copy>(
     previous_output_state: VulkanImageState,
     visible: &[VisibleSurface],
     wallpaper_asset_id: Option<&str>,
-    context_menu_key: Option<K>,
+    context_menu_key: Option<DesktopIconTextureKey>,
     context_menu_draw: Option<(vk::Viewport, vk::Rect2D, u32)>,
     cursor: Option<(SurfaceGeometry, SurfaceScissor, u32)>,
     cursor_trail: &[CursorTrailDraw],

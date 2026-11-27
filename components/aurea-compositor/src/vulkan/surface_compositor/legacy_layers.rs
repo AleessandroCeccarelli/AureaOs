@@ -20,7 +20,7 @@ fn record_surface_class<'pass, 'view, 'image, 'pass_device, 'view_device>(
     target: &VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     surfaces: &[VisibleSurface],
-    views: &[VulkanImageView<'_, '_>],
+    views: &[&VulkanImageView<'_, '_>],
     bindings: &[VulkanTextureBinding<'_, '_, '_, '_>],
     cursor_surfaces: bool,
 ) -> Result<(), VulkanSurfaceCompositionError> {
@@ -223,7 +223,7 @@ pub(super) struct LegacyFrameLayers<'pass, 'view, 'image, 'pass_device, 'view_de
     pub load_target: &'r VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pub clear_color: [f32; 4],
     pub visible: &'r [VisibleSurface],
-    pub surface_views: &'r [VulkanImageView<'i, 'id>],
+    pub surface_views: &'r [&'r VulkanImageView<'i, 'id>],
     pub surface_bindings: &'r [VulkanTextureBinding<'r, 'i, 'id, 'rd>],
     pub surface_pipeline: &'r VulkanSharedLegacyGraphicsPipeline,
     pub wallpaper: Option<LegacyWallpaperLayer<'r, 'i, 'id, 'rd>>,
