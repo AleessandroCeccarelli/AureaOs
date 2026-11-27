@@ -133,8 +133,6 @@ impl VulkanDmabufImportSupport {
                 });
             }
         }
-        supported.sort_by_key(|format| (format.code, u64::from(format.modifier)));
-        supported.dedup();
         supported
     }
 
