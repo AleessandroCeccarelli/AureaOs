@@ -16,6 +16,7 @@ pub mod limits;
 pub mod manager;
 pub mod modes;
 pub mod policy;
+pub mod selection;
 
 pub use capabilities::{
     DisplayCapabilities, DisplayConnector, DisplayDescriptor, DisplayId, DisplayPhysicalSize,
@@ -47,6 +48,9 @@ pub use manager::{
 pub use modes::DisplayMode;
 pub use policy::{
     ActiveRefreshStrategy, DisplayManagementMode, DisplayPolicyContext, DisplayRefreshPolicy,
+};
+pub use selection::{
+    DisplayModeSelection, DisplayModeSelectionError, select_display_mode,
 };
 
 use std::sync::{
