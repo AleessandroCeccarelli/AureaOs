@@ -1425,3 +1425,10 @@ Cautions:
 - Device inventory deliberately continues to report `CompatibilityPending` as not render-ready, and `physical_device.rs` keeps `compatibility_renderer_available: false`. AAG must not select legacy hardware until the complete frame compositor, shaders, transitions, submission and DRM/readback presentation path are integrated and validated.
 - No build, tests, rustfmt, shader compilation or hardware validation was run for this change. The new negotiation and ash pNext typing still require a grouped Fedora validation before being considered compile-verified.
 
+### Legacy compositor fail-closed boundary (2026-11-27)
+
+- `surface_compositor::render_frame` now checks `VulkanLogicalDevice::rendering_mode()` before wallpaper decoding, texture preparation, or command recording.
+- A `CompatibilityPending` device returns the explicit `CompatibilityRendererNotIntegrated` composition error. It can no longer fall through to the active Vulkan 1.3 dynamic-rendering calls by accident.
+- This guard is temporary and intentional. Remove it only when the complete legacy frame recording path is dispatched here, including clear, wallpaper, normal surfaces, context menu, client cursor surfaces, cursor trail, native cursor, optional display color, and the correct DRM release or readback submission.
+- No build, tests, rustfmt, shader compilation or hardware validation was run.
+
