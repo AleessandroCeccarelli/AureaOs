@@ -44,7 +44,12 @@ impl<T> VulkanPendingUpload<T> {
         {
             Ok(buffers) => buffers[0],
             Err(error) => {
-                unsafe { device.handle().destroy_command_pool(command_pool, None) };
+                if device.is_unusable() || error == vk::Result::ERROR_DEVICE_LOST {
+                    device.mark_unusable();
+                    mem::forget(Arc::clone(&device));
+                } else {
+                    unsafe { device.handle().destroy_command_pool(command_pool, None) };
+                }
                 return Err(error);
             }
         };
@@ -53,7 +58,12 @@ impl<T> VulkanPendingUpload<T> {
             .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
         if let Err(error) = unsafe { device.handle().begin_command_buffer(command_buffer, &begin) }
         {
-            unsafe { device.handle().destroy_command_pool(command_pool, None) };
+            if device.is_unusable() || error == vk::Result::ERROR_DEVICE_LOST {
+                device.mark_unusable();
+                mem::forget(Arc::clone(&device));
+            } else {
+                unsafe { device.handle().destroy_command_pool(command_pool, None) };
+            }
             return Err(error);
         }
 
