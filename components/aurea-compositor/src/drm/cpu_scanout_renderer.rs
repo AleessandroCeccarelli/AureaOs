@@ -186,7 +186,7 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
                     )
                 });
 
-        surface_compositor::render_and_readback(
+        if let Err(error) = surface_compositor::render_and_readback(
             self.vulkan.device(),
             &view,
             target,
@@ -195,10 +195,27 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
             VulkanImageState::Undefined,
             effective_display,
             &mut readback,
-        )
-        .map_err(|error| {
-            VulkanCpuScanoutError(format!("Vulkan scene composition failed: {error}"))
-        })?;
+        ) {
+            if error.is_uncertain_submission() {
+                // The command buffer may still reference both output images.
+                // Keep their views, images, and staging allocation alive when
+                // neither fence completion nor device-idle fallback was proven.
+                std::mem::forget(view);
+                std::mem::forget(image);
+                if let Some(intermediate_view) = intermediate_view {
+                    std::mem::forget(intermediate_view);
+                }
+                if let Some(intermediate) = intermediate {
+                    std::mem::forget(intermediate);
+                }
+                if let Some(readback_buffer) = readback.take() {
+                    std::mem::forget(readback_buffer);
+                }
+            }
+            return Err(VulkanCpuScanoutError(format!(
+                "Vulkan scene composition failed: {error}"
+            )));
+        }
         let pixels = readback
             .as_ref()
             .expect("successful composition retains its readback buffer")
