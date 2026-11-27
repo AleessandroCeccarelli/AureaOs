@@ -22,7 +22,10 @@ impl fmt::Display for VulkanLegacyRenderPassError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Creation(error) => {
-                write!(formatter, "Legacy Vulkan render-pass creation failed: {error:?}")
+                write!(
+                    formatter,
+                    "Legacy Vulkan render-pass creation failed: {error:?}"
+                )
             }
             Self::DeviceMismatch => formatter
                 .write_str("Legacy render target and image view use different Vulkan devices"),
