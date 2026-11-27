@@ -75,7 +75,7 @@ impl VulkanClearPass {
     /// recorded around the legacy render-pass scope.
     pub fn record_legacy_color(
         command_buffer: vk::CommandBuffer,
-        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
         previous_state: VulkanImageState,
         final_state: VulkanImageState,
         clear_color: [f32; 4],
