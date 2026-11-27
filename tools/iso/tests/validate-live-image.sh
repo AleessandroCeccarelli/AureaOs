@@ -120,7 +120,7 @@ done
 # Package-list declarations alone are insufficient: these checks inspect the
 # installed package database and the driver/runtime payload shipped in SquashFS.
 for package in linux-image-amd64 firmware-amd-graphics libvulkan1 mesa-vulkan-drivers \
-    libdrm2 libgbm1 libinput10 libseat1 libudev1 libpam-systemd \
+    libdrm2 libgbm1 libinput10 libseat1 libudev1 libxkbcommon0 xkb-data libpam-systemd \
     libturbojpeg0 libheif1 libheif-plugin-libde265 libheif-plugin-dav1d; do
     status="$(dpkg-query --admindir="$ROOTFS/var/lib/dpkg" -W -f='${db:Status-Status}' "$package" 2>/dev/null)" ||
         fail "AureaOS runtime dependency is missing from the Live rootfs: $package"
