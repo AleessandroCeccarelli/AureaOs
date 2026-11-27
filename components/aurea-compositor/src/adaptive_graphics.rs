@@ -109,9 +109,15 @@ impl AureaAdaptiveGraphics {
 mod tests {
     use super::*;
 
-    fn candidate(name: &str, software: bool, modern: bool, compatibility: bool) -> GraphicsCandidate {
+    fn candidate(
+        device_index: usize,
+        name: &str,
+        software: bool,
+        modern: bool,
+        compatibility: bool,
+    ) -> GraphicsCandidate {
         GraphicsCandidate {
-            device_index: 0,
+            device_index,
             name: name.to_owned(),
             capabilities: GraphicsCapabilities {
                 api_major: if modern { 1 } else { 1 },
@@ -128,30 +134,32 @@ mod tests {
     #[test]
     fn prefers_modern_hardware_over_software() {
         let candidates = [
-            candidate("Lavapipe", true, true, false),
-            candidate("Integrated GPU", false, true, false),
+            candidate(1, "Lavapipe", true, true, false),
+            candidate(0, "Integrated GPU", false, true, false),
         ];
         let plan = AureaAdaptiveGraphics::select(&candidates).unwrap();
         assert_eq!(plan.device_name, "Integrated GPU");
+        assert_eq!(plan.device_index, 0);
         assert_eq!(plan.path, GraphicsPath::ModernVulkan);
     }
 
     #[test]
     fn compatibility_is_not_selected_until_legacy_backend_is_wired() {
-        let candidates = [candidate("Legacy GPU", false, false, true)];
+        let candidates = [candidate(2, "Legacy GPU", false, false, true)];
         assert!(AureaAdaptiveGraphics::select(&candidates).is_none());
     }
 
     #[test]
     fn does_not_claim_legacy_support_without_legacy_renderer() {
-        let candidates = [candidate("Older GPU", false, false, false)];
+        let candidates = [candidate(3, "Older GPU", false, false, false)];
         assert!(AureaAdaptiveGraphics::select(&candidates).is_none());
     }
 
     #[test]
     fn software_is_a_fallback_not_a_hardware_replacement() {
-        let candidates = [candidate("Lavapipe", true, true, false)];
+        let candidates = [candidate(4, "Lavapipe", true, true, false)];
         let plan = AureaAdaptiveGraphics::select(&candidates).unwrap();
         assert_eq!(plan.path, GraphicsPath::SoftwareVulkan);
+        assert_eq!(plan.device_index, 4);
     }
 }
