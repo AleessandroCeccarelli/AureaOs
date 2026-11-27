@@ -3,7 +3,7 @@
 # AureaOS ISO Factory
 
 **Status:** operating procedure and target specification  
-**Last reviewed:** 2026-11-26  
+**Last reviewed:** 2026-11-27  
 **Repository:** `AleessandroCeccarelli/AureaOs`  
 **Primary branch:** `main`  
 **Target platform:** Debian GNU/Linux 13 (Trixie), amd64
@@ -205,7 +205,18 @@ The manifest should record at least:
 
 The repository already has a working foundation, but ISO Factory is not yet a fully finished release-management system.
 
-### Implemented in the repository as inspected on 2026-11-26
+### Follow-up audit — 2026-11-27
+
+A full source-snapshot and target-runtime dependency pass found and corrected two gaps:
+
+- The `git archive HEAD` source snapshot included the wallpaper and context-menu masters, but omitted `aurea-human-interfaces/icons/source/system/trash`. Aurea Shell embeds six Trash SVG files with `include_bytes!`, so the release build could fail at compile time even though the assets existed in the repository. The ISO coordinator now archives the Trash source directory and checks all six files immediately after staging.
+- The final SquashFS validator previously checked the compositor/session and cursor payloads, but did not prove that the actual image contained the AMD kernel module, AMD firmware, RADV Vulkan ICD, Vulkan loader or the native media runtime libraries. It now extracts and checks those payloads and verifies the corresponding installed Debian packages, including DRM/GBM/libinput/libseat/logind and HEIF/TurboJPEG runtime packages.
+
+The validator additions are static image-content checks; they do not prove that a physical GPU initializes, that Vulkan presentation succeeds on a particular machine, or that a physical mouse moves. Those remain hardware tests. No ISO build, Rust build or hardware test was run as part of this repository edit.
+
+The ISO source archive is intentionally created from `git archive HEAD`, not from arbitrary uncommitted working-tree files. Therefore all intended changes must be committed on the checked-out commit before starting the Fedora/Podman build. The wrapper also refuses a dirty working tree and pins a workspace to that exact commit.
+
+### Implemented in the repository as inspected on 2026-11-27
 
 - Debian Trixie amd64 live-build configuration.
 - Production desktop build enables the opt-in `heif` feature, while ordinary development builds remain free of a mandatory native libheif dependency.
