@@ -20,7 +20,7 @@ pub(crate) use error::VulkanSurfaceCompositionError;
 use readback::{clear_and_readback, clear_display_and_readback};
 pub(crate) use readback_entry::render_and_readback;
 use release::{clear_and_release, clear_display_and_release};
-use visible_surfaces::visible_surfaces;
+use visible_surfaces::{visible_surfaces, visible_dmabuf_surfaces};
 
 use std::sync::Arc;
 
@@ -31,6 +31,8 @@ use crate::{
     desktop::{WallpaperDrawGeometry, WallpaperFitMode, WallpaperLayout},
     render::{
         RenderScene,
+        #[cfg(feature = "drm")]
+        OrderedSurfaceBufferSnapshot,
         geometry::{
             compose_surface_transforms, surface_geometry, surface_geometry_with_fractional_scale,
             surface_transform_index, transform_geometry_for_output,
@@ -47,6 +49,12 @@ use super::{
     VulkanImageState, VulkanImageTransition, VulkanImageView, VulkanLogicalDevice,
     VulkanNativeCursorTextureError, VulkanReadbackBuffer, VulkanSurfacePipelineCache,
     VulkanTextureBinding,
+    #[cfg(feature = "drm")]
+    DmabufSyncWaitSet,
+    #[cfg(feature = "drm")]
+    VulkanDmabufImage,
+    #[cfg(feature = "drm")]
+    VulkanImageView,
 };
 
 pub(super) const MAX_COMPOSITED_SURFACES: usize = 128;
@@ -201,6 +209,45 @@ pub(super) fn render_frame(
     let active_surface_ids = scene.surface_ids();
     let snapshots = scene.shm_snapshots();
     let visible = visible_surfaces(snapshots, target)?;
+    #[cfg(feature = "drm")]
+    let visible_dmabuf = visible_dmabuf_surfaces(scene.dmabuf_snapshots(), target)?;
+    #[cfg(feature = "drm")]
+    let mut dmabuf_images = visible_dmabuf
+        .iter()
+        .map(|surface| {
+            VulkanDmabufImage::import(
+                surface_cache.device_owner(),
+                surface.snapshot.layout.clone(),
+            )
+            .map(Arc::new)
+            .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    #[cfg(feature = "drm")]
+    let mut dmabuf_sync_wait_set = {
+        let mut wait_set = DmabufSyncWaitSet::new(surface_cache.device_owner());
+        for surface in &visible_dmabuf {
+            wait_set
+                .import_layout(&surface.snapshot.layout)
+                .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+        }
+        wait_set
+    };
+    #[cfg(feature = "drm")]
+    let ordered_draws = scene
+        .ordered_buffer_snapshots()
+        .into_iter()
+        .filter_map(|snapshot| match snapshot {
+            OrderedSurfaceBufferSnapshot::Shm(snapshot) => visible
+                .iter()
+                .position(|surface| surface.surface_id == snapshot.surface_id)
+                .map(OrderedSurfaceDraw::Shm),
+            OrderedSurfaceBufferSnapshot::Dmabuf(snapshot) => visible_dmabuf
+                .iter()
+                .position(|surface| surface.snapshot.surface_id == snapshot.surface_id)
+                .map(OrderedSurfaceDraw::Dmabuf),
+        })
+        .collect::<Vec<_>>();
     let cursor_needed =
         scene.native_cursor_asset().is_some() && scene.native_cursor_pointer_location().is_some();
     let wallpaper_asset_id = scene
@@ -426,6 +473,7 @@ pub(super) fn render_frame(
     let binding_pool = surface_cache
         .create_texture_binding_pool(
             visible.len() as u32
+                + { #[cfg(feature = "drm")] { visible_dmabuf.len() as u32 } #[cfg(not(feature = "drm"))] { 0 } }
                 + u32::from(cursor_texture_ready)
                 + u32::from(wallpaper_ready)
                 + u32::from(context_menu_ready),
@@ -445,6 +493,28 @@ pub(super) fn render_frame(
         })
         .collect::<Result<Vec<_>, _>>()?;
     let bindings = views
+        .iter()
+        .map(|texture_view| {
+            VulkanTextureBinding::new_in_pool(
+                device,
+                &binding_pool,
+                &descriptor_layout,
+                texture_view,
+                &sampler,
+            )
+            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+
+    #[cfg(feature = "drm")]
+    let dmabuf_views = dmabuf_images
+        .iter()
+        .cloned()
+        .map(VulkanImageView::color_dmabuf_owned)
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+    #[cfg(feature = "drm")]
+    let dmabuf_bindings = dmabuf_views
         .iter()
         .map(|texture_view| {
             VulkanTextureBinding::new_in_pool(
@@ -612,47 +682,82 @@ pub(super) fn render_frame(
         }
     }
 
-    for (surface, binding) in visible.iter().zip(bindings.iter()) {
-        if surface.is_cursor {
-            continue;
+    #[cfg(feature = "drm")]
+    for draw in &ordered_draws {
+        match *draw {
+            OrderedSurfaceDraw::Shm(index) => {
+                let surface = &visible[index];
+                if surface.is_cursor { continue; }
+                let binding = &bindings[index];
+                let geometry = surface.geometry;
+                let clipped = surface.scissor;
+                let viewport = vk::Viewport {
+                    x: geometry.x() as f32, y: geometry.y() as f32,
+                    width: geometry.width() as f32, height: geometry.height() as f32,
+                    min_depth: 0.0, max_depth: 1.0,
+                };
+                let scissor = vk::Rect2D {
+                    offset: vk::Offset2D {
+                        x: i32::try_from(clipped.x).map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                        y: i32::try_from(clipped.y).map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                    },
+                    extent: vk::Extent2D { width: clipped.width, height: clipped.height },
+                };
+                VulkanDrawPass::record_textured_region(
+                    command_buffer.handle(), composition_view, &pipeline, binding, 0,
+                    VulkanImageState::General, VulkanImageState::General, VulkanColorLoad::Load,
+                    viewport, scissor, surface.texture_transform,
+                ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+            }
+            OrderedSurfaceDraw::Dmabuf(index) => {
+                let surface = &visible_dmabuf[index];
+                let source = &dmabuf_views[index];
+                let binding = &dmabuf_bindings[index];
+                let geometry = surface.geometry;
+                let clipped = surface.scissor;
+                let viewport = vk::Viewport {
+                    x: geometry.x() as f32, y: geometry.y() as f32,
+                    width: geometry.width() as f32, height: geometry.height() as f32,
+                    min_depth: 0.0, max_depth: 1.0,
+                };
+                let scissor = vk::Rect2D {
+                    offset: vk::Offset2D {
+                        x: i32::try_from(clipped.x).map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                        y: i32::try_from(clipped.y).map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                    },
+                    extent: vk::Extent2D { width: clipped.width, height: clipped.height },
+                };
+                VulkanDrawPass::record_foreign_textured_region(
+                    command_buffer.handle(), composition_view, source, &pipeline, binding, 0,
+                    VulkanImageState::General, VulkanImageState::General, VulkanColorLoad::Load,
+                    viewport, scissor, surface.texture_transform,
+                ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+            }
         }
+    }
+
+    #[cfg(not(feature = "drm"))]
+    for (surface, binding) in visible.iter().zip(bindings.iter()) {
+        if surface.is_cursor { continue; }
         let geometry = surface.geometry;
-        let scissor = surface.scissor;
+        let clipped = surface.scissor;
         let viewport = vk::Viewport {
-            x: geometry.x() as f32,
-            y: geometry.y() as f32,
-            width: geometry.width() as f32,
-            height: geometry.height() as f32,
-            min_depth: 0.0,
-            max_depth: 1.0,
+            x: geometry.x() as f32, y: geometry.y() as f32,
+            width: geometry.width() as f32, height: geometry.height() as f32,
+            min_depth: 0.0, max_depth: 1.0,
         };
         let scissor = vk::Rect2D {
             offset: vk::Offset2D {
-                x: i32::try_from(scissor.x)
-                    .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
-                y: i32::try_from(scissor.y)
-                    .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                x: i32::try_from(clipped.x).map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                y: i32::try_from(clipped.y).map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
             },
-            extent: vk::Extent2D {
-                width: scissor.width,
-                height: scissor.height,
-            },
+            extent: vk::Extent2D { width: clipped.width, height: clipped.height },
         };
-
         VulkanDrawPass::record_textured_region(
-            command_buffer.handle(),
-            composition_view,
-            &pipeline,
-            binding,
-            0,
-            VulkanImageState::General,
-            VulkanImageState::General,
-            VulkanColorLoad::Load,
-            viewport,
-            scissor,
-            surface.texture_transform,
-        )
-        .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+            command_buffer.handle(), composition_view, &pipeline, binding, 0,
+            VulkanImageState::General, VulkanImageState::General, VulkanColorLoad::Load,
+            viewport, scissor, surface.texture_transform,
+        ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
 
     if let (Some((viewport, scissor, texture_transform)), Some(binding)) =
@@ -831,7 +936,14 @@ pub(super) fn render_frame(
         .end()
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
     // All sampled texture uploads are complete before the draw submission.
-    if let Err(queue_error) = command_buffer.submit_and_wait_with(on_submitted) {
+    #[cfg(feature = "drm")]
+    let submit_result = command_buffer.submit_and_wait_with_semaphores(
+        dmabuf_sync_wait_set.wait_semaphores(),
+        on_submitted,
+    );
+    #[cfg(not(feature = "drm"))]
+    let submit_result = command_buffer.submit_and_wait_with(on_submitted);
+    if let Err(queue_error) = submit_result {
         if queue_error.is_uncertain() {
             // The readback allocation is referenced by the submitted command
             // buffer. Keep it alive if neither the fence nor device-idle fallback
@@ -842,6 +954,14 @@ pub(super) fn render_frame(
                 }
             }
             std::mem::forget(bindings);
+            #[cfg(feature = "drm")]
+            {
+                dmabuf_sync_wait_set.quarantine();
+                std::mem::forget(dmabuf_images);
+                std::mem::forget(dmabuf_views);
+                std::mem::forget(dmabuf_bindings);
+                std::mem::forget(visible_dmabuf);
+            }
             std::mem::forget(wallpaper_binding);
             std::mem::forget(context_menu_binding);
             std::mem::forget(cursor_binding);
@@ -852,6 +972,13 @@ pub(super) fn render_frame(
     }
 
     Ok(())
+}
+
+#[cfg(feature = "drm")]
+#[derive(Debug, Clone, Copy)]
+enum OrderedSurfaceDraw {
+    Shm(usize),
+    Dmabuf(usize),
 }
 
 #[cfg(test)]
