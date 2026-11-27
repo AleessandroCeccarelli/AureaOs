@@ -2692,3 +2692,13 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - Smithay documents that `set_default_feedback` updates all known default feedback objects associated with the global. This refresh does not yet supply per-surface feedback or GPU-specific preference tranches.
 - Remaining edge case: when there are temporarily no usable Vulkan backends, reconciliation deliberately does not publish an empty feedback table or destroy the global. The previous global/feedback can remain visible until a usable backend returns. This needs a dedicated no-renderer policy before the lifecycle block can be considered complete.
 - No build, formatting, tests, CI or hardware validation was run.
+
+
+### 2026-11-27 — Per-surface feedback and session-pause audit
+
+- Reviewed Smithay 0.7's documented per-surface feedback lifecycle. A surface feedback object is attached through `SurfaceDmabufFeedbackState::from_states` and updated with `set_feedback`; the handler's `new_surface_feedback` only selects the initial feedback when the client requests it.
+- AureaOS does not yet maintain an authoritative mapping from each `WlSurface` to the output/render GPU that should drive its feedback. A surface can also span multiple outputs. Assigning a GPU from arbitrary scene iteration or from the cursor's current output would therefore advertise misleading format preferences. No speculative per-surface feedback implementation was added.
+- Audited the session pause path: after KMS surfaces are cleared, GBM devices and Vulkan backends are dropped. The existing feedback refresh routine intentionally refuses to replace feedback when no usable renderer/main device exists, so the previously published default feedback may remain advertised during the paused interval. This is a known lifecycle gap, not a completed case.
+- Correct completion requires preserving a valid DRM main-device identity while paused and publishing an empty/no-renderer-safe feedback state, or introducing a protocol-global lifecycle policy that can be safely re-enabled without invalidating existing client bindings. This must be resolved against Smithay's actual global semantics before changing runtime behavior.
+- Next: model surface-to-output/render-device association explicitly, including spanning surfaces; define pause/resume feedback behavior; then add unit tests for cursor scale/hotspot parity and feedback reconciliation before the final full build/test pass.
+- No build, formatting, tests, CI or hardware validation was run.
