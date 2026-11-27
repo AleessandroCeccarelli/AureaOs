@@ -168,7 +168,7 @@ grep -Fq 'After=systemd-logind.service systemd-user-sessions.service' "$ROOTFS/e
     fail "AureaOS systemd service is not ordered after logind and user-session readiness"
 grep -Fq 'Wants=systemd-logind.service' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
     fail "AureaOS systemd service does not pull in systemd-logind"
-grep -Fxq 'LIBSEAT_BACKEND=logind' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
+grep -Fxq 'Environment=LIBSEAT_BACKEND=logind' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
     fail "AureaOS service does not select the logind libseat backend"
 grep -Fxq 'Environment=XDG_SEAT=seat0' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
     fail "AureaOS service does not identify the expected logind seat"
