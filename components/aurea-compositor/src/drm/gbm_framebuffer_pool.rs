@@ -219,7 +219,23 @@ impl GbmCpuFramebufferPool {
             .ok_or(GbmCpuFramebufferPoolError::UnknownFramebuffer(id))
     }
 
-    fn ensure_registered(&self, id: DrmFramebufferId) -> Result<(), GbmCpuFramebufferPoolError> {
+    impl Drop for GbmCpuFramebufferPool {
+    fn drop(&mut self) {
+        let has_kms_owned_buffers = self
+            .buffers
+            .keys()
+            .copied()
+            .any(|id| self.is_in_use(id));
+        if has_kms_owned_buffers {
+            // A failed output disable or unresolved page flip means KMS may
+            // still reference these GBM allocations. Preserve them rather
+            // than closing GEM/GBM owners underneath an active scanout.
+            std::mem::forget(std::mem::take(&mut self.buffers));
+        }
+    }
+}
+
+fn ensure_registered(&self, id: DrmFramebufferId) -> Result<(), GbmCpuFramebufferPoolError> {
         self.buffers
             .contains_key(&id)
             .then_some(())
