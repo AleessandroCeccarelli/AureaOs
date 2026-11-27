@@ -8,7 +8,7 @@
 use std::{
     error::Error,
     fmt,
-    os::fd::AsRawFd,
+    os::fd::{AsRawFd, IntoRawFd},
     sync::Arc,
 };
 
@@ -138,7 +138,7 @@ impl VulkanDmabufImage {
         // succeeds. On failure, imported_fd remains owned here and is closed.
         let memory = match unsafe { raw.allocate_memory(&allocation_info, None) } {
             Ok(memory) => {
-                let _transferred_fd = imported_fd;
+                let _raw_fd_owned_by_vulkan = imported_fd.into_raw_fd();
                 memory
             }
             Err(error) => {
