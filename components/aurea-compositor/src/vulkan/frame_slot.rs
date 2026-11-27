@@ -62,8 +62,7 @@ impl VulkanFrameSlot {
                 Err(error) => {
                     if device.is_unusable() || error == vk::Result::ERROR_DEVICE_LOST {
                         device.mark_unusable();
-                        std::mem::forget(completion_fence);
-                        // The raw handle is intentionally abandoned after device loss.
+                        // The raw fence and command-pool handles are intentionally abandoned after device loss.
                     } else {
                         unsafe {
                             device.handle().destroy_fence(completion_fence, None);
