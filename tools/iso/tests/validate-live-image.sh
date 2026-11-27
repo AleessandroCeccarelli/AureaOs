@@ -164,6 +164,16 @@ grep -Fxq 'Environment=AUREAOS_LIVE_MINIMAL=1' "$ROOTFS/etc/systemd/system/aurea
     fail "AureaOS Live service does not disable the Welcome window for the wallpaper-only first boot"
 grep -Fq 'ExecStart=/usr/local/bin/aurea-live-session' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
     fail "AureaOS systemd service does not start the Live session launcher"
+grep -Fq 'After=systemd-logind.service systemd-user-sessions.service' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
+    fail "AureaOS systemd service is not ordered after logind and user-session readiness"
+grep -Fq 'Wants=systemd-logind.service' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
+    fail "AureaOS systemd service does not pull in systemd-logind"
+grep -Fxq 'LIBSEAT_BACKEND=logind' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
+    fail "AureaOS service does not select the logind libseat backend"
+grep -Fxq 'Environment=XDG_SEAT=seat0' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
+    fail "AureaOS service does not identify the expected logind seat"
+grep -Fxq 'TTYPath=/dev/tty1' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
+    fail "AureaOS service is not attached to the configured first virtual terminal"
 grep -Fq 'pam_systemd.so' "$ROOTFS/etc/pam.d/aurea-desktop" ||
     fail "AureaOS PAM service does not invoke pam_systemd"
 ENABLED_SERVICE="$ROOTFS/etc/systemd/system/multi-user.target.wants/aurea-desktop.service"
