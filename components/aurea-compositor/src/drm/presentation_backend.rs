@@ -231,7 +231,13 @@ impl DrmPresentationBackend {
         }
 
         let requires_modeset = surface.commit_pending();
-        self.frames.begin_presentation(candidate)?;
+        if let Err(error) = self.frames.begin_presentation(candidate) {
+            let rollback = self.rollback_mode_change(surface);
+            return Err(DrmPresentationBackendError::KmsOperation(match rollback {
+                Ok(()) => format!("Unable to begin frame presentation: {error}"),
+                Err(restore) => format!("Unable to begin frame presentation: {error}; restoring previous KMS mode failed: {restore}"),
+            }));
+        }
 
         if let Err(error) = surface.test_state(planes.iter().cloned(), requires_modeset) {
             let operation = format!("Atomic TEST_ONLY rejected the Vulkan framebuffer: {error}");
@@ -248,12 +254,22 @@ impl DrmPresentationBackend {
             };
         }
 
-        self.frames.presentation_test_passed()?;
+        if let Err(error) = self.frames.presentation_test_passed() {
+            let rollback = self.rollback_mode_change(surface);
+            return Err(DrmPresentationBackendError::KmsOperation(match rollback {
+                Ok(()) => format!("Frame lifecycle rejected successful TEST_ONLY: {error}"),
+                Err(restore) => format!("Frame lifecycle rejected successful TEST_ONLY: {error}; restoring previous KMS mode failed: {restore}"),
+            }));
+        }
         if let Err(error) = self.frames.validate_commit_ready(require_in_fence) {
             let operation =
                 format!("KMS commit preconditions failed after TEST_ONLY validation: {error}");
+            let rollback = self.rollback_mode_change(surface);
             return match self.frames.presentation_commit_failed() {
-                Ok(_) => Err(DrmPresentationBackendError::Lifecycle(error)),
+                Ok(_) => Err(DrmPresentationBackendError::KmsOperation(match rollback {
+                    Ok(()) => operation,
+                    Err(restore) => format!("{operation}; restoring previous KMS mode failed: {restore}"),
+                })),
                 Err(lifecycle) => Err(DrmPresentationBackendError::Recovery {
                     operation,
                     lifecycle,
