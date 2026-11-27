@@ -1552,3 +1552,8 @@ Cautions:
 - The frame owner leaks/retains framebuffers and the shared descriptor pool on uncertain completion, avoiding destruction of objects potentially referenced by an in-flight command buffer. The command buffer's Pending-state Drop already retains its allocation when device-idle fails.
 - Readback storage is borrowed from outside this frame owner; its lifetime under uncertain completion is a known remaining audit item.
 - No build, rustfmt, cargo check, tests or GPU validation was run. Do not mark synchronization hardening complete until readback ownership is resolved and Fedora verification passes.
+
+
+## 2026-11-27 — Readback ownership follow-up
+
+The legacy Vulkan frame path now retains the host-visible readback allocation on uncertain queue submission/completion. `render_and_readback` accepts a mutable owned-buffer slot; `legacy_frame` removes and leaks the buffer only on the uncertain error path; CPU scanout reads from the slot after successful composition. This closes the previously identified staging-buffer lifetime hole, but does not certify all frame-resource lifetimes: output/intermediate images are still owned outside the frame function and need a dedicated uncertain-completion audit. No compilation, formatting, tests, or GPU execution performed.
