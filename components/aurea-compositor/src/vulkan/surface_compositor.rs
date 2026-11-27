@@ -22,7 +22,7 @@ pub(crate) use readback_entry::render_and_readback;
 use release::{clear_and_release, clear_display_and_release};
 use visible_surfaces::{visible_surfaces, visible_dmabuf_surfaces};
 
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use aurea_desktop_api::desktop::DesktopContextMenuLayout;
 use smithay::reexports::ash::vk;
@@ -220,24 +220,37 @@ pub(super) fn render_frame(
         ));
     }
     #[cfg(feature = "drm")]
-    let dmabuf_images = visible_dmabuf
-        .iter()
-        .map(|surface| {
-            VulkanDmabufImage::import(
+    let (dmabuf_images, dmabuf_image_indices) = {
+        let mut indices = HashMap::new();
+        let mut images = Vec::new();
+        for surface in &visible_dmabuf {
+            let buffer_id = surface.snapshot.buffer.id();
+            if indices.contains_key(&buffer_id) {
+                continue;
+            }
+            let image = VulkanDmabufImage::import(
                 surface_cache.device_owner(),
                 surface.snapshot.layout.clone(),
             )
             .map(Arc::new)
-            .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))
-        })
-        .collect::<Result<Vec<_>, _>>()?;
+            .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+            indices.insert(buffer_id, images.len());
+            images.push(image);
+        }
+        (images, indices)
+    };
+    // Geometry remains per surface; the underlying Vulkan image is imported once
+    // for each distinct wl_buffer attached anywhere in this frame.
     #[cfg(feature = "drm")]
     let dmabuf_sync_wait_set = {
         let mut wait_set = DmabufSyncWaitSet::new(surface_cache.device_owner());
+        let mut waited_buffers = std::collections::HashSet::new();
         for surface in &visible_dmabuf {
-            wait_set
-                .import_layout(&surface.snapshot.layout)
-                .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+            if waited_buffers.insert(surface.snapshot.buffer.id()) {
+                wait_set
+                    .import_layout(&surface.snapshot.layout)
+                    .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
+            }
         }
         wait_set
     };
@@ -496,7 +509,7 @@ pub(super) fn render_frame(
     let binding_pool = surface_cache
         .create_texture_binding_pool(
             visible.len() as u32
-                + { #[cfg(feature = "drm")] { visible_dmabuf.len() as u32 } #[cfg(not(feature = "drm"))] { 0 } }
+                + { #[cfg(feature = "drm")] { dmabuf_images.len() as u32 } #[cfg(not(feature = "drm"))] { 0 } }
                 + u32::from(cursor_texture_ready)
                 + u32::from(wallpaper_ready)
                 + u32::from(context_menu_ready),
@@ -734,8 +747,9 @@ pub(super) fn render_frame(
             }
             OrderedSurfaceDraw::Dmabuf(index) => {
                 let surface = &visible_dmabuf[index];
-                let source = &dmabuf_views[index];
-                let binding = &dmabuf_bindings[index];
+                let image_index = visible_dmabuf[index].image_index;
+                let source = &dmabuf_views[image_index];
+                let binding = &dmabuf_bindings[image_index];
                 let geometry = surface.geometry;
                 let clipped = surface.scissor;
                 let viewport = vk::Viewport {
