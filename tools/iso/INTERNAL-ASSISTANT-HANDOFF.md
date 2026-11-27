@@ -1341,3 +1341,14 @@ Cautions:
 
 
 - `41e63f8`: gated the legacy display-color manager field, import, initialization, and accessor behind the existing `drm` feature. The general surface-pipeline cache is compiled without DRM too, so this gate is necessary to avoid making non-DRM builds depend on DRM-only modules.
+
+
+## Vulkan legacy draw recording — 2026-11-27
+
+- `216456e`: added `VulkanDrawPass::record_shared_legacy_textured_region` and `record_shared_legacy_clear`.
+  - Both operate with `VulkanSharedLegacyGraphicsPipeline`, whose render pass is retained through shared ownership.
+  - Textured-region recording validates push-constant size/alignment, sampled usage, exact descriptor-to-view identity, no source/target alias, same device, target color-attachment usage, exact render-pass compatibility, matching load operation, and viewport/scissor bounds.
+  - It records Vulkan 1.0 image barriers, begins/ends the traditional render pass, binds descriptors/push constants, sets viewport/scissor, draws, and transitions the target to the requested final state.
+  - The clear recorder validates clear/load compatibility and records a full-target draw.
+- These recorders are primitives for the later frame orchestrator; they do not yet replace `surface_compositor::render_frame` or make the legacy backend selectable.
+- No build, test, rustfmt, shader compilation, or ISO build was run.
