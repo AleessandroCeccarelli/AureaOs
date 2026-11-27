@@ -68,9 +68,13 @@ pub fn select_display_mode(
             .ok_or(DisplayModeSelectionError::NoSupportedModes)?
     };
 
+    let variable_refresh_usable = display
+        .capabilities
+        .variable_refresh
+        .is_some_and(|range| mode.refresh_millihz() >= range.maximum_millihz());
     let refresh_strategy = match refresh_policy {
         DisplayRefreshPolicy::Automatic | DisplayRefreshPolicy::PreferVariable
-            if display.capabilities.variable_refresh.is_some() =>
+            if variable_refresh_usable =>
         {
             ActiveRefreshStrategy::Variable
         }
@@ -275,6 +279,21 @@ mod tests {
         )
         .unwrap();
         assert_eq!(fallback.refresh_strategy(), ActiveRefreshStrategy::Fixed);
+    }
+
+    #[test]
+    fn vrr_is_not_selected_when_the_chosen_mode_cannot_cover_its_verified_range() {
+        let mut descriptor = display(Some(VariableRefreshRange::new(48_000, 144_000).unwrap()));
+        descriptor.supported_modes.pop();
+        let selected = select_display_mode(
+            &descriptor,
+            DisplayManagementMode::Manual,
+            Some(mode(1920, 1080, 60_000)),
+            DisplayRefreshPolicy::PreferVariable,
+            DisplayPolicyContext::default(),
+        )
+        .unwrap();
+        assert_eq!(selected.refresh_strategy(), ActiveRefreshStrategy::Fixed);
     }
 
     #[test]
