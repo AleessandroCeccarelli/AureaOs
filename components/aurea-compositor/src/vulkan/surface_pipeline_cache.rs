@@ -20,7 +20,8 @@ use crate::{
 
 use super::{
     VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
-    VulkanLogicalDevice, VulkanNativeCursorTexture, VulkanSampler, VulkanSamplerError,
+    VulkanLegacyGraphicsPipeline, VulkanLegacyRenderPass, VulkanLogicalDevice,
+    VulkanNativeCursorTexture, VulkanSampler, VulkanSamplerError,
     VulkanShaderError, VulkanShaderModule, VulkanShmTexture, VulkanTextureBindingError,
     VulkanTextureBindingPool, VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
     VulkanWallpaperTexture,
@@ -147,6 +148,107 @@ impl VulkanSurfacePipelineCache {
 
         self.pipelines.insert(format, pipeline);
         Ok(())
+    }
+
+    /// Creates a traditional-render-pass surface pipeline.
+    ///
+    /// The returned pipeline borrows the supplied persistent render pass.
+    /// Keep both the cache and render pass alive for the pipeline's lifetime.
+    pub(crate) fn create_legacy_surface_pipeline<'cache, 'pass>(
+        &'cache self,
+        render_pass: &'pass VulkanLegacyRenderPass<'cache>,
+    ) -> Result<VulkanLegacyGraphicsPipeline<'pass, 'cache>, VulkanSurfacePipelineCacheError> {
+        let vertex = VulkanShaderModule::from_renderer_variants(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_COMPAT_SPV")),
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let fragment = VulkanShaderModule::from_renderer_variants(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_SPV")),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_COMPAT_SPV")),
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let descriptor_layouts = [&self.descriptor_layout];
+        let transform_range = [vk::PushConstantRange::default()
+            .stage_flags(vk::ShaderStageFlags::VERTEX)
+            .offset(0)
+            .size(std::mem::size_of::<u32>() as u32)];
+        VulkanLegacyGraphicsPipeline::new(
+            self.device.as_ref(),
+            render_pass,
+            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            &descriptor_layouts,
+            &transform_range,
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Pipeline)
+    }
+
+    /// Creates a traditional-render-pass wallpaper pipeline.
+    ///
+    /// Its four-float UV transform is independent from the surface transform ABI.
+    pub(crate) fn create_legacy_wallpaper_pipeline<'cache, 'pass>(
+        &'cache self,
+        render_pass: &'pass VulkanLegacyRenderPass<'cache>,
+    ) -> Result<VulkanLegacyGraphicsPipeline<'pass, 'cache>, VulkanSurfacePipelineCacheError> {
+        let vertex = VulkanShaderModule::from_renderer_variants(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_VERT_SPV")),
+            include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_VERT_COMPAT_SPV")),
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let fragment = VulkanShaderModule::from_renderer_variants(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_FRAG_SPV")),
+            include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_FRAG_COMPAT_SPV")),
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let descriptor_layouts = [&self.descriptor_layout];
+        let uv_range = [vk::PushConstantRange::default()
+            .stage_flags(vk::ShaderStageFlags::VERTEX)
+            .offset(0)
+            .size((4 * std::mem::size_of::<f32>()) as u32)];
+        VulkanLegacyGraphicsPipeline::new(
+            self.device.as_ref(),
+            render_pass,
+            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            &descriptor_layouts,
+            &uv_range,
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Pipeline)
+    }
+
+    /// Creates a traditional-render-pass cursor-trail pipeline.
+    pub(crate) fn create_legacy_cursor_trail_pipeline<'cache, 'pass>(
+        &'cache self,
+        render_pass: &'pass VulkanLegacyRenderPass<'cache>,
+    ) -> Result<VulkanLegacyGraphicsPipeline<'pass, 'cache>, VulkanSurfacePipelineCacheError> {
+        let vertex = VulkanShaderModule::from_renderer_variants(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_COMPAT_SPV")),
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let fragment = VulkanShaderModule::from_renderer_variants(
+            self.device.as_ref(),
+            include_bytes!(env!("AUREA_CURSOR_TRAIL_FRAG_SPV")),
+            include_bytes!(env!("AUREA_CURSOR_TRAIL_FRAG_COMPAT_SPV")),
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        let descriptor_layouts = [&self.descriptor_layout];
+        let trail_range = [vk::PushConstantRange::default()
+            .stage_flags(vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT)
+            .offset(0)
+            .size((2 * std::mem::size_of::<u32>()) as u32)];
+        VulkanLegacyGraphicsPipeline::new(
+            self.device.as_ref(),
+            render_pass,
+            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            &descriptor_layouts,
+            &trail_range,
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Pipeline)
     }
 
     /// Creates a wallpaper-specific pipeline with an independent UV push-constant ABI.
