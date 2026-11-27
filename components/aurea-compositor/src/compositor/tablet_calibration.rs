@@ -33,10 +33,10 @@ impl AureaCompositor {
 
         let profile =
             TabletCalibration::new(active_area, rotation, aspect_mode, device_aspect_ratio)?;
-        self.tablet_calibrations.set(device, profile);
 
-        // Runtime-only devices remain configurable for this session. When a
-        // stable physical identity exists, persist the profile for reconnects.
+        // Persist first, matching mouse and touchpad preferences: a failed
+        // write must not leave a runtime-only profile while reporting failure.
+        // Devices without a stable physical identity remain session-configurable.
         if let Some(identity) = self
             .pointing_devices()
             .device(device)
@@ -49,6 +49,8 @@ impl AureaCompositor {
                     TabletCalibrationError::PersistenceFailure
                 })?;
         }
+
+        self.tablet_calibrations.set(device, profile);
         Ok(())
     }
 
