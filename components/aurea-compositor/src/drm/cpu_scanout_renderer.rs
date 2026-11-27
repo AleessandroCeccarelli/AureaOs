@@ -199,9 +199,13 @@ impl RenderBackend for VulkanCpuOutputBackend<'_> {
         .map_err(|error| {
             VulkanCpuScanoutError(format!("Vulkan scene composition failed: {error}"))
         })?;
-        let pixels = readback.as_ref().expect("successful composition retains its readback buffer").read_rgba8().map_err(|error| {
-            VulkanCpuScanoutError(format!("Vulkan output readback failed: {error}"))
-        })?;
+        let pixels = readback
+            .as_ref()
+            .expect("successful composition retains its readback buffer")
+            .read_rgba8()
+            .map_err(|error| {
+                VulkanCpuScanoutError(format!("Vulkan output readback failed: {error}"))
+            })?;
 
         let plane_formats = surface
             .plane_info()
