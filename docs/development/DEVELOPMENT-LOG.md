@@ -2631,3 +2631,13 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - The Vulkan import capability gate now rejects an already-poisoned logical device and independently requires foreign queue-family ownership plus SYNC_FD import, even if a future caller bypasses the advertised-format list.
 - Rechecked the Smithay 0.7 API contract against its documentation: create_global is the v3 no-feedback path, DmabufHandler requires BufferHandler, and successful imports must consume the notifier. The current implementation follows that contract.
 - Hotplug remains intentionally unresolved: v3 format advertisement is static, and replacing a live global safely requires a lifecycle policy for existing client buffers. No build, test, formatting, CI or hardware run was performed.
+
+
+### 2026-11-27 — shared DMA-BUF attachment lifetime
+
+- Replaced per-surface immediate DMA-BUF release with a compositor-owned usage registry keyed by the full Wayland ObjectId.
+- Each surface attachment increments the shared usage count; replacing, detaching or switching to SHM decrements it. `wl_buffer.release` is sent only when the final tracked surface use ends.
+- Surface user-data state now holds a weak reference to the registry and releases its attachment on destruction, avoiding a permanent usage-count leak when a surface disappears without another commit.
+- `BufferHandler::buffer_destroyed` removes registry ownership when the client destroys the protocol resource.
+- This protects shared-buffer attachments across surfaces. GPU safety still relies on the current synchronous Vulkan submission path; asynchronous submissions will require explicit in-flight reference tracking/fences before this release policy can be retained.
+- Source-only change. No formatting, build, tests, CI or hardware validation run.
