@@ -480,6 +480,24 @@ impl VulkanSurfacePipelineCache {
     /// exact textured pipelines required by the selected frame layers. When
     /// display-color processing is enabled, its independent shared pass is also
     /// created here so descriptor/pipeline allocation stays outside recording.
+    /// Prepares the common legacy frame resources without requiring DRM display color.
+    ///
+    /// This is available to both scanout and readback builds. Output-specific
+    /// processing is deliberately layered on top by the DRM caller.
+    pub(crate) fn prepare_shared_legacy_frame_resources_without_display_color(
+        &mut self,
+        format: vk::Format,
+        wallpaper: bool,
+        cursor_trail: bool,
+    ) -> Result<(), VulkanSurfacePipelineCacheError> {
+        self.legacy_clear_render_pass(format)
+            .map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
+        self.legacy_load_render_pass(format)
+            .map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
+        self.prepare_shared_legacy_frame_pipelines(format, wallpaper, cursor_trail)
+    }
+
+    /// Prepares shared frame resources and, when requested, the DRM display-color pass.
     #[cfg(feature = "drm")]
     pub(crate) fn prepare_shared_legacy_frame_resources(
         &mut self,
@@ -488,11 +506,11 @@ impl VulkanSurfacePipelineCache {
         cursor_trail: bool,
         display_color: bool,
     ) -> Result<Option<Arc<VulkanSharedLegacyDisplayColorPass>>, VulkanSurfacePipelineCacheError> {
-        self.legacy_clear_render_pass(format)
-            .map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
-        self.legacy_load_render_pass(format)
-            .map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
-        self.prepare_shared_legacy_frame_pipelines(format, wallpaper, cursor_trail)?;
+        self.prepare_shared_legacy_frame_resources_without_display_color(
+            format,
+            wallpaper,
+            cursor_trail,
+        )?;
         if display_color {
             self.legacy_display_color_pass(format)
                 .map(Some)
