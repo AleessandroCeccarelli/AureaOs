@@ -17,6 +17,7 @@ use super::{
     VulkanClearPass, VulkanClearPassError, VulkanImageState, VulkanImageView,
     VulkanLegacyRenderPass, VulkanLegacyRenderPassError, VulkanSharedLegacyGraphicsPipeline,
     VulkanTextureBinding, VulkanDrawPass, VulkanDrawPassError,
+    VulkanSharedLegacyDisplayColorPass, VulkanDisplayColorPassError,
 };
 
 /// Stateless recorder for operations that form one legacy-rendered frame.
@@ -134,6 +135,43 @@ impl VulkanLegacyFrameRecorder {
         )
     }
 
+    /// Applies display-color processing as the final composition layer.
+    ///
+    /// The source is the completed composition image and the target is the
+    /// scanout image. The target must use the discard render pass owned by the
+    /// display-color pass; the method leaves it in the caller-selected state
+    /// for either readback or foreign-queue release.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn display_color(
+        pass: &VulkanSharedLegacyDisplayColorPass,
+        device: &super::VulkanLogicalDevice,
+        command_buffer: vk::CommandBuffer,
+        source: &VulkanImageView<'_, '_>,
+        target: &VulkanImageView<'_, '_>,
+        render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
+        binding: &VulkanTextureBinding<'_, '_, '_, '_>,
+        previous_source_state: VulkanImageState,
+        previous_target_state: VulkanImageState,
+        final_target_state: VulkanImageState,
+        warmth_percent: u8,
+    ) -> Result<(), VulkanLegacyFrameRecorderError> {
+        let target = render_pass
+            .create_target(target)
+            .map_err(VulkanLegacyFrameRecorderError::RenderPass)?;
+        pass.record(
+            device,
+            command_buffer,
+            source,
+            &target,
+            binding,
+            previous_source_state,
+            previous_target_state,
+            final_target_state,
+            warmth_percent,
+        )
+        .map_err(VulkanLegacyFrameRecorderError::DisplayColor)
+    }
+
     /// Records one textured layer using a traditional render pass.
     ///
     /// This is intentionally one layer per call: it keeps framebuffer lifetime
@@ -186,6 +224,7 @@ pub(crate) enum VulkanLegacyFrameRecorderError {
     RenderPass(VulkanLegacyRenderPassError),
     Clear(VulkanClearPassError),
     Draw(VulkanDrawPassError),
+    DisplayColor(VulkanDisplayColorPassError),
 }
 
 impl std::fmt::Display for VulkanLegacyFrameRecorderError {
@@ -194,6 +233,7 @@ impl std::fmt::Display for VulkanLegacyFrameRecorderError {
             Self::RenderPass(error) => write!(formatter, "Legacy frame target: {error}"),
             Self::Clear(error) => write!(formatter, "Legacy frame clear: {error}"),
             Self::Draw(error) => write!(formatter, "Legacy frame draw: {error}"),
+            Self::DisplayColor(error) => write!(formatter, "Legacy frame display color: {error}"),
         }
     }
 }
