@@ -130,12 +130,12 @@ done
 
 [[ -d "$ROOTFS/usr/lib/modules" ]] ||
     fail "kernel modules directory is missing from the Live rootfs"
-find "$ROOTFS/usr/lib/modules" -type f \\
-    \\( -name 'amdgpu.ko' -o -name 'amdgpu.ko.xz' -o -name 'amdgpu.ko.zst' \\) \\
+find "$ROOTFS/usr/lib/modules" -type f \
+    \( -name 'amdgpu.ko' -o -name 'amdgpu.ko.xz' -o -name 'amdgpu.ko.zst' \) \
     -print -quit | grep -q . ||
     fail "AMD amdgpu kernel module is missing from the Live rootfs"
-find "$ROOTFS/usr/lib/firmware/amdgpu" -type f \\
-    \\( -name '*.bin' -o -name '*.bin.xz' -o -name '*.bin.zst' \\) \\
+find "$ROOTFS/usr/lib/firmware/amdgpu" -type f \
+    \( -name '*.bin' -o -name '*.bin.xz' -o -name '*.bin.zst' \) \
     -print -quit | grep -q . ||
     fail "AMD GPU firmware payload is missing from the Live rootfs"
 [[ -s "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.x86_64.json" ]] ||
