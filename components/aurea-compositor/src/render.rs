@@ -425,9 +425,12 @@ impl<'a> RenderScene<'a> {
         }
 
         if let Some((surface, location, _)) = &self.cursor_surface {
-            snapshots.extend(surface_tree::collect_surface_tree_dmabuf_snapshots(
-                surface, *location,
-            ));
+            let mut cursor_snapshots =
+                surface_tree::collect_surface_tree_dmabuf_snapshots(surface, *location);
+            for snapshot in &mut cursor_snapshots {
+                snapshot.is_cursor = true;
+            }
+            snapshots.extend(cursor_snapshots);
         }
 
         snapshots
