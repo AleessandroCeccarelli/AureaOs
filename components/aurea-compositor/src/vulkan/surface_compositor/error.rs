@@ -19,6 +19,7 @@ pub(crate) enum VulkanSurfaceCompositionError {
     Descriptor(String),
     Command(String),
     DeviceLost(vk::Result),
+    UncertainSubmission(VulkanQueueSubmitError),
     InvalidSurfaceGeometry,
     TooManySurfaces,
     FrameMemoryLimitExceeded,
@@ -47,7 +48,14 @@ impl VulkanSurfaceCompositionError {
         }
     }
 
+    pub(crate) fn is_uncertain_submission(&self) -> bool {
+        matches!(self, Self::UncertainSubmission(_))
+    }
+
     pub(crate) fn from_queue_submit_error(error: VulkanQueueSubmitError) -> Self {
+        if error.is_uncertain() {
+            return Self::UncertainSubmission(error);
+        }
         let device_lost = match error {
             VulkanQueueSubmitError::Rejected(result)
             | VulkanQueueSubmitError::SubmissionUncertain(result) => {
@@ -79,6 +87,10 @@ impl fmt::Display for VulkanSurfaceCompositionError {
             Self::Descriptor(error) => write!(
                 formatter,
                 "Surface texture descriptor creation failed: {error}"
+            ),
+            Self::UncertainSubmission(error) => write!(
+                formatter,
+                "Vulkan queue submission completion is uncertain: {error:?}"
             ),
             Self::DeviceLost(error) => write!(
                 formatter,
