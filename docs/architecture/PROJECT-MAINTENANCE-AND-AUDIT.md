@@ -915,3 +915,12 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - Un errore di attesa non viene interpretato come completamento: se anche il fallback `device_wait_idle` fallisce, staging, risorse associate, fence/pool e contesto del device restano intenzionalmente in quarantena.
 - L'audit ha individuato che il percorso di rimozione fisica del DRM device resta distinto dallo shutdown ordinario: `release_after_device_removal()` rimuove il manager, mentre i pool adottano ancora una strategia conservativa di retention. Non viene introdotto un rilascio forzato finché non è dimostrato l'ordine sicuro tra KMS rimosso, eventuale lavoro GPU ancora in volo e proprietari GBM/Vulkan.
 - Verifica ancora pendente: nessun build, rustfmt, check o test eseguito; il commit richiede validazione CI/Fedora. L'audit diretto di tutte le distruzioni Vulkan e dei rollback parziali continua.
+
+
+### Quarantena delle letture asincrone e upload — 27 novembre 2026
+
+- Il costruttore di `VulkanPendingUpload` ora mette in quarantena anche staging e risorse trasferite al costruttore quando il device è già in fail-stop o si perde durante creazione del command pool, allocazione o begin del command buffer. In precedenza il solo mantenimento del contesto device non impediva ai parametri posseduti di eseguire i propri Drop.
+- `VulkanReadbackSubmission::submit_inner` applica la stessa regola in caso di device-lost durante begin/end del command buffer, reset dopo errore di registrazione o creazione della fence. View sorgente, lease readback, eventuale capture-target e proprietario del device vengono trattenuti; non si restituisce un buffer a un pool quando la sicurezza del device è incerta.
+- Il reset del command buffer dopo errore di registrazione non ignora più `ERROR_DEVICE_LOST`.
+- Queste correzioni sono state applicate tramite aggiornamenti sorgente su `main`; non sono state compilate né testate localmente. Nessuna run CI è stata osservata per il commit documentale.
+- Restano da esaminare i percorsi di rollback delle allocazioni Vulkan non asincrone e gli errori di fence status/readback poll, oltre alla conferma dell'ordine di distruzione dei proprietari DRM/GBM dopo hot-unplug.
