@@ -94,6 +94,9 @@ impl VulkanWallpaperTextureCache {
         key: WallpaperTextureKey,
         pixels: &WallpaperPixels,
     ) -> Result<bool, VulkanWallpaperTextureCacheError> {
+        if self.device.is_unusable() {
+            return Err(VulkanWallpaperTextureCacheError::Command(vk::Result::ERROR_DEVICE_LOST));
+        }
         self.poll()?;
         if self
             .ready
