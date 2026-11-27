@@ -2558,3 +2558,12 @@ Reviewed SHM texture uploads: `VulkanPendingUpload` owns staging, image resource
 - Uncertain `queue_submit` results mark the device unusable; new primary command-buffer allocation is rejected and command-buffer freeing avoids touching a poisoned pool.
 - The factory initializes the state explicitly. This is a fail-stop policy, not a device-recreation implementation.
 - No formatting, build, tests, or CI run.
+
+
+### 2026-11-27 — Fail-stop propagation through frame, upload and readback owners
+
+- Extended the logical-device poison check to primary command-buffer allocation/free and frame-slot creation/preparation.
+- `VulkanFrameScheduler::drop` now skips `device_wait_idle` and all pool/fence/semaphore destruction when the device is already unusable; retained resources are deliberately quarantined.
+- `VulkanPendingUpload` and `VulkanReadbackSubmission` now avoid additional wait/destroy calls after fail-stop and intentionally retain their GPU-referenced resources and a device owner.
+- `VulkanCommandBuffer::drop` avoids wait/free operations after device loss.
+- Static source changes only; no rustfmt, build, tests, CI or hardware validation.
