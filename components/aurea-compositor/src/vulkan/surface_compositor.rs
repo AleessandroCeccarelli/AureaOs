@@ -22,7 +22,7 @@ pub(crate) use readback_entry::render_and_readback;
 use release::{clear_and_release, clear_display_and_release};
 use visible_surfaces::{visible_surfaces, visible_dmabuf_surfaces};
 
-use std::{collections::HashMap, sync::Arc};
+use std::sync::Arc;
 
 use aurea_desktop_api::desktop::DesktopContextMenuLayout;
 use smithay::reexports::ash::vk;
@@ -220,12 +220,11 @@ pub(super) fn render_frame(
         ));
     }
     #[cfg(feature = "drm")]
-    let (dmabuf_images, dmabuf_image_indices) = {
-        let mut indices = HashMap::new();
+    let dmabuf_images = {
+        let mut imported_buffers = std::collections::HashSet::new();
         let mut images = Vec::new();
         for surface in &visible_dmabuf {
-            let buffer_id = surface.snapshot.buffer.id();
-            if indices.contains_key(&buffer_id) {
+            if !imported_buffers.insert(surface.snapshot.buffer.id()) {
                 continue;
             }
             let image = VulkanDmabufImage::import(
@@ -234,10 +233,9 @@ pub(super) fn render_frame(
             )
             .map(Arc::new)
             .map_err(|error| VulkanSurfaceCompositionError::Texture(error.to_string()))?;
-            indices.insert(buffer_id, images.len());
             images.push(image);
         }
-        (images, indices)
+        images
     };
     // Geometry remains per surface; the underlying Vulkan image is imported once
     // for each distinct wl_buffer attached anywhere in this frame.
