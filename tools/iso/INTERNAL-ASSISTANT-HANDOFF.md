@@ -5,7 +5,7 @@ Non è documentazione utente né una specifica del prodotto.
 Aggiornare questo file quando cambiano script, diagnosi o stato delle prove.
 -->
 
-Ultimo aggiornamento: 2026-11-26
+Ultimo aggiornamento: 2026-11-27
 Repository: AleessandroCeccarelli/AureaOs
 Branch di lavoro: main
 
@@ -1178,3 +1178,23 @@ Nessuna build Rust, build ISO o prova hardware è stata eseguita durante queste 
 - Commits: `22800dfc` (traditional pipeline constructor), `a8a29e58` (prevent cross-mode pipeline acceptance).
 - Not run: rustfmt, cargo check, tests, shader compilation, CI, ISO build or hardware tests.
 - Next: refactor legacy render-pass resources into a reusable render-pass owner plus per-image framebuffer target, with a Rust-enforced lifetime relationship. Then add a mode-aware render-scope abstraction and adapt draw/clear passes without changing modern behavior.
+
+
+## 27 NOVEMBRE — RENDERER VULKAN LEGACY: SEPARAZIONE RENDER PASS / FRAMEBUFFER
+
+Modifiche pubblicate su `main`:
+- `834b356d` — refactor iniziale di `legacy_render_pass.rs`: separati l'oggetto render pass e il target framebuffer; il target prende in prestito render pass e image view, e distrugge soltanto il framebuffer.
+- `68ab0966` — il render pass riceve esplicitamente `&VulkanLogicalDevice` e `vk::Format`, così la sua ownership del device non dipende dalla durata di una image view.
+- `52ff3d8e` — esportato il nuovo tipo `VulkanLegacyRenderPass`.
+
+Nuovo modello:
+- `VulkanLegacyRenderPass<'device>` possiede un render pass riutilizzabile per un formato e un load operation.
+- `create_target(&view)` crea un framebuffer specifico per quella image view e controlla device e formato.
+- `VulkanLegacyRenderTarget` prende in prestito sia il render pass sia la image view; Rust impedisce che il target sopravviva a una delle due risorse.
+- Il drop del target distrugge solo il framebuffer; il drop del render pass distrugge il render pass.
+- Lo scope RAII ora opera sul target e continua a bilanciare begin/end render pass.
+
+Vincoli e stato:
+- La creazione del render pass è ora indipendente dalla singola image view.
+- La pipeline legacy usa ancora il costruttore con raw `vk::RenderPass`: la relazione di lifetime tra pipeline e render pass non è ancora codificata nei tipi. È il prossimo intervento, da fare senza rompere i costruttori moderni o i cache esistenti.
+- Nessuna build, test o ISO eseguiti, in accordo con la richiesta dell'utente: verifiche raggruppate domani su Fedora.
