@@ -349,6 +349,15 @@ impl DrmOutputFrameCoordinator {
         self.presentation.pending_candidate()
     }
 
+    /// Whether a framebuffer released by KMS can reacquire Vulkan ownership.
+    pub fn can_acquire_from_foreign(
+        &self,
+        framebuffer: DrmFramebufferId,
+    ) -> Result<bool, DrmOutputFrameError> {
+        let resource = self.resource_for(framebuffer)?;
+        Ok(self.resources.can_acquire_from_foreign(resource)?)
+    }
+
     /// Returns whether a framebuffer's Vulkan image is ready for reuse.
     pub fn is_available(&self, framebuffer: DrmFramebufferId) -> Result<bool, DrmOutputFrameError> {
         let resource = self.resource_for(framebuffer)?;
