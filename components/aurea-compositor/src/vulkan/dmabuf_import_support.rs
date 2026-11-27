@@ -33,6 +33,9 @@ pub(crate) enum VulkanDmabufImportSupportError {
     InvalidDimensions,
     ImageConfigurationUnsupported,
     ExternalMemoryNotImportable,
+    MissingForeignQueueFamily,
+    MissingSyncFdImport,
+    DeviceUnusable,
 }
 
 /// A capability gate only: success does not import FDs or synchronize access.
@@ -140,6 +143,16 @@ impl VulkanDmabufImportSupport {
         device: &VulkanLogicalDevice,
         layout: &DmabufImportLayout,
     ) -> Result<Self, VulkanDmabufImportSupportError> {
+        if device.is_unusable() {
+            return Err(VulkanDmabufImportSupportError::DeviceUnusable);
+        }
+        if !device.supports_foreign_queue_family() {
+            return Err(VulkanDmabufImportSupportError::MissingForeignQueueFamily);
+        }
+        if !device.supports_sync_fd_import() {
+            return Err(VulkanDmabufImportSupportError::MissingSyncFdImport);
+        }
+
         let extensions = device.extension_plan();
         if !extensions.supports_dmabuf_interop() {
             return Err(VulkanDmabufImportSupportError::MissingInteropExtensions);
