@@ -149,6 +149,7 @@ impl DrmSurfaceManager {
                     cpu_frame_pool: GbmCpuFramebufferPool::new(),
                     cpu_presentation,
                     direct_scanout_disabled: false,
+                    staged_previous_mode: None,
                 },
             );
         }
