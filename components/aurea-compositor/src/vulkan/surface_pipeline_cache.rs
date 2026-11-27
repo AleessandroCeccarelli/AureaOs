@@ -116,14 +116,16 @@ impl VulkanSurfacePipelineCache {
             return Ok(());
         }
 
-        let vertex = VulkanShaderModule::from_bytes(
+        let vertex = VulkanShaderModule::from_renderer_variants(
             self.device.as_ref(),
             include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_COMPAT_SPV")),
         )
         .map_err(VulkanSurfacePipelineCacheError::Shader)?;
-        let fragment = VulkanShaderModule::from_bytes(
+        let fragment = VulkanShaderModule::from_renderer_variants(
             self.device.as_ref(),
             include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_SPV")),
+            include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_COMPAT_SPV")),
         )
         .map_err(VulkanSurfacePipelineCacheError::Shader)?;
         let descriptor_layouts = [self.descriptor_layout.handle()];
@@ -156,14 +158,16 @@ impl VulkanSurfacePipelineCache {
             return Ok(());
         }
 
-        let vertex = VulkanShaderModule::from_bytes(
+        let vertex = VulkanShaderModule::from_renderer_variants(
             self.device.as_ref(),
             include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_VERT_SPV")),
+            include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_VERT_COMPAT_SPV")),
         )
         .map_err(VulkanSurfacePipelineCacheError::Shader)?;
-        let fragment = VulkanShaderModule::from_bytes(
+        let fragment = VulkanShaderModule::from_renderer_variants(
             self.device.as_ref(),
             include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_FRAG_SPV")),
+            include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_FRAG_COMPAT_SPV")),
         )
         .map_err(VulkanSurfacePipelineCacheError::Shader)?;
         let descriptor_layouts = [self.descriptor_layout.handle()];
@@ -208,9 +212,10 @@ impl VulkanSurfacePipelineCache {
             include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
         )
         .map_err(VulkanSurfacePipelineCacheError::Shader)?;
-        let fragment = VulkanShaderModule::from_bytes(
+        let fragment = VulkanShaderModule::from_renderer_variants(
             self.device.as_ref(),
             include_bytes!(env!("AUREA_CURSOR_TRAIL_FRAG_SPV")),
+            include_bytes!(env!("AUREA_CURSOR_TRAIL_FRAG_COMPAT_SPV")),
         )
         .map_err(VulkanSurfacePipelineCacheError::Shader)?;
         let descriptor_layouts = [self.descriptor_layout.handle()];
