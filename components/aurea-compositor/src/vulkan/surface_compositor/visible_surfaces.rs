@@ -5,7 +5,7 @@
 
 //! Collects visible Wayland surfaces and prepares their output geometry.
 
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use crate::{
     render::{
@@ -130,6 +130,8 @@ pub(super) fn visible_surfaces(
 /// Geometry for one visible DMA-BUF surface, independent of its Vulkan image import.
 #[cfg(feature = "drm")]
 pub(super) struct VisibleDmabufSurface {
+    /// Index into the frame-local unique imported-image array.
+    pub(super) image_index: usize,
     pub(super) snapshot: SurfaceTreeDmabufSnapshot,
     pub(super) geometry: SurfaceGeometry,
     pub(super) scissor: SurfaceScissor,
@@ -145,6 +147,8 @@ pub(super) fn visible_dmabuf_surfaces(
 ) -> Result<Vec<VisibleDmabufSurface>, VulkanSurfaceCompositionError> {
     let mut visible = Vec::new();
     let mut total_bytes = 0usize;
+    let mut buffer_ids = HashSet::new();
+    let mut image_indices = std::collections::HashMap::new();
     for snapshot in snapshots {
         // The first importer supports one packed memory plane. Bound the
         // retained/imported working set just as we do for copied SHM surfaces.
@@ -158,12 +162,19 @@ pub(super) fn visible_dmabuf_surfaces(
             .and_then(|stride| stride.checked_mul(snapshot.layout.height() as usize))
             .and_then(|bytes| bytes.checked_add(plane.offset as usize))
             .ok_or(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded)?;
-        total_bytes = total_bytes
-            .checked_add(plane_bytes)
-            .ok_or(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded)?;
-        if total_bytes > MAX_COMPOSITED_BUFFER_BYTES {
-            return Err(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded);
+        let buffer_id = snapshot.buffer.id();
+        if buffer_ids.insert(buffer_id.clone()) {
+            total_bytes = total_bytes
+                .checked_add(plane_bytes)
+                .ok_or(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded)?;
+            if total_bytes > MAX_COMPOSITED_BUFFER_BYTES {
+                return Err(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded);
+            }
+            image_indices.insert(buffer_id.clone(), image_indices.len());
         }
+        let image_index = *image_indices
+            .get(&buffer_id)
+            .ok_or(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded)?;
 
         let geometry = if let Some(scale) = target.fractional_scale() {
             surface_geometry_with_fractional_scale(
@@ -217,6 +228,7 @@ pub(super) fn visible_dmabuf_surfaces(
         .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
         let is_cursor = snapshot.is_cursor;
         visible.push(VisibleDmabufSurface {
+            image_index,
             snapshot,
             geometry,
             scissor,
