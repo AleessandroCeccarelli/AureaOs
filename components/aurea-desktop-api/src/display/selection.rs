@@ -208,6 +208,44 @@ mod tests {
     }
 
     #[test]
+    fn battery_power_prefers_sixty_hz_even_during_animations() {
+        let selected = select_display_mode(
+            &display(None),
+            DisplayManagementMode::Automatic,
+            None,
+            DisplayRefreshPolicy::Automatic,
+            DisplayPolicyContext {
+                animations_active: true,
+                on_battery: true,
+                ..DisplayPolicyContext::default()
+            },
+        )
+        .unwrap();
+
+        assert_eq!(selected.mode(), mode(1920, 1080, 60_000));
+    }
+
+    #[test]
+    fn idle_policy_uses_lowest_available_refresh_when_sixty_hz_is_absent() {
+        let mut descriptor = display(None);
+        descriptor.supported_modes = vec![
+            mode(1920, 1080, 75_000),
+            mode(1920, 1080, 120_000),
+        ];
+
+        let selected = select_display_mode(
+            &descriptor,
+            DisplayManagementMode::Automatic,
+            None,
+            DisplayRefreshPolicy::Automatic,
+            DisplayPolicyContext::default(),
+        )
+        .unwrap();
+
+        assert_eq!(selected.mode(), mode(1920, 1080, 75_000));
+    }
+
+    #[test]
     fn measured_frame_cadence_selects_the_lowest_mode_that_can_cover_it() {
         let selected = select_display_mode(
             &display(None),
