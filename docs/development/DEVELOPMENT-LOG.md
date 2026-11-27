@@ -2576,3 +2576,13 @@ Reviewed SHM texture uploads: `VulkanPendingUpload` owns staging, image resource
 - `VulkanLogicalDevice::drop` now skips `device_wait_idle` after terminal device loss and intentionally retains the parent instance context rather than attempting device destruction.
 - `VulkanQueueSubmitter` checks the fail-stop atomic before fence creation and again under the queue external-synchronization lock.
 - Source-only audit. No formatting, build, tests, CI or Vulkan validation were run.
+
+
+### 2026-11-27 — Fail-stop at Vulkan cache and pool boundaries
+
+- Capture-target and readback-buffer pools now reject `prepare`/`acquire` after logical-device loss, preventing fresh allocations and reuse attempts.
+- SHM surface, desktop-icon and wallpaper texture caches stop `prepare` before polling or starting additional uploads when the device is unusable.
+- Added a typed `DeviceLost` error to capture-target pool operations.
+- Hardened partial `VulkanFrameScheduler::with_frame_count` rollback: if device loss occurs while constructing slots, already-created slots are quarantined rather than destroying their fences, semaphores or command pools.
+- Lease objects continue to retain their pool/device ownership; resource destructors now honor the fail-stop state.
+- Source-only changes. No rustfmt, build, tests, CI or Vulkan validation-layer execution.
