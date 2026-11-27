@@ -5,7 +5,7 @@
 
 //! Validated DMA-BUF metadata used at the Vulkan import boundary.
 
-use std::{error::Error, fmt};
+use std::{error::Error, fmt, os::fd::BorrowedFd};
 
 use smithay::backend::allocator::{
     Buffer,
@@ -134,6 +134,14 @@ impl DmabufImportLayout {
     /// Keep this owner alive until every Vulkan operation using an imported plane completes.
     pub fn dmabuf(&self) -> &Dmabuf {
         &self.dmabuf
+    }
+    /// Borrowed file descriptors in the same order as [`Self::planes`].
+    ///
+    /// These descriptors must never be closed or transferred directly to Vulkan:
+    /// the importer must duplicate each descriptor before passing ownership to
+    /// `VK_KHR_external_memory_fd`.
+    pub fn plane_handles(&self) -> impl Iterator<Item = BorrowedFd<'_>> + '_ {
+        self.dmabuf.handles()
     }
     /// Per-plane offsets and row strides in plane-index order.
     pub fn planes(&self) -> &[DmabufPlaneLayout] {
