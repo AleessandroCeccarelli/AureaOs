@@ -298,6 +298,14 @@ pub(super) fn record_legacy_frame_layers(
     layers: LegacyFrameLayers<'_, '_, '_, '_>,
     previous_target_state: VulkanImageState,
 ) -> Result<(), VulkanSurfaceCompositionError> {
+    // Validate the parallel frame arrays before recording even the clear pass.
+    // A malformed frame must not leave a partially recorded command buffer.
+    if layers.visible.len() != layers.surface_views.len()
+        || layers.surface_views.len() != layers.surface_bindings.len()
+    {
+        return Err(VulkanSurfaceCompositionError::FrameResourceCountMismatch);
+    }
+
     VulkanLegacyFrameRecorder::clear(
         command_buffer,
         layers.clear_render_pass,
