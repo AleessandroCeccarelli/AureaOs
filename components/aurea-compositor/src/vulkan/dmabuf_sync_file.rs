@@ -111,7 +111,13 @@ pub(crate) fn import_sync_file_semaphore(
     let mut export_info = vk::ExportSemaphoreCreateInfo::default()
         .handle_types(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD);
     let create_info = vk::SemaphoreCreateInfo::default().push_next(&mut export_info);
-    let semaphore = unsafe { device.handle().create_semaphore(&create_info, None) }?;
+    let semaphore = unsafe { device.handle().create_semaphore(&create_info, None) }
+        .map_err(|error| {
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                device.mark_unusable();
+            }
+            error
+        })?;
 
     let raw_fd = sync_file.into_raw_fd();
     let import_info = vk::ImportSemaphoreFdInfoKHR::default()
@@ -125,9 +131,11 @@ pub(crate) fn import_sync_file_semaphore(
     );
     if let Err(error) = unsafe { loader.import_semaphore_fd(&import_info) } {
         // The FD ownership transfer occurs only on successful import.
-        unsafe {
-            drop(OwnedFd::from_raw_fd(raw_fd));
-            device.handle().destroy_semaphore(semaphore, None);
+        unsafe { drop(OwnedFd::from_raw_fd(raw_fd)); }
+        if error == vk::Result::ERROR_DEVICE_LOST {
+            device.mark_unusable();
+        } else {
+            unsafe { device.handle().destroy_semaphore(semaphore, None); }
         }
         return Err(error);
     }
