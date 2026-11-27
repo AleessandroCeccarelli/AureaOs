@@ -298,6 +298,7 @@ impl DrmSurfaceManager {
         })?;
         managed.presentation.arm_mode_rollback(previous);
         managed.cpu_presentation.arm_mode_rollback(previous);
+        managed.staged_previous_mode = Some(previous);
         Ok(previous)
     }
 
@@ -321,6 +322,7 @@ impl DrmSurfaceManager {
         })?;
         managed.presentation.cancel_mode_rollback();
         managed.cpu_presentation.cancel_mode_rollback();
+        managed.staged_previous_mode = None;
         Ok(())
     }
 
