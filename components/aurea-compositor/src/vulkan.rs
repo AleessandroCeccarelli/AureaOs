@@ -166,7 +166,9 @@ pub use readback_buffer_pool::{VulkanReadbackBufferPool, VulkanReadbackPoolStats
 pub use readback_coordinator::{VulkanReadbackCoordinator, VulkanReadbackPoll};
 pub use readback_error::VulkanReadbackError;
 pub use readback_submission::VulkanReadbackSubmission;
-pub use rendering_features::VulkanRenderingFeaturePlan;
+pub use rendering_features::{
+    VulkanRendererMode, VulkanRenderingCapabilities, VulkanRenderingFeaturePlan,
+};
 pub use sampler::{VulkanSampler, VulkanSamplerError};
 pub use shader_module::{VulkanShaderError, VulkanShaderModule};
 pub use shared_image::{VulkanSharedImage, VulkanSharedImageError};
