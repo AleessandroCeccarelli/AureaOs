@@ -7,7 +7,7 @@ This document defines the supported hardware floor for the first AureaOS desktop
 ## Minimum installation and runtime floor
 
 - **Architecture / CPU:** AMD64 / x86-64 with the complete x86-64-v3 feature level.
-- **CPU performance floor:** a modern 4-core / 8-thread processor is the practical target for a responsive desktop and browser. The ISA floor remains capability-based; Intel and AMD model names are not runtime gates.
+- **CPU family target:** Intel Core 8th generation (Coffee Lake) or newer, or AMD Ryzen 2000-series (Zen+) or newer, with at least 4 cores / 8 threads as the practical minimum target. Equivalent Intel/AMD CPUs are accepted when they meet x86-64-v3 and comparable sustained performance. Older x86-64-v3 CPUs may be technically capable of booting, but are not the Roma 1.0 performance baseline.
 - **Memory:** at least 8 GiB RAM. 16 GiB is the recommended configuration for everyday browser, video, and multitasking use.
 - **Graphics:** at least one hardware integrated or discrete GPU with Vulkan 1.3 and the required renderer features dynamicRendering and synchronization2.
 - **Display:** a working Linux DRM/KMS driver and at least one connected, usable output.
