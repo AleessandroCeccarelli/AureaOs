@@ -166,6 +166,9 @@ impl Drop for VulkanCommandBuffer<'_> {
             let wait_result = unsafe { self.device.handle().device_wait_idle() };
 
             if wait_result.is_err() {
+                if wait_result == Err(vk::Result::ERROR_DEVICE_LOST) {
+                    self.device.mark_unusable();
+                }
                 // Do not free a buffer that may still be in use.
                 return;
             }
