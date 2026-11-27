@@ -11,7 +11,7 @@ on:
     paths:
       - '.github/workflows/turbojpeg-abi.yml'
       - 'tools/dependencies/jpeg/**'
-      - 'aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg'
+      - 'aurea-human-interfaces/resources/wallpapers/aureaos-blue-flow.jpg'
       - 'docs/architecture/AUREA-MEDIA-SERVICE.md'
       - 'docs/development/DEPENDENCY-REGISTER.md'
   pull_request:
@@ -19,7 +19,7 @@ on:
     paths:
       - '.github/workflows/turbojpeg-abi.yml'
       - 'tools/dependencies/jpeg/**'
-      - 'aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg'
+      - 'aurea-human-interfaces/resources/wallpapers/aureaos-blue-flow.jpg'
       - 'docs/architecture/AUREA-MEDIA-SERVICE.md'
       - 'docs/development/DEPENDENCY-REGISTER.md'
   workflow_dispatch:
@@ -77,4 +77,4 @@ jobs:
       - name: Decode the committed AureaOS wallpaper
         run: |
           /tmp/aurea-turbojpeg-probe \
-            aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg
+            aurea-human-interfaces/resources/wallpapers/aureaos-blue-flow.jpg
