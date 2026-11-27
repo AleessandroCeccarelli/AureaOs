@@ -2623,3 +2623,11 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - dmabuf_imported validates the incoming layout and performs a real temporary Vulkan import on every participating device before acknowledging the Wayland buffer. Frame rendering still owns its own imported image lifetime.
 - The compositor intentionally does not publish linux-dmabuf when no common safe format/modifier pair exists. Multi-plane import and v4 feedback remain unsupported.
 - Source-only changes. No rustfmt, Cargo build/check, tests, CI result or hardware validation were run. Hotplug updates to an already-published global and per-output device feedback remain to be addressed.
+
+
+### 2026-11-27 — DMA-BUF import boundary hardening
+
+- Strengthened plane-layout validation to check offset + stride × image-height with checked arithmetic before Vulkan image creation.
+- The Vulkan import capability gate now rejects an already-poisoned logical device and independently requires foreign queue-family ownership plus SYNC_FD import, even if a future caller bypasses the advertised-format list.
+- Rechecked the Smithay 0.7 API contract against its documentation: create_global is the v3 no-feedback path, DmabufHandler requires BufferHandler, and successful imports must consume the notifier. The current implementation follows that contract.
+- Hotplug remains intentionally unresolved: v3 format advertisement is static, and replacing a live global safely requires a lifecycle policy for existing client buffers. No build, test, formatting, CI or hardware run was performed.
