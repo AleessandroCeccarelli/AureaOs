@@ -180,3 +180,109 @@ mod tests {
         );
     }
 }
+
+
+/// One retained DMA-BUF surface and its accumulated global logical position.
+///
+/// The import layout owns a strong reference to the client DMA-BUF, keeping
+/// every plane descriptor alive while the renderer imports or samples it.
+#[cfg(feature = "drm")]
+pub struct SurfaceTreeDmabufSnapshot {
+    /// Wayland surface represented by this snapshot.
+    pub surface: WlSurface,
+    /// Full Wayland object identity used by the renderer texture cache.
+    pub surface_id: ObjectId,
+    /// Global logical origin after accumulating subsurface positions.
+    pub location: Point<i32, Logical>,
+    /// Validated dimensions, DRM format, modifier and per-plane metadata.
+    pub layout: crate::vulkan::DmabufImportLayout,
+    /// Committed buffer scale.
+    pub buffer_scale: i32,
+    /// Committed Wayland buffer transform.
+    pub buffer_transform: Transform,
+}
+
+/// Collects DMA-BUF-backed surfaces in the same stacking order as SHM snapshots.
+///
+/// This deliberately does not advertise the linux-dmabuf protocol or claim
+/// that a buffer is importable by Vulkan. It only preserves validated buffer
+/// ownership and surface placement for the later device-specific import step.
+#[cfg(feature = "drm")]
+pub fn collect_surface_tree_dmabuf_snapshots(
+    root: &WlSurface,
+    root_location: Point<i32, Logical>,
+) -> Vec<SurfaceTreeDmabufSnapshot> {
+    let mut snapshots = Vec::new();
+
+    with_surface_tree_downward(
+        root,
+        TraversalLocation {
+            origin: root_location,
+            is_root: true,
+        },
+        |_, states, parent| {
+            let location = surface_location(states, *parent);
+            TraversalAction::DoChildren(TraversalLocation {
+                origin: location,
+                is_root: false,
+            })
+        },
+        |surface, states, parent| {
+            let location = surface_location(states, *parent);
+            if let Some(snapshot) = surface_dmabuf_snapshot(surface) {
+                snapshots.push(SurfaceTreeDmabufSnapshot {
+                    surface: surface.clone(),
+                    surface_id: surface.id(),
+                    location,
+                    layout: snapshot.layout,
+                    buffer_scale: snapshot.buffer_scale,
+                    buffer_transform: snapshot.buffer_transform,
+                });
+            }
+        },
+        |_, _, _| true,
+    );
+
+    snapshots
+}
+
+#[cfg(feature = "drm")]
+struct SurfaceDmabufSnapshot {
+    layout: crate::vulkan::DmabufImportLayout,
+    buffer_scale: i32,
+    buffer_transform: Transform,
+}
+
+#[cfg(feature = "drm")]
+fn surface_dmabuf_snapshot(surface: &WlSurface) -> Option<SurfaceDmabufSnapshot> {
+    use smithay::{
+        reexports::wayland_server::protocol::wl_buffer::WlBuffer,
+        wayland::{compositor::{BufferAssignment, SurfaceAttributes, with_states}, dmabuf::get_dmabuf},
+    };
+
+    with_states(surface, |states| {
+        let (buffer, buffer_scale, buffer_transform) = {
+            let mut attributes = states.cached_state.get::<SurfaceAttributes>();
+            let current = attributes.current();
+            let buffer = match current.buffer.as_ref()? {
+                BufferAssignment::NewBuffer(buffer) => buffer.clone(),
+                BufferAssignment::Removed => return None,
+            };
+            (buffer, current.buffer_scale, current.buffer_transform)
+        };
+
+        if buffer_scale <= 0 {
+            return None;
+        }
+
+        let dmabuf = get_dmabuf(&buffer).ok()?;
+        let layout = crate::vulkan::DmabufImportLayout::from_dmabuf(dmabuf).ok()?;
+        let _keep_buffer_alive: WlBuffer = buffer;
+
+        Some(SurfaceDmabufSnapshot {
+            layout,
+            buffer_scale,
+            buffer_transform: buffer_transform.into(),
+        })
+    })
+}
