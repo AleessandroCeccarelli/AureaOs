@@ -52,7 +52,7 @@ impl<T> VulkanPendingUpload<T> {
             Err(error) => {
                 if device.is_unusable() || error == vk::Result::ERROR_DEVICE_LOST {
                     device.mark_unusable();
-                    mem::forget(Arc::clone(&device));
+                    quarantine_upload_inputs(&device, staging, resources);
                 } else {
                     unsafe { device.handle().destroy_command_pool(command_pool, None) };
                 }
@@ -66,7 +66,7 @@ impl<T> VulkanPendingUpload<T> {
         {
             if device.is_unusable() || error == vk::Result::ERROR_DEVICE_LOST {
                 device.mark_unusable();
-                mem::forget(Arc::clone(&device));
+                quarantine_upload_inputs(&device, staging, resources);
             } else {
                 unsafe { device.handle().destroy_command_pool(command_pool, None) };
             }
@@ -238,4 +238,15 @@ fn mark_device_lost(device: &VulkanLogicalDevice, error: vk::Result) {
     if error == vk::Result::ERROR_DEVICE_LOST {
         device.mark_unusable();
     }
+}
+
+/// Retains every object whose destructor could touch a lost Vulkan device.
+fn quarantine_upload_inputs<T>(
+    device: &Arc<VulkanLogicalDevice>,
+    staging: VulkanUploadBatch,
+    resources: T,
+) {
+    mem::forget(staging);
+    mem::forget(resources);
+    mem::forget(Arc::clone(device));
 }
