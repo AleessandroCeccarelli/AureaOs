@@ -5,7 +5,10 @@
 
 //! Collects visible Wayland surfaces and prepares their output geometry.
 
-use std::{collections::HashSet, sync::Arc};
+use std::sync::Arc;
+
+#[cfg(feature = "drm")]
+use std::collections::HashSet;
 
 use crate::{
     render::{
