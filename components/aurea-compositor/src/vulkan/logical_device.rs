@@ -84,9 +84,18 @@ impl VulkanLogicalDevice {
         self.supports_foreign_queue_family
     }
 
-    /// Returns the Vulkan 1.3 rendering features enabled on this device.
+    /// Returns the rendering feature plan used to create this device.
     pub fn rendering_features(&self) -> &VulkanRenderingFeaturePlan {
         &self.rendering_features
+    }
+
+    /// Returns the rendering mode represented by this logical device.
+    ///
+    /// CompatibilityPending means device creation used only the legacy core
+    /// feature model; it does not imply that frame composition or presentation
+    /// is ready to use on this device.
+    pub fn rendering_mode(&self) -> super::VulkanRendererMode {
+        self.rendering_features.mode()
     }
 
     /// Allocates one primary command buffer from this device's command pool.
