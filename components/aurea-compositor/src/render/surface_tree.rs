@@ -8,7 +8,10 @@
 use std::sync::Arc;
 
 use smithay::{
-    reexports::wayland_server::{Resource, backend::ObjectId, protocol::wl_surface::WlSurface},
+    reexports::wayland_server::{
+        Resource, backend::ObjectId,
+        protocol::{wl_buffer::WlBuffer, wl_surface::WlSurface},
+    },
     utils::{Logical, Point, Transform},
     wayland::compositor::{
         SubsurfaceCachedState, SurfaceData, TraversalAction, with_surface_tree_downward,
@@ -192,6 +195,10 @@ pub struct SurfaceTreeDmabufSnapshot {
     pub surface: WlSurface,
     /// Full Wayland object identity used by the renderer texture cache.
     pub surface_id: ObjectId,
+    /// Strong Wayland resource reference retained until the renderer releases this snapshot.
+    /// Keeping only the DMA-BUF file descriptors alive is insufficient: the client must not
+    /// receive `wl_buffer.release` while the GPU may still be reading the buffer.
+    pub buffer: WlBuffer,
     /// Global logical origin after accumulating subsurface positions.
     pub location: Point<i32, Logical>,
     /// Validated dimensions, DRM format, modifier and per-plane metadata.
@@ -233,6 +240,7 @@ pub fn collect_surface_tree_dmabuf_snapshots(
                 snapshots.push(SurfaceTreeDmabufSnapshot {
                     surface: surface.clone(),
                     surface_id: surface.id(),
+                    buffer: snapshot.buffer,
                     location,
                     layout: snapshot.layout,
                     buffer_scale: snapshot.buffer_scale,
@@ -248,6 +256,7 @@ pub fn collect_surface_tree_dmabuf_snapshots(
 
 #[cfg(feature = "drm")]
 struct SurfaceDmabufSnapshot {
+    buffer: WlBuffer,
     layout: crate::vulkan::DmabufImportLayout,
     buffer_scale: i32,
     buffer_transform: Transform,
@@ -277,9 +286,8 @@ fn surface_dmabuf_snapshot(surface: &WlSurface) -> Option<SurfaceDmabufSnapshot>
 
         let dmabuf = get_dmabuf(&buffer).ok()?;
         let layout = crate::vulkan::DmabufImportLayout::from_dmabuf(dmabuf).ok()?;
-        let _keep_buffer_alive: WlBuffer = buffer;
-
         Some(SurfaceDmabufSnapshot {
+            buffer,
             layout,
             buffer_scale,
             buffer_transform: buffer_transform.into(),
