@@ -30,6 +30,7 @@ pub struct VulkanLogicalDevice {
     pub(super) instance: ash::Instance,
     pub(super) physical_device: vk::PhysicalDevice,
     pub(super) supports_sync_fd: bool,
+    pub(super) supports_sync_fd_import: bool,
     pub(super) supports_foreign_queue_family: bool,
     /// Permanently stops new queue work after uncertain completion or device loss.
     pub(super) device_unusable: AtomicBool,
@@ -88,6 +89,14 @@ impl VulkanLogicalDevice {
     /// Whether this device can export semaphore payloads as Linux sync files.
     pub fn supports_sync_fd(&self) -> bool {
         self.supports_sync_fd
+    }
+
+    /// Whether this device can import Linux sync files as semaphore payloads.
+    ///
+    /// This is negotiated independently from export support; DMA-BUF producer
+    /// synchronization must not assume that one capability implies the other.
+    pub fn supports_sync_fd_import(&self) -> bool {
+        self.supports_sync_fd_import
     }
 
     /// Whether foreign queue-family ownership transfers are enabled on this device.
