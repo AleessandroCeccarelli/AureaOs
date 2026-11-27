@@ -5,7 +5,7 @@
 
 //! Vulkan command submission and fence synchronization.
 
-use std::sync::{\n    Mutex,\n    atomic::{AtomicBool, Ordering},\n};
+use std::sync::{Mutex, atomic::{AtomicBool, Ordering}};
 
 use smithay::reexports::ash::{self, vk};
 
