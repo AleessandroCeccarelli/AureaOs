@@ -5,7 +5,7 @@
 
 //! Persistent Vulkan resources for SHM surface composition.
 
-use std::{collections::HashMap, error::Error, fmt, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, error::Error, fmt, hash::Hash, path::PathBuf, sync::Arc};
 
 use smithay::{reexports::ash::vk, reexports::wayland_server::backend::ObjectId};
 
@@ -77,6 +77,16 @@ pub(crate) struct VulkanSurfacePipelineCache {
     wallpaper_decode_service: WallpaperDecodeService,
     native_cursor_texture: VulkanNativeCursorTexture,
     legacy_render_passes: VulkanLegacyRenderPassManager,
+    legacy_surface_pipelines: HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
+    legacy_wallpaper_pipelines: HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
+    legacy_cursor_trail_pipelines: HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum LegacyPipelineLoad {
+    Clear,
+    Load,
+    Discard,
 }
 
 impl VulkanSurfacePipelineCache {
@@ -109,6 +119,9 @@ impl VulkanSurfacePipelineCache {
             wallpaper_decode_service,
             native_cursor_texture: VulkanNativeCursorTexture::new(),
             legacy_render_passes,
+            legacy_surface_pipelines: HashMap::new(),
+            legacy_wallpaper_pipelines: HashMap::new(),
+            legacy_cursor_trail_pipelines: HashMap::new(),
         })
     }
 
@@ -355,6 +368,85 @@ impl VulkanSurfacePipelineCache {
             VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
             &layouts, &ranges,
         ).map_err(VulkanSurfacePipelineCacheError::Pipeline)
+    }
+
+    /// Ensures a cached shared-ownership surface pipeline for a format/load-op pair.
+    pub(crate) fn ensure_shared_legacy_surface_pipeline(
+        &mut self,
+        format: vk::Format,
+        load: LegacyPipelineLoad,
+    ) -> Result<(), VulkanSurfacePipelineCacheError> {
+        let key = (format, load);
+        if self.legacy_surface_pipelines.contains_key(&key) {
+            return Ok(());
+        }
+        let render_pass = match load {
+            LegacyPipelineLoad::Clear => self.legacy_clear_render_pass(format),
+            LegacyPipelineLoad::Load => self.legacy_load_render_pass(format),
+            LegacyPipelineLoad::Discard => self.legacy_discard_render_pass(format),
+        }.map_err(|error| VulkanSurfacePipelineCacheError::Pipeline(
+            VulkanGraphicsPipelineError::Creation(vk::Result::ERROR_INITIALIZATION_FAILED)
+        ))?;
+        let pipeline = self.create_shared_legacy_surface_pipeline(render_pass)
+            .map_err(|error| error)?;
+        self.legacy_surface_pipelines.insert(key, pipeline);
+        Ok(())
+    }
+
+    pub(crate) fn ensure_shared_legacy_wallpaper_pipeline(
+        &mut self,
+        format: vk::Format,
+        load: LegacyPipelineLoad,
+    ) -> Result<(), VulkanSurfacePipelineCacheError> {
+        let key = (format, load);
+        if self.legacy_wallpaper_pipelines.contains_key(&key) { return Ok(()); }
+        let render_pass = match load {
+            LegacyPipelineLoad::Clear => self.legacy_clear_render_pass(format),
+            LegacyPipelineLoad::Load => self.legacy_load_render_pass(format),
+            LegacyPipelineLoad::Discard => self.legacy_discard_render_pass(format),
+        }.map_err(|_| VulkanSurfacePipelineCacheError::Pipeline(
+            VulkanGraphicsPipelineError::Creation(vk::Result::ERROR_INITIALIZATION_FAILED)
+        ))?;
+        let pipeline = self.create_shared_legacy_wallpaper_pipeline(render_pass)?;
+        self.legacy_wallpaper_pipelines.insert(key, pipeline);
+        Ok(())
+    }
+
+    pub(crate) fn ensure_shared_legacy_cursor_trail_pipeline(
+        &mut self,
+        format: vk::Format,
+        load: LegacyPipelineLoad,
+    ) -> Result<(), VulkanSurfacePipelineCacheError> {
+        let key = (format, load);
+        if self.legacy_cursor_trail_pipelines.contains_key(&key) { return Ok(()); }
+        let render_pass = match load {
+            LegacyPipelineLoad::Clear => self.legacy_clear_render_pass(format),
+            LegacyPipelineLoad::Load => self.legacy_load_render_pass(format),
+            LegacyPipelineLoad::Discard => self.legacy_discard_render_pass(format),
+        }.map_err(|_| VulkanSurfacePipelineCacheError::Pipeline(
+            VulkanGraphicsPipelineError::Creation(vk::Result::ERROR_INITIALIZATION_FAILED)
+        ))?;
+        let pipeline = self.create_shared_legacy_cursor_trail_pipeline(render_pass)?;
+        self.legacy_cursor_trail_pipelines.insert(key, pipeline);
+        Ok(())
+    }
+
+    pub(crate) fn shared_legacy_surface_pipeline(
+        &self, format: vk::Format, load: LegacyPipelineLoad,
+    ) -> Option<&super::VulkanSharedLegacyGraphicsPipeline> {
+        self.legacy_surface_pipelines.get(&(format, load))
+    }
+
+    pub(crate) fn shared_legacy_wallpaper_pipeline(
+        &self, format: vk::Format, load: LegacyPipelineLoad,
+    ) -> Option<&super::VulkanSharedLegacyGraphicsPipeline> {
+        self.legacy_wallpaper_pipelines.get(&(format, load))
+    }
+
+    pub(crate) fn shared_legacy_cursor_trail_pipeline(
+        &self, format: vk::Format, load: LegacyPipelineLoad,
+    ) -> Option<&super::VulkanSharedLegacyGraphicsPipeline> {
+        self.legacy_cursor_trail_pipelines.get(&(format, load))
     }
 
     /// Creates a wallpaper-specific pipeline with an independent UV push-constant ABI.
