@@ -865,3 +865,14 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - `surface_compositor` usa la pipeline alpha-blended già esistente per disegnare il pannello dopo le superfici applicative e prima delle superfici cursore e del cursore nativo. Viewport e scissor sono calcolati per output, con origine logica, scala effettiva e clipping multi-monitor.
 - Le superfici cursore client sono marcate nei relativi snapshot per non essere coperte dal menu.
 - I test sorgente aggiunti coprono scala 1x/2x e monitor non interessati. Non sono stati eseguiti build, rustfmt, check o test; gli RGBA devono ancora essere generati e verificati visivamente su Fedora.
+
+
+### Aurea Adaptive Graphics runtime selection — 27 November 2026
+
+- AureaAdaptiveGraphics is now connected to the live VulkanContext physical-device inventory. Candidate capabilities come from Smithay/Ash device enumeration, graphics-queue inspection, Vulkan API/feature probing and the device type reported by Vulkan.
+- Both generic GPU selection and DRM-node-matched selection pass through the same AAG policy. The existing power-saving/performance preference is retained as an ordering hint; software Vulkan is ranked after hardware.
+- Lavapipe/CPU fallback now uses the AAG policy as well. The selected plan carries the physical-device inventory index so backend initialization can open the exact device chosen by policy.
+- The Vulkan instance request was lowered from 1.3 to 1.0. This allows older Vulkan implementations to be enumerated and diagnosed; it does not make the current renderer compatible with them.
+- Important capability boundary: the current renderer still requires Vulkan 1.3 core dynamicRendering and synchronization2, and shader assets are still compiled for Vulkan 1.3. No Vulkan 1.0–1.2 render-pass backend has been implemented. AAG therefore does not select CompatibilityVulkan in runtime selection. Older GPUs are detected but remain unsupported by the current renderer; Lavapipe is a fallback only when it satisfies the same modern renderer requirements.
+- The existing CPU-upload/GBM presentation path is a presentation fallback, not a legacy Vulkan rendering backend. These concepts must not be conflated.
+- No build, rustfmt, check or tests were run, per the agreed schedule. The source changes require compilation and runtime validation on Fedora before they can be called verified.
