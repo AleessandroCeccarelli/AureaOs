@@ -291,3 +291,31 @@ The compositor still needs to coordinate framebuffer allocation at the target
 physical dimensions, submit the corresponding plane state, and update the
 logical output registry only after successful KMS completion. No build, unit
 test, or physical monitor validation has been run for these changes.
+
+
+## Automatic KMS mode staging from output rendering (2026-11-27)
+
+The server render dispatcher now reads the selected logical `OutputMode` for
+each pending output and resolves it against the retained native timings before
+constructing the presentation backend. A unique match is staged on the
+Smithay DRM surface before rendering. The renderer's `RenderTarget` is derived
+from the same logical output mode, and the Vulkan scanout path allocates or
+reuses a framebuffer only when its physical width and height match that target.
+The primary-plane state is then submitted through atomic TEST_ONLY and KMS
+commit. CPU/GBM compatibility presentation reuses the same staged KMS mode.
+
+The `ManagedDrmSurface::stage_native_mode` helper rejects unsupported or
+ambiguous native mappings and arms both presenters with the previously active
+mode. If the target mode is already active, it does not stage a redundant
+modeset. Successful VBlank completion clears the unused presenter's rollback
+guard; failed TEST_ONLY/commit restores the previous staged timing.
+
+**Remaining transaction boundary:** `AureaCompositor::configure_output` still
+updates the logical `OutputManager` and Wayland publication before the server
+render dispatcher performs physical KMS staging. Therefore a physical modeset
+failure can still leave the logical registry describing the requested mode
+while the monitor remains in the previous mode. A server-owned configuration
+request/acknowledgement path is still required to defer logical publication
+until VBlank and restore the previous logical configuration on failure. This
+integration has not been built or tested and has not been validated on physical
+hardware.
