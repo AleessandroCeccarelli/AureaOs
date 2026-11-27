@@ -78,7 +78,7 @@ impl fmt::Display for VulkanImageTransitionError {
 
 impl Error for VulkanImageTransitionError {}
 
-/// Records explicit image transitions using the Vulkan 1.0 vkCmdPipelineBarrier command.
+/// Records image barriers using the Vulkan 1.0 synchronization API.
 pub struct VulkanImageTransition;
 
 impl VulkanImageTransition {
@@ -102,10 +102,8 @@ impl VulkanImageTransition {
         }
 
         let barrier = [vk::ImageMemoryBarrier::default()
-            .src_stage_mask(old_state.stage())
             .src_access_mask(old_state.access())
-            .dst_stage_mask(vk::PipelineStageFlags2::NONE)
-            .dst_access_mask(vk::AccessFlags2::NONE)
+            .dst_access_mask(vk::AccessFlags::empty())
             .old_layout(old_state.layout())
             .new_layout(vk::ImageLayout::GENERAL)
             .src_queue_family_index(device.graphics_queue_family())
@@ -113,7 +111,6 @@ impl VulkanImageTransition {
             .image(image)
             .subresource_range(Self::color_subresource_range())];
 
-        
         unsafe {
             device.handle().cmd_pipeline_barrier(
                 command_buffer,
@@ -143,10 +140,8 @@ impl VulkanImageTransition {
             return Err(VulkanImageTransitionError::ForeignQueueFamilyUnsupported);
         }
 
-        let barrier = [vk::ImageMemoryBarrier2::default()
-            .src_stage_mask(vk::PipelineStageFlags2::NONE)
-            .src_access_mask(vk::AccessFlags2::NONE)
-            .dst_stage_mask(new_state.stage())
+        let barrier = [vk::ImageMemoryBarrier::default()
+            .src_access_mask(vk::AccessFlags::empty())
             .dst_access_mask(new_state.access())
             .old_layout(vk::ImageLayout::GENERAL)
             .new_layout(new_state.layout())
@@ -155,7 +150,6 @@ impl VulkanImageTransition {
             .image(image)
             .subresource_range(Self::color_subresource_range())];
 
-        let dependency = vk::DependencyInfo::default().image_memory_barriers(&barrier);
         unsafe {
             device.handle().cmd_pipeline_barrier(
                 command_buffer,
@@ -190,15 +184,15 @@ impl VulkanImageTransition {
         old_state: VulkanImageState,
         new_state: VulkanImageState,
     ) {
-        let barrier = [vk::ImageMemoryBarrier2::default()
+        let barrier = [vk::ImageMemoryBarrier::default()
+            .src_access_mask(old_state.access())
+            .dst_access_mask(new_state.access())
             .old_layout(old_state.layout())
             .new_layout(new_state.layout())
             .src_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
             .dst_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
             .image(image)
             .subresource_range(Self::color_subresource_range())];
-
-        let dependency = vk::DependencyInfo::default().image_memory_barriers(&barrier);
 
         unsafe {
             device.handle().cmd_pipeline_barrier(
