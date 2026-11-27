@@ -2398,3 +2398,12 @@ Le modifiche sono pubblicate su `main`, ma non sono ancora state compilate né p
 - I framebuffer restano vivi fino al ritorno di `submit_and_wait_with`, sia nel percorso KMS sia nel percorso readback. In caso di errore prima della submission, il command buffer locale viene distrutto prima dei target creati in precedenza.
 - Il controllo di identità esatta del render pass viene mantenuto sui target usati dalle pipeline.
 - La correzione sostituisce il precedente modello con framebuffer temporanei per singola draw. Nessuna build, formattazione, compilazione, test, CI o prova hardware è stata eseguita: la correttezza dei lifetime Rust e la validazione Vulkan vanno ancora verificate su Fedora.
+
+
+### Sincronizzazione e submission incerta del renderer legacy — 27 novembre 2026
+
+- Il registratore legacy ora conserva il tipo originale di errore della coda Vulkan invece di convertirlo subito in una stringa. Le due vie terminali (readback e rilascio KMS) distinguono quindi submission rifiutata da completamento incerto.
+- In caso di completion incerta (attesa fence fallita e fallback `device_wait_idle` fallito), il frame non distrugge i framebuffer e il descriptor pool ancora potenzialmente referenziati dal command buffer. Queste risorse vengono intenzionalmente trattenute; il command buffer in stato Pending applica già la stessa politica conservativa nel proprio Drop.
+- Gli errori di queue submission mantengono la classificazione fatale `DeviceLost` quando è coinvolto `ERROR_DEVICE_LOST`.
+- La submission sincrona continua a usare fence e fallback device-idle: solo una delle due attese riuscita prova il completamento e consente il normale rilascio delle risorse.
+- Nessuna build, rustfmt, cargo check, test o verifica GPU è stata eseguita. Resta da validare la compilazione e verificare anche il lifetime del buffer di readback esterno in caso di completion incerta prima di considerare chiuso questo audit.
