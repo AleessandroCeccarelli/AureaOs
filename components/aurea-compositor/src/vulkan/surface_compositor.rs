@@ -782,49 +782,60 @@ pub(super) fn render_frame(
     }
 
     // Client-provided cursor surfaces are kept above the desktop menu.
-    for (surface, binding) in visible.iter().zip(bindings.iter()) {
-        if !surface.is_cursor {
-            continue;
+    #[cfg(feature = "drm")]
+    for draw in &ordered_draws {
+        match *draw {
+            OrderedSurfaceDraw::Shm(index) => {
+                let surface = &visible[index];
+                if !surface.is_cursor { continue; }
+                let binding = &bindings[index];
+                let geometry = surface.geometry;
+                let clipped = surface.scissor;
+                let viewport = vk::Viewport {
+                    x: geometry.x() as f32, y: geometry.y() as f32,
+                    width: geometry.width() as f32, height: geometry.height() as f32,
+                    min_depth: 0.0, max_depth: 1.0,
+                };
+                let scissor = vk::Rect2D {
+                    offset: vk::Offset2D {
+                        x: i32::try_from(clipped.x).map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                        y: i32::try_from(clipped.y).map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                    },
+                    extent: vk::Extent2D { width: clipped.width, height: clipped.height },
+                };
+                VulkanDrawPass::record_textured_region(
+                    command_buffer.handle(), composition_view, &pipeline, binding, 0,
+                    VulkanImageState::General, VulkanImageState::General, VulkanColorLoad::Load,
+                    viewport, scissor, surface.texture_transform,
+                ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+            }
+            OrderedSurfaceDraw::Dmabuf(index) => {
+                let surface = &visible_dmabuf[index];
+                if !surface.is_cursor { continue; }
+                let source = &dmabuf_views[index];
+                let binding = &dmabuf_bindings[index];
+                let geometry = surface.geometry;
+                let clipped = surface.scissor;
+                let viewport = vk::Viewport {
+                    x: geometry.x() as f32, y: geometry.y() as f32,
+                    width: geometry.width() as f32, height: geometry.height() as f32,
+                    min_depth: 0.0, max_depth: 1.0,
+                };
+                let scissor = vk::Rect2D {
+                    offset: vk::Offset2D {
+                        x: i32::try_from(clipped.x).map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                        y: i32::try_from(clipped.y).map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
+                    },
+                    extent: vk::Extent2D { width: clipped.width, height: clipped.height },
+                };
+                VulkanDrawPass::record_foreign_textured_region(
+                    command_buffer.handle(), composition_view, source, &pipeline, binding, 0,
+                    VulkanImageState::General, VulkanImageState::General, VulkanColorLoad::Load,
+                    viewport, scissor, surface.texture_transform,
+                ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+            }
         }
-        let geometry = surface.geometry;
-        let scissor = surface.scissor;
-        let viewport = vk::Viewport {
-            x: geometry.x() as f32,
-            y: geometry.y() as f32,
-            width: geometry.width() as f32,
-            height: geometry.height() as f32,
-            min_depth: 0.0,
-            max_depth: 1.0,
-        };
-        let scissor = vk::Rect2D {
-            offset: vk::Offset2D {
-                x: i32::try_from(scissor.x)
-                    .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
-                y: i32::try_from(scissor.y)
-                    .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
-            },
-            extent: vk::Extent2D {
-                width: scissor.width,
-                height: scissor.height,
-            },
-        };
-
-        VulkanDrawPass::record_textured_region(
-            command_buffer.handle(),
-            composition_view,
-            &pipeline,
-            binding,
-            0,
-            VulkanImageState::General,
-            VulkanImageState::General,
-            VulkanColorLoad::Load,
-            viewport,
-            scissor,
-            surface.texture_transform,
-        )
-        .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
-
     // Historical impressions are composited with their own alpha pipeline.
     if let Some(binding) = cursor_binding.as_ref() {
         if !cursor_trail.is_empty() {
