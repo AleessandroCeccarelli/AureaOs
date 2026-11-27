@@ -123,7 +123,17 @@ impl VulkanLogicalDevice {
             .command_pool(self.command_pool)
             .level(vk::CommandBufferLevel::PRIMARY)
             .command_buffer_count(1);
-        let command_buffers = unsafe { self.device.allocate_command_buffers(&allocation_info) }?;
+        let command_buffers = match unsafe {
+            self.device.allocate_command_buffers(&allocation_info)
+        } {
+            Ok(command_buffers) => command_buffers,
+            Err(error) => {
+                if error == vk::Result::ERROR_DEVICE_LOST {
+                    self.mark_unusable();
+                }
+                return Err(error);
+            }
+        };
         Ok(command_buffers[0])
     }
 
