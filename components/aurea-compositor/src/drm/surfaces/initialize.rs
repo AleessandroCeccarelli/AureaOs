@@ -142,6 +142,7 @@ impl DrmSurfaceManager {
                 ManagedDrmSurface {
                     output_id,
                     connector: connector_handle,
+                    native_modes: descriptor.native_modes().to_vec(),
                     surface,
                     presentation,
                     frame_pool: VulkanDrmFramePool::new(),
