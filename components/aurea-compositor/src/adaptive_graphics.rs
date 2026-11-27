@@ -53,6 +53,8 @@ impl GraphicsCapabilities {
 /// A discovered GPU together with capabilities queried from its Vulkan device.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GraphicsCandidate {
+    /// Stable index into the VulkanContext physical-device inventory.
+    pub device_index: usize,
     pub name: String,
     pub capabilities: GraphicsCapabilities,
 }
@@ -60,6 +62,7 @@ pub struct GraphicsCandidate {
 /// Result of the automatic graphics-path decision.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AdaptiveGraphicsPlan {
+    pub device_index: usize,
     pub device_name: String,
     pub path: GraphicsPath,
 }
@@ -84,6 +87,7 @@ impl AureaAdaptiveGraphics {
             .filter(|candidate| !candidate.capabilities.software_device)
             .find(|candidate| candidate.capabilities.supports_vulkan_13())
             .map(|candidate| AdaptiveGraphicsPlan {
+                device_index: candidate.device_index,
                 device_name: candidate.name.clone(),
                 path: GraphicsPath::ModernVulkan,
             })
@@ -93,6 +97,7 @@ impl AureaAdaptiveGraphics {
                     .filter(|candidate| !candidate.capabilities.software_device)
                     .find(|candidate| candidate.capabilities.supports_compatibility())
                     .map(|candidate| AdaptiveGraphicsPlan {
+                        device_index: candidate.device_index,
                         device_name: candidate.name.clone(),
                         path: GraphicsPath::CompatibilityVulkan,
                     })
@@ -116,6 +121,7 @@ mod tests {
 
     fn candidate(name: &str, software: bool, modern: bool, compatibility: bool) -> GraphicsCandidate {
         GraphicsCandidate {
+            device_index: 0,
             name: name.to_owned(),
             capabilities: GraphicsCapabilities {
                 api_major: if modern { 1 } else { 1 },
