@@ -33,6 +33,7 @@ drm = [
     "input/libinput_1_21",
     "smithay/backend_udev",
     "smithay/backend_session_libseat",
+    "dep:libc",
     "vulkan",
 ]
 
