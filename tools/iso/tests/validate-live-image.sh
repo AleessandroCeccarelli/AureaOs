@@ -78,6 +78,9 @@ unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
     etc/os-release usr/lib/os-release etc/debian_version usr/lib/systemd/systemd sbin/init \
     usr/lib/systemd/system/multi-user.target etc/systemd/system/default.target \
     var/lib/dpkg/status \
+    usr/lib/modules usr/lib/firmware/amdgpu \
+    usr/share/vulkan/icd.d usr/lib/x86_64-linux-gnu/libvulkan.so.1 \
+    usr/lib/x86_64-linux-gnu/libturbojpeg.so.0 usr/lib/x86_64-linux-gnu/libheif.so.1 \
     usr/share/aureaos/human-interfaces/icons/generated/context-menu \
     usr/share/icons/AureaOS-Light usr/share/icons/AureaOS-Dark \
     >/dev/null 2>&1 || fail "cannot inspect the AureaOS desktop session and artwork inside filesystem.squashfs"
@@ -112,6 +115,37 @@ for package in live-boot live-boot-initramfs-tools live-config live-config-syste
     [[ "$status" == installed ]] ||
         fail "Debian Live boot package is not installed: $package"
 done
+
+# Verify the native graphics/input stack in the actual compressed rootfs.
+# Package-list declarations alone are insufficient: these checks inspect the
+# installed package database and the driver/runtime payload shipped in SquashFS.
+for package in linux-image-amd64 firmware-amd-graphics libvulkan1 mesa-vulkan-drivers \
+    libdrm2 libgbm1 libinput10 libseat1 libudev1 libpam-systemd \
+    libturbojpeg0 libheif1 libheif-plugin-libde265 libheif-plugin-dav1d; do
+    status="$(dpkg-query --admindir="$ROOTFS/var/lib/dpkg" -W -f='${db:Status-Status}' "$package" 2>/dev/null)" ||
+        fail "AureaOS runtime dependency is missing from the Live rootfs: $package"
+    [[ "$status" == installed ]] ||
+        fail "AureaOS runtime dependency is not installed in the Live rootfs: $package"
+done
+
+[[ -d "$ROOTFS/usr/lib/modules" ]] ||
+    fail "kernel modules directory is missing from the Live rootfs"
+find "$ROOTFS/usr/lib/modules" -type f \\
+    \\( -name 'amdgpu.ko' -o -name 'amdgpu.ko.xz' -o -name 'amdgpu.ko.zst' \\) \\
+    -print -quit | grep -q . ||
+    fail "AMD amdgpu kernel module is missing from the Live rootfs"
+find "$ROOTFS/usr/lib/firmware/amdgpu" -type f \\
+    \\( -name '*.bin' -o -name '*.bin.xz' -o -name '*.bin.zst' \\) \\
+    -print -quit | grep -q . ||
+    fail "AMD GPU firmware payload is missing from the Live rootfs"
+[[ -s "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.x86_64.json" ]] ||
+    fail "Mesa RADV Vulkan ICD manifest is missing from the Live rootfs"
+[[ -e "$ROOTFS/usr/lib/x86_64-linux-gnu/libvulkan.so.1" ]] ||
+    fail "Vulkan loader shared library is missing from the Live rootfs"
+[[ -e "$ROOTFS/usr/lib/x86_64-linux-gnu/libturbojpeg.so.0" ]] ||
+    fail "TurboJPEG runtime shared library is missing from the Live rootfs"
+[[ -e "$ROOTFS/usr/lib/x86_64-linux-gnu/libheif.so.1" ]] ||
+    fail "libheif runtime shared library is missing from the Live rootfs"
 
 [[ -s "$ROOTFS/etc/systemd/system/aurea-desktop.service" ]] ||
     fail "AureaOS systemd service is missing from the Live rootfs"
