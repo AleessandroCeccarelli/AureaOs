@@ -53,8 +53,6 @@ use super::{
     DmabufSyncWaitSet,
     #[cfg(feature = "drm")]
     VulkanDmabufImage,
-    #[cfg(feature = "drm")]
-    VulkanImageView,
 };
 
 pub(super) const MAX_COMPOSITED_SURFACES: usize = 128;
@@ -212,7 +210,7 @@ pub(super) fn render_frame(
     #[cfg(feature = "drm")]
     let visible_dmabuf = visible_dmabuf_surfaces(scene.dmabuf_snapshots(), target)?;
     #[cfg(feature = "drm")]
-    let mut dmabuf_images = visible_dmabuf
+    let dmabuf_images = visible_dmabuf
         .iter()
         .map(|surface| {
             VulkanDmabufImage::import(
@@ -224,7 +222,7 @@ pub(super) fn render_frame(
         })
         .collect::<Result<Vec<_>, _>>()?;
     #[cfg(feature = "drm")]
-    let mut dmabuf_sync_wait_set = {
+    let dmabuf_sync_wait_set = {
         let mut wait_set = DmabufSyncWaitSet::new(surface_cache.device_owner());
         for surface in &visible_dmabuf {
             wait_set
@@ -274,6 +272,12 @@ pub(super) fn render_frame(
 
     if device.rendering_mode() != super::VulkanRendererMode::CompatibilityPending
         && visible.is_empty()
+        && {
+            #[cfg(feature = "drm")]
+            { visible_dmabuf.is_empty() }
+            #[cfg(not(feature = "drm"))]
+            { true }
+        }
         && !cursor_needed
         && context_menu_draw.is_none()
         && wallpaper_asset_id.is_none_or(|asset_id| {
