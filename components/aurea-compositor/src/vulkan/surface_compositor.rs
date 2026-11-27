@@ -9,6 +9,7 @@ mod cursor_geometry;
 mod cursor_trail_geometry;
 mod error;
 mod legacy_layers;
+#[cfg(feature = "legacy-vulkan-frame")]
 mod legacy_frame;
 mod readback;
 mod readback_entry;
@@ -365,29 +366,36 @@ pub(super) fn render_frame(
         context_menu_key.is_some_and(|key| surface_cache.desktop_icon_texture(key).is_some());
 
     if device.rendering_mode() == super::VulkanRendererMode::CompatibilityPending {
-        return legacy_frame::render_frame_legacy(
-            device,
-            view,
-            composition_view,
-            target,
-            scene,
-            surface_cache,
-            composition_previous_state,
-            previous_image_state,
-            &visible,
-            wallpaper_asset_id,
-            context_menu_key,
-            context_menu_draw,
-            cursor,
-            &cursor_trail,
-            cursor_texture_ready,
-            cursor_name,
-            requested_cursor_size,
-            cursor_frame_time,
-            display_color.map(|(_, warmth, _, _)| warmth),
-            readback,
-            on_submitted,
-        );
+        #[cfg(feature = "legacy-vulkan-frame")]
+        {
+            return legacy_frame::render_frame_legacy(
+                device,
+                view,
+                composition_view,
+                target,
+                scene,
+                surface_cache,
+                composition_previous_state,
+                previous_image_state,
+                &visible,
+                wallpaper_asset_id,
+                context_menu_key,
+                context_menu_draw,
+                cursor,
+                &cursor_trail,
+                cursor_texture_ready,
+                cursor_name,
+                requested_cursor_size,
+                cursor_frame_time,
+                display_color.map(|(_, warmth, _, _)| warmth),
+                readback,
+                on_submitted,
+            );
+        }
+        #[cfg(not(feature = "legacy-vulkan-frame"))]
+        {
+            return Err(VulkanSurfaceCompositionError::CompatibilityRendererNotIntegrated);
+        }
     }
 
     surface_cache
