@@ -148,14 +148,16 @@ impl VulkanLegacyFrameRecorder {
         command_buffer: vk::CommandBuffer,
         source: &VulkanImageView<'_, '_>,
         target: &VulkanImageView<'_, '_>,
-        render_pass: &Arc<VulkanLegacyRenderPass<'static>>,
         binding: &VulkanTextureBinding<'_, '_, '_, '_>,
         previous_source_state: VulkanImageState,
         previous_target_state: VulkanImageState,
         final_target_state: VulkanImageState,
         warmth_percent: u8,
     ) -> Result<(), VulkanLegacyFrameRecorderError> {
-        let target = render_pass
+        // The framebuffer must use the exact render-pass instance retained by
+        // the display-color pipeline, not another cached pass with the same format.
+        let target = pass
+            .render_pass()
             .create_target(target)
             .map_err(VulkanLegacyFrameRecorderError::RenderPass)?;
         pass.record(
