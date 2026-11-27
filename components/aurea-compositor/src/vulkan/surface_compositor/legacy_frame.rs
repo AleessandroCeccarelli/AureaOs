@@ -377,21 +377,22 @@ pub(super) fn render_frame_legacy<K: Copy>(
     };
 
     if let Err(error) = submit_result {
-        if let VulkanLegacyFrameRecorderError::QueueSubmit(queue_error) = error {
-            if queue_error.is_uncertain() {
-                // A failed fence wait plus failed device-idle fallback does not
-                // prove GPU completion. Intentionally retain every frame-owned
-                // framebuffer and the descriptor pool rather than destroy
-                // objects that an in-flight command buffer may still reference.
-                std::mem::forget(clear_target);
-                std::mem::forget(load_target);
-                std::mem::forget(display_target);
-                std::mem::forget(binding_pool);
+        match error {
+            VulkanLegacyFrameRecorderError::QueueSubmit(queue_error) => {
+                if queue_error.is_uncertain() {
+                    // A failed fence wait plus failed device-idle fallback does not
+                    // prove GPU completion. Intentionally retain every frame-owned
+                    // framebuffer and the descriptor pool rather than destroy
+                    // objects that an in-flight command buffer may still reference.
+                    std::mem::forget(clear_target);
+                    std::mem::forget(load_target);
+                    std::mem::forget(display_target);
+                    std::mem::forget(binding_pool);
+                }
                 return Err(VulkanSurfaceCompositionError::from_queue_submit_error(queue_error));
             }
-            return Err(VulkanSurfaceCompositionError::from_queue_submit_error(queue_error));
+            other => return Err(VulkanSurfaceCompositionError::Command(other.to_string())),
         }
-        return Err(VulkanSurfaceCompositionError::Command(error.to_string()));
     }
 
     Ok(())
