@@ -128,6 +128,20 @@ impl VulkanFrameResource {
         )
     }
 
+    /// Whether a completed presentation can now reacquire foreign ownership.
+    pub const fn can_acquire_from_foreign(&self) -> bool {
+        matches!(
+            self.state,
+            FrameResourceState::Submitted {
+                presentation_resolved: true,
+                kms_owned: false,
+                foreign_owned: true,
+                foreign_acquire_pending: false,
+                ..
+            }
+        )
+    }
+
     /// Returns whether ownership has been released to the foreign queue family.
     pub const fn is_foreign_owned(&self) -> bool {
         matches!(
