@@ -80,7 +80,7 @@ fn record_surface_class<'pass, 'view, 'image, 'pass_device, 'view_device>(
 #[allow(clippy::too_many_arguments)]
 pub(super) fn record_context_menu<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
+    target: &VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     source: &VulkanImageView<'_, '_>,
     binding: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -100,7 +100,7 @@ pub(super) fn record_context_menu<'pass, 'view, 'image, 'pass_device, 'view_devi
 #[allow(clippy::too_many_arguments)]
 pub(super) fn record_wallpaper<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
+    target: &VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     source: &VulkanImageView<'_, '_>,
     binding: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -120,7 +120,7 @@ pub(super) fn record_wallpaper<'pass, 'view, 'image, 'pass_device, 'view_device>
 #[allow(clippy::too_many_arguments)]
 pub(super) fn record_native_cursor<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
+    target: &VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     source: &VulkanImageView<'_, '_>,
     binding: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -139,7 +139,7 @@ pub(super) fn record_native_cursor<'pass, 'view, 'image, 'pass_device, 'view_dev
 /// Records cursor-trail impressions in their supplied back-to-front order.
 pub(super) fn record_cursor_trail<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
+    target: &VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     source: &VulkanImageView<'_, '_>,
     binding: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -160,7 +160,7 @@ pub(super) fn record_cursor_trail<'pass, 'view, 'image, 'pass_device, 'view_devi
 /// Records ordinary client surfaces.
 pub(super) fn record_normal_surfaces<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
+    target: &VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     surfaces: &[VisibleSurface],
     views: &[VulkanImageView<'_, '_>],
@@ -172,7 +172,7 @@ pub(super) fn record_normal_surfaces<'pass, 'view, 'image, 'pass_device, 'view_d
 /// Records client-provided cursor surfaces above the context menu.
 pub(super) fn record_client_cursor_surfaces<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
+    target: &VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     surfaces: &[VisibleSurface],
     views: &[VulkanImageView<'_, '_>],
@@ -219,8 +219,8 @@ pub(super) struct LegacyCursorTrailLayer<'r, 'i, 'id, 'rd> {
 
 /// All resources required to record the legacy scene layers for one frame.
 pub(super) struct LegacyFrameLayers<'r, 'i, 'id, 'rd> {
-    pub clear_target: &'r VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
-    pub load_target: &'r VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
+    pub clear_target: &'r VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
+    pub load_target: &'r VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pub clear_color: [f32; 4],
     pub visible: &'r [VisibleSurface],
     pub surface_views: &'r [VulkanImageView<'i, 'id>],
