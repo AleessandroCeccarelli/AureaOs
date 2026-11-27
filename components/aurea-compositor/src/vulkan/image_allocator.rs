@@ -115,8 +115,12 @@ impl<'device> VulkanImageAllocator<'device> {
             .initial_layout(vk::ImageLayout::UNDEFINED);
 
         let raw = self.device.handle();
-        let image = unsafe { raw.create_image(&create_info, None) }
-            .map_err(VulkanImageError::ImageCreation)?;
+        let image = unsafe { raw.create_image(&create_info, None) }.map_err(|error| {
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                self.device.mark_unusable();
+            }
+            VulkanImageError::ImageCreation(error)
+        })?;
         let requirements = unsafe { raw.get_image_memory_requirements(image) };
 
         let memory_type_index = match select_memory_type_index(
@@ -138,15 +142,23 @@ impl<'device> VulkanImageAllocator<'device> {
         let memory = match unsafe { raw.allocate_memory(&allocate_info, None) } {
             Ok(memory) => memory,
             Err(error) => {
-                unsafe { raw.destroy_image(image, None) };
+                if error == vk::Result::ERROR_DEVICE_LOST {
+                    self.device.mark_unusable();
+                } else {
+                    unsafe { raw.destroy_image(image, None) };
+                }
                 return Err(VulkanImageError::MemoryAllocation(error));
             }
         };
 
         if let Err(error) = unsafe { raw.bind_image_memory(image, memory, 0) } {
-            unsafe {
-                raw.free_memory(memory, None);
-                raw.destroy_image(image, None);
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                self.device.mark_unusable();
+            } else {
+                unsafe {
+                    raw.free_memory(memory, None);
+                    raw.destroy_image(image, None);
+                }
             }
             return Err(VulkanImageError::MemoryBinding(error));
         }
