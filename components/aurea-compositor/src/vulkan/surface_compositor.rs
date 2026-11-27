@@ -212,6 +212,14 @@ pub(super) fn render_frame(
         return Err(VulkanSurfaceCompositionError::TooManySurfaces);
     }
     #[cfg(feature = "drm")]
+    if !visible_dmabuf.is_empty()
+        && (!device.supports_foreign_queue_family() || !device.supports_sync_fd_import())
+    {
+        return Err(VulkanSurfaceCompositionError::Texture(
+            "This Vulkan device lacks foreign queue ownership or SYNC_FD import required for safe DMA-BUF sampling".to_owned(),
+        ));
+    }
+    #[cfg(feature = "drm")]
     let dmabuf_images = visible_dmabuf
         .iter()
         .map(|surface| {
