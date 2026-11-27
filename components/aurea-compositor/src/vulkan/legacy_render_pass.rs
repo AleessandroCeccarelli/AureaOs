@@ -21,8 +21,11 @@ pub enum VulkanLegacyRenderPassError {
 impl fmt::Display for VulkanLegacyRenderPassError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Creation(error) => write!(formatter, "Legacy Vulkan render-pass creation failed: {error:?}"),
-            Self::DeviceMismatch => formatter.write_str("Legacy render target and image view use different Vulkan devices"),
+            Self::Creation(error) => {
+                write!(formatter, "Legacy Vulkan render-pass creation failed: {error:?}")
+            }
+            Self::DeviceMismatch => formatter
+                .write_str("Legacy render target and image view use different Vulkan devices"),
         }
     }
 }
@@ -74,7 +77,10 @@ impl<'view, 'image, 'device> VulkanLegacyRenderTarget<'view, 'image, 'device> {
                 .src_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
                 .dst_stage_mask(vk::PipelineStageFlags::COLOR_ATTACHMENT_OUTPUT)
                 .src_access_mask(vk::AccessFlags::empty())
-                .dst_access_mask(vk::AccessFlags::COLOR_ATTACHMENT_READ | vk::AccessFlags::COLOR_ATTACHMENT_WRITE),
+                .dst_access_mask(
+                    vk::AccessFlags::COLOR_ATTACHMENT_READ
+                        | vk::AccessFlags::COLOR_ATTACHMENT_WRITE,
+                ),
             vk::SubpassDependency::default()
                 .src_subpass(0)
                 .dst_subpass(vk::SUBPASS_EXTERNAL)
@@ -105,7 +111,11 @@ impl<'view, 'image, 'device> VulkanLegacyRenderTarget<'view, 'image, 'device> {
             }
         };
 
-        Ok(Self { view, render_pass, framebuffer })
+        Ok(Self {
+            view,
+            render_pass,
+            framebuffer,
+        })
     }
 
     pub fn render_pass(&self) -> vk::RenderPass {
@@ -113,7 +123,10 @@ impl<'view, 'image, 'device> VulkanLegacyRenderTarget<'view, 'image, 'device> {
     }
 
     pub fn extent(&self) -> vk::Extent2D {
-        vk::Extent2D { width: self.view.width(), height: self.view.height() }
+        vk::Extent2D {
+            width: self.view.width(),
+            height: self.view.height(),
+        }
     }
 
     pub fn view(&self) -> &VulkanImageView<'image, 'device> {
@@ -127,7 +140,9 @@ impl<'view, 'image, 'device> VulkanLegacyRenderTarget<'view, 'image, 'device> {
         clear_color: [f32; 4],
     ) -> VulkanLegacyRenderPassScope<'target, 'view, 'image, 'device> {
         let clear_values = [vk::ClearValue {
-            color: vk::ClearColorValue { float32: clear_color },
+            color: vk::ClearColorValue {
+                float32: clear_color,
+            },
         }];
         let begin_info = vk::RenderPassBeginInfo::default()
             .render_pass(self.render_pass)
@@ -144,7 +159,11 @@ impl<'view, 'image, 'device> VulkanLegacyRenderTarget<'view, 'image, 'device> {
                 vk::SubpassContents::INLINE,
             );
         }
-        VulkanLegacyRenderPassScope { target: self, command_buffer, ended: false }
+        VulkanLegacyRenderPassScope {
+            target: self,
+            command_buffer,
+            ended: false,
+        }
     }
 }
 
@@ -163,7 +182,11 @@ impl VulkanLegacyRenderPassScope<'_, '_, '_, '_> {
     fn end_recording(&mut self) {
         if !self.ended {
             unsafe {
-                self.target.view.device().handle().cmd_end_render_pass(self.command_buffer);
+                self.target
+                    .view
+                    .device()
+                    .handle()
+                    .cmd_end_render_pass(self.command_buffer);
             }
             self.ended = true;
         }
