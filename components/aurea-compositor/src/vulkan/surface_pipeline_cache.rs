@@ -408,8 +408,7 @@ impl VulkanSurfacePipelineCache {
             LegacyPipelineLoad::Load => self.legacy_load_render_pass(format),
             LegacyPipelineLoad::Discard => self.legacy_discard_render_pass(format),
         }.map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
-        let pipeline = self.create_shared_legacy_surface_pipeline(render_pass)
-            .map_err(|error| error)?;
+        let pipeline = self.create_shared_legacy_surface_pipeline(render_pass)?;
         self.legacy_surface_pipelines.insert(key, pipeline);
         Ok(())
     }
@@ -442,9 +441,8 @@ impl VulkanSurfacePipelineCache {
             LegacyPipelineLoad::Clear => self.legacy_clear_render_pass(format),
             LegacyPipelineLoad::Load => self.legacy_load_render_pass(format),
             LegacyPipelineLoad::Discard => self.legacy_discard_render_pass(format),
-        }.map_err(|_| VulkanSurfacePipelineCacheError::Pipeline(
-            VulkanGraphicsPipelineError::Creation(vk::Result::ERROR_INITIALIZATION_FAILED)
-        ))?;
+        }
+        .map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
         let pipeline = self.create_shared_legacy_cursor_trail_pipeline(render_pass)?;
         self.legacy_cursor_trail_pipelines.insert(key, pipeline);
         Ok(())
