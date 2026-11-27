@@ -1,7 +1,7 @@
 # Saturday Pointer-on-Screen Acceptance Test
 
 Target: Saturday 28 November 2026  
-Scope: the first visible and moving AureaOS pointer on the native desktop. Do not expand this test into unrelated desktop features.
+Scope: boot the Live USB to one graphical output showing only the default wallpaper and a visible, moving physical mouse pointer. No Welcome window, desktop icons, dock, launcher, menus, settings or additional UI are part of this milestone.
 
 ## What the source currently implements
 
@@ -25,7 +25,12 @@ operation is pending; otherwise an idle desktop can remain on the clear-color
 background forever after its first frame.
 
 The readiness path now includes pending wallpaper decode and upload work in the
-same frame-polling condition used by native cursor assets. On the physical boot:
+same frame-polling condition used by native cursor assets. The Live systemd unit
+sets `AUREAOS_LIVE_MINIMAL=1`; the desktop factory uses this flag to skip the
+Welcome Wayland client, leaving the compositor wallpaper and native pointer as
+the only intended visible content. Normal development sessions retain Welcome.
+
+On the physical boot:
 
 1. Confirm the default wallpaper appears without moving the mouse or opening a window.
 2. Confirm it fills the active output without stretching or leaving unintended margins.
@@ -58,16 +63,14 @@ bash tools/run-aurea-native-test.sh
 
 It builds the desktop executable, captures PCI/DRM/input/libinput/Vulkan inventory, launches the native DRM/Vulkan desktop, and collects the run diagnostics. It expects a valid `XDG_RUNTIME_DIR` and an interactive local session.
 
-Once the desktop is visible:
+Once the graphical output is visible:
 
-1. Confirm the white arrow with dark outline is visible without moving the mouse.
-2. Move the mouse slowly in all four directions. The arrow must follow continuously.
-3. Move to each edge and corner. It must remain inside the display.
-4. Test left click, right click and double click.
-5. Scroll vertically and horizontally if the device supports both.
-6. Disconnect and reconnect the mouse; confirm motion resumes without restarting AureaOS.
-7. If a touchpad is available, confirm its motion does not disable or strand the pointer.
-8. Exit with Ctrl+C and allow the diagnostic script to collect the report.
+1. Confirm no Welcome window or other desktop UI is covering the wallpaper.
+2. Confirm the wallpaper fills the active monitor without stretching or unintended margins.
+3. Confirm the white arrow with dark outline is visible without moving the mouse.
+4. Move the physical mouse slowly in all four directions. The arrow must follow continuously.
+5. Move to each edge and corner. It must remain inside the display.
+6. Exit with Ctrl+C and allow the diagnostic script to collect the report.
 
 ## Acceptance criteria
 
@@ -77,7 +80,7 @@ The Saturday minimum is met only when all are true:
 - The default pointer arrow is visible on that frame before any mouse movement.
 - Physical relative mouse motion moves the on-screen arrow.
 - Pointer motion remains within enabled output bounds.
-- Left/right button events and wheel events reach the desktop/Wayland seat.
+- The Live session contains no Welcome window or unrelated UI.
 - The run exits cleanly or the reason for failure is captured in the diagnostic report.
 
 If the cursor is absent, do not change themes or cursor assets first. Inspect in this order:
