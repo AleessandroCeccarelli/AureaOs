@@ -259,6 +259,12 @@ jobs:
       - name: Test compositor with DRM and Vulkan
         run: cargo test -p aurea-compositor --features drm
 
+      - name: Check opt-in legacy Vulkan frame compatibility backend
+        run: cargo check -p aurea-compositor --features "drm legacy-vulkan-frame"
+
+      - name: Test opt-in legacy Vulkan frame compatibility backend
+        run: cargo test -p aurea-compositor --features "drm legacy-vulkan-frame"
+
       - name: Preserve resolved lockfile for review
         if: always()
         uses: actions/upload-artifact@v7
