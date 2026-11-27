@@ -1432,3 +1432,12 @@ Cautions:
 - This guard is temporary and intentional. Remove it only when the complete legacy frame recording path is dispatched here, including clear, wallpaper, normal surfaces, context menu, client cursor surfaces, cursor trail, native cursor, optional display color, and the correct DRM release or readback submission.
 - No build, tests, rustfmt, shader compilation or hardware validation was run.
 
+### Legacy Wayland surface-layer recorder (2026-11-27)
+
+- Added `surface_compositor/legacy_layers.rs` as a focused recording module for the two Wayland surface classes.
+- `record_normal_surfaces` records non-cursor client surfaces; `record_client_cursor_surfaces` records client cursor surfaces separately so the caller can place the context menu between those two groups.
+- Both use the shared `VulkanLegacyFrameRecorder::surface_region` ABI and the persistent load render pass. Geometry, clipping and texture-transform values are consumed from the existing `VisibleSurface` snapshots; no second geometry implementation is introduced.
+- The helper validates that surface, image-view and descriptor-binding counts match before recording, preventing silent truncation by iterator zip.
+- This is a recording building block, not yet called by `render_frame`. The active compositor still fails closed for `CompatibilityPending`; AAG remains disabled. Wallpaper, context-menu, cursor-trail, native cursor, display-color and final readback/DRM dispatch still need a unified legacy frame orchestrator.
+- No build, tests, rustfmt, shader compilation or hardware validation was run.
+
