@@ -205,6 +205,31 @@ impl VulkanLegacyFrameRecorder {
         Ok(())
     }
 
+    /// Submits a completed legacy frame whose output was copied to readback.
+    ///
+    /// Unlike scanout submission, this path deliberately does not transfer image
+    /// ownership to the foreign queue family. The readback copy and its transfer
+    /// buffer must already have been recorded into the same command buffer.
+    pub(crate) fn submit_readback(
+        command_buffer: &mut super::VulkanCommandBuffer<'_>,
+        device: &super::VulkanLogicalDevice,
+        output: &VulkanImageView<'_, '_>,
+        on_submitted: impl FnOnce(),
+    ) -> Result<(), VulkanLegacyFrameRecorderError> {
+        if output.device().handle().handle() != device.handle().handle() {
+            return Err(VulkanLegacyFrameRecorderError::DeviceMismatch);
+        }
+
+        command_buffer
+            .end()
+            .map_err(|error| VulkanLegacyFrameRecorderError::Command(error.to_string()))?;
+        command_buffer
+            .submit_and_wait_with(on_submitted)
+            .map_err(|error| VulkanLegacyFrameRecorderError::Command(format!("{error:?}")))?;
+
+        Ok(())
+    }
+
     /// Records one textured layer using a traditional render pass.
     ///
     /// This is intentionally one layer per call: it keeps framebuffer lifetime
