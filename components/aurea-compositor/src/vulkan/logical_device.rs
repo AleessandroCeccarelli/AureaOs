@@ -41,7 +41,7 @@ impl VulkanLogicalDevice {
         self.device_unusable.load(Ordering::Acquire)
     }
 
-    fn mark_unusable(&self) {
+    pub(super) fn mark_unusable(&self) {
         self.device_unusable.store(true, Ordering::Release);
     }
 
