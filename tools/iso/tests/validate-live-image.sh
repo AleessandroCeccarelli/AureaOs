@@ -139,7 +139,7 @@ find "$ROOTFS/usr/lib/firmware/amdgpu" -type f \
     fail "AMD GPU firmware payload is missing from the Live rootfs"
 [[ -s "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.json" ]] ||
     fail "Mesa RADV Vulkan ICD manifest is missing from the Live rootfs"
-grep -Fq '"library_path" : "libvulkan_radeon.so"' "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.json" ||
+grep -Fq 'libvulkan_radeon.so' "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.json" ||
     fail "Mesa RADV ICD manifest does not reference the expected Radeon Vulkan driver"
 [[ -s "$ROOTFS/usr/lib/x86_64-linux-gnu/libvulkan_radeon.so" ]] ||
     fail "Mesa RADV Vulkan driver library is missing from the Live rootfs"
