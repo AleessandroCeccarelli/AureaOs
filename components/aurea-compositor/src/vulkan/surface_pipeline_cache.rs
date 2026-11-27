@@ -41,6 +41,7 @@ pub(crate) enum VulkanSurfacePipelineCacheError {
     Sampler(VulkanSamplerError),
     Shader(VulkanShaderError),
     Pipeline(VulkanGraphicsPipelineError),
+    LegacyRenderPass(VulkanLegacyRenderPassError),
     WallpaperDecode(WallpaperDecodeServiceError),
     NativeCursor(super::VulkanNativeCursorTextureError),
 }
@@ -54,6 +55,7 @@ impl fmt::Display for VulkanSurfacePipelineCacheError {
             Self::Sampler(error) => write!(formatter, "Surface sampler: {error}"),
             Self::Shader(error) => write!(formatter, "Surface shader: {error}"),
             Self::Pipeline(error) => write!(formatter, "Surface pipeline: {error}"),
+            Self::LegacyRenderPass(error) => write!(formatter, "Legacy surface render pass: {error}"),
             Self::WallpaperDecode(error) => write!(formatter, "Wallpaper decode service: {error}"),
             Self::NativeCursor(error) => write!(formatter, "Native cursor texture: {error}"),
         }
@@ -83,7 +85,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum LegacyPipelineLoad {
+pub(crate) enum LegacyPipelineLoad {
     Clear,
     Load,
     Discard,
@@ -384,9 +386,7 @@ impl VulkanSurfacePipelineCache {
             LegacyPipelineLoad::Clear => self.legacy_clear_render_pass(format),
             LegacyPipelineLoad::Load => self.legacy_load_render_pass(format),
             LegacyPipelineLoad::Discard => self.legacy_discard_render_pass(format),
-        }.map_err(|error| VulkanSurfacePipelineCacheError::Pipeline(
-            VulkanGraphicsPipelineError::Creation(vk::Result::ERROR_INITIALIZATION_FAILED)
-        ))?;
+        }.map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
         let pipeline = self.create_shared_legacy_surface_pipeline(render_pass)
             .map_err(|error| error)?;
         self.legacy_surface_pipelines.insert(key, pipeline);
@@ -404,9 +404,7 @@ impl VulkanSurfacePipelineCache {
             LegacyPipelineLoad::Clear => self.legacy_clear_render_pass(format),
             LegacyPipelineLoad::Load => self.legacy_load_render_pass(format),
             LegacyPipelineLoad::Discard => self.legacy_discard_render_pass(format),
-        }.map_err(|_| VulkanSurfacePipelineCacheError::Pipeline(
-            VulkanGraphicsPipelineError::Creation(vk::Result::ERROR_INITIALIZATION_FAILED)
-        ))?;
+        }.map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
         let pipeline = self.create_shared_legacy_wallpaper_pipeline(render_pass)?;
         self.legacy_wallpaper_pipelines.insert(key, pipeline);
         Ok(())
