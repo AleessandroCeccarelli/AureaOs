@@ -2535,3 +2535,8 @@ Reviewing the actual Live startup chain showed that `aurea-live-session` launche
 - When fence waiting and the device-idle fallback both fail, the frame owner intentionally retains its framebuffers and descriptor pool. The command buffer's existing Pending-state Drop policy also avoids freeing it when device-idle cannot prove completion.
 - Device-loss errors remain classified as fatal compositor errors. Normal resource destruction occurs only after fence completion or successful device-idle fallback.
 - No build, rustfmt, cargo check, tests or GPU validation was run. The external readback-buffer lifetime during uncertain completion still requires review.
+
+
+## 2026-11-27 — Legacy Vulkan readback ownership
+
+Changed the CPU scanout readback handoff from a borrowed buffer reference to an owned `Option<VulkanReadbackBuffer>` slot borrowed mutably by the composition entry point. The legacy frame recorder now takes and intentionally retains the buffer if queue submission/completion is uncertain, preventing its destructor from freeing a staging buffer potentially still referenced by GPU work. The caller reads pixels only after successful composition. Static source inspection only; no build, rustfmt, unit tests, or GPU validation were run. Remaining audit: externally owned output/intermediate image resources on uncertain completion, followed by Fedora compilation and tests.
