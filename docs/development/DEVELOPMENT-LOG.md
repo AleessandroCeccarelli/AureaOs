@@ -2519,3 +2519,11 @@ Reviewing the actual Live startup chain showed that `aurea-live-session` launche
 - Verified the intended image-state sequence from clear through scene layers, optional display color and the mutually exclusive readback/KMS terminal paths. Scene and output targets end in GENERAL before their next operation.
 - Verified the exact render-pass instance checks for scene pipelines and display-color framebuffer creation.
 - No build, shader compilation, rustfmt, tests, CI or hardware validation was performed. These checks remain mandatory on Fedora before enabling compatibility by default.
+
+
+### Legacy framebuffer lifetime fix — 2026-11-27
+
+- Static review found that framebuffer targets were being created and dropped inside individual draw helpers, before the recorded command buffer was submitted. That violates Vulkan object lifetime requirements.
+- Refactored the frame owner to create one clear framebuffer, one load framebuffer, and an optional display-color framebuffer. The same targets are reused by all layer draws and remain alive until the synchronous GPU submission/wait returns.
+- Recorder APIs now consume borrowed framebuffer targets and no longer create or destroy framebuffers during command recording. Exact render-pass identity checks remain in place.
+- No build, rustfmt, cargo check, tests, CI or hardware validation was performed. Fedora verification is still required.
