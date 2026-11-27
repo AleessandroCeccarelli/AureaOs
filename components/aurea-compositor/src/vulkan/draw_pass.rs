@@ -12,7 +12,7 @@ use smithay::reexports::ash::vk;
 use super::{
     VulkanColorLoad, VulkanDynamicRenderingScope, VulkanGraphicsPipeline, VulkanImageState,
     VulkanImageTransition, VulkanImageView, VulkanLegacyGraphicsPipeline,
-    VulkanLegacyRenderTarget, VulkanTextureBinding,
+    VulkanLegacyRenderTarget, VulkanSharedLegacyGraphicsPipeline, VulkanTextureBinding,
 };
 
 /// Invalid draw requests rejected before commands are recorded.
@@ -255,6 +255,121 @@ impl VulkanDrawPass {
             VulkanColorLoad::DontCare => vk::AttachmentLoadOp::DONT_CARE,
         };
         target.render_pass_ref().load_op() == expected
+    }
+
+    /// Records a textured region through a cached shared-ownership legacy pipeline.
+    ///
+    /// This is the cache-friendly Vulkan 1.0 counterpart to
+    /// `record_legacy_textured_region`. The pipeline owns its render pass,
+    /// while the target and texture binding remain scoped to the current frame.
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_shared_legacy_textured_region(
+        command_buffer: vk::CommandBuffer,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        pipeline: &VulkanSharedLegacyGraphicsPipeline,
+        source: &VulkanImageView<'_, '_>,
+        texture: &VulkanTextureBinding<'_, '_, '_, '_>,
+        set_index: u32,
+        previous_source_state: VulkanImageState,
+        previous_target_state: VulkanImageState,
+        final_state: VulkanImageState,
+        load: VulkanColorLoad,
+        viewport: vk::Viewport,
+        scissor: vk::Rect2D,
+        push_constants: &[u8],
+        push_constant_stages: vk::ShaderStageFlags,
+    ) -> Result<(), VulkanDrawPassError> {
+        Self::validate(3, 1, final_state, load)?;
+        Self::validate_push_constants(push_constants)?;
+        let view = target.view();
+        if !source.usage().contains(vk::ImageUsageFlags::SAMPLED) {
+            return Err(VulkanDrawPassError::MissingSampledImageUsage);
+        }
+        if !texture.references_view(source) {
+            return Err(VulkanDrawPassError::TextureSourceMismatch);
+        }
+        if source.image_handle() == view.image_handle()
+            || source.device().handle().handle() != view.device().handle().handle()
+        {
+            return Err(VulkanDrawPassError::IncompatibleTextureSource);
+        }
+        if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
+            return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
+        }
+        if !pipeline.is_compatible_with_target(
+            view.device(), view.format(), target.render_pass_ref(),
+        ) {
+            return Err(VulkanDrawPassError::IncompatiblePipeline);
+        }
+        if !Self::legacy_load_matches(target, load) {
+            return Err(VulkanDrawPassError::IncompatibleRenderPassLoad);
+        }
+        Self::validate_region(view.width(), view.height(), viewport, scissor)?;
+
+        VulkanImageTransition::record_color(
+            source.device(), command_buffer, source.image_handle(),
+            previous_source_state, VulkanImageState::ShaderRead,
+        );
+        VulkanImageTransition::record_color(
+            view.device(), command_buffer, view.image_handle(),
+            previous_target_state, VulkanImageState::ColorAttachment,
+        );
+
+        let scope = target.begin(command_buffer, [0.0; 4]);
+        pipeline.bind(command_buffer);
+        texture.bind(command_buffer, pipeline.layout(), set_index);
+        pipeline.push_constants(command_buffer, push_constant_stages, 0, push_constants);
+        pipeline.set_viewport_and_scissor_region(command_buffer, viewport, scissor);
+        pipeline.draw(command_buffer, 3, 1);
+        scope.end();
+
+        VulkanImageTransition::record_color(
+            view.device(), command_buffer, view.image_handle(),
+            VulkanImageState::ColorAttachment, final_state,
+        );
+        Ok(())
+    }
+
+    /// Records a full-target clear draw with a cached shared legacy pipeline.
+    pub fn record_shared_legacy_clear(
+        command_buffer: vk::CommandBuffer,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        pipeline: &VulkanSharedLegacyGraphicsPipeline,
+        previous_state: VulkanImageState,
+        final_state: VulkanImageState,
+        clear_color: [f32; 4],
+        vertex_count: u32,
+        instance_count: u32,
+    ) -> Result<(), VulkanDrawPassError> {
+        Self::validate(
+            vertex_count, instance_count, final_state, VulkanColorLoad::Clear(clear_color),
+        )?;
+        if target.render_pass_ref().load_op() != vk::AttachmentLoadOp::CLEAR {
+            return Err(VulkanDrawPassError::IncompatibleRenderPassLoad);
+        }
+        let view = target.view();
+        if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
+            return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
+        }
+        if !pipeline.is_compatible_with_target(
+            view.device(), view.format(), target.render_pass_ref(),
+        ) {
+            return Err(VulkanDrawPassError::IncompatiblePipeline);
+        }
+        VulkanImageTransition::record_color(
+            view.device(), command_buffer, view.image_handle(),
+            previous_state, VulkanImageState::ColorAttachment,
+        );
+        let scope = target.begin(command_buffer, clear_color);
+        pipeline.bind(command_buffer);
+        pipeline.set_viewport_and_scissor(command_buffer, view.width(), view.height());
+        pipeline.draw(command_buffer, vertex_count, instance_count);
+        scope.end();
+        VulkanImageTransition::record_color(
+            view.device(), command_buffer, view.image_handle(),
+            VulkanImageState::ColorAttachment, final_state,
+        );
+        Ok(())
     }
 
     /// Records a regular pipeline draw without descriptor sets.
