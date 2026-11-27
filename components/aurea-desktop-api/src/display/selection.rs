@@ -64,12 +64,12 @@ pub fn select_display_mode(
         }
         requested
     } else {
-        select_automatic_mode(display, context)
+        select_automatic_mode(display, refresh_policy, context)
             .ok_or(DisplayModeSelectionError::NoSupportedModes)?
     };
 
     let refresh_strategy = match refresh_policy {
-        DisplayRefreshPolicy::PreferVariable
+        DisplayRefreshPolicy::Automatic | DisplayRefreshPolicy::PreferVariable
             if display.capabilities.variable_refresh.is_some() =>
         {
             ActiveRefreshStrategy::Variable
@@ -91,6 +91,7 @@ pub fn select_display_mode(
 /// or battery-powered workload.
 fn select_automatic_mode(
     display: &DisplayDescriptor,
+    refresh_policy: DisplayRefreshPolicy,
     context: DisplayPolicyContext,
 ) -> Option<DisplayMode> {
     let maximum_area = display
@@ -106,6 +107,21 @@ fn select_automatic_mode(
         .filter(|mode| u64::from(mode.width()) * u64::from(mode.height()) == maximum_area)
         .collect::<Vec<_>>();
     modes.sort_by_key(|mode| mode.refresh_millihz());
+
+    // A verified VRR envelope is usable only with a fixed mode whose maximum
+    // refresh reaches the reported upper bound. If no such mode is present,
+    // retain the safe fixed-refresh selection.
+    if refresh_policy != DisplayRefreshPolicy::Fixed {
+        if let Some(range) = display.capabilities.variable_refresh {
+            if let Some(mode) = modes
+                .iter()
+                .copied()
+                .find(|mode| mode.refresh_millihz() >= range.maximum_millihz())
+            {
+                return Some(mode);
+            }
+        }
+    }
 
     if let Some(cadence) = context.frame_cadence_millihz {
         return modes
@@ -228,8 +244,19 @@ mod tests {
     }
 
     #[test]
-    fn variable_refresh_is_used_only_with_a_verified_effective_range() {
+    fn automatic_and_preferred_variable_refresh_require_a_verified_range() {
         let selected = select_display_mode(
+            &display(Some(VariableRefreshRange::new(48_000, 120_000).unwrap())),
+            DisplayManagementMode::Automatic,
+            None,
+            DisplayRefreshPolicy::Automatic,
+            DisplayPolicyContext::default(),
+        )
+        .unwrap();
+        assert_eq!(selected.mode(), mode(1920, 1080, 120_000));
+        assert_eq!(selected.refresh_strategy(), ActiveRefreshStrategy::Variable);
+
+        let preferred = select_display_mode(
             &display(Some(VariableRefreshRange::new(48_000, 120_000).unwrap())),
             DisplayManagementMode::Automatic,
             None,
@@ -237,7 +264,7 @@ mod tests {
             DisplayPolicyContext::default(),
         )
         .unwrap();
-        assert_eq!(selected.refresh_strategy(), ActiveRefreshStrategy::Variable);
+        assert_eq!(preferred.refresh_strategy(), ActiveRefreshStrategy::Variable);
 
         let fallback = select_display_mode(
             &display(None),
