@@ -103,6 +103,8 @@ pub struct AureaCompositor {
     #[cfg(feature = "drm")]
     dmabuf_devices: Vec<std::sync::Arc<crate::vulkan::VulkanLogicalDevice>>,
     #[cfg(feature = "drm")]
+    dmabuf_main_device: Option<libc::dev_t>,
+    #[cfg(feature = "drm")]
     dmabuf_buffer_uses: crate::render::surface_tree::DmabufBufferUseRegistry,
     xdg_shell_state: XdgShellState,
     _fractional_scale_manager_state:
@@ -202,6 +204,8 @@ impl AureaCompositor {
             #[cfg(feature = "drm")]
             dmabuf_devices: Vec::new(),
             #[cfg(feature = "drm")]
+            dmabuf_main_device: None,
+            #[cfg(feature = "drm")]
             dmabuf_buffer_uses: crate::render::surface_tree::DmabufBufferUseRegistry::default(),
             xdg_shell_state,
             _fractional_scale_manager_state: fractional_scale_manager_state,
@@ -279,6 +283,12 @@ impl AureaCompositor {
 
     /// Returns the devices against which advertised DMA-BUF imports are validated.
     #[cfg(feature = "drm")]
+    pub(crate) fn dmabuf_main_device(&self) -> Option<libc::dev_t> {
+        self.dmabuf_main_device
+    }
+
+    /// Returns the devices against which advertised DMA-BUF imports are validated.
+    #[cfg(feature = "drm")]
     pub(crate) fn dmabuf_devices(
         &self,
     ) -> &[std::sync::Arc<crate::vulkan::VulkanLogicalDevice>] {
@@ -293,11 +303,10 @@ impl AureaCompositor {
         display: &DisplayHandle,
         devices: Vec<std::sync::Arc<crate::vulkan::VulkanLogicalDevice>>,
         feedback: DmabufFeedback,
+        main_device: libc::dev_t,
     ) -> bool {
-        if devices.is_empty() {
-            return false;
-        }
         self.dmabuf_devices = devices;
+        self.dmabuf_main_device = Some(main_device);
         if let Some(global) = self.dmabuf_global.as_ref() {
             self.dmabuf_state.set_default_feedback(global, &feedback);
             return true;
