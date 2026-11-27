@@ -25,7 +25,6 @@ use super::{
     VulkanShaderError, VulkanShaderModule, VulkanShmTexture, VulkanTextureBindingError,
     VulkanTextureBindingPool, VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
     VulkanWallpaperTexture, VulkanLegacyRenderPassManager, VulkanLegacyRenderPassError,
-    VulkanLegacyDisplayColorManager, VulkanSharedLegacyDisplayColorPass, VulkanDisplayColorPassError,
     desktop_icon_texture_cache::{
         VulkanDesktopIconTextureCache, VulkanDesktopIconTextureCacheError,
     },
@@ -33,6 +32,12 @@ use super::{
     wallpaper_texture_cache::{
         VulkanWallpaperTextureCache, VulkanWallpaperTextureCacheError, WallpaperTextureKey,
     },
+};
+
+#[cfg(feature = "drm")]
+use super::{
+    VulkanDisplayColorPassError, VulkanLegacyDisplayColorManager,
+    VulkanSharedLegacyDisplayColorPass,
 };
 
 /// Errors returned while preparing cached surface-composition resources.
@@ -80,6 +85,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     wallpaper_decode_service: WallpaperDecodeService,
     native_cursor_texture: VulkanNativeCursorTexture,
     legacy_render_passes: VulkanLegacyRenderPassManager,
+    #[cfg(feature = "drm")]
     legacy_display_color: VulkanLegacyDisplayColorManager,
     legacy_surface_pipelines: HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
     legacy_wallpaper_pipelines: HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
@@ -108,6 +114,7 @@ impl VulkanSurfacePipelineCache {
             .map_err(VulkanSurfacePipelineCacheError::WallpaperDecode)?;
 
         let legacy_render_passes = VulkanLegacyRenderPassManager::new(Arc::clone(&device));
+        #[cfg(feature = "drm")]
         let legacy_display_color = VulkanLegacyDisplayColorManager::new(Arc::clone(&device));
 
         Ok(Self {
@@ -124,6 +131,7 @@ impl VulkanSurfacePipelineCache {
             wallpaper_decode_service,
             native_cursor_texture: VulkanNativeCursorTexture::new(),
             legacy_render_passes,
+            #[cfg(feature = "drm")]
             legacy_display_color,
             legacy_surface_pipelines: HashMap::new(),
             legacy_wallpaper_pipelines: HashMap::new(),
@@ -156,6 +164,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Returns the cached shared legacy display-color pass for an output format.
+    #[cfg(feature = "drm")]
     pub(crate) fn legacy_display_color_pass(
         &mut self,
         format: vk::Format,
