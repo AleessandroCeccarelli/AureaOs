@@ -1499,3 +1499,9 @@ Cautions:
 - Existing Vulkan 1.3 rendering and its fail-closed compatibility guard remain unchanged.
 - No build, tests, rustfmt, shader compilation or hardware validation were run.
 
+### Legacy frame-layer resource preflight and lifetime correction — 2026-11-27
+
+- Corrected the remaining placeholder lifetime parameters in `LegacyWallpaperLayer` and `LegacyCursorTrailLayer`; their pipeline and render-pass references now use the frame-resource borrow lifetime declared by the structs.
+- Added a preflight count check at the beginning of `record_legacy_frame_layers()`. Visible-surface snapshots, image views and descriptor bindings must have identical lengths before even the clear pass is recorded. A malformed frame therefore fails before partially recording its command buffer.
+- The orchestrator still is not dispatched by `render_frame()`. This change tightens its source-level contract only; it does not enable Vulkan 1.0–1.2 rendering.
+- No build, tests, rustfmt, shader compilation, CI or hardware validation was run. Rust lifetime/type correctness remains unverified until grouped Fedora validation.
