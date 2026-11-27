@@ -1482,3 +1482,11 @@ Cautions:
 - Repository search found no production call sites of `VulkanLegacyFrameRecorder::display_color` yet, so no call sites required migration. The helper remains unintegrated into `render_frame`.
 - No build, tests, rustfmt, shader compilation or hardware validation were run. This is a source-level ownership/compatibility correction.
 
+### Legacy layer pipeline/framebuffer identity guard (2026-11-27)
+
+- Extended the exact-render-pass identity invariant beyond display color to every textured legacy layer.
+- `VulkanLegacyFrameRecorder::textured_region` now verifies `Arc::ptr_eq(render_pass, pipeline.render_pass())` before creating a framebuffer or recording commands.
+- A mismatch returns the explicit `RenderPassMismatch` recorder error. Surface, wallpaper and cursor-trail helpers all route through this function, so the guard covers all three layer types and context-menu/native-cursor draws that use the surface pipeline.
+- This is a fail-closed safety check; it does not yet implement the legacy frame orchestration or enable compatibility mode.
+- No build, tests, rustfmt, shader compilation or hardware validation were run.
+
