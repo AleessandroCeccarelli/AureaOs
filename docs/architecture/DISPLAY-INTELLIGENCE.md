@@ -273,3 +273,21 @@ size, call `restore_mode()` when rendering or presentation is abandoned, and
 publish the new logical `OutputMode` only after the KMS commit completes.
 The current output manager still updates logical state independently. No
 build, test, or physical monitor validation has been run for this change.
+
+
+## KMS mode rollback on presentation failure (2026-11-27)
+
+Both DRM presentation paths now retain the previous native mode while a mode
+change is staged. Vulkan presentation and CPU/GBM fallback restore that mode
+when TEST_ONLY rejects the target framebuffer, when the KMS commit fails, or
+when presentation setup/lifecycle validation fails before commit. A successful
+presentation keeps the new mode and clears rollback protection on its VBlank;
+the surface manager clears the unused alternate presenter's guard as well.
+
+This is a KMS staging rollback, not yet a complete user-facing display
+configuration transaction. If target-size rendering/allocation is abandoned
+before either presenter is invoked, the owner must call restore_mode().
+The compositor still needs to coordinate framebuffer allocation at the target
+physical dimensions, submit the corresponding plane state, and update the
+logical output registry only after successful KMS completion. No build, unit
+test, or physical monitor validation has been run for these changes.
