@@ -67,7 +67,17 @@ impl CompositorFactory for DesktopCompositorFactory {
             pointer_settings,
             desktop_pointer_behavior,
         )?;
-        let welcome_client = WelcomeClientProcess::spawn(DEFAULT_WAYLAND_DISPLAY_NAME)?;
+        // The Live image is intentionally a wallpaper-and-pointer bring-up:
+        // do not place a Welcome window over the first frame. Normal developer
+        // sessions retain the Welcome client unless the Live flag is set.
+        let welcome_client = if std::env::var_os("AUREAOS_LIVE_MINIMAL").as_deref()
+            == Some(std::ffi::OsStr::new("1"))
+        {
+            eprintln!("Aurea Desktop: minimal Live session; Welcome client disabled");
+            None
+        } else {
+            Some(WelcomeClientProcess::spawn(DEFAULT_WAYLAND_DISPLAY_NAME)?)
+        };
 
         Ok(Box::new(DesktopCompositorService {
             compositor,
@@ -79,7 +89,7 @@ impl CompositorFactory for DesktopCompositorFactory {
 /// Keeps the Welcome client scoped to the compositor session.
 struct DesktopCompositorService {
     compositor: Box<dyn CompositorService>,
-    welcome_client: WelcomeClientProcess,
+    welcome_client: Option<WelcomeClientProcess>,
 }
 
 impl CompositorService for DesktopCompositorService {
@@ -93,7 +103,10 @@ impl CompositorService for DesktopCompositorService {
 impl DesktopCompositorService {
     /// Stops and reaps the client before the compositor session is released.
     fn stop_welcome_client(&mut self) {
-        match self.welcome_client.stop() {
+        let Some(welcome_client) = self.welcome_client.as_mut() else {
+            return;
+        };
+        match welcome_client.stop() {
             Ok(Some(status))
                 if !status.success()
                     && !matches!(status.signal(), Some(libc::SIGTERM | libc::SIGINT)) =>
