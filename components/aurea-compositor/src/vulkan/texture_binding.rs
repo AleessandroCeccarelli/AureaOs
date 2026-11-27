@@ -269,6 +269,7 @@ impl<'resources, 'image, 'image_device, 'resource_device>
 
 impl Drop for VulkanTextureBinding<'_, '_, '_, '_> {
     fn drop(&mut self) {
+        if self.device.is_unusable() { return; }
         if self.owns_pool {
             unsafe {
                 self.device
