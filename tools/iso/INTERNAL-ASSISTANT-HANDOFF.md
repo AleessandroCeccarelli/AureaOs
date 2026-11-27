@@ -1383,3 +1383,11 @@ Cautions:
 - Updated clear, draw, and display-color APIs to accept the target's expanded lifetime type.
 - This is the reusable recording foundation only. The active `surface_compositor::render_frame` has NOT yet been switched to it; wallpaper, surfaces, menu, cursors, display color, submission, and release still require full legacy-path orchestration.
 - No build, test, rustfmt, shader compile, CI, or hardware validation was run. Compilation remains unverified.
+
+## Legacy frame pipeline preparation — 2026-11-27
+
+- `dea87fe`: added `VulkanSurfacePipelineCache::prepare_shared_legacy_frame_pipelines`.
+- The method prepares the mandatory load-op surface pipeline and conditionally prepares wallpaper and cursor-trail pipelines for a target format before command-buffer recording begins.
+- It deliberately does not create framebuffers or retain frame resources; those remain owned by the frame recorder and current frame.
+- This is a cache-preparation step for the upcoming complete layer recorder, not an active renderer switch. The modern compositor remains unchanged.
+- No build, test, rustfmt, shader compilation, CI, or ISO build was run; the new method and prior lifetime edits remain unverified.
