@@ -155,10 +155,21 @@ pub(super) fn record_native_cursor(
     scissor: vk::Rect2D,
     texture_transform: u32,
 ) -> Result<(), VulkanSurfaceCompositionError> {
-    record_context_menu(
-        command_buffer, render_pass, target, pipeline, source, binding,
-        viewport, scissor, texture_transform,
+    VulkanLegacyFrameRecorder::surface_region(
+        command_buffer,
+        render_pass,
+        target,
+        pipeline,
+        source,
+        binding,
+        VulkanImageState::General,
+        VulkanImageState::General,
+        VulkanImageState::General,
+        viewport,
+        scissor,
+        texture_transform,
     )
+    .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))
 }
 
 /// Records cursor-trail impressions in their supplied back-to-front order.
