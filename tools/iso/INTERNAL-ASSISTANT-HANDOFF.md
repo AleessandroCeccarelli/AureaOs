@@ -1338,3 +1338,6 @@ Cautions:
 - The legacy display-color manager is now reachable through the surface pipeline cache, but no compatibility frame path invokes it yet.
 - Validate all lifetimes, method signatures, feature gates, and enum names during the next grouped Fedora build. Do not enable compatibility mode until the full Vulkan 1.0 path, including logical-device feature requirements and every recording call, has been audited.
 - Continue respecting the no-build/no-test policy until the user authorizes the grouped validation.
+
+
+- `41e63f8`: gated the legacy display-color manager field, import, initialization, and accessor behind the existing `drm` feature. The general surface-pipeline cache is compiled without DRM too, so this gate is necessary to avoid making non-DRM builds depend on DRM-only modules.
