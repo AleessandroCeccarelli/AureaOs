@@ -44,9 +44,9 @@ mod graphics_pipeline;
 mod image_allocator;
 mod image_transition;
 mod image_view;
+mod legacy_render_pass;
 mod logical_device;
 mod logical_device_factory;
-mod legacy_render_pass;
 mod memory_type;
 mod native_cursor_texture;
 mod offscreen_renderer;
@@ -151,10 +151,10 @@ pub use image_allocator::{
 };
 pub use image_transition::{VulkanImageState, VulkanImageTransition, VulkanImageTransitionError};
 pub use image_view::{VulkanImageView, VulkanImageViewError};
-pub use logical_device::VulkanLogicalDevice;
 pub use legacy_render_pass::{
     VulkanLegacyRenderPassError, VulkanLegacyRenderPassScope, VulkanLegacyRenderTarget,
 };
+pub use logical_device::VulkanLogicalDevice;
 pub use memory_type::select_memory_type_index;
 pub(crate) use native_cursor_texture::{VulkanNativeCursorTexture, VulkanNativeCursorTextureError};
 pub use offscreen_renderer::{VulkanOffscreenError, VulkanOffscreenRenderer};
