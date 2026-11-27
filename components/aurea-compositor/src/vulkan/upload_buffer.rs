@@ -218,21 +218,24 @@ impl<'device> VulkanUploadBuffer<'device> {
             return Err(VulkanUploadError::InvalidImageDimensions);
         }
 
-        let buffer_barrier = [vk::BufferMemoryBarrier2::default()
-            .src_stage_mask(vk::PipelineStageFlags2::HOST)
-            .src_access_mask(vk::AccessFlags2::HOST_WRITE)
-            .dst_stage_mask(vk::PipelineStageFlags2::TRANSFER)
-            .dst_access_mask(vk::AccessFlags2::TRANSFER_READ)
+        let buffer_barrier = [vk::BufferMemoryBarrier::default()
+            .src_access_mask(vk::AccessFlags::HOST_WRITE)
+            .dst_access_mask(vk::AccessFlags::TRANSFER_READ)
             .src_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
             .dst_queue_family_index(vk::QUEUE_FAMILY_IGNORED)
             .buffer(self.buffer)
             .offset(0)
             .size(vk::WHOLE_SIZE)];
-        let dependency = vk::DependencyInfo::default().buffer_memory_barriers(&buffer_barrier);
         unsafe {
-            self.device
-                .handle()
-                .cmd_pipeline_barrier2(command_buffer, &dependency);
+            self.device.handle().cmd_pipeline_barrier(
+                command_buffer,
+                vk::PipelineStageFlags::HOST,
+                vk::PipelineStageFlags::TRANSFER,
+                vk::DependencyFlags::empty(),
+                &[],
+                &buffer_barrier,
+                &[],
+            );
         }
 
         let regions = [vk::BufferImageCopy::default()
