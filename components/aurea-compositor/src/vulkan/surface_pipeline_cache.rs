@@ -880,6 +880,12 @@ impl VulkanSurfacePipelineCache {
         self.pipelines.get(&format)
     }
 
+    /// Clones the device owner for frame-scoped external image imports.
+    #[cfg(feature = "drm")]
+    pub(crate) fn device_owner(&self) -> Arc<VulkanLogicalDevice> {
+        Arc::clone(&self.device)
+    }
+
     pub(crate) fn descriptor_layout(&self) -> &VulkanTextureDescriptorSetLayout<'static> {
         &self.descriptor_layout
     }
