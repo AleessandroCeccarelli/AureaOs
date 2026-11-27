@@ -17,7 +17,7 @@ use super::super::{
 /// Records one class of Wayland surfaces while preserving their scene order.
 fn record_surface_class(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
+    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     surfaces: &[VisibleSurface],
     views: &[VulkanImageView<'_, '_>],
@@ -80,7 +80,7 @@ fn record_surface_class(
 #[allow(clippy::too_many_arguments)]
 pub(super) fn record_context_menu(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
+    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     source: &VulkanImageView<'_, '_>,
     binding: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -100,7 +100,7 @@ pub(super) fn record_context_menu(
 #[allow(clippy::too_many_arguments)]
 pub(super) fn record_wallpaper(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
+    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     source: &VulkanImageView<'_, '_>,
     binding: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -120,7 +120,7 @@ pub(super) fn record_wallpaper(
 #[allow(clippy::too_many_arguments)]
 pub(super) fn record_native_cursor(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
+    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     source: &VulkanImageView<'_, '_>,
     binding: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -139,7 +139,7 @@ pub(super) fn record_native_cursor(
 /// Records cursor-trail impressions in their supplied back-to-front order.
 pub(super) fn record_cursor_trail(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
+    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     source: &VulkanImageView<'_, '_>,
     binding: &VulkanTextureBinding<'_, '_, '_, '_>,
@@ -160,7 +160,7 @@ pub(super) fn record_cursor_trail(
 /// Records ordinary client surfaces.
 pub(super) fn record_normal_surfaces(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
+    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     surfaces: &[VisibleSurface],
     views: &[VulkanImageView<'_, '_>],
@@ -172,7 +172,7 @@ pub(super) fn record_normal_surfaces(
 /// Records client-provided cursor surfaces above the context menu.
 pub(super) fn record_client_cursor_surfaces(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
+    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     surfaces: &[VisibleSurface],
     views: &[VulkanImageView<'_, '_>],
@@ -219,8 +219,8 @@ pub(super) struct LegacyCursorTrailLayer<'r, 'i, 'id, 'rd> {
 
 /// All resources required to record the legacy scene layers for one frame.
 pub(super) struct LegacyFrameLayers<'r, 'i, 'id, 'rd> {
-    pub clear_target: &'r VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
-    pub load_target: &'r VulkanLegacyRenderTarget<'_, '_, '_, '_, '_>,
+    pub clear_target: &'r VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
+    pub load_target: &'r VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pub clear_color: [f32; 4],
     pub visible: &'r [VisibleSurface],
     pub surface_views: &'r [VulkanImageView<'i, 'id>],
