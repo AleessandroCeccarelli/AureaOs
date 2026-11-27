@@ -115,7 +115,6 @@ pub(super) fn visible_surfaces(
             is_cursor: snapshot.cursor_anchor.is_some(),
             geometry,
             scissor,
-            is_cursor: snapshot.cursor_anchor.is_some(),
             texture_transform: surface_transform_index(
                 compose_surface_transforms(snapshot.buffer_transform, target.transform())
                     .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
