@@ -24,7 +24,7 @@ use super::{
     VulkanNativeCursorTexture, VulkanSampler, VulkanSamplerError,
     VulkanShaderError, VulkanShaderModule, VulkanShmTexture, VulkanTextureBindingError,
     VulkanTextureBindingPool, VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
-    VulkanWallpaperTexture,
+    VulkanWallpaperTexture, VulkanLegacyRenderPassManager, VulkanLegacyRenderPassError,
     desktop_icon_texture_cache::{
         VulkanDesktopIconTextureCache, VulkanDesktopIconTextureCacheError,
     },
@@ -76,6 +76,7 @@ pub(crate) struct VulkanSurfacePipelineCache {
     context_menu_assets: HashMap<DesktopIconTextureKey, Option<ShmBufferSnapshot>>,
     wallpaper_decode_service: WallpaperDecodeService,
     native_cursor_texture: VulkanNativeCursorTexture,
+    legacy_render_passes: VulkanLegacyRenderPassManager,
 }
 
 impl VulkanSurfacePipelineCache {
@@ -105,7 +106,32 @@ impl VulkanSurfacePipelineCache {
             context_menu_assets: HashMap::new(),
             wallpaper_decode_service,
             native_cursor_texture: VulkanNativeCursorTexture::new(),
+            legacy_render_passes: VulkanLegacyRenderPassManager::new(Arc::clone(&device)),
         })
+    }
+
+    /// Returns the persistent legacy render pass for a format and clear load operation.
+    pub(crate) fn legacy_clear_render_pass(
+        &mut self,
+        format: vk::Format,
+    ) -> Result<Arc<super::VulkanLegacyRenderPass<'static>>, VulkanLegacyRenderPassError> {
+        self.legacy_render_passes.clear(format)
+    }
+
+    /// Returns the persistent legacy render pass for a format when preserving prior contents.
+    pub(crate) fn legacy_load_render_pass(
+        &mut self,
+        format: vk::Format,
+    ) -> Result<Arc<super::VulkanLegacyRenderPass<'static>>, VulkanLegacyRenderPassError> {
+        self.legacy_render_passes.load(format)
+    }
+
+    /// Returns the persistent legacy render pass for a format when prior contents are discarded.
+    pub(crate) fn legacy_discard_render_pass(
+        &mut self,
+        format: vk::Format,
+    ) -> Result<Arc<super::VulkanLegacyRenderPass<'static>>, VulkanLegacyRenderPassError> {
+        self.legacy_render_passes.discard(format)
     }
 
     /// Creates a format-specific pipeline only on its first use.
