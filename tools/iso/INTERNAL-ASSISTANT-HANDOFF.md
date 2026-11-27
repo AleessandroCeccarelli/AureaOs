@@ -1571,3 +1571,8 @@ Reviewed SHM texture uploads: `VulkanPendingUpload` owns staging, image resource
 ### Vulkan device fail-stop state — 2026-11-27
 
 `VulkanLogicalDevice` now owns an atomic `device_unusable` flag. An uncertain synchronous submission or an uncertain `queue_submit`/device-loss result permanently poisons the logical device. Queue submission checks the flag under the queue lock, preventing a concurrent submit race. New primary command-buffer allocation is rejected; freeing command buffers avoids touching a poisoned command pool. The factory initializes the flag. This deliberately prevents partial reuse after uncertain GPU state; full transactional device recreation remains out of scope. Changes are committed on `main` but have not been formatted, built, or tested.
+
+
+### Fail-stop propagation — frame scheduler, uploads and readback (2026-11-27)
+
+The atomic `VulkanLogicalDevice::device_unusable` state is now checked by primary command-buffer allocation/free, frame-slot creation and preparation, and frame-scheduler teardown. A poisoned scheduler skips idle waits and Vulkan object destruction, quarantining retained resources. `VulkanPendingUpload` and `VulkanReadbackSubmission` Drop paths similarly avoid fence/device waits and destroy calls once the device is unusable; staging, resource payloads, source views, readback buffers, capture targets and a device owner are intentionally retained. `VulkanCommandBuffer::drop` also avoids wait/free calls on a poisoned device. These changes are committed on `main`, but have not been formatted, compiled, tested or run under Vulkan validation.
