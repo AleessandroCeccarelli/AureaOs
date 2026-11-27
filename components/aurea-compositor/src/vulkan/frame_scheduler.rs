@@ -131,6 +131,13 @@ impl<'device> VulkanFrameScheduler<'device> {
 
 impl Drop for VulkanFrameScheduler<'_> {
     fn drop(&mut self) {
+        if self.device.is_unusable() {
+            for slot in &mut self.slots {
+                std::mem::forget(std::mem::take(&mut slot.retained_resources));
+            }
+            return;
+        }
+
         unsafe {
             // Destroying pools or fences while the device may still be using
             // them is invalid. If the idle wait fails, intentionally leak the
