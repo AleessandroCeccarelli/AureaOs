@@ -1052,3 +1052,10 @@ Nessun dock, launcher, icone desktop, Welcome window o altra UI in questa prova.
 - `952acde760e04f48e4f760fbbde0575cc089d728` — aggiornamento ISO Factory.
 
 Nessuna build Rust, build ISO o prova hardware è stata eseguita durante queste modifiche. Prima della prossima ISO, controllare lo stato CI e poi lasciare che l'utente esegua la build Fedora/Podman secondo il flusso documentato.
+
+
+### Correzioni aggiuntive del 27 novembre
+- La package list Live ora include `xkb-data`: `libxkbcommon0` da solo non garantisce la presenza delle definizioni XKB sotto `/usr/share/X11/xkb`, necessarie alla mappatura della tastiera. Il validatore finale controlla anche il pacchetto.
+- Il validatore in modalità `--iso` estrae ora l'intera directory `/boot`, non soltanto `boot/efi.img`. Prima, il controllo `ROOT/boot/grub` in modalità ISO poteva essere vuoto per costruzione e quindi non dimostrava l'assenza di GRUB nell'immagine masterizzata.
+- Corretto il controllo dei file condivisi: il validatore non prova a dereferenziare librerie SONAME selezionate singolarmente da SquashFS, perché il target della symlink potrebbe non essere estratto. La presenza dei pacchetti è verificata nel database dpkg e la risoluzione delle librerie è già verificata con `ldd` nel chroot prima del purge.
+- Commit aggiuntivi: `8fbcc701b8c0d6fe85199adb3729cd9901684c37`, `ecad5d469979e3b73c36e60c13ceeb3c49ae34d1`, `78290b4b0d46403b17a44365db67d1394bbb8e7f`, `036b55a6800e4e2bff9e1170fb6389aeeafa892e`, `06a96044fb712174ced80eec4ebd9f619199dfb6`, `37bb205158b3d8814b1e614b084f515f70c102ec`.
