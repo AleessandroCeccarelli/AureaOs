@@ -17,11 +17,81 @@ use serde::{Deserialize, Serialize};
 
 const FORMAT_VERSION: u32 = 1;
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(default)]
+struct StoredTouchpadSettings {
+    tap_to_click: bool,
+    two_finger_scroll: bool,
+    natural_scrolling: bool,
+    disable_while_typing: bool,
+    disable_while_trackpointing: bool,
+    tap_and_drag: bool,
+    edge_scrolling: bool,
+    tap_drag_lock: bool,
+    click_method: aurea_desktop_api::input::TouchpadClickMethod,
+    tap_button_map: aurea_desktop_api::input::TouchpadTapButtonMap,
+    left_handed: bool,
+    middle_button_emulation: bool,
+    pointer_speed_percent: i8,
+    acceleration_profile: aurea_desktop_api::input::TouchpadAccelerationProfile,
+    send_events_mode: aurea_desktop_api::input::TouchpadSendEventsMode,
+}
+
+impl Default for StoredTouchpadSettings {
+    fn default() -> Self {
+        Self::from(TouchpadSettings::default())
+    }
+}
+
+impl From<TouchpadSettings> for StoredTouchpadSettings {
+    fn from(settings: TouchpadSettings) -> Self {
+        Self {
+            tap_to_click: settings.tap_to_click(),
+            two_finger_scroll: settings.two_finger_scroll(),
+            natural_scrolling: settings.natural_scrolling(),
+            disable_while_typing: settings.disable_while_typing(),
+            disable_while_trackpointing: settings.disable_while_trackpointing(),
+            tap_and_drag: settings.tap_and_drag(),
+            edge_scrolling: settings.edge_scrolling(),
+            tap_drag_lock: settings.tap_drag_lock(),
+            click_method: settings.click_method(),
+            tap_button_map: settings.tap_button_map(),
+            left_handed: settings.left_handed(),
+            middle_button_emulation: settings.middle_button_emulation(),
+            pointer_speed_percent: settings.pointer_speed_percent(),
+            acceleration_profile: settings.acceleration_profile(),
+            send_events_mode: settings.send_events_mode(),
+        }
+    }
+}
+
+impl From<StoredTouchpadSettings> for TouchpadSettings {
+    fn from(settings: StoredTouchpadSettings) -> Self {
+        Self::new(
+            settings.tap_to_click,
+            settings.two_finger_scroll,
+            settings.natural_scrolling,
+            settings.disable_while_typing,
+            settings.tap_and_drag,
+        )
+        .with_edge_scrolling(settings.edge_scrolling)
+        .with_disable_while_trackpointing(settings.disable_while_trackpointing)
+        .with_tap_drag_lock(settings.tap_drag_lock)
+        .with_click_method(settings.click_method)
+        .with_tap_button_map(settings.tap_button_map)
+        .with_left_handed(settings.left_handed)
+        .with_middle_button_emulation(settings.middle_button_emulation)
+        .with_pointer_speed_percent(settings.pointer_speed_percent)
+        .with_acceleration_profile(settings.acceleration_profile)
+        .with_send_events_mode(settings.send_events_mode)
+    }
+}
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(default)]
 struct StoredProfiles {
     format_version: u32,
-    devices: HashMap<String, TouchpadSettings>,
+    devices: HashMap<String, StoredTouchpadSettings>,
 }
 
 /// Stores user preferences independently from transient libinput device IDs.
@@ -122,7 +192,7 @@ impl TouchpadProfileStore {
 
         let document = StoredProfiles {
             format_version: FORMAT_VERSION,
-            devices: self.profiles.clone(),
+            devices: self\n                .profiles\n                .iter()\n                .map(|(identity, settings)| (identity.clone(), (*settings).into()))\n                .collect(),
         };
         let encoded = toml::to_string_pretty(&document)
             .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
@@ -186,7 +256,7 @@ fn load_profiles(path: &Path) -> io::Result<HashMap<String, TouchpadSettings>> {
             ),
         ));
     }
-    Ok(stored.devices)
+    Ok(stored\n        .devices\n        .into_iter()\n        .map(|(identity, settings)| (identity, settings.into()))\n        .collect())
 }
 
 #[cfg(test)]
