@@ -1145,3 +1145,14 @@ Nessuna build Rust, build ISO o prova hardware è stata eseguita durante queste 
   5. Replace any Vulkan 1.3-only synchronization/submit calls in the legacy frame path with Vulkan 1.0 barriers, fences and queue submission; retain current shared image-state/resource lifetime rules.
   6. Only then expose legacy capability to AAG and test modern + legacy paths, including wallpaper/surface/cursor composition and DRM presentation.
 - No runtime code was modified in this audit. No build, rustfmt, tests, ISO build or hardware validation was run. This audit prevents a false claim that the isolated render-pass helper already constitutes a usable compatibility renderer.
+
+
+## 2026-11-27 — Runtime shader-variant selection groundwork
+
+- Added `VulkanShaderModule::from_renderer_variants`: it selects the modern SPIR-V when the logical device negotiated dynamic rendering, otherwise selects the Vulkan 1.0 compatibility SPIR-V. Existing `from_bytes` and validation behavior remain unchanged.
+- Wired the selector into the compositor's cached surface, wallpaper and cursor-trail shader modules, and into both borrowed/shared display-color pass constructors.
+- Commits on `main`: `a67fdfcf` (variant selection API), `01106adf` (surface/wallpaper/cursor cache wiring), `55609232` (display-color wiring).
+- This is shader selection only. The current `VulkanRenderingFeaturePlan` still rejects devices below Vulkan 1.3 and always requires dynamicRendering + synchronization2, so all currently creatable logical devices continue to select the modern shaders. No legacy logical device can be created yet; AAG compatibility remains false. The traditional render-pass pipeline and draw/clear/display render scopes are still not wired.
+- The selector assumes both SPIR-V variants are built from equivalent shader interfaces; this has not yet been verified by shader compilation or SPIR-V reflection. The build script currently exposes the compatibility shader environment variables added in the earlier shader groundwork.
+- No build, rustfmt, cargo check, tests, CI rerun, ISO build or physical hardware test was run for these commits. Do not mark compatibility rendering implemented.
+- Next implementation step: add an explicit renderer mode to the logical-device feature plan, querying Vulkan 1.0 core features safely for older devices, while preserving the modern 1.3 feature chain. Only after logical-device creation can instantiate a legacy device should the persistent render-pass/pipeline lifetime and render-scope integration proceed.
