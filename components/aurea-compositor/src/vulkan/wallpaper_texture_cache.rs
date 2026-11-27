@@ -144,9 +144,9 @@ impl VulkanWallpaperTextureCache {
         let upload = match VulkanWallpaperTexture::submit_pixels(Arc::clone(&self.device), pixels) {
             Ok(upload) => upload,
             Err(VulkanWallpaperTextureError::Command(
-                smithay::reexports::ash::smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
+                smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
             )) => {
-                let error = smithay::reexports::ash::smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST;
+                let error = smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST;
                 self.synchronization_error = Some(error);
                 return Err(VulkanWallpaperTextureCacheError::Command(error));
             }
