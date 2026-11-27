@@ -353,7 +353,7 @@ pub fn update_surface_tree_dmabuf_buffer_lifecycle(
         (),
         |_, _, _| TraversalAction::DoChildren(()),
         |surface, _, _| {
-            let previous = with_surface_states(surface, |states| {
+            let change = with_surface_states(surface, |states| {
                 let next = {
                     let mut attributes = states.cached_state.get::<SurfaceAttributes>();
                     match attributes.current().buffer.as_ref() {
@@ -378,21 +378,17 @@ pub fn update_surface_tree_dmabuf_buffer_lifecycle(
                 if state.current == next {
                     return None;
                 }
-                std::mem::replace(&mut state.current, next)
+                let previous = std::mem::replace(&mut state.current, next.clone());
+                Some((previous, next))
             });
 
-            if let Some(next) = with_surface_states(surface, |states| {
-                let mut attributes = states.cached_state.get::<SurfaceAttributes>();
-                match attributes.current().buffer.as_ref() {
-                    Some(BufferAssignment::NewBuffer(buffer))
-                        if get_dmabuf(buffer).is_ok() => Some(buffer.clone()),
-                    _ => None,
+            if let Some((previous, next)) = change {
+                if let Some(next) = next {
+                    registry.retain(next);
                 }
-            }) {
-                registry.retain(next);
-            }
-            if let Some(previous) = previous {
-                registry.release_surface_use(&previous);
+                if let Some(previous) = previous {
+                    registry.release_surface_use(&previous);
+                }
             }
         },
         |_, _, _| true,
