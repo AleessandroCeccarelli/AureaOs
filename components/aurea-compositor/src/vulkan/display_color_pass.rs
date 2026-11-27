@@ -345,6 +345,21 @@ impl<'pass, 'device> VulkanLegacyDisplayColorPass<'pass, 'device> {
             return Err(VulkanDisplayColorPassError::IncompatibleImages);
         }
 
+        // Match the modern pass' format contract: the sampled intermediate
+        // and color-attachment target both use this optimal-tiled format.
+        let format_properties = unsafe {
+            device.instance().get_physical_device_format_properties(
+                device.physical_device(),
+                render_pass.format(),
+            )
+        };
+        let required_features = vk::FormatFeatureFlags::COLOR_ATTACHMENT
+            | vk::FormatFeatureFlags::SAMPLED_IMAGE
+            | vk::FormatFeatureFlags::SAMPLED_IMAGE_FILTER_LINEAR;
+        if !format_properties.optimal_tiling_features.contains(required_features) {
+            return Err(VulkanDisplayColorPassError::UnsupportedFormatFeatures);
+        }
+
         let descriptor_layout = VulkanTextureDescriptorSetLayout::new(device)
             .map_err(|error| VulkanDisplayColorPassError::Descriptor(error.to_string()))?;
         let sampler = VulkanSampler::linear_clamp(device)
@@ -426,6 +441,9 @@ impl<'pass, 'device> VulkanLegacyDisplayColorPass<'pass, 'device> {
         }
         if !source.usage().contains(vk::ImageUsageFlags::SAMPLED) {
             return Err(VulkanDisplayColorPassError::MissingSampledUsage);
+        }
+        if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
+            return Err(VulkanDisplayColorPassError::MissingColorAttachmentUsage);
         }
         if !binding.references_view(source) {
             return Err(VulkanDisplayColorPassError::BindingSourceMismatch);
