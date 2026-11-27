@@ -27,6 +27,9 @@ pub enum VulkanDrawPassError {
     InvalidScissor,
     InvalidPushConstants,
     IncompatibleRenderPassLoad,
+    MissingSampledImageUsage,
+    TextureSourceMismatch,
+    IncompatibleTextureSource,
 }
 
 impl fmt::Display for VulkanDrawPassError {
@@ -57,6 +60,15 @@ impl fmt::Display for VulkanDrawPassError {
             Self::IncompatibleRenderPassLoad => formatter.write_str(
                 "The legacy draw load operation does not match its render pass",
             ),
+            Self::MissingSampledImageUsage => {
+                formatter.write_str("The legacy texture source lacks sampled-image usage")
+            }
+            Self::TextureSourceMismatch => {
+                formatter.write_str("The legacy descriptor binding references a different source image")
+            }
+            Self::IncompatibleTextureSource => {
+                formatter.write_str("The legacy texture source and target must be distinct images on the same device")
+            }
         }
     }
 }
@@ -113,6 +125,17 @@ impl VulkanDrawPass {
             return Err(VulkanDrawPassError::IncompatibleRenderPassLoad);
         }
         let view = target.view();
+        if !source.usage().contains(vk::ImageUsageFlags::SAMPLED) {
+            return Err(VulkanDrawPassError::MissingSampledImageUsage);
+        }
+        if !texture.references_view(source) {
+            return Err(VulkanDrawPassError::TextureSourceMismatch);
+        }
+        if source.image_handle() == view.image_handle()
+            || source.device().handle().handle() != view.device().handle().handle()
+        {
+            return Err(VulkanDrawPassError::IncompatibleTextureSource);
+        }
         if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
             return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
         }
@@ -125,10 +148,17 @@ impl VulkanDrawPass {
         }
 
         VulkanImageTransition::record_color(
+            source.device(),
+            command_buffer,
+            source.image_handle(),
+            previous_source_state,
+            VulkanImageState::ShaderRead,
+        );
+        VulkanImageTransition::record_color(
             view.device(),
             command_buffer,
             view.image_handle(),
-            previous_state,
+            previous_target_state,
             VulkanImageState::ColorAttachment,
         );
 
@@ -159,9 +189,11 @@ impl VulkanDrawPass {
         command_buffer: vk::CommandBuffer,
         target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
         pipeline: &VulkanLegacyGraphicsPipeline<'_, '_>,
+        source: &VulkanImageView<'_, '_>,
         texture: &VulkanTextureBinding<'_, '_, '_, '_>,
         set_index: u32,
-        previous_state: VulkanImageState,
+        previous_source_state: VulkanImageState,
+        previous_target_state: VulkanImageState,
         final_state: VulkanImageState,
         load: VulkanColorLoad,
         viewport: vk::Viewport,
