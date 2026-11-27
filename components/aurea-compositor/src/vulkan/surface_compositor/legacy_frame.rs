@@ -356,6 +356,9 @@ pub(super) fn render_frame_legacy<K: Copy>(
             &mut command_buffer, device, output_view, on_submitted,
         ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     } else {
+        // The scene pass (and optional display-color pass) leaves the output
+        // in GENERAL. Do not reuse the pre-frame state after recording has
+        // already transitioned and written the image.
         VulkanLegacyFrameRecorder::release_and_submit(
             &mut command_buffer, device, output_view, VulkanImageState::General, on_submitted,
         ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
