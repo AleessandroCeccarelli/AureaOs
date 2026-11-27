@@ -461,9 +461,15 @@ impl VulkanSurfacePipelineCache {
             .map_err(VulkanSurfacePipelineCacheError::NativeCursor)
     }
 
-    /// Keeps output frames flowing until worker decode and Vulkan upload fences finish.
-    pub(crate) fn has_pending_native_cursor_work(&self) -> bool {
+    /// Returns whether asynchronous desktop assets need another render-frame poll.
+    ///
+    /// Wallpaper decoding runs on a worker and its GPU upload is fence-backed.
+    /// Keep frames flowing until both stages finish so the first wallpaper is
+    /// presented even when no client or input event requests another frame.
+    pub(crate) fn has_pending_render_resource_work(&self) -> bool {
         self.native_cursor_texture.has_pending_work()
+            || self.wallpaper_decode_service.pending_key().is_some()
+            || self.wallpaper_texture_cache.has_pending_work()
     }
 
     pub(crate) fn native_cursor_asset(
