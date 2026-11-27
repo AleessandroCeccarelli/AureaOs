@@ -349,3 +349,16 @@ entry point. The staged API and its isolation test are in place, but the
 end-to-end request queue from display settings through KMS completion to the
 Wayland commit is not yet connected. Until that integration is complete,
 physical mode changes must not be advertised as fully transactional.
+
+## Overlapping KMS mode requests (2026-11-27)
+
+The KMS surface manager now rejects a second, different mode request while an
+earlier mode change is staged or has a page flip pending. This prevents a new
+request from replacing the original rollback target before the first request
+has either completed at VBlank or been explicitly aborted. Repeating the
+already-staged target remains idempotent, and a request for the currently
+active native mode remains a no-op.
+
+This guard applies to both the public surface-manager staging API and the
+server's automatic render-time staging path. It does not implement the missing
+display-settings request queue or logical Wayland publication transaction.
