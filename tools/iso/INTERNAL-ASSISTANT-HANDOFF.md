@@ -1408,3 +1408,11 @@ Cautions:
 - `03f218b` preserves the original display-color initialization error through a dedicated cache error variant rather than collapsing it into a generic Vulkan pipeline error.
 - This is resource preparation only. It does not yet dispatch `surface_compositor::render_frame` through the legacy recorder. The active compositor remains on the dynamic-rendering path; do not enable compatibility mode yet.
 - No build, tests, rustfmt, shader compilation, CI, or ISO build were run.
+
+## Legacy display-color recording stage — 2026-11-27
+
+- `c806c84` added `VulkanLegacyFrameRecorder::display_color`. It creates a frame-scoped framebuffer target from the caller's scanout view and delegates the final color transform to `VulkanSharedLegacyDisplayColorPass`, preserving explicit source/target image states and warmth intensity.
+- Display-color recording errors are now represented in `VulkanLegacyFrameRecorderError` without stringifying or discarding the underlying error.
+- This is a recording primitive, not a complete frame orchestrator. The active `surface_compositor::render_frame` still records the Vulkan 1.3 dynamic-rendering path; compatibility selection remains intentionally disabled.
+- Next integration work: build legacy-specific texture bindings and command recording for the same exact layer order (clear, wallpaper, non-cursor surfaces, context menu, client cursor surfaces, cursor trail, native cursor, optional display color), then connect readback/foreign-queue release and submission. Keep all cache-owned resources borrowed until the submission completion point.
+- No build, tests, rustfmt, shader compilation, CI, or ISO build were run.
