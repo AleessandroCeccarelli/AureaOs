@@ -896,3 +896,13 @@ L'input non è più soltanto un puntatore dimostrativo: nel compositor esistono 
 - Restano intenzionalmente in quarantena le risorse per cui il clear KMS fallisce, una transazione atomica è ancora irrisolta, oppure l'acquire Vulkan non termina con certezza. Non vengono indeboliti i controlli di disponibilità del registry.
 - Aggiunti test del lifecycle puro per disable confermato, transazione irrisolta e disable senza framebuffer corrente. Questi test sono stati aggiunti al repository ma non ancora eseguiti.
 - Stato verifica: nessuna build, rustfmt, cargo check o suite test eseguiti in questa sessione; non è disponibile una run CI associata ai commit verificati finora. Il percorso async e quello di teardown restano sotto audit, non dichiarati conclusi.
+
+
+### Vulkan/DRM teardown e submission audit — integrazione 27 novembre 2026
+
+- Il teardown dell'output ora tratta separatamente il pool GBM CPU e il pool Vulkan DMA-BUF. Il pool CPU rifiuta la pulizia se il proprio lifecycle KMS conserva un flip/transazione; il suo Drop mette in quarantena le allocazioni ancora correnti o pendenti.
+- Il pool Vulkan espone l'idoneità all'acquire foreign solo quando la presentazione è risolta, KMS non possiede più l'immagine e non esiste un acquire già pendente. Durante lo shutdown vengono reacquisite tutte le immagini rilasciate da KMS, non soltanto l'ultima immagine corrente, prima di `retire_all()`.
+- L'export del sync-file FD dopo una submission asincrona accettata conserva fence e risorse nel frame slot in caso di errore; `ERROR_DEVICE_LOST` attiva il fail-stop e mette in quarantena lo slot.
+- I percorsi di allocazione, begin/end/reset dei command buffer propagano `ERROR_DEVICE_LOST` al flag fail-stop. I Drop del command buffer e dello scheduler attivano il fail-stop su qualunque errore di `device_wait_idle`, poiché la completion rimane incerta anche quando l'errore non è device-lost.
+- Aggiunto un test per l'idoneità all'acquire foreign nei diversi stati del lifecycle.
+- Verifica ancora pendente: non sono stati eseguiti `cargo fmt`, `cargo check` o `cargo test`; non è disponibile una run CI associata a questi commit. L'audit statico continua, in particolare sulle distruzioni dirette e sulle dipendenze GBM/DRM in caso di rimozione fisica del device.
