@@ -158,6 +158,14 @@ pub(super) fn render_frame(
     readback: Option<&VulkanReadbackBuffer<'_>>,
     on_submitted: impl FnOnce(),
 ) -> Result<(), VulkanSurfaceCompositionError> {
+    // Never send a Vulkan 1.0–1.2 device through the active Vulkan 1.3
+    // dynamic-rendering implementation. The dedicated legacy frame path
+    // will replace this fail-closed guard once every layer and output path
+    // is wired into the same frame lifecycle.
+    if device.rendering_mode() == super::VulkanRendererMode::CompatibilityPending {
+        return Err(VulkanSurfaceCompositionError::CompatibilityRendererNotIntegrated);
+    }
+
     let desktop_snapshot = scene.desktop();
     let background_color = desktop_snapshot.surface().background_color();
     let wallpaper = desktop_snapshot.wallpaper();
