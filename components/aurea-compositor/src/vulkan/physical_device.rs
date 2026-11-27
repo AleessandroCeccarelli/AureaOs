@@ -180,34 +180,37 @@ impl VulkanContext {
         node: DrmNode,
         preference: RenderPreference,
     ) -> Option<&PhysicalDevice> {
-        let matching_devices = self
+        let matching_indices = self
             .physical_devices
             .iter()
-            .filter(|device| {
+            .enumerate()
+            .filter_map(|(index, device)| {
                 let primary_matches = device.primary_node().ok().flatten() == Some(node);
                 let render_matches = device.render_node().ok().flatten() == Some(node);
-
-                (primary_matches || render_matches)
-                    && self.graphics_queue_family(device).is_some()
-                    && Self::rendering_compatibility_error(device, true).is_none()
+                (primary_matches || render_matches).then_some(index)
             })
-            .collect::<Vec<_>>();
+            .collect::<std::collections::HashSet<_>>();
 
         let preferred_type = match preference {
             RenderPreference::PowerSaving => Some(VulkanDeviceType::Integrated),
             RenderPreference::Performance => Some(VulkanDeviceType::Discrete),
             RenderPreference::Automatic => None,
         };
-
-        matching_devices
-            .iter()
-            .copied()
-            .find(|device| {
-                preferred_type
-                    .map(|kind| Self::classify_device(device) == kind)
-                    .unwrap_or(true)
-            })
-            .or_else(|| matching_devices.into_iter().next())
+        let mut candidates = self
+            .adaptive_graphics_candidates()
+            .into_iter()
+            .filter(|candidate| matching_indices.contains(&candidate.device_index))
+            .collect::<Vec<_>>();
+        candidates.sort_by_key(|candidate| {
+            let kind = Self::classify_device(&self.physical_devices[candidate.device_index]);
+            match preferred_type {
+                Some(preferred) if kind == preferred => 0,
+                _ if candidate.capabilities.software_device => 2,
+                _ => 1,
+            }
+        });
+        AureaAdaptiveGraphics::select(&candidates)
+            .and_then(|plan| self.physical_devices.get(plan.device_index))
     }
 
     pub(super) fn classify_device(device: &PhysicalDevice) -> VulkanDeviceType {
