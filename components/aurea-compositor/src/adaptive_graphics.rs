@@ -43,11 +43,6 @@ impl GraphicsCapabilities {
             && self.has_graphics_queue
     }
 
-    fn supports_compatibility(self) -> bool {
-        self.has_graphics_queue
-            && self.compatibility_renderer_available
-            && (self.api_major, self.api_minor) >= (1, 0)
-    }
 }
 
 /// A discovered GPU together with capabilities queried from its Vulkan device.
@@ -120,7 +115,7 @@ mod tests {
             device_index,
             name: name.to_owned(),
             capabilities: GraphicsCapabilities {
-                api_major: if modern { 1 } else { 1 },
+                api_major: 1,
                 api_minor: if modern { 3 } else { 2 },
                 dynamic_rendering: modern,
                 synchronization2: modern,
