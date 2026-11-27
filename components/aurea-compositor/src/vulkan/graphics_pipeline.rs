@@ -9,7 +9,7 @@ use std::{error::Error, ffi::CString, fmt, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
-use super::{VulkanDeviceOwner, VulkanLogicalDevice, VulkanShaderModule};
+use super::{VulkanDeviceOwner, VulkanLegacyRenderPass, VulkanLogicalDevice, VulkanShaderModule};
 
 /// Shader stages used to build the initial compositor graphics pipeline.
 pub struct VulkanGraphicsShaders<'shader, 'device> {
@@ -23,6 +23,7 @@ pub enum VulkanGraphicsPipelineError {
     DeviceMismatch,
     Creation(vk::Result),
     InvalidPipelineCount,
+    FormatMismatch,
 }
 
 impl fmt::Display for VulkanGraphicsPipelineError {
@@ -37,6 +38,9 @@ impl fmt::Display for VulkanGraphicsPipelineError {
             Self::InvalidPipelineCount => {
                 formatter.write_str("Vulkan returned no graphics pipeline")
             }
+            Self::FormatMismatch => formatter.write_str(
+                "Legacy render pass and graphics pipeline use different color formats",
+            ),
         }
     }
 }
@@ -50,6 +54,105 @@ pub struct VulkanGraphicsPipeline<'device> {
     pipeline: vk::Pipeline,
     color_format: vk::Format,
     render_pass: Option<vk::RenderPass>,
+}
+
+
+/// A traditional graphics pipeline that borrows its compatible render pass.
+///
+/// The borrow guarantees that the render pass cannot be destroyed while the
+/// Vulkan graphics pipeline still refers to it.
+pub struct VulkanLegacyGraphicsPipeline<'pass, 'device> {
+    pipeline: VulkanGraphicsPipeline<'device>,
+    _render_pass: &'pass VulkanLegacyRenderPass<'device>,
+}
+
+impl<'pass, 'device> VulkanLegacyGraphicsPipeline<'pass, 'device> {
+    pub fn new(
+        device: &'device VulkanLogicalDevice,
+        render_pass: &'pass VulkanLegacyRenderPass<'device>,
+        shaders: VulkanGraphicsShaders<'_, 'device>,
+        descriptor_layouts: &[&super::VulkanTextureDescriptorSetLayout<'device>],
+        push_constant_ranges: &[vk::PushConstantRange],
+    ) -> Result<Self, VulkanGraphicsPipelineError> {
+        if render_pass.device_handle() != device.handle().handle() {
+            return Err(VulkanGraphicsPipelineError::DeviceMismatch);
+        }
+        if descriptor_layouts
+            .iter()
+            .any(|layout| layout.device_handle() != device.handle().handle())
+        {
+            return Err(VulkanGraphicsPipelineError::DeviceMismatch);
+        }
+        let pipeline = VulkanGraphicsPipeline::new_with_render_pass(
+            device,
+            shaders,
+            render_pass.format(),
+            render_pass.handle(),
+            descriptor_layouts,
+            push_constant_ranges,
+        )?;
+        Ok(Self {
+            pipeline,
+            _render_pass: render_pass,
+        })
+    }
+
+    pub fn handle(&self) -> vk::Pipeline {
+        self.pipeline.handle()
+    }
+
+    pub fn layout(&self) -> vk::PipelineLayout {
+        self.pipeline.layout()
+    }
+
+    pub fn bind(&self, command_buffer: vk::CommandBuffer) {
+        self.pipeline.bind(command_buffer);
+    }
+
+    pub fn push_constants(
+        &self,
+        command_buffer: vk::CommandBuffer,
+        stages: vk::ShaderStageFlags,
+        offset: u32,
+        data: &[u8],
+    ) {
+        self.pipeline.push_constants(command_buffer, stages, offset, data);
+    }
+
+    pub fn draw(&self, command_buffer: vk::CommandBuffer, vertex_count: u32, instance_count: u32) {
+        self.pipeline.draw(command_buffer, vertex_count, instance_count);
+    }
+
+    pub fn set_viewport_and_scissor(
+        &self,
+        command_buffer: vk::CommandBuffer,
+        width: u32,
+        height: u32,
+    ) {
+        self.pipeline.set_viewport_and_scissor(command_buffer, width, height);
+    }
+
+    pub fn set_viewport_and_scissor_region(
+        &self,
+        command_buffer: vk::CommandBuffer,
+        viewport: vk::Viewport,
+        scissor: vk::Rect2D,
+    ) {
+        self.pipeline.set_viewport_and_scissor_region(command_buffer, viewport, scissor);
+    }
+
+    pub fn is_compatible_with(
+        &self,
+        device: &VulkanLogicalDevice,
+        color_format: vk::Format,
+        render_pass: &VulkanLegacyRenderPass<'device>,
+    ) -> bool {
+        self.pipeline.is_compatible_with_render_pass(
+            device,
+            color_format,
+            render_pass.handle(),
+        )
+    }
 }
 
 impl<'device> VulkanGraphicsPipeline<'device> {
@@ -151,7 +254,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
     ///
     /// The render pass must remain alive for the lifetime of this pipeline and
     /// must be compatible with the supplied color format and subpass zero.
-    pub fn new_with_render_pass(
+    fn new_with_render_pass(
         device: &'device VulkanLogicalDevice,
         shaders: VulkanGraphicsShaders<'_, 'device>,
         color_format: vk::Format,
