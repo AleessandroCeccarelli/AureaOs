@@ -55,7 +55,7 @@ impl fmt::Display for VulkanDrawPassError {
                 "Vulkan push constants must be non-empty, four-byte aligned, and at most 128 bytes",
             ),
             Self::IncompatibleRenderPassLoad => formatter.write_str(
-                "The legacy draw recorder requires a clear-enabled render pass",
+                "The legacy draw load operation does not match its render pass",
             ),
         }
     }
@@ -146,6 +146,83 @@ impl VulkanDrawPass {
             final_state,
         );
         Ok(())
+    }
+
+    /// Records a textured region through a traditional render pass.
+    ///
+    /// The descriptor binding, legacy pipeline and render target must remain
+    /// alive until the submitted command buffer has completed. The render
+    /// pass load operation must match `load`; use `Load` when compositing
+    /// over an already-rendered wallpaper or surface.
+    #[allow(clippy::too_many_arguments)]
+    pub fn record_legacy_textured_region(
+        command_buffer: vk::CommandBuffer,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        pipeline: &VulkanLegacyGraphicsPipeline<'_, '_>,
+        texture: &VulkanTextureBinding<'_, '_, '_, '_>,
+        set_index: u32,
+        previous_state: VulkanImageState,
+        final_state: VulkanImageState,
+        load: VulkanColorLoad,
+        viewport: vk::Viewport,
+        scissor: vk::Rect2D,
+        push_constants: &[u8],
+        push_constant_stages: vk::ShaderStageFlags,
+    ) -> Result<(), VulkanDrawPassError> {
+        Self::validate(3, 1, final_state, load)?;
+        Self::validate_push_constants(push_constants)?;
+        let view = target.view();
+        if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
+            return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
+        }
+        if !pipeline.is_compatible_with(
+            view.device(),
+            view.format(),
+            target.render_pass_ref(),
+        ) {
+            return Err(VulkanDrawPassError::IncompatiblePipeline);
+        }
+        if !Self::legacy_load_matches(target, load) {
+            return Err(VulkanDrawPassError::IncompatibleRenderPassLoad);
+        }
+        Self::validate_region(view.width(), view.height(), viewport, scissor)?;
+
+        VulkanImageTransition::record_color(
+            view.device(),
+            command_buffer,
+            view.image_handle(),
+            previous_state,
+            VulkanImageState::ColorAttachment,
+        );
+
+        let scope = target.begin(command_buffer, [0.0; 4]);
+        pipeline.bind(command_buffer);
+        texture.bind(command_buffer, pipeline.layout(), set_index);
+        pipeline.push_constants(command_buffer, push_constant_stages, 0, push_constants);
+        pipeline.set_viewport_and_scissor_region(command_buffer, viewport, scissor);
+        pipeline.draw(command_buffer, 3, 1);
+        scope.end();
+
+        VulkanImageTransition::record_color(
+            view.device(),
+            command_buffer,
+            view.image_handle(),
+            VulkanImageState::ColorAttachment,
+            final_state,
+        );
+        Ok(())
+    }
+
+    fn legacy_load_matches(
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        load: VulkanColorLoad,
+    ) -> bool {
+        let expected = match load {
+            VulkanColorLoad::Clear(_) => vk::AttachmentLoadOp::CLEAR,
+            VulkanColorLoad::Load => vk::AttachmentLoadOp::LOAD,
+            VulkanColorLoad::DontCare => vk::AttachmentLoadOp::DONT_CARE,
+        };
+        target.render_pass_ref().load_op() == expected
     }
 
     /// Records a regular pipeline draw without descriptor sets.
