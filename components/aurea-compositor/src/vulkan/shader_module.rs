@@ -82,6 +82,25 @@ impl<'device> VulkanShaderModule<'device> {
         Self::from_words(device, &words)
     }
 
+    /// Creates a shader module from the renderer variant selected for this device.
+    ///
+    /// The modern SPIR-V is used only when dynamic rendering was negotiated.
+    /// Devices using the traditional render-pass backend receive the Vulkan 1.0
+    /// compatibility module. The caller must provide variants compiled from
+    /// equivalent shader sources and interfaces.
+    pub fn from_renderer_variants(
+        device: &'device VulkanLogicalDevice,
+        modern_bytes: &[u8],
+        compatibility_bytes: &[u8],
+    ) -> Result<Self, VulkanShaderError> {
+        let selected = if device.rendering_features().supports_dynamic_rendering() {
+            modern_bytes
+        } else {
+            compatibility_bytes
+        };
+        Self::from_bytes(device, selected)
+    }
+
     /// Validates the minimum SPIR-V container invariants without a GPU.
     pub fn validate_words(words: &[u32]) -> Result<(), VulkanShaderError> {
         if words.is_empty() {
