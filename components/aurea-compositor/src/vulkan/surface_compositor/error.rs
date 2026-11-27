@@ -23,6 +23,7 @@ pub(crate) enum VulkanSurfaceCompositionError {
     TooManySurfaces,
     FrameMemoryLimitExceeded,
     CompatibilityRendererNotIntegrated,
+    FrameResourceCountMismatch,
 }
 
 impl VulkanSurfaceCompositionError {
@@ -96,6 +97,9 @@ impl fmt::Display for VulkanSurfaceCompositionError {
                 .write_str("The frame exceeds the configured aggregate SHM texture memory limit"),
             Self::CompatibilityRendererNotIntegrated => formatter.write_str(
                 "The Vulkan compatibility device is initialized, but its complete frame compositor is not integrated",
+            ),
+            Self::FrameResourceCountMismatch => formatter.write_str(
+                "The legacy frame surface, image-view, and descriptor-binding counts do not match",
             ),
         }
     }
