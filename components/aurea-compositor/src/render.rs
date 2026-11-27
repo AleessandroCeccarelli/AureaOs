@@ -13,6 +13,8 @@ pub mod shm_surface;
 pub mod surface_tree;
 
 use surface_tree::{SurfaceTreeSnapshot, collect_surface_tree_ids, collect_surface_tree_snapshots};
+#[cfg(feature = "drm")]
+use std::collections::HashMap;
 
 use aurea_desktop_api::{desktop::DesktopContextMenuLayout, desktop_interaction::DesktopPanelKind};
 
@@ -54,6 +56,15 @@ pub struct RenderScene<'a> {
 struct RenderToplevel<'a> {
     surface: &'a ToplevelSurface,
     location: Point<i32, Logical>,
+}
+
+/// One renderable Wayland surface buffer, preserving the scene's stacking order.
+#[cfg(feature = "drm")]
+pub enum OrderedSurfaceBufferSnapshot {
+    /// CPU-readable shared-memory content uploaded by the compositor.
+    Shm(SurfaceTreeSnapshot),
+    /// Client DMA-BUF content requiring device import and producer synchronization.
+    Dmabuf(surface_tree::SurfaceTreeDmabufSnapshot),
 }
 
 impl<'a> RenderScene<'a> {
@@ -420,6 +431,35 @@ impl<'a> RenderScene<'a> {
         }
 
         snapshots
+    }
+
+    /// Returns SHM and DMA-BUF snapshots in one authoritative surface stacking order.
+    ///
+    /// The renderer must consume this sequence rather than concatenating the
+    /// separate SHM and DMA-BUF lists: doing so would move every DMA-BUF surface
+    /// above every SHM surface and visibly break Wayland subsurface stacking.
+    #[cfg(feature = "drm")]
+    pub fn ordered_buffer_snapshots(&self) -> Vec<OrderedSurfaceBufferSnapshot> {
+        let mut shm = self.shm_snapshots()
+            .into_iter()
+            .map(|snapshot| (snapshot.surface_id.clone(), snapshot))
+            .collect::<HashMap<_, _>>();
+        let mut dmabuf = self.dmabuf_snapshots()
+            .into_iter()
+            .map(|snapshot| (snapshot.surface_id.clone(), snapshot))
+            .collect::<HashMap<_, _>>();
+
+        self.surface_ids()
+            .into_iter()
+            .filter_map(|surface_id| {
+                if let Some(snapshot) = shm.remove(&surface_id) {
+                    Some(OrderedSurfaceBufferSnapshot::Shm(snapshot))
+                } else {
+                    dmabuf.remove(&surface_id)
+                        .map(OrderedSurfaceBufferSnapshot::Dmabuf)
+                }
+            })
+            .collect()
     }
 
     /// Returns the number of mapped toplevels in this scene.
