@@ -5,7 +5,7 @@
 
 //! Reusable Vulkan 1.0 render passes and per-image framebuffer targets.
 
-use std::{error::Error, fmt};
+use std::{error::Error, fmt, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
@@ -53,6 +53,33 @@ impl<'device> VulkanLegacyRenderPass<'device> {
         format: vk::Format,
         load: VulkanColorLoad,
     ) -> Result<Self, VulkanLegacyRenderPassError> {
+        Self::create(device, VulkanDeviceOwner::Borrowed(device), format, load)
+    }
+
+    /// Creates a render pass that retains its logical device independently.
+    ///
+    /// This permits a renderer resource manager to own render passes through
+    /// `Arc` without tying their lifetime to a temporary device borrow.
+    pub fn new_shared(
+        device: Arc<VulkanLogicalDevice>,
+        format: vk::Format,
+        load: VulkanColorLoad,
+    ) -> Result<VulkanLegacyRenderPass<'static>, VulkanLegacyRenderPassError> {
+        let device_ref = Arc::clone(&device);
+        Self::create(
+            device_ref.as_ref(),
+            VulkanDeviceOwner::Shared(device),
+            format,
+            load,
+        )
+    }
+
+    fn create<'owner>(
+        device: &VulkanLogicalDevice,
+        owner: VulkanDeviceOwner<'owner>,
+        format: vk::Format,
+        load: VulkanColorLoad,
+    ) -> Result<VulkanLegacyRenderPass<'owner>, VulkanLegacyRenderPassError> {
         let load_op = match load {
             VulkanColorLoad::Clear(_) => vk::AttachmentLoadOp::CLEAR,
             VulkanColorLoad::Load => vk::AttachmentLoadOp::LOAD,
@@ -99,8 +126,8 @@ impl<'device> VulkanLegacyRenderPass<'device> {
         let render_pass = unsafe { device.handle().create_render_pass(&create_info, None) }
             .map_err(VulkanLegacyRenderPassError::Creation)?;
 
-        Ok(Self {
-            device: VulkanDeviceOwner::Borrowed(device),
+        Ok(VulkanLegacyRenderPass {
+            device: owner,
             render_pass,
             format,
             load_op,
