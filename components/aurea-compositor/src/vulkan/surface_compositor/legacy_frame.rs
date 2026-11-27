@@ -39,6 +39,7 @@ pub(super) fn render_frame_legacy<K: Copy>(
     scene: &RenderScene<'_>,
     surface_cache: &mut VulkanSurfacePipelineCache,
     previous_composition_state: VulkanImageState,
+    previous_output_state: VulkanImageState,
     visible: &[VisibleSurface],
     wallpaper_asset_id: Option<&str>,
     context_menu_key: Option<K>,
@@ -333,7 +334,7 @@ pub(super) fn render_frame_legacy<K: Copy>(
             output_view,
             binding,
             VulkanImageState::General,
-            previous_composition_state,
+            previous_output_state,
             VulkanImageState::General,
             warmth,
         ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
