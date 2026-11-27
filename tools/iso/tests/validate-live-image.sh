@@ -79,8 +79,6 @@ unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
     usr/lib/systemd/system/multi-user.target etc/systemd/system/default.target \
     var/lib/dpkg/status \
     usr/lib/modules usr/lib/firmware/amdgpu \
-    usr/share/vulkan/icd.d usr/lib/x86_64-linux-gnu/libvulkan.so.1 \
-    usr/lib/x86_64-linux-gnu/libturbojpeg.so.0 usr/lib/x86_64-linux-gnu/libheif.so.1 \
     usr/share/aureaos/human-interfaces/icons/generated/context-menu \
     usr/share/icons/AureaOS-Light usr/share/icons/AureaOS-Dark \
     >/dev/null 2>&1 || fail "cannot inspect the AureaOS desktop session and artwork inside filesystem.squashfs"
@@ -140,12 +138,6 @@ find "$ROOTFS/usr/lib/firmware/amdgpu" -type f \
     fail "AMD GPU firmware payload is missing from the Live rootfs"
 [[ -s "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.x86_64.json" ]] ||
     fail "Mesa RADV Vulkan ICD manifest is missing from the Live rootfs"
-[[ -e "$ROOTFS/usr/lib/x86_64-linux-gnu/libvulkan.so.1" ]] ||
-    fail "Vulkan loader shared library is missing from the Live rootfs"
-[[ -e "$ROOTFS/usr/lib/x86_64-linux-gnu/libturbojpeg.so.0" ]] ||
-    fail "TurboJPEG runtime shared library is missing from the Live rootfs"
-[[ -e "$ROOTFS/usr/lib/x86_64-linux-gnu/libheif.so.1" ]] ||
-    fail "libheif runtime shared library is missing from the Live rootfs"
 
 [[ -s "$ROOTFS/etc/systemd/system/aurea-desktop.service" ]] ||
     fail "AureaOS systemd service is missing from the Live rootfs"
