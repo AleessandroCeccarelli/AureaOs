@@ -87,7 +87,7 @@ pub(super) fn render_and_present(
         .begin_render(framebuffer)
         .map_err(|error| VulkanScanoutError::new(error.to_string()))?;
 
-    surface_compositor::render_and_release(
+    if let Err(error) = surface_compositor::render_and_release(
         device,
         &view,
         target,
@@ -101,18 +101,28 @@ pub(super) fn render_and_present(
                 .mark_submitted(framebuffer)
                 .expect("frame must remain Rendering until submission acceptance is resolved");
         },
-    )
-    .map_err(|error| match error {
-        crate::vulkan::surface_compositor::VulkanSurfaceCompositionError::DeviceLost(result) => {
-            VulkanScanoutError::device_lost(format!("Vulkan device lost: {result:?}"))
+    ) {
+        match error {
+            crate::vulkan::surface_compositor::VulkanSurfaceCompositionError::UncertainSubmission(error) => {
+                // The in-flight command buffer may still reference these views.
+                // The images remain owned by the DRM frame pool; quarantine the
+                // transient views until process/device teardown instead of destroying them.
+                std::mem::forget(view);
+                if let Some(intermediate_view) = intermediate_view {
+                    std::mem::forget(intermediate_view);
+                }
+                return Err(VulkanScanoutError::device_lost(format!(
+                    "Vulkan submission completion is uncertain: {error:?}"
+                )));
+            }
+            crate::vulkan::surface_compositor::VulkanSurfaceCompositionError::DeviceLost(result) => {
+                return Err(VulkanScanoutError::device_lost(format!(
+                    "Vulkan device lost: {result:?}"
+                )));
+            }
+            other => return Err(VulkanScanoutError::new(other.to_string())),
         }
-        crate::vulkan::surface_compositor::VulkanSurfaceCompositionError::UncertainSubmission(error) => {
-            VulkanScanoutError::device_lost(format!(
-                "Vulkan submission completion is uncertain: {error:?}"
-            ))
-        }
-        other => VulkanScanoutError::new(other.to_string()),
-    })?;
+    }
 
     if effective_display.is_some() {
         if let Some(frame) = frame_pool.get(framebuffer) {
