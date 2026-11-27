@@ -221,9 +221,9 @@ impl VulkanLegacyFrameRecorder {
 
     /// Records one textured layer using a traditional render pass.
     ///
-    /// This is intentionally one layer per call: it keeps framebuffer lifetime
-    /// minimal and permits the compositor to interleave surfaces, menu artwork,
-    /// cursor surfaces, and cursor-trail impressions in their established order.
+    /// The same retained target can be reused for every layer in a frame, while
+    /// allowing the compositor to interleave surfaces, menu artwork, and cursors
+    /// in their established order.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn textured_region(
         command_buffer: vk::CommandBuffer,
