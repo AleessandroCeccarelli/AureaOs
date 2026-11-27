@@ -2464,3 +2464,8 @@ Proseguito l'audit dei due percorsi: submission asincrona e teardown/shutdown. C
 - Il frame finale ancora registrato nel coordinatore non viene forzatamente resettato: se rimane ambiguo, `Drop` lo mette in quarantena. È una scelta conservativa intenzionale, da completare con una transizione esplicita di lifecycle per l'output disabilitato.
 - Il percorso CPU/GBM viene rilasciato solo dopo il clear KMS riuscito, poiché il manager rimuove la superficie soltanto in quel caso.
 - Nessun build/test o risultato CI è stato verificato.
+
+
+### Shutdown reporting refinement — 2026-11-27
+
+`DrmSurfaceManager::clear` now refuses to remove an output manager entry when Vulkan scanout frames remain unresolved after KMS disable. It reports the quarantined frame count to the caller, keeping the owner reachable for diagnosis/retry. The conservative pool Drop remains a last-resort leak guard, not a successful retirement path. Physical device-removal cleanup remains a distinct path and still requires proof that GPU ownership is resolved before Vulkan resources can be destroyed.
