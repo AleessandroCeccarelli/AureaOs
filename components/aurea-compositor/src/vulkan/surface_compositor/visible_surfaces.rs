@@ -179,7 +179,7 @@ pub(super) fn visible_dmabuf_surfaces(
             .get(&buffer_id)
             .ok_or(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded)?;
 
-        let geometry = if let Some(scale) = target.fractional_scale() {
+        let mut geometry = if let Some(scale) = target.fractional_scale() {
             surface_geometry_with_fractional_scale(
                 (snapshot.location.x, snapshot.location.y),
                 (snapshot.layout.width(), snapshot.layout.height()),
@@ -199,6 +199,28 @@ pub(super) fn visible_dmabuf_surfaces(
             )
         }
         .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+
+        if let Some(anchor) = snapshot.cursor_anchor {
+            geometry = if let Some(scale) = target.fractional_scale() {
+                scale_surface_geometry_with_fractional_scale(
+                    geometry,
+                    (anchor.x, anchor.y),
+                    target.logical_origin(),
+                    scale,
+                    snapshot.cursor_scale,
+                )
+            } else {
+                scale_surface_geometry(
+                    geometry,
+                    (anchor.x, anchor.y),
+                    target.logical_origin(),
+                    target.scale(),
+                    snapshot.cursor_scale,
+                )
+            }
+            .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+        }
+
         let geometry = transform_geometry_for_output(
             geometry,
             target.width(),
