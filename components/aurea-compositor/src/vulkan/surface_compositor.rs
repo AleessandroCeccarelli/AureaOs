@@ -842,6 +842,10 @@ pub(super) fn render_frame(
                 }
             }
             std::mem::forget(bindings);
+            std::mem::forget(wallpaper_binding);
+            std::mem::forget(context_menu_binding);
+            std::mem::forget(cursor_binding);
+            std::mem::forget(display_binding);
             std::mem::forget(binding_pool);
         }
         return Err(VulkanSurfaceCompositionError::from_queue_submit_error(queue_error));
