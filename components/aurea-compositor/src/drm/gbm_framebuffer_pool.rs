@@ -191,6 +191,20 @@ impl GbmCpuFramebufferPool {
         self.lifecycle.pending_candidate()
     }
 
+    /// Releases all CPU-upload buffers after the owning KMS output is confirmed disabled.
+    ///
+    /// A pending atomic transaction or page flip prevents cleanup. On success,
+    /// the kernel no longer scans out the current buffer, so userspace may drop
+    /// every GBM allocation and framebuffer registration.
+    pub(crate) fn output_disabled(&mut self) -> Result<usize, GbmCpuFramebufferPoolError> {
+        self.lifecycle
+            .output_disabled()
+            .map_err(GbmCpuFramebufferPoolError::Presentation)?;
+        let retired = self.buffers.len();
+        self.buffers.clear();
+        Ok(retired)
+    }
+
     /// Destroys a framebuffer only after KMS has released it.
     pub(crate) fn retire(
         &mut self,
