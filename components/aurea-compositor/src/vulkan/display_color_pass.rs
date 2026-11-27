@@ -506,6 +506,14 @@ pub struct VulkanSharedLegacyDisplayColorPass {
 }
 
 impl VulkanSharedLegacyDisplayColorPass {
+    /// Returns the exact render pass used to create this pass' graphics pipeline.
+    ///
+    /// Per-frame framebuffer targets must be created from this retained instance
+    /// to satisfy Vulkan render-pass compatibility.
+    pub(crate) fn render_pass(&self) -> &std::sync::Arc<super::VulkanLegacyRenderPass<'static>> {
+        self.pipeline.render_pass()
+    }
+
     pub fn new(
         device: std::sync::Arc<VulkanLogicalDevice>,
         render_pass: std::sync::Arc<super::VulkanLegacyRenderPass<'static>>,
