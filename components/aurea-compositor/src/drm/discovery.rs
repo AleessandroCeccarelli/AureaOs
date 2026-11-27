@@ -136,6 +136,11 @@ pub fn discover_connected_outputs(
             continue;
         }
 
+        // DRM's vrefresh accessor is an integer-Hz convenience value.
+        // Keep the limitation explicit: the shared mode model accepts
+        // millihertz, but this discovery path currently receives integer Hz
+        // from the kernel mode descriptor and must not fabricate fractional
+        // precision that the source did not provide.
         let modes = drm_modes
             .iter()
             .map(|mode| {
