@@ -1601,3 +1601,11 @@ Recent changes on `main`:
 - Frame-slot and DRM-image construction now mark Vulkan device loss as fail-stop and avoid unsafe partial destruction after `ERROR_DEVICE_LOST`.
 
 Next: integrate `retire_all` into the DRM output owner's shutdown/hot-unplug path; inspect framebuffer lifecycle coordinator teardown; continue direct Vulkan destroy/free audit. Do not mark either async-submission or teardown path complete until static audit and validation finish. No build/test/CI success has been established.
+
+
+### Handoff — output shutdown integration — 2026-11-27
+
+- `DrmSurfaceManager::clear` now calls `VulkanDrmFramePool::retire_available` after successful KMS surface disable.
+- The pool retires only frames proven available by the GPU/KMS/foreign-ownership coordinator. Ambiguous final scanout resources remain quarantined rather than force-reset.
+- Follow-up: design a dedicated coordinator transition for a confirmed disabled output that safely resolves its last current framebuffer, while still requiring GPU completion and foreign-queue ownership resolution. Do not weaken `VulkanFrameResourceRegistry::unregister`.
+- No compilation/test/CI success established.
