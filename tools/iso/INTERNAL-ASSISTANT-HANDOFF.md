@@ -1576,3 +1576,8 @@ Reviewed SHM texture uploads: `VulkanPendingUpload` owns staging, image resource
 ### Fail-stop propagation — frame scheduler, uploads and readback (2026-11-27)
 
 The atomic `VulkanLogicalDevice::device_unusable` state is now checked by primary command-buffer allocation/free, frame-slot creation and preparation, and frame-scheduler teardown. A poisoned scheduler skips idle waits and Vulkan object destruction, quarantining retained resources. `VulkanPendingUpload` and `VulkanReadbackSubmission` Drop paths similarly avoid fence/device waits and destroy calls once the device is unusable; staging, resource payloads, source views, readback buffers, capture targets and a device owner are intentionally retained. `VulkanCommandBuffer::drop` also avoids wait/free calls on a poisoned device. These changes are committed on `main`, but have not been formatted, compiled, tested or run under Vulkan validation.
+
+
+### Vulkan teardown fail-stop audit — 2026-11-27
+
+Extended the terminal-device guard across Vulkan resource destructors: images, image views, framebuffers, render passes, graphics pipelines/layouts, shader modules, samplers, descriptor pools, upload/readback buffers and their memory allocations skip Vulkan destroy/free calls once `VulkanLogicalDevice::is_unusable()` is set. Both borrowed and shared device-owner wrappers are covered. `VulkanLogicalDevice::drop` skips `device_wait_idle` after terminal device loss and intentionally retains the parent instance context. Queue submission checks the atomic before fence creation and again while holding the queue lock. No rustfmt, build, tests, CI or validation-layer run has been performed.
