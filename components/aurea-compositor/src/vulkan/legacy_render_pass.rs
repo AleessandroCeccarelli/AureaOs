@@ -182,6 +182,10 @@ impl<'pass, 'view, 'image, 'device>
         self.render_pass.handle()
     }
 
+    pub fn render_pass_ref(&self) -> &'pass VulkanLegacyRenderPass<'device> {
+        self.render_pass
+    }
+
     pub fn framebuffer(&self) -> vk::Framebuffer {
         self.framebuffer
     }
