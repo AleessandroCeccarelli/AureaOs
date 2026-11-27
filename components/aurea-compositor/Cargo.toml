@@ -44,7 +44,7 @@ vulkan = ["smithay/backend_vulkan"]
 aurea-desktop-api = { path = "../aurea-desktop-api" }
 aurea-media = { path = "../aurea-media" }
 tracing = "0.1"
-sha2 = "0.10"
+sha2 = "0.11"
 toml = "0.8"
 serde = { version = "1", features = ["derive"] }
 input = { version = "=0.9.1", default-features = false, optional = true, features = ["libinput_1_21"] }
