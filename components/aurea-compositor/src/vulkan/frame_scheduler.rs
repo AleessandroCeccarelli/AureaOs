@@ -70,15 +70,20 @@ impl<'device> VulkanFrameScheduler<'device> {
             match VulkanFrameSlot::new(device, device.graphics_queue_family()) {
                 Ok(slot) => slots.push(slot),
                 Err(error) => {
-                    for slot in slots.drain(..) {
-                        unsafe {
-                            device.handle().destroy_fence(slot.completion_fence, None);
-                            if let Some(semaphore) = slot.sync_fd_semaphore {
-                                device.handle().destroy_semaphore(semaphore, None);
+                    if device.is_unusable() {
+                        // Device loss makes every partially-created slot unsafe to destroy.
+                        std::mem::forget(slots);
+                    } else {
+                        for slot in slots.drain(..) {
+                            unsafe {
+                                device.handle().destroy_fence(slot.completion_fence, None);
+                                if let Some(semaphore) = slot.sync_fd_semaphore {
+                                    device.handle().destroy_semaphore(semaphore, None);
+                                }
+                                device
+                                    .handle()
+                                    .destroy_command_pool(slot.command_pool, None);
                             }
-                            device
-                                .handle()
-                                .destroy_command_pool(slot.command_pool, None);
                         }
                     }
                     return Err(VulkanFrameSchedulerError::Vulkan(error));
