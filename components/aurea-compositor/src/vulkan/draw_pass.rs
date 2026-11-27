@@ -11,7 +11,8 @@ use smithay::reexports::ash::vk;
 
 use super::{
     VulkanColorLoad, VulkanDynamicRenderingScope, VulkanGraphicsPipeline, VulkanImageState,
-    VulkanImageTransition, VulkanImageView, VulkanTextureBinding,
+    VulkanImageTransition, VulkanImageView, VulkanLegacyGraphicsPipeline,
+    VulkanLegacyRenderTarget, VulkanTextureBinding,
 };
 
 /// Invalid draw requests rejected before commands are recorded.
@@ -80,6 +81,63 @@ impl VulkanDrawPass {
                 return Err(VulkanDrawPassError::NonFiniteClearColor);
             }
         }
+        Ok(())
+    }
+
+    /// Records a basic draw through the traditional render-pass backend.
+    ///
+    /// The target must use a render pass created with the same clear/load
+    /// behavior intended by the caller. This first compatibility recorder
+    /// deliberately supports the basic full-target draw path only.
+    pub fn record_legacy(
+        command_buffer: vk::CommandBuffer,
+        target: &VulkanLegacyRenderTarget<'_, '_, '_, '_>,
+        pipeline: &VulkanLegacyGraphicsPipeline<'_, '_>,
+        previous_state: VulkanImageState,
+        final_state: VulkanImageState,
+        clear_color: [f32; 4],
+        vertex_count: u32,
+        instance_count: u32,
+    ) -> Result<(), VulkanDrawPassError> {
+        Self::validate(
+            vertex_count,
+            instance_count,
+            final_state,
+            VulkanColorLoad::Clear(clear_color),
+        )?;
+        let view = target.view();
+        if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
+            return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
+        }
+        if !pipeline.is_compatible_with(
+            view.device(),
+            view.format(),
+            target.render_pass_ref(),
+        ) {
+            return Err(VulkanDrawPassError::IncompatiblePipeline);
+        }
+
+        VulkanImageTransition::record_color(
+            view.device(),
+            command_buffer,
+            view.image_handle(),
+            previous_state,
+            VulkanImageState::ColorAttachment,
+        );
+
+        let scope = target.begin(command_buffer, clear_color);
+        pipeline.bind(command_buffer);
+        pipeline.set_viewport_and_scissor(command_buffer, view.width(), view.height());
+        pipeline.draw(command_buffer, vertex_count, instance_count);
+        scope.end();
+
+        VulkanImageTransition::record_color(
+            view.device(),
+            command_buffer,
+            view.image_handle(),
+            VulkanImageState::ColorAttachment,
+            final_state,
+        );
         Ok(())
     }
 
