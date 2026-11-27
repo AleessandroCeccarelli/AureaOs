@@ -15,7 +15,10 @@ use crate::{
     renderer::RenderPreference,
 };
 
-use super::{VulkanContext, VulkanExternalMemoryCapabilities, VulkanRenderingFeaturePlan};
+use super::{
+    VulkanContext, VulkanExternalMemoryCapabilities, VulkanRendererMode,
+    VulkanRenderingCapabilities, VulkanRenderingFeaturePlan,
+};
 
 /// General category of a Vulkan physical device.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -89,15 +92,17 @@ impl VulkanContext {
                 };
                 let api_major = vk::api_version_major(properties.api_version);
                 let api_minor = vk::api_version_minor(properties.api_version);
-                let modern_renderer = VulkanRenderingFeaturePlan::from_device(device).is_ok();
+                let rendering_capabilities = VulkanRenderingCapabilities::inspect(device);
+                let modern_renderer =
+                    rendering_capabilities.mode() == VulkanRendererMode::ModernDynamic;
                 GraphicsCandidate {
                     device_index,
                     name: device.name().to_owned(),
                     capabilities: GraphicsCapabilities {
                         api_major,
                         api_minor,
-                        dynamic_rendering: modern_renderer,
-                        synchronization2: modern_renderer,
+                        dynamic_rendering: rendering_capabilities.supports_dynamic_rendering(),
+                        synchronization2: rendering_capabilities.supports_synchronization2(),
                         compatibility_renderer_available: false,
                         software_device: Self::classify_device(device) == VulkanDeviceType::Cpu,
                         has_graphics_queue,
