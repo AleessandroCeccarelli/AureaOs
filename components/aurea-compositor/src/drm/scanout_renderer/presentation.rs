@@ -120,7 +120,21 @@ pub(super) fn render_and_present(
                     "Vulkan device lost: {result:?}"
                 )));
             }
-            other => return Err(VulkanScanoutError::new(other.to_string())),
+            other => {
+                // All remaining composition errors are known to have occurred
+                // before queue submission was accepted. Return the frame to the
+                // pool instead of leaving its lifecycle permanently Rendering.
+                let message = other.to_string();
+                presentation
+                    .frame_coordinator_mut()
+                    .cancel_render(framebuffer)
+                    .map_err(|cancel_error| {
+                        VulkanScanoutError::new(format!(
+                            "Frame composition failed ({message}); cancelling the unsubmitted frame also failed: {cancel_error}"
+                        ))
+                    })?;
+                return Err(VulkanScanoutError::new(message));
+            }
         }
     }
 
