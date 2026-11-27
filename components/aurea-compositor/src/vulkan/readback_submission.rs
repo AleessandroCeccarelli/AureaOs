@@ -176,7 +176,12 @@ impl VulkanReadbackSubmission {
                 Ok(true)
             }
             Ok(false) | Err(vk::Result::NOT_READY) => Ok(false),
-            Err(error) => Err(VulkanReadbackError::FenceStatus(error)),
+            Err(error) => {
+                if error == vk::Result::ERROR_DEVICE_LOST {
+                    self.device.mark_unusable();
+                }
+                Err(VulkanReadbackError::FenceStatus(error))
+            },
         }
     }
 
