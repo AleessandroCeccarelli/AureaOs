@@ -6,7 +6,7 @@ License: GPL-3.0-or-later
 
 ## Product goal
 
-AureaOS provides a first-class **static-image wallpaper service** with the everyday selection and layout capabilities users expect from Windows and macOS. The already selected `aureaos-midnight-flow.jpg` remains the default AureaOS wallpaper.
+AureaOS provides a first-class **static-image wallpaper service** with the everyday selection and layout capabilities users expect from Windows and macOS. The already selected `aureaos-blue-flow.jpg` remains the default AureaOS wallpaper.
 
 This scope handles still raster images only. It does not include video wallpapers, animated-image playback, audio, GStreamer, FFmpeg playback pipelines, PipeWire media routing, or a media-player subsystem. A future time-of-day wallpaper may switch between separate still images; it must not rely on continuous video playback.
 
