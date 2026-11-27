@@ -10,7 +10,7 @@ use std::{error::Error, fmt, marker::PhantomData, sync::Arc};
 use smithay::reexports::ash::vk;
 
 #[cfg(feature = "drm")]
-use super::VulkanDrmImage;
+use super::{VulkanDrmImage, VulkanDmabufImage};
 use super::{VulkanImage, VulkanLogicalDevice, VulkanSharedImage};
 
 /// Errors returned while creating an image view.
@@ -35,6 +35,8 @@ impl Error for VulkanImageViewError {}
 enum VulkanImageViewDevice<'device> {
     Borrowed(&'device VulkanLogicalDevice),
     Shared(Arc<VulkanSharedImage>),
+    #[cfg(feature = "drm")]
+    Dmabuf(Arc<VulkanDmabufImage>),
 }
 
 impl VulkanImageViewDevice<'_> {
@@ -42,6 +44,8 @@ impl VulkanImageViewDevice<'_> {
         match self {
             Self::Borrowed(device) => device,
             Self::Shared(image) => image.device(),
+            #[cfg(feature = "drm")]
+            Self::Dmabuf(image) => image.device(),
         }
     }
 }
@@ -162,6 +166,42 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
         })
     }
 
+    /// Creates an owned view over an imported client DMA-BUF image.
+    #[cfg(feature = "drm")]
+    pub(crate) fn color_dmabuf_owned(
+        image: Arc<VulkanDmabufImage>,
+    ) -> Result<VulkanImageView<'static, 'static>, VulkanImageViewError> {
+        let subresource_range = vk::ImageSubresourceRange::default()
+            .aspect_mask(vk::ImageAspectFlags::COLOR)
+            .base_mip_level(0)
+            .level_count(1)
+            .base_array_layer(0)
+            .layer_count(1);
+        let create_info = vk::ImageViewCreateInfo::default()
+            .image(image.image())
+            .view_type(vk::ImageViewType::TYPE_2D)
+            .format(image.format())
+            .subresource_range(subresource_range);
+        let image_handle = image.image();
+        let image_format = image.format();
+        let image_width = image.width();
+        let image_height = image.height();
+        let image_usage = image.usage();
+        let device = image.device();
+        let handle = unsafe { device.handle().create_image_view(&create_info, None) }
+            .map_err(VulkanImageViewError::Creation)?;
+        Ok(VulkanImageView {
+            device: VulkanImageViewDevice::Dmabuf(image),
+            _image: PhantomData,
+            image: image_handle,
+            handle,
+            format: image_format,
+            width: image_width,
+            height: image_height,
+            usage: image_usage,
+        })
+    }
+
     pub fn handle(&self) -> vk::ImageView {
         self.handle
     }
@@ -189,6 +229,8 @@ impl<'image, 'device> VulkanImageView<'image, 'device> {
         match &self.device {
             VulkanImageViewDevice::Borrowed(_) => None,
             VulkanImageViewDevice::Shared(image) => Some(image.device_owner()),
+            #[cfg(feature = "drm")]
+            VulkanImageViewDevice::Dmabuf(_) => None,
         }
     }
 }
