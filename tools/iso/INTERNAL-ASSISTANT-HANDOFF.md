@@ -1167,3 +1167,14 @@ Nessuna build Rust, build ISO o prova hardware è stata eseguita durante queste 
 - Commits: `8983a412` (capability inventory and explicit renderer mode), `786c084e` (AAG feature reporting), `429ef9b1` (public exports).
 - Not yet run: rustfmt, cargo check, workspace tests, CI, shader compilation, ISO build or hardware tests. This is source-level implementation only.
 - Next: inspect all active pipeline/render-scope call sites and design the persistent legacy render-pass lifetime. Then implement a mode-aware logical-device create-info that omits Vulkan 1.3 feature structures for the compatibility backend; do not enable that backend in AAG until its full render path is integrated.
+
+## 2026-11-27 — Legacy graphics-pipeline creation groundwork
+
+- Extended `VulkanGraphicsPipeline` with an explicit traditional-render-pass constructor, `new_with_render_pass`. It builds the same fixed-function state and pipeline layout as the modern path, but supplies the caller's render-pass handle and does not chain `VkPipelineRenderingCreateInfo`.
+- The existing dynamic-rendering constructors remain unchanged in behavior and explicitly store `render_pass: None`. Legacy pipelines retain `Some(render_pass)`.
+- Added render-pass compatibility inspection and tightened the existing dynamic-scope compatibility check so a legacy pipeline cannot accidentally be accepted by a dynamic-rendering draw pass.
+- Lifetime contract is currently documented but not yet enforced by Rust types: the supplied render pass must outlive the pipeline. This is a known design item to resolve by separating reusable render-pass ownership from per-image framebuffer ownership before connecting frame recording.
+- No draw/clear/display-color scope integration has been done yet. The new constructor is groundwork only; no claim of a working compatibility frame.
+- Commits: `22800dfc` (traditional pipeline constructor), `a8a29e58` (prevent cross-mode pipeline acceptance).
+- Not run: rustfmt, cargo check, tests, shader compilation, CI, ISO build or hardware tests.
+- Next: refactor legacy render-pass resources into a reusable render-pass owner plus per-image framebuffer target, with a Rust-enforced lifetime relationship. Then add a mode-aware render-scope abstraction and adapt draw/clear passes without changing modern behavior.
