@@ -149,6 +149,9 @@ impl VulkanLogicalDevice {
             .queue_submit_lock
             .lock()
             .map_err(|_| VulkanQueueSubmitError::Rejected(vk::Result::ERROR_UNKNOWN))?;
+        if self.is_unusable() {
+            return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
+        }
         let command_buffers = [command_buffer];
         let signal_semaphores = signal_semaphore.into_iter().collect::<Vec<_>>();
         let mut submit_info = vk::SubmitInfo::default().command_buffers(&command_buffers);
