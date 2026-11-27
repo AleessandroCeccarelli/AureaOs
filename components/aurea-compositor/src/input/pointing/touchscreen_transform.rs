@@ -94,7 +94,7 @@ mod tests {
             (Transform::Flipped, (99.0, 0.0)),
             (Transform::Flipped90, (0.0, 0.0)),
             (Transform::Flipped180, (0.0, 59.0)),
-            (Transform::Flipped270, (59.0, 0.0)),
+            (Transform::Flipped270, (59.0, 99.0)),
         ];
         for (transform, expected) in cases {
             assert_eq!(
@@ -138,7 +138,7 @@ mod tests {
             ),
             (
                 Transform::Flipped270,
-                [(59.0, 0.0), (59.0, 99.0), (0.0, 0.0), (0.0, 99.0)],
+                [(59.0, 99.0), (59.0, 0.0), (0.0, 99.0), (0.0, 0.0)],
             ),
         ];
         let corners = [(0.0, 0.0), (99.0, 0.0), (0.0, 59.0), (99.0, 59.0)];
