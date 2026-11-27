@@ -2501,3 +2501,12 @@ Reviewing the actual Live startup chain showed that `aurea-live-session` launche
 - Added a pre-build JPEG signature/dimension guard and a final SquashFS check that the installed compositor binary contains the selected wallpaper identifier.
 - Retained the minimal Live session: no Welcome client; only wallpaper and the native pointer are expected on screen. The hook builds and installs both Xcursor themes, and image validation checks all 52 canonical cursor files.
 - GitHub Rust CI for the latest code-bearing ISO-script commit is queued/pending. No ISO has been built in this environment and no physical boot has been performed; those remain required acceptance steps.
+
+
+### Legacy Vulkan frame orchestration — 2026-11-27
+
+- Added a dedicated compatibility frame orchestrator that reuses the common compositor's visible surfaces and cache-owned textures, while creating only the frame-scoped views and descriptor bindings needed by the legacy path.
+- Connected the ordered legacy layer recorder, traditional-render-pass display-color pass, and both terminal operations: readback copy/submission or KMS foreign-queue release/submission.
+- Kept compatibility disabled by default through the opt-in Cargo feature `legacy-vulkan-frame = ["drm"]`. Without the feature, compatibility devices still fail closed with `CompatibilityRendererNotIntegrated`.
+- The empty-scene fast path is bypassed in compatibility mode to avoid using the Vulkan 1.3 clear pass.
+- This is source integration only. No build, rustfmt, cargo check, tests, shader compilation, CI or hardware validation was performed. Verify on Fedora with the feature explicitly enabled before considering the compatibility path complete.
