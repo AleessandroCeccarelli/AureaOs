@@ -215,6 +215,12 @@ impl VulkanDmabufImportSupport {
         if modifier_properties.drm_format_modifier_plane_count as usize != layout.planes().len() {
             return Err(VulkanDmabufImportSupportError::ModifierPlaneCountMismatch);
         }
+        if !modifier_properties
+            .drm_format_modifier_tiling_features
+            .contains(vk::FormatFeatureFlags::SAMPLED_IMAGE)
+        {
+            return Err(VulkanDmabufImportSupportError::ImageConfigurationUnsupported);
+        }
 
         let mut modifier_query =
             vk::PhysicalDeviceImageDrmFormatModifierInfoEXT::default().drm_format_modifier(modifier);
