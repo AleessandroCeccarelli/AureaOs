@@ -468,6 +468,75 @@ impl VulkanDrawPass {
         )
     }
 
+    /// Records one client DMA-BUF surface with explicit foreign queue ownership.
+    ///
+    /// The caller must have imported and retained the producer SYNC_FD semaphore
+    /// in the submission wait list. The source image is acquired from the foreign
+    /// queue family, sampled in SHADER_READ_ONLY_OPTIMAL, then released back in
+    /// GENERAL so the Wayland client can reuse the buffer after submission ends.
+    #[cfg(feature = "drm")]
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn record_foreign_textured_region(
+        command_buffer: vk::CommandBuffer,
+        target: &VulkanImageView<'_, '_>,
+        source: &VulkanImageView<'_, '_>,
+        pipeline: &VulkanGraphicsPipeline<'_>,
+        texture: &VulkanTextureBinding<'_, '_, '_, '_>,
+        set_index: u32,
+        target_previous_state: VulkanImageState,
+        target_final_state: VulkanImageState,
+        load: VulkanColorLoad,
+        viewport: vk::Viewport,
+        scissor: vk::Rect2D,
+        texture_transform: u32,
+    ) -> Result<(), VulkanDrawPassError> {
+        if !source.usage().contains(vk::ImageUsageFlags::SAMPLED) {
+            return Err(VulkanDrawPassError::MissingSampledImageUsage);
+        }
+        if !texture.references_view(source) {
+            return Err(VulkanDrawPassError::TextureSourceMismatch);
+        }
+        if source.image_handle() == target.image_handle()
+            || source.device().handle().handle() != target.device().handle().handle()
+        {
+            return Err(VulkanDrawPassError::IncompatibleTextureSource);
+        }
+
+        VulkanImageTransition::record_acquire_from_foreign(
+            source.device(),
+            command_buffer,
+            source.image_handle(),
+            VulkanImageState::ShaderRead,
+        )
+        .map_err(|_| VulkanDrawPassError::IncompatibleTextureSource)?;
+
+        let result = Self::record_inner(
+            command_buffer,
+            target,
+            pipeline,
+            target_previous_state,
+            target_final_state,
+            load,
+            3,
+            1,
+            Some((texture, set_index)),
+            Some((viewport, scissor)),
+            Some(&texture_transform.to_ne_bytes()),
+            vk::ShaderStageFlags::VERTEX,
+        );
+
+        if result.is_ok() {
+            VulkanImageTransition::record_release_to_foreign(
+                source.device(),
+                command_buffer,
+                source.image_handle(),
+                VulkanImageState::ShaderRead,
+            )
+            .map_err(|_| VulkanDrawPassError::IncompatibleTextureSource)?;
+        }
+        result
+    }
+
     /// Records a textured region with caller-defined push-constant bytes.
     ///
     /// This supports dedicated pipelines whose shader interface differs from
