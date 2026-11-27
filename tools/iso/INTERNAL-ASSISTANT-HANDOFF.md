@@ -1586,3 +1586,8 @@ Extended the terminal-device guard across Vulkan resource destructors: images, i
 ### Vulkan cache/pool fail-stop boundary — 2026-11-27
 
 Capture-target and readback-buffer pools reject preparation/acquisition after logical-device loss. SHM surface, desktop-icon and wallpaper caches stop preparation before polling or creating more uploads. Capture-target pool exposes a typed `DeviceLost` error. Partial frame-scheduler construction now quarantines already-created slots if device loss occurs during later slot creation, rather than destroying Vulkan synchronization objects and command pools on the lost device. Pool leases retain their pool/device owner; underlying resource Drop paths skip Vulkan destruction in fail-stop. No formatting, compilation, tests, CI or validation-layer run has been performed.
+
+
+### Vulkan lifetime follow-up — 2026-11-27
+
+The asynchronous-submission and teardown/shutdown paths received another fail-stop pass. Partial creation rollback in pending-upload and frame-slot setup avoids Vulkan destruction after `ERROR_DEVICE_LOST`; frame-slot fence waits quarantine the slot and poison the shared logical-device state. Failed idle/fence fallback paths in pending-upload, readback-submission, command-buffer and frame-scheduler teardown now mark the device unusable before retaining uncertain resources. GitHub Actions status should be checked against the latest source commit; no Fedora build/test performed in this pass.
