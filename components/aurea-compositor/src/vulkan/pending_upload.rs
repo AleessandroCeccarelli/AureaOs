@@ -95,7 +95,7 @@ impl<T> VulkanPendingUpload<T> {
         let fence_info = vk::FenceCreateInfo::default();
         self.fence = unsafe { self.device.handle().create_fence(&fence_info, None) }?;
         if let Err(error) = self.device.submit_async(self.command_buffer, self.fence) {
-            if error.is_uncertain() {
+            if error.is_uncertain() || self.device.is_unusable() {
                 // Device loss makes queue acceptance uncertain. Keep every
                 // upload resource and synchronization handle quarantined.
                 self.submitted = true;
