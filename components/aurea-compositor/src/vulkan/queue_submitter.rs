@@ -85,11 +85,29 @@ impl<'device> VulkanQueueSubmitter<'device> {
         command_buffer: vk::CommandBuffer,
         on_submitted: impl FnOnce(),
     ) -> Result<(), VulkanQueueSubmitError> {
+        self.submit_and_wait_with_semaphores(command_buffer, &[], on_submitted)
+    }
+
+    /// Submits a command buffer after waiting for all supplied binary semaphores.
+    ///
+    /// Waits at ALL_COMMANDS so no command in the submitted buffer can sample a
+    /// DMA-BUF before its producer fence has signalled.
+    pub(super) fn submit_and_wait_with_semaphores(
+        &self,
+        command_buffer: vk::CommandBuffer,
+        wait_semaphores: &[vk::Semaphore],
+        on_submitted: impl FnOnce(),
+    ) -> Result<(), VulkanQueueSubmitError> {
         if self.device_unusable.load(Ordering::Acquire) {
             return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
         }
         let command_buffers = [command_buffer];
-        let submit_info = [vk::SubmitInfo::default().command_buffers(&command_buffers)];
+        let wait_stages = vec![vk::PipelineStageFlags::ALL_COMMANDS; wait_semaphores.len()];
+        let submit = vk::SubmitInfo::default()
+            .wait_semaphores(wait_semaphores)
+            .wait_dst_stage_mask(&wait_stages)
+            .command_buffers(&command_buffers);
+        let submit_info = [submit];
         let fence_info = vk::FenceCreateInfo::default();
         let fence = match unsafe { self.device.create_fence(&fence_info, None) } {
             Ok(fence) => fence,
