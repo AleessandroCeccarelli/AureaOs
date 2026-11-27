@@ -31,7 +31,6 @@ pub enum DrmPresentationError {
     TestNotPassed,
     CandidateIsCurrent,
     UnexpectedFramebuffer,
-    TransactionInProgress,
 }
 
 impl fmt::Display for DrmPresentationError {
@@ -43,9 +42,6 @@ impl fmt::Display for DrmPresentationError {
             Self::CandidateIsCurrent => "The candidate framebuffer is already active on this CRTC",
             Self::UnexpectedFramebuffer => {
                 "The page-flip event does not match the pending framebuffer"
-            }
-            Self::TransactionInProgress => {
-                "Cannot disable output while a KMS presentation transaction is unresolved"
             }
         };
         formatter.write_str(message)
