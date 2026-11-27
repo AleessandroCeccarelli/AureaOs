@@ -204,3 +204,36 @@ fn scanout_rejects_an_empty_active_plane_set() {
         Err(DrmPresentationBackendError::MissingActivePlane)
     );
 }
+
+#[test]
+fn confirmed_output_disable_releases_current_framebuffer() {
+    let mut lifecycle = DrmPresentationLifecycle::new();
+    lifecycle.begin_test(fb(9)).unwrap();
+    lifecycle.test_passed().unwrap();
+    lifecycle.commit_accepted().unwrap();
+    lifecycle.page_flip_complete(fb(9)).unwrap();
+
+    assert_eq!(lifecycle.output_disabled(), Ok(Some(fb(9))));
+    assert_eq!(lifecycle.current(), None);
+    assert!(!lifecycle.has_pending_transaction());
+}
+
+#[test]
+fn output_disable_refuses_to_discard_an_unresolved_transaction() {
+    let mut lifecycle = DrmPresentationLifecycle::new();
+    lifecycle.begin_test(fb(10)).unwrap();
+
+    assert_eq!(
+        lifecycle.output_disabled(),
+        Err(DrmPresentationError::TransactionInProgress)
+    );
+    assert!(lifecycle.has_pending_transaction());
+}
+
+#[test]
+fn output_disable_without_current_frame_is_idempotent() {
+    let mut lifecycle = DrmPresentationLifecycle::new();
+
+    assert_eq!(lifecycle.output_disabled(), Ok(None));
+    assert_eq!(lifecycle.current(), None);
+}
