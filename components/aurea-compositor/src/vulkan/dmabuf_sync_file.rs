@@ -8,10 +8,12 @@
 use std::{
     error::Error,
     fmt,
-    os::fd::{AsRawFd, BorrowedFd, OwnedFd, FromRawFd},
+    os::fd::{AsRawFd, OwnedFd, FromRawFd, IntoRawFd},
 };
 
-use super::DmabufImportLayout;
+use smithay::reexports::ash::{self, vk};
+
+use super::{DmabufImportLayout, VulkanLogicalDevice};
 
 /// Linux DMA_BUF_IOCTL_EXPORT_SYNC_FILE request number.
 ///
@@ -87,6 +89,60 @@ pub(crate) fn export_read_sync_file(
     // SAFETY: successful DMA_BUF_IOCTL_EXPORT_SYNC_FILE transfers a newly
     // created sync-file descriptor to the caller.
     Ok(unsafe { OwnedFd::from_raw_fd(request.fd) })
+}
+
+
+/// Imports a Linux sync-file as a temporary Vulkan binary-semaphore payload.
+///
+/// On success Vulkan owns the file descriptor and the returned semaphore must
+/// be included in the queue submission wait list. The caller must destroy the
+/// semaphore only after that submission has completed.
+pub(crate) fn import_sync_file_semaphore(
+    device: &VulkanLogicalDevice,
+    sync_file: OwnedFd,
+) -> Result<vk::Semaphore, vk::Result> {
+    if device.is_unusable() {
+        return Err(vk::Result::ERROR_DEVICE_LOST);
+    }
+    if !device.supports_sync_fd_import() {
+        return Err(vk::Result::ERROR_FEATURE_NOT_PRESENT);
+    }
+
+    let mut export_info = vk::ExportSemaphoreCreateInfo::default()
+        .handle_types(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD);
+    let create_info = vk::SemaphoreCreateInfo::default().push_next(&mut export_info);
+    let semaphore = unsafe { device.handle().create_semaphore(&create_info, None) }?;
+
+    let raw_fd = sync_file.into_raw_fd();
+    let import_info = vk::ImportSemaphoreFdInfoKHR::default()
+        .semaphore(semaphore)
+        .flags(vk::SemaphoreImportFlags::TEMPORARY)
+        .handle_type(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD)
+        .fd(raw_fd);
+    let loader = ash::khr::external_semaphore_fd::Device::new(
+        device.instance(),
+        device.handle(),
+    );
+    if let Err(error) = unsafe { loader.import_semaphore_fd(&import_info) } {
+        // The FD ownership transfer occurs only on successful import.
+        unsafe {
+            drop(OwnedFd::from_raw_fd(raw_fd));
+            device.handle().destroy_semaphore(semaphore, None);
+        }
+        return Err(error);
+    }
+
+    Ok(semaphore)
+}
+
+/// Destroys an imported producer-fence semaphore after its wait submission completes.
+pub(crate) fn destroy_imported_sync_file_semaphore(
+    device: &VulkanLogicalDevice,
+    semaphore: vk::Semaphore,
+) {
+    if !device.is_unusable() {
+        unsafe { device.handle().destroy_semaphore(semaphore, None) };
+    }
 }
 
 #[cfg(test)]
