@@ -2446,3 +2446,12 @@ Esteso il fail-stop agli ingressi dei pool e delle cache Vulkan: capture-target 
 ### 27 novembre 2026 — Propagazione del fail-stop nei percorsi di teardown
 
 Proseguito l'audit dei due percorsi: submission asincrona e teardown/shutdown. Corretti i rollback parziali durante la creazione di `VulkanPendingUpload` e `VulkanFrameSlot`: se un'operazione di setup segnala `ERROR_DEVICE_LOST`, il logical device entra nel fail-stop e non vengono distrutti pool/fence sul device perso. Il `FrameSlot::prepare` ora marca il device come inutilizzabile e mette lo slot in quarantena quando il wait della fence restituisce device lost. Anche i fallback di attesa in `VulkanPendingUpload::drop`, `VulkanReadbackSubmission::drop`, `VulkanCommandBuffer::drop` e `VulkanFrameScheduler::drop` propagano il device loss allo stato globale. Nessun test locale eseguito; verifiche GitHub Actions da consultare sui commit sorgente.
+
+
+### Audit ownership DRM/KMS e fail-stop Vulkan — 2026-11-27
+
+- `VulkanDrmFramePool::retire_all` aggiunto per lo shutdown ordinato: verifica prima che tutti i framebuffer siano disponibili, quindi li disregistra dal coordinatore e rilascia le coppie framebuffer/immagine.
+- `Drop` del pool non presume che KMS abbia terminato lo scanout: se restano frame, li mette intenzionalmente in quarantena invece di distruggere framebuffer e DMA-BUF potenzialmente ancora attivi.
+- Gli errori `ERROR_DEVICE_LOST` nella creazione/preparazione degli slot e nella creazione delle immagini DRM propagano ora il fail-stop; i rollback non distruggono handle Vulkan quando la perdita del device rende incerta la validità delle operazioni.
+- La chiusura del percorso DRM richiede ancora l'integrazione esplicita di `retire_all` nel proprietario dell'output e una verifica dei percorsi di hot-unplug/shutdown. Non dichiarare completato il lifecycle fino a tale integrazione e alla validazione.
+- Nessun build/test locale o risultato CI è stato verificato in questa sessione.
