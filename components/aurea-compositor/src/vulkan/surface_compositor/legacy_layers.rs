@@ -15,9 +15,9 @@ use super::super::{
 };
 
 /// Records one class of Wayland surfaces while preserving their scene order.
-fn record_surface_class(
+fn record_surface_class<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
-    target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
+    target: &VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     surfaces: &[VisibleSurface],
     views: &[VulkanImageView<'_, '_>],
@@ -78,7 +78,7 @@ fn record_surface_class(
 
 /// Records the desktop context-menu artwork between normal surfaces and client cursors.
 #[allow(clippy::too_many_arguments)]
-pub(super) fn record_context_menu(
+pub(super) fn record_context_menu<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
     target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
@@ -98,7 +98,7 @@ pub(super) fn record_context_menu(
 
 /// Records the desktop wallpaper using its dedicated four-float UV transform ABI.
 #[allow(clippy::too_many_arguments)]
-pub(super) fn record_wallpaper(
+pub(super) fn record_wallpaper<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
     target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
@@ -118,7 +118,7 @@ pub(super) fn record_wallpaper(
 
 /// Records the compositor-owned native cursor above the cursor-trail layer.
 #[allow(clippy::too_many_arguments)]
-pub(super) fn record_native_cursor(
+pub(super) fn record_native_cursor<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
     target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
@@ -137,7 +137,7 @@ pub(super) fn record_native_cursor(
 }
 
 /// Records cursor-trail impressions in their supplied back-to-front order.
-pub(super) fn record_cursor_trail(
+pub(super) fn record_cursor_trail<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
     target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
@@ -158,7 +158,7 @@ pub(super) fn record_cursor_trail(
 }
 
 /// Records ordinary client surfaces.
-pub(super) fn record_normal_surfaces(
+pub(super) fn record_normal_surfaces<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
     target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
@@ -170,7 +170,7 @@ pub(super) fn record_normal_surfaces(
 }
 
 /// Records client-provided cursor surfaces above the context menu.
-pub(super) fn record_client_cursor_surfaces(
+pub(super) fn record_client_cursor_surfaces<'pass, 'view, 'image, 'pass_device, 'view_device>(
     command_buffer: vk::CommandBuffer,
     target: &VulkanLegacyRenderTarget<'r, 'i, 'id, 'rd, 'rd>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
