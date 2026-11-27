@@ -18,7 +18,7 @@ pub struct VulkanContext {
 impl VulkanContext {
     /// Creates a Vulkan instance and enumerates physical devices.
     pub fn new() -> Result<Self, VulkanInitError> {
-        let instance = Instance::new(Version::VERSION_1_0, None).map_err(|error| {
+        let instance = Instance::new(Version::VERSION_1_1, None).map_err(|error| {
             VulkanInitError::new(format!("Failed to create Vulkan instance: {error}"))
         })?;
 
