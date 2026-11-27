@@ -119,6 +119,8 @@ grep -Fq 'PAMName=aurea-desktop' "$ROOTFS/etc/systemd/system/aurea-desktop.servi
     fail "AureaOS systemd service does not register the dedicated PAM session"
 grep -Fq 'User=aurea' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
     fail "AureaOS systemd service does not run as the unprivileged aurea user"
+grep -Fxq 'Environment=AUREAOS_LIVE_MINIMAL=1' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
+    fail "AureaOS Live service does not disable the Welcome window for the wallpaper-only first boot"
 grep -Fq 'ExecStart=/usr/local/bin/aurea-live-session' "$ROOTFS/etc/systemd/system/aurea-desktop.service" ||
     fail "AureaOS systemd service does not start the Live session launcher"
 grep -Fq 'pam_systemd.so' "$ROOTFS/etc/pam.d/aurea-desktop" ||
