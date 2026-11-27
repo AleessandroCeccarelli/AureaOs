@@ -18,7 +18,7 @@ use aurea_media::DecodeLimits;
 
 const DEFAULT_WALLPAPER_BYTES: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
-    "/../../aurea-human-interfaces/resources/wallpapers/aureaos-midnight-flow.jpg"
+    "/../../aurea-human-interfaces/resources/wallpapers/aureaos-blue-flow.jpg"
 ));
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -81,7 +81,7 @@ pub struct WallpaperAsset {
 
 impl WallpaperAsset {
     pub fn default_wallpaper() -> Option<Self> {
-        Self::from_bytes("aureaos-midnight-flow", DEFAULT_WALLPAPER_BYTES.to_vec()).ok()
+        Self::from_bytes("aureaos-blue-flow", DEFAULT_WALLPAPER_BYTES.to_vec()).ok()
     }
 
     /// Creates an owned asset from bytes. Format is identified by file signature,
@@ -260,7 +260,7 @@ mod tests {
     #[test]
     fn default_wallpaper_is_owned_and_identified_as_jpeg() {
         let wallpaper = WallpaperAsset::default_wallpaper().unwrap();
-        assert_eq!(wallpaper.id(), "aureaos-midnight-flow");
+        assert_eq!(wallpaper.id(), "aureaos-blue-flow");
         assert_eq!(wallpaper.format(), WallpaperFormat::Jpeg);
         assert!(wallpaper.bytes().len() > 1024);
         assert!(wallpaper.dimensions().is_some());
