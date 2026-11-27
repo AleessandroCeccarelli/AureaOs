@@ -42,10 +42,28 @@ fn main() {
         &output_dir.join("surface_texture.vert.spv"),
         "vert",
     );
+    compile_compatibility_shader(
+        &shader_dir.join("surface_texture.vert"),
+        &output_dir.join("surface_texture.vert.compat.spv"),
+        "vert",
+    );
+    println!(
+        "cargo:rustc-env=AUREA_SURFACE_TEXTURE_VERT_COMPAT_SPV={}",
+        output_dir.join("surface_texture.vert.compat.spv").display()
+    );
     compile_shader(
         &shader_dir.join("surface_texture.frag"),
         &output_dir.join("surface_texture.frag.spv"),
         "frag",
+    );
+    compile_compatibility_shader(
+        &shader_dir.join("surface_texture.frag"),
+        &output_dir.join("surface_texture.frag.compat.spv"),
+        "frag",
+    );
+    println!(
+        "cargo:rustc-env=AUREA_SURFACE_TEXTURE_FRAG_COMPAT_SPV={}",
+        output_dir.join("surface_texture.frag.compat.spv").display()
     );
 
     println!(
@@ -62,6 +80,15 @@ fn main() {
         &output_dir.join("cursor_trail.frag.spv"),
         "frag",
     );
+    compile_compatibility_shader(
+        &shader_dir.join("cursor_trail.frag"),
+        &output_dir.join("cursor_trail.frag.compat.spv"),
+        "frag",
+    );
+    println!(
+        "cargo:rustc-env=AUREA_CURSOR_TRAIL_FRAG_COMPAT_SPV={}",
+        output_dir.join("cursor_trail.frag.compat.spv").display()
+    );
     println!(
         "cargo:rustc-env=AUREA_CURSOR_TRAIL_FRAG_SPV={}",
         output_dir.join("cursor_trail.frag.spv").display()
@@ -72,10 +99,28 @@ fn main() {
         &output_dir.join("wallpaper_texture.vert.spv"),
         "vert",
     );
+    compile_compatibility_shader(
+        &shader_dir.join("wallpaper_texture.vert"),
+        &output_dir.join("wallpaper_texture.vert.compat.spv"),
+        "vert",
+    );
+    println!(
+        "cargo:rustc-env=AUREA_WALLPAPER_TEXTURE_VERT_COMPAT_SPV={}",
+        output_dir.join("wallpaper_texture.vert.compat.spv").display()
+    );
     compile_shader(
         &shader_dir.join("wallpaper_texture.frag"),
         &output_dir.join("wallpaper_texture.frag.spv"),
         "frag",
+    );
+    compile_compatibility_shader(
+        &shader_dir.join("wallpaper_texture.frag"),
+        &output_dir.join("wallpaper_texture.frag.compat.spv"),
+        "frag",
+    );
+    println!(
+        "cargo:rustc-env=AUREA_WALLPAPER_TEXTURE_FRAG_COMPAT_SPV={}",
+        output_dir.join("wallpaper_texture.frag.compat.spv").display()
     );
 
     println!(
@@ -92,10 +137,28 @@ fn main() {
         &output_dir.join("display_color.vert.spv"),
         "vert",
     );
+    compile_compatibility_shader(
+        &shader_dir.join("display_color.vert"),
+        &output_dir.join("display_color.vert.compat.spv"),
+        "vert",
+    );
+    println!(
+        "cargo:rustc-env=AUREA_DISPLAY_COLOR_VERT_COMPAT_SPV={}",
+        output_dir.join("display_color.vert.compat.spv").display()
+    );
     compile_shader(
         &shader_dir.join("display_color.frag"),
         &output_dir.join("display_color.frag.spv"),
         "frag",
+    );
+    compile_compatibility_shader(
+        &shader_dir.join("display_color.frag"),
+        &output_dir.join("display_color.frag.compat.spv"),
+        "frag",
+    );
+    println!(
+        "cargo:rustc-env=AUREA_DISPLAY_COLOR_FRAG_COMPAT_SPV={}",
+        output_dir.join("display_color.frag.compat.spv").display()
     );
 
     println!(
@@ -124,6 +187,33 @@ fn compile_shader(source: &Path, destination: &Path, stage: &str) {
     if !result.status.success() {
         panic!(
             "Vulkan shader compilation failed for {}:\n{}",
+            source.display(),
+            format!(
+                "{}{}",
+                String::from_utf8_lossy(&result.stdout),
+                String::from_utf8_lossy(&result.stderr)
+            )
+        );
+    }
+}
+
+
+fn compile_compatibility_shader(source: &Path, destination: &Path, stage: &str) {
+    let result = Command::new("glslangValidator")
+        .args(["-V", "--target-env", "vulkan1.0", "-S", stage])
+        .arg(source)
+        .arg("-o")
+        .arg(destination)
+        .output()
+        .unwrap_or_else(|error| {
+            panic!(
+                "Unable to execute glslangValidator ({error}). Install the shader compiler (Debian: glslang-tools; Fedora: glslang)"
+            )
+        });
+
+    if !result.status.success() {
+        panic!(
+            "Vulkan 1.0 compatibility shader compilation failed for {}:\n{}",
             source.display(),
             format!(
                 "{}{}",
