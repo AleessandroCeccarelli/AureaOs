@@ -1319,3 +1319,22 @@ Limiti ancora aperti:
 - Important boundary: these factories currently return owned pipeline wrappers; the cache caller is responsible for retaining them in a format/load-op keyed collection. The manager caches render passes only. Existing modern caches and borrowed legacy factories remain unchanged.
 - No build, rustfmt, cargo check, tests, shader compilation, CI, ISO build or hardware validation was run. All work remains unverified source-level changes.
 - Next: introduce a dedicated legacy pipeline resource collection keyed by format and load operation, then create a shared-ownership legacy display-color pass and connect it to a legacy display-color manager. After that, wire per-frame framebuffer targets and a separate legacy frame-recording path. Keep Vulkan 1.3 logical-device creation and AAG compatibility disabled until the full path is integrated and validated.
+
+
+## Vulkan legacy continuation — 2026-11-27 (shared caches and display-color pass)
+
+Additional source changes committed directly to `main`; none have been built, tested, formatted, or run on hardware.
+
+- `55465f1`: shared legacy graphics pipelines can validate a borrowed per-frame render target by exact render-pass handle and format.
+- `d601fca`: added `VulkanSharedLegacyDisplayColorPass`. It owns a shared legacy graphics pipeline, shared descriptor-set layout, and shared sampler. It validates format features, render-pass device/load-op, sampled source, target usage, binding identity/layout, aliasing, dimensions, device, and exact render-pass compatibility before recording Vulkan 1.0 transitions and a traditional render-pass draw.
+- `c216ed0`: added `VulkanLegacyDisplayColorManager`, caching the shared display-color pass per output format. It owns the discard render pass used by the color transform.
+- `51f7f42`: wired the shared pass and manager into the DRM-gated Vulkan module exports.
+- `a53f07e`: integrated the manager into `VulkanSurfacePipelineCache` with `legacy_display_color_pass(format)`.
+- `4fc7aca`: added shared legacy surface, wallpaper, and cursor-trail pipeline collections keyed by (format, load operation).
+- `3a797bd`: added a distinct legacy render-pass error variant to the surface-pipeline cache rather than masking it as a generic pipeline error.
+
+Cautions:
+- The shared legacy surface/wallpaper/cursor pipeline cache methods currently exist but still need a caller/recording orchestrator.
+- The legacy display-color manager is now reachable through the surface pipeline cache, but no compatibility frame path invokes it yet.
+- Validate all lifetimes, method signatures, feature gates, and enum names during the next grouped Fedora build. Do not enable compatibility mode until the full Vulkan 1.0 path, including logical-device feature requirements and every recording call, has been audited.
+- Continue respecting the no-build/no-test policy until the user authorizes the grouped validation.
