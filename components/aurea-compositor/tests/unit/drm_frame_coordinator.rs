@@ -57,6 +57,23 @@ fn framebuffer_registration_is_unique_per_output() {
 }
 
 #[test]
+fn cancelled_pre_submit_render_returns_frame_to_available_pool() {
+    let mut coordinator = DrmOutputFrameCoordinator::new();
+    let id = fb(200);
+    coordinator.register_framebuffer(id).unwrap();
+
+    coordinator.begin_render(id).unwrap();
+    assert!(!coordinator.is_available(id).unwrap());
+
+    coordinator.cancel_render(id).unwrap();
+    assert!(coordinator.is_available(id).unwrap());
+
+    // A subsequent frame may safely reuse the same framebuffer.
+    coordinator.begin_render(id).unwrap();
+    coordinator.cancel_render(id).unwrap();
+}
+
+#[test]
 fn presentation_requires_a_submitted_gpu_frame() {
     let mut coordinator = DrmOutputFrameCoordinator::new();
     let id = fb(2);
