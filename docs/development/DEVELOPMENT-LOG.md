@@ -2702,3 +2702,11 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - Correct completion requires preserving a valid DRM main-device identity while paused and publishing an empty/no-renderer-safe feedback state, or introducing a protocol-global lifecycle policy that can be safely re-enabled without invalidating existing client bindings. This must be resolved against Smithay's actual global semantics before changing runtime behavior.
 - Next: model surface-to-output/render-device association explicitly, including spanning surfaces; define pause/resume feedback behavior; then add unit tests for cursor scale/hotspot parity and feedback reconciliation before the final full build/test pass.
 - No build, formatting, tests, CI or hardware validation was run.
+
+
+### 2026-11-27 — DMA-BUF feedback refresh ordering on GPU removal
+
+- Found a concrete hot-unplug ordering bug: the feedback refresh ran immediately after removing the Vulkan backend but before removing the device from the GPU registry and re-running primary-GPU policy. During that interval, `primary_device()` could still select the unplugged GPU, so the refresh could fail to resolve its DRM identity and preserve stale feedback.
+- Moved the refresh to the end of the confirmed device-removal path, after DRM/udev bookkeeping and primary-GPU reselection. The next refresh now resolves the surviving primary renderer, if one exists.
+- This fixes the confirmed-removal path only. The separate rollback path for a device whose integration fails, and the no-renderer/session-paused feedback policy, remain under review.
+- No build, formatting, tests, CI or hardware validation was run.
