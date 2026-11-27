@@ -9,10 +9,11 @@ use std::sync::Arc;
 
 use smithay::reexports::ash::vk;
 
-use super::{
-    VulkanLegacyFrameRecorder, VulkanLegacyFrameRecorderError, VulkanLegacyRenderPass,
-    VulkanSurfaceCompositionError, VulkanImageState, VulkanImageView, VulkanSharedLegacyGraphicsPipeline,
-    VulkanTextureBinding, visible_surfaces::VisibleSurface,
+use super::{VulkanSurfaceCompositionError, visible_surfaces::VisibleSurface};
+use super::super::{
+    VulkanImageState, VulkanImageView, VulkanLegacyFrameRecorder,
+    VulkanLegacyFrameRecorderError, VulkanLegacyRenderPass,
+    VulkanSharedLegacyGraphicsPipeline, VulkanTextureBinding,
 };
 
 /// Records one class of Wayland surfaces while preserving their scene order.
