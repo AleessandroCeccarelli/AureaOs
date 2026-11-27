@@ -31,6 +31,7 @@ pub enum DrmSurfaceManagerError {
     MissingNativeConfiguration(OutputId),
     UnsupportedMode { output_id: OutputId },
     AmbiguousNativeMode { output_id: OutputId },
+    PendingModeChange { output_id: OutputId },
     ModeChange { output_id: OutputId, message: String },
     ConnectorQuery {
         output_id: OutputId,
@@ -59,6 +60,7 @@ impl fmt::Display for DrmSurfaceManagerError {
             ),
             Self::UnsupportedMode { output_id } => write!(f, "DRM output {output_id} does not support the requested logical mode"),
             Self::AmbiguousNativeMode { output_id } => write!(f, "DRM output {output_id} has multiple native timings for the requested logical mode; selection is ambiguous"),
+            Self::PendingModeChange { output_id } => write!(f, "DRM output {output_id} already has a staged or pending mode change"),
             Self::ModeChange { output_id, message } => write!(f, "Failed to stage DRM mode for output {output_id}: {message}"),
             Self::ConnectorQuery { output_id, message } => write!(
                 f,
@@ -146,10 +148,19 @@ impl ManagedDrmSurface {
         if matches.next().is_some() {
             return Err(DrmSurfaceManagerError::AmbiguousNativeMode { output_id: self.output_id });
         }
-        if self.surface.current_mode() == native {
+        let current = self.surface.current_mode();
+        if current == native {
             return Ok(());
         }
-        let previous = self.surface.current_mode();
+        if self.staged_previous_mode.is_some()
+            || self.presentation.pending().is_some()
+            || self.cpu_frame_pool.pending().is_some()
+        {
+            return Err(DrmSurfaceManagerError::PendingModeChange {
+                output_id: self.output_id,
+            });
+        }
+        let previous = current;
         self.surface.use_mode(native).map_err(|error| DrmSurfaceManagerError::ModeChange {
             output_id: self.output_id,
             message: error.to_string(),
@@ -289,7 +300,17 @@ impl DrmSurfaceManager {
         if matches.next().is_some() {
             return Err(DrmSurfaceManagerError::AmbiguousNativeMode { output_id });
         }
-        let previous = managed.surface.current_mode();
+        let current = managed.surface.current_mode();
+        if current == native {
+            return Ok(current);
+        }
+        if managed.staged_previous_mode.is_some()
+            || managed.presentation.pending().is_some()
+            || managed.cpu_frame_pool.pending().is_some()
+        {
+            return Err(DrmSurfaceManagerError::PendingModeChange { output_id });
+        }
+        let previous = current;
         managed.surface.use_mode(native).map_err(|error| {
             DrmSurfaceManagerError::ModeChange {
                 output_id,
