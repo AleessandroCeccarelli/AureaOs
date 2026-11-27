@@ -60,6 +60,7 @@ pub struct VulkanQueueSubmitter<'device> {
     device: &'device ash::Device,
     queue: vk::Queue,
     queue_submit_lock: &'device Mutex<()>,
+    device_unusable: &'device AtomicBool,
 }
 
 impl<'device> VulkanQueueSubmitter<'device> {
@@ -68,11 +69,13 @@ impl<'device> VulkanQueueSubmitter<'device> {
         device: &'device ash::Device,
         queue: vk::Queue,
         queue_submit_lock: &'device Mutex<()>,
+        device_unusable: &'device AtomicBool,
     ) -> Self {
         Self {
             device,
             queue,
             queue_submit_lock,
+            device_unusable,
         }
     }
 
