@@ -2431,3 +2431,8 @@ Aggiunto uno stato atomico permanente `device_unusable` al logical device. Ogni 
 ### 27 novembre 2026 — Propagazione fail-stop a scheduler, upload e readback
 
 Esteso il controllo `device_unusable` oltre il punto di submission: allocazione e rilascio dei command buffer, creazione/preparazione degli slot frame e distruzione dello scheduler ora rispettano lo stato permanente del logical device. Se il device è già inutilizzabile, lo scheduler non tenta `device_wait_idle` né distrugge pool/fence/semafori; trasferisce fuori dalla gestione automatica le risorse retained. Lo stesso vale per `VulkanPendingUpload` e `VulkanReadbackSubmission`: in Drop, se il device è già in fail-stop, non tentano ulteriori wait/destroy e quarantinano staging, immagini, view, target e owner del device. Il command buffer RAII non tenta più wait/free su un device inutilizzabile. Nessun build, rustfmt o test eseguito.
+
+
+### 27 novembre 2026 — Teardown Vulkan dopo device loss
+
+Completato un ulteriore passaggio sull'audit di distruzione: i Drop di immagini, image view, framebuffer legacy, render pass, pipeline/layout, shader, sampler, descriptor pool, buffer upload/readback e memoria ora evitano le chiamate Vulkan quando `VulkanLogicalDevice::is_unusable()` è attivo. Anche `VulkanTextureBindingPool` e il logical device stesso rispettano il fail-stop: il device non tenta `device_wait_idle` dopo device loss e mantiene vivo il contesto Vulkan genitore invece di distruggere un device in stato terminale. `VulkanQueueSubmitter` controlla lo stato anche prima della creazione della fence, oltre al controllo serializzato sotto il lock della queue. Modifiche statiche su `main`; nessun build, rustfmt, test o validation layer eseguito.
