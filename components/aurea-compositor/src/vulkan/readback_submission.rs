@@ -95,20 +95,21 @@ impl VulkanReadbackSubmission {
         }
 
         if let Err(error) = readback.record_copy_rgba8(command_buffer, &view) {
-            unsafe {
+            let reset_result = unsafe {
                 device
                     .handle()
                     .reset_command_buffer(command_buffer, vk::CommandBufferResetFlags::empty())
-                    .ok();
+            };
+            let device_lost = matches!(
+                error,
+                VulkanReadbackError::CommandBuffer(vk::Result::ERROR_DEVICE_LOST)
+            ) || reset_result == Err(vk::Result::ERROR_DEVICE_LOST);
+            if device_lost {
+                device.mark_unusable();
+                quarantine_readback_inputs(&device, view, Some(readback), capture_target);
+            } else {
+                device.free_command_buffer(command_buffer);
             }
-            if let VulkanReadbackError::CommandBuffer(result) = error {
-                if result == vk::Result::ERROR_DEVICE_LOST {
-                    device.mark_unusable();
-                    quarantine_readback_inputs(&device, view, Some(readback), capture_target);
-                    return Err(VulkanReadbackError::CommandBuffer(result));
-                }
-            }
-            device.free_command_buffer(command_buffer);
             return Err(error);
         }
 
