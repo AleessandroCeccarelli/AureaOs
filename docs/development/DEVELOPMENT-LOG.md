@@ -2641,3 +2641,21 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - `BufferHandler::buffer_destroyed` removes registry ownership when the client destroys the protocol resource.
 - This protects shared-buffer attachments across surfaces. GPU safety still relies on the current synchronous Vulkan submission path; asynchronous submissions will require explicit in-flight reference tracking/fences before this release policy can be retained.
 - Source-only change. No formatting, build, tests, CI or hardware validation run.
+
+
+
+### 2026-11-27 — shared DMA-BUF frame import deduplication
+
+- Visible DMA-BUF surfaces now retain a frame-local image index. Surfaces attaching the same Wayland `wl_buffer` share one Vulkan import, image view and descriptor binding while keeping independent geometry, clipping, transform, stacking and cursor state.
+- The frame's DMA-BUF byte budget counts each distinct buffer once. Producer SYNC_FD import is also performed once per distinct buffer in a frame.
+- The deduplication key is the full Wayland `ObjectId`, not a protocol numeric ID. Image creation order follows first appearance in the visible surface traversal, matching the per-surface image indices.
+- No build, formatting, tests, CI or hardware validation was run. This is a source-level integration and still needs compilation and multi-surface runtime validation.
+
+
+### linux-dmabuf v3 hotplug limitation — explicit status
+
+- The v3 global publishes one static format/modifier list derived from the Vulkan renderers present at initial publication. Smithay's current `create_global` path does not provide per-device v4 feedback tranches.
+- A later DRM GPU add/remove or session reactivation does not recompute that already-published list. Removing/recreating the global is not treated as safe because clients may already hold bound global objects and DMA-BUF buffers created under the original contract.
+- Therefore hotplugged GPU compatibility is not yet guaranteed for client DMA-BUF surfaces. A renderer may reject an import at frame time; the compositor must not claim cross-GPU hotplug support until device-aware feedback or a safe output-admission/fallback policy is implemented.
+- This limitation is intentionally left visible rather than mutating the active v3 contract or silently advertising unsupported formats. The appropriate architectural follow-up is linux-dmabuf v4 per-surface feedback with device-specific tranches, or an explicit policy that prevents incompatible outputs from presenting DMA-BUF-backed content.
+- No build, formatting, tests, CI or hardware validation was run.
