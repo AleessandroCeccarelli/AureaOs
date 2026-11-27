@@ -156,6 +156,36 @@ refresh_inputs() {
         return 1
     }
 
+    python3 - "$SOURCE_DIR/aurea-human-interfaces/resources/wallpapers/aureaos-blue-flow.jpg" <<'PY'
+import pathlib
+import sys
+
+data = pathlib.Path(sys.argv[1]).read_bytes()
+if not data.startswith(bytes((0xFF, 0xD8, 0xFF))):
+    raise SystemExit("The selected AureaOS wallpaper is not a valid JPEG.")
+offset = 2
+dimensions = None
+while offset + 4 <= len(data):
+    if data[offset] != 0xFF:
+        offset += 1
+        continue
+    marker = data[offset + 1]
+    if marker in (0xD9, 0xDA):
+        break
+    length = int.from_bytes(data[offset + 2:offset + 4], "big")
+    if length < 2 or offset + 2 + length > len(data):
+        raise SystemExit("The selected AureaOS wallpaper has a malformed JPEG segment.")
+    if marker in (0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF):
+        height = int.from_bytes(data[offset + 5:offset + 7], "big")
+        width = int.from_bytes(data[offset + 7:offset + 9], "big")
+        dimensions = (width, height)
+        break
+    offset += 2 + length
+if dimensions != (3840, 2160):
+    raise SystemExit(f"Expected 3840x2160 default wallpaper, found {dimensions}.")
+print("Validated AureaOS default wallpaper: 3840x2160 JPEG.")
+PY
+
     [[ -s "$SOURCE_DIR/Cargo.toml" && -s "$SOURCE_DIR/Cargo.lock" ]] || {
         echo "The staged AureaOS source snapshot is incomplete." >&2
         return 1
