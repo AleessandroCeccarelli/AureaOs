@@ -205,6 +205,29 @@ impl VulkanLogicalDevice {
         result
     }
 
+    /// Submits work after waiting for imported producer-fence semaphores.
+    pub(super) fn submit_and_wait_with_semaphores(
+        &self,
+        command_buffer: vk::CommandBuffer,
+        wait_semaphores: &[vk::Semaphore],
+        on_submitted: impl FnOnce(),
+    ) -> Result<(), VulkanQueueSubmitError> {
+        if self.is_unusable() {
+            return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
+        }
+        let result = VulkanQueueSubmitter::new(
+            &self.device,
+            self.graphics_queue,
+            &self.queue_submit_lock,
+            &self.device_unusable,
+        )
+            .submit_and_wait_with_semaphores(command_buffer, wait_semaphores, on_submitted);
+        if result.as_ref().is_err_and(|error| error.is_uncertain()) {
+            self.mark_unusable();
+        }
+        result
+    }
+
     /// Submits work and invokes its lifecycle hook only after queue acceptance.
     pub(super) fn submit_and_wait_with(
         &self,
