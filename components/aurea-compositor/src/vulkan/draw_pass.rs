@@ -125,17 +125,6 @@ impl VulkanDrawPass {
             return Err(VulkanDrawPassError::IncompatibleRenderPassLoad);
         }
         let view = target.view();
-        if !source.usage().contains(vk::ImageUsageFlags::SAMPLED) {
-            return Err(VulkanDrawPassError::MissingSampledImageUsage);
-        }
-        if !texture.references_view(source) {
-            return Err(VulkanDrawPassError::TextureSourceMismatch);
-        }
-        if source.image_handle() == view.image_handle()
-            || source.device().handle().handle() != view.device().handle().handle()
-        {
-            return Err(VulkanDrawPassError::IncompatibleTextureSource);
-        }
         if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
             return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
         }
@@ -148,17 +137,10 @@ impl VulkanDrawPass {
         }
 
         VulkanImageTransition::record_color(
-            source.device(),
-            command_buffer,
-            source.image_handle(),
-            previous_source_state,
-            VulkanImageState::ShaderRead,
-        );
-        VulkanImageTransition::record_color(
             view.device(),
             command_buffer,
             view.image_handle(),
-            previous_target_state,
+            previous_state,
             VulkanImageState::ColorAttachment,
         );
 
@@ -204,6 +186,17 @@ impl VulkanDrawPass {
         Self::validate(3, 1, final_state, load)?;
         Self::validate_push_constants(push_constants)?;
         let view = target.view();
+        if !source.usage().contains(vk::ImageUsageFlags::SAMPLED) {
+            return Err(VulkanDrawPassError::MissingSampledImageUsage);
+        }
+        if !texture.references_view(source) {
+            return Err(VulkanDrawPassError::TextureSourceMismatch);
+        }
+        if source.image_handle() == view.image_handle()
+            || source.device().handle().handle() != view.device().handle().handle()
+        {
+            return Err(VulkanDrawPassError::IncompatibleTextureSource);
+        }
         if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
             return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
         }
@@ -220,10 +213,17 @@ impl VulkanDrawPass {
         Self::validate_region(view.width(), view.height(), viewport, scissor)?;
 
         VulkanImageTransition::record_color(
+            source.device(),
+            command_buffer,
+            source.image_handle(),
+            previous_source_state,
+            VulkanImageState::ShaderRead,
+        );
+        VulkanImageTransition::record_color(
             view.device(),
             command_buffer,
             view.image_handle(),
-            previous_state,
+            previous_target_state,
             VulkanImageState::ColorAttachment,
         );
 
