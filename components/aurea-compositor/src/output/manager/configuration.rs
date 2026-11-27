@@ -41,6 +41,21 @@ impl OutputManager {
         output_id: OutputId,
         configuration: OutputConfiguration,
     ) -> Result<(), OutputManagerError> {
+        *self = self.staged_configuration(output_id, configuration)?;
+        Ok(())
+    }
+
+    /// Builds and validates a candidate configuration without mutating the
+    /// currently published output manager.
+    ///
+    /// DRM callers can retain this candidate while KMS performs TEST_ONLY,
+    /// commit and VBlank confirmation, then install it only after the physical
+    /// mode has completed successfully.
+    pub fn staged_configuration(
+        &self,
+        output_id: OutputId,
+        configuration: OutputConfiguration,
+    ) -> Result<Self, OutputManagerError> {
         let mut staged = self.clone();
         let output = staged
             .registry
@@ -102,8 +117,7 @@ impl OutputManager {
         // Validate dimensions, scale conversion and global logical bounds
         // against the complete staged configuration before committing it.
         staged.logical_bounds(output_id)?;
-        *self = staged;
-        Ok(())
+        Ok(staged)
     }
 
     /// Enables or disables an output after validating the resulting layout.
