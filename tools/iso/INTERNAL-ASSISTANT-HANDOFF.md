@@ -1561,3 +1561,8 @@ The legacy Vulkan frame path now retains the host-visible readback allocation on
 Follow-up: applied the same uncertain-submission readback retention to the regular Vulkan scene-composition path in `surface_compositor.rs`, including its frame-scoped descriptor pool. Both regular and legacy submission paths now quarantine the staging allocation when completion cannot be established.
 
 Additional lifetime hardening: composition errors now preserve a distinct `UncertainSubmission` state. The CPU scanout caller uses it to quarantine the output image view/image and optional intermediate view/image as well as the staging buffer, since an unresolved command buffer may still reference all of them. This covers locally allocated CPU-scanout frame resources; shared/cache resource lifetime and full build/test validation remain open.
+
+
+## 2026-11-27 — Shared resources and DRM scanout lifetime audit
+
+Reviewed SHM texture uploads: `VulkanPendingUpload` owns staging, image resources, fence, and command pool until completion; if both fence wait and `device_wait_idle` fail, its Drop path quarantines the owned resources. The surface cache retains uploaded textures through `Arc` while the synchronous composition submission is in progress. Found and fixed a missing lifetime in direct DRM scanout: transient output/intermediate image views were destroyed on uncertain completion even though the frame images remained in the DRM frame pool. `drm/scanout_renderer/presentation.rs` now quarantines both views on `UncertainSubmission`; their images remain frame-pool-owned. Commit: `7d43d580`. Static review only; no compilation or tests run.
