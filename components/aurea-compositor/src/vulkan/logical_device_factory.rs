@@ -52,10 +52,12 @@ impl VulkanLogicalDevice {
             .queue_priorities(&priorities)];
         let extension_names = extension_plan.enabled_name_pointers();
         let mut enabled_rendering_features = rendering_features.enabled_features();
-        let create_info = vk::DeviceCreateInfo::default()
+        let mut create_info = vk::DeviceCreateInfo::default()
             .queue_create_infos(&queue_info)
-            .enabled_extension_names(&extension_names)
-            .push_next(&mut enabled_rendering_features);
+            .enabled_extension_names(&extension_names);
+        if let Some(features) = enabled_rendering_features.as_mut() {
+            create_info = create_info.push_next(features);
+        }
 
         let device = unsafe {
             physical_device.instance().handle().create_device(
