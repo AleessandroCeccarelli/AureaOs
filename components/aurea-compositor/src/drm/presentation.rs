@@ -31,6 +31,7 @@ pub enum DrmPresentationError {
     TestNotPassed,
     CandidateIsCurrent,
     UnexpectedFramebuffer,
+    TransactionInProgress,
 }
 
 impl fmt::Display for DrmPresentationError {
@@ -42,6 +43,9 @@ impl fmt::Display for DrmPresentationError {
             Self::CandidateIsCurrent => "The candidate framebuffer is already active on this CRTC",
             Self::UnexpectedFramebuffer => {
                 "The page-flip event does not match the pending framebuffer"
+            }
+            Self::TransactionInProgress => {
+                "Cannot disable output while a KMS presentation transaction is unresolved"
             }
         };
         formatter.write_str(message)
@@ -169,6 +173,18 @@ impl DrmPresentationLifecycle {
 
         self.transaction = None;
         Ok(candidate)
+    }
+
+    /// Confirms that a successful KMS disable removed the current scanout.
+    ///
+    /// A pending/test/ready transaction makes the outcome ambiguous, so this
+    /// transition refuses to discard it. The caller must first prove that no
+    /// atomic commit can still complete.
+    pub fn output_disabled(&mut self) -> Result<Option<DrmFramebufferId>, DrmPresentationError> {
+        if self.transaction.is_some() {
+            return Err(DrmPresentationError::TransactionInProgress);
+        }
+        Ok(self.current.take())
     }
 
     /// Completes the accepted page flip and returns the previously active FB.
