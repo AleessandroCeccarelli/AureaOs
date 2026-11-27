@@ -147,7 +147,10 @@ impl Drop for VulkanFrameScheduler<'_> {
             // Destroying pools or fences while the device may still be using
             // them is invalid. If the idle wait fails, intentionally leak the
             // Vulkan handles rather than risk freeing in-flight resources.
-            if self.device.handle().device_wait_idle().is_err() {
+            if let Err(error) = self.device.handle().device_wait_idle() {
+                if error == vk::Result::ERROR_DEVICE_LOST {
+                    self.device.mark_unusable();
+                }
                 // Submitted work may still reference these objects. Leak their
                 // owners rather than dropping resources while the GPU uses them.
                 for slot in &mut self.slots {
