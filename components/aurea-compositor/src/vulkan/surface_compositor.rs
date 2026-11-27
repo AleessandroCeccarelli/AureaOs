@@ -841,6 +841,7 @@ pub(super) fn render_frame(
                     std::mem::forget(readback_buffer);
                 }
             }
+            std::mem::forget(bindings);
             std::mem::forget(binding_pool);
         }
         return Err(VulkanSurfaceCompositionError::from_queue_submit_error(queue_error));
