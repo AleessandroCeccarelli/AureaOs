@@ -383,11 +383,49 @@ impl VulkanDrmFramePool {
             .ok_or(VulkanDrmFramePoolError::UnknownFramebuffer(id))
     }
 
+    /// Retires every pooled frame during an orderly output shutdown.
+    ///
+    /// This operation is all-or-nothing with respect to availability: it first
+    /// verifies that KMS has released every framebuffer, then unregisters and
+    /// drops the frame/image pairs. Call this before destroying the DRM output.
+    pub fn retire_all(
+        &mut self,
+        coordinator: &mut DrmOutputFrameCoordinator,
+    ) -> Result<usize, VulkanDrmFramePoolError> {
+        let ids: Vec<_> = self.frames.keys().copied().collect();
+        for id in &ids {
+            if !coordinator.is_available(*id)? {
+                return Err(VulkanDrmFramePoolError::FramebufferStillInUse(*id));
+            }
+        }
+
+        for id in &ids {
+            coordinator.unregister_framebuffer(*id)?;
+        }
+
+        let retired = self.frames.len();
+        drop(std::mem::take(&mut self.frames));
+        Ok(retired)
+    }
+
     pub fn len(&self) -> usize {
         self.frames.len()
     }
 
     pub fn is_empty(&self) -> bool {
         self.frames.is_empty()
+    }
+}
+
+
+impl Drop for VulkanDrmFramePool {
+    fn drop(&mut self) {
+        if !self.frames.is_empty() {
+            // Drop cannot prove that KMS has released the currently scanned-out
+            // framebuffer. Only retire_all()/retire() may release these pairs.
+            // Leak conservatively rather than unregister a framebuffer still
+            // referenced by an active DRM plane or destroy its backing image.
+            std::mem::forget(std::mem::take(&mut self.frames));
+        }
     }
 }
