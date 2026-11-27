@@ -48,17 +48,17 @@ pub struct VulkanLegacyRenderPass<'device> {
 impl<'device> VulkanLegacyRenderPass<'device> {
     /// Creates a one-attachment, single-subpass render pass for the view format.
     pub fn new(
-        view: &VulkanImageView<'_, 'device>,
+        device: &'device VulkanLogicalDevice,
+        format: vk::Format,
         load: VulkanColorLoad,
     ) -> Result<Self, VulkanLegacyRenderPassError> {
-        let device = view.device();
         let load_op = match load {
             VulkanColorLoad::Clear(_) => vk::AttachmentLoadOp::CLEAR,
             VulkanColorLoad::Load => vk::AttachmentLoadOp::LOAD,
             VulkanColorLoad::DontCare => vk::AttachmentLoadOp::DONT_CARE,
         };
         let attachment = [vk::AttachmentDescription::default()
-            .format(view.format())
+            .format(format)
             .samples(vk::SampleCountFlags::TYPE_1)
             .load_op(load_op)
             .store_op(vk::AttachmentStoreOp::STORE)
@@ -101,7 +101,7 @@ impl<'device> VulkanLegacyRenderPass<'device> {
         Ok(Self {
             device: VulkanDeviceOwner::Borrowed(device),
             render_pass,
-            format: view.format(),
+            format,
         })
     }
 
