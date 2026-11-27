@@ -144,7 +144,27 @@ pub(super) fn visible_dmabuf_surfaces(
     target: &RenderTarget,
 ) -> Result<Vec<VisibleDmabufSurface>, VulkanSurfaceCompositionError> {
     let mut visible = Vec::new();
+    let mut total_bytes = 0usize;
     for snapshot in snapshots {
+        // The first importer supports one packed memory plane. Bound the
+        // retained/imported working set just as we do for copied SHM surfaces.
+        let plane = snapshot
+            .layout
+            .planes()
+            .first()
+            .ok_or(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded)?;
+        let plane_bytes = usize::try_from(plane.stride)
+            .ok()
+            .and_then(|stride| stride.checked_mul(snapshot.layout.height() as usize))
+            .and_then(|bytes| bytes.checked_add(plane.offset as usize))
+            .ok_or(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded)?;
+        total_bytes = total_bytes
+            .checked_add(plane_bytes)
+            .ok_or(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded)?;
+        if total_bytes > MAX_COMPOSITED_SHM_BYTES {
+            return Err(VulkanSurfaceCompositionError::FrameMemoryLimitExceeded);
+        }
+
         let geometry = if let Some(scale) = target.fractional_scale() {
             surface_geometry_with_fractional_scale(
                 (snapshot.location.x, snapshot.location.y),
