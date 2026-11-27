@@ -13,7 +13,7 @@ use smithay::reexports::ash::vk;
 
 use super::{
     VulkanClearPass, VulkanClearPassError, VulkanImageState, VulkanImageView,
-    VulkanLegacyRenderPassError, VulkanLegacyRenderTarget, VulkanSharedLegacyGraphicsPipeline,
+    VulkanLegacyRenderTarget, VulkanSharedLegacyGraphicsPipeline,
     VulkanTextureBinding, VulkanDrawPass, VulkanDrawPassError,
     VulkanSharedLegacyDisplayColorPass, VulkanDisplayColorPassError,
 };
@@ -151,7 +151,7 @@ impl VulkanLegacyFrameRecorder {
             device,
             command_buffer,
             source,
-            &target,
+            target,
             binding,
             previous_source_state,
             previous_target_state,
@@ -269,7 +269,6 @@ impl VulkanLegacyFrameRecorder {
 /// Errors returned by the frame-scoped legacy recording helpers.
 #[derive(Debug)]
 pub(crate) enum VulkanLegacyFrameRecorderError {
-    RenderPass(VulkanLegacyRenderPassError),
     Clear(VulkanClearPassError),
     Draw(VulkanDrawPassError),
     DisplayColor(VulkanDisplayColorPassError),
@@ -282,7 +281,6 @@ pub(crate) enum VulkanLegacyFrameRecorderError {
 impl std::fmt::Display for VulkanLegacyFrameRecorderError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::RenderPass(error) => write!(formatter, "Legacy frame target: {error}"),
             Self::Clear(error) => write!(formatter, "Legacy frame clear: {error}"),
             Self::Draw(error) => write!(formatter, "Legacy frame draw: {error}"),
             Self::DisplayColor(error) => write!(formatter, "Legacy frame display color: {error}"),
