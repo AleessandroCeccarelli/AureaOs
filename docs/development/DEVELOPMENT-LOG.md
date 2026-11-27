@@ -2681,3 +2681,14 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - Applied the same integer/fractional output-scale geometry adjustment to DMA-BUF cursor snapshots before output transformation and clipping. SHM and DMA-BUF now share the same hotspot-anchored scaling policy.
 - This change addresses client-provided cursor surfaces; it does not alter compositor-owned named cursor assets.
 - No build, formatting, tests, CI or hardware validation was run, in accordance with the instruction to defer validation until the complete video block is integrated.
+
+
+### 2026-11-27 — DMA-BUF feedback refresh on GPU lifecycle changes
+
+- Added a single reconciliation path that recomputes the conservative format/modifier intersection from the currently initialized Vulkan logical devices.
+- The compositor now replaces its DMA-BUF import-validation device set and calls Smithay `DmabufState::set_default_feedback` when a feedback global already exists; the initial path still creates the feedback-enabled global.
+- Vulkan backend initialization invokes reconciliation after registering the backend. DRM device rollback and confirmed device removal invoke it after removing the corresponding backend. Session reactivation also passes through backend initialization and refreshes the feedback as devices return.
+- The feedback `main_device` is now resolved through the GPU manager's policy-selected primary device and its matching live DRM/Vulkan backend. It is no longer selected from arbitrary `HashMap` iteration order.
+- Smithay documents that `set_default_feedback` updates all known default feedback objects associated with the global. This refresh does not yet supply per-surface feedback or GPU-specific preference tranches.
+- Remaining edge case: when there are temporarily no usable Vulkan backends, reconciliation deliberately does not publish an empty feedback table or destroy the global. The previous global/feedback can remain visible until a usable backend returns. This needs a dedicated no-renderer policy before the lifecycle block can be considered complete.
+- No build, formatting, tests, CI or hardware validation was run.
