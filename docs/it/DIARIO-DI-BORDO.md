@@ -197,7 +197,7 @@ Commit principali: `542f918`, `2826f2d`, `e0fb92e`.
 
 ## 23 novembre 2026 — Primo livello del WallpaperManager
 
-È iniziata l'implementazione del wallpaper selezionato, `aureaos-midnight-flow.jpg`, senza limitarsi a documentare l'architettura.
+È iniziata l'implementazione del wallpaper selezionato, `aureaos-blue-flow.jpg`, senza limitarsi a documentare l'architettura.
 
 ### Codice aggiunto
 
@@ -281,7 +281,7 @@ Nessun comando Cargo è stato eseguito: formattazione, compilazione e test saran
 
 È stata accolta la richiesta di aggiungere ad AureaOS una funzione paragonabile agli sfondi animati/dinamici disponibili su macOS, oltre alle modalità classiche di Windows.
 
-Il wallpaper ufficiale già scelto, `aureaos-midnight-flow.jpg`, resta quello predefinito. La nuova funzione amplia il motore, non cambia la scelta grafica.
+Il wallpaper ufficiale già scelto, `aureaos-blue-flow.jpg`, resta quello predefinito. La nuova funzione amplia il motore, non cambia la scelta grafica.
 
 La specifica completa è in `docs/design/WALLPAPER-SYSTEM.md`.
 
