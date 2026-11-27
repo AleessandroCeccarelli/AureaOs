@@ -2527,3 +2527,11 @@ Reviewing the actual Live startup chain showed that `aurea-live-session` launche
 - Refactored the frame owner to create one clear framebuffer, one load framebuffer, and an optional display-color framebuffer. The same targets are reused by all layer draws and remain alive until the synchronous GPU submission/wait returns.
 - Recorder APIs now consume borrowed framebuffer targets and no longer create or destroy framebuffers during command recording. Exact render-pass identity checks remain in place.
 - No build, rustfmt, cargo check, tests, CI or hardware validation was performed. Fedora verification is still required.
+
+
+### Legacy renderer submission uncertainty handling — 2026-11-27
+
+- Preserved the typed queue-submit error through both legacy terminal paths (readback and KMS release), instead of flattening it into a string before the frame owner can classify it.
+- When fence waiting and the device-idle fallback both fail, the frame owner intentionally retains its framebuffers and descriptor pool. The command buffer's existing Pending-state Drop policy also avoids freeing it when device-idle cannot prove completion.
+- Device-loss errors remain classified as fatal compositor errors. Normal resource destruction occurs only after fence completion or successful device-idle fallback.
+- No build, rustfmt, cargo check, tests or GPU validation was run. The external readback-buffer lifetime during uncertain completion still requires review.
