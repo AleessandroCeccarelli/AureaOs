@@ -266,6 +266,19 @@ pub fn collect_surface_tree_dmabuf_snapshots(
 #[derive(Default)]
 struct SurfaceDmabufBufferState {
     current: Option<WlBuffer>,
+    registry: Option<std::sync::Weak<std::sync::Mutex<std::collections::HashMap<ObjectId, (WlBuffer, usize)>>>>,
+}
+
+#[cfg(feature = "drm")]
+impl Drop for SurfaceDmabufBufferState {
+    fn drop(&mut self) {
+        let (Some(buffer), Some(registry)) = (self.current.take(), self.registry.as_ref()) else {
+            return;
+        };
+        if let Some(registry) = registry.upgrade() {
+            release_dmabuf_surface_use(&registry, &buffer);
+        }
+    }
 }
 
 /// Tracks how many live Wayland surfaces currently reference each DMA-BUF.
@@ -274,41 +287,53 @@ struct SurfaceDmabufBufferState {
 /// wl_buffer.release when only one surface replaces it would let the client
 /// recycle memory still sampled by another surface.
 #[cfg(feature = "drm")]
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct DmabufBufferUseRegistry {
-    buffers: std::collections::HashMap<ObjectId, (WlBuffer, usize)>,
+    buffers: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<ObjectId, (WlBuffer, usize)>>>,
+}
+
+#[cfg(feature = "drm")]
+fn release_dmabuf_surface_use(
+    registry: &std::sync::Mutex<std::collections::HashMap<ObjectId, (WlBuffer, usize)>>,
+    buffer: &WlBuffer,
+) {
+    let mut buffers = registry.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let id = buffer.id();
+    let should_release = if let Some((_, uses)) = buffers.get_mut(&id) {
+        *uses = uses.saturating_sub(1);
+        *uses == 0
+    } else {
+        false
+    };
+    if should_release {
+        if let Some((buffer, _)) = buffers.remove(&id) {
+            drop(buffers);
+            smithay::backend::renderer::utils::Buffer::with_implicit(buffer).release();
+        }
+    }
 }
 
 #[cfg(feature = "drm")]
 impl DmabufBufferUseRegistry {
-    fn retain(&mut self, buffer: WlBuffer) {
+    fn retain(&self, buffer: WlBuffer) {
+        let mut buffers = self.buffers.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let id = buffer.id();
-        self.buffers
+        buffers
             .entry(id)
             .and_modify(|(_, uses)| *uses = uses.saturating_add(1))
             .or_insert((buffer, 1));
     }
 
-    fn release_surface_use(&mut self, buffer: &WlBuffer) {
-        let id = buffer.id();
-        let should_release = if let Some((_, uses)) = self.buffers.get_mut(&id) {
-            *uses = uses.saturating_sub(1);
-            *uses == 0
-        } else {
-            // Unknown ownership is not proof that the client buffer is idle.
-            false
-        };
-
-        if should_release {
-            if let Some((buffer, _)) = self.buffers.remove(&id) {
-                smithay::backend::renderer::utils::Buffer::with_implicit(buffer).release();
-            }
-        }
+    fn release_surface_use(&self, buffer: &WlBuffer) {
+        release_dmabuf_surface_use(&self.buffers, buffer);
     }
 
     /// Drops registry ownership when the client destroys the wl_buffer object.
-    pub fn buffer_destroyed(&mut self, buffer: &WlBuffer) {
-        self.buffers.remove(&buffer.id());
+    pub fn buffer_destroyed(&self, buffer: &WlBuffer) {
+        self.buffers
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .remove(&buffer.id());
     }
 }
 
@@ -349,6 +374,7 @@ pub fn update_surface_tree_dmabuf_buffer_lifecycle(
                 let mut state = state
                     .lock()
                     .unwrap_or_else(std::sync::PoisonError::into_inner);
+                state.registry = Some(std::sync::Arc::downgrade(&registry.buffers));
                 if state.current == next {
                     return None;
                 }
