@@ -2600,3 +2600,12 @@ Continued the two-path audit (asynchronous submission and teardown/shutdown). Pa
 - Device-loss errors during frame-slot setup/preparation and DRM image allocation now propagate the permanent fail-stop state; partial rollback avoids Vulkan destruction calls after `ERROR_DEVICE_LOST`.
 - Remaining integration: call `retire_all` from the output owner after page-flip/hot-unplug resolution, then audit all output shutdown paths. The DRM/KMS lifecycle is not yet complete.
 - No local build/tests or successful CI run were verified in this session.
+
+
+### DRM output shutdown integration — 2026-11-27
+
+- `DrmSurfaceManager::clear` now invokes conservative Vulkan frame retirement after `DrmSurface::clear` successfully disables the KMS surface.
+- Added `VulkanDrmFramePool::retire_available`; a framebuffer is unregistered and released only when GPU, KMS and foreign-queue ownership are all resolved by the coordinator.
+- The final frame still marked active in the coordinator is not force-reset. If ambiguous, it remains quarantined by pool `Drop`. A dedicated lifecycle transition for confirmed output disable is still needed to avoid this conservative leak.
+- CPU/GBM resources are removed only after successful KMS clear.
+- No build/tests or successful CI result were verified.
