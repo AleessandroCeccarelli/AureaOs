@@ -289,44 +289,8 @@ pub(super) fn build(
                 .map_err(io::Error::other)?;
 
             let token = loop_handle
-                .insert_source(notifier, move |event, _, state| match event {
-                    DrmEvent::VBlank(crtc) => {
-                        if let Some(surfaces) = state.drm_surfaces.get_mut(&node) {
-                            match surfaces.on_cpu_vblank(node, crtc) {
-                                Ok(Some(released)) => {
-                                    if let Some(Err(error)) =
-                                        surfaces.retire_released_cpu_frame(crtc, released)
-                                    {
-                                        eprintln!(
-                                            "AureaOS: failed to retire released CPU scanout frame on {node}: {error}"
-                                        );
-                                    }
-                                }
-                                Ok(None) => match surfaces.on_vblank(node, crtc) {
-                                    Ok(Some(released)) => {
-                                        if let Some(Err(error)) =
-                                            surfaces.retire_released_frame(crtc, released)
-                                        {
-                                            eprintln!(
-                                                "AureaOS: failed to reacquire released Vulkan scanout frame on {node}: {error}"
-                                            );
-                                        }
-                                    }
-                                    Ok(None) => {}
-                                    Err(error) => eprintln!(
-                                        "AureaOS: DRM presentation completion failed for {node}: {error}"
-                                    ),
-                                },
-                                Err(error) => eprintln!(
-                                    "AureaOS: CPU KMS presentation completion failed for {node}: {error}"
-                                ),
-                            }
-                        }
-                    }
-                    DrmEvent::Error(error) => {
-                        state.error =
-                            Some(io::Error::other(format!("DRM device {node}: {error}")));
-                    }
+                .insert_source(notifier, move |event, _, state| {
+                    super::udev_events::device::handle_drm_event(state, node, event);
                 })
                 .map_err(io::Error::other)?;
 
