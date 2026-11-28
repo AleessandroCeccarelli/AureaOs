@@ -50,11 +50,13 @@ mod graphics_pipeline;
 mod image_allocator;
 mod image_transition;
 mod image_view;
-#[cfg(feature = "drm")]
+#[cfg(feature = "legacy-vulkan-frame")]
 mod legacy_display_color_manager;
-#[cfg(feature = "drm")]
+#[cfg(feature = "legacy-vulkan-frame")]
 mod legacy_frame_recorder;
+#[cfg(feature = "legacy-vulkan-frame")]
 mod legacy_render_pass;
+#[cfg(feature = "legacy-vulkan-frame")]
 mod legacy_render_pass_manager;
 mod logical_device;
 mod logical_device_factory;
@@ -172,8 +174,9 @@ pub use image_allocator::{
 };
 pub use image_transition::{VulkanImageState, VulkanImageTransition, VulkanImageTransitionError};
 pub use image_view::{VulkanImageView, VulkanImageViewError};
-#[cfg(feature = "drm")]
+#[cfg(feature = "legacy-vulkan-frame")]
 pub(crate) use legacy_display_color_manager::VulkanLegacyDisplayColorManager;
+#[cfg(feature = "legacy-vulkan-frame")]
 pub use legacy_render_pass::{
     VulkanLegacyRenderPass, VulkanLegacyRenderPassError, VulkanLegacyRenderPassScope,
     VulkanLegacyRenderTarget,
@@ -206,8 +209,9 @@ pub use upload_buffer::{VulkanUploadBuffer, VulkanUploadError};
 pub use wallpaper_texture::{VulkanWallpaperTexture, VulkanWallpaperTextureError};
 
 pub(super) use device_owner::VulkanDeviceOwner;
-#[cfg(feature = "drm")]
+#[cfg(feature = "legacy-vulkan-frame")]
 pub(crate) use legacy_frame_recorder::{VulkanLegacyFrameRecorder, VulkanLegacyFrameRecorderError};
+#[cfg(feature = "legacy-vulkan-frame")]
 pub(crate) use legacy_render_pass_manager::VulkanLegacyRenderPassManager;
 pub(super) use pending_upload::VulkanPendingUpload;
 pub(super) use queue_submitter::VulkanQueueSubmitter;
