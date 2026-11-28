@@ -22,9 +22,6 @@ use smithay::reexports::calloop::EventLoop;
 use smithay::reexports::wayland_server::Display;
 
 #[cfg(feature = "drm")]
-use smithay::backend::drm::DrmEvent;
-
-#[cfg(feature = "drm")]
 use crate::drm::{DrmSession, device::DrmDevice};
 
 #[cfg(feature = "drm")]
