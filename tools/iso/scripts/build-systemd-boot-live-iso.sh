@@ -196,15 +196,14 @@ xorriso -as mkisofs \
     -efi-boot-part --efi-boot-image \
     "$ASSEMBLY_DIR"
 
-# Validate the exact staged boot tree before producing an ISO. The source
-# live-build binary tree remains untouched and can be resumed if any step fails.
+# Validate the exact staged boot tree before publishing anything. The source
+# live-build binary tree remains untouched and can be resumed if a check fails.
 bash "$ISO_DIR/tests/validate-live-image.sh" --binary-dir "$ASSEMBLY_DIR"
 
 [[ -s "$TEMP_ISO" ]] || fail "xorriso did not create the final ISO"
-mv -f -- "$TEMP_ISO" "$OUTPUT_PATH"
 
-# Validate the exact mastered ISO as well as the staging tree before publish.
-# This verifies the El Torito EFI entry and the GPT ESP that USB firmware sees.
+# Validate the exact mastered ISO, including its El Torito EFI entry and GPT
+# EFI System Partition, before the temporary image is atomically published.
 bash "$ISO_DIR/tests/validate-live-image.sh" --iso "$TEMP_ISO"
 
 [[ -s "$TEMP_ISO" ]] || fail "final ISO disappeared before publication"
