@@ -72,7 +72,7 @@ def _require_tool(name: str) -> str:
     if executable is None:
         raise RuntimeError(
             f"required tool '{name}' was not found; install librsvg2-tools "
-            "and xcursorgen (Fedora) or librsvg2-bin and xcursorgen (Debian)"
+            "and xcursorgen (Fedora: package xcursorgen; Debian: package x11-apps)"
         )
     return executable
 
