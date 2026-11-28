@@ -135,6 +135,23 @@ refresh_inputs() {
     # in the disposable Debian builder, then stage raw RGBA into includes.chroot
     # so librsvg and Python never enter the target system.
     bash "$SOURCE_DIR/tools/assets/render-context-menu.sh"
+
+    # Build native Xcursor themes in the disposable Debian builder, never in
+    # the target chroot. x11-apps supplies xcursorgen here only; no X11 tools
+    # or libraries are installed in the AureaOS Live filesystem.
+    CURSOR_SOURCE="$SOURCE_DIR/aurea-human-interfaces/cursors"
+    python3 "$SOURCE_DIR/tools/assets/build_cursor_theme.py" \
+        --cursor-dir "$CURSOR_SOURCE" \
+        --output "$CURSOR_SOURCE/generated/AureaOS-Light"
+    python3 "$SOURCE_DIR/tools/assets/build_cursor_theme.py" \
+        --cursor-dir "$CURSOR_SOURCE" \
+        --manifest "$CURSOR_SOURCE/manifest-dark.toml" \
+        --output "$CURSOR_SOURCE/generated/AureaOS-Dark"
+    CURSOR_INCLUDE="$CONFIG_DIR/includes.chroot/usr/share/icons"
+    install -d -m 0755 "$CURSOR_INCLUDE"
+    cp -a "$CURSOR_SOURCE/generated/AureaOS-Light" "$CURSOR_INCLUDE/"
+    cp -a "$CURSOR_SOURCE/generated/AureaOS-Dark" "$CURSOR_INCLUDE/"
+
     ASSET_SOURCE="$SOURCE_DIR/aurea-human-interfaces/icons/generated/context-menu"
     ASSET_INCLUDE="$CONFIG_DIR/includes.chroot/usr/share/aureaos/human-interfaces/icons/generated/context-menu"
     rm -rf -- "$ASSET_INCLUDE"
