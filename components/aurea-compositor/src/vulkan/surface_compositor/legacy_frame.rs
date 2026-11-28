@@ -508,7 +508,6 @@ pub(super) fn render_frame_legacy(
                     std::mem::forget(clear_target);
                     std::mem::forget(load_target);
                     std::mem::forget(display_target);
-                    std::mem::forget(binding_pool);
                     if let Some(readback_slot) = readback {
                         if let Some(readback_buffer) = readback_slot.take() {
                             std::mem::forget(readback_buffer);
