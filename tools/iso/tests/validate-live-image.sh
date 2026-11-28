@@ -52,6 +52,16 @@ if [[ "$MODE" == "--iso" ]]; then
         fail "cannot inspect the ISO El Torito boot catalog"
     grep -Fq 'boot/efi.img' <<<"$REPORT" ||
         fail "ISO El Torito catalog does not reference the systemd-boot EFI image"
+    grep -Eq -- '(-e|--efi-boot)[[:space:]]+boot/efi\.img' <<<"$REPORT" ||
+        fail "ISO El Torito catalog does not declare boot/efi.img as an EFI boot image"
+    grep -Fq -- '-no-emul-boot' <<<"$REPORT" ||
+        fail "ISO EFI El Torito entry is not configured for no-emulation boot"
+    SYSTEM_AREA_REPORT="$(xorriso -indev "$TARGET" -report_system_area plain 2>&1)" ||
+        fail "cannot inspect the ISO system area and GPT partition map"
+    grep -Eiq 'GPT|GUID Partition Table' <<<"$SYSTEM_AREA_REPORT" ||
+        fail "ISO does not contain a detectable GPT partition table"
+    grep -Eiq 'EFI System|EFI.*partition|partition.*EFI' <<<"$SYSTEM_AREA_REPORT" ||
+        fail "ISO GPT does not expose an EFI System Partition"
 else
     [[ -d "$TARGET" ]] || fail "binary tree does not exist: $TARGET"
     ROOT="$TARGET"
@@ -65,8 +75,9 @@ ESP_IMAGE="$ROOT/boot/efi.img"
 [[ -s "$ESP_IMAGE" ]] || fail "systemd-boot EFI image is missing or empty"
 
 # Inspect the actual compressed root filesystem, not just the outer ISO
-# directory. This catches a missing desktop binary, service, PAM hook or
-# systemd enablement link before an image is published.
+# directory. Extract only small, explicitly required files. Kernel modules and
+# firmware are checked against the SquashFS metadata listing below: extracting
+# those entire trees needlessly expands thousands of files and can stall builds.
 ROOTFS="$TEMP_DIR/rootfs"
 mkdir -p "$ROOTFS"
 unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
@@ -78,7 +89,6 @@ unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
     etc/os-release usr/lib/os-release etc/debian_version usr/lib/systemd/systemd sbin/init \
     usr/lib/systemd/system/multi-user.target etc/systemd/system/default.target \
     var/lib/dpkg/status \
-    usr/lib/modules usr/lib/firmware/amdgpu \
     usr/share/vulkan/icd.d \
     usr/lib/x86_64-linux-gnu/libvulkan_radeon.so \
     usr/lib/x86_64-linux-gnu/libvulkan_lvp.so \
@@ -129,15 +139,15 @@ for package in linux-image-amd64 firmware-amd-graphics libvulkan1 mesa-vulkan-dr
         fail "AureaOS runtime dependency is not installed in the Live rootfs: $package"
 done
 
-[[ -d "$ROOTFS/usr/lib/modules" ]] ||
-    fail "kernel modules directory is missing from the Live rootfs"
-find "$ROOTFS/usr/lib/modules" -type f \
-    \( -name 'amdgpu.ko' -o -name 'amdgpu.ko.xz' -o -name 'amdgpu.ko.zst' \) \
-    -print -quit | grep -q . ||
+# Query SquashFS metadata instead of unpacking the full kernel and firmware
+# trees. This verifies real paths in the image without writing gigabytes of
+# mostly unrelated module/firmware files to the temporary validation directory.
+SQUASHFS_LIST="$TEMP_DIR/squashfs.list"
+unsquashfs -ll "$LIVE_DIR/filesystem.squashfs" > "$SQUASHFS_LIST" ||
+    fail "cannot list filesystem.squashfs metadata"
+grep -Eq 'usr/lib/modules/[^[:space:]]+/[^[:space:]]*/?[^[:space:]]*amdgpu\.ko(\.(xz|zst))?([[:space:]]|$)' "$SQUASHFS_LIST" ||
     fail "AMD amdgpu kernel module is missing from the Live rootfs"
-find "$ROOTFS/usr/lib/firmware/amdgpu" -type f \
-    \( -name '*.bin' -o -name '*.bin.xz' -o -name '*.bin.zst' \) \
-    -print -quit | grep -q . ||
+grep -Eq 'usr/lib/firmware/amdgpu/[^[:space:]]+\.bin(\.(xz|zst))?([[:space:]]|$)' "$SQUASHFS_LIST" ||
     fail "AMD GPU firmware payload is missing from the Live rootfs"
 [[ -s "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.json" ]] ||
     fail "Mesa RADV Vulkan ICD manifest is missing from the Live rootfs"
