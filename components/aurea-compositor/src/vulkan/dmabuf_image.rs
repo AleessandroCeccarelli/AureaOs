@@ -102,10 +102,12 @@ impl VulkanDmabufImage {
         let requirements = unsafe { raw.get_image_memory_requirements(image) };
 
         let fd_loader = khr::external_memory_fd::Device::new(device.instance(), raw);
-        let fd_properties = unsafe {
+        let mut fd_properties = vk::MemoryFdPropertiesKHR::default();
+        unsafe {
             fd_loader.get_memory_fd_properties(
                 vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT,
                 imported_fd.as_raw_fd(),
+                &mut fd_properties,
             )
         }.map_err(|error| {
             if error == vk::Result::ERROR_DEVICE_LOST { device.mark_unusable(); }
