@@ -477,7 +477,7 @@ pub(super) fn render_frame_legacy(
                 output_view,
                 VulkanImageState::General,
             )
-            .map_err(|error| VulkanLegacyFrameRecorderError::Command(error.to_string()))?;
+            .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
         VulkanLegacyFrameRecorder::submit_readback(
             &mut command_buffer,
             device,
