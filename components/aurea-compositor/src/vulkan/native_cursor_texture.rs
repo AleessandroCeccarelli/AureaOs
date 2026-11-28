@@ -104,6 +104,9 @@ impl VulkanNativeCursorAsset {
 }
 
 impl VulkanNativeCursorFrame {
+    pub(crate) fn texture(&self) -> &VulkanShmTexture {
+        self.texture.as_ref()
+    }
     pub(crate) fn width(&self) -> u32 {
         self.width
     }
