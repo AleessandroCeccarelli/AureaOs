@@ -375,9 +375,10 @@ bash "$SCRIPT_DIR/scripts/build-systemd-boot-live-iso.sh" \
     --binary-dir "$BUILD_ROOT/binary" \
     --output "$ISO_PATH"
 
-# The UKI assembler validates its isolated staging tree before mastering.
-# Validate the exact ISO emitted by xorriso before preparing publication artifacts.
-bash "$SCRIPT_DIR/tests/validate-live-image.sh" --iso "$ISO_PATH"
+# build-systemd-boot-live-iso.sh validates the assembly tree before
+# mastering and validates this exact ISO after xorriso completes. Do not repeat
+# the full SquashFS/UKI inspection here; duplicate passes only copy and mount
+# the same multi-gigabyte payload again without adding coverage.
 
 CANDIDATE_NAME="AureaOS-$BUILD_ID.iso"
 CANDIDATE="$OUTPUT_DIR/$CANDIDATE_NAME"
@@ -401,9 +402,15 @@ finalize_publication() {
 trap finalize_publication EXIT
 
 install -m 0644 "$ISO_PATH" "$CANDIDATE_TMP"
-# Re-open the exact temporary ISO before it receives a permanent name.
-bash "$SCRIPT_DIR/tests/validate-live-image.sh" --iso "$CANDIDATE_TMP"
+# The source ISO was already validated after mastering; this is a byte-for-byte
+# publication copy. Verify the copy against the same digest rather than
+# repeating expensive ISO extraction and SquashFS inspection.
+SOURCE_SHA256="$(sha256sum "$ISO_PATH" | awk '{print $1}')"
 ISO_SHA256="$(sha256sum "$CANDIDATE_TMP" | awk '{print $1}')"
+[[ "$ISO_SHA256" == "$SOURCE_SHA256" ]] || {
+    echo "Publication copy differs from the validated ISO." >&2
+    exit 1
+}
 ISO_BYTES="$(stat -c '%s' "$CANDIDATE_TMP")"
 export CANDIDATE_NAME ISO_SHA256 ISO_BYTES
 
