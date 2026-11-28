@@ -125,6 +125,14 @@ for UKI in "$WORK_DIR"/aureaos-live-*.efi; do
 done
 BOOTLOADER_BYTES="$(stat -c '%s' "$BOOTLOADER")"
 ESP_BYTES=$((ESP_SIZE_MIB * 1024 * 1024))
+# Keep FAT16 within its portable cluster-count limit for every supported ESP
+# size. 256 MiB needs 8 KiB clusters; the maximum 2047 MiB ESP needs 32 KiB.
+FAT_SECTORS_PER_CLUSTER=1
+while (( (ESP_BYTES / 512 + FAT_SECTORS_PER_CLUSTER - 1) / FAT_SECTORS_PER_CLUSTER > 65524 )); do
+    FAT_SECTORS_PER_CLUSTER=$((FAT_SECTORS_PER_CLUSTER * 2))
+done
+(( FAT_SECTORS_PER_CLUSTER <= 64 )) ||
+    fail "configured ESP is too large for a portable FAT16 cluster layout"
 (( UKI_BYTES + 2 * BOOTLOADER_BYTES + 8 * 1024 * 1024 < ESP_BYTES )) || {
     echo "UKI payload total: $UKI_BYTES bytes; systemd-boot copies: $((2 * BOOTLOADER_BYTES)) bytes; ESP: $ESP_BYTES bytes." >&2
     fail "UKI payloads do not fit in the configured ${ESP_SIZE_MIB} MiB Live ESP; increase AUREAOS_ESP_SIZE_MIB"
@@ -137,7 +145,7 @@ fi
 # created and no host disk is touched by this build-time operation.
 rm -f -- "$ESP_IMAGE"
 truncate -s "${ESP_SIZE_MIB}M" "$ESP_IMAGE"
-mkfs.vfat -F 16 -n AUREAOS "$ESP_IMAGE" >/dev/null
+mkfs.vfat -F 16 -s "$FAT_SECTORS_PER_CLUSTER" -n AUREAOS "$ESP_IMAGE" >/dev/null
 
 for directory in EFI EFI/BOOT EFI/Linux EFI/systemd loader loader/entries; do
     mmd -i "$ESP_IMAGE" "::/$directory"
@@ -195,7 +203,15 @@ bash "$ISO_DIR/tests/validate-live-image.sh" --binary-dir "$ASSEMBLY_DIR"
 [[ -s "$TEMP_ISO" ]] || fail "xorriso did not create the final ISO"
 mv -f -- "$TEMP_ISO" "$OUTPUT_PATH"
 
+# Validate the exact mastered ISO as well as the staging tree before publish.
+# This verifies the El Torito EFI entry and the GPT ESP that USB firmware sees.
+bash "$ISO_DIR/tests/validate-live-image.sh" --iso "$TEMP_ISO"
+
+[[ -s "$TEMP_ISO" ]] || fail "final ISO disappeared before publication"
+mv -f -- "$TEMP_ISO" "$OUTPUT_PATH"
+
 echo "Created UEFI-only AureaOS Live ISO with systemd-boot and UKI:"
 echo "  $OUTPUT_PATH"
 echo "  ESP: boot/efi.img inside the ISO (${ESP_SIZE_MIB} MiB FAT16/GPT ESP)"
+echo "  FAT16 sectors per cluster: $FAT_SECTORS_PER_CLUSTER"
 echo "  Default entry: $DEFAULT_ENTRY"
