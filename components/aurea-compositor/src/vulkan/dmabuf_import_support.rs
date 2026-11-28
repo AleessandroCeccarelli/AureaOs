@@ -247,8 +247,8 @@ impl VulkanDmabufImportSupport {
             .push_next(&mut modifier_query)
             .push_next(&mut external_query);
 
-        let (external, limits) = {
-            let mut external_properties = vk::ExternalImageFormatProperties::default();
+        let mut external_properties = vk::ExternalImageFormatProperties::default();
+        let limits = {
             let mut image_properties =
                 vk::ImageFormatProperties2::default().push_next(&mut external_properties);
             unsafe {
@@ -259,11 +259,9 @@ impl VulkanDmabufImportSupport {
                 )
             }
             .map_err(|_| VulkanDmabufImportSupportError::ImageConfigurationUnsupported)?;
-            let limits = image_properties.image_format_properties;
-            drop(image_properties);
-            let external = external_properties.external_memory_properties;
-            (external, limits)
+            image_properties.image_format_properties
         };
+        let external = external_properties.external_memory_properties;
         if !external.external_memory_features.contains(vk::ExternalMemoryFeatureFlags::IMPORTABLE)
             || !external.compatible_handle_types.contains(
                 vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT,
