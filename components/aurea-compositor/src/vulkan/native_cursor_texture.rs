@@ -101,16 +101,9 @@ impl VulkanNativeCursorAsset {
             .as_millis() as u64;
         &self.frames[frame_index_for_elapsed(&delays, elapsed_ms)]
     }
-
-    pub(crate) fn has_animation(&self) -> bool {
-        self.frames.len() > 1
-    }
 }
 
 impl VulkanNativeCursorFrame {
-    pub(crate) fn texture(&self) -> &VulkanShmTexture {
-        self.texture.as_ref()
-    }
     pub(crate) fn width(&self) -> u32 {
         self.width
     }
@@ -122,9 +115,6 @@ impl VulkanNativeCursorFrame {
     }
     pub(crate) fn hotspot_y(&self) -> u32 {
         self.hotspot_y
-    }
-    pub(crate) fn delay_ms(&self) -> u32 {
-        self.delay_ms
     }
 }
 
