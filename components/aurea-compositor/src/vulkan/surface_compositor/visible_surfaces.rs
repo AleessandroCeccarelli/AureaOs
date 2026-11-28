@@ -8,6 +8,9 @@
 use std::sync::Arc;
 
 #[cfg(feature = "drm")]
+use smithay::reexports::wayland_server::Resource;
+
+#[cfg(feature = "drm")]
 use std::collections::HashSet;
 
 use crate::{
