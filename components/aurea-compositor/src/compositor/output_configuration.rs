@@ -67,6 +67,46 @@ impl AureaCompositor {
             .map_err(CompositorOutputConfigurationError::Manager)
     }
 
+    /// Validates a complete set of output changes without publishing any
+    /// part of the resulting configuration.
+    ///
+    /// The returned manager is one detached candidate for the whole batch.
+    /// Callers must finish every required physical KMS transition before
+    /// committing it, then publish the changed outputs together.
+    pub fn prepare_output_configurations(
+        &self,
+        configurations: &[(OutputId, OutputConfiguration)],
+    ) -> Result<crate::output::manager::OutputManager, CompositorOutputConfigurationError> {
+        self.output_manager
+            .staged_configurations(configurations)
+            .map_err(CompositorOutputConfigurationError::Manager)
+    }
+
+    /// Installs one fully prepared multi-output candidate and publishes one
+    /// Wayland reconciliation only after the caller has completed all KMS
+    /// transitions. If publication fails, the previous manager is restored.
+    pub fn commit_prepared_output_configurations(
+        &mut self,
+        display: &DisplayHandle,
+        changed_outputs: &[OutputId],
+        staged: crate::output::manager::OutputManager,
+    ) -> Result<(), CompositorOutputConfigurationError> {
+        let previous = std::mem::replace(&mut self.output_manager, staged);
+        let changes = OutputReconciliation {
+            updated: changed_outputs.to_vec(),
+            ..OutputReconciliation::default()
+        };
+
+        if let Err(error) = self.publish_output_reconciliation(display, previous.clone(), &changes) {
+            self.output_manager = previous;
+            return Err(CompositorOutputConfigurationError::Publication(error));
+        }
+
+        self.refresh_pointer_focus_at_current_location();
+        self.request_all_output_frames();
+        Ok(())
+    }
+
     /// Installs a previously validated candidate after its physical output
     /// change has completed. Publication failure restores the live manager.
     pub fn commit_prepared_output_configuration(
