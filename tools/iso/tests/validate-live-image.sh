@@ -80,20 +80,34 @@ ESP_IMAGE="$ROOT/boot/efi.img"
 # those entire trees needlessly expands thousands of files and can stall builds.
 ROOTFS="$TEMP_DIR/rootfs"
 mkdir -p "$ROOTFS"
-unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" \
-    usr/local/bin/aurea-desktop \
-    usr/local/bin/aurea-live-session \
-    etc/systemd/system/aurea-desktop.service \
-    etc/pam.d/aurea-desktop \
-    etc/systemd/system/multi-user.target.wants/aurea-desktop.service \
-    etc/os-release usr/lib/os-release etc/debian_version usr/lib/systemd/systemd sbin/init \
-    usr/lib/systemd/system/multi-user.target etc/systemd/system/default.target \
-    var/lib/dpkg/status \
-    usr/share/vulkan/icd.d \
-    usr/lib/x86_64-linux-gnu/libvulkan_radeon.so \
-    usr/lib/x86_64-linux-gnu/libvulkan_lvp.so \
-    usr/share/aureaos/human-interfaces/icons/generated/context-menu \
-    usr/share/icons/AureaOS-Light usr/share/icons/AureaOS-Dark \
+
+# Never pass whole icon-theme directories to unsquashfs: that recursively
+# expands every inherited icon and can turn a small validation into a huge,
+# opaque extraction. Extract only the exact files that the checks below use.
+SQUASHFS_EXTRACT_PATHS=(
+    usr/local/bin/aurea-desktop
+    usr/local/bin/aurea-live-session
+    etc/systemd/system/aurea-desktop.service
+    etc/pam.d/aurea-desktop
+    etc/systemd/system/multi-user.target.wants/aurea-desktop.service
+    etc/os-release usr/lib/os-release etc/debian_version usr/lib/systemd/systemd sbin/init
+    usr/lib/systemd/system/multi-user.target etc/systemd/system/default.target
+    var/lib/dpkg/status
+    usr/share/vulkan/icd.d
+    usr/lib/x86_64-linux-gnu/libvulkan_radeon.so
+    usr/lib/x86_64-linux-gnu/libvulkan_lvp.so
+    usr/share/aureaos/human-interfaces/icons/generated/context-menu/context-menu-light-256.rgba
+    usr/share/aureaos/human-interfaces/icons/generated/context-menu/context-menu-dark-256.rgba
+)
+CURSOR_NAMES=(default pointer text vertical-text crosshair help busy left_ptr_watch not-allowed copy alias grab grabbing move all-scroll ew-resize ns-resize resize-nesw resize-nwse pencil up-arrow pin person zoom-in zoom-out context-menu)
+for theme in AureaOS-Light AureaOS-Dark; do
+    SQUASHFS_EXTRACT_PATHS+=("usr/share/icons/$theme/index.theme")
+    for cursor in "${CURSOR_NAMES[@]}"; do
+        SQUASHFS_EXTRACT_PATHS+=("usr/share/icons/$theme/cursors/$cursor")
+    done
+done
+
+unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" "${SQUASHFS_EXTRACT_PATHS[@]}" \
     >/dev/null 2>&1 || fail "cannot inspect the AureaOS desktop session and artwork inside filesystem.squashfs"
 
 [[ -x "$ROOTFS/usr/local/bin/aurea-desktop" ]] ||
