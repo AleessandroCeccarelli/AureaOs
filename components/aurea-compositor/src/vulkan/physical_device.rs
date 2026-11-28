@@ -93,8 +93,6 @@ impl VulkanContext {
                 let api_major = vk::api_version_major(properties.api_version);
                 let api_minor = vk::api_version_minor(properties.api_version);
                 let rendering_capabilities = VulkanRenderingCapabilities::inspect(device);
-                let modern_renderer =
-                    rendering_capabilities.mode() == VulkanRendererMode::ModernDynamic;
                 GraphicsCandidate {
                     device_index,
                     name: device.name().to_owned(),
