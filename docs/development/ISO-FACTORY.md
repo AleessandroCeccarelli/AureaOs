@@ -323,3 +323,10 @@ No evidence from this failure establishes a GPU, Vulkan or Smithay fault: the sy
 - The target package list no longer installs `librsvg2-bin` or `xcursorgen`, and the chroot hook no longer builds cursors or purges those tools. This keeps X11 utilities and their build dependencies out of the AureaOS Live filesystem while preserving the native Xcursor asset format used by the Wayland compositor.
 - The builder image may contain X11-related build utilities temporarily; they are confined to the disposable Podman container and are not part of the shipped OS.
 - This source correction has not yet been validated by a Fedora ISO build or physical boot. The previously preserved failed workspace belongs to the older source commit; do not resume it with the new source snapshot. Use the fresh commit-specific workspace created by the wrapper.
+
+
+### UKI inspection CLI correction — 2026-11-28
+
+- The first full live-build binary stage completed and produced its intermediate hybrid ISO, but final systemd-boot/UKI assembly stopped while inspecting the generated UKI. The log ended with `ukify: error: unrecognized arguments: <UKI path>`.
+- Debian Trixie's `ukify` CLI expects inspect options before the `inspect` verb: `ukify --all inspect FILE`. Both the UKI assembler and the final image validator now use that argument order. The earlier `ukify inspect --all FILE` invocation was rejected by the parser before image validation or final ISO promotion.
+- This correction is committed to `main`; it has not yet been re-run in the Fedora/Podman build. The preserved failed workspace is from the previous source commit and must not be resumed under the new commit. Start a fresh commit-specific build as documented above.
