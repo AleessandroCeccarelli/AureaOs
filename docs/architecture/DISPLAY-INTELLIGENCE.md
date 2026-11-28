@@ -362,3 +362,26 @@ active native mode remains a no-op.
 This guard applies to both the public surface-manager staging API and the
 server's automatic render-time staging path. It does not implement the missing
 display-settings request queue or logical Wayland publication transaction.
+
+## Coordinated multi-output candidate publication (2026-11-28)
+
+The output manager now exposes `staged_configurations`, which validates a
+batch of changes against one detached manager candidate. Duplicate runtime
+output IDs are rejected, and failure on any member discards the entire
+candidate without changing the live manager.
+
+The compositor exposes matching batch operations:
+- `prepare_output_configurations` prepares the complete candidate without
+  changing Wayland-visible state.
+- `commit_prepared_output_configurations` installs that candidate and
+  performs one Wayland reconciliation for the changed outputs, restoring the
+  previous manager if publication fails.
+
+This establishes the logical all-or-nothing boundary for a multi-output
+request. It does **not** yet coordinate the physical KMS operations: a server
+transaction owner must stage every affected surface, render at candidate
+dimensions, wait for all corresponding VBlanks, and roll back all staged
+surfaces if any member fails or disconnects. The shell-to-compositor request
+transport and a concrete implementation of the shared `DisplayManager`
+contract are also still absent. No build, test, or hardware validation has
+been run for this addition.
