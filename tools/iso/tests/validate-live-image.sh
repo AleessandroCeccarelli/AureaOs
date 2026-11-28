@@ -130,14 +130,15 @@ for package in linux-image-amd64 firmware-amd-graphics libvulkan1 mesa-vulkan-dr
         fail "AureaOS runtime dependency is not installed in the Live rootfs: $package"
 done
 
-# Check the GPU module and firmware directly through the read-only SquashFS
-# mount. find stops at the first matching file and does not enumerate the
-# complete Debian filesystem.
-AMDGPU_MODULE="$(find "$ROOTFS/usr/lib/modules" -type f -path '*/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.ko*' -print -quit)"
-[[ -n "$AMDGPU_MODULE" ]] ||
+# Check the GPU module and firmware through bounded shell globs. Avoid
+# recursive find over the full kernel-module and firmware trees: those trees
+# contain many thousands of entries and are not needed for this assertion.
+shopt -s nullglob
+AMDGPU_MODULES=("$ROOTFS"/usr/lib/modules/*/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.ko*)
+(("${#AMDGPU_MODULES[@]}" > 0)) ||
     fail "AMD amdgpu kernel module is missing from the Live rootfs"
-AMDGPU_FIRMWARE="$(find "$ROOTFS/usr/lib/firmware/amdgpu" -type f -name '*.bin*' -print -quit)"
-[[ -n "$AMDGPU_FIRMWARE" ]] ||
+AMDGPU_FIRMWARE_FILES=("$ROOTFS"/usr/lib/firmware/amdgpu/*.bin*)
+(("${#AMDGPU_FIRMWARE_FILES[@]}" > 0)) ||
     fail "AMD GPU firmware payload is missing from the Live rootfs"
 
 [[ -s "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.json" ]] ||
