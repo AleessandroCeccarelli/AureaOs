@@ -103,7 +103,7 @@ for KERNEL in "${KERNELS[@]}"; do
         --output="$UKI_PATH"
 
     [[ -s "$UKI_PATH" ]] || fail "ukify did not create $UKI_PATH"
-    ukify inspect --all "$UKI_PATH" > "$WORK_DIR/$UKI_NAME.inspect"
+    ukify --all inspect "$UKI_PATH" > "$WORK_DIR/$UKI_NAME.inspect"
     grep -Fq 'boot=live' "$WORK_DIR/$UKI_NAME.inspect" ||
         fail "$UKI_NAME does not contain the required boot=live command line"
 
