@@ -325,7 +325,34 @@ No evidence from this failure establishes a GPU, Vulkan or Smithay fault: the sy
 - This source correction has not yet been validated by a Fedora ISO build or physical boot. The previously preserved failed workspace belongs to the older source commit; do not resume it with the new source snapshot. Use the fresh commit-specific workspace created by the wrapper.
 
 
-### UKI inspection CLI correction — 2026-11-28
+### Kernel, UKI size, and temporary bootloader staging — 2026-11-28
+
+The Fedora build report confirmed that Debian Live installs the explicit
+`linux-image-amd64` package and produced kernel/initramfs
+`6.12.118+deb13-amd64`. The UKI builder had relied on version autodetection;
+it now passes the exact version extracted from the staged kernel filename via
+`ukify --uname`.
+
+The UKI assembly stopped because the combined UKI payload did not fit the
+31 MiB El Torito EFI image. The chroot now stages
+`/etc/initramfs-tools/conf.d/aureaos.conf` with `COMPRESS=xz` before kernel
+installation, reducing the embedded initramfs size. The assembler reports
+exact UKI, bootloader, and ESP byte totals if the capacity check still fails.
+
+Debian Live Build's intermediate hybrid-ISO stage is not AureaOS's final
+bootloader. Its configuration now uses temporary Syslinux staging instead of
+GRUB EFI, avoiding the unnecessary GRUB/shim package set. The final image is
+still assembled separately as UEFI-only systemd-boot + UKI, and its validator
+continues to reject GRUB payloads.
+
+Obsolete failed Podman workspaces can be listed safely with
+`bash tools/iso/cleanup-failed-builds.sh`. After reviewing the list, remove
+only recognized old commit-specific workspaces with
+`sudo bash tools/iso/cleanup-failed-builds.sh --apply`. The current commit's
+workspace is always preserved, active workspaces are skipped, and unknown
+directories are not touched.
+
+## UKI inspection CLI correction — 2026-11-28
 
 - The first full live-build binary stage completed and produced its intermediate hybrid ISO, but final systemd-boot/UKI assembly stopped while inspecting the generated UKI. The log ended with `ukify: error: unrecognized arguments: <UKI path>`.
 - Debian Trixie's `ukify` CLI expects inspect options before the `inspect` verb: `ukify --all inspect FILE`. Both the UKI assembler and the final image validator now use that argument order. The earlier `ukify inspect --all FILE` invocation was rejected by the parser before image validation or final ISO promotion.
