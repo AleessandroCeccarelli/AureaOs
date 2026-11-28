@@ -24,6 +24,7 @@ pub(crate) enum VulkanSurfaceCompositionError {
     TooManySurfaces,
     FrameMemoryLimitExceeded,
     CompatibilityRendererNotIntegrated,
+    #[cfg(feature = "legacy-vulkan-frame")]
     FrameResourceCountMismatch,
 }
 
@@ -110,6 +111,7 @@ impl fmt::Display for VulkanSurfaceCompositionError {
             Self::CompatibilityRendererNotIntegrated => formatter.write_str(
                 "The Vulkan compatibility device is initialized, but its complete frame compositor is not integrated",
             ),
+            #[cfg(feature = "legacy-vulkan-frame")]
             Self::FrameResourceCountMismatch => formatter.write_str(
                 "The legacy frame surface, image-view, and descriptor-binding counts do not match",
             ),
