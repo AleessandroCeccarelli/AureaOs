@@ -27,7 +27,7 @@ use super::{
 ///
 /// Startup and hot-plug registration both use this handler so VBlank
 /// completion, buffer retirement, and device errors follow identical paths.
-pub(super) fn handle_drm_event(
+pub(in crate::server) fn handle_drm_event(
     state: &mut WaylandState,
     node: DrmNode,
     event: smithay::backend::drm::DrmEvent,
