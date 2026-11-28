@@ -41,24 +41,21 @@ impl VulkanRenderingCapabilities {
 
         // This core query is valid for Vulkan 1.0 devices and does not chain
         // Vulkan 1.1/1.3 feature structures onto an older physical device.
-        let _core_features =
-            unsafe { instance.get_physical_device_features(physical_device) };
+        let _core_features = unsafe { instance.get_physical_device_features(physical_device) };
 
-        let (dynamic_rendering, synchronization2) =
-            if api_version >= vk::API_VERSION_1_3 {
-                let mut vulkan13 = vk::PhysicalDeviceVulkan13Features::default();
-                let mut features =
-                    vk::PhysicalDeviceFeatures2::default().push_next(&mut vulkan13);
-                unsafe {
-                    instance.get_physical_device_features2(physical_device, &mut features);
-                }
-                (
-                    vulkan13.dynamic_rendering == vk::TRUE,
-                    vulkan13.synchronization2 == vk::TRUE,
-                )
-            } else {
-                (false, false)
-            };
+        let (dynamic_rendering, synchronization2) = if api_version >= vk::API_VERSION_1_3 {
+            let mut vulkan13 = vk::PhysicalDeviceVulkan13Features::default();
+            let mut features = vk::PhysicalDeviceFeatures2::default().push_next(&mut vulkan13);
+            unsafe {
+                instance.get_physical_device_features2(physical_device, &mut features);
+            }
+            (
+                vulkan13.dynamic_rendering == vk::TRUE,
+                vulkan13.synchronization2 == vk::TRUE,
+            )
+        } else {
+            (false, false)
+        };
 
         let mode = if dynamic_rendering && synchronization2 {
             VulkanRendererMode::ModernDynamic
@@ -139,9 +136,7 @@ impl VulkanRenderingFeaturePlan {
 
     /// Builds the Vulkan 1.3 feature structure only for the modern path.
     /// Legacy devices must not receive Vulkan 1.3 feature structures.
-    pub(super) fn enabled_features(
-        &self,
-    ) -> Option<vk::PhysicalDeviceVulkan13Features<'static>> {
+    pub(super) fn enabled_features(&self) -> Option<vk::PhysicalDeviceVulkan13Features<'static>> {
         (self.mode == VulkanRendererMode::ModernDynamic).then(|| {
             vk::PhysicalDeviceVulkan13Features::default()
                 .dynamic_rendering(self.dynamic_rendering)

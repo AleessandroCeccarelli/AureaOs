@@ -139,13 +139,11 @@ impl VulkanContext {
 
         match VulkanRenderingFeaturePlan::from_device(device) {
             Err(error) => Some(error),
-            Ok(plan) if plan.mode() == VulkanRendererMode::CompatibilityPending => Some(
-                format!(
-                    "GPU '{}' exposes Vulkan API version {} but the complete compatibility frame renderer is not yet integrated",
-                    device.name(),
-                    device.api_version()
-                ),
-            ),
+            Ok(plan) if plan.mode() == VulkanRendererMode::CompatibilityPending => Some(format!(
+                "GPU '{}' exposes Vulkan API version {} but the complete compatibility frame renderer is not yet integrated",
+                device.name(),
+                device.api_version()
+            )),
             Ok(_) => None,
         }
     }

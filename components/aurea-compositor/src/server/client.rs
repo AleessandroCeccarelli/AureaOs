@@ -22,9 +22,7 @@ use smithay::{
 
 use crate::{
     AureaCompositor, compositor::window_placement::center_first_mapped_window,
-    render::{
-        shm_surface::update_surface_tree_snapshots,
-    },
+    render::shm_surface::update_surface_tree_snapshots,
 };
 
 /// State attached to each connected Wayland client.

@@ -10,8 +10,8 @@ use std::{collections::HashMap, sync::Arc};
 use smithay::reexports::ash::vk;
 
 use super::{
-    VulkanColorLoad, VulkanDisplayColorPassError, VulkanLegacyRenderPass,
-    VulkanLogicalDevice, VulkanSharedLegacyDisplayColorPass,
+    VulkanColorLoad, VulkanDisplayColorPassError, VulkanLegacyRenderPass, VulkanLogicalDevice,
+    VulkanSharedLegacyDisplayColorPass,
 };
 
 /// Owns one display-color pass per supported output format.
@@ -22,7 +22,10 @@ pub(crate) struct VulkanLegacyDisplayColorManager {
 
 impl VulkanLegacyDisplayColorManager {
     pub(crate) fn new(device: Arc<VulkanLogicalDevice>) -> Self {
-        Self { device, passes: HashMap::new() }
+        Self {
+            device,
+            passes: HashMap::new(),
+        }
     }
 
     pub(crate) fn get(
@@ -32,11 +35,17 @@ impl VulkanLegacyDisplayColorManager {
         if let Some(pass) = self.passes.get(&format) {
             return Ok(Arc::clone(pass));
         }
-        let render_pass = Arc::new(VulkanLegacyRenderPass::new_shared(
-            Arc::clone(&self.device), format, VulkanColorLoad::DontCare,
-        ).map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?);
+        let render_pass = Arc::new(
+            VulkanLegacyRenderPass::new_shared(
+                Arc::clone(&self.device),
+                format,
+                VulkanColorLoad::DontCare,
+            )
+            .map_err(|error| VulkanDisplayColorPassError::Pipeline(error.to_string()))?,
+        );
         let pass = Arc::new(VulkanSharedLegacyDisplayColorPass::new(
-            Arc::clone(&self.device), render_pass,
+            Arc::clone(&self.device),
+            render_pass,
         )?);
         self.passes.insert(format, Arc::clone(&pass));
         Ok(pass)

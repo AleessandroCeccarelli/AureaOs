@@ -68,7 +68,9 @@ impl VulkanReadbackSubmission {
             .ok_or(VulkanReadbackError::ImageNotOwned)?;
         if device.is_unusable() {
             quarantine_readback_inputs(&device, view, None, capture_target);
-            return Err(VulkanReadbackError::Submission(vk::Result::ERROR_DEVICE_LOST));
+            return Err(VulkanReadbackError::Submission(
+                vk::Result::ERROR_DEVICE_LOST,
+            ));
         }
         if !pool.owns_device(&device) {
             return Err(VulkanReadbackError::DeviceMismatch);
@@ -181,7 +183,7 @@ impl VulkanReadbackSubmission {
                     self.device.mark_unusable();
                 }
                 Err(VulkanReadbackError::FenceStatus(error))
-            },
+            }
         }
     }
 
@@ -258,7 +260,6 @@ impl Drop for VulkanReadbackSubmission {
         self.device.free_command_buffer(self.command_buffer);
     }
 }
-
 
 /// Retains every resource whose destructor may touch a lost Vulkan device.
 fn quarantine_readback_inputs(

@@ -132,7 +132,9 @@ impl CpuPresentationBackend {
                 let rollback = self.rollback_mode_change(surface);
                 return Err(CpuPresentationError::KmsOperation(match rollback {
                     Ok(()) => format!("CPU framebuffer lookup failed: {error}"),
-                    Err(restore) => format!("CPU framebuffer lookup failed: {error}; restoring previous KMS mode failed: {restore}"),
+                    Err(restore) => format!(
+                        "CPU framebuffer lookup failed: {error}; restoring previous KMS mode failed: {restore}"
+                    ),
                 }));
             }
         };
@@ -153,7 +155,9 @@ impl CpuPresentationBackend {
             let rollback = self.rollback_mode_change(surface);
             return Err(CpuPresentationError::KmsOperation(match rollback {
                 Ok(()) => format!("Unable to begin CPU framebuffer test: {error}"),
-                Err(restore) => format!("Unable to begin CPU framebuffer test: {error}; restoring previous KMS mode failed: {restore}"),
+                Err(restore) => format!(
+                    "Unable to begin CPU framebuffer test: {error}; restoring previous KMS mode failed: {restore}"
+                ),
             }));
         }
         let requires_modeset = surface.commit_pending();
@@ -164,7 +168,9 @@ impl CpuPresentationBackend {
             return match pool.test_failed() {
                 Ok(_) => Err(CpuPresentationError::KmsOperation(match rollback {
                     Ok(()) => operation,
-                    Err(restore) => format!("{operation}; restoring previous KMS mode failed: {restore}"),
+                    Err(restore) => {
+                        format!("{operation}; restoring previous KMS mode failed: {restore}")
+                    }
                 })),
                 Err(lifecycle) => Err(CpuPresentationError::Recovery {
                     operation,
@@ -176,8 +182,12 @@ impl CpuPresentationBackend {
         if let Err(error) = pool.test_passed() {
             let rollback = self.rollback_mode_change(surface);
             return Err(CpuPresentationError::KmsOperation(match rollback {
-                Ok(()) => format!("CPU framebuffer lifecycle rejected successful TEST_ONLY: {error}"),
-                Err(restore) => format!("CPU framebuffer lifecycle rejected successful TEST_ONLY: {error}; restoring previous KMS mode failed: {restore}"),
+                Ok(()) => {
+                    format!("CPU framebuffer lifecycle rejected successful TEST_ONLY: {error}")
+                }
+                Err(restore) => format!(
+                    "CPU framebuffer lifecycle rejected successful TEST_ONLY: {error}; restoring previous KMS mode failed: {restore}"
+                ),
             }));
         }
         let submission = if requires_modeset {
@@ -192,7 +202,9 @@ impl CpuPresentationBackend {
             return match pool.commit_failed() {
                 Ok(_) => Err(CpuPresentationError::KmsOperation(match rollback {
                     Ok(()) => operation,
-                    Err(restore) => format!("{operation}; restoring previous KMS mode failed: {restore}"),
+                    Err(restore) => {
+                        format!("{operation}; restoring previous KMS mode failed: {restore}")
+                    }
                 })),
                 Err(lifecycle) => Err(CpuPresentationError::Recovery {
                     operation,
@@ -218,7 +230,9 @@ impl CpuPresentationBackend {
         let Some(displayed) = pool.pending() else {
             return Ok(None);
         };
-        let released = pool.page_flip_complete(displayed).map_err(CpuPresentationError::from)?;
+        let released = pool
+            .page_flip_complete(displayed)
+            .map_err(CpuPresentationError::from)?;
         self.pending_mode_rollback = None;
         Ok(released)
     }

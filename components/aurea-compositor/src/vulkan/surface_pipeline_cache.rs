@@ -20,11 +20,11 @@ use crate::{
 
 use super::{
     VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
-    VulkanLegacyGraphicsPipeline, VulkanLegacyRenderPass, VulkanLogicalDevice,
-    VulkanNativeCursorTexture, VulkanSampler, VulkanSamplerError,
-    VulkanShaderError, VulkanShaderModule, VulkanShmTexture, VulkanTextureBindingError,
-    VulkanTextureBindingPool, VulkanTextureDescriptorSetLayout, VulkanTextureLayoutError,
-    VulkanWallpaperTexture, VulkanLegacyRenderPassManager, VulkanLegacyRenderPassError,
+    VulkanLegacyGraphicsPipeline, VulkanLegacyRenderPass, VulkanLegacyRenderPassError,
+    VulkanLegacyRenderPassManager, VulkanLogicalDevice, VulkanNativeCursorTexture, VulkanSampler,
+    VulkanSamplerError, VulkanShaderError, VulkanShaderModule, VulkanShmTexture,
+    VulkanTextureBindingError, VulkanTextureBindingPool, VulkanTextureDescriptorSetLayout,
+    VulkanTextureLayoutError, VulkanWallpaperTexture,
     desktop_icon_texture_cache::{
         VulkanDesktopIconTextureCache, VulkanDesktopIconTextureCacheError,
     },
@@ -63,7 +63,9 @@ impl fmt::Display for VulkanSurfacePipelineCacheError {
             Self::Sampler(error) => write!(formatter, "Surface sampler: {error}"),
             Self::Shader(error) => write!(formatter, "Surface shader: {error}"),
             Self::Pipeline(error) => write!(formatter, "Surface pipeline: {error}"),
-            Self::LegacyRenderPass(error) => write!(formatter, "Legacy surface render pass: {error}"),
+            Self::LegacyRenderPass(error) => {
+                write!(formatter, "Legacy surface render pass: {error}")
+            }
             #[cfg(feature = "drm")]
             Self::DisplayColor(error) => write!(formatter, "Legacy display-color pass: {error}"),
             Self::WallpaperDecode(error) => write!(formatter, "Wallpaper decode service: {error}"),
@@ -91,9 +93,12 @@ pub(crate) struct VulkanSurfacePipelineCache {
     legacy_render_passes: VulkanLegacyRenderPassManager,
     #[cfg(feature = "drm")]
     legacy_display_color: VulkanLegacyDisplayColorManager,
-    legacy_surface_pipelines: HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
-    legacy_wallpaper_pipelines: HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
-    legacy_cursor_trail_pipelines: HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
+    legacy_surface_pipelines:
+        HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
+    legacy_wallpaper_pipelines:
+        HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
+    legacy_cursor_trail_pipelines:
+        HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -246,7 +251,10 @@ impl VulkanSurfacePipelineCache {
         VulkanLegacyGraphicsPipeline::new(
             self.device.as_ref(),
             render_pass,
-            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            VulkanGraphicsShaders {
+                vertex: &vertex,
+                fragment: &fragment,
+            },
             &descriptor_layouts,
             &transform_range,
         )
@@ -280,7 +288,10 @@ impl VulkanSurfacePipelineCache {
         VulkanLegacyGraphicsPipeline::new(
             self.device.as_ref(),
             render_pass,
-            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            VulkanGraphicsShaders {
+                vertex: &vertex,
+                fragment: &fragment,
+            },
             &descriptor_layouts,
             &uv_range,
         )
@@ -312,7 +323,10 @@ impl VulkanSurfacePipelineCache {
         VulkanLegacyGraphicsPipeline::new(
             self.device.as_ref(),
             render_pass,
-            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
+            VulkanGraphicsShaders {
+                vertex: &vertex,
+                fragment: &fragment,
+            },
             &descriptor_layouts,
             &trail_range,
         )
@@ -328,21 +342,30 @@ impl VulkanSurfacePipelineCache {
             self.device.as_ref(),
             include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
             include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_COMPAT_SPV")),
-        ).map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
         let fragment = VulkanShaderModule::from_renderer_variants(
             self.device.as_ref(),
             include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_SPV")),
             include_bytes!(env!("AUREA_SURFACE_TEXTURE_FRAG_COMPAT_SPV")),
-        ).map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
         let layouts = [self.descriptor_layout.handle()];
         let ranges = [vk::PushConstantRange::default()
-            .stage_flags(vk::ShaderStageFlags::VERTEX).offset(0)
+            .stage_flags(vk::ShaderStageFlags::VERTEX)
+            .offset(0)
             .size(std::mem::size_of::<u32>() as u32)];
         super::VulkanSharedLegacyGraphicsPipeline::new(
-            Arc::clone(&self.device), render_pass,
-            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
-            &layouts, &ranges,
-        ).map_err(VulkanSurfacePipelineCacheError::Pipeline)
+            Arc::clone(&self.device),
+            render_pass,
+            VulkanGraphicsShaders {
+                vertex: &vertex,
+                fragment: &fragment,
+            },
+            &layouts,
+            &ranges,
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Pipeline)
     }
 
     /// Creates a shared-ownership legacy wallpaper pipeline.
@@ -354,21 +377,30 @@ impl VulkanSurfacePipelineCache {
             self.device.as_ref(),
             include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_VERT_SPV")),
             include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_VERT_COMPAT_SPV")),
-        ).map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
         let fragment = VulkanShaderModule::from_renderer_variants(
             self.device.as_ref(),
             include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_FRAG_SPV")),
             include_bytes!(env!("AUREA_WALLPAPER_TEXTURE_FRAG_COMPAT_SPV")),
-        ).map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
         let layouts = [self.descriptor_layout.handle()];
         let ranges = [vk::PushConstantRange::default()
-            .stage_flags(vk::ShaderStageFlags::VERTEX).offset(0)
+            .stage_flags(vk::ShaderStageFlags::VERTEX)
+            .offset(0)
             .size((4 * std::mem::size_of::<f32>()) as u32)];
         super::VulkanSharedLegacyGraphicsPipeline::new(
-            Arc::clone(&self.device), render_pass,
-            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
-            &layouts, &ranges,
-        ).map_err(VulkanSurfacePipelineCacheError::Pipeline)
+            Arc::clone(&self.device),
+            render_pass,
+            VulkanGraphicsShaders {
+                vertex: &vertex,
+                fragment: &fragment,
+            },
+            &layouts,
+            &ranges,
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Pipeline)
     }
 
     /// Creates a shared-ownership legacy cursor-trail pipeline.
@@ -380,21 +412,30 @@ impl VulkanSurfacePipelineCache {
             self.device.as_ref(),
             include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_SPV")),
             include_bytes!(env!("AUREA_SURFACE_TEXTURE_VERT_COMPAT_SPV")),
-        ).map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
         let fragment = VulkanShaderModule::from_renderer_variants(
             self.device.as_ref(),
             include_bytes!(env!("AUREA_CURSOR_TRAIL_FRAG_SPV")),
             include_bytes!(env!("AUREA_CURSOR_TRAIL_FRAG_COMPAT_SPV")),
-        ).map_err(VulkanSurfacePipelineCacheError::Shader)?;
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Shader)?;
         let layouts = [self.descriptor_layout.handle()];
         let ranges = [vk::PushConstantRange::default()
             .stage_flags(vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT)
-            .offset(0).size((2 * std::mem::size_of::<u32>()) as u32)];
+            .offset(0)
+            .size((2 * std::mem::size_of::<u32>()) as u32)];
         super::VulkanSharedLegacyGraphicsPipeline::new(
-            Arc::clone(&self.device), render_pass,
-            VulkanGraphicsShaders { vertex: &vertex, fragment: &fragment },
-            &layouts, &ranges,
-        ).map_err(VulkanSurfacePipelineCacheError::Pipeline)
+            Arc::clone(&self.device),
+            render_pass,
+            VulkanGraphicsShaders {
+                vertex: &vertex,
+                fragment: &fragment,
+            },
+            &layouts,
+            &ranges,
+        )
+        .map_err(VulkanSurfacePipelineCacheError::Pipeline)
     }
 
     /// Ensures a cached shared-ownership surface pipeline for a format/load-op pair.
@@ -411,7 +452,8 @@ impl VulkanSurfacePipelineCache {
             LegacyPipelineLoad::Clear => self.legacy_clear_render_pass(format),
             LegacyPipelineLoad::Load => self.legacy_load_render_pass(format),
             LegacyPipelineLoad::Discard => self.legacy_discard_render_pass(format),
-        }.map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
+        }
+        .map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
         let pipeline = self.create_shared_legacy_surface_pipeline(render_pass)?;
         self.legacy_surface_pipelines.insert(key, pipeline);
         Ok(())
@@ -423,12 +465,15 @@ impl VulkanSurfacePipelineCache {
         load: LegacyPipelineLoad,
     ) -> Result<(), VulkanSurfacePipelineCacheError> {
         let key = (format, load);
-        if self.legacy_wallpaper_pipelines.contains_key(&key) { return Ok(()); }
+        if self.legacy_wallpaper_pipelines.contains_key(&key) {
+            return Ok(());
+        }
         let render_pass = match load {
             LegacyPipelineLoad::Clear => self.legacy_clear_render_pass(format),
             LegacyPipelineLoad::Load => self.legacy_load_render_pass(format),
             LegacyPipelineLoad::Discard => self.legacy_discard_render_pass(format),
-        }.map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
+        }
+        .map_err(VulkanSurfacePipelineCacheError::LegacyRenderPass)?;
         let pipeline = self.create_shared_legacy_wallpaper_pipeline(render_pass)?;
         self.legacy_wallpaper_pipelines.insert(key, pipeline);
         Ok(())
@@ -440,7 +485,9 @@ impl VulkanSurfacePipelineCache {
         load: LegacyPipelineLoad,
     ) -> Result<(), VulkanSurfacePipelineCacheError> {
         let key = (format, load);
-        if self.legacy_cursor_trail_pipelines.contains_key(&key) { return Ok(()); }
+        if self.legacy_cursor_trail_pipelines.contains_key(&key) {
+            return Ok(());
+        }
         let render_pass = match load {
             LegacyPipelineLoad::Clear => self.legacy_clear_render_pass(format),
             LegacyPipelineLoad::Load => self.legacy_load_render_pass(format),
@@ -505,7 +552,8 @@ impl VulkanSurfacePipelineCache {
         wallpaper: bool,
         cursor_trail: bool,
         display_color: bool,
-    ) -> Result<Option<Arc<VulkanSharedLegacyDisplayColorPass>>, VulkanSurfacePipelineCacheError> {
+    ) -> Result<Option<Arc<VulkanSharedLegacyDisplayColorPass>>, VulkanSurfacePipelineCacheError>
+    {
         self.prepare_shared_legacy_frame_resources_without_display_color(
             format,
             wallpaper,
@@ -521,19 +569,25 @@ impl VulkanSurfacePipelineCache {
     }
 
     pub(crate) fn shared_legacy_surface_pipeline(
-        &self, format: vk::Format, load: LegacyPipelineLoad,
+        &self,
+        format: vk::Format,
+        load: LegacyPipelineLoad,
     ) -> Option<&super::VulkanSharedLegacyGraphicsPipeline> {
         self.legacy_surface_pipelines.get(&(format, load))
     }
 
     pub(crate) fn shared_legacy_wallpaper_pipeline(
-        &self, format: vk::Format, load: LegacyPipelineLoad,
+        &self,
+        format: vk::Format,
+        load: LegacyPipelineLoad,
     ) -> Option<&super::VulkanSharedLegacyGraphicsPipeline> {
         self.legacy_wallpaper_pipelines.get(&(format, load))
     }
 
     pub(crate) fn shared_legacy_cursor_trail_pipeline(
-        &self, format: vk::Format, load: LegacyPipelineLoad,
+        &self,
+        format: vk::Format,
+        load: LegacyPipelineLoad,
     ) -> Option<&super::VulkanSharedLegacyGraphicsPipeline> {
         self.legacy_cursor_trail_pipelines.get(&(format, load))
     }

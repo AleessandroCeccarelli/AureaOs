@@ -87,7 +87,8 @@ pub(super) fn reconcile(compositor: &mut AureaCompositor) {
     // membership protocol as SHM surfaces. They are collected separately
     // because their buffer ownership and import path are device-specific.
     #[cfg(feature = "drm")]
-    for snapshot in RenderScene::from_window_manager(&compositor.window_manager).dmabuf_snapshots() {
+    for snapshot in RenderScene::from_window_manager(&compositor.window_manager).dmabuf_snapshots()
+    {
         let (width, height) = logical_dimensions(
             snapshot.layout.width(),
             snapshot.layout.height(),

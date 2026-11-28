@@ -35,9 +35,8 @@ impl fmt::Display for VulkanClearPassError {
             Self::MissingColorAttachmentUsage => {
                 formatter.write_str("The Vulkan image was not created with color-attachment usage")
             }
-            Self::IncompatibleLoadOperation => formatter.write_str(
-                "The legacy render pass was not created with a clear load operation",
-            ),
+            Self::IncompatibleLoadOperation => formatter
+                .write_str("The legacy render pass was not created with a clear load operation"),
         }
     }
 }

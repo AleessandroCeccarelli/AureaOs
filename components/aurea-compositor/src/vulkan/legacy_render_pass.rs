@@ -23,12 +23,16 @@ impl fmt::Display for VulkanLegacyRenderPassError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Creation(error) => {
-                write!(formatter, "Legacy Vulkan render-pass creation failed: {error:?}")
+                write!(
+                    formatter,
+                    "Legacy Vulkan render-pass creation failed: {error:?}"
+                )
             }
             Self::DeviceMismatch => formatter
                 .write_str("Legacy render pass and image view use different Vulkan devices"),
-            Self::FormatMismatch => formatter
-                .write_str("Legacy render pass and image view use different color formats"),
+            Self::FormatMismatch => {
+                formatter.write_str("Legacy render pass and image view use different color formats")
+            }
         }
     }
 }
@@ -157,8 +161,7 @@ impl<'device> VulkanLegacyRenderPass<'device> {
     ) -> Result<
         VulkanLegacyRenderTarget<'pass, 'view, 'image, 'device, 'view_device>,
         VulkanLegacyRenderPassError,
-    >
-    {
+    > {
         if view.device().handle().handle() != self.device.device().handle().handle() {
             return Err(VulkanLegacyRenderPassError::DeviceMismatch);
         }
@@ -191,7 +194,9 @@ impl<'device> VulkanLegacyRenderPass<'device> {
 
 impl Drop for VulkanLegacyRenderPass<'_> {
     fn drop(&mut self) {
-        if self.device.device().is_unusable() { return; }
+        if self.device.device().is_unusable() {
+            return;
+        }
         unsafe {
             self.device
                 .device()
@@ -243,9 +248,8 @@ impl<'pass, 'view, 'image, 'pass_device, 'view_device>
         &'target self,
         command_buffer: vk::CommandBuffer,
         clear_color: [f32; 4],
-    ) -> VulkanLegacyRenderPassScope<
-        'target, 'pass, 'view, 'image, 'pass_device, 'view_device,
-    > {
+    ) -> VulkanLegacyRenderPassScope<'target, 'pass, 'view, 'image, 'pass_device, 'view_device>
+    {
         let clear_values = [vk::ClearValue {
             color: vk::ClearColorValue {
                 float32: clear_color,
@@ -275,12 +279,8 @@ impl<'pass, 'view, 'image, 'pass_device, 'view_device>
 }
 
 /// RAII guard that balances vkCmdBeginRenderPass with vkCmdEndRenderPass.
-pub struct VulkanLegacyRenderPassScope<
-    'target, 'pass, 'view, 'image, 'pass_device, 'view_device,
-> {
-    target: &'target VulkanLegacyRenderTarget<
-        'pass, 'view, 'image, 'pass_device, 'view_device,
-    >,
+pub struct VulkanLegacyRenderPassScope<'target, 'pass, 'view, 'image, 'pass_device, 'view_device> {
+    target: &'target VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     command_buffer: vk::CommandBuffer,
     ended: bool,
 }
@@ -312,7 +312,9 @@ impl Drop for VulkanLegacyRenderPassScope<'_, '_, '_, '_, '_, '_> {
 
 impl Drop for VulkanLegacyRenderTarget<'_, '_, '_, '_, '_> {
     fn drop(&mut self) {
-        if self.view.device().is_unusable() { return; }
+        if self.view.device().is_unusable() {
+            return;
+        }
         unsafe {
             self.view
                 .device()

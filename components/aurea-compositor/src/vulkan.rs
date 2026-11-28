@@ -21,13 +21,11 @@ mod display_color_manager;
 #[cfg(feature = "drm")]
 mod display_color_pass;
 #[cfg(feature = "drm")]
-mod legacy_display_color_manager;
-#[cfg(feature = "drm")]
-mod dmabuf_layout;
+mod dmabuf_image;
 #[cfg(feature = "drm")]
 mod dmabuf_import_support;
 #[cfg(feature = "drm")]
-mod dmabuf_image;
+mod dmabuf_layout;
 #[cfg(feature = "drm")]
 mod dmabuf_sync_file;
 mod draw_pass;
@@ -52,9 +50,11 @@ mod graphics_pipeline;
 mod image_allocator;
 mod image_transition;
 mod image_view;
-mod legacy_render_pass;
+#[cfg(feature = "drm")]
+mod legacy_display_color_manager;
 #[cfg(feature = "drm")]
 mod legacy_frame_recorder;
+mod legacy_render_pass;
 mod legacy_render_pass_manager;
 mod logical_device;
 mod logical_device_factory;
@@ -126,17 +126,18 @@ pub use device_extensions::VulkanDeviceExtensionPlan;
 #[cfg(feature = "drm")]
 pub(crate) use display_color_manager::VulkanDisplayColorManager;
 #[cfg(feature = "drm")]
-pub(crate) use legacy_display_color_manager::VulkanLegacyDisplayColorManager;
-#[cfg(feature = "drm")]
-pub use display_color_pass::{VulkanDisplayColorPass, VulkanDisplayColorPassError, VulkanLegacyDisplayColorPass, VulkanSharedLegacyDisplayColorPass};
-#[cfg(feature = "drm")]
-pub use dmabuf_layout::{DmabufImportLayout, DmabufLayoutError, DmabufPlaneLayout};
-#[cfg(feature = "drm")]
-pub(crate) use dmabuf_import_support::{VulkanDmabufImportSupport, VulkanDmabufImportSupportError};
+pub use display_color_pass::{
+    VulkanDisplayColorPass, VulkanDisplayColorPassError, VulkanLegacyDisplayColorPass,
+    VulkanSharedLegacyDisplayColorPass,
+};
 #[cfg(feature = "drm")]
 pub(crate) use dmabuf_image::{VulkanDmabufImage, VulkanDmabufImageError};
 #[cfg(feature = "drm")]
-pub(crate) use dmabuf_sync_file::{DmabufSyncWaitSet, DmabufSyncWaitError};
+pub(crate) use dmabuf_import_support::{VulkanDmabufImportSupport, VulkanDmabufImportSupportError};
+#[cfg(feature = "drm")]
+pub use dmabuf_layout::{DmabufImportLayout, DmabufLayoutError, DmabufPlaneLayout};
+#[cfg(feature = "drm")]
+pub(crate) use dmabuf_sync_file::{DmabufSyncWaitError, DmabufSyncWaitSet};
 pub use draw_pass::{VulkanDrawPass, VulkanDrawPassError};
 #[cfg(feature = "drm")]
 pub use drm_compatibility::{
@@ -171,6 +172,8 @@ pub use image_allocator::{
 };
 pub use image_transition::{VulkanImageState, VulkanImageTransition, VulkanImageTransitionError};
 pub use image_view::{VulkanImageView, VulkanImageViewError};
+#[cfg(feature = "drm")]
+pub(crate) use legacy_display_color_manager::VulkanLegacyDisplayColorManager;
 pub use legacy_render_pass::{
     VulkanLegacyRenderPass, VulkanLegacyRenderPassError, VulkanLegacyRenderPassScope,
     VulkanLegacyRenderTarget,
@@ -203,9 +206,9 @@ pub use upload_buffer::{VulkanUploadBuffer, VulkanUploadError};
 pub use wallpaper_texture::{VulkanWallpaperTexture, VulkanWallpaperTextureError};
 
 pub(super) use device_owner::VulkanDeviceOwner;
-pub(crate) use legacy_render_pass_manager::VulkanLegacyRenderPassManager;
 #[cfg(feature = "drm")]
 pub(crate) use legacy_frame_recorder::{VulkanLegacyFrameRecorder, VulkanLegacyFrameRecorderError};
+pub(crate) use legacy_render_pass_manager::VulkanLegacyRenderPassManager;
 pub(super) use pending_upload::VulkanPendingUpload;
 pub(super) use queue_submitter::VulkanQueueSubmitter;
 pub(super) use upload_batch::VulkanUploadBatch;

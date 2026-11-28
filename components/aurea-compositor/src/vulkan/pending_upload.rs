@@ -106,9 +106,8 @@ impl<T> VulkanPendingUpload<T> {
 
     /// Ends and submits the command buffer without waiting for the GPU.
     pub(super) fn submit(mut self) -> Result<Self, vk::Result> {
-        if let Err(error) = unsafe {
-            self.device.handle().end_command_buffer(self.command_buffer)
-        } {
+        if let Err(error) = unsafe { self.device.handle().end_command_buffer(self.command_buffer) }
+        {
             mark_device_lost(&self.device, error);
             return Err(error);
         }
@@ -156,10 +155,10 @@ impl<T> VulkanPendingUpload<T> {
     pub(super) fn wait(mut self) -> Result<T, vk::Result> {
         if !self.is_complete()? {
             unsafe {
-                if let Err(error) = self
-                    .device
-                    .handle()
-                    .wait_for_fences(&[self.fence], true, u64::MAX)
+                if let Err(error) =
+                    self.device
+                        .handle()
+                        .wait_for_fences(&[self.fence], true, u64::MAX)
                 {
                     mark_device_lost(&self.device, error);
                     return Err(error);

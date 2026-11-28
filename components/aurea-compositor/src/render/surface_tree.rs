@@ -9,12 +9,14 @@ use std::sync::Arc;
 
 use smithay::{
     reexports::wayland_server::{
-        Resource, backend::ObjectId,
+        Resource,
+        backend::ObjectId,
         protocol::{wl_buffer::WlBuffer, wl_surface::WlSurface},
     },
     utils::{Logical, Point, Transform},
     wayland::compositor::{
-        BufferAssignment, SubsurfaceCachedState, SurfaceAttributes, SurfaceData, TraversalAction, with_surface_tree_downward,
+        BufferAssignment, SubsurfaceCachedState, SurfaceAttributes, SurfaceData, TraversalAction,
+        with_surface_tree_downward,
     },
 };
 
@@ -184,7 +186,6 @@ mod tests {
     }
 }
 
-
 /// One retained DMA-BUF surface and its accumulated global logical position.
 ///
 /// The import layout owns a strong reference to the client DMA-BUF, keeping
@@ -272,14 +273,26 @@ pub fn collect_surface_tree_dmabuf_snapshots(
 #[derive(Default)]
 struct SurfaceDmabufBufferState {
     current: std::sync::Mutex<Option<WlBuffer>>,
-    registry: std::sync::Mutex<Option<std::sync::Weak<std::sync::Mutex<std::collections::HashMap<ObjectId, (WlBuffer, usize)>>>>>,
+    registry: std::sync::Mutex<
+        Option<
+            std::sync::Weak<
+                std::sync::Mutex<std::collections::HashMap<ObjectId, (WlBuffer, usize)>>,
+            >,
+        >,
+    >,
 }
 
 #[cfg(feature = "drm")]
 impl Drop for SurfaceDmabufBufferState {
     fn drop(&mut self) {
-        let current = self.current.get_mut().unwrap_or_else(std::sync::PoisonError::into_inner);
-        let registry = self.registry.get_mut().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let current = self
+            .current
+            .get_mut()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let registry = self
+            .registry
+            .get_mut()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let (Some(buffer), Some(registry)) = (current.take(), registry.as_ref()) else {
             return;
         };
@@ -297,7 +310,8 @@ impl Drop for SurfaceDmabufBufferState {
 #[cfg(feature = "drm")]
 #[derive(Clone, Default)]
 pub struct DmabufBufferUseRegistry {
-    buffers: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<ObjectId, (WlBuffer, usize)>>>,
+    buffers:
+        std::sync::Arc<std::sync::Mutex<std::collections::HashMap<ObjectId, (WlBuffer, usize)>>>,
 }
 
 #[cfg(feature = "drm")]
@@ -305,7 +319,9 @@ fn release_dmabuf_surface_use(
     registry: &std::sync::Mutex<std::collections::HashMap<ObjectId, (WlBuffer, usize)>>,
     buffer: &WlBuffer,
 ) {
-    let mut buffers = registry.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut buffers = registry
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let id = buffer.id();
     let should_release = if let Some((_, uses)) = buffers.get_mut(&id) {
         *uses = uses.saturating_sub(1);
@@ -324,7 +340,10 @@ fn release_dmabuf_surface_use(
 #[cfg(feature = "drm")]
 impl DmabufBufferUseRegistry {
     fn retain(&self, buffer: WlBuffer) {
-        let mut buffers = self.buffers.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut buffers = self
+            .buffers
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let id = buffer.id();
         buffers
             .entry(id)
@@ -365,13 +384,12 @@ pub fn update_surface_tree_dmabuf_buffer_lifecycle(
                 let next = {
                     let mut attributes = states.cached_state.get::<SurfaceAttributes>();
                     match attributes.current().buffer.as_ref() {
-                        Some(BufferAssignment::NewBuffer(buffer))
-                            if get_dmabuf(buffer).is_ok() =>
-                        {
+                        Some(BufferAssignment::NewBuffer(buffer)) if get_dmabuf(buffer).is_ok() => {
                             Some(buffer.clone())
                         }
-                        Some(BufferAssignment::NewBuffer(_))
-                        | Some(BufferAssignment::Removed) => None,
+                        Some(BufferAssignment::NewBuffer(_)) | Some(BufferAssignment::Removed) => {
+                            None
+                        }
                         None => return None,
                     }
                 };
@@ -379,8 +397,14 @@ pub fn update_surface_tree_dmabuf_buffer_lifecycle(
                 let state = states
                     .data_map
                     .get_or_insert_threadsafe(SurfaceDmabufBufferState::default);
-                let mut current = state.current.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-                let mut registry_slot = state.registry.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+                let mut current = state
+                    .current
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                let mut registry_slot = state
+                    .registry
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
                 *registry_slot = Some(std::sync::Arc::downgrade(&registry.buffers));
                 if *current == next {
                     return None;
@@ -403,10 +427,7 @@ pub fn update_surface_tree_dmabuf_buffer_lifecycle(
 }
 
 #[cfg(feature = "drm")]
-fn with_surface_states<T>(
-    surface: &WlSurface,
-    callback: impl FnOnce(&SurfaceData) -> T,
-) -> T {
+fn with_surface_states<T>(surface: &WlSurface, callback: impl FnOnce(&SurfaceData) -> T) -> T {
     smithay::wayland::compositor::with_states(surface, callback)
 }
 

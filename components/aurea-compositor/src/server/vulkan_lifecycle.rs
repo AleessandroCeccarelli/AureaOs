@@ -5,10 +5,7 @@
 
 //! Vulkan renderer lifecycle for DRM-owned outputs.
 
-use smithay::{
-    backend::drm::DrmNode,
-    wayland::dmabuf::DmabufFeedbackBuilder,
-};
+use smithay::{backend::drm::DrmNode, wayland::dmabuf::DmabufFeedbackBuilder};
 
 use crate::{
     gpu::GpuSelectionMetadata,
@@ -77,13 +74,17 @@ pub(super) fn refresh_dmabuf_feedback(state: &mut WaylandState) {
     // but fail closed by clearing import targets until a renderer returns.
     if devices.is_empty() || formats.is_empty() {
         state.compositor.clear_dmabuf_devices();
-        tracing::info!("AureaOS: DMA-BUF imports disabled; no active renderer intersection is available");
+        tracing::info!(
+            "AureaOS: DMA-BUF imports disabled; no active renderer intersection is available"
+        );
         return;
     }
     let main_device = main_device.or_else(|| state.compositor.dmabuf_main_device());
     let Some(main_device) = main_device else {
         state.compositor.clear_dmabuf_devices();
-        tracing::warn!("AureaOS: linux-dmabuf feedback not refreshed; no known DRM device identity");
+        tracing::warn!(
+            "AureaOS: linux-dmabuf feedback not refreshed; no known DRM device identity"
+        );
         return;
     };
     let feedback = match DmabufFeedbackBuilder::new(main_device, formats).build() {
@@ -94,7 +95,10 @@ pub(super) fn refresh_dmabuf_feedback(state: &mut WaylandState) {
         }
     };
     let display_handle = state.display.handle();
-    if state.compositor.initialize_dmabuf_global(&display_handle, devices, feedback, main_device) {
+    if state
+        .compositor
+        .initialize_dmabuf_global(&display_handle, devices, feedback, main_device)
+    {
         tracing::info!("AureaOS: linux-dmabuf feedback reconciled with active Vulkan renderers");
     }
 }

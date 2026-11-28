@@ -33,7 +33,9 @@ pub enum VulkanCaptureTargetError {
 impl fmt::Display for VulkanCaptureTargetError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::DeviceLost => formatter.write_str("Vulkan logical device is unusable after device loss"),
+            Self::DeviceLost => {
+                formatter.write_str("Vulkan logical device is unusable after device loss")
+            }
             Self::InvalidDimensions => {
                 formatter.write_str("Capture target dimensions must be non-zero")
             }

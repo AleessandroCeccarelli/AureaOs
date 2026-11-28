@@ -80,7 +80,9 @@ impl<'device> VulkanSampler<'device> {
 
 impl Drop for VulkanSampler<'_> {
     fn drop(&mut self) {
-        if self.device.device().is_unusable() { return; }
+        if self.device.device().is_unusable() {
+            return;
+        }
         unsafe {
             self.device
                 .device()

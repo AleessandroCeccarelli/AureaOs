@@ -66,7 +66,9 @@ impl VulkanReadbackBufferPool {
     /// from the compositor presentation path. Repeated calls can prewarm a pool.
     pub fn prepare(&self, width: u32, height: u32) -> Result<(), VulkanReadbackError> {
         if self.inner.device.is_unusable() {
-            return Err(VulkanReadbackError::Submission(smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST));
+            return Err(VulkanReadbackError::Submission(
+                smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
+            ));
         }
         readback_byte_len(width, height)?;
         let mut state = self
@@ -141,7 +143,9 @@ impl VulkanReadbackBufferPool {
         height: u32,
     ) -> Result<VulkanReadbackBufferLease, VulkanReadbackError> {
         if self.inner.device.is_unusable() {
-            return Err(VulkanReadbackError::Submission(smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST));
+            return Err(VulkanReadbackError::Submission(
+                smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
+            ));
         }
         let byte_len = readback_byte_len(width, height)?;
         let mut state = match self.inner.state.try_lock() {

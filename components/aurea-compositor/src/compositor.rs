@@ -296,9 +296,7 @@ impl AureaCompositor {
 
     /// Returns the devices against which advertised DMA-BUF imports are validated.
     #[cfg(feature = "drm")]
-    pub(crate) fn dmabuf_devices(
-        &self,
-    ) -> &[std::sync::Arc<crate::vulkan::VulkanLogicalDevice>] {
+    pub(crate) fn dmabuf_devices(&self) -> &[std::sync::Arc<crate::vulkan::VulkanLogicalDevice>] {
         &self.dmabuf_devices
     }
 
@@ -319,7 +317,8 @@ impl AureaCompositor {
             return true;
         }
         self.dmabuf_global = Some(
-            self.dmabuf_state.create_global_with_default_feedback::<Self>(display, &feedback),
+            self.dmabuf_state
+                .create_global_with_default_feedback::<Self>(display, &feedback),
         );
         true
     }

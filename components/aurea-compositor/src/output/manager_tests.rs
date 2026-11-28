@@ -297,7 +297,10 @@ fn staged_multi_output_configuration_rejects_duplicate_ids_without_mutation() {
         ),
     ]);
 
-    assert!(matches!(result, Err(OutputManagerError::DuplicateOutput(23))));
+    assert!(matches!(
+        result,
+        Err(OutputManagerError::DuplicateOutput(23))
+    ));
     assert_eq!(manager.registry().get(23).unwrap().current_mode(), original);
     assert_eq!(manager.layout().get(23).unwrap().x(), 0);
 }
@@ -399,9 +402,11 @@ fn staged_multi_output_configuration_validates_only_final_active_count() {
     assert_eq!(manager.active_output_count(), MAX_ACTIVE_OUTPUTS);
     assert_eq!(staged.active_output_count(), MAX_ACTIVE_OUTPUTS);
     assert!(!staged.registry().get(1).unwrap().is_enabled());
-    assert!(staged
-        .registry()
-        .get(MAX_ACTIVE_OUTPUTS as u128 + 1)
-        .unwrap()
-        .is_enabled());
+    assert!(
+        staged
+            .registry()
+            .get(MAX_ACTIVE_OUTPUTS as u128 + 1)
+            .unwrap()
+            .is_enabled()
+    );
 }

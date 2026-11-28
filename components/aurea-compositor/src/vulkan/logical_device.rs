@@ -5,7 +5,10 @@
 
 //! Vulkan logical-device and command-pool resource management.
 
-use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+};
 
 use smithay::reexports::ash::{self, vk};
 
@@ -132,17 +135,16 @@ impl VulkanLogicalDevice {
             .command_pool(self.command_pool)
             .level(vk::CommandBufferLevel::PRIMARY)
             .command_buffer_count(1);
-        let command_buffers = match unsafe {
-            self.device.allocate_command_buffers(&allocation_info)
-        } {
-            Ok(command_buffers) => command_buffers,
-            Err(error) => {
-                if error == vk::Result::ERROR_DEVICE_LOST {
-                    self.mark_unusable();
+        let command_buffers =
+            match unsafe { self.device.allocate_command_buffers(&allocation_info) } {
+                Ok(command_buffers) => command_buffers,
+                Err(error) => {
+                    if error == vk::Result::ERROR_DEVICE_LOST {
+                        self.mark_unusable();
+                    }
+                    return Err(error);
                 }
-                return Err(error);
-            }
-        };
+            };
         Ok(command_buffers[0])
     }
 
@@ -179,14 +181,18 @@ impl VulkanLogicalDevice {
         signal_semaphore: Option<vk::Semaphore>,
     ) -> Result<(), VulkanQueueSubmitError> {
         if self.is_unusable() {
-            return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
+            return Err(VulkanQueueSubmitError::Rejected(
+                vk::Result::ERROR_DEVICE_LOST,
+            ));
         }
         let _queue_guard = self
             .queue_submit_lock
             .lock()
             .map_err(|_| VulkanQueueSubmitError::Rejected(vk::Result::ERROR_UNKNOWN))?;
         if self.is_unusable() {
-            return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
+            return Err(VulkanQueueSubmitError::Rejected(
+                vk::Result::ERROR_DEVICE_LOST,
+            ));
         }
         let command_buffers = [command_buffer];
         let signal_semaphores = signal_semaphore.into_iter().collect::<Vec<_>>();
@@ -213,7 +219,9 @@ impl VulkanLogicalDevice {
         on_submitted: impl FnOnce(),
     ) -> Result<(), VulkanQueueSubmitError> {
         if self.is_unusable() {
-            return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
+            return Err(VulkanQueueSubmitError::Rejected(
+                vk::Result::ERROR_DEVICE_LOST,
+            ));
         }
         let result = VulkanQueueSubmitter::new(
             &self.device,
@@ -221,7 +229,7 @@ impl VulkanLogicalDevice {
             &self.queue_submit_lock,
             &self.device_unusable,
         )
-            .submit_and_wait_with_semaphores(command_buffer, wait_semaphores, on_submitted);
+        .submit_and_wait_with_semaphores(command_buffer, wait_semaphores, on_submitted);
         if result.as_ref().is_err_and(|error| error.is_uncertain()) {
             self.mark_unusable();
         }
@@ -235,7 +243,9 @@ impl VulkanLogicalDevice {
         on_submitted: impl FnOnce(),
     ) -> Result<(), VulkanQueueSubmitError> {
         if self.is_unusable() {
-            return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
+            return Err(VulkanQueueSubmitError::Rejected(
+                vk::Result::ERROR_DEVICE_LOST,
+            ));
         }
         let result = VulkanQueueSubmitter::new(
             &self.device,
@@ -243,7 +253,7 @@ impl VulkanLogicalDevice {
             &self.queue_submit_lock,
             &self.device_unusable,
         )
-            .submit_and_wait_with(command_buffer, on_submitted);
+        .submit_and_wait_with(command_buffer, on_submitted);
         if result.as_ref().is_err_and(|error| error.is_uncertain()) {
             self.mark_unusable();
         }

@@ -12,9 +12,9 @@ pub mod shm_buffer;
 pub mod shm_surface;
 pub mod surface_tree;
 
-use surface_tree::{SurfaceTreeSnapshot, collect_surface_tree_ids, collect_surface_tree_snapshots};
 #[cfg(feature = "drm")]
 use std::collections::HashMap;
+use surface_tree::{SurfaceTreeSnapshot, collect_surface_tree_ids, collect_surface_tree_snapshots};
 
 use aurea_desktop_api::{desktop::DesktopContextMenuLayout, desktop_interaction::DesktopPanelKind};
 
@@ -445,11 +445,13 @@ impl<'a> RenderScene<'a> {
     /// above every SHM surface and visibly break Wayland subsurface stacking.
     #[cfg(feature = "drm")]
     pub fn ordered_buffer_snapshots(&self) -> Vec<OrderedSurfaceBufferSnapshot> {
-        let mut shm = self.shm_snapshots()
+        let mut shm = self
+            .shm_snapshots()
             .into_iter()
             .map(|snapshot| (snapshot.surface_id.clone(), snapshot))
             .collect::<HashMap<_, _>>();
-        let mut dmabuf = self.dmabuf_snapshots()
+        let mut dmabuf = self
+            .dmabuf_snapshots()
             .into_iter()
             .map(|snapshot| (snapshot.surface_id.clone(), snapshot))
             .collect::<HashMap<_, _>>();
@@ -460,7 +462,8 @@ impl<'a> RenderScene<'a> {
                 if let Some(snapshot) = shm.remove(&surface_id) {
                     Some(OrderedSurfaceBufferSnapshot::Shm(snapshot))
                 } else {
-                    dmabuf.remove(&surface_id)
+                    dmabuf
+                        .remove(&surface_id)
                         .map(OrderedSurfaceBufferSnapshot::Dmabuf)
                 }
             })

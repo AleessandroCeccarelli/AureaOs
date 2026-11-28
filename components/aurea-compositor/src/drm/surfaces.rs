@@ -29,12 +29,24 @@ mod initialize;
 pub enum DrmSurfaceManagerError {
     Discovery(String),
     MissingNativeConfiguration(OutputId),
-    UnsupportedMode { output_id: OutputId },
-    AmbiguousNativeMode { output_id: OutputId },
-    PendingModeChange { output_id: OutputId },
+    UnsupportedMode {
+        output_id: OutputId,
+    },
+    AmbiguousNativeMode {
+        output_id: OutputId,
+    },
+    PendingModeChange {
+        output_id: OutputId,
+    },
     DuplicateBatchOutput(OutputId),
-    BatchRollback { output_id: OutputId, message: String },
-    ModeChange { output_id: OutputId, message: String },
+    BatchRollback {
+        output_id: OutputId,
+        message: String,
+    },
+    ModeChange {
+        output_id: OutputId,
+        message: String,
+    },
     ConnectorQuery {
         output_id: OutputId,
         message: String,
@@ -60,12 +72,30 @@ impl fmt::Display for DrmSurfaceManagerError {
                 f,
                 "DRM output {id} has no native connector/mode configuration"
             ),
-            Self::UnsupportedMode { output_id } => write!(f, "DRM output {output_id} does not support the requested logical mode"),
-            Self::AmbiguousNativeMode { output_id } => write!(f, "DRM output {output_id} has multiple native timings for the requested logical mode; selection is ambiguous"),
-            Self::PendingModeChange { output_id } => write!(f, "DRM output {output_id} already has a staged or pending mode change"),
-            Self::DuplicateBatchOutput(id) => write!(f, "DRM output {id} appears more than once in a mode-change batch"),
-            Self::BatchRollback { output_id, message } => write!(f, "DRM output {output_id} could not be restored after a batch mode-change failure: {message}"),
-            Self::ModeChange { output_id, message } => write!(f, "Failed to stage DRM mode for output {output_id}: {message}"),
+            Self::UnsupportedMode { output_id } => write!(
+                f,
+                "DRM output {output_id} does not support the requested logical mode"
+            ),
+            Self::AmbiguousNativeMode { output_id } => write!(
+                f,
+                "DRM output {output_id} has multiple native timings for the requested logical mode; selection is ambiguous"
+            ),
+            Self::PendingModeChange { output_id } => write!(
+                f,
+                "DRM output {output_id} already has a staged or pending mode change"
+            ),
+            Self::DuplicateBatchOutput(id) => write!(
+                f,
+                "DRM output {id} appears more than once in a mode-change batch"
+            ),
+            Self::BatchRollback { output_id, message } => write!(
+                f,
+                "DRM output {output_id} could not be restored after a batch mode-change failure: {message}"
+            ),
+            Self::ModeChange { output_id, message } => write!(
+                f,
+                "Failed to stage DRM mode for output {output_id}: {message}"
+            ),
             Self::ConnectorQuery { output_id, message } => write!(
                 f,
                 "Failed to query connector for output {output_id}: {message}"
@@ -96,7 +126,10 @@ impl Error for DrmSurfaceManagerError {}
 pub struct ManagedDrmSurface {
     output_id: OutputId,
     connector: connector::Handle,
-    native_modes: Vec<(crate::drm::output::DrmModeInfo, smithay::reexports::drm::control::Mode)>,
+    native_modes: Vec<(
+        crate::drm::output::DrmModeInfo,
+        smithay::reexports::drm::control::Mode,
+    )>,
     surface: DrmSurface,
     presentation: DrmPresentationBackend,
     frame_pool: VulkanDrmFramePool,
@@ -117,7 +150,12 @@ impl ManagedDrmSurface {
         self.surface.crtc()
     }
     /// Returns the retained native DRM timings for this connector.
-    pub fn native_modes(&self) -> &[(crate::drm::output::DrmModeInfo, smithay::reexports::drm::control::Mode)] {
+    pub fn native_modes(
+        &self,
+    ) -> &[(
+        crate::drm::output::DrmModeInfo,
+        smithay::reexports::drm::control::Mode,
+    )] {
         &self.native_modes
     }
     pub fn surface(&self) -> &DrmSurface {
@@ -143,14 +181,19 @@ impl ManagedDrmSurface {
         &mut self,
         mode: crate::output::OutputMode,
     ) -> Result<(), DrmSurfaceManagerError> {
-        let mut matches = self.native_modes.iter().filter(|(info, _)| {
-            info.to_output_mode() == Some(mode)
-        });
+        let mut matches = self
+            .native_modes
+            .iter()
+            .filter(|(info, _)| info.to_output_mode() == Some(mode));
         let native = matches.next().map(|(_, native)| *native).ok_or(
-            DrmSurfaceManagerError::UnsupportedMode { output_id: self.output_id }
+            DrmSurfaceManagerError::UnsupportedMode {
+                output_id: self.output_id,
+            },
         )?;
         if matches.next().is_some() {
-            return Err(DrmSurfaceManagerError::AmbiguousNativeMode { output_id: self.output_id });
+            return Err(DrmSurfaceManagerError::AmbiguousNativeMode {
+                output_id: self.output_id,
+            });
         }
         let current = self.surface.current_mode();
         if current == native {
@@ -165,10 +208,12 @@ impl ManagedDrmSurface {
             });
         }
         let previous = current;
-        self.surface.use_mode(native).map_err(|error| DrmSurfaceManagerError::ModeChange {
-            output_id: self.output_id,
-            message: error.to_string(),
-        })?;
+        self.surface
+            .use_mode(native)
+            .map_err(|error| DrmSurfaceManagerError::ModeChange {
+                output_id: self.output_id,
+                message: error.to_string(),
+            })?;
         self.presentation.arm_mode_rollback(previous);
         self.cpu_presentation.arm_mode_rollback(previous);
         self.staged_previous_mode = Some(previous);
@@ -200,10 +245,12 @@ impl ManagedDrmSurface {
                 message: "cannot abort a mode while a KMS page flip is pending".into(),
             });
         }
-        self.surface.use_mode(previous).map_err(|error| DrmSurfaceManagerError::ModeChange {
-            output_id: self.output_id,
-            message: format!("failed to restore abandoned mode: {error}"),
-        })?;
+        self.surface
+            .use_mode(previous)
+            .map_err(|error| DrmSurfaceManagerError::ModeChange {
+                output_id: self.output_id,
+                message: format!("failed to restore abandoned mode: {error}"),
+            })?;
         self.presentation.cancel_mode_rollback();
         self.cpu_presentation.cancel_mode_rollback();
         self.staged_previous_mode = None;
@@ -306,15 +353,18 @@ impl DrmSurfaceManager {
         output_id: OutputId,
         mode: crate::output::OutputMode,
     ) -> Result<smithay::reexports::drm::control::Mode, DrmSurfaceManagerError> {
-        let managed = self.surfaces.get_mut(&output_id).ok_or(
-            DrmSurfaceManagerError::UnsupportedMode { output_id }
-        )?;
-        let mut matches = managed.native_modes.iter().filter(|(info, _)| {
-            info.to_output_mode() == Some(mode)
-        });
-        let native = matches.next().map(|(_, native)| *native).ok_or(
-            DrmSurfaceManagerError::UnsupportedMode { output_id }
-        )?;
+        let managed = self
+            .surfaces
+            .get_mut(&output_id)
+            .ok_or(DrmSurfaceManagerError::UnsupportedMode { output_id })?;
+        let mut matches = managed
+            .native_modes
+            .iter()
+            .filter(|(info, _)| info.to_output_mode() == Some(mode));
+        let native = matches
+            .next()
+            .map(|(_, native)| *native)
+            .ok_or(DrmSurfaceManagerError::UnsupportedMode { output_id })?;
         if matches.next().is_some() {
             return Err(DrmSurfaceManagerError::AmbiguousNativeMode { output_id });
         }
@@ -329,12 +379,13 @@ impl DrmSurfaceManager {
             return Err(DrmSurfaceManagerError::PendingModeChange { output_id });
         }
         let previous = current;
-        managed.surface.use_mode(native).map_err(|error| {
-            DrmSurfaceManagerError::ModeChange {
+        managed
+            .surface
+            .use_mode(native)
+            .map_err(|error| DrmSurfaceManagerError::ModeChange {
                 output_id,
                 message: error.to_string(),
-            }
-        })?;
+            })?;
         managed.presentation.arm_mode_rollback(previous);
         managed.cpu_presentation.arm_mode_rollback(previous);
         managed.staged_previous_mode = Some(previous);
@@ -350,7 +401,8 @@ impl DrmSurfaceManager {
     pub fn stage_modes_batch(
         &mut self,
         changes: &[(OutputId, crate::output::OutputMode)],
-    ) -> Result<Vec<(OutputId, smithay::reexports::drm::control::Mode)>, DrmSurfaceManagerError> {
+    ) -> Result<Vec<(OutputId, smithay::reexports::drm::control::Mode)>, DrmSurfaceManagerError>
+    {
         let mut seen = std::collections::HashSet::with_capacity(changes.len());
         for (output_id, _) in changes {
             if !seen.insert(*output_id) {
@@ -395,15 +447,17 @@ impl DrmSurfaceManager {
         output_id: OutputId,
         previous: smithay::reexports::drm::control::Mode,
     ) -> Result<(), DrmSurfaceManagerError> {
-        let managed = self.surfaces.get_mut(&output_id).ok_or(
-            DrmSurfaceManagerError::UnsupportedMode { output_id }
-        )?;
-        managed.surface.use_mode(previous).map_err(|error| {
-            DrmSurfaceManagerError::ModeChange {
+        let managed = self
+            .surfaces
+            .get_mut(&output_id)
+            .ok_or(DrmSurfaceManagerError::UnsupportedMode { output_id })?;
+        managed
+            .surface
+            .use_mode(previous)
+            .map_err(|error| DrmSurfaceManagerError::ModeChange {
                 output_id,
                 message: error.to_string(),
-            }
-        })?;
+            })?;
         managed.presentation.cancel_mode_rollback();
         managed.cpu_presentation.cancel_mode_rollback();
         managed.staged_previous_mode = None;
@@ -470,9 +524,10 @@ impl DrmSurfaceManager {
         let Some(output) = self.surfaces.get_mut(&output_id) else {
             return Ok(None);
         };
-        let completed = output
-            .cpu_presentation
-            .on_vblank(node, crtc, &mut output.cpu_frame_pool)?;
+        let completed =
+            output
+                .cpu_presentation
+                .on_vblank(node, crtc, &mut output.cpu_frame_pool)?;
         if completed.is_some() && confirm_mode {
             output.presentation.cancel_mode_rollback();
             output.confirm_staged_mode();
@@ -538,10 +593,14 @@ impl DrmSurfaceManager {
 
     /// Confirms a staged mode after its page flip has been included in a
     /// successfully completed coordinated transaction.
-    pub fn confirm_staged_mode(&mut self, output_id: OutputId) -> Result<(), DrmSurfaceManagerError> {
-        let output = self.surfaces.get_mut(&output_id).ok_or(
-            DrmSurfaceManagerError::UnsupportedMode { output_id }
-        )?;
+    pub fn confirm_staged_mode(
+        &mut self,
+        output_id: OutputId,
+    ) -> Result<(), DrmSurfaceManagerError> {
+        let output = self
+            .surfaces
+            .get_mut(&output_id)
+            .ok_or(DrmSurfaceManagerError::UnsupportedMode { output_id })?;
         output.presentation.cancel_mode_rollback();
         output.cpu_presentation.cancel_mode_rollback();
         output.confirm_staged_mode();

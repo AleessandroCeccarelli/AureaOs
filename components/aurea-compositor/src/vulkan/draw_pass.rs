@@ -11,8 +11,8 @@ use smithay::reexports::ash::vk;
 
 use super::{
     VulkanColorLoad, VulkanDynamicRenderingScope, VulkanGraphicsPipeline, VulkanImageState,
-    VulkanImageTransition, VulkanImageView, VulkanLegacyGraphicsPipeline,
-    VulkanLegacyRenderTarget, VulkanSharedLegacyGraphicsPipeline, VulkanTextureBinding,
+    VulkanImageTransition, VulkanImageView, VulkanLegacyGraphicsPipeline, VulkanLegacyRenderTarget,
+    VulkanSharedLegacyGraphicsPipeline, VulkanTextureBinding,
 };
 
 /// Invalid draw requests rejected before commands are recorded.
@@ -57,18 +57,17 @@ impl fmt::Display for VulkanDrawPassError {
             Self::InvalidPushConstants => formatter.write_str(
                 "Vulkan push constants must be non-empty, four-byte aligned, and at most 128 bytes",
             ),
-            Self::IncompatibleRenderPassLoad => formatter.write_str(
-                "The legacy draw load operation does not match its render pass",
-            ),
+            Self::IncompatibleRenderPassLoad => {
+                formatter.write_str("The legacy draw load operation does not match its render pass")
+            }
             Self::MissingSampledImageUsage => {
                 formatter.write_str("The legacy texture source lacks sampled-image usage")
             }
-            Self::TextureSourceMismatch => {
-                formatter.write_str("The legacy descriptor binding references a different source image")
-            }
-            Self::IncompatibleTextureSource => {
-                formatter.write_str("The legacy texture source and target must be distinct images on the same device")
-            }
+            Self::TextureSourceMismatch => formatter
+                .write_str("The legacy descriptor binding references a different source image"),
+            Self::IncompatibleTextureSource => formatter.write_str(
+                "The legacy texture source and target must be distinct images on the same device",
+            ),
         }
     }
 }
@@ -128,11 +127,7 @@ impl VulkanDrawPass {
         if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
             return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
         }
-        if !pipeline.is_compatible_with(
-            view.device(),
-            view.format(),
-            target.render_pass_ref(),
-        ) {
+        if !pipeline.is_compatible_with(view.device(), view.format(), target.render_pass_ref()) {
             return Err(VulkanDrawPassError::IncompatiblePipeline);
         }
 
@@ -200,11 +195,7 @@ impl VulkanDrawPass {
         if !view.usage().contains(vk::ImageUsageFlags::COLOR_ATTACHMENT) {
             return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
         }
-        if !pipeline.is_compatible_with(
-            view.device(),
-            view.format(),
-            target.render_pass_ref(),
-        ) {
+        if !pipeline.is_compatible_with(view.device(), view.format(), target.render_pass_ref()) {
             return Err(VulkanDrawPassError::IncompatiblePipeline);
         }
         if !Self::legacy_load_matches(target, load) {
@@ -297,7 +288,9 @@ impl VulkanDrawPass {
             return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
         }
         if !pipeline.is_compatible_with_target(
-            view.device(), view.format(), target.render_pass_ref(),
+            view.device(),
+            view.format(),
+            target.render_pass_ref(),
         ) {
             return Err(VulkanDrawPassError::IncompatiblePipeline);
         }
@@ -307,12 +300,18 @@ impl VulkanDrawPass {
         Self::validate_region(view.width(), view.height(), viewport, scissor)?;
 
         VulkanImageTransition::record_color(
-            source.device(), command_buffer, source.image_handle(),
-            previous_source_state, VulkanImageState::ShaderRead,
+            source.device(),
+            command_buffer,
+            source.image_handle(),
+            previous_source_state,
+            VulkanImageState::ShaderRead,
         );
         VulkanImageTransition::record_color(
-            view.device(), command_buffer, view.image_handle(),
-            previous_target_state, VulkanImageState::ColorAttachment,
+            view.device(),
+            command_buffer,
+            view.image_handle(),
+            previous_target_state,
+            VulkanImageState::ColorAttachment,
         );
 
         let scope = target.begin(command_buffer, [0.0; 4]);
@@ -324,8 +323,11 @@ impl VulkanDrawPass {
         scope.end();
 
         VulkanImageTransition::record_color(
-            view.device(), command_buffer, view.image_handle(),
-            VulkanImageState::ColorAttachment, final_state,
+            view.device(),
+            command_buffer,
+            view.image_handle(),
+            VulkanImageState::ColorAttachment,
+            final_state,
         );
         Ok(())
     }
@@ -342,7 +344,10 @@ impl VulkanDrawPass {
         instance_count: u32,
     ) -> Result<(), VulkanDrawPassError> {
         Self::validate(
-            vertex_count, instance_count, final_state, VulkanColorLoad::Clear(clear_color),
+            vertex_count,
+            instance_count,
+            final_state,
+            VulkanColorLoad::Clear(clear_color),
         )?;
         if target.render_pass_ref().load_op() != vk::AttachmentLoadOp::CLEAR {
             return Err(VulkanDrawPassError::IncompatibleRenderPassLoad);
@@ -352,13 +357,18 @@ impl VulkanDrawPass {
             return Err(VulkanDrawPassError::MissingColorAttachmentUsage);
         }
         if !pipeline.is_compatible_with_target(
-            view.device(), view.format(), target.render_pass_ref(),
+            view.device(),
+            view.format(),
+            target.render_pass_ref(),
         ) {
             return Err(VulkanDrawPassError::IncompatiblePipeline);
         }
         VulkanImageTransition::record_color(
-            view.device(), command_buffer, view.image_handle(),
-            previous_state, VulkanImageState::ColorAttachment,
+            view.device(),
+            command_buffer,
+            view.image_handle(),
+            previous_state,
+            VulkanImageState::ColorAttachment,
         );
         let scope = target.begin(command_buffer, clear_color);
         pipeline.bind(command_buffer);
@@ -366,8 +376,11 @@ impl VulkanDrawPass {
         pipeline.draw(command_buffer, vertex_count, instance_count);
         scope.end();
         VulkanImageTransition::record_color(
-            view.device(), command_buffer, view.image_handle(),
-            VulkanImageState::ColorAttachment, final_state,
+            view.device(),
+            command_buffer,
+            view.image_handle(),
+            VulkanImageState::ColorAttachment,
+            final_state,
         );
         Ok(())
     }

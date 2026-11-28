@@ -159,18 +159,17 @@ impl VulkanFrameSlot {
                     .command_pool(self.command_pool)
                     .level(vk::CommandBufferLevel::PRIMARY)
                     .command_buffer_count(1);
-                let command_buffer = match unsafe {
-                    device.handle().allocate_command_buffers(&allocation)
-                } {
-                    Ok(buffers) => buffers[0],
-                    Err(error) => {
-                        if error == vk::Result::ERROR_DEVICE_LOST {
-                            device.mark_unusable();
-                            self.quarantined = true;
+                let command_buffer =
+                    match unsafe { device.handle().allocate_command_buffers(&allocation) } {
+                        Ok(buffers) => buffers[0],
+                        Err(error) => {
+                            if error == vk::Result::ERROR_DEVICE_LOST {
+                                device.mark_unusable();
+                                self.quarantined = true;
+                            }
+                            return Err(error);
                         }
-                        return Err(error);
-                    }
-                };
+                    };
                 self.command_buffer = Some(command_buffer);
                 command_buffer
             }
@@ -179,7 +178,9 @@ impl VulkanFrameSlot {
         let begin_info = vk::CommandBufferBeginInfo::default()
             .flags(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT);
         if let Err(error) = unsafe {
-            device.handle().begin_command_buffer(command_buffer, &begin_info)
+            device
+                .handle()
+                .begin_command_buffer(command_buffer, &begin_info)
         } {
             if error == vk::Result::ERROR_DEVICE_LOST {
                 device.mark_unusable();

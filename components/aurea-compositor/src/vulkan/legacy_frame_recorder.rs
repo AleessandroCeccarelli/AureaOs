@@ -12,10 +12,9 @@
 use smithay::reexports::ash::vk;
 
 use super::{
-    VulkanClearPass, VulkanClearPassError, VulkanImageState, VulkanImageView,
-    VulkanLegacyRenderTarget, VulkanSharedLegacyGraphicsPipeline,
-    VulkanTextureBinding, VulkanDrawPass, VulkanDrawPassError,
-    VulkanSharedLegacyDisplayColorPass, VulkanDisplayColorPassError,
+    VulkanClearPass, VulkanClearPassError, VulkanDisplayColorPassError, VulkanDrawPass,
+    VulkanDrawPassError, VulkanImageState, VulkanImageView, VulkanLegacyRenderTarget,
+    VulkanSharedLegacyDisplayColorPass, VulkanSharedLegacyGraphicsPipeline, VulkanTextureBinding,
 };
 
 /// Stateless recorder for operations that form one legacy-rendered frame.
@@ -63,10 +62,20 @@ impl VulkanLegacyFrameRecorder {
         texture_transform: u32,
     ) -> Result<(), VulkanLegacyFrameRecorderError> {
         Self::textured_region(
-            command_buffer, target, pipeline, source, binding, 0,
-            previous_source_state, previous_target_state, next_target_state,
-            super::VulkanColorLoad::Load, viewport, scissor,
-            &texture_transform.to_ne_bytes(), vk::ShaderStageFlags::VERTEX,
+            command_buffer,
+            target,
+            pipeline,
+            source,
+            binding,
+            0,
+            previous_source_state,
+            previous_target_state,
+            next_target_state,
+            super::VulkanColorLoad::Load,
+            viewport,
+            scissor,
+            &texture_transform.to_ne_bytes(),
+            vk::ShaderStageFlags::VERTEX,
         )
     }
 
@@ -90,10 +99,20 @@ impl VulkanLegacyFrameRecorder {
             bytes[index * 4..(index + 1) * 4].copy_from_slice(&value.to_ne_bytes());
         }
         Self::textured_region(
-            command_buffer, target, pipeline, source, binding, 0,
-            previous_source_state, previous_target_state, next_target_state,
-            super::VulkanColorLoad::Load, viewport, scissor,
-            &bytes, vk::ShaderStageFlags::VERTEX,
+            command_buffer,
+            target,
+            pipeline,
+            source,
+            binding,
+            0,
+            previous_source_state,
+            previous_target_state,
+            next_target_state,
+            super::VulkanColorLoad::Load,
+            viewport,
+            scissor,
+            &bytes,
+            vk::ShaderStageFlags::VERTEX,
         )
     }
 
@@ -117,10 +136,20 @@ impl VulkanLegacyFrameRecorder {
         bytes[0..4].copy_from_slice(&texture_transform.to_ne_bytes());
         bytes[4..8].copy_from_slice(&opacity.to_ne_bytes());
         Self::textured_region(
-            command_buffer, target, pipeline, source, binding, 0,
-            previous_source_state, previous_target_state, next_target_state,
-            super::VulkanColorLoad::Load, viewport, scissor,
-            &bytes, vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT,
+            command_buffer,
+            target,
+            pipeline,
+            source,
+            binding,
+            0,
+            previous_source_state,
+            previous_target_state,
+            next_target_state,
+            super::VulkanColorLoad::Load,
+            viewport,
+            scissor,
+            &bytes,
+            vk::ShaderStageFlags::VERTEX | vk::ShaderStageFlags::FRAGMENT,
         )
     }
 
@@ -284,9 +313,15 @@ impl std::fmt::Display for VulkanLegacyFrameRecorderError {
             Self::Draw(error) => write!(formatter, "Legacy frame draw: {error}"),
             Self::DisplayColor(error) => write!(formatter, "Legacy frame display color: {error}"),
             Self::Transition(error) => write!(formatter, "Legacy frame output release: {error}"),
-            Self::DeviceMismatch => formatter.write_str("Legacy frame output belongs to a different Vulkan device"),
-            Self::RenderPassMismatch => formatter.write_str("Legacy frame pipeline and framebuffer use different render-pass instances"),
-            Self::QueueSubmit(error) => write!(formatter, "Legacy frame queue submission: {error:?}"),
+            Self::DeviceMismatch => {
+                formatter.write_str("Legacy frame output belongs to a different Vulkan device")
+            }
+            Self::RenderPassMismatch => formatter.write_str(
+                "Legacy frame pipeline and framebuffer use different render-pass instances",
+            ),
+            Self::QueueSubmit(error) => {
+                write!(formatter, "Legacy frame queue submission: {error:?}")
+            }
             Self::Command(error) => write!(formatter, "Legacy frame command submission: {error}"),
         }
     }

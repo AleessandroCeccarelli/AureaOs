@@ -69,8 +69,8 @@ impl<'device> VulkanReadbackBuffer<'device> {
             .size(size)
             .usage(vk::BufferUsageFlags::TRANSFER_DST)
             .sharing_mode(vk::SharingMode::EXCLUSIVE);
-        let buffer = unsafe { raw_device.handle().create_buffer(&create_info, None) }
-            .map_err(|error| {
+        let buffer =
+            unsafe { raw_device.handle().create_buffer(&create_info, None) }.map_err(|error| {
                 if error == vk::Result::ERROR_DEVICE_LOST {
                     raw_device.mark_unusable();
                 }
@@ -302,7 +302,9 @@ impl<'device> VulkanReadbackBuffer<'device> {
 
 impl Drop for VulkanReadbackBuffer<'_> {
     fn drop(&mut self) {
-        if self.device.device().is_unusable() { return; }
+        if self.device.device().is_unusable() {
+            return;
+        }
         unsafe {
             self.device
                 .device()

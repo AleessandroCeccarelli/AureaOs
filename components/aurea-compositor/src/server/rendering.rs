@@ -151,9 +151,11 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
                     .get(output_id)
                     .map(|logical| logical.current_mode())
             })
-            .ok_or_else(|| io::Error::other(format!(
-                "AureaOS: logical output {output_id} disappeared before modeset"
-            )))?;
+            .ok_or_else(|| {
+                io::Error::other(format!(
+                    "AureaOS: logical output {output_id} disappeared before modeset"
+                ))
+            })?;
         output
             .stage_native_mode(requested_mode)
             .map_err(io::Error::other)?;

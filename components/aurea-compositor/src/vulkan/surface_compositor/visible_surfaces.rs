@@ -132,7 +132,6 @@ pub(super) fn visible_surfaces(
     Ok(visible)
 }
 
-
 /// Geometry for one visible DMA-BUF surface, independent of its Vulkan image import.
 #[cfg(feature = "drm")]
 pub(super) struct VisibleDmabufSurface {

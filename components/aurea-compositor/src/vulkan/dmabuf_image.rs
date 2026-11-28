@@ -60,19 +60,24 @@ impl VulkanDmabufImage {
     ) -> Result<Self, VulkanDmabufImageError> {
         let support = VulkanDmabufImportSupport::query(&device, &layout)
             .map_err(VulkanDmabufImageError::Unsupported)?;
-        let plane = layout.planes().first().ok_or(VulkanDmabufImageError::InvalidPlaneCount)?;
-        let borrowed_fd = layout.plane_handles().next()
+        let plane = layout
+            .planes()
+            .first()
             .ok_or(VulkanDmabufImageError::InvalidPlaneCount)?;
-        let imported_fd = borrowed_fd.try_clone_to_owned()
+        let borrowed_fd = layout
+            .plane_handles()
+            .next()
+            .ok_or(VulkanDmabufImageError::InvalidPlaneCount)?;
+        let imported_fd = borrowed_fd
+            .try_clone_to_owned()
             .map_err(|_| VulkanDmabufImageError::FileDescriptorDuplication)?;
 
         let plane_layouts = [vk::SubresourceLayout::default()
             .offset(u64::from(plane.offset))
             .row_pitch(u64::from(plane.stride))];
-        let mut explicit_modifier =
-            vk::ImageDrmFormatModifierExplicitCreateInfoEXT::default()
-                .drm_format_modifier(support.modifier)
-                .plane_layouts(&plane_layouts);
+        let mut explicit_modifier = vk::ImageDrmFormatModifierExplicitCreateInfoEXT::default()
+            .drm_format_modifier(support.modifier)
+            .plane_layouts(&plane_layouts);
         let mut external_image = vk::ExternalMemoryImageCreateInfo::default()
             .handle_types(vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT);
         let image_info = vk::ImageCreateInfo::default()
@@ -94,11 +99,12 @@ impl VulkanDmabufImage {
             .push_next(&mut external_image);
 
         let raw = device.handle();
-        let image = unsafe { raw.create_image(&image_info, None) }
-            .map_err(|error| {
-                if error == vk::Result::ERROR_DEVICE_LOST { device.mark_unusable(); }
-                VulkanDmabufImageError::ImageCreation(error)
-            })?;
+        let image = unsafe { raw.create_image(&image_info, None) }.map_err(|error| {
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                device.mark_unusable();
+            }
+            VulkanDmabufImageError::ImageCreation(error)
+        })?;
         let requirements = unsafe { raw.get_image_memory_requirements(image) };
 
         let fd_loader = khr::external_memory_fd::Device::new(device.instance(), raw);
@@ -109,9 +115,14 @@ impl VulkanDmabufImage {
                 imported_fd.as_raw_fd(),
                 &mut fd_properties,
             )
-        }.map_err(|error| {
-            if error == vk::Result::ERROR_DEVICE_LOST { device.mark_unusable(); }
-            unsafe { raw.destroy_image(image, None); }
+        }
+        .map_err(|error| {
+            if error == vk::Result::ERROR_DEVICE_LOST {
+                device.mark_unusable();
+            }
+            unsafe {
+                raw.destroy_image(image, None);
+            }
             VulkanDmabufImageError::FileDescriptorProperties(error)
         })?;
 
@@ -122,7 +133,9 @@ impl VulkanDmabufImage {
             vk::MemoryPropertyFlags::empty(),
             vk::MemoryPropertyFlags::DEVICE_LOCAL,
         ) else {
-            unsafe { raw.destroy_image(image, None); }
+            unsafe {
+                raw.destroy_image(image, None);
+            }
             return Err(VulkanDmabufImageError::MemoryTypeUnavailable);
         };
 
@@ -147,7 +160,9 @@ impl VulkanDmabufImage {
                 if error == vk::Result::ERROR_DEVICE_LOST {
                     device.mark_unusable();
                 } else {
-                    unsafe { raw.destroy_image(image, None); }
+                    unsafe {
+                        raw.destroy_image(image, None);
+                    }
                 }
                 return Err(VulkanDmabufImageError::MemoryAllocation(error));
             }
@@ -176,18 +191,34 @@ impl VulkanDmabufImage {
         })
     }
 
-    pub(crate) fn image(&self) -> vk::Image { self.image }
-    pub(crate) fn format(&self) -> vk::Format { self.format }
-    pub(crate) fn width(&self) -> u32 { self.width }
-    pub(crate) fn height(&self) -> u32 { self.height }
-    pub(crate) fn usage(&self) -> vk::ImageUsageFlags { vk::ImageUsageFlags::SAMPLED }
-    pub(crate) fn device(&self) -> &VulkanLogicalDevice { &self.device }
-    pub(crate) fn layout(&self) -> &DmabufImportLayout { &self.layout }
+    pub(crate) fn image(&self) -> vk::Image {
+        self.image
+    }
+    pub(crate) fn format(&self) -> vk::Format {
+        self.format
+    }
+    pub(crate) fn width(&self) -> u32 {
+        self.width
+    }
+    pub(crate) fn height(&self) -> u32 {
+        self.height
+    }
+    pub(crate) fn usage(&self) -> vk::ImageUsageFlags {
+        vk::ImageUsageFlags::SAMPLED
+    }
+    pub(crate) fn device(&self) -> &VulkanLogicalDevice {
+        &self.device
+    }
+    pub(crate) fn layout(&self) -> &DmabufImportLayout {
+        &self.layout
+    }
 }
 
 impl Drop for VulkanDmabufImage {
     fn drop(&mut self) {
-        if self.device.is_unusable() { return; }
+        if self.device.is_unusable() {
+            return;
+        }
         unsafe {
             self.device.handle().destroy_image(self.image, None);
             self.device.handle().free_memory(self.memory, None);

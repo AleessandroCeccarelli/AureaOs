@@ -5,7 +5,10 @@
 
 //! Vulkan command submission and fence synchronization.
 
-use std::sync::{Mutex, atomic::{AtomicBool, Ordering}};
+use std::sync::{
+    Mutex,
+    atomic::{AtomicBool, Ordering},
+};
 
 use smithay::reexports::ash::{self, vk};
 
@@ -99,7 +102,9 @@ impl<'device> VulkanQueueSubmitter<'device> {
         on_submitted: impl FnOnce(),
     ) -> Result<(), VulkanQueueSubmitError> {
         if self.device_unusable.load(Ordering::Acquire) {
-            return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
+            return Err(VulkanQueueSubmitError::Rejected(
+                vk::Result::ERROR_DEVICE_LOST,
+            ));
         }
         let command_buffers = [command_buffer];
         let wait_stages = vec![vk::PipelineStageFlags::ALL_COMMANDS; wait_semaphores.len()];
@@ -129,7 +134,9 @@ impl<'device> VulkanQueueSubmitter<'device> {
             };
             if self.device_unusable.load(Ordering::Acquire) {
                 unsafe { self.device.destroy_fence(fence, None) };
-                return Err(VulkanQueueSubmitError::Rejected(vk::Result::ERROR_DEVICE_LOST));
+                return Err(VulkanQueueSubmitError::Rejected(
+                    vk::Result::ERROR_DEVICE_LOST,
+                ));
             }
             let result = unsafe { self.device.queue_submit(self.queue, &submit_info, fence) };
             if result == Err(vk::Result::ERROR_DEVICE_LOST) {

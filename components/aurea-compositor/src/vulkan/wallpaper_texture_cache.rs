@@ -95,7 +95,9 @@ impl VulkanWallpaperTextureCache {
         pixels: &WallpaperPixels,
     ) -> Result<bool, VulkanWallpaperTextureCacheError> {
         if self.device.is_unusable() {
-            return Err(VulkanWallpaperTextureCacheError::Command(smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST));
+            return Err(VulkanWallpaperTextureCacheError::Command(
+                smithay::reexports::ash::vk::Result::ERROR_DEVICE_LOST,
+            ));
         }
         self.poll()?;
         if self

@@ -235,11 +235,7 @@ impl GbmCpuFramebufferPool {
 
 impl Drop for GbmCpuFramebufferPool {
     fn drop(&mut self) {
-        let has_kms_owned_buffers = self
-            .buffers
-            .keys()
-            .copied()
-            .any(|id| self.is_in_use(id));
+        let has_kms_owned_buffers = self.buffers.keys().copied().any(|id| self.is_in_use(id));
         if has_kms_owned_buffers {
             // A failed output disable or unresolved page flip means KMS may
             // still reference these GBM allocations. Preserve them rather

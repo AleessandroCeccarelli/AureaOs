@@ -11,10 +11,17 @@ use smithay::reexports::ash::vk;
 
 use crate::{
     desktop::{DesktopIconTextureKey, WallpaperDrawGeometry, WallpaperFitMode, WallpaperLayout},
-    render::{RenderScene, geometry::{SurfaceGeometry, SurfaceScissor}},
+    render::{
+        RenderScene,
+        geometry::{SurfaceGeometry, SurfaceScissor},
+    },
     renderer::RenderTarget,
 };
 
+use super::super::{
+    VulkanDisplayColorPassError, VulkanLegacyFrameRecorder, VulkanLegacyFrameRecorderError,
+    VulkanSharedLegacyDisplayColorPass, surface_pipeline_cache::LegacyPipelineLoad,
+};
 use super::{
     VulkanCommandBuffer, VulkanImageState, VulkanImageView, VulkanReadbackBuffer,
     VulkanSurfaceCompositionError, VulkanSurfacePipelineCache, VulkanTextureBinding,
@@ -24,10 +31,6 @@ use super::{
         LegacyNativeCursorLayer, LegacyWallpaperLayer,
     },
     visible_surfaces::VisibleSurface,
-};
-use super::super::{
-    surface_pipeline_cache::LegacyPipelineLoad, VulkanDisplayColorPassError,
-    VulkanLegacyFrameRecorder, VulkanLegacyFrameRecorderError, VulkanSharedLegacyDisplayColorPass,
 };
 
 /// Records a complete compatibility frame using the resources already prepared
@@ -58,10 +61,12 @@ pub(super) fn render_frame_legacy(
 ) -> Result<(), VulkanSurfaceCompositionError> {
     let format = composition_view.format();
     let wallpaper_ready = wallpaper_asset_id.is_some_and(|asset_id| {
-        surface_cache.wallpaper_texture_for_asset(asset_id).is_some()
+        surface_cache
+            .wallpaper_texture_for_asset(asset_id)
+            .is_some()
     });
-    let context_menu_ready = context_menu_key
-        .is_some_and(|key| surface_cache.desktop_icon_texture(key).is_some());
+    let context_menu_ready =
+        context_menu_key.is_some_and(|key| surface_cache.desktop_icon_texture(key).is_some());
 
     surface_cache
         .prepare_shared_legacy_frame_resources_without_display_color(
@@ -75,10 +80,13 @@ pub(super) fn render_frame_legacy(
     // textures below; its manager mutates the cache on first use.
     let legacy_display_pass: Option<Arc<VulkanSharedLegacyDisplayColorPass>> =
         if display_warmth.is_some() {
-            Some(surface_cache.legacy_display_color_pass(output_view.format())
-                .map_err(|error: VulkanDisplayColorPassError| {
-                    VulkanSurfaceCompositionError::Pipeline(error.to_string())
-                })?)
+            Some(
+                surface_cache
+                    .legacy_display_color_pass(output_view.format())
+                    .map_err(|error: VulkanDisplayColorPassError| {
+                        VulkanSurfaceCompositionError::Pipeline(error.to_string())
+                    })?,
+            )
         } else {
             None
         };
@@ -101,24 +109,36 @@ pub(super) fn render_frame_legacy(
 
     let surface_pipeline = surface_cache
         .shared_legacy_surface_pipeline(format, LegacyPipelineLoad::Load)
-        .ok_or_else(|| VulkanSurfaceCompositionError::Pipeline(
-            "The compatibility surface pipeline was not cached".to_owned(),
-        ))?;
+        .ok_or_else(|| {
+            VulkanSurfaceCompositionError::Pipeline(
+                "The compatibility surface pipeline was not cached".to_owned(),
+            )
+        })?;
     let wallpaper_pipeline = if wallpaper_ready {
-        Some(surface_cache.shared_legacy_wallpaper_pipeline(format, LegacyPipelineLoad::Load)
-            .ok_or_else(|| VulkanSurfaceCompositionError::Pipeline(
-                "The compatibility wallpaper pipeline was not cached".to_owned(),
-            ))?)
+        Some(
+            surface_cache
+                .shared_legacy_wallpaper_pipeline(format, LegacyPipelineLoad::Load)
+                .ok_or_else(|| {
+                    VulkanSurfaceCompositionError::Pipeline(
+                        "The compatibility wallpaper pipeline was not cached".to_owned(),
+                    )
+                })?,
+        )
     } else {
         None
     };
     let trail_pipeline = if cursor_trail.is_empty() {
         None
     } else {
-        Some(surface_cache.shared_legacy_cursor_trail_pipeline(format, LegacyPipelineLoad::Load)
-            .ok_or_else(|| VulkanSurfaceCompositionError::Pipeline(
-                "The compatibility cursor-trail pipeline was not cached".to_owned(),
-            ))?)
+        Some(
+            surface_cache
+                .shared_legacy_cursor_trail_pipeline(format, LegacyPipelineLoad::Load)
+                .ok_or_else(|| {
+                    VulkanSurfaceCompositionError::Pipeline(
+                        "The compatibility cursor-trail pipeline was not cached".to_owned(),
+                    )
+                })?,
+        )
     };
 
     // Cache-owned textures are borrowed only after all asynchronous uploads have
@@ -128,41 +148,63 @@ pub(super) fn render_frame_legacy(
     let surface_views = visible
         .iter()
         .map(|surface| {
-            surface_cache.surface_texture(&surface.surface_id)
+            surface_cache
+                .surface_texture(&surface.surface_id)
                 .map(|texture| texture.view())
-                .ok_or_else(|| VulkanSurfaceCompositionError::Texture(
-                    "A visible surface texture was not present in the shared cache".to_owned(),
-                ))
+                .ok_or_else(|| {
+                    VulkanSurfaceCompositionError::Texture(
+                        "A visible surface texture was not present in the shared cache".to_owned(),
+                    )
+                })
         })
         .collect::<Result<Vec<_>, _>>()?;
 
     let wallpaper_view = if wallpaper_ready {
-        Some(wallpaper_asset_id
-            .and_then(|asset_id| surface_cache.wallpaper_texture_for_asset(asset_id))
-            .ok_or_else(|| VulkanSurfaceCompositionError::Texture(
-                "The selected wallpaper texture disappeared before legacy binding".to_owned(),
-            ))?
-            .view())
+        Some(
+            wallpaper_asset_id
+                .and_then(|asset_id| surface_cache.wallpaper_texture_for_asset(asset_id))
+                .ok_or_else(|| {
+                    VulkanSurfaceCompositionError::Texture(
+                        "The selected wallpaper texture disappeared before legacy binding"
+                            .to_owned(),
+                    )
+                })?
+                .view(),
+        )
     } else {
         None
     };
     let context_menu_view = if context_menu_ready {
         let key = context_menu_key.expect("ready context menu has a cache key");
-        Some(surface_cache.desktop_icon_texture(key)
-            .ok_or_else(|| VulkanSurfaceCompositionError::Texture(
-                "The context-menu texture disappeared before legacy binding".to_owned(),
-            ))?
-            .view())
+        Some(
+            surface_cache
+                .desktop_icon_texture(key)
+                .ok_or_else(|| {
+                    VulkanSurfaceCompositionError::Texture(
+                        "The context-menu texture disappeared before legacy binding".to_owned(),
+                    )
+                })?
+                .view(),
+        )
     } else {
         None
     };
     let cursor_view = if cursor_texture_ready {
-        Some(surface_cache.native_cursor_asset(
-            cursor_name, scene.context_menu_theme(), requested_cursor_size,
-        ).map(|asset| asset.frame_at(cursor_frame_time).texture().view())
-            .ok_or_else(|| VulkanSurfaceCompositionError::Texture(
-                "The selected native cursor texture was not ready for legacy binding".to_owned(),
-            ))?)
+        Some(
+            surface_cache
+                .native_cursor_asset(
+                    cursor_name,
+                    scene.context_menu_theme(),
+                    requested_cursor_size,
+                )
+                .map(|asset| asset.frame_at(cursor_frame_time).texture().view())
+                .ok_or_else(|| {
+                    VulkanSurfaceCompositionError::Texture(
+                        "The selected native cursor texture was not ready for legacy binding"
+                            .to_owned(),
+                    )
+                })?,
+        )
     } else {
         None
     };
@@ -172,8 +214,11 @@ pub(super) fn render_frame_legacy(
         + usize::from(context_menu_view.is_some())
         + usize::from(cursor_view.is_some());
     let binding_pool = if binding_count > 0 {
-        Some(surface_cache.create_texture_binding_pool(binding_count as u32)
-            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?)
+        Some(
+            surface_cache
+                .create_texture_binding_pool(binding_count as u32)
+                .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))?,
+        )
     } else {
         None
     };
@@ -193,39 +238,72 @@ pub(super) fn render_frame_legacy(
         })
         .collect::<Result<Vec<_>, _>>()?;
 
-    let wallpaper_binding = wallpaper_view.as_ref().map(|source| {
-        VulkanTextureBinding::new_in_pool(
-            device, pool.expect("wallpaper requires a descriptor pool"),
-            descriptor_layout, source, sampler,
-        ).map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
-    }).transpose()?;
-    let context_menu_binding = context_menu_view.as_ref().map(|source| {
-        VulkanTextureBinding::new_in_pool(
-            device, pool.expect("context menu requires a descriptor pool"),
-            descriptor_layout, source, sampler,
-        ).map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
-    }).transpose()?;
-    let cursor_binding = cursor_view.as_ref().map(|source| {
-        VulkanTextureBinding::new_in_pool(
-            device, pool.expect("native cursor requires a descriptor pool"),
-            descriptor_layout, source, sampler,
-        ).map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
-    }).transpose()?;
+    let wallpaper_binding = wallpaper_view
+        .as_ref()
+        .map(|source| {
+            VulkanTextureBinding::new_in_pool(
+                device,
+                pool.expect("wallpaper requires a descriptor pool"),
+                descriptor_layout,
+                source,
+                sampler,
+            )
+            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
+        })
+        .transpose()?;
+    let context_menu_binding = context_menu_view
+        .as_ref()
+        .map(|source| {
+            VulkanTextureBinding::new_in_pool(
+                device,
+                pool.expect("context menu requires a descriptor pool"),
+                descriptor_layout,
+                source,
+                sampler,
+            )
+            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
+        })
+        .transpose()?;
+    let cursor_binding = cursor_view
+        .as_ref()
+        .map(|source| {
+            VulkanTextureBinding::new_in_pool(
+                device,
+                pool.expect("native cursor requires a descriptor pool"),
+                descriptor_layout,
+                source,
+                sampler,
+            )
+            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
+        })
+        .transpose()?;
 
     let wallpaper_layer = if let (Some(source), Some(binding), Some(pipeline)) = (
-        wallpaper_view.as_ref(), wallpaper_binding.as_ref(), wallpaper_pipeline,
+        wallpaper_view.as_ref(),
+        wallpaper_binding.as_ref(),
+        wallpaper_pipeline,
     ) {
         let texture = wallpaper_asset_id
             .and_then(|asset_id| surface_cache.wallpaper_texture_for_asset(asset_id))
-            .ok_or_else(|| VulkanSurfaceCompositionError::Texture(
-                "Wallpaper texture was lost while resolving its geometry".to_owned(),
-            ))?;
+            .ok_or_else(|| {
+                VulkanSurfaceCompositionError::Texture(
+                    "Wallpaper texture was lost while resolving its geometry".to_owned(),
+                )
+            })?;
         let layout = WallpaperLayout::calculate(
-            texture.width(), texture.height(), target.width(), target.height(),
+            texture.width(),
+            texture.height(),
+            target.width(),
+            target.height(),
             WallpaperFitMode::Fill,
-        ).ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
+        )
+        .ok_or(VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?;
         if let Some(geometry) = WallpaperDrawGeometry::for_output(
-            layout, texture.width(), texture.height(), target.width(), target.height(),
+            layout,
+            texture.width(),
+            texture.height(),
+            target.width(),
+            target.height(),
         ) {
             let destination = geometry.destination();
             let scissor_x = i32::try_from(destination.x())
@@ -246,7 +324,10 @@ pub(super) fn render_frame_legacy(
                     max_depth: 1.0,
                 },
                 scissor: vk::Rect2D {
-                    offset: vk::Offset2D { x: scissor_x, y: scissor_y },
+                    offset: vk::Offset2D {
+                        x: scissor_x,
+                        y: scissor_y,
+                    },
                     extent: vk::Extent2D {
                         width: destination.width(),
                         height: destination.height(),
@@ -262,31 +343,41 @@ pub(super) fn render_frame_legacy(
     };
 
     let context_menu_layer = match (
-        context_menu_view.as_ref(), context_menu_binding.as_ref(), context_menu_draw,
+        context_menu_view.as_ref(),
+        context_menu_binding.as_ref(),
+        context_menu_draw,
     ) {
         (Some(source), Some(binding), Some((viewport, scissor, texture_transform))) => {
             Some(LegacyContextMenuLayer {
-                source, binding, viewport, scissor, texture_transform,
+                source,
+                binding,
+                viewport,
+                scissor,
+                texture_transform,
             })
         }
         _ => None,
     };
     let cursor_trail_layer = match (
-        cursor_view.as_ref(), cursor_binding.as_ref(), trail_pipeline,
+        cursor_view.as_ref(),
+        cursor_binding.as_ref(),
+        trail_pipeline,
     ) {
         (Some(source), Some(binding), Some(pipeline)) if !cursor_trail.is_empty() => {
             Some(LegacyCursorTrailLayer {
-                source, binding, pipeline, impressions: cursor_trail,
+                source,
+                binding,
+                pipeline,
+                impressions: cursor_trail,
             })
         }
         _ => None,
     };
-    let native_cursor_layer = match (
-        cursor_view.as_ref(), cursor_binding.as_ref(), cursor,
-    ) {
+    let native_cursor_layer = match (cursor_view.as_ref(), cursor_binding.as_ref(), cursor) {
         (Some(source), Some(binding), Some((geometry, scissor, texture_transform))) => {
             Some(LegacyNativeCursorLayer {
-                source, binding,
+                source,
+                binding,
                 viewport: vk::Viewport {
                     x: geometry.x() as f32,
                     y: geometry.y() as f32,
@@ -302,7 +393,10 @@ pub(super) fn render_frame_legacy(
                         y: i32::try_from(scissor.y)
                             .map_err(|_| VulkanSurfaceCompositionError::InvalidSurfaceGeometry)?,
                     },
-                    extent: vk::Extent2D { width: scissor.width, height: scissor.height },
+                    extent: vk::Extent2D {
+                        width: scissor.width,
+                        height: scissor.height,
+                    },
                 },
                 texture_transform,
             })
@@ -324,55 +418,82 @@ pub(super) fn render_frame_legacy(
         native_cursor: native_cursor_layer,
     };
 
-    let display_binding = legacy_display_pass.as_ref().map(|pass| {
-        pass.bind_source(composition_view)
-            .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
-    }).transpose()?;
+    let display_binding = legacy_display_pass
+        .as_ref()
+        .map(|pass| {
+            pass.bind_source(composition_view)
+                .map_err(|error| VulkanSurfaceCompositionError::Descriptor(error.to_string()))
+        })
+        .transpose()?;
 
-    let display_target = legacy_display_pass.as_ref().map(|pass| {
-        pass.render_pass().create_target(output_view)
-            .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))
-    }).transpose()?;
+    let display_target = legacy_display_pass
+        .as_ref()
+        .map(|pass| {
+            pass.render_pass()
+                .create_target(output_view)
+                .map_err(|error| VulkanSurfaceCompositionError::Pipeline(error.to_string()))
+        })
+        .transpose()?;
 
     let mut command_buffer = VulkanCommandBuffer::new(device)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
-    command_buffer.begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
+    command_buffer
+        .begin(vk::CommandBufferUsageFlags::ONE_TIME_SUBMIT)
         .map_err(|error| VulkanSurfaceCompositionError::Command(format!("{error:?}")))?;
 
     legacy_layers::record_legacy_frame_layers(
-        command_buffer.handle(), layers, previous_composition_state,
+        command_buffer.handle(),
+        layers,
+        previous_composition_state,
     )?;
 
     if let (Some(pass), Some(binding), Some(warmth)) = (
-        legacy_display_pass.as_ref(), display_binding.as_ref(), display_warmth,
+        legacy_display_pass.as_ref(),
+        display_binding.as_ref(),
+        display_warmth,
     ) {
         VulkanLegacyFrameRecorder::display_color(
             pass,
             device,
             command_buffer.handle(),
             composition_view,
-            display_target.as_ref().expect("display pass has a retained framebuffer"),
+            display_target
+                .as_ref()
+                .expect("display pass has a retained framebuffer"),
             binding,
             VulkanImageState::General,
             previous_output_state,
             VulkanImageState::General,
             warmth,
-        ).map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
+        )
+        .map_err(|error| VulkanSurfaceCompositionError::Command(error.to_string()))?;
     }
 
     let submit_result = if let Some(readback) = readback.as_ref().and_then(|slot| slot.as_ref()) {
-        readback.record_transition_and_copy_rgba8(
-            device, command_buffer.handle(), output_view, VulkanImageState::General,
-        ).map_err(|error| VulkanLegacyFrameRecorderError::Command(error.to_string()))?;
+        readback
+            .record_transition_and_copy_rgba8(
+                device,
+                command_buffer.handle(),
+                output_view,
+                VulkanImageState::General,
+            )
+            .map_err(|error| VulkanLegacyFrameRecorderError::Command(error.to_string()))?;
         VulkanLegacyFrameRecorder::submit_readback(
-            &mut command_buffer, device, output_view, on_submitted,
+            &mut command_buffer,
+            device,
+            output_view,
+            on_submitted,
         )
     } else {
         // The scene pass (and optional display-color pass) leaves the output
         // in GENERAL. Do not reuse the pre-frame state after recording has
         // already transitioned and written the image.
         VulkanLegacyFrameRecorder::release_and_submit(
-            &mut command_buffer, device, output_view, VulkanImageState::General, on_submitted,
+            &mut command_buffer,
+            device,
+            output_view,
+            VulkanImageState::General,
+            on_submitted,
         )
     };
 
@@ -394,7 +515,9 @@ pub(super) fn render_frame_legacy(
                         }
                     }
                 }
-                return Err(VulkanSurfaceCompositionError::from_queue_submit_error(queue_error));
+                return Err(VulkanSurfaceCompositionError::from_queue_submit_error(
+                    queue_error,
+                ));
             }
             other => return Err(VulkanSurfaceCompositionError::Command(other.to_string())),
         }

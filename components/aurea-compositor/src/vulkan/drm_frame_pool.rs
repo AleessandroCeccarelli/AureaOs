@@ -458,7 +458,6 @@ impl VulkanDrmFramePool {
     }
 }
 
-
 impl Drop for VulkanDrmFramePool {
     fn drop(&mut self) {
         if !self.frames.is_empty() {

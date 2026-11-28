@@ -10,7 +10,7 @@ use std::{error::Error, fmt, marker::PhantomData, sync::Arc};
 use smithay::reexports::ash::vk;
 
 #[cfg(feature = "drm")]
-use super::{VulkanDrmImage, VulkanDmabufImage};
+use super::{VulkanDmabufImage, VulkanDrmImage};
 use super::{VulkanImage, VulkanLogicalDevice, VulkanSharedImage};
 
 /// Errors returned while creating an image view.
@@ -280,7 +280,9 @@ impl VulkanImageView<'static, 'static> {
 
 impl Drop for VulkanImageView<'_, '_> {
     fn drop(&mut self) {
-        if self.device.device().is_unusable() { return; }
+        if self.device.device().is_unusable() {
+            return;
+        }
         unsafe {
             self.device
                 .device()

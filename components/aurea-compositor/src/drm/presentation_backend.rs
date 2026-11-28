@@ -225,7 +225,9 @@ impl DrmPresentationBackend {
             .filter_map(|plane| plane.config.as_ref())
             .map(|config| config.fence.is_some())
             .collect::<Vec<_>>();
-        if let Err(error) = Self::validate_plane_synchronization(&active_plane_fences, require_in_fence) {
+        if let Err(error) =
+            Self::validate_plane_synchronization(&active_plane_fences, require_in_fence)
+        {
             let _ = self.rollback_mode_change(surface);
             return Err(error);
         }
@@ -235,7 +237,9 @@ impl DrmPresentationBackend {
             let rollback = self.rollback_mode_change(surface);
             return Err(DrmPresentationBackendError::KmsOperation(match rollback {
                 Ok(()) => format!("Unable to begin frame presentation: {error}"),
-                Err(restore) => format!("Unable to begin frame presentation: {error}; restoring previous KMS mode failed: {restore}"),
+                Err(restore) => format!(
+                    "Unable to begin frame presentation: {error}; restoring previous KMS mode failed: {restore}"
+                ),
             }));
         }
 
@@ -245,7 +249,9 @@ impl DrmPresentationBackend {
             return match self.frames.presentation_test_failed() {
                 Ok(_) => Err(DrmPresentationBackendError::KmsOperation(match rollback {
                     Ok(()) => operation,
-                    Err(restore) => format!("{operation}; restoring previous KMS mode failed: {restore}"),
+                    Err(restore) => {
+                        format!("{operation}; restoring previous KMS mode failed: {restore}")
+                    }
                 })),
                 Err(lifecycle) => Err(DrmPresentationBackendError::Recovery {
                     operation,
@@ -258,7 +264,9 @@ impl DrmPresentationBackend {
             let rollback = self.rollback_mode_change(surface);
             return Err(DrmPresentationBackendError::KmsOperation(match rollback {
                 Ok(()) => format!("Frame lifecycle rejected successful TEST_ONLY: {error}"),
-                Err(restore) => format!("Frame lifecycle rejected successful TEST_ONLY: {error}; restoring previous KMS mode failed: {restore}"),
+                Err(restore) => format!(
+                    "Frame lifecycle rejected successful TEST_ONLY: {error}; restoring previous KMS mode failed: {restore}"
+                ),
             }));
         }
         if let Err(error) = self.frames.validate_commit_ready(require_in_fence) {
@@ -268,7 +276,9 @@ impl DrmPresentationBackend {
             return match self.frames.presentation_commit_failed() {
                 Ok(_) => Err(DrmPresentationBackendError::KmsOperation(match rollback {
                     Ok(()) => operation,
-                    Err(restore) => format!("{operation}; restoring previous KMS mode failed: {restore}"),
+                    Err(restore) => {
+                        format!("{operation}; restoring previous KMS mode failed: {restore}")
+                    }
                 })),
                 Err(lifecycle) => Err(DrmPresentationBackendError::Recovery {
                     operation,
@@ -289,7 +299,9 @@ impl DrmPresentationBackend {
             return match self.frames.presentation_commit_failed() {
                 Ok(_) => Err(DrmPresentationBackendError::KmsOperation(match rollback {
                     Ok(()) => operation,
-                    Err(restore) => format!("{operation}; restoring previous KMS mode failed: {restore}"),
+                    Err(restore) => {
+                        format!("{operation}; restoring previous KMS mode failed: {restore}")
+                    }
                 })),
                 Err(lifecycle) => Err(DrmPresentationBackendError::Recovery {
                     operation,
@@ -322,7 +334,10 @@ impl DrmPresentationBackend {
                 DrmOutputFrameError::NoPendingFrame,
             ))?;
 
-        let released = self.frames.page_flip_complete(displayed).map_err(DrmPresentationBackendError::from)?;
+        let released = self
+            .frames
+            .page_flip_complete(displayed)
+            .map_err(DrmPresentationBackendError::from)?;
         self.pending_mode_rollback = None;
         Ok(released)
     }

@@ -9,7 +9,9 @@ use std::{collections::HashMap, sync::Arc};
 
 use smithay::reexports::ash::vk;
 
-use super::{VulkanColorLoad, VulkanLegacyRenderPass, VulkanLegacyRenderPassError, VulkanLogicalDevice};
+use super::{
+    VulkanColorLoad, VulkanLegacyRenderPass, VulkanLegacyRenderPassError, VulkanLogicalDevice,
+};
 
 /// Owns persistent legacy render passes keyed by attachment format and load operation.
 ///
@@ -32,16 +34,40 @@ impl VulkanLegacyRenderPassManager {
         }
     }
 
-    pub(crate) fn clear(&mut self, format: vk::Format) -> Result<Arc<VulkanLegacyRenderPass<'static>>, VulkanLegacyRenderPassError> {
-        Self::get_or_create(&self.device, &mut self.clear_passes, format, VulkanColorLoad::Clear([0.0; 4]))
+    pub(crate) fn clear(
+        &mut self,
+        format: vk::Format,
+    ) -> Result<Arc<VulkanLegacyRenderPass<'static>>, VulkanLegacyRenderPassError> {
+        Self::get_or_create(
+            &self.device,
+            &mut self.clear_passes,
+            format,
+            VulkanColorLoad::Clear([0.0; 4]),
+        )
     }
 
-    pub(crate) fn load(&mut self, format: vk::Format) -> Result<Arc<VulkanLegacyRenderPass<'static>>, VulkanLegacyRenderPassError> {
-        Self::get_or_create(&self.device, &mut self.load_passes, format, VulkanColorLoad::Load)
+    pub(crate) fn load(
+        &mut self,
+        format: vk::Format,
+    ) -> Result<Arc<VulkanLegacyRenderPass<'static>>, VulkanLegacyRenderPassError> {
+        Self::get_or_create(
+            &self.device,
+            &mut self.load_passes,
+            format,
+            VulkanColorLoad::Load,
+        )
     }
 
-    pub(crate) fn discard(&mut self, format: vk::Format) -> Result<Arc<VulkanLegacyRenderPass<'static>>, VulkanLegacyRenderPassError> {
-        Self::get_or_create(&self.device, &mut self.discard_passes, format, VulkanColorLoad::DontCare)
+    pub(crate) fn discard(
+        &mut self,
+        format: vk::Format,
+    ) -> Result<Arc<VulkanLegacyRenderPass<'static>>, VulkanLegacyRenderPassError> {
+        Self::get_or_create(
+            &self.device,
+            &mut self.discard_passes,
+            format,
+            VulkanColorLoad::DontCare,
+        )
     }
 
     fn get_or_create(
@@ -53,7 +79,11 @@ impl VulkanLegacyRenderPassManager {
         if let Some(pass) = cache.get(&format) {
             return Ok(Arc::clone(pass));
         }
-        let pass = Arc::new(VulkanLegacyRenderPass::new_shared(Arc::clone(device), format, load)?);
+        let pass = Arc::new(VulkanLegacyRenderPass::new_shared(
+            Arc::clone(device),
+            format,
+            load,
+        )?);
         cache.insert(format, Arc::clone(&pass));
         Ok(pass)
     }

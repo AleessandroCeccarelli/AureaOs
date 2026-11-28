@@ -6,8 +6,8 @@
 //! Wayland shared-memory protocol integration.
 
 use smithay::{
-    delegate_dmabuf, delegate_shm,
     backend::allocator::dmabuf::Dmabuf,
+    delegate_dmabuf, delegate_shm,
     reexports::wayland_server::protocol::wl_buffer::WlBuffer,
     wayland::{
         buffer::BufferHandler,

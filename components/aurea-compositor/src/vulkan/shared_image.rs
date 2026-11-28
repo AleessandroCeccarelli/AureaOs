@@ -191,7 +191,9 @@ impl VulkanSharedImage {
 
 impl Drop for VulkanSharedImage {
     fn drop(&mut self) {
-        if self.device.is_unusable() { return; }
+        if self.device.is_unusable() {
+            return;
+        }
         let raw = self.device.handle();
         unsafe {
             raw.destroy_image(self.image, None);

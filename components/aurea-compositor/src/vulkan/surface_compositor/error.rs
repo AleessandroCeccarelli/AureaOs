@@ -180,6 +180,9 @@ mod tests {
                 idle_error: vk::Result::ERROR_UNKNOWN,
             },
         );
-        assert!(matches!(error, VulkanSurfaceCompositionError::UncertainSubmission(_)));
+        assert!(matches!(
+            error,
+            VulkanSurfaceCompositionError::UncertainSubmission(_)
+        ));
     }
 }

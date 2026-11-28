@@ -97,7 +97,8 @@ impl AureaCompositor {
             ..OutputReconciliation::default()
         };
 
-        if let Err(error) = self.publish_output_reconciliation(display, previous.clone(), &changes) {
+        if let Err(error) = self.publish_output_reconciliation(display, previous.clone(), &changes)
+        {
             self.output_manager = previous;
             return Err(CompositorOutputConfigurationError::Publication(error));
         }
@@ -121,7 +122,8 @@ impl AureaCompositor {
             ..OutputReconciliation::default()
         };
 
-        if let Err(error) = self.publish_output_reconciliation(display, previous.clone(), &changes) {
+        if let Err(error) = self.publish_output_reconciliation(display, previous.clone(), &changes)
+        {
             self.output_manager = previous;
             return Err(CompositorOutputConfigurationError::Publication(error));
         }

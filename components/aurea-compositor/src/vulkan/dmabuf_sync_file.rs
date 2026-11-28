@@ -8,7 +8,7 @@
 use std::{
     error::Error,
     fmt,
-    os::fd::{AsRawFd, OwnedFd, FromRawFd, IntoRawFd},
+    os::fd::{AsRawFd, FromRawFd, IntoRawFd, OwnedFd},
 };
 
 use smithay::reexports::ash::{self, vk};
@@ -44,7 +44,9 @@ impl fmt::Display for DmabufSyncFileError {
         match self {
             Self::MissingPlane => formatter.write_str("DMA-BUF has no memory plane"),
             Self::ExportIo(kind) => write!(formatter, "DMA-BUF sync-file export failed: {kind:?}"),
-            Self::InvalidReturnedFd => formatter.write_str("Kernel returned an invalid sync-file descriptor"),
+            Self::InvalidReturnedFd => {
+                formatter.write_str("Kernel returned an invalid sync-file descriptor")
+            }
         }
     }
 }
@@ -91,7 +93,6 @@ pub(crate) fn export_read_sync_file(
     Ok(unsafe { OwnedFd::from_raw_fd(request.fd) })
 }
 
-
 /// Imports a Linux sync-file as a temporary Vulkan binary-semaphore payload.
 ///
 /// On success Vulkan owns the file descriptor and the returned semaphore must
@@ -111,8 +112,8 @@ pub(crate) fn import_sync_file_semaphore(
     let mut export_info = vk::ExportSemaphoreCreateInfo::default()
         .handle_types(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD);
     let create_info = vk::SemaphoreCreateInfo::default().push_next(&mut export_info);
-    let semaphore = unsafe { device.handle().create_semaphore(&create_info, None) }
-        .map_err(|error| {
+    let semaphore =
+        unsafe { device.handle().create_semaphore(&create_info, None) }.map_err(|error| {
             if error == vk::Result::ERROR_DEVICE_LOST {
                 device.mark_unusable();
             }
@@ -125,17 +126,18 @@ pub(crate) fn import_sync_file_semaphore(
         .flags(vk::SemaphoreImportFlags::TEMPORARY)
         .handle_type(vk::ExternalSemaphoreHandleTypeFlags::SYNC_FD)
         .fd(raw_fd);
-    let loader = ash::khr::external_semaphore_fd::Device::new(
-        device.instance(),
-        device.handle(),
-    );
+    let loader = ash::khr::external_semaphore_fd::Device::new(device.instance(), device.handle());
     if let Err(error) = unsafe { loader.import_semaphore_fd(&import_info) } {
         // The FD ownership transfer occurs only on successful import.
-        unsafe { drop(OwnedFd::from_raw_fd(raw_fd)); }
+        unsafe {
+            drop(OwnedFd::from_raw_fd(raw_fd));
+        }
         if error == vk::Result::ERROR_DEVICE_LOST {
             device.mark_unusable();
         } else {
-            unsafe { device.handle().destroy_semaphore(semaphore, None); }
+            unsafe {
+                device.handle().destroy_semaphore(semaphore, None);
+            }
         }
         return Err(error);
     }
@@ -162,7 +164,11 @@ pub(crate) struct DmabufSyncWaitSet {
 
 impl DmabufSyncWaitSet {
     pub(crate) fn new(device: std::sync::Arc<VulkanLogicalDevice>) -> Self {
-        Self { device, semaphores: Vec::new(), quarantined: false }
+        Self {
+            device,
+            semaphores: Vec::new(),
+            quarantined: false,
+        }
     }
 
     pub(crate) fn import_layout(
