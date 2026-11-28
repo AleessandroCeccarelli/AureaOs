@@ -347,3 +347,61 @@ fn staged_multi_output_configuration_discards_earlier_candidates_on_later_failur
     assert_eq!(manager.registry().get(25).unwrap().current_mode(), original);
 }
 
+#[test]
+fn staged_multi_output_configuration_validates_only_final_active_count() {
+    let mode = OutputMode::new(1920, 1080, 60_000).unwrap();
+    let mut manager = OutputManager::new();
+
+    for id in 1..=MAX_ACTIVE_OUTPUTS as u128 {
+        manager
+            .register(
+                DisplayOutput::new(id, format!("DP-{id}"), vec![mode], mode, 1).unwrap(),
+                ((id as i32 - 1) * 1920, 0),
+            )
+            .unwrap();
+    }
+
+    let mut disabled = DisplayOutput::new(
+        MAX_ACTIVE_OUTPUTS as u128 + 1,
+        "HDMI-A-1",
+        vec![mode],
+        mode,
+        1,
+    )
+    .unwrap();
+    disabled.set_enabled(false);
+    manager
+        .register(disabled, (MAX_ACTIVE_OUTPUTS as i32 * 1920, 0))
+        .unwrap();
+
+    // Enabling the replacement first temporarily exceeds the active limit.
+    // The complete batch is nevertheless valid because it also disables one
+    // of the currently active outputs.
+    let staged = manager
+        .staged_configurations(&[
+            (
+                MAX_ACTIVE_OUTPUTS as u128 + 1,
+                OutputConfiguration {
+                    enabled: Some(true),
+                    ..OutputConfiguration::default()
+                },
+            ),
+            (
+                1,
+                OutputConfiguration {
+                    enabled: Some(false),
+                    ..OutputConfiguration::default()
+                },
+            ),
+        ])
+        .unwrap();
+
+    assert_eq!(manager.active_output_count(), MAX_ACTIVE_OUTPUTS);
+    assert_eq!(staged.active_output_count(), MAX_ACTIVE_OUTPUTS);
+    assert!(!staged.registry().get(1).unwrap().is_enabled());
+    assert!(staged
+        .registry()
+        .get(&(MAX_ACTIVE_OUTPUTS as u128 + 1))
+        .unwrap()
+        .is_enabled());
+}
