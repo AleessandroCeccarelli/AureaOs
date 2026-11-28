@@ -47,7 +47,7 @@ pub(crate) struct VulkanDmabufImage {
     device: Arc<VulkanLogicalDevice>,
     image: vk::Image,
     memory: vk::DeviceMemory,
-    layout: DmabufImportLayout,
+    _layout: DmabufImportLayout,
     format: vk::Format,
     width: u32,
     height: u32,
@@ -184,7 +184,7 @@ impl VulkanDmabufImage {
             device,
             image,
             memory,
-            layout,
+            _layout: layout,
             format: support.format,
             width: support.width,
             height: support.height,
@@ -208,9 +208,6 @@ impl VulkanDmabufImage {
     }
     pub(crate) fn device(&self) -> &VulkanLogicalDevice {
         &self.device
-    }
-    pub(crate) fn layout(&self) -> &DmabufImportLayout {
-        &self.layout
     }
 }
 
