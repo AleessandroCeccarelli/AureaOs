@@ -5,7 +5,7 @@
 
 //! Core Wayland compositor state and module coordination.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 
 use aurea_desktop_api::{
     desktop::DesktopManager as DesktopItemsManager, desktop_interaction::DesktopInteractionSender,
