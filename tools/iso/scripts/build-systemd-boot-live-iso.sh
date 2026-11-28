@@ -5,7 +5,7 @@ set -Eeuo pipefail
 readonly SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 readonly ISO_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd -P)"
 readonly OS_RELEASE="$ISO_DIR/os-release"
-readonly ESP_SIZE_MIB="${AUREAOS_ESP_SIZE_MIB:-31}"
+readonly ESP_SIZE_MIB="${AUREAOS_ESP_SIZE_MIB:-256}"
 
 usage() {
     echo "Usage: $0 --binary-dir PATH --output PATH" >&2
@@ -40,7 +40,7 @@ done
 [[ -d "$BINARY_DIR/live" ]] || fail "Debian Live payload is missing"
 [[ -s "$OS_RELEASE" ]] || fail "AureaOS UKI os-release metadata is missing"
 [[ "$ESP_SIZE_MIB" =~ ^[0-9]+$ ]] || fail "AUREAOS_ESP_SIZE_MIB must be an integer"
-(( ESP_SIZE_MIB >= 16 && ESP_SIZE_MIB <= 31 )) || fail "El Torito EFI image must be between 16 and 31 MiB"
+(( ESP_SIZE_MIB >= 16 && ESP_SIZE_MIB <= 2047 )) || fail "EFI system partition must be between 16 and 2047 MiB"
 
 for tool in ukify mcopy mmd mkfs.vfat truncate xorriso sort cp; do
     command -v "$tool" >/dev/null 2>&1 || fail "required tool not found: $tool"
@@ -113,18 +113,25 @@ for KERNEL in "${KERNELS[@]}"; do
 
 done
 
-# El Torito's EFI boot-image size field is limited. Keep the FAT ESP below
-# 32 MiB and fail before mcopy if the UKIs cannot fit safely.
+# El Torito stores the EFI image load count in a 16-bit sector field. For an
+# EFI image larger than 65535 sectors, xorriso writes the UEFI full-medium
+# convention (load count 0/1). -efi-boot-part --efi-boot-image also exposes
+# this same FAT image as a GPT EFI System Partition, the USB/Ventoy boot path.
+# The Live ESP is intentionally 256 MiB: a complete UKI includes kernel and
+# initramfs and must not be truncated or split to satisfy the catalog field.
 UKI_BYTES=0
 for UKI in "$WORK_DIR"/aureaos-live-*.efi; do
     UKI_BYTES=$((UKI_BYTES + $(stat -c '%s' "$UKI")))
 done
 BOOTLOADER_BYTES="$(stat -c '%s' "$BOOTLOADER")"
 ESP_BYTES=$((ESP_SIZE_MIB * 1024 * 1024))
-(( UKI_BYTES + 2 * BOOTLOADER_BYTES + 2 * 1024 * 1024 < ESP_BYTES )) || {
+(( UKI_BYTES + 2 * BOOTLOADER_BYTES + 8 * 1024 * 1024 < ESP_BYTES )) || {
     echo "UKI payload total: $UKI_BYTES bytes; systemd-boot copies: $((2 * BOOTLOADER_BYTES)) bytes; ESP: $ESP_BYTES bytes." >&2
-    fail "UKI payloads need more than the ${ESP_SIZE_MIB} MiB El Torito ESP can safely hold; verify initramfs compression and kernel count"
+    fail "UKI payloads do not fit in the configured ${ESP_SIZE_MIB} MiB Live ESP; increase AUREAOS_ESP_SIZE_MIB"
 }
+if (( ESP_BYTES > 65535 * 512 )); then
+    echo "EFI image exceeds the El Torito 16-bit load-count range; using xorriso's UEFI full-medium convention and the matching GPT ESP."
+fi
 
 # systemd-boot scans this FAT image as its ESP. No firmware NVRAM entries are
 # created and no host disk is touched by this build-time operation.
@@ -190,5 +197,5 @@ mv -f -- "$TEMP_ISO" "$OUTPUT_PATH"
 
 echo "Created UEFI-only AureaOS Live ISO with systemd-boot and UKI:"
 echo "  $OUTPUT_PATH"
-echo "  ESP: boot/efi.img inside the ISO (${ESP_SIZE_MIB} MiB FAT16)"
+echo "  ESP: boot/efi.img inside the ISO (${ESP_SIZE_MIB} MiB FAT16/GPT ESP)"
 echo "  Default entry: $DEFAULT_ENTRY"
