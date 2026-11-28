@@ -20,5 +20,5 @@ pub use decode_service::{
 pub use draw_geometry::{WallpaperDrawGeometry, WallpaperUvRect};
 pub use layout::{WallpaperFitMode, WallpaperLayout, WallpaperPixelRect};
 pub use manager::WallpaperManager;
-pub use pixels::{MAX_WALLPAPER_RGBA_BYTES, WallpaperPixels, WallpaperPixelsError};
+pub use pixels::{WallpaperPixels, WallpaperPixelsError};
 pub use snapshot::WallpaperSnapshot;
