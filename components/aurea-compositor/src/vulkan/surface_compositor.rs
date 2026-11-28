@@ -1046,8 +1046,9 @@ pub(super) fn render_frame(
             {
                 dmabuf_sync_wait_set.quarantine();
                 std::mem::forget(dmabuf_images);
-                std::mem::forget(dmabuf_views);
+                // Bindings borrow the image views, so consume them first.
                 std::mem::forget(dmabuf_bindings);
+                std::mem::forget(dmabuf_views);
                 std::mem::forget(visible_dmabuf);
             }
             std::mem::forget(wallpaper_binding);
