@@ -25,9 +25,10 @@ pub use background::DesktopBackground;
 #[allow(unused_imports)]
 pub(crate) use icon_asset_loader::{DesktopIconAssetLoadError, load_desktop_icon_snapshot};
 pub(crate) use icon_assets::{
-    DesktopIconAssetDescriptor, DesktopIconTextureKey,
-    desktop_context_menu_asset, desktop_icon_asset,
+    DesktopIconAssetDescriptor, DesktopIconTextureKey, desktop_context_menu_asset,
 };
+#[cfg(feature = "legacy-vulkan-frame")]
+pub(crate) use icon_assets::desktop_icon_asset;
 #[allow(unused_imports)]
 pub(crate) use item_geometry::{
     DESKTOP_ICON_LOGICAL_SIZE, DesktopItemDrawGeometry, desktop_item_geometries,
