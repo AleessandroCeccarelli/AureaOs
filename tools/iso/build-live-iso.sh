@@ -120,7 +120,7 @@ refresh_inputs() {
     # xz is provided by the Debian base image and is supported by the Debian kernel.
     INITRAMFS_CONF="$CONFIG_DIR/includes.chroot/etc/initramfs-tools/conf.d"
     install -d -m 0755 "$INITRAMFS_CONF"
-    printf 'COMPRESS=xz\\n' > "$INITRAMFS_CONF/aureaos.conf"
+    printf '%s\\n' 'COMPRESS=xz' > "$INITRAMFS_CONF/aureaos.conf"
     chmod 0644 "$INITRAMFS_CONF/aureaos.conf"
 
     # Replace only the staged source snapshot, never the live-build chroot.
