@@ -115,6 +115,7 @@ impl Default for TouchpadProfileStore {
 }
 
 impl TouchpadProfileStore {
+    #[cfg(test)]
     fn with_path(path: PathBuf) -> Self {
         Self::open(path)
     }
@@ -164,12 +165,9 @@ impl TouchpadProfileStore {
         Ok(())
     }
 
+    #[cfg(test)]
     pub fn len(&self) -> usize {
         self.profiles.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.profiles.is_empty()
     }
 
     fn persist(&self) -> io::Result<()> {
