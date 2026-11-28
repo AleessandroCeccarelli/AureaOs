@@ -142,11 +142,15 @@ pub(super) fn render_pending_outputs(state: &mut WaylandState) -> io::Result<()>
         // allocating the frame. The scanout renderer below allocates its Vulkan
         // image/GBM framebuffer from RenderTarget dimensions, then TEST_ONLY and
         // commit apply the staged KMS mode together with that matching framebuffer.
-        let requested_mode = compositor
-            .output_manager()
-            .registry()
-            .get(output_id)
-            .map(|logical| logical.current_mode())
+        let requested_mode = output
+            .staged_output_mode()
+            .or_else(|| {
+                compositor
+                    .output_manager()
+                    .registry()
+                    .get(output_id)
+                    .map(|logical| logical.current_mode())
+            })
             .ok_or_else(|| io::Error::other(format!(
                 "AureaOS: logical output {output_id} disappeared before modeset"
             )))?;
