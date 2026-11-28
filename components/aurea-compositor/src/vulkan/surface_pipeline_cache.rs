@@ -740,6 +740,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Prepares compositor-owned desktop artwork without using Wayland surface IDs.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn prepare_desktop_icon_textures(
         &mut self,
         requested: &[(DesktopIconTextureKey, ShmBufferSnapshot)],
@@ -809,6 +810,7 @@ impl VulkanSurfacePipelineCache {
     /// Decoded RGBA snapshots are retained by texture key, so filesystem access
     /// occurs only when an artwork variant is first requested. The key includes
     /// theme, Trash state and raster density through the asset descriptor.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn prepare_desktop_item_texture(
         &mut self,
         item: &aurea_desktop_api::desktop::DesktopItem,
@@ -894,6 +896,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Submits the selected wallpaper pixels without waiting for GPU completion.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn prepare_wallpaper_texture(
         &mut self,
         key: WallpaperTextureKey,
