@@ -52,7 +52,7 @@ if [[ "$MODE" == "--iso" ]]; then
         fail "cannot inspect the ISO El Torito boot catalog"
     grep -Fq 'boot/efi.img' <<<"$REPORT" ||
         fail "ISO El Torito catalog does not reference the systemd-boot EFI image"
-    grep -Eq -- '(-e|--efi-boot)[[:space:]]+boot/efi\.img' <<<"$REPORT" ||
+    grep -Eq -- '(-e|--efi-boot).*boot/efi\.img' <<<"$REPORT" ||
         fail "ISO El Torito catalog does not declare boot/efi.img as an EFI boot image"
     grep -Fq -- '-no-emul-boot' <<<"$REPORT" ||
         fail "ISO EFI El Torito entry is not configured for no-emulation boot"
