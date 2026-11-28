@@ -465,7 +465,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
         let mut rendering =
             vk::PipelineRenderingCreateInfo::default().color_attachment_formats(&color_formats);
 
-        let pipeline_info = vk::GraphicsPipelineCreateInfo::default()
+        let mut pipeline_info = vk::GraphicsPipelineCreateInfo::default()
             .stages(&stages)
             .vertex_input_state(&vertex_input)
             .input_assembly_state(&input_assembly)
