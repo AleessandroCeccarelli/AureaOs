@@ -287,7 +287,7 @@ The native cursor texture is decoded and uploaded asynchronously, then cached fo
 - `RenderScene` carries the named Smithay cursor role, global pointer anchor and desktop Light/Dark theme.
 - `VulkanNativeCursorTexture` resolves Xcursor files from `AUREA_CURSOR_THEME_ROOT` (default `/usr/share/icons`), decodes with the bounded internal parser, selects the closest raster size and retains the uploaded frame textures in the per-device cache.
 - The native cursor draw uses the decoded image dimensions and per-asset hotspot. Missing files fall back to a raster-size-adjusted built-in arrow.
-- Debian Live packaging builds both SVG themes with `rsvg-convert` and `xcursorgen`, installs them in `/usr/share/icons`, and validates the canonical cursor payload.
+- The disposable Debian ISO builder generates both SVG themes with `rsvg-convert` and `xcursorgen` (from `x11-apps`), then stages only the resulting Xcursor files in `/usr/share/icons`; the target chroot contains no X11 build utilities and validates the canonical cursor payload.
 - Current limitation: first-use file read/decode/upload still occurs synchronously on the render path; all selected frames are uploaded but only frame zero is drawn. Animation scheduling, asynchronous preparation, cache-budget review and physical fractional/high-DPI validation remain open. No build or test was run for this source change.
 
 ### Asynchronous native cursor loading and frame animation — 26 November 2026
