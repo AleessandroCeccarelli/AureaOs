@@ -244,7 +244,7 @@ for UKI in "${UKIS[@]}"; do
     VERSION="${VERSION%.efi}"
     ENTRY="$TEMP_DIR/aureaos-live-$VERSION.conf"
 
-    ukify inspect --all "$UKI" > "$TEMP_DIR/$UKI_NAME.inspect" ||
+    ukify --all inspect "$UKI" > "$TEMP_DIR/$UKI_NAME.inspect" ||
         fail "ukify cannot inspect $UKI_NAME"
     for section in .linux .initrd .osrel .cmdline; do
         grep -Fq "$section" "$TEMP_DIR/$UKI_NAME.inspect" ||
