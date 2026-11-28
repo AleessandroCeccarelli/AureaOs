@@ -11,6 +11,15 @@ Branch di lavoro: main
 
 ## PRIORITÀ E ISTRUZIONI DELL'UTENTE
 
+## REGOLA PERMANENTE — ASSISTENTE DI SVILUPPO
+
+- ChatGPT è l'unico assistente AI incaricato dello sviluppo di AureaOS.
+- Non usare Codex, Copilot o altri agenti/assistenti AI per scrivere codice, modificare file, fare debugging, revisioni o prendere decisioni tecniche.
+- Non delegare il lavoro di AureaOS ad altri agenti. Il lavoro sul repository viene svolto direttamente da ChatGPT tramite gli strumenti GitHub disponibili e verificato poi dall'utente su Fedora/VS Code.
+- In ogni nuova sessione leggere integralmente questo handoff e controllare i file correnti su GitHub prima di intervenire. Non chiedere all'utente di ripetere informazioni già documentate.
+- This is a permanent project workflow requirement: ChatGPT is the sole AI development assistant; do not use Codex or other coding agents.
+
+
 - Da lunedì 23 novembre si lavora sul DESKTOP AureaOS in GitHub.
 - L'utente ha richiesto esplicitamente la migrazione della ISO Factory a systemd-boot + UKI e l'avvio del desktop reale in modalità Live. Le modifiche ISO sono autorizzate su main.
 - La ISO serve soltanto come ambiente Live di sviluppo/test. Installer, partizionamento, installazione Btrfs, Aurea Update e Aurea Recovery sono rinviati.
@@ -1614,3 +1623,61 @@ Next: integrate `retire_all` into the DRM output owner's shutdown/hot-unplug pat
 ### Shutdown reporting refinement — 2026-11-27
 
 `DrmSurfaceManager::clear` now refuses to remove an output manager entry when Vulkan scanout frames remain unresolved after KMS disable. It reports the quarantined frame count to the caller, keeping the owner reachable for diagnosis/retry. The conservative pool Drop remains a last-resort leak guard, not a successful retirement path. Physical device-removal cleanup remains a distinct path and still requires proof that GPU ownership is resolved before Vulkan resources can be destroyed.
+
+
+## STATO ISO E RIPRESA BUILD — 2026-11-28
+
+### Diagnosi del fallimento reale
+
+Log esaminato: `Testo incollato(20261128-163857).txt`.
+
+- `live-build` ha completato correttamente bootstrap, chroot, installer e binary stage: `P: Build completed successfully`.
+- La generazione UKI è riuscita: `aureaos-live-6.12.118+deb13-amd64.efi`, dimensione totale UKI **131,134,976 byte**.
+- Le due copie di systemd-boot occupano **248,832 byte**.
+- L'assemblatore ha configurato una ESP FAT16 da **31 MiB / 32,505,856 byte** e ha interrotto correttamente la pubblicazione perché il payload UKI non entrava.
+- Diagnosi: il fallimento è nella capacità della ESP di assemblaggio UEFI, non nella compilazione Debian Live. Non ricostruire il rootfs per questo errore.
+
+### Stato repository e workspace da preservare
+
+- Repository: `AleessandroCeccarelli/AureaOs`, branch `main`.
+- HEAD GitHub prima di questa correzione: `0ee861a557eb8b0404a21b7db132597fd4ab1d97`.
+- Commit sorgente registrato nel workspace già costruito: `32198179c35a85335bc692becf6c7932bbb00cb4`.
+- Workspace persistente Fedora/Podman: `/var/tmp/aureaos-podman-build-32198179c35a`.
+- Live-build root: `/var/tmp/aureaos-podman-build-32198179c35a/build`.
+- Snapshot host usato nel tentativo precedente: `/var/tmp/aureaos-iso-snapshot-32198179c35a`.
+- Non cancellare, non pulire e non ricreare il workspace. La build ha già completato il chroot e il binary stage; va ripresa per rigenerare l'assemblaggio finale.
+
+### Correzioni applicate in questa revisione
+
+- Il wrapper Podman prepara ora l'archivio Git sul Fedora host e monta uno snapshot indipendente in `/workspace:ro`. Il container Debian non deve leggere il file `.git` del worktree, che può puntare a metadata host non montati.
+- Il container non installa né usa Git. Il coordinatore riceve commit, branch e remote tramite variabili d'ambiente e usa `tar` per copiare i percorsi sorgente nello staging.
+- Il resume cross-commit è consentito soltanto quando l'utente indica il commit esatto presente nel marker e il workspace ha già completato il chroot hook e prodotto `binary/live/filesystem.squashfs`. Il marker originale non viene sovrascritto.
+- Il manifest distingue `git.commit` (commit del payload OS realmente presente nel workspace) da `git.factory_commit` (commit degli script factory usati per finalizzare).
+- La ESP Live predefinita torna a **256 MiB FAT16**, come già stabilito nel progetto. Le immagini EFI superiori a 65535 settori usano la convenzione UEFI full-medium di xorriso; `-efi-boot-part --efi-boot-image` espone la stessa immagine anche come partizione EFI GPT, usata dal percorso USB/Ventoy. Il test su Ventoy resta obbligatorio.
+
+### Comandi Fedora dopo il pull
+
+Da eseguire nella checkout Fedora, senza eliminare o spostare il workspace:
+
+```bash
+cd ~/Documenti/vscode/AureaOs
+git switch main
+git pull --ff-only origin main
+
+bash -n tools/iso/build-live-iso.sh
+bash -n tools/iso/build-live-iso-podman.sh
+bash -n tools/iso/scripts/build-systemd-boot-live-iso.sh
+bash -n tools/iso/tests/validate-live-image.sh
+
+RESUME=1 \
+RESUME_FROM_COMMIT=32198179c35a85335bc692becf6c7932bbb00cb4 \
+BUILD_PARENT=/var/tmp/aureaos-podman-build-32198179c35a \
+OUTPUT_DIR="$HOME/Documenti" \
+bash tools/iso/build-live-iso-podman.sh
+```
+
+### Stato delle verifiche
+
+- Analisi statica dei sorgenti e del log completata.
+- Nessuna build ISO, comando `bash -n`, QEMU/OVMF o prova fisica è stata eseguita da ChatGPT in questa revisione.
+- Non dichiarare la ISO corretta o avviabile fino al completamento del comando Fedora, alla verifica checksum/manifest/El Torito e al boot reale da Ventoy.
