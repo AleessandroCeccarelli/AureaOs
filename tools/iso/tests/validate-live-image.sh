@@ -153,15 +153,18 @@ for package in linux-image-amd64 firmware-amd-graphics libvulkan1 mesa-vulkan-dr
         fail "AureaOS runtime dependency is not installed in the Live rootfs: $package"
 done
 
-# Query SquashFS metadata instead of unpacking the full kernel and firmware
-# trees. This verifies real paths in the image without writing gigabytes of
-# mostly unrelated module/firmware files to the temporary validation directory.
-SQUASHFS_LIST="$TEMP_DIR/squashfs.list"
-unsquashfs -ll "$LIVE_DIR/filesystem.squashfs" > "$SQUASHFS_LIST" ||
-    fail "cannot list filesystem.squashfs metadata"
-grep -Eq 'usr/lib/modules/[^[:space:]]+/[^[:space:]]*/?[^[:space:]]*amdgpu\.ko(\.(xz|zst))?([[:space:]]|$)' "$SQUASHFS_LIST" ||
+# Query only the two hardware payload paths needed by this check. A full
+# -ll traversal walks every inode in the Debian rootfs (often hundreds of
+# thousands of entries) and makes post-mastering validation needlessly slow.
+# Quoted patterns are passed to unsquashfs, which applies its own globbing.
+SQUASHFS_GPU_LIST="$TEMP_DIR/squashfs-gpu.list"
+unsquashfs -ll "$LIVE_DIR/filesystem.squashfs" \
+    'usr/lib/modules/*/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.ko*' \
+    'usr/lib/firmware/amdgpu/*.bin*' > "$SQUASHFS_GPU_LIST" || \
+    fail "cannot inspect AMD GPU module and firmware metadata"
+grep -Eq 'usr/lib/modules/[^[:space:]]+/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu\\.ko(\\.(xz|zst))?([[:space:]]|$)' "$SQUASHFS_GPU_LIST" || \
     fail "AMD amdgpu kernel module is missing from the Live rootfs"
-grep -Eq 'usr/lib/firmware/amdgpu/[^[:space:]]+\.bin(\.(xz|zst))?([[:space:]]|$)' "$SQUASHFS_LIST" ||
+grep -Eq 'usr/lib/firmware/amdgpu/[^[:space:]]+\\.bin(\\.(xz|zst))?([[:space:]]|$)' "$SQUASHFS_GPU_LIST" || \
     fail "AMD GPU firmware payload is missing from the Live rootfs"
 [[ -s "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.json" ]] ||
     fail "Mesa RADV Vulkan ICD manifest is missing from the Live rootfs"
