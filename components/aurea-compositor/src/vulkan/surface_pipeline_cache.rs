@@ -5,7 +5,7 @@
 
 //! Persistent Vulkan resources for SHM surface composition.
 
-use std::{collections::HashMap, error::Error, fmt, hash::Hash, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, error::Error, fmt, path::PathBuf, sync::Arc};
 
 use smithay::{reexports::ash::vk, reexports::wayland_server::backend::ObjectId};
 
