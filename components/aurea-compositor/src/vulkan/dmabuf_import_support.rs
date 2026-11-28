@@ -118,23 +118,25 @@ impl VulkanDmabufImportSupport {
                     .usage(vk::ImageUsageFlags::SAMPLED)
                     .push_next(&mut modifier_info)
                     .push_next(&mut external_info);
-                let mut external_properties = vk::ExternalImageFormatProperties::default();
-                let mut image_properties =
-                    vk::ImageFormatProperties2::default().push_next(&mut external_properties);
-                if unsafe {
-                    device
-                        .instance()
-                        .get_physical_device_image_format_properties2(
-                            device.physical_device(),
-                            &image_info,
-                            &mut image_properties,
-                        )
-                }
-                .is_err()
-                {
-                    continue;
-                }
-                let external = external_properties.external_memory_properties;
+                let external = {
+                    let mut external_properties = vk::ExternalImageFormatProperties::default();
+                    let mut image_properties =
+                        vk::ImageFormatProperties2::default().push_next(&mut external_properties);
+                    if unsafe {
+                        device
+                            .instance()
+                            .get_physical_device_image_format_properties2(
+                                device.physical_device(),
+                                &image_info,
+                                &mut image_properties,
+                            )
+                    }
+                    .is_err()
+                    {
+                        continue;
+                    }
+                    external_properties.external_memory_properties
+                };
                 if !external
                     .external_memory_features
                     .contains(vk::ExternalMemoryFeatureFlags::IMPORTABLE)
