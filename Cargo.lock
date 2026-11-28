@@ -58,6 +58,7 @@ dependencies = [
  "aurea-desktop-api",
  "aurea-media",
  "input",
+ "libc",
  "serde",
  "sha2 0.11.1",
  "smithay",

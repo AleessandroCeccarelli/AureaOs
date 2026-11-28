@@ -49,9 +49,7 @@ pub use modes::DisplayMode;
 pub use policy::{
     ActiveRefreshStrategy, DisplayManagementMode, DisplayPolicyContext, DisplayRefreshPolicy,
 };
-pub use selection::{
-    DisplayModeSelection, DisplayModeSelectionError, select_display_mode,
-};
+pub use selection::{DisplayModeSelection, DisplayModeSelectionError, select_display_mode};
 
 use std::sync::{
     Arc,

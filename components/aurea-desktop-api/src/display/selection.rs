@@ -12,7 +12,9 @@
 use super::{
     capabilities::DisplayDescriptor,
     modes::DisplayMode,
-    policy::{ActiveRefreshStrategy, DisplayManagementMode, DisplayPolicyContext, DisplayRefreshPolicy},
+    policy::{
+        ActiveRefreshStrategy, DisplayManagementMode, DisplayPolicyContext, DisplayRefreshPolicy,
+    },
 };
 
 /// Why a display mode could not be selected safely.
@@ -78,7 +80,8 @@ pub fn select_display_mode(
         {
             ActiveRefreshStrategy::Variable
         }
-        DisplayRefreshPolicy::Automatic | DisplayRefreshPolicy::PreferVariable
+        DisplayRefreshPolicy::Automatic
+        | DisplayRefreshPolicy::PreferVariable
         | DisplayRefreshPolicy::Fixed => ActiveRefreshStrategy::Fixed,
     };
 
@@ -150,7 +153,10 @@ fn select_automatic_mode(
 mod tests {
     use super::*;
     use crate::display::{
-        capabilities::{DisplayCapabilities, DisplayConnector, DisplayId, DisplayDescriptor, VariableRefreshRange},
+        capabilities::{
+            DisplayCapabilities, DisplayConnector, DisplayDescriptor, DisplayId,
+            VariableRefreshRange,
+        },
         modes::DisplayMode,
     };
 
@@ -228,10 +234,7 @@ mod tests {
     #[test]
     fn idle_policy_uses_lowest_available_refresh_when_sixty_hz_is_absent() {
         let mut descriptor = display(None);
-        descriptor.supported_modes = vec![
-            mode(1920, 1080, 75_000),
-            mode(1920, 1080, 120_000),
-        ];
+        descriptor.supported_modes = vec![mode(1920, 1080, 75_000), mode(1920, 1080, 120_000)];
 
         let selected = select_display_mode(
             &descriptor,
@@ -306,7 +309,10 @@ mod tests {
             DisplayPolicyContext::default(),
         )
         .unwrap();
-        assert_eq!(preferred.refresh_strategy(), ActiveRefreshStrategy::Variable);
+        assert_eq!(
+            preferred.refresh_strategy(),
+            ActiveRefreshStrategy::Variable
+        );
 
         let fallback = select_display_mode(
             &display(None),

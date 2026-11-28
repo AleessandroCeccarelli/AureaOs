@@ -106,7 +106,9 @@ fn main() {
     );
     println!(
         "cargo:rustc-env=AUREA_WALLPAPER_TEXTURE_VERT_COMPAT_SPV={}",
-        output_dir.join("wallpaper_texture.vert.compat.spv").display()
+        output_dir
+            .join("wallpaper_texture.vert.compat.spv")
+            .display()
     );
     compile_shader(
         &shader_dir.join("wallpaper_texture.frag"),
@@ -120,7 +122,9 @@ fn main() {
     );
     println!(
         "cargo:rustc-env=AUREA_WALLPAPER_TEXTURE_FRAG_COMPAT_SPV={}",
-        output_dir.join("wallpaper_texture.frag.compat.spv").display()
+        output_dir
+            .join("wallpaper_texture.frag.compat.spv")
+            .display()
     );
 
     println!(
@@ -196,7 +200,6 @@ fn compile_shader(source: &Path, destination: &Path, stage: &str) {
         );
     }
 }
-
 
 fn compile_compatibility_shader(source: &Path, destination: &Path, stage: &str) {
     let result = Command::new("glslangValidator")
