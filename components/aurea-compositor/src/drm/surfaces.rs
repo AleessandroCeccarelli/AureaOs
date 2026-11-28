@@ -32,6 +32,8 @@ pub enum DrmSurfaceManagerError {
     UnsupportedMode { output_id: OutputId },
     AmbiguousNativeMode { output_id: OutputId },
     PendingModeChange { output_id: OutputId },
+    DuplicateBatchOutput(OutputId),
+    BatchRollback { output_id: OutputId, message: String },
     ModeChange { output_id: OutputId, message: String },
     ConnectorQuery {
         output_id: OutputId,
@@ -61,6 +63,8 @@ impl fmt::Display for DrmSurfaceManagerError {
             Self::UnsupportedMode { output_id } => write!(f, "DRM output {output_id} does not support the requested logical mode"),
             Self::AmbiguousNativeMode { output_id } => write!(f, "DRM output {output_id} has multiple native timings for the requested logical mode; selection is ambiguous"),
             Self::PendingModeChange { output_id } => write!(f, "DRM output {output_id} already has a staged or pending mode change"),
+            Self::DuplicateBatchOutput(id) => write!(f, "DRM output {id} appears more than once in a mode-change batch"),
+            Self::BatchRollback { output_id, message } => write!(f, "DRM output {output_id} could not be restored after a batch mode-change failure: {message}"),
             Self::ModeChange { output_id, message } => write!(f, "Failed to stage DRM mode for output {output_id}: {message}"),
             Self::ConnectorQuery { output_id, message } => write!(
                 f,
@@ -321,6 +325,51 @@ impl DrmSurfaceManager {
         managed.cpu_presentation.arm_mode_rollback(previous);
         managed.staged_previous_mode = Some(previous);
         Ok(previous)
+    }
+
+    /// Stages a set of native modes as one preflight operation.
+    ///
+    /// No frame is submitted here. If any output cannot be staged, every
+    /// earlier output in the batch is restored before the error is returned.
+    /// The returned previous modes are retained by the caller for the later
+    /// coordinated KMS/VBlank transaction.
+    pub fn stage_modes_batch(
+        &mut self,
+        changes: &[(OutputId, crate::output::OutputMode)],
+    ) -> Result<Vec<(OutputId, smithay::reexports::drm::control::Mode)>, DrmSurfaceManagerError> {
+        let mut seen = std::collections::HashSet::with_capacity(changes.len());
+        for (output_id, _) in changes {
+            if !seen.insert(*output_id) {
+                return Err(DrmSurfaceManagerError::DuplicateBatchOutput(*output_id));
+            }
+        }
+
+        let mut staged = Vec::with_capacity(changes.len());
+        for (output_id, mode) in changes {
+            match self.stage_mode(*output_id, *mode) {
+                Ok(previous) => staged.push((*output_id, previous)),
+                Err(error) => {
+                    for (staged_id, _) in staged.iter().rev() {
+                        if let Err(rollback_error) = self
+                            .surfaces
+                            .get_mut(staged_id)
+                            .ok_or(DrmSurfaceManagerError::UnsupportedMode {
+                                output_id: *staged_id,
+                            })
+                            .and_then(ManagedDrmSurface::abort_staged_mode)
+                        {
+                            return Err(DrmSurfaceManagerError::BatchRollback {
+                                output_id: *staged_id,
+                                message: format!("{error}; rollback failed: {rollback_error}"),
+                            });
+                        }
+                    }
+                    return Err(error);
+                }
+            }
+        }
+
+        Ok(staged)
     }
 
     /// Restores a previously active native mode after an abandoned change.
