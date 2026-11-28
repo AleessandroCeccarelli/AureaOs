@@ -39,7 +39,7 @@ while (($#)); do
     esac
 done
 
-for command_name in lb git tar sudo sha256sum realpath find install chmod date awk stat python3; do
+for command_name in lb tar sudo sha256sum realpath find install chmod date awk stat python3; do
     command -v "$command_name" >/dev/null 2>&1 || {
         echo "Required build command not found: $command_name" >&2
         exit 1
@@ -73,10 +73,15 @@ BUILD_ROOT="$(realpath -m -- "$BUILD_ROOT")"
 
 # A build workspace is tied to one immutable source revision. Never combine
 # staged files or a partially built chroot from another commit.
-SOURCE_COMMIT="$(git -C "$REPO_ROOT" rev-parse HEAD)"
-if [[ -n "$(git -C "$REPO_ROOT" status --porcelain)" ]]; then
-    echo "The AureaOS working tree is not clean." >&2
-    echo "Commit the intended source state before building a reproducible Live ISO." >&2
+SOURCE_COMMIT="${AUREAOS_COMMIT:?Host wrapper must provide AUREAOS_COMMIT from its immutable Git archive snapshot}"
+[[ "$SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "AUREAOS_COMMIT must be a full 40-character Git commit SHA." >&2; exit 1; }
+SOURCE_BRANCH="${AUREAOS_BRANCH:-snapshot}"
+SOURCE_REMOTE="${AUREAOS_REMOTE:-}"
+SOURCE_WORKTREE_CLEAN="${AUREAOS_WORKTREE_CLEAN:-true}"
+[[ "$SOURCE_WORKTREE_CLEAN" == true ]] || { echo "Refusing to build from a dirty host worktree." >&2; exit 1; }
+RESUME_FROM_COMMIT="${AUREAOS_RESUME_FROM_COMMIT:-}"
+if [[ -n "$RESUME_FROM_COMMIT" && ! "$RESUME_FROM_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "AUREAOS_RESUME_FROM_COMMIT must be a full 40-character Git commit SHA." >&2
     exit 1
 fi
 SOURCE_MARKER="$BUILD_ROOT/.aureaos-source-commit"
@@ -126,17 +131,19 @@ refresh_inputs() {
     # Replace only the staged source snapshot, never the live-build chroot.
     rm -rf -- "$SOURCE_DIR"
     mkdir -p -- "$SOURCE_DIR"
-    git -C "$REPO_ROOT" archive --format=tar HEAD \
-        Cargo.toml Cargo.lock components tools/iso/pam tools/iso/systemd tools/iso/scripts \
-        tools/assets/render-context-menu.sh tools/assets/png_to_rgba.py \
-        tools/assets/build_cursor_theme.py tools/assets/cursor_manifest.py \
-        tools/assets/cursor_rasterizer.py tools/assets/cursor_svg.py \
-        tools/assets/xcursor_config.py aurea-human-interfaces/cursors \
-        aurea-human-interfaces/resources/wallpapers \
-        aurea-human-interfaces/fonts/source/google-fonts/noto-sans \
-        aurea-human-interfaces/icons/source/system/context-menu \
-        aurea-human-interfaces/icons/source/system/trash |
-        tar -xf - -C "$SOURCE_DIR"
+    (
+        cd "$REPO_ROOT"
+        tar -cf - \
+            Cargo.toml Cargo.lock components tools/iso/pam tools/iso/systemd tools/iso/scripts \
+            tools/assets/render-context-menu.sh tools/assets/png_to_rgba.py \
+            tools/assets/build_cursor_theme.py tools/assets/cursor_manifest.py \
+            tools/assets/cursor_rasterizer.py tools/assets/cursor_svg.py \
+            tools/assets/xcursor_config.py aurea-human-interfaces/cursors \
+            aurea-human-interfaces/resources/wallpapers \
+            aurea-human-interfaces/fonts/source/google-fonts/noto-sans \
+            aurea-human-interfaces/icons/source/system/context-menu \
+            aurea-human-interfaces/icons/source/system/trash
+    ) | tar -xf - -C "$SOURCE_DIR"
 
     # Generate only the artwork consumed by the current compositor. Rasterize
     # in the disposable Debian builder, then stage raw RGBA into includes.chroot
@@ -238,12 +245,24 @@ if "$RESUME"; then
         exit 1
     }
     RECORDED_COMMIT="$(<"$SOURCE_MARKER")"
-    [[ "$RECORDED_COMMIT" == "$SOURCE_COMMIT" ]] || {
-        echo "Cannot resume: workspace belongs to commit $RECORDED_COMMIT, current source is $SOURCE_COMMIT." >&2
-        echo "Use a fresh build directory for this source revision." >&2
-        exit 1
-    }
-    echo "Resuming Debian Live workspace: $BUILD_ROOT (source $SOURCE_COMMIT)"
+    [[ "$RECORDED_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "Workspace source marker is not a full Git commit SHA." >&2; exit 1; }
+    WORKSPACE_COMMIT="$RECORDED_COMMIT"
+    if [[ "$RECORDED_COMMIT" != "$SOURCE_COMMIT" ]]; then
+        [[ "$RESUME_FROM_COMMIT" == "$RECORDED_COMMIT" ]] || {
+            echo "Workspace OS payload is $RECORDED_COMMIT, but factory snapshot is $SOURCE_COMMIT." >&2
+            echo "Set RESUME_FROM_COMMIT to the exact workspace marker for a finalization-only resume." >&2
+            exit 1
+        }
+        [[ -f "$BUILD_ROOT/.build/chroot_hooks" && -s "$BUILD_ROOT/binary/live/filesystem.squashfs" ]] || {
+            echo "Cross-commit resume requires completed chroot_hooks and binary/live/filesystem.squashfs." >&2
+            echo "The existing workspace and source marker are preserved." >&2
+            exit 1
+        }
+        echo "Resuming final ISO assembly: OS payload $WORKSPACE_COMMIT; factory scripts $SOURCE_COMMIT"
+    else
+        [[ -z "$RESUME_FROM_COMMIT" || "$RESUME_FROM_COMMIT" == "$RECORDED_COMMIT" ]] || { echo "RESUME_FROM_COMMIT does not match the workspace marker." >&2; exit 1; }
+        echo "Resuming Debian Live workspace: $BUILD_ROOT (source $WORKSPACE_COMMIT)"
+    fi
 
     # The previous Podman container may have been interrupted while live-build
     # held its workspace lock. The wrapper serializes all managed builds with
@@ -276,6 +295,7 @@ else
     mkdir -p -- "$BUILD_ROOT"
     printf '%s\n' "$SOURCE_COMMIT" > "$SOURCE_MARKER"
     chmod 0644 "$SOURCE_MARKER"
+    WORKSPACE_COMMIT="$SOURCE_COMMIT"
     cd "$BUILD_ROOT"
 
     # Canonical Debian Live Build layout: workspace/config/{package-lists,hooks,...}
@@ -339,19 +359,16 @@ ISO_PATH="${ISO_FILES[0]}"
 
 # Record build provenance before the isolated UKI assembly snapshot is prepared.
 BUILD_TIMESTAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-BUILD_ID="$BUILD_TIMESTAMP-$(git -C "$REPO_ROOT" rev-parse --short=12 HEAD)"
-COMMIT="$(git -C "$REPO_ROOT" rev-parse HEAD)"
-BRANCH="$(git -C "$REPO_ROOT" branch --show-current)"
-REMOTE="$(git -C "$REPO_ROOT" remote get-url origin 2>/dev/null || true)"
-if [[ -z "$(git -C "$REPO_ROOT" status --porcelain)" ]]; then
-    WORKTREE_CLEAN=true
-else
-    WORKTREE_CLEAN=false
-fi
+COMMIT="$WORKSPACE_COMMIT"
+FACTORY_COMMIT="$SOURCE_COMMIT"
+BUILD_ID="$BUILD_TIMESTAMP-${COMMIT:0:12}"
+BRANCH="$SOURCE_BRANCH"
+REMOTE="$SOURCE_REMOTE"
+WORKTREE_CLEAN="$SOURCE_WORKTREE_CLEAN"
 KERNEL_PATH="$(find "$BUILD_ROOT/binary/live" -maxdepth 1 -type f -name 'vmlinuz-*' -print | sort -V | tail -n 1)"
 [[ -n "$KERNEL_PATH" ]] || { echo "No staged kernel found for build manifest." >&2; exit 1; }
 KERNEL_VERSION="${KERNEL_PATH##*/vmlinuz-}"
-export BUILD_ID BUILD_TIMESTAMP COMMIT BRANCH REMOTE WORKTREE_CLEAN KERNEL_VERSION
+export BUILD_ID BUILD_TIMESTAMP COMMIT FACTORY_COMMIT BRANCH REMOTE WORKTREE_CLEAN KERNEL_VERSION
 
 # Replace Debian Live's intermediate GRUB image with the approved systemd-boot + UKI path.
 bash "$SCRIPT_DIR/scripts/build-systemd-boot-live-iso.sh" \
@@ -404,8 +421,9 @@ manifest = {
         "remote": os.environ.get("REMOTE", ""),
         "branch": os.environ.get("BRANCH", ""),
         "commit": os.environ["COMMIT"],
+        "factory_commit": os.environ["FACTORY_COMMIT"],
         "working_tree_clean": os.environ["WORKTREE_CLEAN"] == "true",
-        "build_source": "git archive HEAD",
+        "build_source": "host-prepared immutable Git archive snapshot",
     },
     "platform": {
         "distribution": "Debian GNU/Linux 13 (Trixie)",
