@@ -23,6 +23,7 @@ pub mod gbm_upload_layout;
 pub mod hdr_link;
 pub mod identity;
 pub mod identity_registry;
+pub mod modeset_transaction;
 pub mod output;
 pub mod outputs;
 pub mod plane_formats;
