@@ -25,7 +25,7 @@ use visible_surfaces::{visible_surfaces, visible_dmabuf_surfaces};
 use std::sync::Arc;
 
 use aurea_desktop_api::desktop::DesktopContextMenuLayout;
-use smithay::reexports::ash::vk;
+use smithay::reexports::{ash::vk, wayland_server::Resource};
 
 use crate::{
     desktop::{WallpaperDrawGeometry, WallpaperFitMode, WallpaperLayout},
