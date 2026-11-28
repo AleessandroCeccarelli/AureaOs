@@ -260,7 +260,7 @@ for UKI in "${UKIS[@]}"; do
     # Inspect the initramfs embedded in this exact UKI, not merely the source
     # initrd that existed earlier in the live-build workspace.
     UKI_INITRD="$TEMP_DIR/$UKI_NAME.initrd"
-    ukify inspect --section=".initrd:binary@$UKI_INITRD" "$UKI" >/dev/null ||
+    ukify --section=".initrd:binary@$UKI_INITRD" inspect "$UKI" >/dev/null ||
         fail "cannot extract the initramfs embedded in $UKI_NAME"
     [[ -s "$UKI_INITRD" ]] || fail "$UKI_NAME contains an empty initramfs"
     UKI_INITRD_LIST="$TEMP_DIR/$UKI_NAME.initrd.list"
