@@ -401,7 +401,7 @@ fn staged_multi_output_configuration_validates_only_final_active_count() {
     assert!(!staged.registry().get(1).unwrap().is_enabled());
     assert!(staged
         .registry()
-        .get(&(MAX_ACTIVE_OUTPUTS as u128 + 1))
+        .get(MAX_ACTIVE_OUTPUTS as u128 + 1)
         .unwrap()
         .is_enabled());
 }
