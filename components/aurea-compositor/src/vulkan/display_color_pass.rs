@@ -533,6 +533,7 @@ impl VulkanSharedLegacyDisplayColorPass {
     ///
     /// Per-frame framebuffer targets must be created from this retained instance
     /// to satisfy Vulkan render-pass compatibility.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn render_pass(&self) -> &std::sync::Arc<super::VulkanLegacyRenderPass<'static>> {
         self.pipeline.render_pass()
     }
