@@ -41,6 +41,4 @@ build-essential
 pkg-config
 curl
 glslang-tools
-librsvg2-bin
-xcursorgen
 ca-certificates
