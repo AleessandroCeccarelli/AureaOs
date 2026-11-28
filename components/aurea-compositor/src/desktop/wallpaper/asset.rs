@@ -129,7 +129,7 @@ impl WallpaperAsset {
             return Err(WallpaperAssetError::InputTooLarge);
         }
 
-        let mut file =
+        let file =
             File::open(path).map_err(|error| WallpaperAssetError::Io(error.to_string()))?;
         let mut bytes = Vec::with_capacity(metadata.len() as usize);
         file.take(max_bytes + 1)
