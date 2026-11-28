@@ -27,6 +27,7 @@ pub(crate) fn default_cursor_origin(pointer_location: Point<f64, Logical>) -> Po
 ///
 /// The input is the unscaled top-left origin returned by
 /// `default_cursor_origin`. Invalid scales fall back to the native size.
+#[cfg(test)]
 pub(crate) fn scaled_cursor_origin(origin: Point<i32, Logical>, scale: f64) -> Point<i32, Logical> {
     let scale = if scale.is_finite() {
         scale.clamp(1.0, 3.0)
