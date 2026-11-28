@@ -236,6 +236,7 @@ impl VulkanSharedLegacyGraphicsPipeline {
     ///
     /// Framebuffers used with this pipeline must be created from this render
     /// pass instance, not merely from another pass with the same format/load op.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn render_pass(&self) -> &Arc<VulkanLegacyRenderPass<'static>> {
         &self.render_pass
     }
