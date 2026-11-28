@@ -259,10 +259,10 @@ impl VulkanDmabufImportSupport {
                 )
             }
             .map_err(|_| VulkanDmabufImportSupportError::ImageConfigurationUnsupported)?;
-            (
-                external_properties.external_memory_properties,
-                image_properties.image_format_properties,
-            )
+            let limits = image_properties.image_format_properties;
+            drop(image_properties);
+            let external = external_properties.external_memory_properties;
+            (external, limits)
         };
         if !external.external_memory_features.contains(vk::ExternalMemoryFeatureFlags::IMPORTABLE)
             || !external.compatible_handle_types.contains(
