@@ -131,13 +131,13 @@ pub use display_color_pass::{
     VulkanSharedLegacyDisplayColorPass,
 };
 #[cfg(feature = "drm")]
-pub(crate) use dmabuf_image::{VulkanDmabufImage, VulkanDmabufImageError};
+pub(crate) use dmabuf_image::VulkanDmabufImage;
 #[cfg(feature = "drm")]
 pub(crate) use dmabuf_import_support::{VulkanDmabufImportSupport, VulkanDmabufImportSupportError};
 #[cfg(feature = "drm")]
 pub use dmabuf_layout::{DmabufImportLayout, DmabufLayoutError, DmabufPlaneLayout};
 #[cfg(feature = "drm")]
-pub(crate) use dmabuf_sync_file::{DmabufSyncWaitError, DmabufSyncWaitSet};
+pub(crate) use dmabuf_sync_file::DmabufSyncWaitSet;
 pub use draw_pass::{VulkanDrawPass, VulkanDrawPassError};
 #[cfg(feature = "drm")]
 pub use drm_compatibility::{
