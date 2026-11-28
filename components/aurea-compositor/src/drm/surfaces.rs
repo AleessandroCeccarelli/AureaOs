@@ -500,18 +500,6 @@ impl DrmSurfaceManager {
         self.on_cpu_vblank_with_confirmation(node, crtc, true)
     }
 
-    /// Completes a CPU page flip without confirming a staged modeset.
-    ///
-    /// Coordinated multi-output transactions use this path and confirm all
-    /// staged surfaces only after every participating CRTC has reached VBlank.
-    pub(crate) fn on_cpu_vblank_deferred(
-        &mut self,
-        node: DrmNode,
-        crtc: crtc::Handle,
-    ) -> Result<Option<crate::drm::presentation::DrmFramebufferId>, CpuPresentationError> {
-        self.on_cpu_vblank_with_confirmation(node, crtc, false)
-    }
-
     fn on_cpu_vblank_with_confirmation(
         &mut self,
         node: DrmNode,
@@ -689,6 +677,7 @@ impl Drop for DrmSurfaceManager {
 }
 
 /// Clears map values and retains entries whose cleanup failed.
+#[cfg(test)]
 fn clear_and_retain<K, V, E>(
     entries: &mut HashMap<K, V>,
     mut clear: impl FnMut(&V) -> Result<(), E>,
