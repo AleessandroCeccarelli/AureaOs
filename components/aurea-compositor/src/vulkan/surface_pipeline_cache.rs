@@ -9,11 +9,13 @@ use std::{collections::HashMap, error::Error, fmt, path::PathBuf, sync::Arc};
 
 use smithay::{reexports::ash::vk, reexports::wayland_server::backend::ObjectId};
 
+#[cfg(feature = "legacy-vulkan-frame")]
+use crate::desktop::{WallpaperPixels, desktop_icon_asset};
+
 use crate::{
     desktop::{
         DesktopIconTextureKey, DesktopTheme, WallpaperAsset, WallpaperDecodeService,
-        WallpaperDecodeServiceError, WallpaperPixels, desktop_context_menu_asset,
-        desktop_icon_asset, load_desktop_icon_snapshot,
+        WallpaperDecodeServiceError, desktop_context_menu_asset, load_desktop_icon_snapshot,
     },
     render::shm_buffer::ShmBufferSnapshot,
 };
