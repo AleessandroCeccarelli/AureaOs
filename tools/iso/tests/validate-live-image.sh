@@ -162,9 +162,9 @@ unsquashfs -ll "$LIVE_DIR/filesystem.squashfs" \
     'usr/lib/modules/*/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.ko*' \
     'usr/lib/firmware/amdgpu/*.bin*' > "$SQUASHFS_GPU_LIST" || \
     fail "cannot inspect AMD GPU module and firmware metadata"
-grep -Eq 'usr/lib/modules/[^[:space:]]+/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu\\.ko(\\.(xz|zst))?([[:space:]]|$)' "$SQUASHFS_GPU_LIST" || \
+grep -Eq 'usr/lib/modules/[^[:space:]]+/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu\.ko(\.(xz|zst))?([[:space:]]|$)' "$SQUASHFS_GPU_LIST" || \
     fail "AMD amdgpu kernel module is missing from the Live rootfs"
-grep -Eq 'usr/lib/firmware/amdgpu/[^[:space:]]+\\.bin(\\.(xz|zst))?([[:space:]]|$)' "$SQUASHFS_GPU_LIST" || \
+grep -Eq 'usr/lib/firmware/amdgpu/[^[:space:]]+\.bin(\.(xz|zst))?([[:space:]]|$)' "$SQUASHFS_GPU_LIST" || \
     fail "AMD GPU firmware payload is missing from the Live rootfs"
 [[ -s "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.json" ]] ||
     fail "Mesa RADV Vulkan ICD manifest is missing from the Live rootfs"
