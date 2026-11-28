@@ -118,6 +118,7 @@ impl Default for TabletProfileStore {
 }
 
 impl TabletProfileStore {
+    #[cfg(test)]
     fn with_path(path: PathBuf) -> Self {
         Self::open(path)
     }
