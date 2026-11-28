@@ -101,7 +101,7 @@ fn worker_loop(receiver: Receiver<DecodeRequest>) {
 
 #[cfg(test)]
 mod tests {
-    use super::{DECODE_QUEUE_CAPACITY, DecodeWorker, DecodeWorkerError};
+    use super::{DECODE_QUEUE_CAPACITY, DecodeWorker};
     use crate::{DecodeLimits, ImageFormat};
 
     #[test]
