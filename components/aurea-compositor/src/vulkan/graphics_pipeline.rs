@@ -478,7 +478,7 @@ impl<'device> VulkanGraphicsPipeline<'device> {
             .render_pass(render_pass.unwrap_or(vk::RenderPass::null()))
             .subpass(0);
         if render_pass.is_none() {
-            pipeline_info.push_next(&mut rendering);
+            let _ = pipeline_info.push_next(&mut rendering);
         }
         let pipeline_info = [pipeline_info];
 
