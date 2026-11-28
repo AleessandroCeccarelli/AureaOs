@@ -54,7 +54,6 @@ mod image_view;
 mod legacy_display_color_manager;
 #[cfg(feature = "legacy-vulkan-frame")]
 mod legacy_frame_recorder;
-#[cfg(feature = "legacy-vulkan-frame")]
 mod legacy_render_pass;
 #[cfg(feature = "legacy-vulkan-frame")]
 mod legacy_render_pass_manager;
@@ -176,7 +175,6 @@ pub use image_transition::{VulkanImageState, VulkanImageTransition, VulkanImageT
 pub use image_view::{VulkanImageView, VulkanImageViewError};
 #[cfg(feature = "legacy-vulkan-frame")]
 pub(crate) use legacy_display_color_manager::VulkanLegacyDisplayColorManager;
-#[cfg(feature = "legacy-vulkan-frame")]
 pub use legacy_render_pass::{
     VulkanLegacyRenderPass, VulkanLegacyRenderPassError, VulkanLegacyRenderPassScope,
     VulkanLegacyRenderTarget,
