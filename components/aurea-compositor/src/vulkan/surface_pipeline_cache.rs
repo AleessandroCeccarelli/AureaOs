@@ -20,8 +20,7 @@ use crate::{
 
 use super::{
     VulkanGraphicsPipeline, VulkanGraphicsPipelineError, VulkanGraphicsShaders,
-    VulkanLegacyGraphicsPipeline, VulkanLegacyRenderPass, VulkanLegacyRenderPassError,
-    VulkanLegacyRenderPassManager, VulkanLogicalDevice, VulkanNativeCursorTexture, VulkanSampler,
+    VulkanLogicalDevice, VulkanNativeCursorTexture, VulkanSampler,
     VulkanSamplerError, VulkanShaderError, VulkanShaderModule, VulkanShmTexture,
     VulkanTextureBindingError, VulkanTextureBindingPool, VulkanTextureDescriptorSetLayout,
     VulkanTextureLayoutError, VulkanWallpaperTexture,
@@ -34,10 +33,11 @@ use super::{
     },
 };
 
-#[cfg(feature = "drm")]
+#[cfg(feature = "legacy-vulkan-frame")]
 use super::{
-    VulkanDisplayColorPassError, VulkanLegacyDisplayColorManager,
-    VulkanSharedLegacyDisplayColorPass,
+    VulkanLegacyGraphicsPipeline, VulkanLegacyRenderPass, VulkanLegacyRenderPassError,
+    VulkanLegacyRenderPassManager, VulkanLegacyDisplayColorManager,
+    VulkanDisplayColorPassError, VulkanSharedLegacyDisplayColorPass,
 };
 
 /// Errors returned while preparing cached surface-composition resources.
@@ -47,8 +47,9 @@ pub(crate) enum VulkanSurfacePipelineCacheError {
     Sampler(VulkanSamplerError),
     Shader(VulkanShaderError),
     Pipeline(VulkanGraphicsPipelineError),
+    #[cfg(feature = "legacy-vulkan-frame")]
     LegacyRenderPass(VulkanLegacyRenderPassError),
-    #[cfg(feature = "drm")]
+    #[cfg(feature = "legacy-vulkan-frame")]
     DisplayColor(VulkanDisplayColorPassError),
     WallpaperDecode(WallpaperDecodeServiceError),
     NativeCursor(super::VulkanNativeCursorTextureError),
@@ -63,10 +64,11 @@ impl fmt::Display for VulkanSurfacePipelineCacheError {
             Self::Sampler(error) => write!(formatter, "Surface sampler: {error}"),
             Self::Shader(error) => write!(formatter, "Surface shader: {error}"),
             Self::Pipeline(error) => write!(formatter, "Surface pipeline: {error}"),
+            #[cfg(feature = "legacy-vulkan-frame")]
             Self::LegacyRenderPass(error) => {
                 write!(formatter, "Legacy surface render pass: {error}")
             }
-            #[cfg(feature = "drm")]
+            #[cfg(feature = "legacy-vulkan-frame")]
             Self::DisplayColor(error) => write!(formatter, "Legacy display-color pass: {error}"),
             Self::WallpaperDecode(error) => write!(formatter, "Wallpaper decode service: {error}"),
             Self::NativeCursor(error) => write!(formatter, "Native cursor texture: {error}"),
@@ -90,17 +92,22 @@ pub(crate) struct VulkanSurfacePipelineCache {
     context_menu_assets: HashMap<DesktopIconTextureKey, Option<ShmBufferSnapshot>>,
     wallpaper_decode_service: WallpaperDecodeService,
     native_cursor_texture: VulkanNativeCursorTexture,
+    #[cfg(feature = "legacy-vulkan-frame")]
     legacy_render_passes: VulkanLegacyRenderPassManager,
-    #[cfg(feature = "drm")]
+    #[cfg(feature = "legacy-vulkan-frame")]
     legacy_display_color: VulkanLegacyDisplayColorManager,
+    #[cfg(feature = "legacy-vulkan-frame")]
     legacy_surface_pipelines:
         HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
+    #[cfg(feature = "legacy-vulkan-frame")]
     legacy_wallpaper_pipelines:
         HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
+    #[cfg(feature = "legacy-vulkan-frame")]
     legacy_cursor_trail_pipelines:
         HashMap<(vk::Format, LegacyPipelineLoad), super::VulkanSharedLegacyGraphicsPipeline>,
 }
 
+#[cfg(feature = "legacy-vulkan-frame")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) enum LegacyPipelineLoad {
     Clear,
@@ -122,8 +129,9 @@ impl VulkanSurfacePipelineCache {
         let wallpaper_decode_service = WallpaperDecodeService::new()
             .map_err(VulkanSurfacePipelineCacheError::WallpaperDecode)?;
 
+        #[cfg(feature = "legacy-vulkan-frame")]
         let legacy_render_passes = VulkanLegacyRenderPassManager::new(Arc::clone(&device));
-        #[cfg(feature = "drm")]
+        #[cfg(feature = "legacy-vulkan-frame")]
         let legacy_display_color = VulkanLegacyDisplayColorManager::new(Arc::clone(&device));
 
         Ok(Self {
@@ -139,16 +147,21 @@ impl VulkanSurfacePipelineCache {
             context_menu_assets: HashMap::new(),
             wallpaper_decode_service,
             native_cursor_texture: VulkanNativeCursorTexture::new(),
+            #[cfg(feature = "legacy-vulkan-frame")]
             legacy_render_passes,
-            #[cfg(feature = "drm")]
+            #[cfg(feature = "legacy-vulkan-frame")]
             legacy_display_color,
+            #[cfg(feature = "legacy-vulkan-frame")]
             legacy_surface_pipelines: HashMap::new(),
+            #[cfg(feature = "legacy-vulkan-frame")]
             legacy_wallpaper_pipelines: HashMap::new(),
+            #[cfg(feature = "legacy-vulkan-frame")]
             legacy_cursor_trail_pipelines: HashMap::new(),
         })
     }
 
     /// Returns the persistent legacy render pass for a format and clear load operation.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn legacy_clear_render_pass(
         &mut self,
         format: vk::Format,
@@ -157,6 +170,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Returns the persistent legacy render pass for a format when preserving prior contents.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn legacy_load_render_pass(
         &mut self,
         format: vk::Format,
@@ -165,6 +179,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Returns the persistent legacy render pass for a format when prior contents are discarded.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn legacy_discard_render_pass(
         &mut self,
         format: vk::Format,
@@ -174,6 +189,7 @@ impl VulkanSurfacePipelineCache {
 
     /// Returns the cached shared legacy display-color pass for an output format.
     #[cfg(feature = "drm")]
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn legacy_display_color_pass(
         &mut self,
         format: vk::Format,
@@ -227,6 +243,7 @@ impl VulkanSurfacePipelineCache {
     ///
     /// The returned pipeline borrows the supplied persistent render pass.
     /// Keep both the cache and render pass alive for the pipeline's lifetime.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn create_legacy_surface_pipeline<'cache, 'pass>(
         &'cache self,
         render_pass: &'pass VulkanLegacyRenderPass<'cache>,
@@ -264,6 +281,7 @@ impl VulkanSurfacePipelineCache {
     /// Creates a traditional-render-pass wallpaper pipeline.
     ///
     /// Its four-float UV transform is independent from the surface transform ABI.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn create_legacy_wallpaper_pipeline<'cache, 'pass>(
         &'cache self,
         render_pass: &'pass VulkanLegacyRenderPass<'cache>,
@@ -299,6 +317,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Creates a traditional-render-pass cursor-trail pipeline.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn create_legacy_cursor_trail_pipeline<'cache, 'pass>(
         &'cache self,
         render_pass: &'pass VulkanLegacyRenderPass<'cache>,
@@ -334,6 +353,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Creates a shared-ownership legacy surface pipeline suitable for a long-lived cache.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn create_shared_legacy_surface_pipeline(
         &self,
         render_pass: Arc<super::VulkanLegacyRenderPass<'static>>,
@@ -369,6 +389,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Creates a shared-ownership legacy wallpaper pipeline.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn create_shared_legacy_wallpaper_pipeline(
         &self,
         render_pass: Arc<super::VulkanLegacyRenderPass<'static>>,
@@ -404,6 +425,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Creates a shared-ownership legacy cursor-trail pipeline.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn create_shared_legacy_cursor_trail_pipeline(
         &self,
         render_pass: Arc<super::VulkanLegacyRenderPass<'static>>,
@@ -439,6 +461,7 @@ impl VulkanSurfacePipelineCache {
     }
 
     /// Ensures a cached shared-ownership surface pipeline for a format/load-op pair.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn ensure_shared_legacy_surface_pipeline(
         &mut self,
         format: vk::Format,
@@ -459,6 +482,7 @@ impl VulkanSurfacePipelineCache {
         Ok(())
     }
 
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn ensure_shared_legacy_wallpaper_pipeline(
         &mut self,
         format: vk::Format,
@@ -479,6 +503,7 @@ impl VulkanSurfacePipelineCache {
         Ok(())
     }
 
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn ensure_shared_legacy_cursor_trail_pipeline(
         &mut self,
         format: vk::Format,
@@ -505,6 +530,7 @@ impl VulkanSurfacePipelineCache {
     /// layers load the existing attachment contents. Keeping this preparation
     /// in one cache operation ensures the frame recorder never has to create
     /// pipelines while command-buffer recording is in progress.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn prepare_shared_legacy_frame_pipelines(
         &mut self,
         format: vk::Format,
@@ -531,6 +557,7 @@ impl VulkanSurfacePipelineCache {
     ///
     /// This is available to both scanout and readback builds. Output-specific
     /// processing is deliberately layered on top by the DRM caller.
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn prepare_shared_legacy_frame_resources_without_display_color(
         &mut self,
         format: vk::Format,
@@ -546,6 +573,7 @@ impl VulkanSurfacePipelineCache {
 
     /// Prepares shared frame resources and, when requested, the DRM display-color pass.
     #[cfg(feature = "drm")]
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn prepare_shared_legacy_frame_resources(
         &mut self,
         format: vk::Format,
@@ -568,6 +596,7 @@ impl VulkanSurfacePipelineCache {
         }
     }
 
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn shared_legacy_surface_pipeline(
         &self,
         format: vk::Format,
@@ -576,6 +605,7 @@ impl VulkanSurfacePipelineCache {
         self.legacy_surface_pipelines.get(&(format, load))
     }
 
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn shared_legacy_wallpaper_pipeline(
         &self,
         format: vk::Format,
@@ -584,6 +614,7 @@ impl VulkanSurfacePipelineCache {
         self.legacy_wallpaper_pipelines.get(&(format, load))
     }
 
+    #[cfg(feature = "legacy-vulkan-frame")]
     pub(crate) fn shared_legacy_cursor_trail_pipeline(
         &self,
         format: vk::Format,
