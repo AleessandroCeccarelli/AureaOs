@@ -429,6 +429,27 @@ impl DrmSurfaceManager {
         node: DrmNode,
         crtc: crtc::Handle,
     ) -> Result<Option<crate::drm::presentation::DrmFramebufferId>, CpuPresentationError> {
+        self.on_cpu_vblank_with_confirmation(node, crtc, true)
+    }
+
+    /// Completes a CPU page flip without confirming a staged modeset.
+    ///
+    /// Coordinated multi-output transactions use this path and confirm all
+    /// staged surfaces only after every participating CRTC has reached VBlank.
+    pub(crate) fn on_cpu_vblank_deferred(
+        &mut self,
+        node: DrmNode,
+        crtc: crtc::Handle,
+    ) -> Result<Option<crate::drm::presentation::DrmFramebufferId>, CpuPresentationError> {
+        self.on_cpu_vblank_with_confirmation(node, crtc, false)
+    }
+
+    fn on_cpu_vblank_with_confirmation(
+        &mut self,
+        node: DrmNode,
+        crtc: crtc::Handle,
+        confirm_mode: bool,
+    ) -> Result<Option<crate::drm::presentation::DrmFramebufferId>, CpuPresentationError> {
         let Some(output_id) = self.crtc_owners.get(&crtc).copied() else {
             return Ok(None);
         };
@@ -438,7 +459,7 @@ impl DrmSurfaceManager {
         let completed = output
             .cpu_presentation
             .on_vblank(node, crtc, &mut output.cpu_frame_pool)?;
-        if completed.is_some() {
+        if completed.is_some() && confirm_mode {
             output.presentation.cancel_mode_rollback();
             output.confirm_staged_mode();
         }
@@ -463,6 +484,27 @@ impl DrmSurfaceManager {
         crtc: crtc::Handle,
     ) -> Result<Option<crate::drm::presentation::DrmFramebufferId>, DrmPresentationBackendError>
     {
+        self.on_vblank_with_confirmation(node, crtc, true)
+    }
+
+    /// Completes a Vulkan page flip without confirming a staged modeset.
+    /// The transaction owner must confirm it after every target CRTC completes.
+    pub fn on_vblank_deferred(
+        &mut self,
+        node: DrmNode,
+        crtc: crtc::Handle,
+    ) -> Result<Option<crate::drm::presentation::DrmFramebufferId>, DrmPresentationBackendError>
+    {
+        self.on_vblank_with_confirmation(node, crtc, false)
+    }
+
+    fn on_vblank_with_confirmation(
+        &mut self,
+        node: DrmNode,
+        crtc: crtc::Handle,
+        confirm_mode: bool,
+    ) -> Result<Option<crate::drm::presentation::DrmFramebufferId>, DrmPresentationBackendError>
+    {
         let Some(output_id) = self.crtc_owners.get(&crtc).copied() else {
             return Ok(None);
         };
@@ -473,11 +515,23 @@ impl DrmSurfaceManager {
             return Ok(None);
         }
         let completed = output.presentation_mut().on_vblank(node, crtc)?;
-        if completed.is_some() {
+        if completed.is_some() && confirm_mode {
             output.cpu_presentation.cancel_mode_rollback();
             output.confirm_staged_mode();
         }
         Ok(completed)
+    }
+
+    /// Confirms a staged mode after its page flip has been included in a
+    /// successfully completed coordinated transaction.
+    pub fn confirm_staged_mode(&mut self, output_id: OutputId) -> Result<(), DrmSurfaceManagerError> {
+        let output = self.surfaces.get_mut(&output_id).ok_or(
+            DrmSurfaceManagerError::UnsupportedMode { output_id }
+        )?;
+        output.presentation.cancel_mode_rollback();
+        output.cpu_presentation.cancel_mode_rollback();
+        output.confirm_staged_mode();
+        Ok(())
     }
 
     /// Releases userspace references after Udev confirms physical device removal.
