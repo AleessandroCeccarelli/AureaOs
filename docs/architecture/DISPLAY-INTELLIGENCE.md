@@ -385,3 +385,16 @@ surfaces if any member fails or disconnects. The shell-to-compositor request
 transport and a concrete implementation of the shared `DisplayManager`
 contract are also still absent. No build, test, or hardware validation has
 been run for this addition.
+
+## Final-state validation for batch changes (2026-11-28)
+
+Multi-output logical staging now applies every requested property to one
+detached candidate before checking the active-output limit and logical bounds.
+This avoids rejecting a valid atomic replacement merely because an intermediate
+request-order state temporarily exceeds the limit (for example, enabling a
+replacement monitor before disabling the monitor it replaces). Duplicate IDs,
+unknown outputs, unsupported modes, invalid scales, and invalid final bounds
+still reject the entire candidate without mutating live state.
+
+A regression test covers replacement at the active-output limit. This remains
+a logical staging test; it does not exercise KMS or Wayland publication.
