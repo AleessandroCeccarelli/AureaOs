@@ -213,11 +213,6 @@ impl VulkanWallpaperTextureCache {
         Ok(())
     }
 
-    pub(crate) fn texture(&self) -> Option<&VulkanWallpaperTexture> {
-        let (key, texture) = self.ready.as_ref()?;
-        (self.selected.as_ref() == Some(key)).then_some(texture.as_ref())
-    }
-
     /// Returns the ready texture only if the selected cache key belongs to this asset.
     pub(crate) fn texture_for_asset(&self, asset_id: &str) -> Option<&VulkanWallpaperTexture> {
         let (key, texture) = self.ready.as_ref()?;
