@@ -174,6 +174,20 @@ impl ManagedDrmSurface {
         self.staged_previous_mode = Some(previous);
         Ok(())
     }
+    /// Returns the logical mode selected by a staged native KMS timing.
+    ///
+    /// The live output registry intentionally remains unchanged until the
+    /// coordinated modeset commits. Rendering must nevertheless allocate its
+    /// framebuffer using the staged timing's dimensions.
+    pub(crate) fn staged_output_mode(&self) -> Option<crate::output::OutputMode> {
+        self.staged_previous_mode?;
+        let current = self.surface.current_mode();
+        self.native_modes
+            .iter()
+            .find(|(_, native)| *native == current)
+            .and_then(|(info, _)| info.to_output_mode())
+    }
+
     /// Abandons a staged mode when rendering fails before KMS submission.
     /// A submitted/pending frame must be completed through its normal VBlank path.
     pub(crate) fn abort_staged_mode(&mut self) -> Result<(), DrmSurfaceManagerError> {
