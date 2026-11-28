@@ -86,6 +86,7 @@ impl Default for PointerProfileStore {
 }
 
 impl PointerProfileStore {
+    #[cfg(test)]
     fn with_path(path: PathBuf) -> Self {
         Self::open(path)
     }
