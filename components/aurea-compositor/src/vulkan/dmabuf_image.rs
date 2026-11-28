@@ -23,7 +23,6 @@ use super::{
 pub(crate) enum VulkanDmabufImageError {
     Unsupported(VulkanDmabufImportSupportError),
     InvalidPlaneCount,
-    InvalidPlaneLayout,
     FileDescriptorDuplication,
     FileDescriptorProperties(vk::Result),
     MemoryTypeUnavailable,
