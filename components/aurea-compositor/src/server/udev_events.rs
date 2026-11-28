@@ -6,7 +6,7 @@
 //! Udev discovery and DRM hotplug lifecycle coordination.
 
 mod activation;
-mod device;
+pub(super) mod device;
 mod outputs;
 mod tracking;
 
