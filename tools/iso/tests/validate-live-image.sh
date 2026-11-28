@@ -29,12 +29,16 @@ while (($#)); do
 done
 [[ -n "$MODE" && -n "$TARGET" ]] || usage
 
-for tool in mdir mcopy mtype ukify grep unsquashfs readlink stat find lsinitramfs dpkg-query; do
+for tool in mdir mcopy mtype ukify grep mount umount readlink stat find lsinitramfs dpkg-query; do
     command -v "$tool" >/dev/null 2>&1 || fail "required validation tool not found: $tool"
 done
 
 TEMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/aureaos-image-check.XXXXXX")"
+ROOTFS="$TEMP_DIR/rootfs"
 cleanup() {
+    if mountpoint -q "$ROOTFS" 2>/dev/null; then
+        umount "$ROOTFS" || true
+    fi
     rm -rf -- "$TEMP_DIR"
 }
 trap cleanup EXIT
@@ -74,41 +78,14 @@ ESP_IMAGE="$ROOT/boot/efi.img"
     fail "Debian Live filesystem.squashfs is missing or empty"
 [[ -s "$ESP_IMAGE" ]] || fail "systemd-boot EFI image is missing or empty"
 
-# Inspect the actual compressed root filesystem, not just the outer ISO
-# directory. Extract only small, explicitly required files. Kernel modules and
-# firmware are checked against the SquashFS metadata listing below: extracting
-# those entire trees needlessly expands thousands of files and can stall builds.
-ROOTFS="$TEMP_DIR/rootfs"
+# Mount the SquashFS read-only instead of extracting selected files with
+# unsquashfs. Even filtered extraction repeatedly walks compressed directory
+# metadata and has stalled this build after ISO mastering. A kernel mount is
+# lazy: it reads only the metadata/data needed by the checks below.
 mkdir -p "$ROOTFS"
+mount -t squashfs -o loop,ro "$LIVE_DIR/filesystem.squashfs" "$ROOTFS" ||
+    fail "cannot mount the Debian Live SquashFS read-only for validation"
 
-# Never pass whole icon-theme directories to unsquashfs: that recursively
-# expands every inherited icon and can turn a small validation into a huge,
-# opaque extraction. Extract only the exact files that the checks below use.
-SQUASHFS_EXTRACT_PATHS=(
-    usr/local/bin/aurea-desktop
-    usr/local/bin/aurea-live-session
-    etc/systemd/system/aurea-desktop.service
-    etc/pam.d/aurea-desktop
-    etc/systemd/system/multi-user.target.wants/aurea-desktop.service
-    etc/os-release usr/lib/os-release etc/debian_version usr/lib/systemd/systemd sbin/init
-    usr/lib/systemd/system/multi-user.target etc/systemd/system/default.target
-    var/lib/dpkg/status
-    usr/share/vulkan/icd.d
-    usr/lib/x86_64-linux-gnu/libvulkan_radeon.so
-    usr/lib/x86_64-linux-gnu/libvulkan_lvp.so
-    usr/share/aureaos/human-interfaces/icons/generated/context-menu/context-menu-light-256.rgba
-    usr/share/aureaos/human-interfaces/icons/generated/context-menu/context-menu-dark-256.rgba
-)
-CURSOR_NAMES=(default pointer text vertical-text crosshair help busy left_ptr_watch not-allowed copy alias grab grabbing move all-scroll ew-resize ns-resize resize-nesw resize-nwse pencil up-arrow pin person zoom-in zoom-out context-menu)
-for theme in AureaOS-Light AureaOS-Dark; do
-    SQUASHFS_EXTRACT_PATHS+=("usr/share/icons/$theme/index.theme")
-    for cursor in "${CURSOR_NAMES[@]}"; do
-        SQUASHFS_EXTRACT_PATHS+=("usr/share/icons/$theme/cursors/$cursor")
-    done
-done
-
-unsquashfs -f -d "$ROOTFS" "$LIVE_DIR/filesystem.squashfs" "${SQUASHFS_EXTRACT_PATHS[@]}" \
-    >/dev/null 2>&1 || fail "cannot inspect the AureaOS desktop session and artwork inside filesystem.squashfs"
 
 [[ -x "$ROOTFS/usr/local/bin/aurea-desktop" ]] ||
     fail "AureaOS desktop executable is missing or not executable in the Live rootfs"
@@ -153,19 +130,16 @@ for package in linux-image-amd64 firmware-amd-graphics libvulkan1 mesa-vulkan-dr
         fail "AureaOS runtime dependency is not installed in the Live rootfs: $package"
 done
 
-# Query only the two hardware payload paths needed by this check. A full
-# -ll traversal walks every inode in the Debian rootfs (often hundreds of
-# thousands of entries) and makes post-mastering validation needlessly slow.
-# Quoted patterns are passed to unsquashfs, which applies its own globbing.
-SQUASHFS_GPU_LIST="$TEMP_DIR/squashfs-gpu.list"
-unsquashfs -ll "$LIVE_DIR/filesystem.squashfs" \
-    'usr/lib/modules/*/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.ko*' \
-    'usr/lib/firmware/amdgpu/*.bin*' > "$SQUASHFS_GPU_LIST" || \
-    fail "cannot inspect AMD GPU module and firmware metadata"
-grep -Eq 'usr/lib/modules/[^[:space:]]+/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu\.ko(\.(xz|zst))?([[:space:]]|$)' "$SQUASHFS_GPU_LIST" || \
+# Check the GPU module and firmware directly through the read-only SquashFS
+# mount. find stops at the first matching file and does not enumerate the
+# complete Debian filesystem.
+AMDGPU_MODULE="$(find "$ROOTFS/usr/lib/modules" -type f -path '*/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.ko*' -print -quit)"
+[[ -n "$AMDGPU_MODULE" ]] ||
     fail "AMD amdgpu kernel module is missing from the Live rootfs"
-grep -Eq 'usr/lib/firmware/amdgpu/[^[:space:]]+\.bin(\.(xz|zst))?([[:space:]]|$)' "$SQUASHFS_GPU_LIST" || \
+AMDGPU_FIRMWARE="$(find "$ROOTFS/usr/lib/firmware/amdgpu" -type f -name '*.bin*' -print -quit)"
+[[ -n "$AMDGPU_FIRMWARE" ]] ||
     fail "AMD GPU firmware payload is missing from the Live rootfs"
+
 [[ -s "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.json" ]] ||
     fail "Mesa RADV Vulkan ICD manifest is missing from the Live rootfs"
 grep -Fq 'libvulkan_radeon.so' "$ROOTFS/usr/share/vulkan/icd.d/radeon_icd.json" ||
