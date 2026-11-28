@@ -29,10 +29,11 @@ use smithay::{
         shell::xdg::XdgShellState,
         shm::ShmState,
         tablet_manager::{TabletManagerState, TabletSeatHandler},
-        #[cfg(feature = "drm")]
-        dmabuf::{DmabufFeedback, DmabufGlobal, DmabufState},
     },
 };
+
+#[cfg(feature = "drm")]
+use smithay::wayland::dmabuf::{DmabufFeedback, DmabufGlobal, DmabufState};
 
 use crate::{
     desktop::DesktopManager,
