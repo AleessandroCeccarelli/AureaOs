@@ -163,7 +163,7 @@ pub(super) fn record_normal_surfaces<'pass, 'view, 'image, 'pass_device, 'view_d
     target: &VulkanLegacyRenderTarget<'pass, 'view, 'image, 'pass_device, 'view_device>,
     pipeline: &VulkanSharedLegacyGraphicsPipeline,
     surfaces: &[VisibleSurface],
-    views: &[VulkanImageView<'_, '_>],
+    views: &[&VulkanImageView<'_, '_>],
     bindings: &[VulkanTextureBinding<'_, '_, '_, '_>],
 ) -> Result<(), VulkanSurfaceCompositionError> {
     record_surface_class(command_buffer, target, pipeline, surfaces, views, bindings, false)
