@@ -81,7 +81,7 @@ impl VulkanDmabufImportSupport {
             let count = modifier_list.drm_format_modifier_count as usize;
             if count == 0 { continue; }
             let mut properties = vec![vk::DrmFormatModifierPropertiesEXT::default(); count];
-            modifier_list.drm_format_modifier_properties = properties.as_mut_ptr();
+            modifier_list.drm_format_modifier_properties(&mut properties);
             unsafe {
                 device.instance().get_physical_device_format_properties2(
                     device.physical_device(),
@@ -199,7 +199,7 @@ impl VulkanDmabufImportSupport {
             vk::DrmFormatModifierPropertiesEXT::default();
             modifier_count
         ];
-        modifier_list.drm_format_modifier_properties = modifier_properties.as_mut_ptr();
+        modifier_list.drm_format_modifier_properties(&mut modifier_properties);
         unsafe {
             device.instance().get_physical_device_format_properties2(
                 device.physical_device(),
