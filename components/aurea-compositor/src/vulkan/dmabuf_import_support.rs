@@ -68,26 +68,33 @@ impl VulkanDmabufImportSupport {
         let mut supported = Vec::new();
         for fourcc in known_formats().iter().copied() {
             let Some(format) = get_vk_format(fourcc) else { continue };
-            let mut modifier_list = vk::DrmFormatModifierPropertiesListEXT::default();
-            let mut format_properties =
-                vk::FormatProperties2::default().push_next(&mut modifier_list);
-            unsafe {
-                device.instance().get_physical_device_format_properties2(
-                    device.physical_device(),
-                    format,
-                    &mut format_properties,
-                );
-            }
-            let count = modifier_list.drm_format_modifier_count as usize;
+            let count = {
+                let mut modifier_list = vk::DrmFormatModifierPropertiesListEXT::default();
+                let mut format_properties =
+                    vk::FormatProperties2::default().push_next(&mut modifier_list);
+                unsafe {
+                    device.instance().get_physical_device_format_properties2(
+                        device.physical_device(),
+                        format,
+                        &mut format_properties,
+                    );
+                }
+                modifier_list.drm_format_modifier_count as usize
+            };
             if count == 0 { continue; }
             let mut properties = vec![vk::DrmFormatModifierPropertiesEXT::default(); count];
-            modifier_list.drm_format_modifier_properties(&mut properties);
-            unsafe {
-                device.instance().get_physical_device_format_properties2(
-                    device.physical_device(),
-                    format,
-                    &mut format_properties,
-                );
+            {
+                let mut modifier_list = vk::DrmFormatModifierPropertiesListEXT::default()
+                    .drm_format_modifier_properties(&mut properties);
+                let mut format_properties =
+                    vk::FormatProperties2::default().push_next(&mut modifier_list);
+                unsafe {
+                    device.instance().get_physical_device_format_properties2(
+                        device.physical_device(),
+                        format,
+                        &mut format_properties,
+                    );
+                }
             }
 
             for modifier in properties {
@@ -180,18 +187,19 @@ impl VulkanDmabufImportSupport {
         // external-memory handle type. First verify that this exact modifier
         // is advertised for the mapped Vulkan format and that its Vulkan
         // memory-plane count agrees with the DMA-BUF metadata.
-        let mut modifier_list = vk::DrmFormatModifierPropertiesListEXT::default();
-        let mut format_properties =
-            vk::FormatProperties2::default().push_next(&mut modifier_list);
-        unsafe {
-            device.instance().get_physical_device_format_properties2(
-                device.physical_device(),
-                format,
-                &mut format_properties,
-            )
+        let modifier_count = {
+            let mut modifier_list = vk::DrmFormatModifierPropertiesListEXT::default();
+            let mut format_properties =
+                vk::FormatProperties2::default().push_next(&mut modifier_list);
+            unsafe {
+                device.instance().get_physical_device_format_properties2(
+                    device.physical_device(),
+                    format,
+                    &mut format_properties,
+                )
+            };
+            modifier_list.drm_format_modifier_count as usize
         };
-
-        let modifier_count = modifier_list.drm_format_modifier_count as usize;
         if modifier_count == 0 {
             return Err(VulkanDmabufImportSupportError::UnsupportedModifier);
         }
@@ -199,14 +207,19 @@ impl VulkanDmabufImportSupport {
             vk::DrmFormatModifierPropertiesEXT::default();
             modifier_count
         ];
-        modifier_list.drm_format_modifier_properties(&mut modifier_properties);
-        unsafe {
-            device.instance().get_physical_device_format_properties2(
-                device.physical_device(),
-                format,
-                &mut format_properties,
-            )
-        };
+        {
+            let mut modifier_list = vk::DrmFormatModifierPropertiesListEXT::default()
+                .drm_format_modifier_properties(&mut modifier_properties);
+            let mut format_properties =
+                vk::FormatProperties2::default().push_next(&mut modifier_list);
+            unsafe {
+                device.instance().get_physical_device_format_properties2(
+                    device.physical_device(),
+                    format,
+                    &mut format_properties,
+                )
+            };
+        }
 
         let modifier_properties = modifier_properties
             .iter()
@@ -234,19 +247,23 @@ impl VulkanDmabufImportSupport {
             .push_next(&mut modifier_query)
             .push_next(&mut external_query);
 
-        let mut external_properties = vk::ExternalImageFormatProperties::default();
-        let mut image_properties =
-            vk::ImageFormatProperties2::default().push_next(&mut external_properties);
-        unsafe {
-            device.instance().get_physical_device_image_format_properties2(
-                device.physical_device(),
-                &image_query,
-                &mut image_properties,
+        let (external, limits) = {
+            let mut external_properties = vk::ExternalImageFormatProperties::default();
+            let mut image_properties =
+                vk::ImageFormatProperties2::default().push_next(&mut external_properties);
+            unsafe {
+                device.instance().get_physical_device_image_format_properties2(
+                    device.physical_device(),
+                    &image_query,
+                    &mut image_properties,
+                )
+            }
+            .map_err(|_| VulkanDmabufImportSupportError::ImageConfigurationUnsupported)?;
+            (
+                external_properties.external_memory_properties,
+                image_properties.image_format_properties,
             )
-        }
-        .map_err(|_| VulkanDmabufImportSupportError::ImageConfigurationUnsupported)?;
-
-        let external = external_properties.external_memory_properties;
+        };
         if !external.external_memory_features.contains(vk::ExternalMemoryFeatureFlags::IMPORTABLE)
             || !external.compatible_handle_types.contains(
                 vk::ExternalMemoryHandleTypeFlags::DMA_BUF_EXT,
@@ -255,7 +272,6 @@ impl VulkanDmabufImportSupport {
             return Err(VulkanDmabufImportSupportError::ExternalMemoryNotImportable);
         }
 
-        let limits = image_properties.image_format_properties;
         if layout.width() > limits.max_extent.width || layout.height() > limits.max_extent.height {
             return Err(VulkanDmabufImportSupportError::ImageConfigurationUnsupported);
         }
