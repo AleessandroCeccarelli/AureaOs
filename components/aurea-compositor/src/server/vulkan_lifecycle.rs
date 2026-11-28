@@ -70,7 +70,7 @@ pub(super) fn refresh_dmabuf_feedback(state: &mut WaylandState) {
                 .ok()
                 .flatten()
                 .or_else(|| physical.render_node().ok().flatten())
-                .and_then(|node| node.dev_id().ok())
+                .map(|node| node.dev_id())
         });
     // An empty feedback table has no main-device tranche and is not a valid
     // replacement for this feedback global. Keep the last published table,
