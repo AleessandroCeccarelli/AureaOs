@@ -5,7 +5,7 @@
 
 //! Ordered SHM snapshots for complete Wayland surface trees.
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use smithay::{
     reexports::wayland_server::{
@@ -14,7 +14,7 @@ use smithay::{
     },
     utils::{Logical, Point, Transform},
     wayland::compositor::{
-        SubsurfaceCachedState, SurfaceData, TraversalAction, with_surface_tree_downward,
+        BufferAssignment, SubsurfaceCachedState, SurfaceAttributes, SurfaceData, TraversalAction, with_surface_tree_downward,
     },
 };
 
@@ -271,14 +271,16 @@ pub fn collect_surface_tree_dmabuf_snapshots(
 #[cfg(feature = "drm")]
 #[derive(Default)]
 struct SurfaceDmabufBufferState {
-    current: Option<WlBuffer>,
-    registry: Option<std::sync::Weak<std::sync::Mutex<std::collections::HashMap<ObjectId, (WlBuffer, usize)>>>>,
+    current: std::sync::Mutex<Option<WlBuffer>>,
+    registry: std::sync::Mutex<Option<std::sync::Weak<std::sync::Mutex<std::collections::HashMap<ObjectId, (WlBuffer, usize)>>>>>,
 }
 
 #[cfg(feature = "drm")]
 impl Drop for SurfaceDmabufBufferState {
     fn drop(&mut self) {
-        let (Some(buffer), Some(registry)) = (self.current.take(), self.registry.as_ref()) else {
+        let current = self.current.get_mut().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let registry = self.registry.get_mut().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let (Some(buffer), Some(registry)) = (current.take(), registry.as_ref()) else {
             return;
         };
         if let Some(registry) = registry.upgrade() {
@@ -377,14 +379,13 @@ pub fn update_surface_tree_dmabuf_buffer_lifecycle(
                 let state = states
                     .data_map
                     .get_or_insert_threadsafe(SurfaceDmabufBufferState::default);
-                let mut state = state
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner);
-                state.registry = Some(std::sync::Arc::downgrade(&registry.buffers));
-                if state.current == next {
+                let mut current = state.current.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+                let mut registry_slot = state.registry.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+                *registry_slot = Some(std::sync::Arc::downgrade(&registry.buffers));
+                if *current == next {
                     return None;
                 }
-                let previous = std::mem::replace(&mut state.current, next.clone());
+                let previous = std::mem::replace(&mut *current, next.clone());
                 Some((previous, next))
             });
 
@@ -419,10 +420,7 @@ struct SurfaceDmabufSnapshot {
 
 #[cfg(feature = "drm")]
 fn surface_dmabuf_snapshot(surface: &WlSurface) -> Option<SurfaceDmabufSnapshot> {
-    use smithay::{
-        reexports::wayland_server::protocol::wl_buffer::WlBuffer,
-        wayland::{compositor::{BufferAssignment, SurfaceAttributes, with_states}, dmabuf::get_dmabuf},
-    };
+    use smithay::wayland::{compositor::with_states, dmabuf::get_dmabuf};
 
     with_states(surface, |states| {
         let (buffer, buffer_scale, buffer_transform) = {
