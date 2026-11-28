@@ -98,6 +98,7 @@ for KERNEL in "${KERNELS[@]}"; do
         --stub="$UKI_STUB" \
         --linux="$KERNEL" \
         --initrd="$INITRD" \
+        --uname="$VERSION" \
         --cmdline="$CMDLINE" \
         --os-release="@$OS_RELEASE" \
         --output="$UKI_PATH"
@@ -120,8 +121,10 @@ for UKI in "$WORK_DIR"/aureaos-live-*.efi; do
 done
 BOOTLOADER_BYTES="$(stat -c '%s' "$BOOTLOADER")"
 ESP_BYTES=$((ESP_SIZE_MIB * 1024 * 1024))
-(( UKI_BYTES + 2 * BOOTLOADER_BYTES + 2 * 1024 * 1024 < ESP_BYTES )) ||
-    fail "UKI payloads need more than the ${ESP_SIZE_MIB} MiB El Torito ESP can safely hold"
+(( UKI_BYTES + 2 * BOOTLOADER_BYTES + 2 * 1024 * 1024 < ESP_BYTES )) || {
+    echo "UKI payload total: $UKI_BYTES bytes; systemd-boot copies: $((2 * BOOTLOADER_BYTES)) bytes; ESP: $ESP_BYTES bytes." >&2
+    fail "UKI payloads need more than the ${ESP_SIZE_MIB} MiB El Torito ESP can safely hold; verify initramfs compression and kernel count"
+}
 
 # systemd-boot scans this FAT image as its ESP. No firmware NVRAM entries are
 # created and no host disk is touched by this build-time operation.
