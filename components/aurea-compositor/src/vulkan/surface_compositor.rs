@@ -10,6 +10,7 @@ mod cursor_trail_geometry;
 mod error;
 #[cfg(feature = "legacy-vulkan-frame")]
 mod legacy_frame;
+#[cfg(feature = "legacy-vulkan-frame")]
 mod legacy_layers;
 mod readback;
 mod readback_entry;
