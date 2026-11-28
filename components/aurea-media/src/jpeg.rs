@@ -116,7 +116,7 @@ fn map_status(status: c_int) -> Result<(), DecodeError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{decode, validate_dimensions};
+    use super::validate_dimensions;
     use crate::{DecodeError, DecodeLimits};
 
     #[test]
